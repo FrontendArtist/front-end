@@ -1,0 +1,10 @@
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-title-hover);
+}
+
+p {
+  font-size: var(--font-md);
+  line-height: var(--line-height-md);
+  color: var(--color-text-primary);
+} 

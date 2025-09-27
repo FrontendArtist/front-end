@@ -1,0 +1,61 @@
+// Breakpoints for mixin logic
+$breakpoint-xl: 1280px;
+$breakpoint-lg: 960px;
+$breakpoint-md: 768px;
+$breakpoint-sm: 440px;
+
+@mixin respond($breakpoint) {
+  @if $breakpoint == xl { @media (max-width: $breakpoint-xl) { @content; } }
+  @if $breakpoint == lg { @media (max-width: $breakpoint-lg) { @content; } }
+  @if $breakpoint == md { @media (max-width: $breakpoint-md) { @content; } }
+  @if $breakpoint == sm { @media (max-width: $breakpoint-sm) { @content; } }
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin hover-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+@mixin card-container {
+  padding: 24px;
+  border-radius: 16px;
+  @include hover-transition;
+  @include respond(md) { padding: 16px; }
+}
+
+@mixin section-spacing {
+  padding-top: var(--space-section-top-desktop);
+  padding-bottom: var(--space-section-bottom-desktop);
+  @include respond(md) {
+    padding-top: 96px;
+    padding-bottom: 80px;
+  }
+  @include respond(sm) {
+    padding-top: 64px;
+    padding-bottom: 56px;
+  }
+}
+
+@mixin container {
+  margin: 0 auto;
+  padding-left: var(--space-container-x-desktop);
+  padding-right: var(--space-container-x-desktop);
+  max-width: $breakpoint-xl;
+  @include respond(lg) {
+    padding-left: 60px;
+    padding-right: 60px;
+  }
+  @include respond(md) {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  @include respond(sm) {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+} 
