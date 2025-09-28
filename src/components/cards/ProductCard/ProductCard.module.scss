@@ -1,0 +1,88 @@
+@import '../../../styles/base/mixins';
+
+.productCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  background-color: var(--color-card-bg);
+  transition: transform 0.3s ease;
+  direction: rtl;
+
+  &:hover {
+    transform: translateY(-4px);
+
+    .productImage {
+      transform: scale(1.05);
+    }
+
+    .cardTitle {
+      color: var(--color-title-hover);
+    }
+  }
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  overflow: hidden;
+}
+
+.productImage {
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  flex: 1;
+}
+
+.cardTitle {
+  font-size: var(--font-size-lg);
+  color: var(--color-primary);
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.cardText {
+  color: var(--color-card-text);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.price {
+  font-size: var(--font-size-md);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.ctaButton {
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-primary);
+  color: var(--color-card-bg);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: var(--color-title-hover);
+  }
+} 

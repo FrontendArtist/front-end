@@ -22,7 +22,7 @@ $breakpoint-sm: 440px;
 }
 
 @mixin card-container {
-  padding: 24px;
+
   border-radius: 16px;
   @include hover-transition;
   @include respond(md) { padding: 16px; }

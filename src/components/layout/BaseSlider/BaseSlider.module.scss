@@ -1,0 +1,30 @@
+.sliderContainer {
+    position: relative;
+    width: 100%;
+  
+    // The :global selectors are now nested INSIDE our local class.
+    // This makes the rule "pure" because it's anchored to .sliderContainer.
+    :global(.swiper-button-next),
+    :global(.swiper-button-prev) {
+      color: var(--color-text-primary) !important;
+      transition: color 0.3s ease;
+  
+      &:hover {
+        color: var(--color-title-hover) !important;
+      }
+    }
+  
+    // You can also style other global swiper elements this way
+    :global(.swiper-pagination-bullet-active) {
+      background-color: var(--color-text-primary) !important;
+    }
+  }
+  
+  .swiper {
+    // We can keep styles for our local swiper wrapper class here
+    padding-bottom: 40px; 
+  }
+  
+  .swiperSlide {
+    // Styles for individual slides if needed
+  }
