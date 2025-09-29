@@ -19,7 +19,7 @@ const ProductsSection = () => {
   };
 
   return (
-    <section className={`${styles.productsSection} section`}>
+    <section  id="products-section" className={`${styles.productsSection} section`}>
       <div className="container">
         <header className={styles.header}>
           <h2 className={styles.title}>جدیدترین محصولات</h2>
