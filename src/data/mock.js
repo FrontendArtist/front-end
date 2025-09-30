@@ -81,3 +81,111 @@ export const mockProducts = [
         shortDescription: 'این محصول توضیحات کوتاهی دارد.',
     }
   ];
+  // ... (mockProducts array is already here)
+
+export const mockCourses = [
+  {
+    id: 1,
+    slug: 'course-one-slug',
+    image: {
+      url: 'https://picsum.photos/seed/c1/400/300',
+      alt: 'A placeholder image for course one',
+    },
+    title: 'دوره مقدماتی آگاهی',
+    price: {
+      toman: 750000,
+    },
+    shortDescription: 'در این دوره با مبانی اصلی خودشناسی و بیداری درونی آشنا خواهید شد.',
+  },
+  {
+    id: 2,
+    slug: 'course-two-slug',
+    image: {
+      url: 'https://picsum.photos/seed/c2/400/300',
+      alt: 'A placeholder image for course two',
+    },
+    title: 'دوره پیشرفته کیمیاگری درون',
+    price: {
+      toman: 1200000,
+    },
+    shortDescription: 'تکنیک‌های پیشرفته برای تبدیل انرژی‌های درونی و رسیدن به تعالی.',
+  },
+  {
+    id: 3,
+    slug: 'course-three-slug',
+    image: {
+      url: 'https://picsum.photos/seed/c3/400/300',
+      alt: 'A placeholder image for course three',
+    },
+    title: 'کارگاه عملی مراقبه',
+    price: {
+      toman: 0, // This is a free course
+    },
+    shortDescription: 'یک کارگاه رایگان برای تجربه عملی تکنیک‌های مختلف مراقبه و مدیتیشن.',
+  },
+  {
+    id: 4,
+    slug: 'course-four-slug',
+    image: {
+      url: 'https://picsum.photos/seed/c4/400/300',
+      alt: 'A placeholder image for course four',
+    },
+    title: 'دوره مقدماتی آگاهی',
+    price: {
+      toman: 750000,
+    },
+    shortDescription: 'در این دوره با مبانی اصلی خودشناسی و بیداری درونی آشنا خواهید شد.',
+  },
+  {
+    id: 5,
+    slug: 'course-five-slug',
+    image: {
+      url: 'https://picsum.photos/seed/c5/400/300',
+      alt: 'A placeholder image for course five',
+    },
+    title: 'دوره مقدماتی آگاهی',
+    price: {
+      toman: 750000,
+    },
+    shortDescription: 'در این دوره با مبانی اصلی خودشناسی و بیداری درونی آشنا خواهید شد.',    
+  },
+  {
+    id: 6,
+    slug: 'course-six-slug',
+    image: {
+      url: 'https://picsum.photos/seed/c6/400/300',
+      alt: 'A placeholder image for course six',
+    },
+    title: 'دوره مقدماتی آگاهی',
+    price: {
+      toman: 750000,
+    },
+    shortDescription: 'در این دوره با مبانی اصلی خودشناسی و بیداری درونی آشنا خواهید شد.',
+  },
+  {
+    id: 7,
+    slug: 'course-seven-slug',
+    image: {
+      url: 'https://picsum.photos/seed/c7/400/300',
+      alt: 'A placeholder image for course seven',
+    },
+    title: 'دوره مقدماتی آگاهی',
+    price: {
+      toman: 750000,
+    },
+    shortDescription: 'در این دوره با مبانی اصلی خودشناسی و بیداری درونی آشنا خواهید شد.',
+  },
+  {
+    id: 8,
+    slug: 'course-eight-slug',
+    image: {
+      url: 'https://picsum.photos/seed/c8/400/300',
+      alt: 'A placeholder image for course eight',
+    },
+    title: 'دوره مقدماتی آگاهی',
+    price: {
+      toman: 750000,
+    },
+    shortDescription: 'در این دوره با مبانی اصلی خودشناسی و بیداری درونی آشنا خواهید شد.',
+  },
+];
