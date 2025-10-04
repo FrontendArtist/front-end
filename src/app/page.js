@@ -5,6 +5,7 @@ import AboutMentorSection from "@/modules/home/AboutMentorSection/AboutMentorSec
 import CoursesSection from "@/modules/home/CoursesSection/CoursesSection";
 import HakimElahiSection from "@/modules/home/HakimElahiSection/HakimElahiSection";
 import ProductCategoriesSection from "@/modules/home/ProductCategoriesSection/ProductCategoriesSection";
+import ServicesSection from "@/modules/home/ServicesSection/ServicesSection";
 
 
 
@@ -17,6 +18,7 @@ export default function HomePage() {
       <HakimElahiSection />
       <ProductCategoriesSection />
       <ProductsSection />
+      <ServicesSection />
     </div>
   );
 }
