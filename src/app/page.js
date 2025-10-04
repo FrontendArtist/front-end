@@ -4,6 +4,8 @@ import HeroSection from "@/modules/home/HeroSection/HeroSection";
 import AboutMentorSection from "@/modules/home/AboutMentorSection/AboutMentorSection";
 import CoursesSection from "@/modules/home/CoursesSection/CoursesSection";
 import HakimElahiSection from "@/modules/home/HakimElahiSection/HakimElahiSection";
+import ProductCategoriesSection from "@/modules/home/ProductCategoriesSection/ProductCategoriesSection";
+
 
 
 export default function HomePage() {
@@ -13,8 +15,8 @@ export default function HomePage() {
       <AboutMentorSection />
       <CoursesSection />
       <HakimElahiSection />
+      <ProductCategoriesSection />
       <ProductsSection />
-
     </div>
   );
 }

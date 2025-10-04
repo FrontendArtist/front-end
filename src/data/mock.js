@@ -189,3 +189,62 @@ export const mockCourses = [
     shortDescription: 'در این دوره با مبانی اصلی خودشناسی و بیداری درونی آشنا خواهید شد.',
   },
 ];
+
+
+// ... (mockProducts and mockCourses are already here)
+
+export const mockCategories = [
+  {
+    id: 1,
+    slug: 'herbal-teas',
+    name: 'دمنوش‌های گیاهی',
+    icon: '/icons/tea-leaf.svg', // Placeholder path, we will add icons later
+  },
+  {
+    id: 2,
+    slug: 'natural-oils',
+    name: 'روغن‌های طبیعی',
+    icon: '/icons/oil-drop.svg',
+  },
+  {
+    id: 3,
+    slug: 'spiritual-books',
+    name: 'کتاب‌های معنوی',
+    icon: '/icons/book-open.svg',
+  },
+  {
+    id: 4,
+    slug: 'handicrafts',
+    name: 'صنایع دستی',
+    icon: '/icons/hand-heart.svg',
+  },
+  {
+    id: 5,
+    slug: 'spiritual-books',
+    name: 'کتاب‌های معنوی',
+    icon: '/icons/book-open.svg',
+  },
+  
+  {
+    id: 6,
+    slug: 'handicrafts',
+    name: 'صنایع دستی',
+    icon: '/icons/hand-heart.svg',
+  },
+  
+  {
+    id: 7,
+    slug: 'handicrafts',
+    name: 'صنایع دستی',
+    icon: '/icons/hand-heart.svg',
+  },
+  
+  {
+    id: 8,
+    slug: 'handicrafts',
+    name: 'صنایع دستی',
+    icon: '/icons/hand-heart.svg',
+  },
+  
+    
+];
