@@ -1,17 +1,17 @@
-.courseCard {
+.articleCard {
   display: flex;
   flex-direction: column;
-  height: 100%; // Ensures cards in a row have the same height
+  height: 100%;
 }
 
 .imageWrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10; // Gives the image a consistent shape
+  aspect-ratio: 16 / 10;
   flex-shrink: 0;
 }
 
-.courseImage {
+.articleImage {
   object-fit: cover;
 }
 
@@ -19,7 +19,7 @@
   padding: var(--space-title-text-desktop);
   display: flex;
   flex-direction: column;
-  flex-grow: 1; // Allows this section to fill available space
+  flex-grow: 1;
 }
 
 .cardTitle {
@@ -28,18 +28,27 @@
   margin-bottom: 1rem;
 }
 
-.cardText {
+.cardExcerpt {
   color: var(--color-card-text);
   font-size: var(--font-md);
   line-height: var(--line-height-md);
-  flex-grow: 1; // Pushes the button down
-
+  flex-grow: 1;
+  
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  display: -webkit-box;
+  text-overflow: ellipsis;
 }
 
-.ctaButton {
-  margin-top: var(--space-text-button-desktop); // Pushes button away from text
-  align-self: center; // Centers the button horizontally
+.footer {
+  margin-top: var(--space-text-button-desktop);
+  display: flex;
+  justify-content: flex-start;
 }
+
+.date {
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  opacity: 0.8;
+} 

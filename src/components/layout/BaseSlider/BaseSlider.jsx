@@ -1,5 +1,8 @@
 'use client';
 
+// 1. Import useState from React
+import { useState } from 'react';
+
 // Essential Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -18,6 +21,9 @@ import styles from './BaseSlider.module.scss';
  * }} props
  */
 const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4 }) => {
+  // 2. Add a state to track Swiper initialization
+  const [isInitialized, setIsInitialized] = useState(false);
+
   if (!items || items.length === 0) {
     return <div>No items to display.</div>;
   }
@@ -47,13 +53,16 @@ const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4 }) => {
   };
 
   return (
-    <div className={styles.sliderContainer}>
+    // 3. Apply the conditional class based on the state
+    <div className={`${styles.sliderContainer} ${isInitialized ? styles.swiperInitialized : ''}`}>
       <Swiper
         modules={[Navigation]}
         navigation
         loop={loop}
         breakpoints={breakpoints} // Use the new breakpoints config
         className={styles.swiper}
+        // 4. Use the onInit callback to update the state when Swiper is ready
+        onInit={() => setIsInitialized(true)}
       >
         {items.map((item, index) => (
           <SwiperSlide key={index} className={styles.swiperSlide}>

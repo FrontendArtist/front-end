@@ -25,6 +25,21 @@
     padding-bottom: 40px; 
   }
   
-  .swiperSlide {
-    // Styles for individual slides if needed
+  // .swiperSlide {
+  // Styles for individual slides if needed
+  // }
+  .sliderContainer {
+    position: relative;
+    width: 100%;
+  
+    // Initially, the slider is transparent and hidden
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease-in-out;
+  
+    // This class is added via state when Swiper's onInit event fires
+    &.swiperInitialized {
+      opacity: 1;
+      visibility: visible;
+    }
   }

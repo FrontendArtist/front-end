@@ -1,0 +1,95 @@
+@import '../../../styles/base/mixins';
+
+.hakimElahiSection {
+  padding: 80px 0;
+  background-color: var(--color-bg-primary);
+}
+
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-gap-desktop, 48px);
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+
+  @include respond(md) {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+.contentWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-title-content-desktop, 56px);
+
+  @include respond(md) {
+    gap: 24px;
+    order: 1;
+  }
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  height: 700px;
+  border-radius: 16px;
+  overflow: hidden;
+
+  @include respond(md) {
+    height: 400px;
+    order: -1;
+  }
+}
+
+.title {
+  font-size: var(--font-xl, 32px);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-text-primary, #F6D982);
+  margin: 0;
+  line-height: 1.4;
+
+  @include respond(md) {
+    font-size: 24px;
+  }
+}
+
+.text {
+  font-size: 18px;
+  line-height: 1.8;
+  color: var(--color-card-text, #FFFAEA);
+  margin: 0;
+
+  @include respond(md) {
+    font-size: 16px;
+    line-height: 1.7;
+  }
+}
+
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-title-hover) 100%);
+  color: var(--color-bg-primary);
+  font-size: 16px;
+  font-weight: var(--font-weight-bold, 700);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  align-self: flex-start;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(246, 217, 130, 0.3);
+  }
+
+  @include respond(md) {
+    width: 100%;
+    padding: 14px 24px;
+  }
+}
+

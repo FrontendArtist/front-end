@@ -21,27 +21,24 @@ const CourseCard = ({ course }) => {
   const { slug, image, title, price, shortDescription } = course;
 
   return (
-    <Link href={`/courses/${slug}`} className={`${styles.courseCard} card vertical-gradient`}>
+    <div className={`${styles.courseCard} card`}>
       <div className={styles.imageWrapper}>
         <Image
           src={image.url}
           alt={image.alt || title}
           fill
-          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+          sizes="(max-width: 768px) 100vw, 50vw"
           className={styles.courseImage}
         />
       </div>
       <div className={styles.cardContent}>
-        <h3 className={`${styles.cardTitle} card-title`}>{title}</h3>
-        {shortDescription && <p className={`${styles.cardText} card-text`}>{shortDescription}</p>}
-        <div className={styles.footer}>
-          <span className={styles.price}>{price.toman === 0 ? 'رایگان' : `${price.toman.toLocaleString()} تومان`}</span>
-          <div className={`${styles.ctaButton} card-button`}>
-            ثبت‌نام در دوره
-          </div>
-        </div>
+        <h3 className={styles.cardTitle}>{title}</h3>
+        <p className={styles.cardText}>{shortDescription}</p>
+        <Link href={`/courses/${slug}`} className={`${styles.ctaButton} card-button`}>
+          بیشتر بدانید
+        </Link>
       </div>
-    </Link>
+    </div>
   );
 };
 
