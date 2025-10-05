@@ -8,6 +8,7 @@ import ProductCategoriesSection from "@/modules/home/ProductCategoriesSection/Pr
 import ServicesSection from "@/modules/home/ServicesSection/ServicesSection";
 import ArticlesSection from "@/modules/home/ArticlesSection/ArticlesSection";
 import FaqSection from "@/modules/home/FaqSection/FaqSection";
+import TestimonialsSection from "@/modules/home/TestimonialsSection/TestimonialsSection";
 
 
 export default function HomePage() {
@@ -22,6 +23,7 @@ export default function HomePage() {
       <ServicesSection />
       <ArticlesSection />
       <FaqSection />
+      <TestimonialsSection />
     </div>
   );
 }
