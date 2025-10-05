@@ -1,0 +1,44 @@
+@import '../../../styles/base/mixins';
+
+.faqSection {
+  @include section-spacing;
+  background: var(--color-bg-primary);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--space-title-content-desktop);
+
+  @include respond(md) {
+    margin-bottom: 40px;
+  }
+
+  @include respond(sm) {
+    margin-bottom: 32px;
+  }
+}
+
+.title {
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: var(--line-height-sm);
+
+  @include respond(md) {
+    font-size: 28px;
+  }
+
+  @include respond(sm) {
+    font-size: 24px;
+  }
+}
+
+.accordionWrapper {
+  max-width: 900px;
+  margin: 0 auto;
+
+  @include respond(md) {
+    max-width: 100%;
+  }
+}
+

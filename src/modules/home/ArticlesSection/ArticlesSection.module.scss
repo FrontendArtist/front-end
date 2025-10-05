@@ -1,0 +1,34 @@
+@import '../../../styles/base/mixins';
+
+.articlesSection {
+  // The global .section class will handle the padding
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.viewAllLink {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: var(--color-primary-hover);
+  }
+}
+
+.sliderWrapper {
+  margin-top: 2rem;
+  // The BaseSlider component handles its own internal styling
+}
+

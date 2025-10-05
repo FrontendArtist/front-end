@@ -6,7 +6,8 @@ import CoursesSection from "@/modules/home/CoursesSection/CoursesSection";
 import HakimElahiSection from "@/modules/home/HakimElahiSection/HakimElahiSection";
 import ProductCategoriesSection from "@/modules/home/ProductCategoriesSection/ProductCategoriesSection";
 import ServicesSection from "@/modules/home/ServicesSection/ServicesSection";
-
+import ArticlesSection from "@/modules/home/ArticlesSection/ArticlesSection";
+import FaqSection from "@/modules/home/FaqSection/FaqSection";
 
 
 export default function HomePage() {
@@ -19,6 +20,8 @@ export default function HomePage() {
       <ProductCategoriesSection />
       <ProductsSection />
       <ServicesSection />
+      <ArticlesSection />
+      <FaqSection />
     </div>
   );
 }
