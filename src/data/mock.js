@@ -79,8 +79,177 @@ export const mockProducts = [
             toman: 180000,
         },
         shortDescription: 'این محصول توضیحات کوتاهی دارد.',
-    }
-  ];
+    },{
+        id: 7,
+        slug: 'product-seven-slug',
+        image: {
+            url: 'https://picsum.photos/seed/p7/400/300',
+            alt: 'A random placeholder image for product seven',
+        },
+        title: 'محصول شماره هفت',
+        price: {
+            toman: 180000,
+        },
+        shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+    },{
+        id: 8,
+        slug: 'product-eight-slug',
+        image: {
+            url: 'https://picsum.photos/seed/p8/400/300',
+            alt: 'A random placeholder image for product eight',
+        },
+        title: 'محصول شماره هشت',
+        price: {
+            toman: 180000,
+        },
+        shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+    },{
+        id: 9,
+        slug: 'product-nine-slug',
+        image: {
+            url: 'https://picsum.photos/seed/p9/400/300',
+            alt: 'A random placeholder image for product nine',
+        },
+        title: 'محصول شماره ده',
+        price: {
+            toman: 180000,
+        },
+        shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+    },{
+        id: 10,
+        slug: 'product-ten-slug',
+        image: {
+            url: 'https://picsum.photos/seed/p10/400/300',
+            alt: 'A random placeholder image for product ten',
+        },
+        title: 'محصول شماره یازده',
+        price: {
+            toman: 180000,
+        },
+        shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+    },
+    {
+        id: 11,
+        slug: 'product-eleven-slug',
+        image: {
+            url: 'https://picsum.photos/seed/p11/400/300',
+            alt: 'A random placeholder image for product eleven',
+        },
+        title: 'محصول شماره دوازده',
+        price: {
+            toman: 180000,
+        },
+        shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+    },{
+        id: 12,
+        slug: 'product-twelve-slug',
+        image: {
+            url: 'https://picsum.photos/seed/p12/400/300',
+            alt: 'A random placeholder image for product twelve',
+        },
+        title: 'محصول شماره سیزده',
+        price: {
+            toman: 180000,
+        },
+        shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+    },{
+        id: 13,
+        slug: 'product-twelve-slug',
+        image: {
+            url: 'https://picsum.photos/seed/p13/400/300',
+            alt: 'A random placeholder image for product twelve',
+        },
+        title: 'محصول شماره چهارده',
+        price: {
+            toman: 180000,
+        },
+        shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+    },{
+      id: 14,
+      slug: 'product-twelve-slug',
+      image: {
+          url: 'https://picsum.photos/seed/p14/400/300',
+          alt: 'A random placeholder image for product twelve',
+      },
+      title: 'محصول شماره چهارده',
+      price: {
+          toman: 180000,
+      },
+      shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+  },{
+    id: 15,
+    slug: 'product-twelve-slug',
+    image: {
+        url: 'https://picsum.photos/seed/p15/400/300',
+        alt: 'A random placeholder image for product twelve',
+    },
+    title: 'محصول شماره پانزده',
+    price: {
+        toman: 180000,
+    },
+    shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+},{
+  id: 16,
+  slug: 'product-twelve-slug',
+  image: {
+      url: 'https://picsum.photos/seed/p16/400/300',
+      alt: 'A random placeholder image for product twelve',
+  },
+  title: 'محصول شماره شانزده',
+  price: {
+      toman: 180000,
+  },
+  shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+},{
+  id: 17,
+  slug: 'product-twelve-slug',
+  image: {
+      url: 'https://picsum.photos/seed/p17/400/300',
+      alt: 'A random placeholder image for product twelve',
+  },
+  title: 'محصول شماره هفده',
+  price: {
+      toman: 180000,
+  },
+  shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+},{
+  id: 18,
+  slug: 'product-twelve-slug',
+  image: {
+      url: 'https://picsum.photos/seed/p18/400/300',
+      alt: 'A random placeholder image for product twelve',
+  },
+  title: 'محصول شماره هیجده',
+  price: {
+      toman: 180000,
+  },
+  shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+},{
+  id: 19,
+  slug: 'product-twelve-slug',
+  image: {
+      url: 'https://picsum.photos/seed/p19/400/300',
+      alt: 'A random placeholder image for product twelve',
+  },
+  title: 'محصول شماره نوزده',
+  price: {
+      toman: 180000,
+  },
+  shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+},{
+  id: 20,
+  slug: 'product-twelve-slug',
+  image: {
+      url: 'https://picsum.photos/seed/p20/400/300',
+      alt: 'A random placeholder image for product twelve',
+  },
+  title: 'محصول شماره بیست',
+  price: {
+      toman: 180000,
+  },
+  shortDescription: 'این محصول توضیحات کوتاهی دارد.',
+}
+    ];
   // ... (mockProducts array is already here)
 
 export const mockCourses = [

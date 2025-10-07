@@ -5,3 +5,23 @@
   margin: 0;
   padding: 0;
 }
+body{
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-sm);
+  letter-spacing: var(--letter-spacing-sm);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+}
+a{
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+ul{
+  list-style: none;
+}
