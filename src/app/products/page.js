@@ -8,6 +8,8 @@ export const metadata = {
   description: 'لیست کامل محصولات فروشگاه ما را مشاهده کنید.',
 };
 
+const PAGE_SIZE = 3; // Same as ProductGrid
+
 /**
  * Fetches the initial products from the Strapi API.
  * This is a separate function for clarity and reusability.
@@ -15,7 +17,9 @@ export const metadata = {
 async function getInitialProducts() {
   const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
   try {
-    const response = await fetch(`${STRAPI_API_URL}/api/products?populate=*&sort=createdAt:desc`);
+    const response = await fetch(
+      `${STRAPI_API_URL}/api/products?populate=*&sort=createdAt:desc&pagination[page]=1&pagination[pageSize]=${PAGE_SIZE}`
+    );
     if (!response.ok) throw new Error('Failed to fetch initial products');
     const result = await response.json();
     console.log(result);
