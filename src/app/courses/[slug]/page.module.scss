@@ -1,0 +1,254 @@
+// =============================================================================
+// Single Course Page Styles
+// =============================================================================
+// This stylesheet defines the visual layout and styling for the course detail page.
+// It follows our project's design system using CSS Custom Properties from _variables.scss
+// and mixins from _mixins.scss for responsive behavior.
+//
+// Key Layout Features:
+// 1. Two-column grid for main course info (media + details)
+// 2. Centered curriculum section with accordion
+// 3. Fully responsive with mobile-first approach
+// 4. RTL (Right-to-Left) support for Persian language
+
+// Import mixins for responsive breakpoints and utility functions
+// Note: We use relative path, NOT the @/ alias (SCSS doesn't support it)
+@import '../../../styles/base/mixins';
+
+// =============================================================================
+// MAIN PAGE CONTAINER
+// =============================================================================
+
+// Root container for the entire course page
+.coursePage {
+  // Apply consistent top and bottom spacing using CSS custom properties
+  // These variables are defined in _variables.scss and are globally available
+  padding: var(--space-section-top-desktop) 0 var(--space-section-bottom-desktop) 0;
+
+  // Responsive adjustments for smaller screens
+  // The respond() mixin comes from _mixins.scss
+  @include respond(md) {
+    // Reduce padding on tablets (max-width: 768px)
+    padding: 96px 0 80px 0;
+  }
+
+  @include respond(sm) {
+    // Further reduce padding on mobile (max-width: 440px)
+    padding: 64px 0 56px 0;
+  }
+}
+
+// =============================================================================
+// MAIN INFO SECTION - TWO COLUMN LAYOUT
+// =============================================================================
+
+// Grid container for the main course information
+// Left column: Course media (image/video thumbnail)
+// Right column: Course details (title, description, price, CTA)
+.mainInfoGrid {
+  // CSS Grid for flexible two-column layout
+  display: grid;
+  grid-template-columns: 1fr 1fr; // Equal width columns
+  gap: var(--space-gap-desktop); // Spacing between columns (48px on desktop)
+  margin-bottom: var(--space-section-bottom-desktop); // Space before curriculum section
+
+  // Responsive: Stack columns vertically on tablets and below
+  @include respond(md) {
+    grid-template-columns: 1fr; // Single column layout
+    gap: 40px; // Reduced gap for stacked layout
+    margin-bottom: 80px;
+  }
+
+  @include respond(sm) {
+    gap: 32px; // Even smaller gap on mobile
+    margin-bottom: 56px;
+  }
+}
+
+// =============================================================================
+// MEDIA COLUMN - Course Image/Video Thumbnail
+// =============================================================================
+
+// Wrapper for the course media (maintains aspect ratio)
+.mediaWrapper {
+  // Position relative is required for Next.js Image with fill layout
+  position: relative;
+  // 16:9 aspect ratio is standard for video content
+  // This ensures consistent sizing even before image loads
+  aspect-ratio: 16 / 9;
+  // Rounded corners for modern, polished look
+  border-radius: 16px;
+  // Hide any content that overflows the rounded corners
+  overflow: hidden;
+  // Subtle border using our primary text color with low opacity
+  border: 1px solid rgba(246, 217, 130, 0.2);
+  // Background color while image is loading
+  background: var(--color-overlay);
+
+  // Responsive adjustments
+  @include respond(md) {
+    border-radius: 12px; // Slightly smaller radius on tablet
+  }
+
+  @include respond(sm) {
+    border-radius: 8px; // Even smaller radius on mobile
+  }
+}
+
+// Styling for the Next.js Image component inside the wrapper
+.media {
+  // Smooth transition for any image state changes
+  @include hover-transition;
+}
+
+// =============================================================================
+// DETAILS COLUMN - Course Information
+// =============================================================================
+
+// Container for course details (title, description, price, CTA button)
+.details {
+  // Flexbox for vertical stacking with proper spacing
+  display: flex;
+  flex-direction: column;
+  // Right-align text for RTL support (Persian language)
+  text-align: right;
+  // Justify content to space items with description taking available space
+  justify-content: space-between;
+}
+
+// Course Title - Main heading
+.title {
+  // Use extra large font size from design system
+  font-size: var(--font-xl); // 32px on desktop
+  // Use primary text color (gold) from design system
+  color: var(--color-text-primary);
+  // Medium weight for proper hierarchy
+  font-weight: var(--font-weight-medium);
+  // Spacing below title
+  margin-bottom: var(--space-image-title-desktop); // 32px
+  // Remove default top margin
+  margin-top: 0;
+  // Comfortable line height for readability
+  line-height: var(--line-height-md);
+
+  // Responsive typography
+  @include respond(md) {
+    font-size: var(--font-lg); // 20px on tablet
+    margin-bottom: 24px;
+  }
+
+  @include respond(sm) {
+    font-size: var(--font-md); // 16px on mobile
+    margin-bottom: 16px;
+  }
+}
+
+// Course Description - Explains what the course is about
+.description {
+  // Use base font size
+  font-size: var(--font-md); // 16px
+  // Use card text color (lighter than primary) for better contrast
+  color: var(--color-card-text);
+  // Generous line height for comfortable reading of longer text
+  line-height: var(--line-height-lg); // 1.8
+  // Spacing below description
+  margin-bottom: var(--space-title-text-desktop); // 24px
+  // Flex grow pushes the price and button to the bottom
+  flex-grow: 1;
+
+  // Responsive adjustments
+  @include respond(md) {
+    font-size: var(--font-sm); // 14px on tablet
+    line-height: var(--line-height-md); // 1.6
+    margin-bottom: 20px;
+  }
+
+  @include respond(sm) {
+    margin-bottom: 16px;
+  }
+}
+
+// Price Display
+.price {
+  // Larger font size to emphasize the price
+  font-size: var(--font-lg); // 20px
+  // Use primary gold color to draw attention
+  color: var(--color-text-primary);
+  // Bold weight for emphasis
+  font-weight: var(--font-weight-bold);
+  // Spacing before the CTA button
+  margin-bottom: var(--space-text-button-desktop); // 24px
+
+  // Responsive adjustments
+  @include respond(md) {
+    font-size: var(--font-md); // 16px on tablet
+    margin-bottom: 20px;
+  }
+
+  @include respond(sm) {
+    margin-bottom: 16px;
+  }
+}
+
+// =============================================================================
+// CURRICULUM SECTION - Course Syllabus with Accordion
+// =============================================================================
+
+// Container for the curriculum section (below the main info grid)
+.curriculumSection {
+  // Limit width for better readability of text-heavy content
+  max-width: 800px;
+  // Center the section horizontally
+  margin: 0 auto;
+  // Top padding to separate from main info section
+  padding-top: var(--space-section-top-desktop); // 120px
+
+  // Responsive adjustments
+  @include respond(md) {
+    max-width: 100%; // Full width on tablet
+    padding-top: 80px;
+  }
+
+  @include respond(sm) {
+    padding-top: 60px;
+  }
+}
+
+// Section Title - "سرفصل‌های دوره"
+.sectionTitle {
+  // Center align for section headers
+  text-align: center;
+  // Use extra large font for section headers
+  font-size: var(--font-xl); // 32px
+  // Primary gold color
+  color: var(--color-text-primary);
+  // Medium weight
+  font-weight: var(--font-weight-medium);
+  // Spacing before accordion items
+  margin-bottom: var(--space-title-content-desktop); // 56px
+  // Remove default top margin
+  margin-top: 0;
+
+  // Responsive typography
+  @include respond(md) {
+    font-size: var(--font-lg); // 20px on tablet
+    margin-bottom: 40px;
+  }
+
+  @include respond(sm) {
+    font-size: var(--font-md); // 16px on mobile
+    margin-bottom: 32px;
+  }
+}
+
+// =============================================================================
+// NOTES:
+// =============================================================================
+// 1. All spacing uses CSS Custom Properties from _variables.scss
+// 2. All colors use CSS Custom Properties (never hardcoded hex values)
+// 3. The Accordion component has its own styles (Accordion.module.scss)
+// 4. The .card-button class used in the Link is a global class defined in _components.scss
+// 5. The .container class is a global class that provides consistent page padding
+// 6. All responsive breakpoints are handled by the respond() mixin from _mixins.scss
+// 7. This layout follows the design patterns from our CONTEXT_SingleCoursePage.md document
+

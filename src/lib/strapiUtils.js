@@ -1,55 +1,86 @@
+// This is the definitive version of the data formatting utility file,
+// tailored to your specific flat Strapi API structure.
+
+const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+
 /**
- * Formats a single image object from the user's specific Strapi response.
- * @param {Array} imagesArray - The 'images' array from the API.
- * @returns {{url: string, alt: string}} - A formatted image object.
+ * A generic helper to format a single image object.
+ * @param {object} imgData - A single, flat image object from your Strapi API.
+ * @returns {{url: string, alt: string}}
  */
-function formatUserImage(imagesArray) {
-  const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-  
-  // Check if the array exists and has at least one image
-  if (!imagesArray || imagesArray.length === 0) {
-    return { 
-      url: 'https://picsum.photos/seed/placeholder/400/300', 
-      alt: 'Placeholder Image' 
-    };
+function formatSingleImage(imgData) {
+  if (!imgData || !imgData.url) {
+    return { url: 'https://picsum.photos/seed/placeholder/400/300', alt: 'Placeholder Image' };
   }
-
-  // Use the first image from the array
-  const firstImage = imagesArray[0];
-  const imageUrl = firstImage.url.startsWith('http') ? firstImage.url : `${STRAPI_API_URL}${firstImage.url}`;
-
+  const imageUrl = imgData.url.startsWith('http') ? imgData.url : `${STRAPI_API_URL}${imgData.url}`;
   return {
     url: imageUrl,
-    alt: firstImage.alternativeText || '',
+    alt: imgData.alternativeText || '',
   };
 }
 
 /**
- * Formats the user's specific Strapi API response into a clean array of product objects.
- * @param {object} apiResponse - The raw response from the user's Strapi endpoint.
- * @returns {Array<object>} - A clean array of product objects.
+ * Formats your specific Strapi API response for PRODUCTS.
  */
+
 export function formatStrapiProducts(apiResponse) {
   if (!apiResponse || !apiResponse.data) return [];
 
   return apiResponse.data
-    // Filter out any items that might be null
-    .filter(item => item) 
-    // Map over the valid items to create our clean product objects
+    .filter(item => item && item.title)
     .map(item => {
-      // The price from the API is a number, but our component expects an object.
       const priceObject = { toman: item.price || 0 };
-
-      // The description from the API is a rich text array. We'll take the first paragraph.
       const shortDescription = (item.description && item.description[0]?.children[0]?.text) || '';
+
+      // Create a clean array of all images for the product
+      const images = (item.images || []).map(img => formatSingleImage(img));
 
       return {
         id: item.id,
         title: item.title,
         slug: item.slug,
-        price: priceObject, // Format the price
-        shortDescription: shortDescription, // Extract the description text
-        image: formatUserImage(item.images), // Use the new helper for the image
+        price: priceObject,
+        shortDescription: shortDescription,
+        // Return both the full array and a single thumbnail
+        images: images, // The full array for the gallery
+        image: images.length > 0 ? images[0] : formatSingleImage(null), // The first image for card views
       };
     });
+}
+/**
+ * Formats your specific Strapi API response for ARTICLES.
+ */
+export function formatStrapiArticles(apiResponse) {
+  if (!apiResponse || !apiResponse.data) return [];
+
+  return apiResponse.data
+    .filter(item => item && item.title)
+    .map(item => ({
+      id: item.id,
+      slug: item.slug,
+      title: item.title,
+      excerpt: item.excerpt,
+      date: item.publishedAt,
+      // Articles have a single 'cover' object.
+      cover: formatSingleImage(item.cover),
+    }));
+}
+
+/**
+ * Formats your specific Strapi API response for COURSES.
+ */
+export function formatStrapiCourses(apiResponse) {
+  if (!apiResponse || !apiResponse.data) return [];
+
+  return apiResponse.data
+    .filter(item => item && item.title)
+    .map(item => ({
+      id: item.id,
+      slug: item.slug,
+      title: item.title,
+      price: { toman: item.price || 0 },
+      shortDescription: (item.description && item.description[0]?.children[0]?.text) || '',
+      // Courses have a 'media' array, we take the first one.
+      image: formatSingleImage(item.media ? item.media[0] : null),
+    }));
 }

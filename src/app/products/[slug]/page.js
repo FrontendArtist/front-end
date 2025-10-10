@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import ProductGallery from '@/components/products/ProductGallery/ProductGallery';
 import { formatStrapiProducts } from '@/lib/strapiUtils';
 import styles from './page.module.scss';
 
@@ -38,7 +39,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
-  const product = await getProductBySlug(params.slug);
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
   if (!product) {
     return { title: 'محصول یافت نشد' };
   }
@@ -49,7 +51,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ProductPage({ params }) {
-  const { slug } = params;
+  const { slug } = await params;
   const product = await getProductBySlug(slug);
 
   if (!product) {
@@ -61,13 +63,7 @@ export default async function ProductPage({ params }) {
       <div className="container">
         <div className={styles.layoutGrid}>
           <div className={styles.gallery}>
-            <Image 
-              src={product.image.url} 
-              alt={product.image.alt} 
-              width={500} 
-              height={500} 
-              className={styles.mainImage}
-            />
+            <ProductGallery images={product.images} />
           </div>
 
           <div className={styles.details}>

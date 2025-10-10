@@ -1,0 +1,145 @@
+// =============================================================================
+// Single Article Page Styles
+// =============================================================================
+// This stylesheet provides styling for the individual article page.
+// It follows the project's design system using CSS Custom Properties.
+// All values reference variables from src/styles/base/_variables.scss
+// which are globally available (no import needed).
+
+// =============================================================================
+// MAIN CONTAINER
+// =============================================================================
+
+/* Main wrapper for the entire article page */
+/* Provides vertical spacing consistent with other pages in the site */
+.articlePage {
+  padding: var(--space-section-top-desktop) 0;
+  
+  /* The container class (from global styles) provides:
+     - Max width constraint
+     - Horizontal padding
+     - Center alignment */
+}
+
+// =============================================================================
+// ARTICLE HEADER SECTION
+// =============================================================================
+
+/* Header section containing the article title and publication date */
+/* Centered layout creates a focal point before the content */
+.header {
+  text-align: center;
+  /* Space below the header before the cover image appears */
+  margin-bottom: var(--space-title-content-desktop);
+}
+
+/* Main article title (H1) */
+/* Uses the largest font size and hover color for prominence */
+.title {
+  font-size: var(--font-xl); // 32px - largest heading size
+  color: var(--color-title-hover); // Gold accent color (#F5C452)
+  margin-bottom: 1rem; // Space between title and date
+  /* Font weight is inherited from global typography settings */
+}
+
+/* Publication date display */
+/* Slightly muted to be less prominent than the title */
+.date {
+  color: var(--color-text-primary); // Primary gold text (#F6D982)
+  opacity: 0.8; // Reduce opacity for subtle effect
+  /* Using the <time> element ensures semantic HTML for SEO */
+}
+
+// =============================================================================
+// COVER IMAGE SECTION
+// =============================================================================
+
+/* Wrapper for the main cover image */
+/* This container constrains the image width and provides proper spacing */
+.coverImageWrapper {
+  position: relative; // Creates positioning context for the image
+  width: 100%; // Full width up to the max-width constraint
+  max-width: 800px; // Limit width for better readability
+  margin: 0 auto var(--space-title-content-desktop); // Center and add bottom space
+  aspect-ratio: 16 / 9; // Maintain cinematic aspect ratio
+  
+  /* The nested .coverImage class styles the Next.js Image component */
+  .coverImage {
+    border-radius: 16px; // Rounded corners for modern look
+    object-fit: cover; // Ensure image fills container while maintaining aspect ratio
+    /* Next.js Image component automatically handles responsive sizing */
+  }
+}
+
+// =============================================================================
+// ARTICLE CONTENT SECTION
+// =============================================================================
+
+/* Main content area where the article text is rendered */
+/* This styles the HTML that's generated from the markdown/rich text */
+.content {
+  max-width: 800px; // Same as image for visual consistency and readability
+  margin: 0 auto; // Center the content
+  line-height: var(--line-height-lg); // 1.8 for comfortable reading
+  
+  // ---------------------------------------------------------------------------
+  // HTML Element Styles
+  // ---------------------------------------------------------------------------
+  // These rules style the HTML elements that are generated from the rich text
+  // content. We target common markdown/HTML elements for consistent formatting.
+
+  /* Heading styles (H2, H3) within the article */
+  /* These are subheadings that break up the content into sections */
+  h2, h3 {
+    margin-top: 2.5rem; // Generous top spacing to separate sections
+    margin-bottom: 1rem; // Space before the paragraph text
+    color: var(--color-title-hover); // Gold accent for visual hierarchy
+  }
+
+  /* Paragraph spacing */
+  /* Comfortable spacing between paragraphs improves readability */
+  p {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Link styles within article content */
+  /* Underlined to make them clearly identifiable as clickable */
+  a {
+    color: var(--color-text-primary); // Primary gold color
+    text-decoration: underline; // Always underline links for clarity
+    
+    /* Hover state provides visual feedback */
+    &:hover {
+      color: var(--color-title-hover); // Brighter gold on hover
+    }
+  }
+
+  /* List styles (ordered and unordered) */
+  /* Proper indentation and spacing for RTL layout */
+  ul, ol {
+    margin-bottom: 1.5rem; // Space below lists
+    padding-right: 2rem; // RTL: Indent from the right side
+    /* Note: In RTL layout, list bullets/numbers appear on the right */
+  }
+
+  /* 
+    Additional elements that might be styled in the future:
+    - blockquote: For quoted text
+    - code: For inline code snippets
+    - pre: For code blocks
+    - img: For images within the content
+    - table: For data tables
+    
+    These can be added as needed based on content requirements.
+  */
+}
+
+// =============================================================================
+// RESPONSIVE DESIGN
+// =============================================================================
+// TODO: Add media queries for mobile/tablet views
+// The desktop-first approach means we'll add smaller breakpoints later:
+// - Tablet: Adjust spacing and font sizes
+// - Mobile: Stack elements, reduce margins, smaller typography
+// This will be implemented in Phase 1 responsive optimization.
+
