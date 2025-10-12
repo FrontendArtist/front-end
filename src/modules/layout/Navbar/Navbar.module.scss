@@ -7,8 +7,9 @@
   right: 0;
   width: 100%;
   z-index: 1000;
-  background-color: var(--color-bg-primary);
+  background-color:#002b20d0;
   transition: box-shadow 0.3s ease;
+  backdrop-filter: blur(3px);
 
   &.scrolled {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -19,7 +20,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 70px;
+  height: 100px;
   padding: 0 1rem;
 }
 
@@ -46,7 +47,7 @@
   @media (min-width: 1024px) {
     display: flex;
     gap: 2rem;
-    margin-right: auto;
+
     margin-left: 2rem;
 
     li {

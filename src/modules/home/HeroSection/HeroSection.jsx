@@ -8,10 +8,10 @@ const HeroSection = () => {
     <section className={styles.heroSection}>
       <div className={styles.backgroundImage}>
         <Image
-          src="https://picsum.photos/seed/hero/1920/1080"
+          src="/hero/heropicshadow.webp"
           alt="Spiritual and tranquil background"
           fill
-          quality={80}
+          quality={100}
           priority={true}
           style={{ objectFit: 'cover' }}
         />

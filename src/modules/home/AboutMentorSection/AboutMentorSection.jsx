@@ -8,7 +8,7 @@ const AboutMentorSection = () => {
       <div className={`${styles.container} container`}>
         <div className={styles.imageWrapper}>
           <Image
-            src="https://picsum.photos/seed/mentor/600/700"
+            src="/images/master.png"
             alt="Portrait of the Mentor, Hakim Elahi"
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
