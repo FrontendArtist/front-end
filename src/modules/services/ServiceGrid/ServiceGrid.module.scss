@@ -1,0 +1,103 @@
+// Import mixins using relative path (required for SCSS modules)
+@import '../../../styles/base/mixins';
+
+/**
+ * ServiceGrid Component Styles
+ * 
+ * Responsive grid layout for service cards
+ * Follows BEM naming convention and uses design tokens from styles.md
+ * Grid adapts to viewport: 4 cols (desktop), 3 cols (tablet), 2 cols (mobile)
+ */
+
+// === Main Grid Wrapper ===
+// Outer wrapper for the entire service grid component
+.serviceGrid {
+  width: 100%;
+}
+
+// === Grid Container ===
+// Responsive grid layout using CSS Grid with automatic column adjustments
+.serviceGrid__container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-gap-desktop); // 48px from design tokens
+  
+  // Center items when fewer items than columns
+  justify-items: center;
+  align-items: stretch; // Ensure all cards have equal height
+  
+  /**
+   * Responsive Breakpoints
+   * Following mobile-first approach with progressive enhancement
+   */
+  
+  // Tablet Landscape (≤1280px): 3 columns
+  @include respond(xl) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+  }
+  
+  // Tablet Portrait (≤960px): 3 columns
+  @include respond(lg) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+  
+  // Mobile Landscape/Large Mobile (≤768px): 2 columns
+  @include respond(md) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  
+  // Mobile Portrait (≤440px): 2 columns (maintained for consistency)
+  @include respond(sm) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  /**
+   * Card Width Control
+   * Ensure cards don't exceed container or become too narrow
+   */
+  > * {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0; // Prevents grid blowout with long content
+  }
+}
+
+// === Empty State Section ===
+// Displayed when no services are available
+.emptyState {
+  width: 100%;
+  padding: var(--space-section-top-desktop) 0;
+  text-align: center;
+  
+  @include respond(md) {
+    padding: 80px 0;
+  }
+  
+  @include respond(sm) {
+    padding: 60px 0;
+  }
+}
+
+// Empty state message text
+.emptyState__message {
+  color: var(--color-text-primary);
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-md);
+  margin: 0;
+  opacity: 0.7;
+  
+  @include respond(md) {
+    font-size: var(--font-md);
+  }
+  
+  @include respond(sm) {
+    font-size: var(--font-md);
+    padding: 0 var(--space-title-text-desktop);
+  }
+}
+

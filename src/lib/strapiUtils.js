@@ -84,3 +84,22 @@ export function formatStrapiCourses(apiResponse) {
       image: formatSingleImage(item.media ? item.media[0] : null),
     }));
 }
+
+/**
+ * Formats your specific Strapi API response for SERVICES.
+ */
+export function formatStrapiServices(apiResponse) {
+  if (!apiResponse || !apiResponse.data) return [];
+
+  return apiResponse.data
+    .filter(item => item && item.title)
+    .map(item => ({
+      id: item.id,
+      slug: item.slug,
+      title: item.title,
+      description: (item.description && item.description[0]?.children[0]?.text) || '',
+      // Services have a single 'image' object
+      image: formatSingleImage(item.image),
+      link: item.link || null,
+    }));
+}

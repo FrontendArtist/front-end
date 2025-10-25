@@ -1,20 +1,19 @@
 @import '../../../styles/base/mixins';
 
 .productCard {
-  position: relative;
+  @include card-container;
   display: flex;
   flex-direction: column;
-  width: 100%;
   height: 100%;
-
-  border-radius: 10px;
+  background: var(--gradient-card-vertical);
   overflow: hidden;
-  background-color: var(--color-card-bg);
-  transition: transform 0.3s ease;
-  direction: rtl;
+  padding: 0;
+  text-decoration: none;
 
   &:hover {
+    background: var(--gradient-card-horizontal-rtl);
     transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 
     .productImage {
       transform: scale(1.05);
@@ -29,35 +28,71 @@
 .imageWrapper {
   position: relative;
   width: 100%;
-  height: 240px;
+  aspect-ratio: 16 / 10;
+  flex-shrink: 0;
   overflow: hidden;
+  
+  @include respond(md) {
+    aspect-ratio: 4 / 3;
+  }
+  
+  @include respond(sm) {
+    aspect-ratio: 16 / 9;
+  }
 }
 
 .productImage {
   object-fit: cover;
-  transition: transform 0.3s ease;
+  @include hover-transition;
 }
 
 .cardContent {
+  padding: var(--space-title-text-desktop);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1.5rem;
-  flex: 1;
+  flex-grow: 1;
+  gap: 16px;
+  
+  @include respond(md) {
+    padding: 20px;
+    gap: 12px;
+  }
+  
+  @include respond(sm) {
+    padding: 16px;
+    gap: 10px;
+  }
 }
 
 .cardTitle {
-  font-size: 16px;
-  color: var(--color-title-hover);
+  color: var(--color-text-primary);
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-sm);
   margin: 0;
-  transition: color 0.3s ease;
+  @include hover-transition;
+  
+  @include respond(md) {
+    font-size: var(--font-md);
+  }
 }
 
 .cardText {
   color: var(--color-card-text);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-md);
+  flex-grow: 1;
   margin: 0;
+  
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  
+  @include respond(md) {
+    font-size: var(--font-sm);
+  }
 }
 
 .footer {
@@ -65,24 +100,15 @@
   justify-content: space-between;
   align-items: center;
   margin-top: auto;
+  padding-top: 12px;
 }
 
 .price {
-    font-size: 16px;
-  color: var(--color-title-hover);
-  font-weight: 600;
-}
-
-.ctaButton {
-  padding: 0.5rem 1rem;
-  border-radius: 10px;
-  background-color: var(--color-title-hover);
-  color: var(--color-card-bg);
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: var(--color-title-hover);
+  color: var(--color-text-primary);
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-bold);
+  
+  @include respond(md) {
+    font-size: var(--font-md);
   }
 } 

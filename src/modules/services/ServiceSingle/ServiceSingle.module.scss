@@ -1,0 +1,190 @@
+// Import mixins using relative path (required for SCSS modules)
+@import '../../../styles/base/mixins';
+
+/**
+ * ServiceSingle Component Styles
+ * 
+ * Detailed service page with responsive two-column layout
+ * Follows BEM naming convention and uses design tokens from styles.md
+ * 
+ * Desktop Layout: Image right (RTL), content left
+ * Mobile Layout: Image top, content bottom
+ */
+
+// === Main Section Container ===
+// Outer wrapper with vertical spacing for the entire service detail section
+.serviceSingle {
+  width: 100%;
+  padding-top: var(--space-section-top-desktop); // 120px
+  padding-bottom: var(--space-section-bottom-desktop); // 100px
+  
+  // Responsive vertical padding adjustments
+  @include respond(md) {
+    padding-top: 96px;
+    padding-bottom: 80px;
+  }
+  
+  @include respond(sm) {
+    padding-top: 64px;
+    padding-bottom: 56px;
+  }
+}
+
+// === Content Wrapper ===
+// Grid container for two-column desktop layout (image + content)
+.serviceSingle__wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr; // Equal columns on desktop
+  gap: var(--space-gap-desktop); // 48px gap between image and content
+  align-items: start; // Align items to top of grid
+  
+  // Tablet: Maintain two columns but reduce gap
+  @include respond(lg) {
+    gap: 40px;
+  }
+  
+  // Mobile: Stack vertically (image on top, content below)
+  @include respond(md) {
+    grid-template-columns: 1fr;
+    gap: var(--space-image-title-desktop); // 32px
+  }
+  
+  @include respond(sm) {
+    gap: 24px;
+  }
+}
+
+// === Image Container ===
+// Right side on desktop (RTL), top on mobile
+.serviceSingle__imageContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10; // Consistent aspect ratio across breakpoints
+  border-radius: 16px;
+  overflow: hidden;
+  
+  // Grid order for RTL: image appears on right (order 2)
+  order: 2;
+  
+  @include respond(md) {
+    // On mobile, image appears first (top)
+    order: 1;
+    aspect-ratio: 16 / 9; // Slightly taller on mobile
+  }
+  
+  @include respond(sm) {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+// Image element with proper object-fit
+.serviceSingle__image {
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+// === Content Section ===
+// Left side on desktop (RTL), bottom on mobile
+.serviceSingle__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-title-text-desktop); // 24px spacing between elements
+  
+  // Grid order for RTL: content appears on left (order 1)
+  order: 1;
+  
+  @include respond(md) {
+    // On mobile, content appears second (bottom)
+    order: 2;
+    gap: 20px;
+  }
+  
+  @include respond(sm) {
+    gap: 16px;
+  }
+}
+
+// === Title Element ===
+// Main heading with extra large font size and bold weight
+.serviceSingle__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-xl); // 32px
+  font-weight: var(--font-weight-bold); // 700
+  line-height: var(--line-height-sm); // 1.4
+  margin: 0;
+  
+  // Responsive font size adjustments
+  @include respond(md) {
+    font-size: 28px;
+  }
+  
+  @include respond(sm) {
+    font-size: 24px;
+  }
+}
+
+// === Description Text ===
+// Full service description with optimal line height for readability
+.serviceSingle__description {
+  color: var(--color-card-text);
+  font-size: var(--font-md); // 16px
+  font-weight: var(--font-weight-regular); // 400
+  line-height: var(--line-height-lg); // 1.8 for better readability
+  margin: 0;
+  
+  // Responsive font size adjustments
+  @include respond(md) {
+    font-size: var(--font-md);
+    line-height: var(--line-height-md); // Slightly tighter on mobile
+  }
+  
+  @include respond(sm) {
+    font-size: var(--font-sm);
+  }
+}
+
+// === Call-to-Action Button/Link ===
+// Styled link button with border and hover effects
+.serviceSingle__cta {
+  display: inline-block;
+  align-self: flex-start; // Align to right in RTL layout
+  margin-top: var(--space-text-button-desktop); // 24px additional spacing
+  padding: 16px 48px;
+  color: var(--color-text-primary);
+  font-size: var(--font-lg); // 20px
+  font-weight: var(--font-weight-bold); // 700
+  text-decoration: none;
+  border: 2px solid var(--color-text-primary);
+  border-radius: 12px;
+  @include hover-transition;
+  
+  /**
+   * Hover Effects
+   * - Background fills with primary color
+   * - Text color inverts to dark background
+   * - Border color changes to hover color
+   * - Slight scale up for emphasis
+   */
+  &:hover {
+    background-color: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    border-color: var(--color-title-hover);
+    transform: scale(1.03);
+  }
+  
+  // Responsive button sizing
+  @include respond(md) {
+    margin-top: 20px;
+    padding: 14px 40px;
+    font-size: var(--font-md);
+  }
+  
+  @include respond(sm) {
+    margin-top: 16px;
+    padding: 12px 32px;
+    font-size: var(--font-md);
+    align-self: stretch; // Full width on small mobile
+    text-align: center;
+  }
+}
+

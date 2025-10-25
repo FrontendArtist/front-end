@@ -1,46 +1,164 @@
+// Import mixins using relative path (required for SCSS modules)
+@import '../../../styles/base/mixins';
+
+/**
+ * ServiceCard Component Styles
+ * 
+ * Follows BEM naming convention and uses design tokens from styles.md
+ * Includes responsive breakpoints and hover effects
+ */
+
+// === Main Card Container ===
+// Uses card-container mixin for consistent card styling across the app
 .serviceCard {
+  @include card-container;
   display: flex;
   flex-direction: column;
   height: 100%;
+  background: var(--gradient-card-vertical);
+  overflow: hidden;
+  padding: 0; // Override card-container padding to allow full-width image
+
+  // Hover effect with horizontal gradient
+  &:hover {
+    background: var(--gradient-card-horizontal-rtl);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
 }
 
-.imageWrapper {
+// === Image Section ===
+// Container for the service image with fixed aspect ratio
+.serviceCard__imageWrapper {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 10;
   flex-shrink: 0;
+  overflow: hidden;
+  
+  @include respond(md) {
+    aspect-ratio: 4 / 3; // Adjust aspect ratio for tablets
+  }
+  
+  @include respond(sm) {
+    aspect-ratio: 16 / 9; // Adjust aspect ratio for mobile
+  }
 }
 
-.serviceImage {
+// Image element with object-fit for proper scaling
+.serviceCard__image {
   object-fit: cover;
+  @include hover-transition;
+  
+  // Zoom effect on card hover
+  .serviceCard:hover & {
+    transform: scale(1.05);
+  }
 }
 
-.cardContent {
+// === Content Section ===
+// Contains title, description, and CTA link
+.serviceCard__content {
   padding: var(--space-title-text-desktop);
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  gap: 16px;
+  
+  @include respond(md) {
+    padding: 20px;
+    gap: 12px;
+  }
+  
+  @include respond(sm) {
+    padding: 16px;
+    gap: 10px;
+  }
 }
 
-.cardTitle {
+// === Title Element ===
+// Service title with primary color and bold weight
+.serviceCard__title {
   color: var(--color-text-primary);
   font-size: var(--font-lg);
-  margin-bottom: 1rem;
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-sm);
+  margin: 0;
+  @include hover-transition;
+  
+  // Title color change on card hover
+  .serviceCard:hover & {
+    color: var(--color-title-hover);
+  }
+  
+  @include respond(md) {
+    font-size: var(--font-md);
+  }
+  
+  @include respond(sm) {
+    font-size: var(--font-md);
+  }
 }
 
-.cardText {
+// === Description Text ===
+// Service description with controlled overflow
+.serviceCard__description {
   color: var(--color-card-text);
   font-size: var(--font-md);
+  font-weight: var(--font-weight-regular);
   line-height: var(--line-height-md);
   flex-grow: 1;
-
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin: 0;
+  
+  // Text truncation for consistent card heights
   display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  
+  @include respond(md) {
+    font-size: var(--font-sm);
+    -webkit-line-clamp: 4;
+  }
+  
+  @include respond(sm) {
+    font-size: var(--font-sm);
+    -webkit-line-clamp: 3;
+  }
 }
 
-.ctaButton {
-  margin-top: var(--space-text-button-desktop);
+// === CTA Link ===
+// Call-to-action link with button styling
+.serviceCard__link {
+  display: inline-block;
   align-self: center;
+  margin-top: var(--space-text-button-desktop);
+  padding: 12px 32px;
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  border: 2px solid var(--color-text-primary);
+  border-radius: 8px;
+  @include hover-transition;
+  
+  // Hover effect for the link
+  &:hover {
+    background-color: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    transform: scale(1.05);
+  }
+  
+  @include respond(md) {
+    margin-top: 16px;
+    padding: 10px 24px;
+    font-size: var(--font-sm);
+  }
+  
+  @include respond(sm) {
+    margin-top: 12px;
+    padding: 8px 20px;
+    font-size: var(--font-sm);
+  }
 }
 
