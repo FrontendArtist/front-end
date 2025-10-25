@@ -1,46 +1,339 @@
+/**
+ * ServiceCard Component Styles
+ * 
+ * Styling Strategy:
+ * - Uses SCSS modules for component-scoped styles (prevents style conflicts)
+ * - All colors, spacing, and typography use CSS custom properties from _variables.scss
+ * - Mixins are imported from _mixins.scss for responsive breakpoints
+ * - Follows BEM naming convention for clarity and maintainability
+ * - Mobile-first approach with responsive breakpoints
+ * - RTL-compatible layout (direction handled globally)
+ * 
+ * Design System Integration:
+ * - Colors: var(--color-*) from _variables.scss
+ * - Spacing: var(--space-*) from _variables.scss
+ * - Typography: var(--font-*) from _variables.scss
+ * - Breakpoints: respond() mixin from _mixins.scss
+ */
+
+// Import mixins for responsive design
+// Note: Per CONTEXT_RULES.md, we import mixins with relative paths (no @ alias in SCSS)
+@import '../../../styles/base/mixins';
+
+/**
+ * Main Card Container (.serviceCard)
+ * 
+ * Purpose:
+ * - Wraps the entire service card (Link component in JSX)
+ * - Establishes flexbox layout for vertical stacking (image + content)
+ * - Provides hover effects and visual feedback
+ * - Ensures card fills its grid cell and maintains aspect ratio
+ * 
+ * Layout Strategy:
+ * - display: flex with column direction stacks image above content
+ * - height: 100% ensures cards in a grid have equal heights
+ * - overflow: hidden clips image during scale animation on hover
+ * 
+ * Hover Effects:
+ * - Subtle lift animation (translateY) for depth perception
+ * - Image scale for visual interest
+ * - Title color change for interactive feedback
+ * - Gradient border for premium feel
+ */
 .serviceCard {
+  // Flexbox layout: vertical stacking of image and content
   display: flex;
   flex-direction: column;
-  height: 100%;
-}
-
-.imageWrapper {
-  position: relative;
+  
+  // Ensure card fills its container (important for grid layouts)
   width: 100%;
-  aspect-ratio: 16 / 10;
+  height: 100%;
+  
+  // Visual styling: rounded corners for modern look
+  border-radius: 16px;
+  
+  // Clip children to prevent overflow during animations
+  overflow: hidden;
+  
+  // Dark theme background with slight transparency
+  background-color: rgba(6, 24, 24, 0.6);
+  
+  // Subtle border for card definition
+  border: 1px solid rgba(246, 217, 130, 0.1);
+  
+  // Smooth transitions for hover effects
+  transition: all 0.3s ease-in-out;
+  
+  // Remove default link underline
+  text-decoration: none;
+  
+  /**
+   * Hover State
+   * - Lifts card up slightly for depth perception
+   * - Scales image for zoom effect
+   * - Changes title color to accent color
+   * - Adds gradient border for premium feel
+   */
+  &:hover {
+    // Lift effect: move card up 8px
+    transform: translateY(-8px);
+    
+    // Enhanced border with gradient overlay effect
+    border-color: var(--color-text-primary);
+    
+    // Add subtle shadow for depth
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    
+    // Nested selector: scale image when card is hovered
+    .serviceImage {
+      transform: scale(1.08); // 8% zoom for visual interest
+    }
+    
+    // Nested selector: change title color to accent on hover
+    .cardTitle {
+      color: var(--color-title-hover); // Gold accent color
+    }
+    
+    // Nested selector: highlight CTA text on hover
+    .ctaText {
+      color: var(--color-title-hover);
+      transform: translateX(-4px); // Subtle RTL-aware movement
+    }
+  }
+  
+  /**
+   * Focus State (Accessibility)
+   * - Visible outline for keyboard navigation
+   * - High contrast for visibility
+   */
+  &:focus {
+    outline: 2px solid var(--color-title-hover);
+    outline-offset: 4px;
+  }
+}
+
+/**
+ * Image Container (.imageWrapper)
+ * 
+ * Purpose:
+ * - Wraps the Next.js Image component
+ * - Defines aspect ratio for consistent card heights
+ * - Provides positioning context for fill layout
+ * - Clips image during scale animation
+ * 
+ * Layout Notes:
+ * - position: relative required for Next.js Image fill property
+ * - aspect-ratio: 16/9 maintains widescreen proportions
+ * - overflow: hidden clips scaled image on hover
+ */
+.imageWrapper {
+  // Required for Next.js Image with fill property
+  position: relative;
+  
+  // Full width of card
+  width: 100%;
+  
+  // Maintain 16:9 aspect ratio for consistent layout
+  // This ensures all cards have same image height regardless of content
+  aspect-ratio: 16 / 9;
+  
+  // Prevent shrinking in flex container
   flex-shrink: 0;
+  
+  // Clip image during scale animation
+  overflow: hidden;
+  
+  // Subtle rounding at top of card
+  border-radius: 16px 16px 0 0;
 }
 
+/**
+ * Service Image (.serviceImage)
+ * 
+ * Purpose:
+ * - Styles the Next.js Image component
+ * - Ensures image covers container while maintaining aspect ratio
+ * - Provides smooth scale transition on hover
+ * 
+ * Object-fit Strategy:
+ * - cover: fills container, crops if necessary, no stretching
+ * - Image scales from center point during hover animation
+ */
 .serviceImage {
+  // Ensure image covers container without distortion
   object-fit: cover;
+  
+  // Smooth scale transition (triggered by parent hover)
+  transition: transform 0.4s ease-in-out;
 }
 
+/**
+ * Card Content Container (.cardContent)
+ * 
+ * Purpose:
+ * - Wraps title, description, and CTA text
+ * - Provides consistent padding and spacing
+ * - Manages vertical layout with flexbox
+ * - Ensures content area grows to fill available space
+ * 
+ * Spacing Strategy:
+ * - Uses design system spacing tokens (--space-*)
+ * - Flexbox gap for consistent spacing between elements
+ * - flex-grow ensures content fills card height
+ */
 .cardContent {
+  // Padding using design system token (24px on desktop)
   padding: var(--space-title-text-desktop);
+  
+  // Vertical flexbox for content stacking
   display: flex;
   flex-direction: column;
+  
+  // Grow to fill remaining card height (pushes CTA to bottom)
   flex-grow: 1;
+  
+  // Consistent spacing between child elements
+  gap: 16px;
+  
+  /**
+   * Responsive Adjustments
+   * Reduce padding on smaller screens to maximize content space
+   */
+  @include respond(md) {
+    padding: 20px; // Tablet: 20px padding
+  }
+  
+  @include respond(sm) {
+    padding: 16px; // Mobile: 16px padding
+    gap: 12px;     // Reduce gap on mobile
+  }
 }
 
+/**
+ * Service Title (.cardTitle)
+ * 
+ * Purpose:
+ * - Displays the service name
+ * - Provides visual hierarchy as the main heading
+ * - Changes color on hover for interactive feedback
+ * 
+ * Typography:
+ * - Font size from design system (--font-lg = 20px)
+ * - Primary text color (gold) for brand consistency
+ * - Smooth color transition on hover
+ */
 .cardTitle {
+  // Typography from design system
+  font-size: var(--font-lg);           // 20px
+  font-weight: var(--font-weight-medium); // 500
+  line-height: 1.4;
+  
+  // Color from design system (gold)
   color: var(--color-text-primary);
-  font-size: var(--font-lg);
-  margin-bottom: 1rem;
+  
+  // Remove default margin for precise spacing control
+  margin: 0;
+  
+  // Smooth color transition (triggered by parent hover)
+  transition: color 0.3s ease-in-out;
+  
+  /**
+   * Responsive Typography
+   * Scale down on smaller screens for better fit
+   */
+  @include respond(md) {
+    font-size: var(--font-md); // 16px on tablet/mobile
+  }
 }
 
+/**
+ * Service Description (.cardText)
+ * 
+ * Purpose:
+ * - Brief summary of the service
+ * - Provides context before user clicks through
+ * - Multi-line ellipsis truncation for long descriptions
+ * 
+ * Text Truncation:
+ * - Uses webkit-line-clamp for clean multi-line truncation
+ * - Grows to fill available space (pushes CTA to bottom)
+ * - Ensures consistent card heights in grid layouts
+ */
 .cardText {
+  // Typography from design system
+  font-size: var(--font-md);        // 16px
+  line-height: var(--line-height-md); // 1.6
+  
+  // Color from design system (light cream for readability)
   color: var(--color-card-text);
-  font-size: var(--font-md);
-  line-height: var(--line-height-md);
+  
+  // Remove default margin
+  margin: 0;
+  
+  // Grow to fill space, pushing CTA to bottom
   flex-grow: 1;
-
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  
+  /**
+   * Multi-line text truncation
+   * Shows ellipsis after 3 lines to maintain consistent card heights
+   * Note: Webkit-specific but widely supported
+   */
   display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3; // Limit to 3 lines
+  overflow: hidden;
+  
+  /**
+   * Responsive Typography
+   * Slightly smaller on mobile to fit more content
+   */
+  @include respond(md) {
+    font-size: var(--font-sm); // 14px on tablet/mobile
+    -webkit-line-clamp: 2;     // 2 lines on smaller screens
+  }
 }
 
-.ctaButton {
-  margin-top: var(--space-text-button-desktop);
+/**
+ * Call-to-Action Text (.ctaText)
+ * 
+ * Purpose:
+ * - Visual indicator that card is clickable
+ * - Persian "Learn More" text
+ * - Draws attention to interactive element
+ * - Changes color and moves on hover
+ * 
+ * Position:
+ * - Sits at bottom of card (due to flex-grow on cardText)
+ * - Centered horizontally for visual balance
+ */
+.ctaText {
+  // Typography from design system
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-medium);
+  
+  // Color from design system (gold accent)
+  color: var(--color-text-primary);
+  
+  // Spacing from design system
+  margin-top: var(--space-text-button-desktop); // 24px
+  
+  // Center horizontally
   align-self: center;
+  
+  // Smooth transitions for hover effects
+  transition: all 0.3s ease-in-out;
+  
+  /**
+   * Responsive Spacing
+   * Reduce top margin on smaller screens
+   */
+  @include respond(md) {
+    margin-top: 16px; // Reduce spacing on tablet
+    font-size: var(--font-sm);
+  }
+  
+  @include respond(sm) {
+    margin-top: 12px; // Further reduce on mobile
+  }
 }
 

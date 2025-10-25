@@ -1,0 +1,362 @@
+/**
+ * Services Listing Page Styles
+ * 
+ * Styling Strategy:
+ * - Uses SCSS modules for component-scoped styles
+ * - All colors, spacing, and typography use CSS custom properties
+ * - Mixins imported for responsive breakpoints
+ * - Follows BEM naming convention for clarity
+ * - Mobile-first responsive approach
+ * - RTL-compatible layout (direction handled globally)
+ * 
+ * Design System Integration:
+ * - Colors: var(--color-*) from _variables.scss (globally available)
+ * - Spacing: var(--space-*) from _variables.scss
+ * - Typography: var(--font-*) from _variables.scss
+ * - Breakpoints: respond() mixin from _mixins.scss (imported)
+ * 
+ * Layout Structure:
+ * 1. .main - Page wrapper with vertical padding
+ * 2. .hero - Hero section with title and subtitle
+ * 3. .grid - Responsive CSS Grid for service cards
+ * 4. .emptyState - Empty state when no services available
+ */
+
+// Import mixins for responsive design
+// Per CONTEXT_RULES.md: Use relative paths, not @ alias in SCSS
+@import '../../styles/base/mixins';
+
+/**
+ * Main Page Container (.main)
+ * 
+ * Purpose:
+ * - Wraps the entire services listing page
+ * - Provides consistent vertical spacing across all listing pages
+ * - Ensures adequate breathing room at top and bottom
+ * 
+ * Spacing Strategy:
+ * - Uses design system spacing tokens for consistency
+ * - --space-section-top-desktop: 120px (desktop)
+ * - --space-section-bottom-desktop: 100px (desktop)
+ * - Responsive values defined in mixin calls below
+ */
+.main {
+  // Top padding: Space from navbar to page content
+  padding-top: var(--space-section-top-desktop);
+  
+  // Bottom padding: Space before footer
+  padding-bottom: var(--space-section-bottom-desktop);
+  
+  /**
+   * Responsive Padding Adjustments
+   * - Reduce padding on smaller screens to maximize content space
+   * - Maintains visual hierarchy while optimizing for viewport size
+   */
+  @include respond(md) {
+    padding-top: 96px;   // Tablet: Slightly less padding
+    padding-bottom: 80px;
+  }
+  
+  @include respond(sm) {
+    padding-top: 64px;   // Mobile: Minimal padding
+    padding-bottom: 56px;
+  }
+}
+
+/**
+ * Hero Section (.hero)
+ * 
+ * Purpose:
+ * - Introductory section at top of page
+ * - Contains page title and descriptive subtitle
+ * - Provides context before main content (grid)
+ * - Centered layout for visual balance
+ * 
+ * Layout Strategy:
+ * - Text-align center for symmetrical appearance
+ * - Bottom margin creates space before grid
+ * - Consistent with other listing pages (products, articles)
+ */
+.hero {
+  // Center all text within hero section
+  text-align: center;
+  
+  // Bottom margin: Space between hero and grid
+  // Uses design system token (56px on desktop)
+  margin-bottom: var(--space-title-content-desktop);
+  
+  /**
+   * Responsive Margin Adjustments
+   * - Reduce space on smaller screens for compact layout
+   */
+  @include respond(md) {
+    margin-bottom: 48px; // Tablet: Moderate spacing
+  }
+  
+  @include respond(sm) {
+    margin-bottom: 40px; // Mobile: Compact spacing
+  }
+}
+
+/**
+ * Page Title (.title)
+ * 
+ * Purpose:
+ * - Main heading of the page (h1 in JSX)
+ * - Displays "خدمات ما" (Our Services)
+ * - Provides clear page identification
+ * - Establishes visual hierarchy
+ * 
+ * Typography:
+ * - Large font size for prominence
+ * - Bold weight for emphasis
+ * - Gold color for brand consistency
+ * - Responsive scaling for different viewports
+ */
+.title {
+  // Typography from design system
+  font-size: var(--font-xl);              // 32px on desktop
+  font-weight: var(--font-weight-bold);   // 700
+  
+  // Color from design system (gold accent)
+  color: var(--color-title-hover);
+  
+  // Remove default margin for precise spacing control
+  margin: 0 0 16px 0; // Only bottom margin for spacing to subtitle
+  
+  /**
+   * Responsive Typography
+   * - Scale down font size on smaller screens
+   * - Maintains hierarchy while fitting viewport
+   */
+  @include respond(md) {
+    font-size: 28px; // Tablet: Slightly smaller
+  }
+  
+  @include respond(sm) {
+    font-size: 24px; // Mobile: Compact size
+  }
+}
+
+/**
+ * Hero Subtitle (.subtitle)
+ * 
+ * Purpose:
+ * - Descriptive text below main title
+ * - Provides context about services offered
+ * - Enhances SEO with descriptive content
+ * - Improves user understanding of page purpose
+ * 
+ * Typography:
+ * - Medium font size for readability
+ * - Lighter color than title for hierarchy
+ * - Optimal line height for multi-line text
+ * 
+ * Layout:
+ * - Max-width for optimal readability (40-75 chars per line)
+ * - Centered with auto margins
+ */
+.subtitle {
+  // Typography from design system
+  font-size: var(--font-lg);              // 20px
+  line-height: var(--line-height-lg);     // 1.8 (optimal for reading)
+  
+  // Color from design system (cream/off-white)
+  color: var(--color-card-text);
+  
+  // Max-width for optimal readability
+  // Prevents lines from being too long on large screens
+  max-width: 800px;
+  
+  // Center horizontally within hero section
+  margin: 0 auto;
+  
+  /**
+   * Responsive Typography
+   * - Scale down on smaller screens
+   * - Maintain readability across devices
+   */
+  @include respond(md) {
+    font-size: var(--font-md); // 16px on tablet
+  }
+  
+  @include respond(sm) {
+    font-size: var(--font-sm); // 14px on mobile
+  }
+}
+
+/**
+ * Services Grid (.grid)
+ * 
+ * Purpose:
+ * - Responsive grid layout for displaying ServiceCard components
+ * - Automatically adjusts number of columns based on viewport
+ * - Ensures equal card heights within each row
+ * - Provides consistent spacing between cards
+ * 
+ * CSS Grid Strategy:
+ * - grid-template-columns: Defines number and width of columns
+ * - repeat(auto-fit, minmax()): Creates responsive columns automatically
+ * - gap: Space between grid items (rows and columns)
+ * - align-items: stretch ensures cards fill row height
+ * 
+ * Responsive Breakpoints:
+ * - Desktop (> 960px): 3 columns
+ * - Tablet (768-960px): 2 columns  
+ * - Mobile (< 768px): 1 column
+ * 
+ * Performance:
+ * - CSS Grid is highly performant for card layouts
+ * - No JavaScript needed for responsive behavior
+ * - Browser-native grid calculations
+ */
+.grid {
+  // CSS Grid layout
+  display: grid;
+  
+  /**
+   * Grid Columns Definition
+   * - repeat(3, 1fr): 3 equal-width columns on desktop
+   * - 1fr: Each column takes equal fraction of available space
+   * - Ensures cards are same width regardless of content
+   */
+  grid-template-columns: repeat(3, 1fr);
+  
+  /**
+   * Grid Gap (Spacing between cards)
+   * - Uses design system spacing token (48px on desktop)
+   * - Same gap for rows and columns creates uniform spacing
+   * - Visual rhythm and prevents cards from touching
+   */
+  gap: var(--space-gap-desktop);
+  
+  /**
+   * Grid Item Alignment
+   * - stretch: Cards fill full height of their grid row
+   * - Ensures equal card heights even with varying content
+   * - Creates professional, aligned appearance
+   */
+  align-items: stretch;
+  
+  /**
+   * Width Control
+   * - 100%: Grid fills container width
+   * - min-width: 0 prevents grid blowout with long content
+   * - Allows proper text truncation in cards
+   */
+  width: 100%;
+  min-width: 0;
+  
+  /**
+   * Responsive Grid: Large Screens (max-width: 1280px)
+   * - Keep 3 columns but reduce gap for tighter layout
+   */
+  @include respond(xl) {
+    gap: 40px; // Slightly smaller gap on large screens
+  }
+  
+  /**
+   * Responsive Grid: Medium-Large Screens (max-width: 960px)
+   * - Reduce to 3 columns with smaller gap
+   * - Maintains multi-column layout on tablets
+   */
+  @include respond(lg) {
+    grid-template-columns: repeat(3, 1fr); // Still 3 columns
+    gap: 32px; // Further reduce gap
+  }
+  
+  /**
+   * Responsive Grid: Tablet (max-width: 768px)
+   * - Reduce to 2 columns for comfortable viewing
+   * - Balance between showcasing multiple items and readability
+   */
+  @include respond(md) {
+    grid-template-columns: repeat(2, 1fr); // 2 columns on tablet
+    gap: 24px; // Smaller gap for compact layout
+  }
+  
+  /**
+   * Responsive Grid: Mobile (max-width: 440px)
+   * - Single column layout for mobile phones
+   * - Full focus on one card at a time
+   * - Optimal for vertical scrolling
+   */
+  @include respond(sm) {
+    grid-template-columns: 1fr; // Single column on mobile
+    gap: 16px; // Minimal gap for compact mobile layout
+  }
+}
+
+/**
+ * Empty State Section (.emptyState)
+ * 
+ * Purpose:
+ * - Displayed when no services are available
+ * - Prevents confusing blank page
+ * - Maintains page structure even without content
+ * - Professional appearance in empty state
+ * 
+ * Layout Strategy:
+ * - Centered content for visual balance
+ * - Adequate padding for breathing room
+ * - Subtle styling to not overwhelm page
+ */
+.emptyState {
+  // Center text horizontally
+  text-align: center;
+  
+  // Vertical padding: Prevents cramped appearance
+  // Uses design system spacing for consistency
+  padding: var(--space-section-top-desktop) 0;
+  
+  /**
+   * Responsive Padding
+   * - Reduce on smaller screens
+   */
+  @include respond(md) {
+    padding: 80px 0;
+  }
+  
+  @include respond(sm) {
+    padding: 60px 0;
+  }
+}
+
+/**
+ * Empty State Message (.emptyMessage)
+ * 
+ * Purpose:
+ * - Informative text explaining why page is empty
+ * - Persian: "در حال حاضر هیچ خدمتی ثبت نشده است."
+ * - Translation: "Currently no services are registered."
+ * 
+ * Typography:
+ * - Medium size for readability
+ * - Card text color (softer than primary)
+ * - Optimal line height
+ */
+.emptyMessage {
+  // Typography from design system
+  font-size: var(--font-lg);          // 20px
+  line-height: var(--line-height-md); // 1.6
+  
+  // Color from design system (cream/off-white)
+  // Softer than primary text for less emphasis
+  color: var(--color-card-text);
+  
+  // Remove default margin
+  margin: 0;
+  
+  /**
+   * Responsive Typography
+   * - Scale down on smaller screens
+   */
+  @include respond(md) {
+    font-size: var(--font-md); // 16px on tablet
+  }
+  
+  @include respond(sm) {
+    font-size: var(--font-sm); // 14px on mobile
+  }
+}
+

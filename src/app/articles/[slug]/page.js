@@ -1,39 +1,76 @@
-// All comments from the previous version are still valid.
 import { marked } from 'marked';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { getArticleBySlug as fetchArticleBySlug, getArticles } from '@/lib/api'; // Import from centralized API layer
+import { getStrapiURL } from '@/lib/strapiUtils';
 import styles from './page.module.scss';
 
-const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-
 /**
- * Fetches a single article from Strapi based on its slug, corrected for a FLAT data structure.
+ * Fetches a single article by slug from centralized API layer
+ * 
+ * Refactored to use src/lib/api.js per ARCHITECTURE_RULES.md Rule 2.2
+ * - No direct fetch() calls in components
+ * - All API logic centralized in api.js
+ * - Returns { data, error } format from API layer
+ * 
+ * @param {string} slug - Article slug identifier
+ * @returns {Promise<Object|null>} Formatted article object or null if not found
  */
 async function getArticleBySlug(slug) {
   try {
-    const response = await fetch(
-      `${STRAPI_API_URL}/api/articles?populate=cover&filters[slug][$eq]=${slug}`,
-      { next: { revalidate: 3600 } }
-    );
-    if (!response.ok) return null;
-    const result = await response.json();
-    if (!result.data || result.data.length === 0) return null;
+    /**
+     * Call centralized API function
+     * - Handles URL construction and query parameters
+     * - Implements ISR revalidation strategy
+     * - Returns standardized { data, error } format
+     */
+    const { data, error } = await fetchArticleBySlug(slug);
 
-    // The raw article data from Strapi (no .attributes)
-    const rawArticle = result.data[0];
+    // Check for API errors
+    if (error) {
+      console.error("API Error fetching article:", error);
+      return null;
+    }
 
-    // Format the cover image from the flat structure
-    let coverImage = { url: 'https://picsum.photos/seed/placeholder/800/450', alt: 'Placeholder', width: 800, height: 450 };
+    // Validate data exists
+    if (!data || !data.data || data.data.length === 0) {
+      console.warn(`No article found with slug: ${slug}`);
+      return null;
+    }
+
+    // Extract the raw article data (Strapi returns array for filters)
+    const rawArticle = data.data[0];
+
+    /**
+     * Format cover image
+     * - Handle both relative and absolute URLs
+     * - Provide fallback placeholder if missing
+     * - Extract dimensions for Next.js Image component
+     */
+    let coverImage = { 
+      url: 'https://picsum.photos/seed/placeholder/800/450', 
+      alt: 'Placeholder', 
+      width: 800, 
+      height: 450 
+    };
+    
     if (rawArticle.cover && rawArticle.cover.url) {
       coverImage = {
-        url: STRAPI_API_URL + rawArticle.cover.url,
+        // Use getStrapiURL for consistent URL handling
+        url: rawArticle.cover.url.startsWith('http') 
+          ? rawArticle.cover.url 
+          : getStrapiURL(rawArticle.cover.url),
         alt: rawArticle.cover.alternativeText || '',
-        width: rawArticle.cover.width,
-        height: rawArticle.cover.height,
+        width: rawArticle.cover.width || 800,
+        height: rawArticle.cover.height || 450,
       };
     }
 
-    // Format the final object without accessing .attributes
+    /**
+     * Format and return the article object
+     * - Convert publishedAt to Persian date format
+     * - Keep content in rich text format for rendering
+     */
     const formattedArticle = {
       id: rawArticle.id,
       title: rawArticle.title,
@@ -41,7 +78,9 @@ async function getArticleBySlug(slug) {
       cover: coverImage,
       date: new Date(rawArticle.publishedAt).toLocaleDateString('fa-IR'),
     };
+    
     return formattedArticle;
+    
   } catch (error) {
     console.error("Failed to fetch article by slug:", error);
     return null;
@@ -49,16 +88,40 @@ async function getArticleBySlug(slug) {
 }
 
 /**
- * Generates all possible article slugs at build time. Corrected for a FLAT data structure.
+ * Generate static params for all articles at build time
+ * 
+ * Refactored to use centralized API layer
+ * - Fetches all articles to extract slugs
+ * - Used for Static Site Generation (SSG)
+ * 
+ * @returns {Promise<Array>} Array of { slug } objects for static generation
  */
 export async function generateStaticParams() {
   try {
-    const response = await fetch(`${STRAPI_API_URL}/api/articles`);
-    const result = await response.json();
-    // Access slug directly, no .attributes
-    return result.data.map((article) => ({
-      slug: article.slug,
-    }));
+    /**
+     * Fetch all articles from API layer
+     * - Use large pageSize to get all articles
+     * - Returns { data, error } format
+     */
+    const { data, error } = await getArticles({ pageSize: 1000 });
+
+    if (error || !data || !data.data) {
+      console.error("Failed to generate static params for articles:", error);
+      return [];
+    }
+
+    /**
+     * Extract slugs from article data
+     * - Strapi v5 has flat structure (no .attributes)
+     * - Map directly to slug property
+     * - Filter out any articles without slugs
+     */
+    return data.data
+      .filter(article => article && article.slug)
+      .map((article) => ({
+        slug: article.slug,
+      }));
+      
   } catch (error) {
     console.error("Failed to generate static params for articles:", error);
     return [];

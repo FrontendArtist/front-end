@@ -1,4 +1,5 @@
 import { formatStrapiArticles } from '@/lib/strapiUtils';
+import { getArticles } from '@/lib/api'; // Import from centralized API layer
 import ArticleGrid from '@/modules/articles/ArticleGrid/ArticleGrid';
 import styles from './articles.module.scss';
 
@@ -9,24 +10,55 @@ export const metadata = {
 
 const PAGE_SIZE = 6;
 
+/**
+ * Fetches initial articles from centralized API layer
+ * 
+ * Refactored to use src/lib/api.js per ARCHITECTURE_RULES.md Rule 2.2
+ * - No direct fetch() calls in components
+ * - All API logic centralized in api.js
+ * - Returns { data, error } format from API layer
+ * - Handles data formatting with strapiUtils
+ * 
+ * @returns {Promise<Array>} Formatted array of article objects
+ */
 async function getInitialArticles() {
-  const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
   try {
-    console.log('Fetching initial articles from:', STRAPI_API_URL);
+    /**
+     * Call centralized API function instead of direct fetch
+     * - getArticles handles URL construction
+     * - getArticles handles query parameters (sort, pagination, populate)
+     * - getArticles handles error scenarios
+     * - Returns standardized { data, error } format
+     */
+    const { data, error } = await getArticles({
+      sort: 'publishedAt:desc',
+      page: 1,
+      pageSize: PAGE_SIZE
+    });
 
-    const response = await fetch(
-        `${STRAPI_API_URL}/api/articles?sort=publishedAt:desc&pagination[page]=1&pagination[pageSize]=${PAGE_SIZE}&populate=cover`
-      );
-    if (!response.ok) {
-      console.error('Failed to fetch articles:', response.status, response.statusText);
-      throw new Error('Failed to fetch initial articles');
+    // Check for API errors
+    if (error) {
+      console.error("API Error fetching initial articles:", error);
+      return [];
     }
-    const result = await response.json();
-    console.log('Received articles data:', result);
-    const formattedArticles = formatStrapiArticles(result, STRAPI_API_URL);
-    console.log('Formatted articles:', formattedArticles);
+
+    // Validate data structure
+    if (!data) {
+      console.warn("No data returned from articles API");
+      return [];
+    }
+
+    /**
+     * Format the raw Strapi response
+     * - data contains the raw Strapi response: { data: [...], meta: {...} }
+     * - formatStrapiArticles transforms it into clean article objects
+     */
+    const formattedArticles = formatStrapiArticles(data);
+    
     return formattedArticles;
+    
   } catch (error) {
+    // Catch any unexpected errors
     console.error("Initial Articles Fetch Error:", error);
     return [];
   }

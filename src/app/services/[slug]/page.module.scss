@@ -1,0 +1,639 @@
+/**
+ * Single Service Detail Page Styles
+ * 
+ * Styling Strategy:
+ * - Uses SCSS modules for component-scoped styles
+ * - All colors, spacing, and typography use CSS custom properties
+ * - Mixins imported for responsive breakpoints
+ * - Follows BEM naming convention for clarity
+ * - Mobile-first responsive approach
+ * - RTL-compatible layout (direction handled globally)
+ * 
+ * Design System Integration:
+ * - Colors: var(--color-*) from _variables.scss (globally available)
+ * - Spacing: var(--space-*) from _variables.scss
+ * - Typography: var(--font-*) from _variables.scss
+ * - Breakpoints: respond() mixin from _mixins.scss (imported)
+ * 
+ * Layout Structure:
+ * 1. .servicePage - Page wrapper with vertical padding
+ * 2. .backButtonWrapper - Navigation back to listing
+ * 3. .contentGrid - Two-column layout (details + image)
+ * 4. .details - Service information section
+ * 5. .imageWrapper - Service image container
+ * 
+ * Key Features:
+ * - Two-column layout on desktop
+ * - Single column (stacked) on mobile
+ * - Prominent CTA button
+ * - Back button navigation
+ * - Responsive typography and spacing
+ */
+
+// Import mixins for responsive design
+// Per CONTEXT_RULES.md: Use relative paths, not @ alias in SCSS
+@import '../../../styles/base/mixins';
+
+/**
+ * Main Page Container (.servicePage)
+ * 
+ * Purpose:
+ * - Wraps the entire service detail page
+ * - Provides consistent vertical spacing
+ * - Ensures adequate space from navbar and footer
+ * 
+ * Spacing Strategy:
+ * - Uses design system spacing tokens
+ * - --space-section-top-desktop: 120px (desktop)
+ * - --space-section-bottom-desktop: 100px (desktop)
+ * - Responsive reductions on smaller screens
+ */
+.servicePage {
+  // Top padding: Space from navbar
+  padding-top: var(--space-section-top-desktop);
+  
+  // Bottom padding: Space before footer
+  padding-bottom: var(--space-section-bottom-desktop);
+  
+  /**
+   * Responsive Padding Adjustments
+   * - Reduce padding on smaller screens
+   * - Maximizes content space while maintaining breathing room
+   */
+  @include respond(md) {
+    padding-top: 96px;    // Tablet: Moderate reduction
+    padding-bottom: 80px;
+  }
+  
+  @include respond(sm) {
+    padding-top: 64px;    // Mobile: Significant reduction
+    padding-bottom: 56px;
+  }
+}
+
+/**
+ * Back Button Wrapper (.backButtonWrapper)
+ * 
+ * Purpose:
+ * - Container for the back navigation link
+ * - Provides spacing below before main content
+ * - Allows positioning and layout control
+ * 
+ * Layout:
+ * - Button aligned to the right (RTL)
+ * - Spacing below creates separation from content
+ */
+.backButtonWrapper {
+  // Bottom margin: Space before content grid
+  margin-bottom: var(--space-title-content-desktop); // 56px
+  
+  /**
+   * Responsive Margin
+   * - Reduce spacing on smaller screens
+   */
+  @include respond(md) {
+    margin-bottom: 40px;
+  }
+  
+  @include respond(sm) {
+    margin-bottom: 32px;
+  }
+}
+
+/**
+ * Back Button Link (.backButton)
+ * 
+ * Purpose:
+ * - Navigation link to return to services listing
+ * - Styled as button for clear affordance
+ * - Includes arrow icon and text label
+ * - Hover effects for interactivity
+ * 
+ * Design:
+ * - Transparent background with border
+ * - Gold color matching brand
+ * - Inline-flex for icon + text layout
+ * - Smooth transitions on hover
+ */
+.backButton {
+  // Inline flex: Icon and text in row
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; // Space between arrow and text
+  
+  // Typography from design system
+  font-size: var(--font-md);        // 16px
+  font-weight: var(--font-weight-medium); // 500
+  
+  // Color from design system (gold)
+  color: var(--color-text-primary);
+  
+  // Remove default link underline
+  text-decoration: none;
+  
+  // Padding for comfortable click area
+  padding: 12px 24px;
+  
+  // Border styling
+  border: 2px solid var(--color-text-primary);
+  border-radius: 8px;
+  
+  // Smooth transitions for hover effects
+  transition: all 0.3s ease-in-out;
+  
+  /**
+   * Hover State
+   * - Fill background with gold color
+   * - Invert text color for contrast
+   * - Slight scale for tactile feedback
+   */
+  &:hover {
+    // Fill background with primary color
+    background-color: var(--color-text-primary);
+    
+    // Invert text color to dark background color
+    color: var(--color-bg-primary);
+    
+    // Subtle scale effect
+    transform: scale(1.02);
+  }
+  
+  /**
+   * Focus State (Accessibility)
+   * - Visible outline for keyboard navigation
+   * - High contrast for visibility
+   */
+  &:focus {
+    outline: 2px solid var(--color-title-hover);
+    outline-offset: 4px;
+  }
+  
+  /**
+   * Responsive Adjustments
+   * - Reduce padding on mobile for compact size
+   */
+  @include respond(sm) {
+    padding: 10px 20px;
+    font-size: var(--font-sm); // 14px
+    gap: 6px;
+  }
+}
+
+/**
+ * Back Button Icon (.backIcon)
+ * 
+ * Purpose:
+ * - Arrow icon indicating navigation direction
+ * - Visual indicator of back action
+ * - Slightly larger for visibility
+ */
+.backIcon {
+  // Slightly larger than text for emphasis
+  font-size: 18px;
+  
+  // Ensure alignment with text
+  line-height: 1;
+  
+  @include respond(sm) {
+    font-size: 16px;
+  }
+}
+
+/**
+ * Content Grid (.contentGrid)
+ * 
+ * Purpose:
+ * - Main layout container for service content
+ * - Two-column grid on desktop: Details + Image
+ * - Single column on mobile (stacked)
+ * - Ensures equal height columns
+ * 
+ * CSS Grid Strategy:
+ * - grid-template-columns: Two equal columns (1fr 1fr)
+ * - gap: Space between columns
+ * - Responsive: Collapses to single column on mobile
+ * 
+ * Layout Behavior:
+ * - Desktop: Details left, Image right (in LTR; reversed in RTL)
+ * - Mobile: Image on top, Details below (better UX)
+ */
+.contentGrid {
+  // CSS Grid layout
+  display: grid;
+  
+  /**
+   * Grid Columns
+   * - 1fr 1fr: Two equal-width columns
+   * - Each takes 50% of available space
+   * - Ensures balanced layout
+   */
+  grid-template-columns: 1fr 1fr;
+  
+  /**
+   * Grid Gap
+   * - Space between details and image
+   * - Uses design system token (48px on desktop)
+   */
+  gap: var(--space-gap-desktop);
+  
+  /**
+   * Grid Alignment
+   * - align-items: center vertically centers content in each column
+   * - Ensures details and image are vertically aligned
+   */
+  align-items: center;
+  
+  /**
+   * Responsive Grid: Tablet (max-width: 768px)
+   * - Switch to single column layout
+   * - Stack image above details
+   * - Reduce gap for compact layout
+   */
+  @include respond(md) {
+    // Single column: Full width
+    grid-template-columns: 1fr;
+    
+    // Reduce gap between stacked elements
+    gap: 40px;
+    
+    /**
+     * Image First on Mobile
+     * - Use CSS Grid order property
+     * - Image wrapper gets order: -1 (moves to top)
+     * - Details stay at default order: 0 (below image)
+     * - Better mobile UX: Image first grabs attention
+     */
+    .imageWrapper {
+      order: -1; // Move to top in stacked layout
+    }
+  }
+  
+  @include respond(sm) {
+    gap: 32px; // Further reduce gap on mobile
+  }
+}
+
+/**
+ * Details Section (.details)
+ * 
+ * Purpose:
+ * - Container for service information
+ * - Includes title, description, and CTA button
+ * - Flexbox for vertical stacking
+ * - Text aligned right for RTL
+ * 
+ * Layout Strategy:
+ * - Flexbox column direction
+ * - Space-between pushes button to bottom
+ * - Text alignment right for Persian
+ */
+.details {
+  // Flexbox for vertical layout
+  display: flex;
+  flex-direction: column;
+  
+  /**
+   * Justify Content
+   * - flex-start: Stack items from top
+   * - Allows description to take needed space
+   * - CTA button follows naturally
+   */
+  justify-content: flex-start;
+  
+  /**
+   * Text Alignment
+   * - Right align for RTL (Persian)
+   * - Consistent with design system
+   */
+  text-align: right;
+  
+  /**
+   * Gap Between Elements
+   * - Space between title, description, and button
+   * - Creates visual hierarchy
+   */
+  gap: var(--space-title-text-desktop); // 24px
+  
+  @include respond(md) {
+    gap: 20px; // Reduce gap on tablet
+  }
+  
+  @include respond(sm) {
+    gap: 16px; // Minimal gap on mobile
+  }
+}
+
+/**
+ * Service Title (.title)
+ * 
+ * Purpose:
+ * - Main heading of the page (h1 in JSX)
+ * - Displays service name
+ * - Establishes page topic
+ * - Most prominent text on page
+ * 
+ * Typography:
+ * - Extra large font for prominence
+ * - Bold weight for emphasis
+ * - Gold color for brand consistency
+ * - Responsive scaling
+ */
+.title {
+  // Typography from design system
+  font-size: var(--font-xl);            // 32px on desktop
+  font-weight: var(--font-weight-bold); // 700
+  line-height: var(--line-height-md);   // 1.6
+  
+  // Color from design system (gold accent)
+  color: var(--color-text-primary);
+  
+  // Remove default margins for precise spacing
+  margin: 0;
+  
+  /**
+   * Responsive Typography
+   * - Scale down on smaller screens
+   * - Maintains hierarchy while fitting viewport
+   */
+  @include respond(md) {
+    font-size: 28px; // Tablet: Moderate size
+  }
+  
+  @include respond(sm) {
+    font-size: 24px; // Mobile: Compact size
+  }
+}
+
+/**
+ * Service Description (.description)
+ * 
+ * Purpose:
+ * - Detailed explanation of the service
+ * - Provides context and information
+ * - Helps user understand what service offers
+ * - Influences decision to click CTA
+ * 
+ * Typography:
+ * - Medium font size for readability
+ * - Lighter color than title for hierarchy
+ * - Generous line height for comfortable reading
+ * - Responsive scaling
+ */
+.description {
+  // Typography from design system
+  font-size: var(--font-lg);          // 20px
+  line-height: var(--line-height-lg); // 1.8 (optimal for paragraphs)
+  
+  // Color from design system (cream/off-white)
+  // Softer than primary for visual hierarchy
+  color: var(--color-card-text);
+  
+  // Remove default margins
+  margin: 0;
+  
+  /**
+   * Flex Behavior
+   * - flex-grow: 1 allows description to take available space
+   * - Pushes CTA button toward bottom
+   * - Maintains flexible layout
+   */
+  flex-grow: 1;
+  
+  /**
+   * Responsive Typography
+   * - Scale down on smaller screens
+   * - Maintain readability
+   */
+  @include respond(md) {
+    font-size: var(--font-md); // 16px on tablet
+    line-height: var(--line-height-md); // 1.6
+  }
+  
+  @include respond(sm) {
+    font-size: var(--font-sm); // 14px on mobile
+  }
+}
+
+/**
+ * Call-to-Action Button (.ctaButton)
+ * 
+ * Purpose:
+ * - Primary action button for service request
+ * - Links to external page, contact form, or booking
+ * - Most important interactive element on page
+ * - Should draw user's attention
+ * 
+ * Design:
+ * - Filled button with gold background
+ * - High contrast for visibility
+ * - Large click area for accessibility
+ * - Hover effects for interactivity
+ * 
+ * Accessibility:
+ * - Sufficient padding for comfortable clicking
+ * - High color contrast for readability
+ * - Focus state for keyboard navigation
+ */
+.ctaButton {
+  // Display as inline-block for padding control
+  display: inline-block;
+  
+  // Padding for comfortable click area
+  // More horizontal padding for better proportion
+  padding: 16px 48px;
+  
+  // Typography from design system
+  font-size: var(--font-lg);            // 20px
+  font-weight: var(--font-weight-bold); // 700
+  
+  /**
+   * Color Scheme
+   * - Background: Gold (brand primary color)
+   * - Text: Dark background color for contrast
+   * - High contrast ratio for accessibility
+   */
+  background-color: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  
+  // Remove default link underline
+  text-decoration: none;
+  
+  // Rounded corners for modern look
+  border-radius: 8px;
+  
+  // Center text within button
+  text-align: center;
+  
+  // Smooth transitions for hover effects
+  transition: all 0.3s ease-in-out;
+  
+  // Remove default border
+  border: none;
+  
+  // Cursor pointer on hover
+  cursor: pointer;
+  
+  /**
+   * Hover State
+   * - Darken background for feedback
+   * - Scale up slightly for tactile feel
+   * - Subtle shadow for depth
+   */
+  &:hover {
+    // Darken to hover color (lighter gold)
+    background-color: var(--color-title-hover);
+    
+    // Lift button slightly
+    transform: translateY(-2px);
+    
+    // Add shadow for depth
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  }
+  
+  /**
+   * Focus State (Accessibility)
+   * - Visible outline for keyboard navigation
+   * - High contrast
+   * - Offset for clarity
+   */
+  &:focus {
+    outline: 2px solid var(--color-title-hover);
+    outline-offset: 4px;
+  }
+  
+  /**
+   * Active State (Click)
+   * - Scale down slightly when pressed
+   * - Provides tactile feedback
+   */
+  &:active {
+    transform: translateY(0);
+  }
+  
+  /**
+   * Responsive Adjustments
+   * - Reduce font size and padding on mobile
+   * - Maintain proportions
+   * - Ensure comfortable touch target (min 44px)
+   */
+  @include respond(md) {
+    font-size: var(--font-md); // 16px on tablet
+    padding: 14px 40px;
+  }
+  
+  @include respond(sm) {
+    font-size: var(--font-sm); // 14px on mobile
+    padding: 12px 32px;
+    // Full width on mobile for easier clicking
+    width: 100%;
+  }
+}
+
+/**
+ * Image Wrapper (.imageWrapper)
+ * 
+ * Purpose:
+ * - Container for service image
+ * - Maintains aspect ratio
+ * - Provides rounded corners
+ * - Clips image to defined shape
+ * 
+ * Layout Strategy:
+ * - Relative positioning for potential overlays
+ * - Overflow hidden for rounded corner clipping
+ * - Border for definition
+ * - Background for loading state
+ */
+.imageWrapper {
+  // Full width of grid column
+  width: 100%;
+  
+  // Maintain aspect ratio
+  // 4:3 is balanced for content images
+  aspect-ratio: 4 / 3;
+  
+  // Relative positioning (could add overlays if needed)
+  position: relative;
+  
+  // Rounded corners for modern look
+  border-radius: 16px;
+  
+  // Clip image to rounded corners
+  overflow: hidden;
+  
+  /**
+   * Border
+   * - Subtle border using primary color
+   * - Low opacity for delicate appearance
+   * - Defines image boundary
+   */
+  border: 1px solid rgba(246, 217, 130, 0.2);
+  
+  /**
+   * Background
+   * - Overlay color while image loads
+   * - Prevents blank white space
+   * - Smooth visual experience
+   */
+  background: var(--color-overlay);
+  
+  /**
+   * Responsive Adjustments
+   * - Reduce border radius on smaller screens
+   * - Maintain proportional appearance
+   */
+  @include respond(md) {
+    border-radius: 12px; // Tablet: Moderate rounding
+    aspect-ratio: 16 / 9; // Wider aspect on tablet/mobile
+  }
+  
+  @include respond(sm) {
+    border-radius: 8px; // Mobile: Subtle rounding
+  }
+}
+
+/**
+ * Service Image (.image)
+ * 
+ * Purpose:
+ * - Styles the Next.js Image component
+ * - Ensures proper object-fit
+ * - Smooth transitions if needed
+ * 
+ * Object-fit:
+ * - cover: Fills container, crops if necessary
+ * - Maintains aspect ratio
+ * - No distortion
+ */
+.image {
+  // Ensure image covers container without distortion
+  object-fit: cover;
+  
+  // Smooth transition for any state changes
+  transition: transform 0.3s ease-in-out;
+  
+  /**
+   * Optional: Add subtle zoom on hover
+   * - Uncomment if desired
+   * - Adds interactivity to image
+   */
+  // &:hover {
+  //   transform: scale(1.05);
+  // }
+}
+
+/**
+ * NOTES:
+ * =======================================================================
+ * 1. All spacing uses CSS Custom Properties from _variables.scss
+ * 2. All colors use CSS Custom Properties (no hardcoded hex values)
+ * 3. All typography uses CSS Custom Properties
+ * 4. The .container class is global (provides consistent page padding)
+ * 5. All responsive breakpoints use the respond() mixin from _mixins.scss
+ * 6. Layout follows the design patterns from CONTEXT_SingleServicePage.md
+ * 7. RTL support is handled globally via direction property
+ * 8. Focus states ensure keyboard navigation accessibility
+ * 9. Hover effects provide clear interactive feedback
+ * 10. Mobile-first approach with progressive enhancement
+ */
+
