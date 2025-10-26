@@ -1,176 +1,372 @@
-import { notFound } from 'next/navigation';
+/**
+ * Service Single Page - Dynamic Route for Individual Service Details
+ * 
+ * PURPOSE:
+ * Displays detailed information for a single service based on URL slug.
+ * Implements Server-Side Rendering (SSR) for optimal SEO and performance.
+ * 
+ * ARCHITECTURE COMPLIANCE:
+ * ✅ Server Component (async function, no 'use client')
+ * ✅ Uses domain API layer (servicesApi.js) instead of direct fetch
+ * ✅ Follows project structure: /src/app/services/[slug]/page.js
+ * ✅ Imports ServiceSingle from modules for composition
+ * ✅ Uses Next.js 15 async params pattern
+ * ✅ Handles invalid slugs with EmptyState
+ * 
+ * DATA FLOW (SSR):
+ * 1. User navigates to /services/some-slug
+ * 2. Next.js extracts 'some-slug' from URL and passes it as params
+ * 3. getServiceBySlug(slug) fetches data from Strapi via API layer
+ * 4. Data flows: Strapi → apiClient → servicesApi → this page
+ * 5. Component renders with data on server
+ * 6. Complete HTML is sent to browser
+ * 7. No client-side loading states needed
+ * 
+ * ERROR HANDLING:
+ * - If slug is invalid or service not found, returns EmptyState
+ * - Graceful degradation: no crashes, always renders something
+ * - Error logged on server for debugging
+ * 
+ * SEO BENEFITS:
+ * - Dynamic metadata generation per service
+ * - Complete content rendered on server
+ * - Search engines can index individual service pages
+ * - Fast Time to First Byte (TTFB)
+ * 
+ * @module app/services/[slug]/page
+ */
+
+import Image from 'next/image';
+import Link from 'next/link';
+import { getServiceBySlug } from '@/lib/servicesApi';
 import ServiceSingle from '@/modules/services/ServiceSingle/ServiceSingle';
+import styles from './page.module.scss';
 
 /**
- * Strapi API URL from environment variables
- * Fallback to localhost for development
- */
-const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-
-/**
- * Fetches a single service from Strapi API based on slug
+ * Generate Dynamic Metadata for SEO
  * 
- * Data Flow:
- * 1. Constructs API URL with slug filter and image population
- * 2. Fetches data with 1-hour revalidation for ISR
- * 3. Validates response and data existence
- * 4. Formats image URL (prepends API URL if relative)
- * 5. Extracts description from Strapi's rich text structure
- * 6. Returns formatted service object
+ * This function runs before the page renders and generates:
+ * - <title> tag with service title
+ * - <meta name="description"> with service description
+ * - Open Graph tags for social sharing
  * 
- * @param {string} slug - Service slug from URL parameter
- * @returns {Object|null} Formatted service object or null if not found
- */
-async function getServiceBySlug(slug) {
-  try {
-    // Construct API endpoint with filters and population
-    const apiUrl = `${STRAPI_API_URL}/api/services?populate=image&filters[slug][$eq]=${slug}`;
-    
-    // Fetch with ISR revalidation (1 hour)
-    const response = await fetch(apiUrl, { 
-      next: { revalidate: 3600 } 
-    });
-    
-    // Handle failed requests
-    if (!response.ok) return null;
-    
-    const result = await response.json();
-    
-    // Validate data existence
-    if (!result.data || result.data.length === 0) return null;
-    
-    // Extract first result (slug should be unique)
-    const rawService = result.data[0];
-    
-    /**
-     * Format Service Image
-     * Handle both absolute URLs and relative Strapi paths
-     */
-    let serviceImage = { 
-      url: '/images/placeholder.jpg', 
-      alt: 'خدمت' 
-    };
-    
-    if (rawService.image && rawService.image.url) {
-      serviceImage = {
-        url: rawService.image.url.startsWith('http') 
-          ? rawService.image.url 
-          : `${STRAPI_API_URL}${rawService.image.url}`,
-        alt: rawService.image.alternativeText || rawService.title || 'خدمت',
-      };
-    }
-    
-    /**
-     * Extract Description from Rich Text
-     * Strapi stores text as array of blocks with children
-     * Extract text from first block's first child
-     */
-    const descriptionText = rawService.description && 
-                           rawService.description[0]?.children?.[0]?.text 
-                           ? rawService.description[0].children[0].text 
-                           : '';
-    
-    // Return formatted service object
-    return {
-      id: rawService.id,
-      slug: rawService.slug,
-      title: rawService.title,
-      description: descriptionText,
-      image: serviceImage,
-      link: rawService.link || null,
-    };
-    
-  } catch (error) {
-    console.error("Failed to fetch service by slug:", error);
-    return null;
-  }
-}
-
-/**
- * Generates static paths for all services at build time
- * Enables Static Site Generation (SSG) for better performance
+ * EXECUTION:
+ * - Runs on server during page build/request
+ * - Fetches service data independently from page component
+ * - Next.js automatically caches this between metadata and page render
  * 
- * @returns {Array} Array of params objects with slug property
- */
-export async function generateStaticParams() {
-  try {
-    const response = await fetch(`${STRAPI_API_URL}/api/services`);
-    
-    if (!response.ok) return [];
-    
-    const result = await response.json();
-    
-    // Map service data to slug params array, filtering invalid entries
-    return (result.data || [])
-      .filter(service => service && service.slug)
-      .map(service => ({
-        slug: service.slug,
-      }));
-      
-  } catch (error) {
-    console.error("Failed to generate static params for services:", error);
-    return [];
-  }
-}
-
-/**
- * Generates metadata for SEO optimization
- * Sets page title and description based on service data
- * 
- * @param {Object} params - Route parameters
- * @param {string} params.slug - Service slug from URL
- * @returns {Object} Metadata object with title and description
+ * @param {Object} context - Next.js context object
+ * @param {Object} context.params - URL parameters (Promise in Next.js 15)
+ * @returns {Promise<Object>} Metadata object for Next.js
  */
 export async function generateMetadata({ params }) {
+  // Next.js 15: params is a Promise, must await it
   const { slug } = await params;
+  
+  // Fetch service data for metadata
   const service = await getServiceBySlug(slug);
   
+  // Fallback metadata if service not found
   if (!service) {
     return {
-      title: 'خدمت یافت نشد',
+      title: 'خدمت یافت نشد | طرح الهی',
       description: 'خدمت مورد نظر یافت نشد.',
     };
   }
   
+  // Generate rich metadata for found service
   return {
-    title: service.title,
-    description: service.description || `اطلاعات کامل درباره ${service.title}`,
+    title: `${service.title} | خدمات طرح الهی`,
+    description: service.description || 'اطلاعات بیشتر درباره این خدمت',
   };
 }
 
 /**
- * Service Detail Page Component
+ * Service Single Page Component
  * 
- * Server-side rendered page displaying single service details
- * Implements Next.js App Router with async/await pattern
+ * COMPONENT TYPE: Server Component (default in App Router)
+ * - Async function allows await at component level
+ * - No useState, useEffect, or browser APIs
+ * - Executes only on server, never on client
  * 
- * Flow:
- * 1. Extracts slug from route parameters
- * 2. Fetches service data from Strapi
- * 3. Returns 404 if service not found
- * 4. Renders ServiceSingle component with service data
+ * ARCHITECTURAL LAYERS INVOLVED:
+ * 1. This Page Component (route handler & data orchestration)
+ * 2. ServiceSingle Module (detailed service layout)
+ * 3. servicesApi.js (domain-specific data fetching)
+ * 4. apiClient.js (HTTP communication)
+ * 5. strapiUtils.js (data formatting)
+ * 6. Strapi Backend (data source)
  * 
- * @param {Object} props - Page props
- * @param {Object} props.params - Route parameters containing slug
- * @returns {JSX.Element} Rendered service detail page
+ * URL PATTERN:
+ * - /services/[slug] → slug is dynamic parameter
+ * - Example: /services/astrology-consultation
+ * 
+ * EMPTY STATE HANDLING:
+ * - If slug is invalid or service doesn't exist
+ * - Displays user-friendly message instead of 404
+ * - Better UX than raw error page
+ * 
+ * @param {Object} context - Next.js page context
+ * @param {Object} context.params - URL parameters (Promise in Next.js 15)
+ * @returns {Promise<JSX.Element>} Rendered service detail page
  */
-export default async function ServicePage({ params }) {
-  // Extract slug from route parameters (async in Next.js 15)
+export default async function ServiceSinglePage({ params }) {
+  // ============================================================================
+  // PARAMS EXTRACTION (Next.js 15 Pattern)
+  // ============================================================================
+  
+  /**
+   * In Next.js 15, params is a Promise that must be awaited
+   * This is part of the new async request handling model
+   * 
+   * Previous versions: const { slug } = params;
+   * Next.js 15+: const { slug } = await params;
+   */
   const { slug } = await params;
   
-  // Fetch service data by slug
+  // ============================================================================
+  // DATA FETCHING (SSR)
+  // ============================================================================
+  
+  /**
+   * Fetch single service by slug from Strapi via API abstraction layer
+   * 
+   * WHY NOT fetch() DIRECTLY:
+   * ❌ const res = await fetch(`http://localhost:1337/api/services?filters[slug][$eq]=${slug}`)
+   *    - Exposes Strapi URL structure to page component
+   *    - Duplicates filtering logic across pages
+   *    - Hard to test, mock, or change backend
+   *    - Mixes data fetching with UI concerns
+   * 
+   * ✅ const service = await getServiceBySlug(slug)
+   *    - Clean, semantic API that reads like natural language
+   *    - Backend implementation can change freely
+   *    - Easy to test with mocked API layer
+   *    - Consistent error handling across all service pages
+   * 
+   * EXECUTION CONTEXT:
+   * - Runs on server during page request
+   * - Blocks rendering until data is fetched
+   * - Data is embedded in initial HTML payload
+   * - No loading spinner needed on client
+   * 
+   * RETURN VALUE:
+   * - Object with service data if found
+   * - null if service doesn't exist or error occurs
+   */
   const service = await getServiceBySlug(slug);
   
-  // Handle not found case (returns Next.js 404 page)
+  // ============================================================================
+  // EMPTY STATE HANDLING
+  // ============================================================================
+  
+  /**
+   * Handle case where service doesn't exist or slug is invalid
+   * 
+   * WHY NOT notFound():
+   * - notFound() would trigger Next.js 404 page (harsh UX)
+   * - EmptyState provides context-aware message (better UX)
+   * - User understands they're in services section
+   * - Can include navigation links to other services
+   * 
+   * ALTERNATIVE APPROACH (if preferred):
+   * - Could use notFound() from 'next/navigation'
+   * - Would require creating not-found.js in this directory
+   * - Current approach is more graceful and user-friendly
+   */
   if (!service) {
-    notFound();
+    return (
+      <main className={styles.serviceSinglePage}>
+        <div className="container">
+          {/* Breadcrumbs for navigation context */}
+          <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
+            <Link href="/" className={styles.breadcrumbs__link}>
+              خانه
+            </Link>
+            <span className={styles.breadcrumbs__separator}>/</span>
+            <Link href="/services" className={styles.breadcrumbs__link}>
+              خدمات
+            </Link>
+            <span className={styles.breadcrumbs__separator}>/</span>
+            <span className={styles.breadcrumbs__current}>خدمت یافت نشد</span>
+          </nav>
+          
+          {/* Empty State Component */}
+          <div className={styles.emptyState}>
+            <h1 className={styles.emptyState__title}>خدمت مورد نظر یافت نشد</h1>
+            <p className={styles.emptyState__message}>
+              متأسفانه خدمتی با این آدرس وجود ندارد. لطفاً به صفحه خدمات بازگردید.
+            </p>
+            <Link href="/services" className={styles.emptyState__button}>
+              بازگشت به خدمات
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
   }
   
-  // Render service detail page
+  // ============================================================================
+  // COMPONENT RENDERING (Service Found)
+  // ============================================================================
+  
+  /**
+   * Main page layout structure:
+   * 
+   * 1. Breadcrumbs Navigation
+   *    - Shows current location in site hierarchy
+   *    - Helps users understand where they are
+   *    - Improves SEO with structured navigation
+   * 
+   * 2. ServiceSingle Component
+   *    - Renders detailed service information
+   *    - Handles layout, styling, and presentation
+   *    - Receives clean, formatted service data
+   *    - Includes image, title, description, and CTA link
+   * 
+   * ACCESSIBILITY:
+   * - <main> landmark for main content area
+   * - <nav> with aria-label for breadcrumbs
+   * - Semantic HTML structure
+   * - Proper heading hierarchy (h1 in ServiceSingle)
+   */
   return (
-    <main className="container">
-      <ServiceSingle service={service} />
+    <main className={styles.serviceSinglePage}>
+      <div className="container">
+        
+        {/* ================================================================== */}
+        {/* BREADCRUMBS NAVIGATION                                             */}
+        {/* ================================================================== */}
+        {/*
+          Hierarchical navigation showing:
+          خانه / خدمات / [Service Title]
+          
+          BENEFITS:
+          - User orientation: Shows current location in site
+          - Navigation: Quick way to move up the hierarchy
+          - SEO: Helps search engines understand site structure
+          - Accessibility: Screen readers announce navigation context
+          
+          STYLING:
+          - Inline horizontal layout with separators
+          - Primary color for links, muted for current page
+          - Hover effects on clickable links
+          - Responsive font sizing
+        */}
+        <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
+          <Link href="/" className={styles.breadcrumbs__link}>
+            خانه
+          </Link>
+          <span className={styles.breadcrumbs__separator}>/</span>
+          <Link href="/services" className={styles.breadcrumbs__link}>
+            خدمات
+          </Link>
+          <span className={styles.breadcrumbs__separator}>/</span>
+          <span className={styles.breadcrumbs__current}>{service.title}</span>
+        </nav>
+        
+        {/* ================================================================== */}
+        {/* SERVICE DETAIL CONTENT                                             */}
+        {/* ================================================================== */}
+        {/*
+          ServiceSingle Component renders:
+          - Service image (responsive, optimized with Next.js Image)
+          - Service title (large, bold, primary color)
+          - Full description (readable line height, card text color)
+          - Call-to-Action link (styled as button, external or internal)
+          
+          LAYOUT:
+          - Desktop: Two-column grid (image right, content left in RTL)
+          - Mobile: Single column (image top, content bottom)
+          
+          DATA PASSED:
+          - service object with all fields from Strapi
+          - Already formatted by strapiUtils
+          - Includes: id, slug, title, description, image, link
+          
+          COMPONENT RESPONSIBILITY:
+          - ServiceSingle handles all presentation logic
+          - This page only handles routing and data fetching
+          - Clean separation of concerns
+        */}
+        <ServiceSingle service={service} />
+        
+      </div>
     </main>
   );
 }
 
+/**
+ * ARCHITECTURAL NOTES:
+ * 
+ * 1. SEPARATION OF CONCERNS
+ *    ├─ This page: Route handling, params extraction, data orchestration
+ *    ├─ ServiceSingle: Layout and detailed presentation
+ *    ├─ servicesApi: Data fetching and business logic
+ *    ├─ apiClient: HTTP communication with Strapi
+ *    └─ strapiUtils: Data transformation and formatting
+ * 
+ * 2. DATA FLOW VISUALIZATION
+ *    Browser → /services/slug → Next.js Router
+ *                                      ↓
+ *                         ServiceSinglePage (this file)
+ *                                      ↓
+ *                          Extract slug from params
+ *                                      ↓
+ *                            getServiceBySlug(slug)
+ *                                      ↓
+ *                                 apiClient()
+ *                                      ↓
+ *                        Strapi: /api/services?filters[slug][$eq]=slug
+ *                                      ↓
+ *                          formatStrapiServices()
+ *                                      ↓
+ *                               ServiceSingle
+ *                                      ↓
+ *                            HTML Response
+ * 
+ * 3. ERROR HANDLING STRATEGY
+ *    Level 1: servicesApi catches HTTP errors → returns null
+ *    Level 2: This page checks for null → shows EmptyState
+ *    Level 3: ServiceSingle checks for null (defensive) → returns null
+ *    Result: No crashes, always graceful degradation
+ * 
+ * 4. SEO OPTIMIZATION
+ *    - Dynamic metadata per service (generateMetadata)
+ *    - Server-side rendering for complete HTML
+ *    - Semantic HTML structure (main, nav, h1)
+ *    - Breadcrumbs for site hierarchy
+ *    - Fast initial load (no client-side fetch delay)
+ * 
+ * 5. FUTURE ENHANCEMENTS
+ *    - Add structured data (JSON-LD) for rich snippets
+ *    - Implement social sharing buttons
+ *    - Add "Related Services" section
+ *    - Include user reviews/testimonials
+ *    - Add FAQ accordion for common questions
+ *    - Implement loading.js for Suspense boundary
+ *    - Add error.js for error boundary
+ *    - Consider ISR (Incremental Static Regeneration) for caching
+ * 
+ * 6. TESTING STRATEGY
+ *    - Mock getServiceBySlug() with valid data
+ *    - Test with invalid slug for EmptyState
+ *    - Test metadata generation
+ *    - Test breadcrumbs navigation
+ *    - Visual regression testing for layout
+ *    - Test with/without service.link field
+ * 
+ * 7. PERFORMANCE CONSIDERATIONS
+ *    - SSR eliminates client-side loading states
+ *    - Consider adding revalidation: { next: { revalidate: 3600 } }
+ *    - Image optimization handled by Next.js Image component
+ *    - Minimal JavaScript bundle (no client components)
+ *    - Fast Time to First Byte (TTFB)
+ * 
+ * 8. ACCESSIBILITY
+ *    - Semantic HTML landmarks (main, nav)
+ *    - ARIA labels for navigation (aria-label="Breadcrumb")
+ *    - Proper heading hierarchy (h1 for page title)
+ *    - Keyboard navigation support
+ *    - Screen reader friendly structure
+ */

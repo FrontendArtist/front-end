@@ -1,70 +1,79 @@
 🎯 Purpose
 
-ایجاد صفحه‌ی کامل Services Page در مسیر /services برای نمایش فهرست همه‌ی خدمات سایت.
-این صفحه شامل هدر (Hero)، توضیح کوتاه، و گرید کارت‌های خدمات است.
-داده‌ها از Strapi واکشی شده و SSR برای بهینه‌سازی سئو استفاده می‌شود.
+صفحه لیست خدمات در مسیر /services
+نمایش تمام خدمات با استفاده از داده‌های Strapi از طریق servicesApi.js (بدون fetch مستقیم در صفحه).
 
 📂 File Structure
 /src/modules/services/page.jsx
 /src/modules/services/ServicePage.module.scss
+/src/lib/servicesApi.js
 
 ⚙️ Component Type
 
 server
-(صفحه فقط نمایش داده دارد و نیاز به تعامل کاربری مستقیم ندارد. داده‌ها باید در سطح سرور واکشی شوند.)
+(صفحه فقط داده را از API abstraction می‌گیرد و SSR انجام می‌دهد.)
 
 🌐 Data Source
 
 Endpoint: /api/services
 
-Fields used: id, slug, image, title, description, link
+Wrapper Function: getAllServices() از servicesApi.js
 
-داده‌ها با استفاده از fetch(${process.env.NEXT_PUBLIC_STRAPI_API_URL}/api/services) دریافت می‌شوند.
+Fields used: id, slug, image, title, description, link
 
 🧩 Dependencies
 
-ServiceGrid → برای نمایش لیست خدمات
+ServiceGrid
 
-Breadcrumbs → برای ناوبری بالا
+Breadcrumbs
 
-Loader → برای نمایش وضعیت در حال بارگذاری
+EmptyState
 
-EmptyState → برای زمانی که هیچ داده‌ای وجود ندارد
+servicesApi.js (برای فچ داده‌ها از Strapi از طریق apiClient.js)
 
 🧠 State Logic
 
 ندارد (Server Component)
-اما باید:
+اما:
 
-هنگام واکشی داده، خطا یا پاسخ خالی را مدیریت کند.
-
-در صورت خالی بودن لیست خدمات، EmptyState را با پیام:
-"هیچ خدمتی در حال حاضر فعال نیست." نمایش دهد.
+بررسی خطا یا داده خالی (if (!services?.length) → نمایش EmptyState)
 
 🎨 Design Notes
 
-Layout کلی:
+مطابق نسخه قبلی:
 
-<section className="services-page">
-  <Breadcrumbs />
-  <header className="services-page__hero">
-    <h1 className="services-page__title">خدمات ما</h1>
-    <p className="services-page__subtitle">
-      در این بخش می‌توانید با خدمات ما آشنا شوید و بر اساس نیاز خود انتخاب کنید.
-    </p>
-  </header>
-  <ServiceGrid />
-</section>
+Hero section با عنوان و توضیح
+
+استفاده از spacing و رنگ‌ها از styles.md
+
+نمایش ServiceGrid در پایین بخش Hero
+
+📦 API Layer Details
+
+/src/lib/servicesApi.js
+
+import { apiClient } from "./apiClient";
+
+export async function getAllServices() {
+  try {
+    const response = await apiClient("/services?populate=*");
+    return response.data || [];
+  } catch (err) {
+    console.error("Error fetching services:", err);
+    return [];
+  }
+}
 
 
-رنگ‌ها و spacing مطابق با styles.md:
+/src/lib/apiClient.js
 
-رنگ عنوان: --color-text-primary
-
-رنگ زیرعنوان: --color-card-text
-
-فاصله بالا: --space-section-top-desktop
-
-فاصله پایین: --space-section-bottom-desktop
-
-در حالت موبایل، عنوان وسط‌چین و spacing کمتر شود (با @include respond(md)).
+export async function apiClient(endpoint, options = {}) {
+  const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL;
+  const res = await fetch(`${baseUrl}${endpoint}`, {
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    ...options,
+  });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+}

@@ -1,5 +1,12 @@
+/**
+ * Products Page - Main Listing Page
+ * 
+ * Data fetched via API Layer abstraction (productsApi.js)
+ * Implements Server-Side Rendering (SSR) for optimal SEO and performance
+ */
+
 import ProductGrid from '@/modules/products/ProductGrid/ProductGrid';
-import { formatStrapiProducts } from '@/lib/strapiUtils';
+import { getAllProducts } from '@/lib/productsApi';
 import styles from './products.module.scss';
 
 // SEO Metadata for the page
@@ -8,32 +15,17 @@ export const metadata = {
   description: 'لیست کامل محصولات فروشگاه ما را مشاهده کنید.',
 };
 
-const PAGE_SIZE = 3; // Same as ProductGrid
-
 /**
- * Fetches the initial products from the Strapi API.
- * This is a separate function for clarity and reusability.
+ * Products Page Component (Server Component)
+ * 
+ * Architecture:
+ * - Uses getAllProducts() from productsApi.js (no direct fetch)
+ * - Follows Repository Pattern for clean separation of concerns
+ * - SSR renders complete HTML with product data
  */
-async function getInitialProducts() {
-  const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-  try {
-    const response = await fetch(
-      `${STRAPI_API_URL}/api/products?populate=*&sort=createdAt:desc&pagination[page]=1&pagination[pageSize]=${PAGE_SIZE}`
-    );
-    if (!response.ok) throw new Error('Failed to fetch initial products');
-    const result = await response.json();
-    console.log(result);
-    
-    return formatStrapiProducts(result); // Use the helper to format data
-  } catch (error) {
-    console.error("Initial Products Fetch Error:", error);
-    return [];
-  }
-}
-
-// This is an async Server Component
 async function ProductsPage() {
-  const initialProducts = await getInitialProducts();
+  // Data fetched via API Layer abstraction
+  const initialProducts = await getAllProducts();
 
   return (
     <main className={styles.main}>
@@ -42,7 +34,7 @@ async function ProductsPage() {
           <h1 className={styles.title}>محصولات</h1>
         </header>
         
-        {/* Pass the REAL server-fetched data to the client component */}
+        {/* Pass server-fetched data to the client component */}
         <ProductGrid initialProducts={initialProducts} />
       </div>
     </main>

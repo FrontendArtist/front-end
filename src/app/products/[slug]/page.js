@@ -1,57 +1,45 @@
-import Image from 'next/image';
+/**
+ * Product Single Page - Dynamic Route
+ * 
+ * Data fetched via API Layer abstraction (productsApi.js)
+ * Implements Server-Side Rendering (SSR) for optimal SEO
+ */
+
 import { notFound } from 'next/navigation';
 import ProductGallery from '@/components/products/ProductGallery/ProductGallery';
-import { formatStrapiProducts } from '@/lib/strapiUtils';
+import { getProductBySlug } from '@/lib/productsApi';
 import styles from './page.module.scss';
 
-const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-
-async function getProductBySlug(slug) {
-  try {
-    const response = await fetch(
-      `${STRAPI_API_URL}/api/products?populate=*&filters[slug][$eq]=${slug}`,
-      { next: { revalidate: 60 } }
-    );
-    if (!response.ok) return null;
-    const result = await response.json();
-    if (!result.data || result.data.length === 0) return null;
-    
-    const formatted = formatStrapiProducts(result);
-    return formatted[0];
-
-  } catch (error) {
-    console.error("Failed to fetch product by slug:", error);
-    return null;
-  }
-}
-
-export async function generateStaticParams() {
-  try {
-    const response = await fetch(`${STRAPI_API_URL}/api/products`);
-    const result = await response.json();
-    return result.data.map((product) => ({
-      slug: product.attributes.slug,
-    }));
-  } catch (error) {
-    console.error("Failed to generate static params:", error);
-    return [];
-  }
-}
-
+/**
+ * Generate Dynamic Metadata for SEO
+ * Uses API Layer abstraction
+ */
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
+  
   if (!product) {
     return { title: 'محصول یافت نشد' };
   }
+  
   return {
     title: `${product.title} | فروشگاه آنلاین`,
     description: product.shortDescription,
   };
 }
 
+/**
+ * Product Page Component (Server Component)
+ * 
+ * Architecture:
+ * - Uses getProductBySlug() from productsApi.js (no direct fetch)
+ * - Follows Repository Pattern for clean separation of concerns
+ * - Handles invalid slugs with notFound()
+ */
 export default async function ProductPage({ params }) {
   const { slug } = await params;
+  
+  // Data fetched via API Layer abstraction
   const product = await getProductBySlug(slug);
 
   if (!product) {

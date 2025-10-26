@@ -1,5 +1,12 @@
-import { formatStrapiArticles } from '@/lib/strapiUtils';
+/**
+ * Articles Page - Main Listing Page
+ * 
+ * Data fetched via API Layer abstraction (articlesApi.js)
+ * Implements Server-Side Rendering (SSR) for optimal SEO and performance
+ */
+
 import ArticleGrid from '@/modules/articles/ArticleGrid/ArticleGrid';
+import { getAllArticles } from '@/lib/articlesApi';
 import styles from './articles.module.scss';
 
 export const metadata = {
@@ -7,33 +14,18 @@ export const metadata = {
   description: 'آخرین مقالات و نوشته‌ها را مطالعه کنید.',
 };
 
-const PAGE_SIZE = 6;
-
-async function getInitialArticles() {
-  const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-  try {
-    console.log('Fetching initial articles from:', STRAPI_API_URL);
-
-    const response = await fetch(
-        `${STRAPI_API_URL}/api/articles?sort=publishedAt:desc&pagination[page]=1&pagination[pageSize]=${PAGE_SIZE}&populate=cover`
-      );
-    if (!response.ok) {
-      console.error('Failed to fetch articles:', response.status, response.statusText);
-      throw new Error('Failed to fetch initial articles');
-    }
-    const result = await response.json();
-    console.log('Received articles data:', result);
-    const formattedArticles = formatStrapiArticles(result, STRAPI_API_URL);
-    console.log('Formatted articles:', formattedArticles);
-    return formattedArticles;
-  } catch (error) {
-    console.error("Initial Articles Fetch Error:", error);
-    return [];
-  }
-}
-
+/**
+ * Articles Page Component (Server Component)
+ * 
+ * Architecture:
+ * - Uses getAllArticles() from articlesApi.js (no direct fetch)
+ * - Follows Repository Pattern for clean separation of concerns
+ * - SSR renders complete HTML with article data
+ */
 export default async function ArticlesPage() {
-  const initialArticles = await getInitialArticles();
+  // Data fetched via API Layer abstraction
+  const initialArticles = await getAllArticles();
+  
   return (
     <main className={styles.main}>
       <div className="container">
