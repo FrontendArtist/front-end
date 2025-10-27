@@ -117,6 +117,83 @@ export async function getProductBySlug(slug) {
 }
 
 /**
+ * واکشی محصولات با محدودیت تعداد (برای صفحه اصلی)
+ * 
+ * این تابع برای نمایش تعدادی محصول در صفحه اصلی طراحی شده است
+ * و به‌صورت SSR در کامپوننت‌های سرور استفاده می‌شود
+ * 
+ * @param {object} options - آپشن‌های کوئری
+ * @param {number} options.limit - تعداد محصولات (پیش‌فرض: 4)
+ * @param {string} options.sort - پارامتر مرتب‌سازی Strapi (پیش‌فرض: "createdAt:desc")
+ * @returns {Promise<Array>} آرایه‌ای از محصولات فرمت شده
+ * 
+ * @example
+ * // در Server Component:
+ * const products = await getProducts({ limit: 4 });
+ */
+export async function getProducts({ limit = 4, sort = 'createdAt:desc' } = {}) {
+  try {
+    const response = await apiClient(
+      `/api/products?populate=*&pagination[limit]=${limit}&sort=${sort}`
+    );
+    
+    const formattedProducts = formatStrapiProducts(response);
+    return formattedProducts;
+    
+  } catch (error) {
+    console.error('خطا در واکشی محصولات:', error.message);
+    return [];
+  }
+}
+
+/**
+ * واکشی محصولات با قابلیت صفحه‌بندی و مرتب‌سازی
+ * 
+ * این تابع برای Route Handler داخلی Next.js طراحی شده است
+ * و قابلیت pagination و sorting را پشتیبانی می‌کند
+ * 
+ * جریان داده:
+ * Client Component → Next.js Route Handler → این تابع → apiClient → Strapi
+ * 
+ * @param {number} page - شماره صفحه (پیش‌فرض: 1)
+ * @param {number} pageSize - تعداد آیتم در هر صفحه (پیش‌فرض: 6)
+ * @param {string} sort - پارامتر مرتب‌سازی Strapi (پیش‌فرض: "createdAt:desc")
+ * @returns {Promise<{data: Array, meta: object}>} محصولات فرمت شده با metadata صفحه‌بندی
+ * 
+ * @example
+ * // در Route Handler (/app/api/products/route.js):
+ * const result = await getProductsPaginated(2, 6, "price:asc");
+ * return Response.json(result);
+ */
+export async function getProductsPaginated(page = 1, pageSize = 6, sort = 'createdAt:desc') {
+  try {
+    // ساخت query string با pagination و sort
+    // Strapi انتظار دارد: pagination[page]=X&pagination[pageSize]=Y&sort=field:order
+    const response = await apiClient(
+      `/api/products?populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`
+    );
+    
+    // فرمت کردن داده‌های محصولات
+    const formattedProducts = formatStrapiProducts(response);
+    
+    // برگرداندن داده‌ها به همراه metadata صفحه‌بندی
+    // metadata شامل: page, pageSize, pageCount, total
+    return {
+      data: formattedProducts,
+      meta: response.meta || {}
+    };
+    
+  } catch (error) {
+    console.error('خطا در واکشی محصولات صفحه‌بندی‌شده:', error.message);
+    // برگرداندن ساختار خالی اما معتبر
+    return {
+      data: [],
+      meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } }
+    };
+  }
+}
+
+/**
  * مزایای معماری این الگو:
  * 
  * 1. جداسازی نگرانی‌ها (Separation of Concerns)

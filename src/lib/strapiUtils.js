@@ -103,3 +103,76 @@ export function formatStrapiServices(apiResponse) {
       link: item.link || null,
     }));
 }
+
+/**
+ * Formats your specific Strapi API response for TESTIMONIALS.
+ */
+/**
+ * تاریخ را به فرمت فارسی تبدیل می‌کند
+ * @param {string} isoDate - تاریخ به فرمت ISO
+ * @returns {string} تاریخ فارسی شده
+ */
+function formatPersianDate(isoDate) {
+  if (!isoDate) return '';
+  
+  const date = new Date(isoDate);
+  const options = { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+  };
+  
+  return new Intl.DateTimeFormat('fa-IR', options).format(date);
+}
+
+export function formatStrapiTestimonials(apiResponse) {
+  if (!apiResponse || !apiResponse.data) return [];
+
+  return apiResponse.data
+    .filter(item => item && item.name && item.comment)
+    .map(item => ({
+      id: item.id,
+      documentId: item.documentId,
+      name: item.name,
+      title: item.title || null,
+      comment: item.comment,
+      createdAt: item.createdAt || item.publishedAt || null,
+      formattedDate: formatPersianDate(item.createdAt || item.publishedAt),
+    }));
+}
+
+/**
+ * Formats your specific Strapi API response for FAQs.
+ * Maps Strapi FAQ fields to the format expected by the Accordion component.
+ */
+export function formatStrapiFaqs(apiResponse) {
+  // Handle both formats: direct array or { data: [...] }
+  const dataArray = Array.isArray(apiResponse) ? apiResponse : apiResponse?.data;
+
+  if (!dataArray || !Array.isArray(dataArray)) return [];
+
+  return dataArray
+    .filter(item => item && item.question && item.answer)
+    .map(item => ({
+      id: item.id,
+      title: item.question,    // Maps to Accordion's 'title' prop
+      content: item.answer,    // Maps to Accordion's 'content' prop
+    }));
+}
+
+/**
+ * Formats your specific Strapi API response for CATEGORIES.
+ * Maps Strapi category fields to the format expected by CategoryCard component.
+ */
+export function formatStrapiCategories(apiResponse) {
+  if (!apiResponse || !apiResponse.data) return [];
+
+  return apiResponse.data
+    .filter(item => item && item.text && item.slug)
+    .map(item => ({
+      id: item.id,
+      slug: item.slug,
+      name: item.text, // Maps Strapi 'text' field to CategoryCard's 'name' prop
+      icon: formatSingleImage(item.image).url, // Maps Strapi 'image' to CategoryCard's 'icon' prop (extract URL string)
+    }));
+}

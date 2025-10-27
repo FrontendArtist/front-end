@@ -3,10 +3,15 @@
  * 
  * Data fetched via API Layer abstraction (productsApi.js)
  * Implements Server-Side Rendering (SSR) for optimal SEO and performance
+ * 
+ * جریان داده (Data Flow):
+ * این صفحه → getProductsPaginated() → apiClient → Strapi
+ * فقط صفحه اول با تعداد محدود آیتم واکشی می‌شود
+ * بقیه آیتم‌ها با دکمه "بارگذاری بیشتر" از سمت کلاینت واکشی می‌شوند
  */
 
 import ProductGrid from '@/modules/products/ProductGrid/ProductGrid';
-import { getAllProducts } from '@/lib/productsApi';
+import { getProductsPaginated } from '@/lib/productsApi';
 import styles from './products.module.scss';
 
 // SEO Metadata for the page
@@ -19,13 +24,16 @@ export const metadata = {
  * Products Page Component (Server Component)
  * 
  * Architecture:
- * - Uses getAllProducts() from productsApi.js (no direct fetch)
+ * - Uses getProductsPaginated() برای واکشی صفحه اول با pagination
+ * - PAGE_SIZE = 3 (فقط 3 محصول در بارگذاری اولیه)
  * - Follows Repository Pattern for clean separation of concerns
- * - SSR renders complete HTML with product data
+ * - SSR renders complete HTML with initial product data
  */
 async function ProductsPage() {
-  // Data fetched via API Layer abstraction
-  const initialProducts = await getAllProducts();
+  // واکشی صفحه اول محصولات با pagination
+  // فقط 3 محصول اول برای بارگذاری سریع‌تر صفحه
+  const result = await getProductsPaginated(1, 3, 'createdAt:desc');
+  const initialProducts = result.data;
 
   return (
     <main className={styles.main}>

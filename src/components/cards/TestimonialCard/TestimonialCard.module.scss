@@ -16,10 +16,30 @@
   margin-bottom: 1.5rem;
 }
 
+.authorInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .author {
   color: var(--color-text-primary);
   font-weight: var(--font-weight-medium);
   font-size: var(--font-lg);
+}
+
+.title {
+  color: var(--color-card-text);
+  font-size: var(--font-sm);
+  opacity: 0.8;
+}
+
+.date {
+  color: var(--color-card-text);
+  font-size: var(--font-xs);
+  opacity: 0.6;
+  font-weight: var(--font-weight-light);
 }
 
 .text {

@@ -2,29 +2,43 @@
 
 import { useState, useEffect, useRef } from 'react';
 import ArticleCard from '@/components/cards/ArticleCard/ArticleCard';
-import { formatStrapiArticles } from '@/lib/strapiUtils';
-import SortControls from '@/components/ui/SortControls/SortControls'; // 1. ایمپورت کامپوننت جدید
+import SortControls from '@/components/ui/SortControls/SortControls';
 import styles from './ArticleGrid.module.scss';
 
 const PAGE_SIZE = 6;
-// 2. تعریف گزینه‌های مرتب‌سازی
+
+// تعریف گزینه‌های مرتب‌سازی
 const SORT_OPTIONS = [
   { value: 'latest', label: 'جدیدترین' },
   { value: 'oldest', label: 'قدیمی‌ترین' },
 ];
 
+/**
+ * ArticleGrid - نمایش شبکه‌ای مقالات با قابلیت مرتب‌سازی و بارگذاری بیشتر
+ * 
+ * جریان داده (Data Flow):
+ * این کامپوننت → fetch('/api/articles') → Next.js Route Handler → Domain API → Strapi
+ * 
+ * مزایای استفاده از Route Handler داخلی:
+ * - حذف وابستگی مستقیم به Strapi URL
+ * - امنیت بیشتر (API keys فاش نمی‌شوند)
+ * - تست‌پذیری بالاتر
+ * - امکان افزودن middleware (auth, caching) در آینده
+ * 
+ * @param {Array} initialArticles - مقالات اولیه از SSR
+ */
 const ArticleGrid = ({ initialArticles }) => {
   const [articles, setArticles] = useState(initialArticles || []);
   const [sortBy, setSortBy] = useState('latest');
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(initialArticles.length === PAGE_SIZE);
-  const isInitialMount = useRef(true); // 3. استفاده از useRef برای حل باگ
+  const isInitialMount = useRef(true); // استفاده از useRef برای جلوگیری از اجرای اضافی در mount اول
 
-  const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-
+  // Effect: مرتب‌سازی مقالات
+  // هنگامی که کاربر ترتیب مرتب‌سازی را تغییر می‌دهد، مقالات را از ابتدا واکشی می‌کنیم
   useEffect(() => {
-    // 4. اصلاح منطق useEffect برای جلوگیری از اجرای اضافی و حل باگ
+    // جلوگیری از اجرا در بارگذاری اولیه (mount)
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
@@ -33,41 +47,56 @@ const ArticleGrid = ({ initialArticles }) => {
     const sortArticles = async () => {
       setIsLoading(true);
       try {
+        // محاسبه تعداد آیتم‌های فعلی برای حفظ تعداد نمایش
         const itemsToFetch = Math.max(articles.length, PAGE_SIZE);
         const sortQuery = sortBy === 'latest' ? 'publishedAt:desc' : 'publishedAt:asc';
+        
+        // ✅ استفاده از Route Handler داخلی Next.js به‌جای Strapi مستقیم
+        // Client → /api/articles → Next.js Route Handler → Domain API → Strapi
         const response = await fetch(
-          `${STRAPI_API_URL}/api/articles?populate=cover&sort=${sortQuery}&pagination[page]=1&pagination[pageSize]=${itemsToFetch}`
+          `/api/articles?page=1&pageSize=${itemsToFetch}&sort=${sortQuery}`
         );
         const result = await response.json();
-        const newArticles = formatStrapiArticles(result, STRAPI_API_URL);
         
-        setArticles(newArticles);
+        // داده‌ها از Route Handler قبلاً فرمت شده برمی‌گردند
+        setArticles(result.data);
         setPage(1);
         setHasMore(result.meta.pagination.page < result.meta.pagination.pageCount);
-      } catch (error) { console.error("Failed to sort articles:", error); } 
-      finally { setIsLoading(false); }
+      } catch (error) { 
+        console.error("خطا در مرتب‌سازی مقالات:", error); 
+      } finally { 
+        setIsLoading(false); 
+      }
     };
 
     sortArticles();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy]);
 
+  // Handler: بارگذاری صفحه بعدی مقالات
+  // هنگام کلیک روی دکمه "بارگذاری بیشتر"
   const handleLoadMore = async () => {
-    // ... این تابع بدون تغییر باقی می‌ماند ...
     setIsLoading(true);
     try {
       const nextPage = page + 1;
       const sortQuery = sortBy === 'latest' ? 'publishedAt:desc' : 'publishedAt:asc';
+      
+      // ✅ استفاده از Route Handler داخلی Next.js به‌جای Strapi مستقیم
+      // Client → /api/articles → Next.js Route Handler → Domain API → Strapi
       const response = await fetch(
-        `${STRAPI_API_URL}/api/articles?populate=cover&sort=${sortQuery}&pagination[page]=${nextPage}&pagination[pageSize]=${PAGE_SIZE}`
+        `/api/articles?page=${nextPage}&pageSize=${PAGE_SIZE}&sort=${sortQuery}`
       );
       const result = await response.json();
-      const newArticles = formatStrapiArticles(result, STRAPI_API_URL);
-      setArticles(prev => [...prev, ...newArticles]);
+      
+      // داده‌ها از Route Handler قبلاً فرمت شده برمی‌گردند
+      setArticles(prev => [...prev, ...result.data]);
       setPage(nextPage);
       setHasMore(result.meta.pagination.page < result.meta.pagination.pageCount);
-    } catch (error) { console.error(error); }
-    finally { setIsLoading(false); }
+    } catch (error) { 
+      console.error("خطا در بارگذاری مقالات بیشتر:", error); 
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   return (

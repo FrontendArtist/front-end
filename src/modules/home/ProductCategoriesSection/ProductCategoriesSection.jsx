@@ -1,12 +1,12 @@
 'use client';
+
 import Link from 'next/link';
 import CategoryCard from '@/components/cards/CategoryCard/CategoryCard';
 import BaseSlider from '@/components/layout/BaseSlider/BaseSlider';
-import { mockCategories } from '@/data/mock';
 import styles from './ProductCategoriesSection.module.scss';
 
-const ProductCategoriesSection = () => {
-  const categories = mockCategories;
+const ProductCategoriesSection = ({ data = [] }) => {
+  const categories = data;
 
   const renderCategoryCard = (category) => {
     return <CategoryCard category={category} />;

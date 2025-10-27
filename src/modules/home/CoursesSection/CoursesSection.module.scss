@@ -30,4 +30,11 @@
 .sliderWrapper {
   margin-top: 2rem;
   // The BaseSlider component handles its own internal styling
+}
+
+.emptyState {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: 3rem 1rem;
+  font-size: var(--font-size-md);
 } 

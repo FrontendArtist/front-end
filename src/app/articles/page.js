@@ -3,10 +3,15 @@
  * 
  * Data fetched via API Layer abstraction (articlesApi.js)
  * Implements Server-Side Rendering (SSR) for optimal SEO and performance
+ * 
+ * جریان داده (Data Flow):
+ * این صفحه → getArticlesPaginated() → apiClient → Strapi
+ * فقط صفحه اول با تعداد محدود آیتم واکشی می‌شود
+ * بقیه آیتم‌ها با دکمه "بارگذاری بیشتر" از سمت کلاینت واکشی می‌شوند
  */
 
 import ArticleGrid from '@/modules/articles/ArticleGrid/ArticleGrid';
-import { getAllArticles } from '@/lib/articlesApi';
+import { getArticlesPaginated } from '@/lib/articlesApi';
 import styles from './articles.module.scss';
 
 export const metadata = {
@@ -18,13 +23,16 @@ export const metadata = {
  * Articles Page Component (Server Component)
  * 
  * Architecture:
- * - Uses getAllArticles() from articlesApi.js (no direct fetch)
+ * - Uses getArticlesPaginated() برای واکشی صفحه اول با pagination
+ * - PAGE_SIZE = 6 (فقط 6 مقاله در بارگذاری اولیه)
  * - Follows Repository Pattern for clean separation of concerns
- * - SSR renders complete HTML with article data
+ * - SSR renders complete HTML with initial article data
  */
 export default async function ArticlesPage() {
-  // Data fetched via API Layer abstraction
-  const initialArticles = await getAllArticles();
+  // واکشی صفحه اول مقالات با pagination
+  // فقط 6 مقاله اول مرتب‌شده بر اساس تاریخ انتشار
+  const result = await getArticlesPaginated(1, 6, 'publishedAt:desc');
+  const initialArticles = result.data;
   
   return (
     <main className={styles.main}>

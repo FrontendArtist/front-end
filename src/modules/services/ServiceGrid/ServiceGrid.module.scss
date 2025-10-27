@@ -101,3 +101,87 @@
   }
 }
 
+// === Load More Section ===
+// Container for the "Load More" button with proper spacing
+.loadMoreContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: var(--space-section-button-desktop); // 40px from design tokens
+  padding-bottom: var(--space-section-bottom-desktop); // 100px from design tokens
+  
+  @include respond(md) {
+    margin-top: 32px;
+    padding-bottom: 80px;
+  }
+  
+  @include respond(sm) {
+    margin-top: 24px;
+    padding-bottom: 60px;
+  }
+}
+
+// Load More Button styling
+.loadMoreButton {
+  // Layout
+  padding: 16px 48px;
+  min-width: 200px;
+  
+  // Typography - using design tokens from styles.md
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-md);
+  
+  // Visual styling
+  background: transparent;
+  border: 2px solid var(--color-text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  
+  // Transition for smooth hover effect
+  transition: all 0.3s ease;
+  
+  // Hover state - using design token color
+  &:hover:not(:disabled) {
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    border-color: var(--color-title-hover);
+    transform: translateY(-2px);
+  }
+  
+  // Active state
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  
+  // Disabled state - when loading or no more items
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  // Responsive adjustments
+  @include respond(md) {
+    padding: 14px 40px;
+    min-width: 180px;
+    font-size: var(--font-md);
+  }
+  
+  @include respond(sm) {
+    width: 100%; // Full width on mobile
+    padding: 12px 32px;
+    min-width: unset;
+    font-size: var(--font-md);
+  }
+}
+
+// Loading text style (optional fallback)
+.loadingText {
+  text-align: center;
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  margin-top: var(--space-title-text-desktop);
+  opacity: 0.7;
+}
+

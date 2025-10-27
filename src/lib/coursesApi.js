@@ -116,6 +116,82 @@ export async function getCourseBySlug(slug) {
 }
 
 /**
+ * واکشی تعداد محدودی دوره برای نمایش در صفحه اصلی
+ * 
+ * این تابع برای نمایش آخرین دوره‌ها در CoursesSection طراحی شده است
+ * 
+ * @param {object} options - تنظیمات واکشی
+ * @param {number} options.limit - تعداد دوره‌های درخواستی (پیش‌فرض: 4)
+ * @returns {Promise<Array>} آرایه‌ای از اشیاء دوره فرمت شده
+ * 
+ * @example
+ * // در صفحه اصلی (app/page.js):
+ * const courses = await getCourses({ limit: 4 });
+ * return <CoursesSection data={courses} />;
+ */
+export async function getCourses({ limit = 4 } = {}) {
+  try {
+    const response = await apiClient(
+      `/api/courses?populate=*&sort=createdAt:desc&pagination[limit]=${limit}`
+    );
+    
+    const formattedCourses = formatStrapiCourses(response);
+    return formattedCourses;
+    
+  } catch (error) {
+    console.error('خطا در واکشی دوره‌ها:', error.message);
+    return [];
+  }
+}
+
+/**
+ * واکشی دوره‌ها با قابلیت صفحه‌بندی و مرتب‌سازی
+ * 
+ * این تابع برای Route Handler داخلی Next.js طراحی شده است
+ * و قابلیت pagination و sorting را پشتیبانی می‌کند
+ * 
+ * جریان داده:
+ * Client Component → Next.js Route Handler → این تابع → apiClient → Strapi
+ * 
+ * @param {number} page - شماره صفحه (پیش‌فرض: 1)
+ * @param {number} pageSize - تعداد آیتم در هر صفحه (پیش‌فرض: 6)
+ * @param {string} sort - پارامتر مرتب‌سازی Strapi (پیش‌فرض: "createdAt:desc")
+ * @returns {Promise<{data: Array, meta: object}>} دوره‌های فرمت شده با metadata صفحه‌بندی
+ * 
+ * @example
+ * // در Route Handler (/app/api/courses/route.js):
+ * const result = await getCoursesPaginated(2, 6, "price:asc");
+ * return Response.json(result);
+ */
+export async function getCoursesPaginated(page = 1, pageSize = 6, sort = 'createdAt:desc') {
+  try {
+    // ساخت query string با pagination و sort
+    // Strapi انتظار دارد: pagination[page]=X&pagination[pageSize]=Y&sort=field:order
+    const response = await apiClient(
+      `/api/courses?populate=media&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`
+    );
+    
+    // فرمت کردن داده‌های دوره‌ها
+    const formattedCourses = formatStrapiCourses(response);
+    
+    // برگرداندن داده‌ها به همراه metadata صفحه‌بندی
+    // metadata شامل: page, pageSize, pageCount, total
+    return {
+      data: formattedCourses,
+      meta: response.meta || {}
+    };
+    
+  } catch (error) {
+    console.error('خطا در واکشی دوره‌های صفحه‌بندی‌شده:', error.message);
+    // برگرداندن ساختار خالی اما معتبر
+    return {
+      data: [],
+      meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } }
+    };
+  }
+}
+
+/**
  * مزایای معماری این الگو:
  * 
  * 1. جداسازی نگرانی‌ها (Separation of Concerns)

@@ -41,6 +41,14 @@
   right: -120px;
 }
 
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-card-text);
+  font-size: var(--font-lg);
+  opacity: 0.8;
+}
+
 @media (max-width: 1200px) {
   .ornament {
     width: 80px;

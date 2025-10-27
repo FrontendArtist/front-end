@@ -30,7 +30,7 @@
  */
 
 import ServiceGrid from '@/modules/services/ServiceGrid/ServiceGrid';
-import { getAllServices } from '@/lib/servicesApi';
+import { getServicesPaginated } from '@/lib/servicesApi';
 import styles from './services.module.scss';
 
 /**
@@ -81,26 +81,36 @@ export default async function ServicesPage() {
   // ============================================================================
   
   /**
-   * Fetch all services from Strapi via API abstraction layer
+   * Fetch paginated services from Strapi via API abstraction layer
    * 
-   * WHY NOT fetch() DIRECTLY:
-   * ❌ const res = await fetch('http://localhost:1337/api/services')
-   *    - Tightly couples page to Strapi implementation
-   *    - Hard to test, mock, or change backend
-   *    - Duplicates error handling everywhere
+   * جریان داده (Data Flow):
+   * این صفحه → getServicesPaginated() → apiClient → Strapi
    * 
-   * ✅ const services = await getAllServices()
-   *    - Clean, semantic API
-   *    - Easy to test with mocks
-   *    - Backend can change without touching this file
-   *    - Consistent error handling
+   * WHY PAGINATION:
+   * ✅ فقط صفحه اول (PAGE_SIZE = 2) در SSR واکشی می‌شود
+   * ✅ بارگذاری سریع‌تر صفحه
+   * ✅ بقیه آیتم‌ها با دکمه "بارگذاری بیشتر" از سمت کلاینت
+   * ✅ بهبود تجربه کاربری و کاهش حجم اولیه
+   * 
+   * WHY NOT getAllServices():
+   * ❌ const services = await getAllServices()
+   *    - همه خدمات رو یکجا می‌آره (سنگین)
+   *    - بارگذاری اولیه کند می‌شه
+   *    - کاربر باید منتظر همه داده‌ها بمونه
+   * 
+   * ✅ const result = await getServicesPaginated(1, 2)
+   *    - فقط 2 خدمت اول (سریع)
+   *    - بقیه با Load More
+   *    - تجربه کاربری بهتر
    * 
    * EXECUTION CONTEXT:
    * - This runs on the server during page request
-   * - Blocks rendering until data is fetched
-   * - Data is embedded in initial HTML
+   * - Blocks rendering until FIRST PAGE data is fetched
+   * - Initial data is embedded in HTML
+   * - More data loaded client-side on demand
    */
-  const services = await getAllServices();
+  const result = await getServicesPaginated(1, 2, 'createdAt:desc');
+  const services = result.data;
   
   // ============================================================================
   // COMPONENT RENDERING
@@ -192,21 +202,25 @@ export default async function ServicesPage() {
  *                                      ↓
  *                            HTML Response
  * 
- * 3. FUTURE ENHANCEMENTS
+ * 3. IMPLEMENTED FEATURES
+ *    ✅ Pagination با Load More button
+ *    ✅ واکشی صفحه اول با getServicesPaginated()
+ *    ✅ بارگذاری تدریجی برای بهبود performance
+ * 
+ * 4. FUTURE ENHANCEMENTS
  *    - Add breadcrumbs navigation
  *    - Implement filtering by category
  *    - Add search functionality
- *    - Implement pagination for large datasets
  *    - Add loading.js for Suspense boundary
  *    - Add error.js for error boundary
  * 
- * 4. TESTING STRATEGY
+ * 5. TESTING STRATEGY
  *    - Mock getAllServices() to test rendering
  *    - Test with empty array for EmptyState
  *    - Test with various service counts
  *    - Visual regression testing for responsive layout
  * 
- * 5. PERFORMANCE CONSIDERATIONS
+ * 6. PERFORMANCE CONSIDERATIONS
  *    - SSR eliminates loading spinners
  *    - Consider adding revalidation for cached data
  *    - Images should use Next.js Image component (check ServiceCard)
