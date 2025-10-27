@@ -163,16 +163,22 @@ export function formatStrapiFaqs(apiResponse) {
 /**
  * Formats your specific Strapi API response for CATEGORIES.
  * Maps Strapi category fields to the format expected by CategoryCard component.
+ * This section now uses live Strapi categories via API Layer abstraction.
  */
 export function formatStrapiCategories(apiResponse) {
   if (!apiResponse || !apiResponse.data) return [];
 
   return apiResponse.data
-    .filter(item => item && item.text && item.slug)
-    .map(item => ({
-      id: item.id,
-      slug: item.slug,
-      name: item.text, // Maps Strapi 'text' field to CategoryCard's 'name' prop
-      icon: formatSingleImage(item.image).url, // Maps Strapi 'image' to CategoryCard's 'icon' prop (extract URL string)
-    }));
+    .filter(item => item && item.attributes && item.attributes.name && item.attributes.slug)
+    .map(item => {
+      const attributes = item.attributes;
+      const imageData = attributes.image?.data?.attributes;
+      
+      return {
+        id: item.id,
+        slug: attributes.slug,
+        name: attributes.name,
+        icon: formatSingleImage(imageData).url, // Full URL with STRAPI_API_URL prefix
+      };
+    });
 }

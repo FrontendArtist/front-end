@@ -1,3 +1,11 @@
+/**
+ * ProductCategoriesSection Component
+ * This section now uses live Strapi categories via API Layer abstraction.
+ * 
+ * Displays main product categories fetched from Strapi (parent=null)
+ * Data flow: HomePage → /api/home → getAllCategories() → formatStrapiCategories() → ProductCategoriesSection
+ */
+
 'use client';
 
 import Link from 'next/link';

@@ -24,6 +24,7 @@ import { formatStrapiCategories } from './strapiUtils';
 
 /**
  * واکشی تمام دسته‌بندی‌ها از Strapi
+ * This section now uses live Strapi categories via API Layer abstraction.
  *
  * جریان داده در SSR:
  * 1. کامپوننت صفحه Next.js این تابع را در هنگام رندر سمت سرور صدا می‌زند
@@ -54,14 +55,14 @@ import { formatStrapiCategories } from './strapiUtils';
  *   id: number,
  *   slug: string,
  *   name: string,
- *   icon: { url: string, alt: string }
+ *   icon: string (full URL)
  * }
  */
 export async function getAllCategories() {
   try {
-    // واکشی دسته‌بندی‌ها با تمام رابطه‌ها populate شده
+    // واکشی فقط دسته‌بندی‌های اصلی (parent=null) با تصویر populate شده
     // Strapi به پارامتر "populate" نیاز دارد تا داده‌های مرتبط را شامل شود
-    const response = await apiClient('/api/categories?populate=*');
+    const response = await apiClient('/api/categories?filters[parent][$null]=true&populate[image][fields][0]=url&populate[image][fields][1]=alternativeText');
 
     // فرمت کردن پاسخ خام Strapi به داده‌های تمیز و قابل استفاده
     // strapiUtils مدیریت URL های تصاویر، نگاشت فیلدها و بررسی null را انجام می‌دهد
