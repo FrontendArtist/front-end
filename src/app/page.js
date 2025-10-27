@@ -14,7 +14,7 @@ import { headers } from "next/headers";
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const hdrs = headers();
+  const hdrs = await headers();
   const protocol = hdrs.get("x-forwarded-proto") || "http";
   const host = hdrs.get("host");
   const baseUrl = `${protocol}://${host}`;
