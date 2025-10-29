@@ -15,7 +15,7 @@ import styles from './ProductCategoriesSection.module.scss';
 
 const ProductCategoriesSection = ({ data = [] }) => {
   const categories = data;
-
+  
   const renderCategoryCard = (category) => {
     return <CategoryCard category={category} />;
   };

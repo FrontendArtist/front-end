@@ -1,0 +1,16 @@
+.emptyState {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    padding: 2rem;
+    text-align: center;
+    background: rgba(246, 217, 130, 0.05);
+    border-radius: 8px;
+    
+    .title {
+      color: #F6D982;
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+  }

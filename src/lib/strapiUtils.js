@@ -169,14 +169,14 @@ export function formatStrapiCategories(apiResponse) {
   if (!apiResponse || !apiResponse.data) return [];
 
   return apiResponse.data
-    .filter(item => item && item.text && item.slug)
+    .filter(item => item && item.name && item.slug)
     .map(item => {
       const imageData = item.image;
 
       return {
         id: item.id,
         slug: item.slug,
-        name: item.text,
+        name: item.name,
         icon: formatSingleImage(imageData).url, // Full URL with STRAPI_API_URL prefix
       };
     });

@@ -19,7 +19,9 @@ const ProductCard = ({ product }) => {
   if (!product) return null;
 
   const { slug, image, title, price, shortDescription } = product;
+const formattedPrice = (typeof price === "object" ? price?.toman : price) || 0;
 
+<span className={styles.price}>{formattedPrice.toLocaleString()} تومان</span>
   return (
     <Link href={`/products/${slug}`} className={`${styles.productCard} card vertical-gradient`}>
       <div className={styles.imageWrapper}>
@@ -35,7 +37,9 @@ const ProductCard = ({ product }) => {
         <h3 className={`${styles.cardTitle} card-title`}>{title}</h3>
         {shortDescription && <p className={`${styles.cardText} card-text`}>{shortDescription}</p>}
         <div className={styles.footer}>
-          <span className={styles.price}>{price.toman.toLocaleString()} تومان</span>
+          
+          { formattedPrice > 0 && <span className={styles.price}>{formattedPrice.toLocaleString()} تومان</span>}
+
           <AddToCartButton />
         </div>
       </div>
