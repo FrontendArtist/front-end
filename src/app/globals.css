@@ -14,13 +14,12 @@ html,
 body {
   max-width: 100%;
   overflow-x: hidden;
-  
 }
 
 body {
-  color: red;
-  background: red;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-iransans)!important;
+font-weight: 300
+  ;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './Navbar.module.scss';
-
+import Image from 'next/image';
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -28,7 +28,7 @@ const Navbar = () => {
       <nav className={`${styles.navbar} container`}>
         {/* Logo */}
         <div className={styles.logo}>
-          <Link href="/">لوگو سایت</Link>
+          <Link href="/"><Image src="/images/Logo.png" alt="Logo" width={130} height={60} /></Link>
         </div>
 
         {/* Desktop Navigation */}
