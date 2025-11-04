@@ -1,4 +1,4 @@
-import { getAllCategories } from '@/lib/categoriesApi';
+import { getMainCategories } from '@/lib/categoriesApi';
 import { getAllFaqs } from '@/lib/faqApi';
 import { getAllTestimonials } from '@/lib/testimonialsApi';
 import { getProducts } from '@/lib/productsApi';
@@ -11,7 +11,7 @@ export const revalidate = 300;
 export async function GET() {
   try {
     const [categories, faqs, testimonials, products, articles, services, courses] = await Promise.all([
-      getAllCategories(),
+      getMainCategories(),
       getAllFaqs(),
       getAllTestimonials(),
       getProducts({ limit: 20 }),

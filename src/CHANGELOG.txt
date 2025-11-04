@@ -1,0 +1,124 @@
+# CHANGELOG
+
+## [Latest] - 2025-11-02
+
+### Feature: Navbar MegaMenu with SSR Category Fetching
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **SSR Category Fetching**
+   - Created: `src/modules/layout/Navbar/NavbarClient.jsx` (client component)
+   - Updated: `src/modules/layout/Navbar/Navbar.jsx` (server component)
+   - Integrated: `getCategoryTree()` from `categoriesApi.js` with ISR caching (revalidate: 300s)
+   - Data flows from SSR parent to client child component
+
+2. **Desktop MegaMenu**
+   - Hover-activated dropdown with 3-column grid (responsive: 2 columns @ tablet, 1 @ mobile)
+   - Category titles with subcategories listed beneath each parent
+   - Smooth fade-in/fade-down animation (translateY + opacity)
+   - Backdrop blur effect with dark overlay background
+   - Persistent on hover with pointer-events management
+
+3. **Mobile Accordion Menu**
+   - "محصولات" button expands to show all categories
+   - Each category displays with nested subcategories
+   - Animated slideDown expansion with border accent
+   - Proper state management for open/closed accordion
+   - Closes menu on navigation link click
+
+4. **SCSS Module Updates**
+   - Added: `.megaMenuWrapper`, `.megaMenu`, `.megaMenuGrid`, `.megaMenuColumn`
+   - Added: `.mobileCategoryToggle`, `.mobileSubMenu`, `.mobileCategoryGroup`, `.mobileSubList`
+   - Used design tokens: `var(--color-overlay)`, `var(--color-text-primary)`, `var(--font-md)`, etc.
+   - Applied mixins: `@include hover-transition`, `@include respond()`
+   - Animations: slideDown keyframe for mobile accordion
+
+5. **Accessibility Features**
+   - aria-expanded on mobile category toggle
+   - aria-label for navigation elements
+   - role="menu" and role="menuitem" for semantic structure
+   - Keyboard-friendly buttons
+   - Focus management with body scroll lock
+
+#### Architecture Maintained:
+- Server-Side Rendering (SSR) for category data
+- Client-Side Interactivity (CSR) for UI state
+- Clean component separation (Navbar → NavbarClient)
+- API Layer abstraction (categoriesApi.js)
+- SCSS Modules with design tokens
+- RTL layout support
+- Performance optimized (useCallback, ISR caching)
+
+#### Technical Implementation:
+- Server Component: Fetches categories via `getCategoryTree()`
+- Client Component: Handles state (menu open/close, accordion expansion)
+- Prop drilling: categories passed from server to client
+- URL structure: `/products?category={slug}&subcategory={subslug}`
+
+---
+
+## [Latest] - 2025-11-03
+
+### Refactor: Navbar MegaMenu Hover Stability & Animation
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Always-render mega menu with state-driven visibility class (`.megaMenuVisible`) to prevent flicker and gaps.
+2. Unified SCSS: removed duplicate `.megaMenu` blocks and hover-coupled open rules; single transition source of truth.
+3. Smooth open/close with opacity+translate transitions; pointer-events managed for stability.
+4. Hover intent: delayed close (300ms) with enter/leave handlers to avoid accidental dismiss.
+5. Accessibility: added `aria-label` and `aria-hidden`, and focus enter/leave to support keyboard.
+
+#### Files Updated:
+- `src/modules/layout/Navbar/NavbarClient.jsx`
+- `src/modules/layout/Navbar/Navbar.module.scss`
+
+#### Architecture & Styling:
+- Preserved SSR snapshot from `Navbar.jsx` and API layer.
+- SCSS Modules with design tokens; RTL friendly.
+
+### Migration: Product Detail Page Route Refactor
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Route Migration**
+   - Moved: `src/app/products/[slug]/page.js` → `src/app/product/[slug]/page.js`
+   - Moved: `src/app/products/[slug]/page.module.scss` → `src/app/product/[slug]/page.module.scss`
+   - Rationale: Distinguish singular product detail page from plural products listing page
+
+2. **Component Updates**
+   - `src/components/cards/ProductCard/ProductCard.jsx`: Updated link from `/products/${slug}` to `/product/${slug}`
+   - ProductGrid.jsx uses ProductCard component, so links are automatically updated
+
+3. **Verification**
+   - ✅ SSR rendering preserved (metadata generation intact)
+   - ✅ Dynamic route params properly handled with `await params`
+   - ✅ API Layer abstraction maintained (getProductBySlug from productsApi.js)
+   - ✅ Error handling preserved (notFound() for invalid slugs)
+   - ✅ Styles and layout unchanged
+
+#### Architecture Maintained:
+- Clean Architecture with API Layer abstraction
+- Repository Pattern (productsApi.js)
+- Server-Side Rendering (SSR) for SEO
+- SCSS Module structure
+- RTL layout support
+
+#### Old Route:
+- `src/app/products/[slug]/page.js` still exists (can be cleaned up or repurposed for categories)
+
+#### New Route:
+- `src/app/product/[slug]/page.js` now active for singular product detail pages
+## [Latest] - 2025-11-04
+
+### Enhancement: Dropdown Arrow on "محصولات" with Open State
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Added a toggleable arrow icon next to the "محصولات" link that rotates upward when the MegaMenu is open.
+2. Updated `src/modules/layout/Navbar/NavbarClient.jsx` to render the arrow SVG and bind its open state to `isMegaMenuOpen`.
+3. Updated `src/modules/layout/Navbar/Navbar.module.scss` with `.navLinkContent`, `.dropdownIcon`, and `.dropdownIconOpen` classes using design tokens (no hard-coded values).
+
+#### Impact:
+- Clear affordance for dropdown behavior on desktop navigation, aligned with RTL and theme tokens.
+

@@ -23,7 +23,7 @@ const formattedPrice = (typeof price === "object" ? price?.toman : price) || 0;
 
 <span className={styles.price}>{formattedPrice.toLocaleString()} تومان</span>
   return (
-    <Link href={`/products/${slug}`} className={`${styles.productCard} card vertical-gradient`}>
+    <Link href={`/product/${slug}`} className={`${styles.productCard} card vertical-gradient`}>
       <div className={styles.imageWrapper}>
         <Image
           src={image.url}

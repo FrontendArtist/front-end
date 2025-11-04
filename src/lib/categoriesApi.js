@@ -1,59 +1,75 @@
 /**
  * Categories API - لایه API اختصاصی برای دسته‌بندی‌ها
- *
- * نقش:
- * این ماژول یک رابط تمیز و معنادار برای تمام عملیات مرتبط با دسته‌بندی‌ها (Categories) فراهم می‌کند.
- * این لایه بین UI و apiClient قرار دارد و منطق کسب‌وکار مربوط به دسته‌بندی‌ها را مدیریت می‌کند.
- *
- * @module lib/categoriesApi
+ * پشتیبانی از getMainCategories و getCategoryTree
  */
-
 import { apiClient } from './apiClient';
-import { formatStrapiCategories, formatStrapiProducts } from './strapiUtils';
+import { formatSingleImage } from './strapiUtils';
 
 /**
- * واکشی تمام دسته‌بندی‌ها از Strapi
+ * ✅ گرفتن دسته‌های اصلی (Parent=null)
+ * برای صفحه Home و سایر بخش‌ها (سازگار با ساختار flat و attributes)
  */
-export async function getAllCategories() {
+export async function getMainCategories() {
   try {
-    const response = await apiClient(
+    const res = await apiClient(
       '/api/categories?filters[parent][$null]=true&populate[image][fields][0]=url&populate[image][fields][1]=alternativeText'
     );
 
-    const formattedCategories = formatStrapiCategories(response);
-    return formattedCategories;
+    // هم ساختار قدیمی { data: [...] } و هم آرایهٔ مستقیم
+    const raw = res?.data?.data || res?.data || [];
+    if (!Array.isArray(raw)) return [];
+
+    // خروجی استاندارد: [{id, name, slug, image:{url,alt}}]
+    const formatted = raw.map(item => {
+      const base = item?.attributes || item; // ← پشتیبانی از هر دو
+      return {
+        id: item.id,
+        name: base?.name || '',
+        slug: base?.slug || '',
+        image: formatSingleImage(base?.image), // alt/url امن
+      };
+    });
+
+    return formatted;
   } catch (error) {
-    console.error('خطا در واکشی دسته‌بندی‌ها:', error.message);
+    console.error('❌ خطا در واکشی دسته‌های اصلی:', error);
     return [];
   }
 }
 
 /**
- * واکشی جزئیات یک دسته از Strapi بر اساس slug
- * شامل محصولات مرتبط (با تصاویر کامل)
+ * ✅ گرفتن ساختار درختی (برای Navbar)
+ * (بدون تغییر)
  */
-export async function getCategoryBySlug(slug) {
+export async function getCategoryTree() {
   try {
-    // واکشی دسته با محصولات و تصاویرشان
-    const response = await apiClient(
-      `/api/categories?filters[slug][$eq]=${slug}&populate[products][populate]=images`
+    const res = await apiClient(
+      '/api/categories?filters[parent][id][$null]=true&populate[subCategories][fields][0]=name&populate[subCategories][fields][1]=slug'
     );
 
-    const category = response?.data?.[0];
-    if (!category) return null;
+    // بررسی امن برای مسیر داده
+    const raw = res?.data?.data || res?.data || [];
+    const formatted = raw.map(item => {
+      const base = item.attributes || item; // پشتیبانی از هر دو ساختار
+      return {
+        id: item.id,
+        name: base.name || '',
+        slug: base.slug || '',
+        subCategories:
+          (base.subCategories?.data || base.subCategories || []).map(sub => {
+            const subBase = sub.attributes || sub;
+            return {
+              id: sub.id,
+              name: subBase.name || '',
+              slug: subBase.slug || '',
+            };
+          }),
+      };
+    });
 
-    // استفاده از formatter رسمی محصولات برای سازگاری داده
-    const products = formatStrapiProducts({ data: category.products || [] });
-
-    // بازگرداندن ساختار نهایی تمیز و قابل استفاده در Frontend
-    return {
-      id: category.id,
-      slug: category.slug,
-      name: category.name || category.title || 'دسته‌بندی بدون نام',
-      products,
-    };
+    return formatted;
   } catch (error) {
-    console.error('خطا در واکشی دسته از Strapi:', error.message);
-    return null;
+    console.error('❌ خطا در واکشی ساختار درختی دسته‌ها:', error);
+    return []; 
   }
 }

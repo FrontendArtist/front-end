@@ -24,6 +24,7 @@ export default async function HomePage() {
     throw new Error("Failed to fetch home data");
   }
   const { categories, faqs, testimonials, products, articles, services, courses } = await res.json();
+
   return (
     <div className={styles.container}>
       <HeroSection />

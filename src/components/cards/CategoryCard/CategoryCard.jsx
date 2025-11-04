@@ -1,11 +1,3 @@
-/**
- * CategoryCard Component
- * This section now uses live Strapi categories via API Layer abstraction.
- * 
- * Displays a single category card with icon and name.
- * Icon URL is prefixed with STRAPI_API_URL in strapiUtils.formatSingleImage()
- */
-
 import Image from 'next/image';
 import Link from 'next/link';
 import styles from './CategoryCard.module.scss';
@@ -15,24 +7,26 @@ import styles from './CategoryCard.module.scss';
  * category: {
  * slug: string;
  * name: string;
- * icon: string; // Full URL from Strapi (already prefixed)
+ * image: { url: string; alt: string } | null;
  * }
  * }} props
  */
 const CategoryCard = ({ category }) => {
   if (!category) return null;
 
-  const { slug, name, icon } = category;
+  const { slug, name, image } = category;
+  const imageUrl = image?.url || '/images/placeholder.png';
+  const imageAlt = image?.alt || name || 'بدون نام';
 
   return (
-    <Link href={`/categories/${slug}`} className={styles.categoryCard}>
+    <Link href={`/products/${slug}`} className={styles.categoryCard}>
       <div className={styles.iconWrapper}>
-        <Image 
-          src={icon} 
-          alt={name} 
-          width={64} 
+        <Image
+          src={imageUrl}
+          alt={imageAlt}
+          width={64}
           height={64}
-          unoptimized={icon.includes('picsum.photos')}
+          unoptimized={imageUrl?.includes('picsum.photos') || false}
         />
       </div>
       <h3 className={styles.name}>{name}</h3>
@@ -41,4 +35,3 @@ const CategoryCard = ({ category }) => {
 };
 
 export default CategoryCard;
-

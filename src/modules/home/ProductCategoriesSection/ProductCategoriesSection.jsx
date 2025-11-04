@@ -15,7 +15,7 @@ import styles from './ProductCategoriesSection.module.scss';
 
 const ProductCategoriesSection = ({ data = [] }) => {
   const categories = data;
-  
+console.log('categories in ProductCategoriesSection', categories);
   const renderCategoryCard = (category) => {
     return <CategoryCard category={category} />;
   };
@@ -25,7 +25,7 @@ const ProductCategoriesSection = ({ data = [] }) => {
       <div className="container">
         <header className={styles.header}>
           <h2 className={styles.title}>دسته بندی</h2>
-          <Link href="/categories" className={styles.viewAllLink}>
+          <Link href="/products" className={styles.viewAllLink}>
             مشاهده همه دسته بندی ها ...
           </Link>
         </header>

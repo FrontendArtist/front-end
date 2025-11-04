@@ -17,7 +17,7 @@ body {
 }
 
 body {
-  font-family: var(--font-iransans)!important;
+
 font-weight: 300
   ;
   -webkit-font-smoothing: antialiased;
@@ -40,4 +40,7 @@ a {
   html {
     color-scheme: dark;
   }
+}
+body{
+  font-family: 'IRANSans'!important;
 }

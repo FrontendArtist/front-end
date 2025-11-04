@@ -5,11 +5,30 @@ const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localho
 
 /**
  * A generic helper to format a single image object.
- * @param {object} imgData - A single, flat image object from your Strapi API.
+ * Handles both flat and nested image structures from Strapi.
+ * @param {object} imgData - A single image object from your Strapi API (flat or nested).
  * @returns {{url: string, alt: string}}
  */
-function formatSingleImage(imgData) {
-  if (!imgData || !imgData.url) {
+export function formatSingleImage(imgData) {
+  if (!imgData) {
+    return { url: 'https://picsum.photos/seed/placeholder/400/300', alt: 'Placeholder Image' };
+  }
+
+  // Handle nested structure: { data: { url: '...', alternativeText: '...' } }
+  if (imgData.data && typeof imgData.data === 'object') {
+    const dataObj = imgData.data;
+    if (!dataObj.url) {
+      return { url: 'https://picsum.photos/seed/placeholder/400/300', alt: 'Placeholder Image' };
+    }
+    const imageUrl = dataObj.url.startsWith('http') ? dataObj.url : `${STRAPI_API_URL}${dataObj.url}`;
+    return {
+      url: imageUrl,
+      alt: dataObj.alternativeText || '',
+    };
+  }
+
+  // Handle flat structure: { url: '...', alternativeText: '...' }
+  if (!imgData.url) {
     return { url: 'https://picsum.photos/seed/placeholder/400/300', alt: 'Placeholder Image' };
   }
   const imageUrl = imgData.url.startsWith('http') ? imgData.url : `${STRAPI_API_URL}${imgData.url}`;
@@ -22,7 +41,6 @@ function formatSingleImage(imgData) {
 /**
  * Formats your specific Strapi API response for PRODUCTS.
  */
-
 export function formatStrapiProducts(apiResponse) {
   if (!apiResponse || !apiResponse.data) return [];
 
@@ -47,6 +65,7 @@ export function formatStrapiProducts(apiResponse) {
       };
     });
 }
+
 /**
  * Formats your specific Strapi API response for ARTICLES.
  */
@@ -105,9 +124,6 @@ export function formatStrapiServices(apiResponse) {
 }
 
 /**
- * Formats your specific Strapi API response for TESTIMONIALS.
- */
-/**
  * تاریخ را به فرمت فارسی تبدیل می‌کند
  * @param {string} isoDate - تاریخ به فرمت ISO
  * @returns {string} تاریخ فارسی شده
@@ -125,6 +141,9 @@ function formatPersianDate(isoDate) {
   return new Intl.DateTimeFormat('fa-IR', options).format(date);
 }
 
+/**
+ * Formats your specific Strapi API response for TESTIMONIALS.
+ */
 export function formatStrapiTestimonials(apiResponse) {
   if (!apiResponse || !apiResponse.data) return [];
 
@@ -161,23 +180,70 @@ export function formatStrapiFaqs(apiResponse) {
 }
 
 /**
- * Formats your specific Strapi API response for CATEGORIES.
- * Maps Strapi category fields to the format expected by CategoryCard component.
- * This section now uses live Strapi categories via API Layer abstraction.
+ * ✅ Formatter برای محصولات
  */
-export function formatStrapiCategories(apiResponse) {
-  if (!apiResponse || !apiResponse.data) return [];
+function formatStrapiProduct(product) {
+  const attr = product.attributes || {};
+  const img = attr.images?.data?.[0]
+    ? formatSingleImage(attr.images.data[0])
+    : { url: '/images/placeholder.png' };
 
-  return apiResponse.data
-    .filter(item => item && item.name && item.slug)
-    .map(item => {
-      const imageData = item.image;
-
-      return {
-        id: item.id,
-        slug: item.slug,
-        name: item.name,
-        icon: formatSingleImage(imageData).url, // Full URL with STRAPI_API_URL prefix
-      };
-    });
+  return {
+    id: product.id,
+    title: attr.title,
+    slug: attr.slug,
+    price: attr.price,
+    image: img.url,
+  };
 }
+
+/**
+ * ✅ Formatter برای داده‌های Strapi Categories
+ */
+export function formatStrapiCategories(data = []) {
+  if (!Array.isArray(data)) return [];
+
+  return data.map((item) => {
+    const base = item?.attributes || item; // ← اضافه شد
+
+    return {
+      id: item.id,
+      name: base.name || '',
+      slug: base.slug || '',
+      image: formatSingleImage(base.image),
+
+      subCategories:
+        base.subCategories?.data?.map((sub) => {
+          const sBase = sub?.attributes || sub;
+
+          return {
+            id: sub.id,
+            name: sBase.name || '',
+            slug: sBase.slug || '',
+            image: formatSingleImage(sBase.image),
+            products:
+              sBase.products?.data?.map(formatStrapiProduct) ||
+              sBase.products?.map(formatStrapiProduct) ||
+              [],
+          };
+        }) ||
+        base.subCategories?.map((sub) => {
+          return {
+            id: sub.id,
+            name: sub.name || '',
+            slug: sub.slug || '',
+            image: formatSingleImage(sub.image),
+            products: sub.products?.map(formatStrapiProduct) || [],
+          };
+        }) ||
+        [],
+
+      products:
+        base.products?.data?.map(formatStrapiProduct) ||
+        base.products?.map(formatStrapiProduct) ||
+        [],
+    };
+  });
+}
+
+
