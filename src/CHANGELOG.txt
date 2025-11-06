@@ -122,3 +122,23 @@
 #### Impact:
 - Clear affordance for dropdown behavior on desktop navigation, aligned with RTL and theme tokens.
 
+---
+
+## [Latest] - 2025-11-06
+
+### Enhancement: productsApi.getProductsPaginated category/subcategory filters
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Extended `src/lib/productsApi.js` → `getProductsPaginated(page, pageSize, sort, options?)` to accept optional `{ categorySlug, subCategorySlug, subSlugs = [] }` without breaking existing callers.
+2. Implemented Strapi v4 filters via `URLSearchParams`:
+   - If `subCategorySlug` → `filters[subCategory][slug][$eq] = {subCategorySlug}`
+   - Else if `categorySlug` → OR filter:
+     - `filters[$or][0][category][slug][$eq] = {categorySlug}`
+     - `filters[$or][1][subCategory][slug][$in] = subSlugs.join(',')` (when provided)
+3. Preserved output structure: `{ data, meta }` unchanged, including pagination meta and error fallback.
+
+#### Notes:
+- `subSlugs` should be provided by SSR from `categoriesApi` when a category is selected to include all its subcategories.
+- No UI/component changes required; API remains backward-compatible with previous 3-arg calls.
+
