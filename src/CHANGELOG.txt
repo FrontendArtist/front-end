@@ -142,3 +142,65 @@
 - `subSlugs` should be provided by SSR from `categoriesApi` when a category is selected to include all its subcategories.
 - No UI/component changes required; API remains backward-compatible with previous 3-arg calls.
 
+### Feature: SSR Initial Render from URL for /products
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Updated `src/app/products/page.js` to read `searchParams` → `category`, `sub`, `sort`, `page`.
+2. When `category` present and `sub` absent, fetched `getCategoryTree()` and derived `subSlugs` for that category.
+3. Called `getProductsPaginated(page, 6, sort, { categorySlug, subCategorySlug, subSlugs })` for initial SSR data.
+4. Fetched categories snapshot via `getCategoryTree()` and passed to client.
+5. Added `src/modules/products/ProductsPageClient/ProductsPageClient.jsx` (client) to receive initial props and render `ProductGrid`.
+
+#### Impact:
+- Enables direct URL-driven SSR filtering and pagination for better SEO and first paint.
+- Keeps Clean Architecture with API Layer and server→client data flow.
+
+### Feature: CategoryFilter component (UI-only, emits events)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Added `src/modules/products/components/CategoryFilter.jsx` (client component) with two states:
+   - No active category: shows scrollable category pills.
+   - Active category: large selected box on the right + subcategory pills on the left.
+2. Added `src/modules/products/components/CategoryFilter.module.scss` styled with theme tokens:
+   - Dark background, gold accents, RTL-friendly layout.
+   - Hover/active states, subtle elevation, responsive grid (2→1 columns on mobile).
+3. Accessibility: `aria-label`, `aria-pressed`, `type="button"` on interactive elements.
+
+#### Usage Notes:
+- Receives data via props; emits only events: `onSelectCategory(slug)`, `onSelectSubCategory(slug)`.
+- Update URL handling in the parent to set `?category=` and `?sub=` as needed.
+
+### Enhancement: ProductGrid filtering + pagination reset logic
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. `src/modules/products/ProductGrid/ProductGrid.jsx`
+   - Added `category` and `sub` query params to all fetches.
+   - On `sort`, `activeCategory`, or `activeSubCategory` change: refetch from page 1 and replace products.
+   - On load more: fetch next page in current filters and append.
+   - Standardized `PAGE_SIZE` to 6 and aligned `page`/`hasMore` with API meta.
+
+### Enhancement: /api/products route supports filters (category, sub, sort, page, pageSize)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Updated `src/app/api/products/route.js` to parse `category`, `sub`, `sort`, `page`, `pageSize`.
+2. When a category is selected without a subcategory, derive `subSlugs` via `getCategoryTree()` for inclusive filtering.
+3. Call `getProductsPaginated(page, pageSize, sort, { categorySlug, subCategorySlug, subSlugs })` and return `{ data, meta }` unchanged.
+
+#### Impact:
+- Ensures URL-driven UX for `/products`, `/products/{category}`, and `/products/{category}/{sub}` with correct filtering and pagination.
+
+### Fix: Align product filters with `categories` relation slug equality
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Updated `src/lib/productsApi.js` → `getProductsPaginated` query build to:
+   - If `subCategorySlug`: `filters[categories][slug][$eq] = subCategorySlug`
+   - Else if `categorySlug`: `filters[categories][slug][$eq] = categorySlug`
+
+#### Rationale:
+- Backend expects filtering via unified `categories` relation; removes previous OR/in logic.
+

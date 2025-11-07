@@ -165,30 +165,49 @@ export async function getProducts({ limit = 4, sort = 'createdAt:desc' } = {}) {
  * const result = await getProductsPaginated(2, 6, "price:asc");
  * return Response.json(result);
  */
-export async function getProductsPaginated(page = 1, pageSize = 6, sort = 'createdAt:desc') {
+export async function getProductsPaginated(
+  page = 1,
+  pageSize = 6,
+  sort = 'createdAt:desc',
+  { categorySlug, subCategorySlug, subSlugs = [] } = {}
+) {
   try {
-    // ساخت query string با pagination و sort
-    // Strapi انتظار دارد: pagination[page]=X&pagination[pageSize]=Y&sort=field:order
-    const response = await apiClient(
-      `/api/products?populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`
-    );
-    
-    // فرمت کردن داده‌های محصولات
-    const formattedProducts = formatStrapiProducts(response);
-    
-    // برگرداندن داده‌ها به همراه metadata صفحه‌بندی
-    // metadata شامل: page, pageSize, pageCount, total
+    const params = new URLSearchParams();
+    params.set('populate', '*');
+    params.set('pagination[page]', String(page));
+    params.set('pagination[pageSize]', String(pageSize));
+    params.set('sort', sort);
+
+    // ---- فیلتر دسته/زیر‌دسته
+    if (subCategorySlug) {
+      // فقط محصولات همین زیر‌دسته
+      params.set('filters[categories][slug][$eq]', subCategorySlug);
+    } else if (categorySlug) {
+      // محصولات خود دسته + همه زیر‌دسته‌ها (OR)
+      // نمونه خروجی:
+      // filters[$or][0][categories][slug][$eq]=books
+      // filters[$or][1][categories][slug][$eq]=medicalbooks
+      // filters[$or][2][categories][slug][$eq]=spiritualbooks
+      params.set('filters[$or][0][categories][slug][$eq]', categorySlug);
+      (Array.isArray(subSlugs) ? subSlugs : []).forEach((slug, idx) => {
+        params.set(`filters[$or][${idx + 1}][categories][slug][$eq]`, slug);
+      });
+    }
+
+    // برای دیباگ: می‌تونی موقتاً باز کنی
+    // console.log('🧩 getProductsPaginated Query:', `/api/products?${params.toString()}`);
+
+    const res = await apiClient(`/api/products?${params.toString()}`);
+    const formatted = formatStrapiProducts(res);
     return {
-      data: formattedProducts,
-      meta: response.meta || {}
+      data: formatted,
+      meta: res?.meta || {},
     };
-    
   } catch (error) {
     console.error('خطا در واکشی محصولات صفحه‌بندی‌شده:', error.message);
-    // برگرداندن ساختار خالی اما معتبر
     return {
       data: [],
-      meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } }
+      meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } },
     };
   }
 }

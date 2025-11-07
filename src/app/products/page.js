@@ -10,8 +10,9 @@
  * بقیه آیتم‌ها با دکمه "بارگذاری بیشتر" از سمت کلاینت واکشی می‌شوند
  */
 
-import ProductGrid from '@/modules/products/ProductGrid/ProductGrid';
 import { getProductsPaginated } from '@/lib/productsApi';
+import { getCategoryTree } from '@/lib/categoriesApi';
+import ProductsPageClient from '@/modules/products/ProductsPageClient/ProductsPageClient';
 import styles from './products.module.scss';
 
 // SEO Metadata for the page
@@ -29,11 +30,28 @@ export const metadata = {
  * - Follows Repository Pattern for clean separation of concerns
  * - SSR renders complete HTML with initial product data
  */
-async function ProductsPage() {
-  // واکشی صفحه اول محصولات با pagination
-  // فقط 3 محصول اول برای بارگذاری سریع‌تر صفحه
-  const result = await getProductsPaginated(1, 3, 'createdAt:desc');
-  const initialProducts = result.data;
+export default async function ProductsPage({ searchParams }) {
+  const categorySlug = searchParams?.category || '';
+  const subCategorySlug = searchParams?.sub || '';
+  const sort = searchParams?.sort || 'createdAt:desc';
+  const page = Number(searchParams?.page || 1);
+
+  let subSlugs = [];
+  if (categorySlug && !subCategorySlug) {
+    const tree = await getCategoryTree();
+    const cat = tree.find(c => c.slug === categorySlug);
+    if (cat?.subCategories?.length) {
+      subSlugs = cat.subCategories.map(s => s.slug);
+    }
+  }
+
+  const { data, meta } = await getProductsPaginated(page, 6, sort, {
+    categorySlug: categorySlug || undefined,
+    subCategorySlug: subCategorySlug || undefined,
+    subSlugs
+  });
+
+  const categories = await getCategoryTree();
 
   return (
     <main className={styles.main}>
@@ -41,12 +59,15 @@ async function ProductsPage() {
         <header className={styles.header}>
           <h1 className={styles.title}>محصولات</h1>
         </header>
-        
-        {/* Pass server-fetched data to the client component */}
-        <ProductGrid initialProducts={initialProducts} />
+        <ProductsPageClient
+          initialProducts={data}
+          initialMeta={meta}
+          categoriesSnapshot={JSON.stringify(categories)}
+          initialSort={sort}
+          initialCategory={categorySlug}
+          initialSubCategory={subCategorySlug}
+        />
       </div>
     </main>
   );
 }
-
-export default ProductsPage;

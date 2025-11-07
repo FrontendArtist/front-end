@@ -23,6 +23,7 @@
  */
 
 import { getProductsPaginated } from '@/lib/productsApi';
+import { getCategoryTree } from '@/lib/categoriesApi';
 
 /**
  * GET Handler - دریافت لیست محصولات با صفحه‌بندی
@@ -42,34 +43,37 @@ import { getProductsPaginated } from '@/lib/productsApi';
  * const result = await response.json();
  * // result = { data: [...], meta: { pagination: {...} } }
  */
-export async function GET(request) {
+export async function GET(req) {
   try {
-    // استخراج query parameters از URL
-    const { searchParams } = new URL(request.url);
-    
-    // دریافت پارامترها با مقادیر پیش‌فرض
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(searchParams.get('pageSize') || '3', 10);
+    const { searchParams } = new URL(req.url);
+    const page = Number(searchParams.get('page') || 1);
+    const pageSize = Number(searchParams.get('pageSize') || 6);
     const sort = searchParams.get('sort') || 'createdAt:desc';
-    
-    // فراخوانی تابع دامنه‌ای برای واکشی محصولات
-    // این تابع از apiClient استفاده می‌کند و داده‌ها را فرمت می‌کند
-    const result = await getProductsPaginated(page, pageSize, sort);
-    
-    // برگرداندن پاسخ JSON
-    // Next.js 13+ از Response.json() برای ساخت پاسخ استفاده می‌کند
+    const category = searchParams.get('category') || '';
+    const sub = searchParams.get('sub') || '';
+
+    let subSlugs = [];
+    if (category && !sub) {
+      // اگر فقط دسته انتخاب شده، زیر‌دسته‌هاش رو بگیر
+      const tree = await getCategoryTree();
+      const cat = tree.find(c => c.slug === category);
+      if (cat?.subCategories?.length) {
+        subSlugs = cat.subCategories.map(s => s.slug);
+      }
+    }
+
+    const result = await getProductsPaginated(page, pageSize, sort, {
+      categorySlug: category || undefined,
+      subCategorySlug: sub || undefined,
+      subSlugs,
+    });
+
     return Response.json(result);
-    
-  } catch (error) {
-    // مدیریت خطا و برگرداندن پاسخ 500
-    console.error('خطا در Route Handler محصولات:', error.message);
-    
+  } catch (e) {
+    console.error('API /products error:', e?.message);
     return Response.json(
-      { 
-        error: 'خطا در دریافت محصولات', 
-        message: error.message 
-      },
-      { status: 500 }
+      { data: [], meta: { pagination: { page: 1, pageSize: 6, pageCount: 0, total: 0 } } },
+      { status: 200 }
     );
   }
 }
