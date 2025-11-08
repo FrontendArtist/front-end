@@ -117,6 +117,52 @@ export async function getProductBySlug(slug) {
 }
 
 /**
+ * Resolve product category path (category + subcategory) by product slug
+ * Tries to fetch categories with parent to infer deep path.
+ * Falls back gracefully if structure differs.
+ */
+export async function getProductCategoryPath(slug) {
+  try {
+    const res = await apiClient(
+      `/api/products?filters[slug][$eq]=${slug}&populate[categories][populate][parent]=*`
+    );
+
+    const raw = res?.data?.[0] || res?.data?.data?.[0] || null;
+    if (!raw) return null;
+
+    const base = raw?.attributes || raw;
+    const cats =
+      base?.categories?.data ||
+      base?.categories ||
+      [];
+
+    let categorySlug;
+    let subcategorySlug;
+
+    for (const c of cats) {
+      const cBase = c?.attributes || c;
+      const parent = cBase?.parent?.data?.attributes || cBase?.parent || null;
+      const cSlug = cBase?.slug;
+      const pSlug = parent?.slug;
+      if (cSlug && pSlug) {
+        categorySlug = pSlug;
+        subcategorySlug = cSlug;
+        break;
+      }
+      if (!categorySlug && cSlug) {
+        categorySlug = cSlug;
+      }
+    }
+
+    if (!categorySlug) return null;
+    return { categorySlug, subcategorySlug: subcategorySlug || null };
+  } catch (e) {
+    console.error('خطا در استخراج مسیر دسته محصول:', e?.message);
+    return null;
+  }
+}
+
+/**
  * واکشی محصولات با محدودیت تعداد (برای صفحه اصلی)
  * 
  * این تابع برای نمایش تعدادی محصول در صفحه اصلی طراحی شده است

@@ -5,9 +5,9 @@
  * Implements Server-Side Rendering (SSR) for optimal SEO
  */
 
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import ProductGallery from '@/components/products/ProductGallery/ProductGallery';
-import { getProductBySlug } from '@/lib/productsApi';
+import { getProductBySlug, getProductCategoryPath } from '@/lib/productsApi';
 import styles from './page.module.scss';
 
 /**
@@ -44,6 +44,13 @@ export default async function ProductPage({ params }) {
 
   if (!product) {
     notFound();
+  }
+
+  // Redirect to new deep path under /products/[category]/[subcategory]/[slug]
+  const pathInfo = await getProductCategoryPath(slug);
+  if (pathInfo?.categorySlug) {
+    const target = `/products/${pathInfo.categorySlug}${pathInfo.subcategorySlug ? `/${pathInfo.subcategorySlug}` : ''}/${slug}`;
+    redirect(target);
   }
 
   return (

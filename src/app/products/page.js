@@ -19,6 +19,9 @@ import styles from './products.module.scss';
 export const metadata = {
   title: 'محصولات | فروشگاه آنلاین',
   description: 'لیست کامل محصولات فروشگاه ما را مشاهده کنید.',
+  alternates: {
+    canonical: `${process.env.NEXT_PUBLIC_SITE_URL || ''}/products`
+  }
 };
 
 /**
