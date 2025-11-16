@@ -33,7 +33,9 @@ export const metadata = {
  * - Follows Repository Pattern for clean separation of concerns
  * - SSR renders complete HTML with initial product data
  */
-export default async function ProductsPage({ searchParams }) {
+export default async function ProductsPage({ searchParams: spPromise }) {
+  // ⬅️ FIX: Await searchParams — ADDED LINE
+  const searchParams = await spPromise;
   const categorySlug = searchParams?.category || '';
   const subCategorySlug = searchParams?.sub || '';
   const sort = searchParams?.sort || 'createdAt:desc';
@@ -62,6 +64,7 @@ export default async function ProductsPage({ searchParams }) {
         <header className={styles.header}>
           <h1 className={styles.title}>محصولات</h1>
         </header>
+
         <ProductsPageClient
           initialProducts={data}
           initialMeta={meta}

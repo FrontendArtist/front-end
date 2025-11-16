@@ -165,12 +165,12 @@ const NavbarClient = ({ categoriesSnapshot = '[]' }) => {
               <ul className={styles.mobileNavList}>
                 {categories.map(cat => (
                   <li key={cat.id} className={styles.mobileCategoryGroup}>
-                    <Link href={`/category/${cat.slug}`} onClick={closeMobileMenu}>{cat.name}</Link>
+                    <Link href={`/products/${cat.slug}`} onClick={closeMobileMenu}>{cat.name}</Link>
                     {Array.isArray(cat.subCategories) && cat.subCategories.length > 0 && (
                       <ul className={styles.mobileSubList}>
                         {cat.subCategories.map(sub => (
                           <li key={sub.id}>
-                            <Link href={`/category/${cat.slug}/${sub.slug}`} onClick={closeMobileMenu}>
+                            <Link href={`/products/${cat.slug}/${sub.slug}`} onClick={closeMobileMenu}>
                               {sub.name}
                             </Link>
                           </li>
@@ -199,14 +199,14 @@ const NavbarClient = ({ categoriesSnapshot = '[]' }) => {
             <div className={styles.megaMenuGrid}>
               {categories.map(cat => (
                 <div key={cat.id} className={styles.megaMenuColumn}>
-                  <Link href={`/category/${cat.slug}`} className={styles.categoryTitle}>
+                  <Link href={`/products/${cat.slug}`} className={styles.categoryTitle}>
                     {cat.name}
                   </Link>
                   {cat.subCategories?.length > 0 && (
                     <ul className={styles.subCategoryList}>
                       {cat.subCategories.map(sub => (
                         <li key={sub.id}>
-                          <Link href={`/category/${cat.slug}/${sub.slug}`}>
+                          <Link href={`/products/${cat.slug}/${sub.slug}`}>
                             {sub.name}
                           </Link>
                         </li>

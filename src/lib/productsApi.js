@@ -124,38 +124,35 @@ export async function getProductBySlug(slug) {
 export async function getProductCategoryPath(slug) {
   try {
     const res = await apiClient(
-      `/api/products?filters[slug][$eq]=${slug}&populate[categories][populate][parent]=*`
+      `/api/products?filters[slug][$eq]=${slug}&populate[categories][populate]=parent`
     );
 
-    const raw = res?.data?.[0] || res?.data?.data?.[0] || null;
+    const raw = res?.data?.[0] || null;
     if (!raw) return null;
 
-    const base = raw?.attributes || raw;
-    const cats =
-      base?.categories?.data ||
-      base?.categories ||
-      [];
+    const base = raw?.attributes;
+    const cats = base?.categories?.data || [];
 
-    let categorySlug;
-    let subcategorySlug;
+    let categorySlug = null;
+    let subcategorySlug = null;
 
     for (const c of cats) {
-      const cBase = c?.attributes || c;
-      const parent = cBase?.parent?.data?.attributes || cBase?.parent || null;
-      const cSlug = cBase?.slug;
-      const pSlug = parent?.slug;
-      if (cSlug && pSlug) {
-        categorySlug = pSlug;
-        subcategorySlug = cSlug;
+      const cBase = c.attributes;
+      const parent = cBase?.parent?.data?.attributes || null;
+
+      if (parent?.slug) {
+        categorySlug = parent.slug;
+        subcategorySlug = cBase.slug;
         break;
       }
-      if (!categorySlug && cSlug) {
-        categorySlug = cSlug;
+
+      // دسته بدون parent
+      if (!categorySlug) {
+        categorySlug = cBase.slug;
       }
     }
 
-    if (!categorySlug) return null;
-    return { categorySlug, subcategorySlug: subcategorySlug || null };
+    return { categorySlug, subcategorySlug };
   } catch (e) {
     console.error('خطا در استخراج مسیر دسته محصول:', e?.message);
     return null;
@@ -293,4 +290,3 @@ export async function getProductsPaginated(
  * import { getAllProducts } from '@/lib/productsApi';
  * const products = await getAllProducts();
  */
-
