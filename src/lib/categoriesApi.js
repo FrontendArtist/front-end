@@ -5,6 +5,8 @@
 import { apiClient } from './apiClient';
 import { formatSingleImage } from './strapiUtils';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
+
 /**
  * ✅ گرفتن دسته‌های اصلی (Parent=null)
  * برای صفحه Home و سایر بخش‌ها (سازگار با ساختار flat و attributes)
@@ -14,7 +16,7 @@ export async function getMainCategories() {
     const res = await apiClient(
       '/api/categories?filters[parent][$null]=true&populate[image][fields][0]=url&populate[image][fields][1]=alternativeText'
     );
-
+    console.log("getMainCategories res:", res);
     // هم ساختار قدیمی { data: [...] } و هم آرایهٔ مستقیم
     const raw = res?.data?.data || res?.data || [];
     if (!Array.isArray(raw)) return [];
@@ -44,32 +46,39 @@ export async function getMainCategories() {
 export async function getCategoryTree() {
   try {
     const res = await apiClient(
-      '/api/categories?filters[parent][id][$null]=true&populate[subCategories][fields][0]=name&populate[subCategories][fields][1]=slug'
+      '/api/categories?filters[parent][id][$null]=true' +
+      '&populate[subCategories][fields][0]=name' +
+      '&populate[subCategories][fields][1]=slug' +
+      '&populate=image'
     );
 
-    // بررسی امن برای مسیر داده
-    const raw = res?.data?.data || res?.data || [];
-    const formatted = raw.map(item => {
-      const base = item.attributes || item; // پشتیبانی از هر دو ساختار
+    if (!res?.data) return [];
+
+    return res.data.map(item => {
+      const attrs = item;
+      const img = attrs.image;
+
       return {
-        id: item.id,
-        name: base.name || '',
-        slug: base.slug || '',
-        subCategories:
-          (base.subCategories?.data || base.subCategories || []).map(sub => {
-            const subBase = sub.attributes || sub;
-            return {
-              id: sub.id,
-              name: subBase.name || '',
-              slug: subBase.slug || '',
-            };
-          }),
+        id: attrs.id,
+        name: attrs.name || '',
+        slug: attrs.slug || '',
+        image: img
+          ? {
+              url: img.formats?.thumbnail?.url
+                ? API_URL + img.formats.thumbnail.url
+                : API_URL + img.url,
+              alt: img.alternativeText || attrs.name || '',
+            }
+          : null,
+        subCategories: (attrs.subCategories || []).map(sub => ({
+          id: sub.id,
+          name: sub.name,
+          slug: sub.slug,
+        })),
       };
     });
-
-    return formatted;
   } catch (error) {
     console.error('❌ خطا در واکشی ساختار درختی دسته‌ها:', error);
-    return []; 
+    return [];
   }
 }

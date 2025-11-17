@@ -204,3 +204,25 @@
 #### Rationale:
 - Backend expects filtering via unified `categories` relation; removes previous OR/in logic.
 
+---
+
+## [Latest] - 2025-11-17
+
+### Enhancement: Products List Category UI Refresh
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Rebuilt the `/products` category selector UI to visually match `ProductCategoriesSection`:
+   - Updated `src/modules/products/ProductsPageClient/components/CategoryFilter.jsx` to render circular icon cards with Next/Image and fallback placeholders.
+   - Added structured layout states: full grid when no category is selected and split layout (selected card on the right, subcategories list on the left) when a category is active.
+2. Created `src/modules/products/ProductsPageClient/components/CategoryFilter.module.scss` mirroring the home category card styling:
+   - Reused theme tokens (`var(--color-overlay)`, `var(--gradient-card-vertical)`, etc.), RTL grid, hover/focus transitions, and pill-style subcategory highlights.
+   - Added responsive rules to collapse the two-column layout on tablet/mobile while keeping typography/spacing consistent with the homepage.
+3. Preserved SPA filtering contracts by keeping `onSelectCategory`/`onSelectSubCategory` signatures untouched and including reset actions ("بازگشت" + "همه زیر‌دسته‌ها") to avoid URL or pagination regressions.
+4. Fixed back navigation by preventing the category reset button from firing the subcategory router logic, eliminating the stuck state on `/products/{category}`.
+5. Added `public/images/placeholder.png` fallback so circular category icons always render even when Strapi lacks an image.
+
+#### Impact:
+- Category icons, typography, and spacing now stay consistent between Home and Products pages.
+- Subcategory list provides clear active states without interfering with existing load-more, sort, or routing logic.
+
