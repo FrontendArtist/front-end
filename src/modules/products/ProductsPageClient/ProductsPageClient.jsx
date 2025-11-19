@@ -27,14 +27,12 @@ export default function ProductsPageClient({
 
   const handleSelectCategory = (catSlug) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set('page', '1');
     const basePath = catSlug ? `/products/${catSlug}` : `/products`;
     router.replace(`${basePath}?${params.toString()}`, { scroll: false });
   };
 
   const handleSelectSub = (subSlug) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set('page', '1');
     const basePath = subSlug ? `/products/${category}/${subSlug}` : `/products/${category}`;
     router.replace(`${basePath}?${params.toString()}`, { scroll: false });
   };
@@ -42,7 +40,6 @@ export default function ProductsPageClient({
   const handleChangeSort = (nextSort) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('sort', nextSort);
-    params.set('page', '1');
     const basePath = category
       ? `/products/${category}${sub ? `/${sub}` : ''}`
       : `/products`;

@@ -226,3 +226,32 @@
 - Category icons, typography, and spacing now stay consistent between Home and Products pages.
 - Subcategory list provides clear active states without interfering with existing load-more, sort, or routing logic.
 
+
+## [Latest] - 2025-11-18
+
+### Fix: Remove forced `page` query resets in ProductsPageClient
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. `src/modules/products/ProductsPageClient/ProductsPageClient.jsx`
+   - Deleted the `params.set('page', '1')` calls in `handleSelectCategory`, `handleSelectSub`, and `handleChangeSort`.
+   - Keeps existing search params intact so URLs no longer auto-append `?page=`.
+
+#### Impact:
+- Prevents redundant `page` query strings during category/subcategory selection and sort changes.
+- Router updates now preserve whatever paging logic already exists in the URL or defaults.
+
+### UI Update: Modern Glassmorphism Styles for CategoryFilter
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. `src/modules/products/ProductsPageClient/components/CategoryFilter.module.scss`
+    - Completely overhauled styles to use modern glassmorphism.
+    - Added `backdrop-filter: blur`, semi-transparent backgrounds, and subtle borders.
+    - Enhanced gradients for cards and active states to match the dark/gold theme.
+    - Improved hover and focus states with smooth transitions, scaling, and shadows.
+    - Refined layout spacing and responsiveness.
+    - Used complex box-shadows for depth and glowing effects.
+
+#### Impact:
+- Significant visual upgrade to the category filter on the products page, aligning it with a more premium, modern aesthetic.
