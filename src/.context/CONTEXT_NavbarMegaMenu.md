@@ -30,7 +30,7 @@
 - `next/link`
 - `next/image`
 - `getCategoryTree` from `/lib/categoriesApi`
-- CSS transitions + SCSS grid system (`@include respond()` از `styles.md`)
+- CSS transitions + SCSS grid system (`@include m.respond()` از `styles.md`)
 
 ---
 
@@ -124,7 +124,7 @@ Copy code
 }
 
 .megaMenu {
-  @include card-container;
+  @include m.card-container;
   position: absolute;
   top: 100%;
   right: 0;
@@ -137,8 +137,8 @@ Copy code
   transform: translateY(16px);
   pointer-events: none;
   transition: all 0.3s ease-in-out;
-  @include respond(md) { grid-template-columns: repeat(2, 1fr); }
-  @include respond(sm) { grid-template-columns: 1fr; }
+  @include m.respond(md) { grid-template-columns: repeat(2, 1fr); }
+  @include m.respond(sm) { grid-template-columns: 1fr; }
 }
 
 .megaMenuColumn {

@@ -48,14 +48,16 @@ export default function CategoryFilter({
   const renderCategoryCard = category => {
     if (!category?.slug) return null;
     const { url, alt, unoptimized } = resolveImage(category);
+    const isActive = activeCategory === category.slug;
     
     return (
       <button
         key={category.slug}
         type="button"
-        className={styles.categoryCard}
+        className={`${styles.categoryCard} ${isActive ? styles.categoryCardActive : ''}`}
         onClick={() => handleSelectCategory(category.slug)}
         aria-label={`مشاهده دسته ${category.name || category.title || ''}`}
+        aria-current={isActive ? 'true' : undefined}
       >
         <div className={styles.iconWrapper}>
           <Image

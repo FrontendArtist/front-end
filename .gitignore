@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+.cursor/
 
 # debug
 npm-debug.log*
@@ -39,14 +40,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-.cursor/rules/architectural-compliance.mdc
-.cursor/rules/basic-security.mdc
-.cursor/rules/complete-import.mdc
-.cursor/rules/complete-imports.mdc
-.cursor/rules/file-adherience.mdc
-.cursor/rules/modern-syntax.mdc
-.cursor/rules/no-hardcoded-styles.mdc
-.cursor/rules/no-placeholders.mdc
-.cursor/rules/performance-first.mdc
-.cursor/rules/style-source-of-truth.mdc
-.cursor/rules/use-scss-modules.mdc

@@ -1,70 +1,66 @@
 /**
- * Products - Category Listing Page (/products/[category])
- * SSR first page with SPA-compatible sorting and load more
+ * Category Listing Page
+ * Path: /products/[category]
+ * 
+ * Data fetched via API Layer abstraction (productsApi.js)
+ * Implements Server-Side Rendering (SSR) for optimal SEO
  */
 
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import { getProductsPaginated } from '@/lib/productsApi';
 import { getCategoryTree } from '@/lib/categoriesApi';
+import { getProductBreadcrumbs } from '@/lib/breadcrumbs';
 import ProductsPageClient from '@/modules/products/ProductsPageClient/ProductsPageClient';
 import styles from '../products.module.scss';
 
-export async function generateMetadata({ params: paramsPromise }) {
-  // ⬅️ FIX: Await params
-  const params = await paramsPromise;
-  const { category } = params;
-
-  const base = process.env.NEXT_PUBLIC_SITE_URL || '';
-  const url = `${base}/products/${category}`;
-
+export async function generateMetadata({ params }) {
+  const { category } = await params;
   return {
-    title: category,
-    alternates: { canonical: url },
+    title: `محصولات دسته ${category} | فروشگاه آنلاین`,
+    description: `مشاهده محصولات در دسته ${category}`,
   };
 }
 
-export default async function ProductsCategoryPage({ params: paramsPromise, searchParams: spPromise }) {
-  // ⬅️ FIX: Await both params & searchParams
-  const params = await paramsPromise;
-  const searchParams = await spPromise;
+export default async function CategoryPage({ params, searchParams }) {
+  // Await params and searchParams (Next.js 15 requirement)
+  const { category } = await params;
+  const sp = await searchParams;
+  
+  const page = Number(sp?.page || 1);
+  const sort = sp?.sort || 'createdAt:desc';
 
-  const { category } = params;
-
-  const sort = searchParams?.sort || 'createdAt:desc';
-  const page = Number(searchParams?.page || 1);
-
-  // If only category is selected, include all child subcategories in SSR query
-  let subSlugs = [];
+  // Fetch category tree to find subcategories for this category
   const tree = await getCategoryTree();
-
-  const cat = tree.find(
-    c =>
-      (c.slug || c?.nameSlug) === category ||
-      c?.name === category
-  );
-
-  if (cat?.subCategories?.length) {
-    subSlugs = cat.subCategories.map(s => s.slug);
+  const currentCategory = tree.find(c => c.slug === category);
+  
+  let subSlugs = [];
+  if (currentCategory?.subCategories?.length) {
+    subSlugs = currentCategory.subCategories.map(s => s.slug);
   }
 
-  const { data, meta } = await getProductsPaginated(page, 6, sort, {
-    categorySlug: category,
-    subCategorySlug: undefined,
-    subSlugs
+  const breadcrumbItems = getProductBreadcrumbs({
+    category: currentCategory
   });
 
-  const categories = await getCategoryTree();
+  // Fetch products for this category
+  // We pass categorySlug to filter by this category (and its subcategories via subSlugs logic in API)
+  const { data, meta } = await getProductsPaginated(page, 6, sort, {
+    categorySlug: category,
+    subSlugs
+  });
 
   return (
     <main className={styles.main}>
       <div className="container">
+        <Breadcrumb items={breadcrumbItems} />
         <header className={styles.header}>
-          <h1 className={styles.title}>محصولات</h1>
+          <h1 className={styles.title}>محصولات: {currentCategory?.name || category}</h1>
         </header>
 
         <ProductsPageClient
           initialProducts={data}
           initialMeta={meta}
-          categoriesSnapshot={JSON.stringify(categories)}
+          categoriesSnapshot={JSON.stringify(tree)}
           initialSort={sort}
           initialCategory={category}
           initialSubCategory=""

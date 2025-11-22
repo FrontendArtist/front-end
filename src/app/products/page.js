@@ -10,8 +10,10 @@
  * بقیه آیتم‌ها با دکمه "بارگذاری بیشتر" از سمت کلاینت واکشی می‌شوند
  */
 
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import { getProductsPaginated } from '@/lib/productsApi';
 import { getCategoryTree } from '@/lib/categoriesApi';
+import { getProductBreadcrumbs } from '@/lib/breadcrumbs';
 import ProductsPageClient from '@/modules/products/ProductsPageClient/ProductsPageClient';
 import styles from './products.module.scss';
 
@@ -41,12 +43,24 @@ export default async function ProductsPage({ searchParams: spPromise }) {
   const sort = searchParams?.sort || 'createdAt:desc';
   const page = Number(searchParams?.page || 1);
 
+  // Fetch categories once for both logic and client component
+  const categories = await getCategoryTree();
+  
+  let currentCategory = null;
+  let currentSubCategory = null;
   let subSlugs = [];
-  if (categorySlug && !subCategorySlug) {
-    const tree = await getCategoryTree();
-    const cat = tree.find(c => c.slug === categorySlug);
-    if (cat?.subCategories?.length) {
-      subSlugs = cat.subCategories.map(s => s.slug);
+
+  // Find current category objects if slugs exist
+  if (categorySlug) {
+    currentCategory = categories.find(c => c.slug === categorySlug);
+    
+    if (currentCategory) {
+      if (subCategorySlug) {
+        currentSubCategory = currentCategory.subCategories?.find(s => s.slug === subCategorySlug);
+      } else if (currentCategory.subCategories?.length) {
+        // If we are in a main category, we might want to include subcategories in the fetch
+        subSlugs = currentCategory.subCategories.map(s => s.slug);
+      }
     }
   }
 
@@ -56,11 +70,15 @@ export default async function ProductsPage({ searchParams: spPromise }) {
     subSlugs
   });
 
-  const categories = await getCategoryTree();
+  const breadcrumbItems = getProductBreadcrumbs({
+    category: currentCategory,
+    subcategory: currentSubCategory
+  });
 
   return (
     <main className={styles.main}>
       <div className="container">
+        <Breadcrumb items={breadcrumbItems} />
         <header className={styles.header}>
           <h1 className={styles.title}>محصولات</h1>
         </header>

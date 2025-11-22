@@ -1,82 +1,63 @@
 /**
- * Product Single Page - Deep Path (/products/[category]/[subcategory]/[slug])
+ * Product Single Page - Deep Nested Route
+ * Path: /products/[category]/[subcategory]/[slug]
+ * 
+ * Data fetched via API Layer abstraction (productsApi.js)
+ * Implements Server-Side Rendering (SSR) for optimal SEO
  */
 
 import { notFound } from 'next/navigation';
-import ProductGallery from '@/components/products/ProductGallery/ProductGallery';
+import { getCategoryTree } from '@/lib/categoriesApi';
 import { getProductBySlug } from '@/lib/productsApi';
-import styles from '../../../[slug]/page.module.scss';
+import { getProductBreadcrumbs } from '@/lib/breadcrumbs';
+import ProductDetails from '@/modules/products/ProductDetails/ProductDetails';
 
+/**
+ * Generate Dynamic Metadata for SEO
+ * Uses API Layer abstraction
+ */
 export async function generateMetadata({ params }) {
-  const { category, subcategory, slug } = await params;
+  const { slug } = await params;
   const product = await getProductBySlug(slug);
-
-  const base = process.env.NEXT_PUBLIC_SITE_URL || '';
-  const canonical = `${base}/products/${category}/${subcategory}/${slug}`;
-
+  
   if (!product) {
-    return {
-      title: 'محصول یافت نشد',
-      alternates: { canonical },
-    };
+    return { title: 'محصول یافت نشد' };
   }
-
+  
   return {
     title: `${product.title} | فروشگاه آنلاین`,
     description: product.shortDescription,
-    alternates: { canonical },
   };
 }
 
-export default async function ProductDeepPage({ params }) {
-  const { slug, category, subcategory } = await params;
+/**
+ * Product Page Component (Server Component)
+ * 
+ * Architecture:
+ * - Uses getProductBySlug() from productsApi.js (no direct fetch)
+ * - Follows Repository Pattern for clean separation of concerns
+ * - Handles invalid slugs with notFound()
+ * - No redirect logic needed here as this is the destination
+ */
+export default async function ProductPage({ params }) {
+  const { category, subcategory, slug } = await params;
+  
+  // Data fetched via API Layer abstraction
   const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: product.title,
-    description: product.shortDescription || '',
-    image: Array.isArray(product.images) ? product.images.map(i => i.url) : [],
-    sku: product.id,
-    brand: { '@type': 'Brand', name: 'Tarh Elahi' },
-    category: `${category}/${subcategory}`,
-    offers: {
-      '@type': 'Offer',
-      priceCurrency: 'IRR',
-      price: product?.price?.toman || 0,
-      availability: 'https://schema.org/InStock',
-      url: `${process.env.NEXT_PUBLIC_SITE_URL || ''}/products/${category}/${subcategory}/${slug}`,
-    },
-  };
+  const tree = await getCategoryTree();
+  const currentCategory = tree.find((c) => c.slug === category);
+  const currentSubCategory = currentCategory?.subCategories?.find((s) => s.slug === subcategory);
 
-  return (
-    <main className={styles.productPage}>
-      <div className="container">
-        <script
-          type="application/ld+json"
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-        <div className={styles.layoutGrid}>
-          <div className={styles.gallery}>
-            <ProductGallery images={product.images} />
-          </div>
+  const breadcrumbItems = getProductBreadcrumbs({
+    category: currentCategory,
+    subcategory: currentSubCategory,
+    product: product
+  });
 
-          <div className={styles.details}>
-            <h1 className={styles.title}>{product.title}</h1>
-            <div className={styles.price}>{product.price.toman.toLocaleString()} تومان</div>
-            <p className={styles.description}>{product.shortDescription}</p>
-            <button className="card-button">افزودن به سبد خرید</button>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
+  return <ProductDetails product={product} breadcrumbItems={breadcrumbItems} />;
 }
-
-

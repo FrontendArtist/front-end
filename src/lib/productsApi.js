@@ -1,21 +1,5 @@
 /**
- * Products API - لایه API اختصاصی برای محصولات
- * 
- * نقش:
- * این ماژول یک رابط تمیز و معنادار برای تمام عملیات مرتبط با محصولات (Products) فراهم می‌کند.
- * این لایه بین UI و apiClient قرار دارد و منطق کسب‌وکار مربوط به محصولات را مدیریت می‌کند.
- * 
- * نقش در معماری:
- * - جزئیات endpoint های Strapi را از کامپوننت‌ها مخفی می‌کند
- * - بازیابی خطا و fallback های مخصوص محصولات را مدیریت می‌کند
- * - قرارداد API پایدار برای لایه UI فراهم می‌کند
- * - تست و Mock کردن را آسان‌تر می‌کند
- * 
- * الگوی طراحی (Repository Pattern):
- * - کامپوننت‌ها از جزئیات Strapi یا HTTP بی‌اطلاع هستند
- * - تغییرات API را می‌توان بدون دست زدن به کامپوننت‌ها انجام داد
- * - مدیریت خطا متمرکز و یکپارچه است
- * 
+ * Products API - Safe Mode
  * @module lib/productsApi
  */
 
@@ -24,92 +8,29 @@ import { formatStrapiProducts } from './strapiUtils';
 
 /**
  * واکشی تمام محصولات از Strapi
- * 
- * جریان داده در SSR:
- * 1. کامپوننت صفحه Next.js این تابع را در هنگام رندر سمت سرور صدا می‌زند
- * 2. این تابع از apiClient برای واکشی از Strapi استفاده می‌کند
- * 3. پاسخ خام Strapi با استفاده از strapiUtils فرمت می‌شود
- * 4. داده‌های تمیز و فرمت شده به صفحه برگردانده می‌شوند
- * 5. صفحه با داده رندر می‌شود و HTML به مرورگر ارسال می‌شود
- * 
- * استراتژی مدیریت خطا:
- * - در صورت خطا آرایه خالی برمی‌گرداند (Graceful Degradation)
- * - خطا را برای دیباگ لاگ می‌کند
- * - به صفحه اجازه می‌دهد با EmptyState رندر شود به‌جای کرش
- * 
- * استراتژی کش:
- * - از cache: 'no-store' در Next.js برای داده‌های همیشه تازه استفاده می‌کند
- * - می‌تواند برای استفاده از revalidation تغییر کند (مثلاً { next: { revalidate: 3600 } })
- * - در صورتی که داده‌ها کم تغییر می‌کنند، کش کردن را در نظر بگیرید
- * 
- * @returns {Promise<Array>} آرایه‌ای از اشیاء محصول فرمت شده
- * 
- * @example
- * // در یک Server Component (page.js):
- * const products = await getAllProducts();
- * return <ProductGrid products={products} />;
- * 
- * // ساختار هر شیء محصول:
- * {
- *   id: number,
- *   slug: string,
- *   title: string,
- *   price: { toman: number },
- *   shortDescription: string,
- *   images: Array<{ url: string, alt: string }>,
- *   image: { url: string, alt: string }
- * }
  */
 export async function getAllProducts() {
   try {
-    // واکشی محصولات با تمام رابطه‌ها populate شده
-    // Strapi به پارامتر "populate" نیاز دارد تا داده‌های مرتبط را شامل شود
-    const response = await apiClient('/api/products?populate=*');
-    
-    // فرمت کردن پاسخ خام Strapi به داده‌های تمیز و قابل استفاده
-    // strapiUtils مدیریت URL های تصاویر، نگاشت فیلدها و بررسی null را انجام می‌دهد
-    const formattedProducts = formatStrapiProducts(response);
-    
-    return formattedProducts;
-    
+    // تغییر: استفاده از سینتکس امن‌تر برای populate
+    // تصاویر را با true صدا می‌زنیم نه *
+    const response = await apiClient('/api/products?populate[categories][populate]=parent&populate[images]=true');
+    return formatStrapiProducts(response);
   } catch (error) {
-    // ثبت خطا برای دیباگ در لاگ‌های سرور
     console.error('خطا در واکشی محصولات:', error.message);
-    
-    // برگرداندن آرایه خالی به‌جای پرتاب خطا
-    // این به صفحه اجازه می‌دهد با EmptyState رندر شود
-    // تجربه کاربری بهتر از نمایش صفحه خطای 500
     return [];
   }
 }
 
 /**
  * واکشی یک محصول خاص با استفاده از slug
- * 
- * استفاده:
- * این تابع توسط صفحه جزئیات محصول (/products/[slug]) استفاده می‌شود
- * 
- * @param {string} slug - slug محصول از پارامتر URL
- * @returns {Promise<object|null>} شیء محصول یا null در صورت عدم یافتن
- * 
- * @example
- * // در یک صفحه مسیر پویا:
- * const product = await getProductBySlug(params.slug);
- * if (!product) notFound();
  */
 export async function getProductBySlug(slug) {
   try {
-    // کوئری Strapi با فیلتر slug
-    // از سینتکس Strapi v4/v5 برای فیلتر دقیق استفاده می‌کند
     const response = await apiClient(
-      `/api/products?filters[slug][$eq]=${slug}&populate=*`
+      `/api/products?filters[slug][$eq]=${slug}&populate[categories][populate]=parent&populate[images]=true`
     );
-    
-    // فرمت کردن و برگرداندن اولین نتیجه
-    // اگر نتیجه‌ای یافت نشد، null برمی‌گرداند
     const formattedProducts = formatStrapiProducts(response);
     return formattedProducts[0] || null;
-    
   } catch (error) {
     console.error(`خطا در واکشی محصول با slug "${slug}":`, error.message);
     return null;
@@ -117,9 +38,7 @@ export async function getProductBySlug(slug) {
 }
 
 /**
- * Resolve product category path (category + subcategory) by product slug
- * Tries to fetch categories with parent to infer deep path.
- * Falls back gracefully if structure differs.
+ * یافتن مسیر Canonical
  */
 export async function getProductCategoryPath(slug) {
   try {
@@ -130,59 +49,54 @@ export async function getProductCategoryPath(slug) {
     const raw = res?.data?.[0] || null;
     if (!raw) return null;
 
-    const base = raw?.attributes;
-    const cats = base?.categories?.data || [];
+    const base = raw?.attributes || raw;
+    const cats = base?.categories?.data || base?.categories || [];
 
-    let categorySlug = null;
-    let subcategorySlug = null;
-
-    for (const c of cats) {
-      const cBase = c.attributes;
-      const parent = cBase?.parent?.data?.attributes || null;
-
-      if (parent?.slug) {
-        categorySlug = parent.slug;
-        subcategorySlug = cBase.slug;
-        break;
-      }
-
-      // دسته بدون parent
-      if (!categorySlug) {
-        categorySlug = cBase.slug;
-      }
+    if (!cats.length) {
+      return { categorySlug: null, subcategorySlug: null, productSlug: slug };
     }
 
-    return { categorySlug, subcategorySlug };
+    // نرمال‌سازی
+    const normalizedCats = cats.map(c => {
+        const attrs = c.attributes || c;
+        const parentAttrs = attrs.parent?.data?.attributes || attrs.parent || null;
+        return { ...attrs, parent: parentAttrs };
+    });
+
+    // اولویت 1: دسته Primary
+    const primaryCat = normalizedCats.find(c => c.isPrimary === true);
+    if (primaryCat) {
+      if (primaryCat.parent?.slug) {
+        return { categorySlug: primaryCat.parent.slug, subcategorySlug: primaryCat.slug, productSlug: slug };
+      }
+      return { categorySlug: primaryCat.slug, subcategorySlug: null, productSlug: slug };
+    }
+
+    // اولویت 2: اولین دسته‌ای که parent دارد
+    const deepCat = normalizedCats.find(c => c.parent?.slug);
+    if (deepCat) {
+        return { categorySlug: deepCat.parent.slug, subcategorySlug: deepCat.slug, productSlug: slug };
+    }
+
+    // اولویت 3: Fallback
+    const firstCat = normalizedCats[0];
+    return { categorySlug: firstCat.slug, subcategorySlug: null, productSlug: slug };
+    
   } catch (e) {
-    console.error('خطا در استخراج مسیر دسته محصول:', e?.message);
+    console.error('خطا در استخراج مسیر دسته:', e?.message);
     return null;
   }
 }
 
 /**
- * واکشی محصولات با محدودیت تعداد (برای صفحه اصلی)
- * 
- * این تابع برای نمایش تعدادی محصول در صفحه اصلی طراحی شده است
- * و به‌صورت SSR در کامپوننت‌های سرور استفاده می‌شود
- * 
- * @param {object} options - آپشن‌های کوئری
- * @param {number} options.limit - تعداد محصولات (پیش‌فرض: 4)
- * @param {string} options.sort - پارامتر مرتب‌سازی Strapi (پیش‌فرض: "createdAt:desc")
- * @returns {Promise<Array>} آرایه‌ای از محصولات فرمت شده
- * 
- * @example
- * // در Server Component:
- * const products = await getProducts({ limit: 4 });
+ * واکشی محصولات برای صفحه اصلی
  */
 export async function getProducts({ limit = 4, sort = 'createdAt:desc' } = {}) {
   try {
     const response = await apiClient(
-      `/api/products?populate=*&pagination[limit]=${limit}&sort=${sort}`
+      `/api/products?populate[categories][populate]=parent&populate[images]=true&pagination[limit]=${limit}&sort=${sort}`
     );
-    
-    const formattedProducts = formatStrapiProducts(response);
-    return formattedProducts;
-    
+    return formatStrapiProducts(response);
   } catch (error) {
     console.error('خطا در واکشی محصولات:', error.message);
     return [];
@@ -190,23 +104,7 @@ export async function getProducts({ limit = 4, sort = 'createdAt:desc' } = {}) {
 }
 
 /**
- * واکشی محصولات با قابلیت صفحه‌بندی و مرتب‌سازی
- * 
- * این تابع برای Route Handler داخلی Next.js طراحی شده است
- * و قابلیت pagination و sorting را پشتیبانی می‌کند
- * 
- * جریان داده:
- * Client Component → Next.js Route Handler → این تابع → apiClient → Strapi
- * 
- * @param {number} page - شماره صفحه (پیش‌فرض: 1)
- * @param {number} pageSize - تعداد آیتم در هر صفحه (پیش‌فرض: 6)
- * @param {string} sort - پارامتر مرتب‌سازی Strapi (پیش‌فرض: "createdAt:desc")
- * @returns {Promise<{data: Array, meta: object}>} محصولات فرمت شده با metadata صفحه‌بندی
- * 
- * @example
- * // در Route Handler (/app/api/products/route.js):
- * const result = await getProductsPaginated(2, 6, "price:asc");
- * return Response.json(result);
+ * واکشی محصولات با صفحه‌بندی (تابع حساس)
  */
 export async function getProductsPaginated(
   page = 1,
@@ -216,77 +114,58 @@ export async function getProductsPaginated(
 ) {
   try {
     const params = new URLSearchParams();
-    params.set('populate', '*');
+    
+    // ✅ Fix: استفاده از true به جای * برای تصاویر
+    params.set('populate[categories][populate]', 'parent');
+    params.set('populate[images]', 'true');
+    
     params.set('pagination[page]', String(page));
     params.set('pagination[pageSize]', String(pageSize));
     params.set('sort', sort);
 
     // ---- فیلتر دسته/زیر‌دسته
+    
     if (subCategorySlug) {
-      // فقط محصولات همین زیر‌دسته
+      // حالت ساده: فقط زیر‌دسته
       params.set('filters[categories][slug][$eq]', subCategorySlug);
-    } else if (categorySlug) {
-      // محصولات خود دسته + همه زیر‌دسته‌ها (OR)
-      // نمونه خروجی:
-      // filters[$or][0][categories][slug][$eq]=books
-      // filters[$or][1][categories][slug][$eq]=medicalbooks
-      // filters[$or][2][categories][slug][$eq]=spiritualbooks
-      params.set('filters[$or][0][categories][slug][$eq]', categorySlug);
-      (Array.isArray(subSlugs) ? subSlugs : []).forEach((slug, idx) => {
-        params.set(`filters[$or][${idx + 1}][categories][slug][$eq]`, slug);
-      });
+    } 
+    else if (categorySlug) {
+      // ✅ Fix: جلوگیری از باگ $or تک‌عضوی
+      const validSubSlugs = Array.isArray(subSlugs) ? subSlugs.filter(Boolean) : [];
+
+      if (validSubSlugs.length === 0) {
+        // اگر زیر‌دسته‌ای نداریم، فقط خود دسته را فیلتر کن (بدون $or)
+        params.set('filters[categories][slug][$eq]', categorySlug);
+      } else {
+        // اگر زیر‌دسته داریم، از $in استفاده کن که تمیزتر و امن‌تر از $or است
+        // لیست شامل: خود دسته والد + تمام زیر‌دسته‌ها
+        const allSlugs = [categorySlug, ...validSubSlugs];
+        
+        // استفاده از سینتکس $in برای چندین مقدار (بهینه‌تر از $or)
+        allSlugs.forEach((slug, idx) => {
+           params.set(`filters[categories][slug][$in][${idx}]`, slug);
+        });
+      }
     }
 
-    // برای دیباگ: می‌تونی موقتاً باز کنی
-    // console.log('🧩 getProductsPaginated Query:', `/api/products?${params.toString()}`);
+    // دیباگ
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 Products Query URL:', decodeURIComponent(params.toString()));
+    }
 
     const res = await apiClient(`/api/products?${params.toString()}`);
-    const formatted = formatStrapiProducts(res);
+    
     return {
-      data: formatted,
+      data: formatStrapiProducts(res),
       meta: res?.meta || {},
     };
+    
   } catch (error) {
     console.error('خطا در واکشی محصولات صفحه‌بندی‌شده:', error.message);
+    // در صورت خطای 400 هم آرایه خالی برمی‌گردانیم تا صفحه کرش نکند
     return {
       data: [],
       meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } },
     };
   }
 }
-
-/**
- * مزایای معماری این الگو:
- * 
- * 1. جداسازی نگرانی‌ها (Separation of Concerns)
- *    - کامپوننت‌ها بر روی UI تمرکز دارند
- *    - این لایه واکشی داده را مدیریت می‌کند
- *    - apiClient جزئیات HTTP را مدیریت می‌کند
- * 
- * 2. قابلیت تست (Testability)
- *    - می‌توان این ماژول را در تست‌های کامپوننت Mock کرد
- *    - می‌توان این ماژول را به‌صورت مستقل تست کرد
- *    - وابستگی‌های Strapi را ایزوله می‌کند
- * 
- * 3. قابلیت نگهداری (Maintainability)
- *    - یک مکان واحد برای به‌روزرسانی کوئری‌های Strapi
- *    - افزودن کش، محدودیت نرخ و... آسان است
- *    - مستندسازی واضح قراردادهای داده
- * 
- * 4. انعطاف‌پذیری (Flexibility)
- *    - می‌توان بدون دست زدن به کامپوننت‌ها، بک‌اند را تغییر داد
- *    - می‌توان به‌راحتی GraphQL، REST API یا داده Mock اضافه کرد
- *    - می‌توان به‌روزرسانی‌های خوش‌بینانه یا پشتیبانی آفلاین پیاده‌سازی کرد
- * 
- * مثال استفاده در کامپوننت‌ها:
- * 
- * // ❌ اشتباه - از fetch مستقیماً در کامپوننت‌ها استفاده نکنید:
- * const res = await fetch('http://localhost:1337/api/products');
- * 
- * // ❌ اشتباه - از apiClient مستقیماً در کامپوننت‌ها استفاده نکنید:
- * const data = await apiClient('/api/products');
- * 
- * // ✅ درست - از API دامنه‌ای استفاده کنید:
- * import { getAllProducts } from '@/lib/productsApi';
- * const products = await getAllProducts();
- */

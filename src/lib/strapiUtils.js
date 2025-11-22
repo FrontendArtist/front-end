@@ -37,7 +37,6 @@ export function formatSingleImage(imgData) {
     alt: imgData.alternativeText || '',
   };
 }
-
 /**
  * Formats your specific Strapi API response for PRODUCTS.
  */
@@ -53,6 +52,39 @@ export function formatStrapiProducts(apiResponse) {
       // Create a clean array of all images for the product
       const images = (item.images || []).map(img => formatSingleImage(img));
 
+      // ✅ FIX: Robust category parent extraction
+      const categories = (item.categories || []).map(cat => {
+        // Handle both "attributes" wrapper and direct object
+        const categoryData = cat.data ? cat.data : cat;
+        const categoryAttrs = categoryData.attributes || categoryData;
+        
+        let parentData = null;
+
+        // Case 1: Direct parent object (Your JSON structure)
+        if (categoryAttrs.parent && categoryAttrs.parent.slug) {
+           const pAttrs = categoryAttrs.parent.attributes || categoryAttrs.parent;
+           parentData = {
+             slug: pAttrs.slug,
+             name: pAttrs.name
+           };
+        }
+        // Case 2: Nested "data" wrapper (Old Strapi/Populate structure)
+        else if (categoryAttrs.parent?.data) {
+          const parentContent = categoryAttrs.parent.data;
+          const parentAttrs = parentContent.attributes || parentContent;
+          parentData = {
+            slug: parentAttrs.slug,
+            name: parentAttrs.name
+          };
+        }
+
+        return {
+          slug: categoryAttrs.slug,
+          name: categoryAttrs.name,
+          parent: parentData // Now correctly populated
+        };
+      });
+
       return {
         id: item.id,
         title: item.title,
@@ -60,12 +92,12 @@ export function formatStrapiProducts(apiResponse) {
         price: priceObject,
         shortDescription: shortDescription,
         // Return both the full array and a single thumbnail
-        images: images, // The full array for the gallery
-        image: images.length > 0 ? images[0] : formatSingleImage(null), // The first image for card views
+        images: images, 
+        image: images.length > 0 ? images[0] : formatSingleImage(null),
+        categories: categories, // Correctly structured for ProductCard
       };
     });
 }
-
 /**
  * Formats your specific Strapi API response for ARTICLES.
  */
@@ -245,5 +277,3 @@ export function formatStrapiCategories(data = []) {
     };
   });
 }
-
-

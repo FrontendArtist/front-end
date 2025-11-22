@@ -30,7 +30,7 @@
    - Added: `.megaMenuWrapper`, `.megaMenu`, `.megaMenuGrid`, `.megaMenuColumn`
    - Added: `.mobileCategoryToggle`, `.mobileSubMenu`, `.mobileCategoryGroup`, `.mobileSubList`
    - Used design tokens: `var(--color-overlay)`, `var(--color-text-primary)`, `var(--font-md)`, etc.
-   - Applied mixins: `@include hover-transition`, `@include respond()`
+   - Applied mixins: `@include m.hover-transition`, `@include m.respond()`
    - Animations: slideDown keyframe for mobile accordion
 
 5. **Accessibility Features**
@@ -255,3 +255,133 @@
 
 #### Impact:
 - Significant visual upgrade to the category filter on the products page, aligning it with a more premium, modern aesthetic.
+
+## [Latest] - 2025-11-19
+
+### Feature: Nested Route Structure for Products
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Nested Routing Implementation**
+   - Created `src/app/products/[category]/page.js`: SSR listing page for categories.
+   - Created `src/app/products/[category]/[subcategory]/page.js`: SSR listing page for subcategories.
+   - Created `src/app/products/[category]/[subcategory]/[slug]/page.js`: SSR single product page (deep link).
+   - Created `src/app/products/[category]/[subcategory]/[slug]/page.module.scss`: Styles for the deep product page.
+
+2. **SSR Data Flow**
+   - Listing pages await `params` and `searchParams` (Next.js 15 compatible).
+   - Listing pages fetch data via `getProductsPaginated` with `categorySlug` or `subCategorySlug` filters.
+   - Listing pages fetch `getCategoryTree` for sidebar/filter context.
+   - Single product page fetches data via `getProductBySlug`.
+
+3. **Component Reuse**
+   - Reused `ProductsPageClient` for listing pages, passing initial data and category context.
+   - Reused `ProductGallery` and styles for the single product page.
+
+#### Architecture Maintained:
+- **Clean Architecture**: API calls abstracted in `lib/productsApi.js`.
+- **SSR First**: All initial data fetching happens on the server for SEO.
+- **Client Hydration**: `ProductsPageClient` takes over for interactive filtering.
+- **Backward Compatibility**: Old `src/app/product/[slug]` route preserved for future redirects.
+
+### Feature: Breadcrumb Navigation & Legacy Redirects
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Added `src/components/ui/Breadcrumb.jsx` + `.module.scss` with LD-JSON schema output, RTL styling, and design tokens.
+2. Injected `<Breadcrumb />` into `/products`, `/products/[category]`, `/products/[category]/[subcategory]`, and the deep product page to mirror URL hierarchy.
+3. Refactored legacy `src/app/product/[slug]/page.js` into a pure `permanentRedirect` handler that resolves canonical category paths via `productsApi`.
+
+#### Impact:
+- Ensures consistent UX breadcrumbs with structured data for SEO rich snippets.
+- Guarantees 301 redirects from legacy `/product/:slug` URLs to the nested `/products/:category/:sub/:slug` routes.
+- Keeps Clean Architecture by reusing API layer helpers and SCSS modules.
+
+### Enhancement: ProductCard Nested Route Support
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ProductCard Component** (`src/components/cards/ProductCard/ProductCard.jsx`)
+   - Added `constructProductUrl()` logic to dynamically build nested route URLs based on product categories.
+   - Implements priority-based URL construction:
+     * Priority 1: Subcategory (category with parent) → `/products/{parent}/{subcategory}/{slug}`
+     * Priority 2: Root category → `/products/{category}/{slug}`
+     * Priority 3: Fallback to legacy route → `/product/{slug}` (triggers 301 redirect)
+   - Gracefully handles missing category data with fallback mechanism.
+
+2. **Data Layer Enhancement** (`src/lib/strapiUtils.js`)
+   - Updated `formatStrapiProducts()` to include `categories` array with parent relationship.
+   - Each category now includes: `{ slug, name, parent: { slug, name } | null }`.
+   - Supports both nested Strapi v4 structure (`attributes.parent.data`) and flat structure.
+
+#### Impact:
+- ProductCard now generates SEO-friendly nested URLs automatically.
+- Backward compatible: cards without category data fall back to legacy route with 301 redirect.
+- Maintains Clean Architecture with data formatting in strapiUtils layer.
+- No breaking changes to existing ProductCard usage.
+
+### Refactor: Extract ProductDetails Reusable Component
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New Component** (`src/modules/products/ProductDetails/ProductDetails.jsx`)
+   - Extracted UI structure from single product page into reusable component.
+   - Props: `{ product, breadcrumbItems }`.
+   - Renders: Breadcrumb, ProductGallery, product info (title, price, description), add-to-cart button.
+   
+2. **Styles Module** (`src/modules/products/ProductDetails/ProductDetails.module.scss`)
+   - Migrated styles from page-level to component-level.
+   - Responsive grid layout (2 columns desktop, 1 column mobile).
+   - Uses design tokens for colors, spacing, and typography.
+
+3. **Page Refactor** (`src/app/products/[category]/[subcategory]/[slug]/page.js`)
+   - Removed inline JSX and styles import.
+   - Now imports and renders `<ProductDetails />` component.
+   - Keeps SSR data fetching logic (getProductBySlug, getCategoryTree, getProductBreadcrumbs).
+   - Maintains metadata generation for SEO.
+
+#### Impact:
+- ProductDetails component ready for reuse in hybrid `/product/[slug]` route.
+- Separates UI concerns from data fetching logic.
+- Maintains Clean Architecture and SSR patterns.
+- No visual or functional changes to the product detail page.
+
+### Feature: Hybrid Route Resolver for /products/[category]/[subcategory]
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Hybrid Route Logic** (`src/app/products/[category]/[subcategory]/page.js`)
+   - Step 1: Fetch category tree and validate category param.
+   - Step 2: Check if `subcategory` param is a valid subcategory of `category`:
+     * **YES**: Render subcategory listing page with ProductsPageClient.
+     * **NO**: Attempt to fetch product using `getProductBySlug(subcategory)`:
+       - **Product found**: Render ProductDetails component with correct breadcrumbs.
+       - **Product not found**: Call `notFound()`.
+
+2. **Dynamic Metadata Generation**
+   - Detects route type (subcategory vs product) before generating metadata.
+   - Subcategory: Generates listing page title/description.
+   - Product: Generates product detail title/description using product data.
+   - Invalid route: Returns "صفحه یافت نشد".
+
+3. **Smart Breadcrumb Resolution**
+   - For products: Attempts to match product's categories with URL category param.
+   - Falls back to URL-based category if no match found in product data.
+   - Ensures breadcrumbs remain accurate regardless of URL structure.
+
+4. **Component Reuse**
+   - Uses existing `ProductsPageClient` for listing pages.
+   - Uses new `ProductDetails` component for product detail pages.
+   - Maintains consistent UI/UX across both route types.
+
+#### Architecture Maintained:
+- **SSR First**: All data fetching on server for SEO optimization.
+- **Clean Architecture**: API Layer abstraction (productsApi, categoriesApi).
+- **DRY Principle**: Reuses ProductDetails component instead of duplicate JSX.
+- **Next.js 15 Compatible**: Properly awaits params and searchParams.
+
+#### Impact:
+- Resolves routing collision: `/products/cat/slug` now intelligently determines if "slug" is a subcategory or product.
+- Eliminates need for separate deep route at `/products/[category]/[subcategory]/[slug]`.
+- Maintains backward compatibility with existing subcategory listing pages.
+- Improves SEO with dynamic metadata generation based on route type.

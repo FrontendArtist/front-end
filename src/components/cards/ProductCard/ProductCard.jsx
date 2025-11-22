@@ -5,6 +5,8 @@ import AddToCartButton from './AddToCartButton';
 
 /**
  * A reusable card component to display product information.
+ * Constructs nested route URLs based on product categories.
+ * 
  * @param {{
  * id: string | number;
  * slug: string;
@@ -12,18 +14,48 @@ import AddToCartButton from './AddToCartButton';
  * title: string;
  * price: { toman: number; };
  * shortDescription?: string;
+ * categories?: Array<{ slug: string; parent?: { slug: string } }>;
  * }} product - The product data to display.
  */
 const ProductCard = ({ product }) => {
-  // Add a guard clause for when product data is not available
   if (!product) return null;
 
-  const { slug, image, title, price, shortDescription } = product;
-const formattedPrice = (typeof price === "object" ? price?.toman : price) || 0;
+  const { slug, image, title, price, shortDescription, categories } = product;
+  const formattedPrice = (typeof price === "object" ? price?.toman : price) || 0;
 
-<span className={styles.price}>{formattedPrice.toLocaleString()} تومان</span>
+  /**
+   * تشخیص مسیر کانونیکال بر اساس categories
+   * اولویت‌بندی:
+   * 1. اولین زیر‌دسته (دسته‌ای با parent)
+   * 2. اولین دسته اصلی (بدون parent)
+   * 3. Fallback به مسیر قدیمی (که redirect می‌شود)
+   */
+  const constructProductUrl = () => {
+    if (!categories || !Array.isArray(categories) || categories.length === 0) {
+      // Fallback: مسیر قدیمی که به canonical redirect می‌شود
+      return `/product/${slug}`;
+    }
+
+    // اولویت 1: یافتن زیر‌دسته (دسته‌ای که parent دارد)
+    const subcategory = categories.find(cat => cat.parent && cat.parent.slug);
+    if (subcategory && subcategory.parent) {
+      return `/products/${subcategory.parent.slug}/${subcategory.slug}/${slug}`;
+    }
+
+    // اولویت 2: یافتن دسته اصلی (بدون parent)
+    const rootCategory = categories.find(cat => !cat.parent);
+    if (rootCategory) {
+      return `/products/${rootCategory.slug}/${slug}`;
+    }
+
+    // اولویت 3: Fallback اگر ساختار داده غیرمنتظره باشد
+    return `/product/${slug}`;
+  };
+
+  const productUrl = constructProductUrl();
+
   return (
-    <Link href={`/product/${slug}`} className={`${styles.productCard} card vertical-gradient`}>
+    <Link href={productUrl} className={`${styles.productCard} card vertical-gradient`}>
       <div className={styles.imageWrapper}>
         <Image
           src={image.url}
@@ -37,9 +69,7 @@ const formattedPrice = (typeof price === "object" ? price?.toman : price) || 0;
         <h3 className={`${styles.cardTitle} card-title`}>{title}</h3>
         {shortDescription && <p className={`${styles.cardText} card-text`}>{shortDescription}</p>}
         <div className={styles.footer}>
-          
-          { formattedPrice > 0 && <span className={styles.price}>{formattedPrice.toLocaleString()} تومان</span>}
-
+          {formattedPrice > 0 && <span className={styles.price}>{formattedPrice.toLocaleString()} تومان</span>}
           <AddToCartButton />
         </div>
       </div>

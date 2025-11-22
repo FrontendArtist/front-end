@@ -26,15 +26,24 @@ export default function ProductsPageClient({
   const sort = searchParams.get('sort') || initialSort || 'createdAt:desc';
 
   const handleSelectCategory = (catSlug) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams();
+    const currentSort = searchParams.get('sort');
+    if (currentSort) params.set('sort', currentSort);
+    
     const basePath = catSlug ? `/products/${catSlug}` : `/products`;
-    router.replace(`${basePath}?${params.toString()}`, { scroll: false });
+    const query = params.toString();
+    router.push(query ? `${basePath}?${query}` : basePath);
   };
 
   const handleSelectSub = (subSlug) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams();
+    const currentSort = searchParams.get('sort');
+    if (currentSort) params.set('sort', currentSort);
+    
     const basePath = subSlug ? `/products/${category}/${subSlug}` : `/products/${category}`;
-    router.replace(`${basePath}?${params.toString()}`, { scroll: false });
+    const query = params.toString();
+    const fullPath = query ? `${basePath}?${query}` : basePath;
+    router.push(fullPath, { scroll: false });
   };
 
   const handleChangeSort = (nextSort) => {

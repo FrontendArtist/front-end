@@ -5,23 +5,20 @@
  * Implements Server-Side Rendering (SSR) for optimal SEO
  */
 
-import { notFound, redirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ProductGallery from '@/components/products/ProductGallery/ProductGallery';
 import { getProductBySlug, getProductCategoryPath } from '@/lib/productsApi';
 import styles from './page.module.scss';
 
-/**
- * Generate Dynamic Metadata for SEO
- * Uses API Layer abstraction
- */
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  
+
   if (!product) {
     return { title: 'محصول یافت نشد' };
   }
-  
+
   return {
     title: `${product.title} | فروشگاه آنلاین`,
     description: product.shortDescription,
@@ -29,42 +26,50 @@ export async function generateMetadata({ params }) {
 }
 
 /**
- * Product Page Component (Server Component)
+ * Legacy Product Page - Permanent Redirect Handler
  * 
- * Architecture:
- * - Uses getProductBySlug() from productsApi.js (no direct fetch)
- * - Follows Repository Pattern for clean separation of concerns
- * - Handles invalid slugs with notFound()
+ * Responsibilities:
+ * - Fetch product to ensure slug validity
+ * - Resolve canonical nested path
+ * - Issue 301 redirect to new URL
  */
 export default async function ProductPage({ params }) {
   const { slug } = await params;
-  
-  // Data fetched via API Layer abstraction
+
   const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
 
-  // Redirect to new deep path under /products/[category]/[subcategory]/[slug]
   const pathInfo = await getProductCategoryPath(slug);
   if (pathInfo?.categorySlug) {
-    const target = `/products/${pathInfo.categorySlug}${pathInfo.subcategorySlug ? `/${pathInfo.subcategorySlug}` : ''}/${slug}`;
-    redirect(target);
+    const target = `/products/${pathInfo.categorySlug}${
+      pathInfo.subcategorySlug ? `/${pathInfo.subcategorySlug}` : ''
+    }/${slug}`;
+
+    permanentRedirect(target);
   }
+
+  const breadcrumbItems = [
+    { label: 'خانه', href: '/' },
+    { label: 'محصولات', href: '/products' },
+    { label: product.title, active: true },
+  ];
 
   return (
     <main className={styles.productPage}>
       <div className="container">
+        <Breadcrumb items={breadcrumbItems} />
         <div className={styles.layoutGrid}>
           <div className={styles.gallery}>
             <ProductGallery images={product.images} />
           </div>
 
           <div className={styles.details}>
-            <h1 className={styles.title}>{product.title}</h1>
-            <div className={styles.price}>{product.price.toman.toLocaleString()} تومان</div>
-            <p className={styles.description}>{product.shortDescription}</p>
+            <h1 className={styles.detailsTitle}>{product.title}</h1>
+            <div className={styles.detailsPrice}>{product.price.toman.toLocaleString()} تومان</div>
+            <p className={styles.detailsDescription}>{product.shortDescription}</p>
             <button className="card-button">افزودن به سبد خرید</button>
           </div>
         </div>
