@@ -385,3 +385,14 @@
 - Eliminates need for separate deep route at `/products/[category]/[subcategory]/[slug]`.
 - Maintains backward compatibility with existing subcategory listing pages.
 - Improves SEO with dynamic metadata generation based on route type.
+
+## [Latest] - 2025-11-22
+
+### Feature: ListGuard SSR Wrapper & EmptyState Upgrade
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Added `src/components/layout/ListGuard.jsx` server component to guard list views by rendering children, filter-based empty states, or global empty messaging using configurable `entityName` and `resetLink`.
+2. Enhanced `src/components/ui/EmptyState/EmptyState.jsx` to support optional `description`, `actionLabel`, and `actionHref` props, enabling reusable messaging with contextual CTAs.
+3. Updated `src/components/ui/EmptyState/EmptyState.module.scss` with design tokens, layout refinements, and button styling to match the dark theme with gold accents while remaining RTL-friendly.
+4. Integrated `ListGuard` across `/products`, `/articles`, `/courses`, and `/services` pages so all grids now share consistent empty feedback driven by URL filters.

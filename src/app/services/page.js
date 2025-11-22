@@ -29,6 +29,7 @@
  * @module app/services/page
  */
 
+import ListGuard from '@/components/layout/ListGuard';
 import ServiceGrid from '@/modules/services/ServiceGrid/ServiceGrid';
 import { getServicesPaginated } from '@/lib/servicesApi';
 import styles from './services.module.scss';
@@ -75,7 +76,7 @@ export const metadata = {
  * 
  * @returns {Promise<JSX.Element>} Rendered services page
  */
-export default async function ServicesPage() {
+export default async function ServicesPage({ searchParams: spPromise }) {
   // ============================================================================
   // DATA FETCHING (SSR)
   // ============================================================================
@@ -109,6 +110,12 @@ export default async function ServicesPage() {
    * - Initial data is embedded in HTML
    * - More data loaded client-side on demand
    */
+  const searchParams = await spPromise;
+  const normalizedSearchParams =
+    searchParams && typeof searchParams.entries === 'function'
+      ? Object.fromEntries(searchParams.entries())
+      : searchParams || {};
+  const hasFilters = Object.keys(normalizedSearchParams).length > 0;
   const result = await getServicesPaginated(1, 2, 'createdAt:desc');
   const services = result.data;
   
@@ -168,7 +175,14 @@ export default async function ServicesPage() {
             link: string | null
           }
         */}
-        <ServiceGrid initialServices={services} />
+        <ListGuard
+          data={services}
+          hasFilters={hasFilters}
+          entityName="خدمت"
+          resetLink="/services"
+        >
+          <ServiceGrid initialServices={services} />
+        </ListGuard>
         
       </div>
     </main>

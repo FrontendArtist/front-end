@@ -10,6 +10,7 @@
  * بقیه آیتم‌ها با دکمه "بارگذاری بیشتر" از سمت کلاینت واکشی می‌شوند
  */
 
+import ListGuard from '@/components/layout/ListGuard';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import { getProductsPaginated } from '@/lib/productsApi';
 import { getCategoryTree } from '@/lib/categoriesApi';
@@ -38,10 +39,15 @@ export const metadata = {
 export default async function ProductsPage({ searchParams: spPromise }) {
   // ⬅️ FIX: Await searchParams — ADDED LINE
   const searchParams = await spPromise;
-  const categorySlug = searchParams?.category || '';
-  const subCategorySlug = searchParams?.sub || '';
-  const sort = searchParams?.sort || 'createdAt:desc';
-  const page = Number(searchParams?.page || 1);
+  const normalizedSearchParams =
+    searchParams && typeof searchParams.entries === 'function'
+      ? Object.fromEntries(searchParams.entries())
+      : searchParams || {};
+  const hasFilters = Object.keys(normalizedSearchParams).length > 0;
+  const categorySlug = normalizedSearchParams.category || '';
+  const subCategorySlug = normalizedSearchParams.sub || '';
+  const sort = normalizedSearchParams.sort || 'createdAt:desc';
+  const page = Number(normalizedSearchParams.page || 1);
 
   // Fetch categories once for both logic and client component
   const categories = await getCategoryTree();
@@ -83,14 +89,21 @@ export default async function ProductsPage({ searchParams: spPromise }) {
           <h1 className={styles.title}>محصولات</h1>
         </header>
 
-        <ProductsPageClient
-          initialProducts={data}
-          initialMeta={meta}
-          categoriesSnapshot={JSON.stringify(categories)}
-          initialSort={sort}
-          initialCategory={categorySlug}
-          initialSubCategory={subCategorySlug}
-        />
+        <ListGuard
+          data={data}
+          hasFilters={hasFilters}
+          entityName="محصول"
+          resetLink="/products"
+        >
+          <ProductsPageClient
+            initialProducts={data}
+            initialMeta={meta}
+            categoriesSnapshot={JSON.stringify(categories)}
+            initialSort={sort}
+            initialCategory={categorySlug}
+            initialSubCategory={subCategorySlug}
+          />
+        </ListGuard>
       </div>
     </main>
   );
