@@ -1,0 +1,35 @@
+@import '@/styles/base/variables';
+@import '@/styles/base/mixins';
+
+.introSection {
+  background-color: var(--color-bg-primary);
+  padding: 3rem 1rem;
+
+  @include respond(md) {
+    padding: 4rem 2rem;
+  }
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.introText {
+  font-family: 'Far Shafigh', serif;
+  font-size: 1.5rem;
+  line-height: 1.8;
+  color: var(--color-text-primary);
+  margin: 0;
+  letter-spacing: 0.5px;
+
+  @include respond(md) {
+    font-size: 1.25rem;
+  }
+
+  @include respond(sm) {
+    font-size: 1rem;
+  }
+}
+

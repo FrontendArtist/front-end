@@ -1,6 +1,212 @@
 # CHANGELOG
 
-## [Latest] - 2025-11-02
+## [Latest] - 2025-11-29
+
+### Feature: IntroTextSection Module
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New Module** (`modules/home/IntroTextSection/IntroTextSection.jsx` + `.module.scss`)
+   - Created simple intro section with Persian text between HeroSection and AboutMentorSection.
+   - Used design tokens for colors and responsive spacing.
+
+#### Impact:
+- Homepage now features the intro text between hero and about mentor sections.
+
+---
+
+## [Latest] - 2025-11-27
+
+### Enhancement: Hero Scroll CTA matches ornate badge asset
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Scroll CTA Component** (`components/ui/ScrollCTAButton/ScrollCTAButton.jsx`)
+   - Replaced generic `.card-button` markup with bespoke hero button structure.
+   - Added default Persian label fallback and preserved smooth-scroll behavior.
+   - Wired new SCSS module className handling so other sections can extend styles safely.
+
+2. **Component Styling** (`components/ui/ScrollCTAButton/ScrollCTAButton.module.scss`)
+   - Implemented ornate badge background using `/images/herobutton.png`.
+   - Added hover/focus states, RTL alignment, and typography aligned with hero art direction.
+   - Ensured overlay text sits centered with non-interactive label span.
+
+3. **Design Tokens** (`styles/base/_variables.scss`)
+   - Introduced hero button sizing + shadow custom properties for reuse across sections.
+
+#### Impact:
+- Hero CTA now visually matches the provided badge image with centered copy.
+- Keeps accessible text, smooth scroll UX, and reusable tokens for future ornate CTAs.
+
+---
+
+## [Previous] - 2025-11-24
+
+### Fix: ArticleGrid Load More Button Logic (Replicated from ProductGrid)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ArticleGrid Component** (`modules/articles/ArticleGrid/ArticleGrid.jsx`)
+   - Added `initialMeta` prop to receive pagination metadata from server.
+   - Changed `hasMore` calculation from `initialArticles.length === PAGE_SIZE` to `(page < pageCount)` logic.
+   - Updated initial state to use `initialMeta.pagination.page` and `initialMeta.pagination.pageCount`.
+   - Refactored `useEffect` sync logic to compare `page` vs `pageCount` instead of array length vs total.
+   - Refactored sort effect to use `(p?.page || 1) < (p?.pageCount || 1)` pattern.
+   - Refactored `handleLoadMore` to use `(p?.page || nextPage) < (p?.pageCount || 1)` pattern.
+   - Changed `setArticles([...articles, ...result.data])` to `setArticles(prev => [...prev, ...result.data])`.
+
+2. **Articles Page** (`app/articles/page.js`)
+   - Extracted `initialMeta = result.meta` from API response.
+   - Passed `initialMeta` prop to ArticleGrid component.
+
+#### Technical Details:
+- **Before**: `hasMore` compared `articles.length < total` which was unreliable.
+- **After**: `hasMore` compares `currentPage < totalPageCount` matching ProductGrid pattern.
+- **Logic Pattern**: `setHasMore((p?.page || nextPage) < (p?.pageCount || 1))`
+- **State Management**: Uses pagination metadata from Strapi response for accurate button visibility.
+
+#### Impact:
+- Load More button now disappears correctly when all articles are loaded.
+- Behavior matches ProductGrid exactly (working reference implementation).
+- No more false-positive button display when pagination is exhausted.
+- Clean Architecture maintained with API Layer abstraction.
+
+---
+
+## [Previous] - 2025-11-24
+
+### Refactor: Centralized Pagination Constants (Single Source of Truth)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New Constants File** (`lib/constants.js`)
+   - Created centralized configuration file for pagination settings.
+   - Defined `ARTICLES_PAGE_SIZE = 6` as single source of truth.
+   - Added constants for other entities: `PRODUCTS_PAGE_SIZE`, `COURSES_PAGE_SIZE`, `SERVICES_PAGE_SIZE`.
+
+2. **ArticleGrid Component** (`modules/articles/ArticleGrid/ArticleGrid.jsx`)
+   - Removed hardcoded `const PAGE_SIZE = 1`.
+   - Imported `ARTICLES_PAGE_SIZE` from `lib/constants`.
+   - Updated all references from `PAGE_SIZE` to `ARTICLES_PAGE_SIZE`.
+
+3. **Articles Page** (`app/articles/page.js`)
+   - Imported `ARTICLES_PAGE_SIZE` from `lib/constants`.
+   - Changed hardcoded `6` to `ARTICLES_PAGE_SIZE` in `getArticlesPaginated` call.
+   - Updated comments to reference constants file.
+
+4. **API Route Handler** (`app/api/articles/route.js`)
+   - Imported `ARTICLES_PAGE_SIZE` from `lib/constants`.
+   - Changed default pageSize from `'6'` to `String(ARTICLES_PAGE_SIZE)`.
+   - Updated JSDoc to reflect dynamic default value.
+
+#### Impact:
+- **Single Source of Truth**: Only need to change `ARTICLES_PAGE_SIZE` in one file (`lib/constants.js`).
+- **Consistency**: All three layers (Client, Server, API) now use the same value.
+- **Maintainability**: Easier to manage pagination settings across the app.
+- **Scalability**: Template ready for other entities (products, courses, services).
+- **No Breaking Changes**: Existing functionality preserved, only improved architecture.
+
+---
+
+## [Previous] - 2025-11-24
+
+### Fix: ArticleGrid Category Filter Persistence & Load More Logic
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ArticleGrid Component** (`modules/articles/ArticleGrid/ArticleGrid.jsx`)
+   - **FIX 1: Category Filter Persistence**
+     * Added `categoryParam` variable that includes `activeSlug` in fetch URLs for sorting and pagination.
+     * Now passes `&categorySlug=${activeSlug}` to all `/api/articles` requests when a category is selected.
+     * Ensures category filter persists across sort changes and load more actions.
+   
+   - **FIX 2: Load More Button Visibility**
+     * Changed `hasMore` calculation from comparing page count to comparing total items.
+     * New logic: `setHasMore(articles.length < meta.pagination.total)` or `setHasMore(updatedArticles.length < totalArticles)`.
+     * Prevents button from showing when all items are loaded.
+   
+   - **FIX 3: State Synchronization**
+     * Added `activeSlug` to useEffect dependency array for props sync.
+     * Resets `isInitialMount` ref when `activeSlug` changes to allow proper re-filtering.
+
+2. **API Route Handler** (`app/api/articles/route.js`)
+   - Added `categorySlug` query parameter support.
+   - Extracts `categorySlug` from search params and passes to `getArticlesPaginated()`.
+   - Updated JSDoc comments to document the new parameter.
+
+#### Technical Details:
+- Sort effect now constructs URL: `/api/articles?page=1&pageSize=${itemsToFetch}&sort=${sortQuery}${categoryParam}`
+- Load more constructs URL: `/api/articles?page=${nextPage}&pageSize=${PAGE_SIZE}&sort=${sortQuery}${categoryParam}`
+- Where `categoryParam = activeSlug ? `&categorySlug=${activeSlug}` : ''`
+- API route signature: `getArticlesPaginated(page, pageSize, sort, categorySlug)`
+
+#### Impact:
+- Category filter now works correctly with sorting and pagination.
+- Load more button accurately reflects when all articles are loaded.
+- No data duplication or missing items during filter transitions.
+- Maintains Clean Architecture with proper data flow through API layers.
+
+---
+
+### Fix: ArticleGrid stale state sync
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. `modules/articles/ArticleGrid/ArticleGrid.jsx`
+   - Added hydration effect to align local `articles`, `page`, and `hasMore` with new `initialArticles` props when category filter updates.
+   - Prevented stale grids when navigating between categories via SSR data refresh.
+
+---
+
+### Feature: Navbar Articles MegaMenu
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Server Component Updates (modules/layout/Navbar/Navbar.jsx)**
+   - Imported `getArticleCategories` from articlesApi.
+   - Fetched article categories in parallel with product categories.
+   - Passed `articleCategoriesSnapshot` to client.
+
+2. **Client Component Updates (modules/layout/Navbar/NavbarClient.jsx)**
+   - Implemented generic `activeMegaMenu` state ('products' | 'articles').
+   - Added "Articles" MegaMenu with image card layout.
+   - Updated Mobile Drawer to include "Articles" tab and list.
+   - Refactored hover logic to support multiple mega menus.
+
+3. **Styling (modules/layout/Navbar/Navbar.module.scss)**
+   - Added `.articleImage` and `.viewAllLink` styles for Article MegaMenu cards.
+   - Reused existing grid and column styles.
+
+---
+
+## [Previous] - 2025-11-24
+
+### Feature: Article Category Filter Integration
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Server Component Updates (app/articles/page.js)**
+   - Imported `getArticleCategories` from articlesApi
+   - Fetch categories and articles in parallel with Promise.all
+   - Extract `activeCategory` from searchParams
+   - Pass `categorySlug` to `getArticlesPaginated` for filtered results
+   - Pass `categories` and `activeSlug` props to ArticleGrid
+
+2. **Client Component Updates (ArticleGrid.jsx)**
+   - Imported `ArticleCategoryFilter` component
+   - Accept `categories` and `activeSlug` props
+   - Render filter component before SortControls
+   - No prop-drilling errors
+
+3. **Integration Verification**
+   - Category filter appears at top of articles page
+   - Clicking category updates URL with ?category=slug
+   - Server re-renders with filtered articles
+   - Clean Architecture maintained with API Layer abstraction
+
+---
+
+## [Previous] - 2025-11-02
 
 ### Feature: Navbar MegaMenu with SSR Category Fetching
 **Status**: ✅ COMPLETED (100%)
@@ -396,3 +602,61 @@
 2. Enhanced `src/components/ui/EmptyState/EmptyState.jsx` to support optional `description`, `actionLabel`, and `actionHref` props, enabling reusable messaging with contextual CTAs.
 3. Updated `src/components/ui/EmptyState/EmptyState.module.scss` with design tokens, layout refinements, and button styling to match the dark theme with gold accents while remaining RTL-friendly.
 4. Integrated `ListGuard` across `/products`, `/articles`, `/courses`, and `/services` pages so all grids now share consistent empty feedback driven by URL filters.
+
+## [Latest] - 2025-11-24
+
+### Fix: Article filter populate consistency
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Updated `lib/articlesApi.js` → `getArticlesPaginated` to include `articles_categories` in `populate` while keeping the confirmed filter key `filters[articles_categories][slug][$eq]` for reliable Strapi filtering.
+
+---
+
+### Fix: Article category filter query alignment
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Updated `lib/articlesApi.js` → `getArticles` and `getArticlesPaginated` to use Strapi’s exact relation key `filters[articles_categories][slug][$eq]` when filtering by category slug.
+2. Ensured both limited and paginated article fetchers query the correct `articles_categories` relation to restore backend filtering.
+
+---
+
+### Feature: ArticleCategoryFilter Component
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Created `src/modules/articles/components/ArticleCategoryFilter.jsx` (client component):
+   - Accepts `categories` array and `activeSlug` from URL query param.
+   - Handles category selection via Next.js router.push with query param `?category=slug`.
+   - Resets pagination on category change (removes `page` param).
+   - Flat category structure (no subcategories logic).
+   - Includes "نمایش همه" clear button when a category is active.
+
+2. Created `src/modules/articles/components/ArticleCategoryFilter.module.scss`:
+   - Glassmorphism design matching ProductCategoryFilter aesthetics.
+   - Uses design tokens (`var(--color-text-primary)`, `var(--color-title-hover)`, etc.).
+   - Responsive grid layout (auto-fit, minmax).
+   - Active category indicator with checkmark badge.
+   - Hover effects with transform, glow, and backdrop-filter.
+   - RTL-friendly layout with proper spacing and alignment.
+
+3. Visual Features:
+   - Category cards with circular icon wrappers.
+   - Gold accent borders and hover states.
+   - Active state highlighting with checkmark badge.
+   - Smooth transitions (0.4s cubic-bezier).
+   - Responsive breakpoints (1024px, 600px).
+
+#### Architecture Maintained:
+- Client-side component for interactivity.
+- URL-driven state management via Next.js router.
+- Clean separation from products CategoryFilter (no code reuse).
+- SCSS Modules with design token system.
+- Accessibility features (aria-label, aria-current, focus states).
+
+#### Impact:
+- Articles listing page can now integrate category filtering UI.
+- Consistent visual language with products section.
+- SEO-friendly URL structure with query params.
+- Ready for integration with ArticleGrid and /articles page.

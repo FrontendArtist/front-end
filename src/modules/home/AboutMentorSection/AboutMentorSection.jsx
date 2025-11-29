@@ -4,7 +4,7 @@ import styles from './AboutMentorSection.module.scss';
 
 const AboutMentorSection = () => {
   return (
-    <section className={`${styles.aboutSection} section`}>
+    <section id="about-mentor" className={`${styles.aboutSection} section`}>
       <div className={`${styles.container} container`}>
         <div className={styles.imageWrapper}>
           <Image

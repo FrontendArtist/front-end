@@ -18,12 +18,14 @@ const HeroSection = () => {
         <div className={styles.overlay}></div>
       </div>
       <div className={`${styles.content} container`}>
-        <h1 className={styles.title}>تبدیل معامله به تعالی</h1>
+        <div className={styles.titleWrapper}>
+        <img src="/images/navline.png" alt="navline" className={styles.navline} />
+        <h1 className={styles.title}>طرح الهی | سفر عاشقانه از تاریکی به نور و بیداری</h1>
+        </div>
         <p className={styles.subtitle}>
-          فضایی برای رشد روح، تمرین بیداری و خدمت عاشقانه
         </p>
-        <ScrollCTAButton targetId="products-section">
-          مشاهده محصولات
+        <ScrollCTAButton targetId="about-mentor">
+          شروع سفر
         </ScrollCTAButton>  
       </div>
     </section>

@@ -43,4 +43,10 @@ a {
 }
 body{
   font-family: 'IRANSans'!important;
+  button{
+    font-family: 'IRANSans'!important;
+  }
+}
+.section{
+  border-bottom: 1px solid var(--color-text-primary);
 }
