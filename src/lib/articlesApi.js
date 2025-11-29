@@ -1,114 +1,70 @@
 /**
  * Articles API - لایه API اختصاصی برای مقالات
- * 
- * نقش:
- * این ماژول یک رابط تمیز و معنادار برای تمام عملیات مرتبط با مقالات (Articles) فراهم می‌کند.
- * این لایه بین UI و apiClient قرار دارد و منطق کسب‌وکار مربوط به مقالات را مدیریت می‌کند.
- * 
- * نقش در معماری:
- * - جزئیات endpoint های Strapi را از کامپوننت‌ها مخفی می‌کند
- * - بازیابی خطا و fallback های مخصوص مقالات را مدیریت می‌کند
- * - قرارداد API پایدار برای لایه UI فراهم می‌کند
- * - تست و Mock کردن را آسان‌تر می‌کند
- * 
- * الگوی طراحی (Repository Pattern):
- * - کامپوننت‌ها از جزئیات Strapi یا HTTP بی‌اطلاع هستند
- * - تغییرات API را می‌توان بدون دست زدن به کامپوننت‌ها انجام داد
- * - مدیریت خطا متمرکز و یکپارچه است
- * 
- * @module lib/articlesApi
+ * اصلاح شده برای پشتیبانی کامل از فیلتر دسته‌بندی و ساختار داده Strapi
  */
 
 import { apiClient } from './apiClient';
 import { formatStrapiArticles } from './strapiUtils';
 
 /**
- * واکشی تمام مقالات از Strapi
- * 
- * جریان داده در SSR:
- * 1. کامپوننت صفحه Next.js این تابع را در هنگام رندر سمت سرور صدا می‌زند
- * 2. این تابع از apiClient برای واکشی از Strapi استفاده می‌کند
- * 3. پاسخ خام Strapi با استفاده از strapiUtils فرمت می‌شود
- * 4. داده‌های تمیز و فرمت شده به صفحه برگردانده می‌شوند
- * 5. صفحه با داده رندر می‌شود و HTML به مرورگر ارسال می‌شود
- * 
- * استراتژی مدیریت خطا:
- * - در صورت خطا آرایه خالی برمی‌گرداند (Graceful Degradation)
- * - خطا را برای دیباگ لاگ می‌کند
- * - به صفحه اجازه می‌دهد با EmptyState رندر شود به‌جای کرش
- * 
- * استراتژی کش:
- * - از cache: 'no-store' در Next.js برای داده‌های همیشه تازه استفاده می‌کند
- * - می‌تواند برای استفاده از revalidation تغییر کند (مثلاً { next: { revalidate: 3600 } })
- * - در صورتی که داده‌ها کم تغییر می‌کنند، کش کردن را در نظر بگیرید
- * 
- * @returns {Promise<Array>} آرایه‌ای از اشیاء مقاله فرمت شده
- * 
- * @example
- * // در یک Server Component (page.js):
- * const articles = await getAllArticles();
- * return <ArticleGrid articles={articles} />;
- * 
- * // ساختار هر شیء مقاله:
- * {
- *   id: number,
- *   slug: string,
- *   title: string,
- *   excerpt: string,
- *   date: string,
- *   cover: { url: string, alt: string }
- * }
+ * واکشی دسته‌بندی‌های مقالات
+ * پشتیبانی از ساختار Flat و Nested
  */
-export async function getAllArticles() {
+export async function getArticleCategories() {
   try {
-    // واکشی مقالات با تمام رابطه‌ها populate شده
-    // Strapi به پارامتر "populate" نیاز دارد تا داده‌های مرتبط را شامل شود
-    const response = await apiClient('/api/articles?populate=*&sort=publishedAt:desc');
-    
-    // فرمت کردن پاسخ خام Strapi به داده‌های تمیز و قابل استفاده
-    // strapiUtils مدیریت URL های تصاویر، نگاشت فیلدها و بررسی null را انجام می‌دهد
-    const formattedArticles = formatStrapiArticles(response);
-    
-    return formattedArticles;
-    
+    const response = await apiClient(
+      '/api/articles-categories?populate=image&sort=name:asc'
+    );
+
+    const categoriesRaw = response?.data || [];
+
+    const categories = categoriesRaw.map((item) => {
+      // هندل کردن ساختار Flat (v5) و Nested (v4)
+      const data = item.attributes || item;
+      
+      // استخراج تصویر با ایمنی بالا
+      const imageSource = data.image?.data?.attributes || data.image || null;
+      const imageUrl = imageSource?.url || null;
+
+      return {
+        id: item.id,
+        name: data.name ?? '',
+        slug: data.slug ?? '',
+        description: data.description ?? '',
+        image: imageUrl
+      };
+    });
+
+    return categories;
   } catch (error) {
-    // ثبت خطا برای دیباگ در لاگ‌های سرور
-    console.error('خطا در واکشی مقالات:', error.message);
-    
-    // برگرداندن آرایه خالی به‌جای پرتاب خطا
-    // این به صفحه اجازه می‌دهد با EmptyState رندر شود
-    // تجربه کاربری بهتر از نمایش صفحه خطای 500
+    console.error('خطا در واکشی دسته‌بندی‌های مقالات:', error.message);
     return [];
   }
 }
 
 /**
- * واکشی یک مقاله خاص با استفاده از slug
- * 
- * استفاده:
- * این تابع توسط صفحه جزئیات مقاله (/articles/[slug]) استفاده می‌شود
- * 
- * @param {string} slug - slug مقاله از پارامتر URL
- * @returns {Promise<object|null>} شیء مقاله یا null در صورت عدم یافتن
- * 
- * @example
- * // در یک صفحه مسیر پویا:
- * const article = await getArticleBySlug(params.slug);
- * if (!article) notFound();
+ * واکشی تمام مقالات
+ */
+export async function getAllArticles() {
+  try {
+    const response = await apiClient('/api/articles?populate=*&sort=publishedAt:desc');
+    return formatStrapiArticles(response);
+  } catch (error) {
+    console.error('خطا در واکشی مقالات:', error.message);
+    return [];
+  }
+}
+
+/**
+ * واکشی یک مقاله با اسلاگ
  */
 export async function getArticleBySlug(slug) {
   try {
-    // کوئری Strapi با فیلتر slug
-    // از سینتکس Strapi v4/v5 برای فیلتر دقیق استفاده می‌کند
     const response = await apiClient(
       `/api/articles?filters[slug][$eq]=${slug}&populate=*`
     );
-    
-    // فرمت کردن و برگرداندن اولین نتیجه
-    // اگر نتیجه‌ای یافت نشد، null برمی‌گرداند
     const formattedArticles = formatStrapiArticles(response);
     return formattedArticles[0] || null;
-    
   } catch (error) {
     console.error(`خطا در واکشی مقاله با slug "${slug}":`, error.message);
     return null;
@@ -116,29 +72,23 @@ export async function getArticleBySlug(slug) {
 }
 
 /**
- * واکشی مقالات با محدودیت تعداد (برای صفحه اصلی)
- * 
- * این تابع برای نمایش تعدادی مقاله در صفحه اصلی طراحی شده است
- * و به‌صورت SSR در کامپوننت‌های سرور استفاده می‌شود
- * 
- * @param {object} options - آپشن‌های کوئری
- * @param {number} options.limit - تعداد مقالات (پیش‌فرض: 3)
- * @param {string} options.sort - پارامتر مرتب‌سازی Strapi (پیش‌فرض: "publishedAt:desc")
- * @returns {Promise<Array>} آرایه‌ای از مقالات فرمت شده
- * 
- * @example
- * // در Server Component:
- * const articles = await getArticles({ limit: 3 });
+ * واکشی مقالات (نسخه ساده)
  */
-export async function getArticles({ limit = 3, sort = 'publishedAt:desc' } = {}) {
+export async function getArticles({
+  limit = 3,
+  sort = 'publishedAt:desc',
+  categorySlug = null
+} = {}) {
   try {
-    const response = await apiClient(
-      `/api/articles?populate=*&pagination[limit]=${limit}&sort=${sort}`
-    );
-    
-    const formattedArticles = formatStrapiArticles(response);
-    return formattedArticles;
-    
+    let url = `/api/articles?populate=*&pagination[limit]=${limit}&sort=${sort}`;
+
+    if (categorySlug) {
+      // استفاده از نام فیلد صحیح طبق دیتابیس (articles_categories)
+      url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
+    }
+
+    const response = await apiClient(url);
+    return formatStrapiArticles(response);
   } catch (error) {
     console.error('خطا در واکشی مقالات:', error.message);
     return [];
@@ -146,37 +96,29 @@ export async function getArticles({ limit = 3, sort = 'publishedAt:desc' } = {})
 }
 
 /**
- * واکشی مقالات با قابلیت صفحه‌بندی و مرتب‌سازی
- * 
- * این تابع برای Route Handler داخلی Next.js طراحی شده است
- * و قابلیت pagination و sorting را پشتیبانی می‌کند
- * 
- * جریان داده:
- * Client Component → Next.js Route Handler → این تابع → apiClient → Strapi
- * 
- * @param {number} page - شماره صفحه (پیش‌فرض: 1)
- * @param {number} pageSize - تعداد آیتم در هر صفحه (پیش‌فرض: 6)
- * @param {string} sort - پارامتر مرتب‌سازی Strapi (پیش‌فرض: "publishedAt:desc")
- * @returns {Promise<{data: Array, meta: object}>} مقالات فرمت شده با metadata صفحه‌بندی
- * 
- * @example
- * // در Route Handler (/app/api/articles/route.js):
- * const result = await getArticlesPaginated(2, 6, "publishedAt:asc");
- * return Response.json(result);
+ * واکشی مقالات با صفحه‌بندی (برای صفحه اصلی مقالات)
+ * اصلاح شده: استفاده از populate=* برای اطمینان از دریافت کامل داده‌ها
  */
-export async function getArticlesPaginated(page = 1, pageSize = 6, sort = 'publishedAt:desc') {
+export async function getArticlesPaginated(
+  page = 1,
+  pageSize = 6,
+  sort = 'publishedAt:desc',
+  categorySlug = null
+) {
   try {
-    // ساخت query string با pagination و sort
-    // Strapi انتظار دارد: pagination[page]=X&pagination[pageSize]=Y&sort=field:order
-    const response = await apiClient(
-      `/api/articles?populate=cover&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`
-    );
+    // تغییر مهم: populate=* بجای populate=cover
+    // این اطمینان می‌دهد که اگر کارت مقاله نیاز به نمایش دسته یا نویسنده داشت، داده موجود باشد
+    let url = `/api/articles?populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`;
+
+    if (categorySlug) {
+      // استفاده از نام فیلد صحیح طبق دیتابیس (articles_categories)
+      url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
+    }
+
+    const response = await apiClient(url);
     
-    // فرمت کردن داده‌های مقالات
     const formattedArticles = formatStrapiArticles(response);
     
-    // برگرداندن داده‌ها به همراه metadata صفحه‌بندی
-    // metadata شامل: page, pageSize, pageCount, total
     return {
       data: formattedArticles,
       meta: response.meta || {}
@@ -184,47 +126,9 @@ export async function getArticlesPaginated(page = 1, pageSize = 6, sort = 'publi
     
   } catch (error) {
     console.error('خطا در واکشی مقالات صفحه‌بندی‌شده:', error.message);
-    // برگرداندن ساختار خالی اما معتبر
     return {
       data: [],
       meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } }
     };
   }
 }
-
-/**
- * مزایای معماری این الگو:
- * 
- * 1. جداسازی نگرانی‌ها (Separation of Concerns)
- *    - کامپوننت‌ها بر روی UI تمرکز دارند
- *    - این لایه واکشی داده را مدیریت می‌کند
- *    - apiClient جزئیات HTTP را مدیریت می‌کند
- * 
- * 2. قابلیت تست (Testability)
- *    - می‌توان این ماژول را در تست‌های کامپوننت Mock کرد
- *    - می‌توان این ماژول را به‌صورت مستقل تست کرد
- *    - وابستگی‌های Strapi را ایزوله می‌کند
- * 
- * 3. قابلیت نگهداری (Maintainability)
- *    - یک مکان واحد برای به‌روزرسانی کوئری‌های Strapi
- *    - افزودن کش، محدودیت نرخ و... آسان است
- *    - مستندسازی واضح قراردادهای داده
- * 
- * 4. انعطاف‌پذیری (Flexibility)
- *    - می‌توان بدون دست زدن به کامپوننت‌ها، بک‌اند را تغییر داد
- *    - می‌توان به‌راحتی GraphQL، REST API یا داده Mock اضافه کرد
- *    - می‌توان به‌روزرسانی‌های خوش‌بینانه یا پشتیبانی آفلاین پیاده‌سازی کرد
- * 
- * مثال استفاده در کامپوننت‌ها:
- * 
- * // ❌ اشتباه - از fetch مستقیماً در کامپوننت‌ها استفاده نکنید:
- * const res = await fetch('http://localhost:1337/api/articles');
- * 
- * // ❌ اشتباه - از apiClient مستقیماً در کامپوننت‌ها استفاده نکنید:
- * const data = await apiClient('/api/articles');
- * 
- * // ✅ درست - از API دامنه‌ای استفاده کنید:
- * import { getAllArticles } from '@/lib/articlesApi';
- * const articles = await getAllArticles();
- */
-

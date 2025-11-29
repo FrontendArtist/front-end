@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import ArticleCard from '@/components/cards/ArticleCard/ArticleCard';
 import SortControls from '@/components/ui/SortControls/SortControls';
+import ArticleCategoryFilter from '@/modules/articles/components/ArticleCategoryFilter';
+import { ARTICLES_PAGE_SIZE } from '@/lib/constants';
 import styles from './ArticleGrid.module.scss';
-
-const PAGE_SIZE = 6;
 
 // تعریف گزینه‌های مرتب‌سازی
 const SORT_OPTIONS = [
@@ -26,14 +26,26 @@ const SORT_OPTIONS = [
  * - امکان افزودن middleware (auth, caching) در آینده
  * 
  * @param {Array} initialArticles - مقالات اولیه از SSR
+ * @param {Array} categories - لیست دسته‌بندی‌های مقالات
+ * @param {string} activeSlug - slug دسته‌بندی فعال
  */
-const ArticleGrid = ({ initialArticles }) => {
+const ArticleGrid = ({ initialArticles, categories = [], activeSlug = '', initialMeta = {} }) => {
   const [articles, setArticles] = useState(initialArticles || []);
   const [sortBy, setSortBy] = useState('latest');
   const [isLoading, setIsLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(initialArticles.length === PAGE_SIZE);
-  const isInitialMount = useRef(true); // استفاده از useRef برای جلوگیری از اجرای اضافی در mount اول
+  const [page, setPage] = useState(initialMeta?.pagination?.page || 1);
+  const [hasMore, setHasMore] = useState(
+    (initialMeta?.pagination?.page || 1) < (initialMeta?.pagination?.pageCount || 1)
+  );
+  const isInitialMount = useRef(true);
+
+  // همگام‌سازی state داخلی با داده‌های جدیدی که از Server Component می‌رسد
+  useEffect(() => {
+    setArticles(initialArticles || []);
+    const p = initialMeta?.pagination;
+    setPage(p?.page || 1);
+    setHasMore((p?.page || 1) < (p?.pageCount || 1));
+  }, [initialArticles, activeSlug, initialMeta]);
 
   // Effect: مرتب‌سازی مقالات
   // هنگامی که کاربر ترتیب مرتب‌سازی را تغییر می‌دهد، مقالات را از ابتدا واکشی می‌کنیم
@@ -48,20 +60,22 @@ const ArticleGrid = ({ initialArticles }) => {
       setIsLoading(true);
       try {
         // محاسبه تعداد آیتم‌های فعلی برای حفظ تعداد نمایش
-        const itemsToFetch = Math.max(articles.length, PAGE_SIZE);
+        const itemsToFetch = Math.max(articles.length, ARTICLES_PAGE_SIZE);
         const sortQuery = sortBy === 'latest' ? 'publishedAt:desc' : 'publishedAt:asc';
         
         // ✅ استفاده از Route Handler داخلی Next.js به‌جای Strapi مستقیم
         // Client → /api/articles → Next.js Route Handler → Domain API → Strapi
+        const categoryParam = activeSlug ? `&categorySlug=${activeSlug}` : '';
         const response = await fetch(
-          `/api/articles?page=1&pageSize=${itemsToFetch}&sort=${sortQuery}`
+          `/api/articles?page=1&pageSize=${itemsToFetch}&sort=${sortQuery}${categoryParam}`
         );
         const result = await response.json();
         
         // داده‌ها از Route Handler قبلاً فرمت شده برمی‌گردند
         setArticles(result.data);
-        setPage(1);
-        setHasMore(result.meta.pagination.page < result.meta.pagination.pageCount);
+        const p = result?.meta?.pagination;
+        setPage(p?.page || 1);
+        setHasMore((p?.page || 1) < (p?.pageCount || 1));
       } catch (error) { 
         console.error("خطا در مرتب‌سازی مقالات:", error); 
       } finally { 
@@ -71,7 +85,7 @@ const ArticleGrid = ({ initialArticles }) => {
 
     sortArticles();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortBy]);
+  }, [sortBy, activeSlug]);
 
   // Handler: بارگذاری صفحه بعدی مقالات
   // هنگام کلیک روی دکمه "بارگذاری بیشتر"
@@ -83,15 +97,17 @@ const ArticleGrid = ({ initialArticles }) => {
       
       // ✅ استفاده از Route Handler داخلی Next.js به‌جای Strapi مستقیم
       // Client → /api/articles → Next.js Route Handler → Domain API → Strapi
+      const categoryParam = activeSlug ? `&categorySlug=${activeSlug}` : '';
       const response = await fetch(
-        `/api/articles?page=${nextPage}&pageSize=${PAGE_SIZE}&sort=${sortQuery}`
+        `/api/articles?page=${nextPage}&pageSize=${ARTICLES_PAGE_SIZE}&sort=${sortQuery}${categoryParam}`
       );
       const result = await response.json();
       
       // داده‌ها از Route Handler قبلاً فرمت شده برمی‌گردند
       setArticles(prev => [...prev, ...result.data]);
-      setPage(nextPage);
-      setHasMore(result.meta.pagination.page < result.meta.pagination.pageCount);
+      const p = result?.meta?.pagination;
+      setPage(p?.page || nextPage);
+      setHasMore((p?.page || nextPage) < (p?.pageCount || 1));
     } catch (error) { 
       console.error("خطا در بارگذاری مقالات بیشتر:", error); 
     } finally { 
@@ -101,6 +117,12 @@ const ArticleGrid = ({ initialArticles }) => {
 
   return (
     <div>
+      {/* فیلتر دسته‌بندی مقالات */}
+      <ArticleCategoryFilter 
+        categories={categories}
+        activeSlug={activeSlug}
+      />
+      
       {/* 5. جایگزینی دکمه‌های قدیمی با کامپوننت جدید */}
       <SortControls 
         options={SORT_OPTIONS}

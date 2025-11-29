@@ -23,22 +23,24 @@
  */
 
 import { getArticlesPaginated } from '@/lib/articlesApi';
+import { ARTICLES_PAGE_SIZE } from '@/lib/constants';
 
 /**
  * GET Handler - دریافت لیست مقالات با صفحه‌بندی
  * 
  * Query Parameters پشتیبانی شده:
  * - page: شماره صفحه (پیش‌فرض: 1)
- * - pageSize: تعداد آیتم در هر صفحه (پیش‌فرض: 6)
+ * - pageSize: تعداد آیتم در هر صفحه (پیش‌فرض: از ARTICLES_PAGE_SIZE)
  * - sort: پارامتر مرتب‌سازی Strapi (پیش‌فرض: "publishedAt:desc")
  *        مقادیر معتبر: "publishedAt:desc", "publishedAt:asc"
+ * - categorySlug: فیلتر دسته‌بندی مقالات (اختیاری)
  * 
  * @param {Request} request - شیء Request از Next.js
  * @returns {Response} JSON response حاوی {data: Array, meta: object}
  * 
  * @example
  * // از Client Component:
- * const response = await fetch('/api/articles?page=2&pageSize=6&sort=publishedAt:asc');
+ * const response = await fetch('/api/articles?page=2&pageSize=6&sort=publishedAt:asc&categorySlug=tech');
  * const result = await response.json();
  * // result = { data: [...], meta: { pagination: {...} } }
  */
@@ -47,14 +49,15 @@ export async function GET(request) {
     // استخراج query parameters از URL
     const { searchParams } = new URL(request.url);
     
-    // دریافت پارامترها با مقادیر پیش‌فرض
+    // دریافت پارامترها با مقادیر پیش‌فرض از constants
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(searchParams.get('pageSize') || '6', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || String(ARTICLES_PAGE_SIZE), 10);
     const sort = searchParams.get('sort') || 'publishedAt:desc';
+    const categorySlug = searchParams.get('categorySlug') || null;
     
     // فراخوانی تابع دامنه‌ای برای واکشی مقالات
     // این تابع از apiClient استفاده می‌کند و داده‌ها را فرمت می‌کند
-    const result = await getArticlesPaginated(page, pageSize, sort);
+    const result = await getArticlesPaginated(page, pageSize, sort, categorySlug);
     
     // برگرداندن پاسخ JSON
     // Next.js 13+ از Response.json() برای ساخت پاسخ استفاده می‌کند

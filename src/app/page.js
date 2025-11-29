@@ -1,6 +1,7 @@
 import ProductsSection from "@/modules/home/ProductsSection/ProductsSection";
 import styles from "./page.module.css";
 import HeroSection from "@/modules/home/HeroSection/HeroSection";
+import IntroTextSection from "@/modules/home/IntroTextSection/IntroTextSection";
 import AboutMentorSection from "@/modules/home/AboutMentorSection/AboutMentorSection";
 import CoursesSection from "@/modules/home/CoursesSection/CoursesSection";
 import HakimElahiSection from "@/modules/home/HakimElahiSection/HakimElahiSection";
@@ -28,6 +29,7 @@ export default async function HomePage() {
   return (
     <div className={styles.container}>
       <HeroSection />
+      <IntroTextSection />
       <AboutMentorSection />
       <CoursesSection data={courses} />
       <HakimElahiSection />

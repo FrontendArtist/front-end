@@ -12,7 +12,8 @@
 
 import ListGuard from '@/components/layout/ListGuard';
 import ArticleGrid from '@/modules/articles/ArticleGrid/ArticleGrid';
-import { getArticlesPaginated } from '@/lib/articlesApi';
+import { getArticlesPaginated, getArticleCategories } from '@/lib/articlesApi';
+import { ARTICLES_PAGE_SIZE } from '@/lib/constants';
 import styles from './articles.module.scss';
 
 export const metadata = {
@@ -25,21 +26,34 @@ export const metadata = {
  * 
  * Architecture:
  * - Uses getArticlesPaginated() برای واکشی صفحه اول با pagination
- * - PAGE_SIZE = 6 (فقط 6 مقاله در بارگذاری اولیه)
+ * - PAGE_SIZE از lib/constants.js وارد می‌شود (Single Source of Truth)
  * - Follows Repository Pattern for clean separation of concerns
  * - SSR renders complete HTML with initial article data
  */
 export default async function ArticlesPage({ searchParams: spPromise }) {
   // واکشی صفحه اول مقالات با pagination
-  // فقط 6 مقاله اول مرتب‌شده بر اساس تاریخ انتشار
+  // تعداد مقالات از ARTICLES_PAGE_SIZE در lib/constants.js
   const searchParams = await spPromise;
   const normalizedSearchParams =
     searchParams && typeof searchParams.entries === 'function'
       ? Object.fromEntries(searchParams.entries())
       : searchParams || {};
+  
+  // خواندن دسته‌بندی فعال از پارامترهای URL
+  const activeCategory = normalizedSearchParams.category || '';
   const hasFilters = Object.keys(normalizedSearchParams).length > 0;
-  const result = await getArticlesPaginated(1, 6, 'publishedAt:desc');
+  
+  // واکشی مقالات و دسته‌بندی‌ها به‌صورت موازی
+  const [result, categories] = await Promise.all([
+    getArticlesPaginated(1, ARTICLES_PAGE_SIZE, 'publishedAt:desc', activeCategory || null),
+    getArticleCategories()
+  ]);
+
+  // این خط را موقتاً اضافه کردیم و ترمینال VSCode را چک کنید
+  console.log('Categories fetched from API:', JSON.stringify(categories, null, 2));
+  
   const initialArticles = result.data;
+  const initialMeta = result.meta;
   
   return (
     <main className={styles.main}>
@@ -53,10 +67,14 @@ export default async function ArticlesPage({ searchParams: spPromise }) {
           entityName="مقاله"
           resetLink="/articles"
         >
-          <ArticleGrid initialArticles={initialArticles} />
+          <ArticleGrid 
+            initialArticles={initialArticles}
+            initialMeta={initialMeta}
+            categories={categories}
+            activeSlug={activeCategory}
+          />
         </ListGuard>
       </div>
     </main>
   );
 }
-

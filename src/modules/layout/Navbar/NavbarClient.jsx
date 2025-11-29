@@ -5,17 +5,22 @@ import Link from 'next/link';
 import Image from 'next/image';
 import styles from './Navbar.module.scss';
 
-const NavbarClient = ({ categoriesSnapshot = '[]' }) => {
+const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '[]' }) => {
   const [isClient, setIsClient] = useState(false);
   useEffect(() => setIsClient(true), []);
-  const categories = useMemo(() => {
+
+  const productCategories = useMemo(() => {
     try { return JSON.parse(categoriesSnapshot) || []; } catch { return []; }
   }, [categoriesSnapshot]);
 
+  const articleCategories = useMemo(() => {
+    try { return JSON.parse(articleCategoriesSnapshot) || []; } catch { return []; }
+  }, [articleCategoriesSnapshot]);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeMobileTab, setActiveMobileTab] = useState('menu'); // menu | categories
+  const [activeMobileTab, setActiveMobileTab] = useState('menu'); // menu | products | articles
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+  const [activeMegaMenu, setActiveMegaMenu] = useState(null); // 'products' | 'articles' | null
   const closeTimerRef = useRef(null);
 
   useEffect(() => {
@@ -38,20 +43,20 @@ const NavbarClient = ({ categoriesSnapshot = '[]' }) => {
   }, []);
 
   // مگامنو Hover کنترل
-  const handleMouseEnter = () => {
+  const handleMouseEnter = (menu) => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-    setIsMegaMenuOpen(true);
+    setActiveMegaMenu(menu);
   };
 
   const handleMouseLeave = () => {
     closeTimerRef.current = setTimeout(() => {
-      setIsMegaMenuOpen(false);
+      setActiveMegaMenu(null);
     }, 300);
   };
 
   return (
     <>
-      <header className={`${styles.header} ${isScrolled ? styles.scrolled : ''} ${isMegaMenuOpen ? styles.megaOpen : ''}`}>
+      <header className={`${styles.header} ${isScrolled ? styles.scrolled : ''} ${activeMegaMenu ? styles.megaOpen : ''}`}>
         <nav className={`${styles.navbar} container`}>
           {/* 🟢 Logo */}
           <div className={styles.logo}>
@@ -64,14 +69,14 @@ const NavbarClient = ({ categoriesSnapshot = '[]' }) => {
           <ul className={styles.navList}>
             <li
               className={styles.navItem}
-              onMouseEnter={handleMouseEnter}
+              onMouseEnter={() => handleMouseEnter('products')}
               onMouseLeave={handleMouseLeave}
             >
               <Link href="/products" className={styles.navLink}>
                 <span className={styles.navLinkContent}>
                   محصولات
                   <svg
-                    className={`${styles.dropdownIcon} ${isMegaMenuOpen ? styles.dropdownIconOpen : ''}`}
+                    className={`${styles.dropdownIcon} ${activeMegaMenu === 'products' ? styles.dropdownIconOpen : ''}`}
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
                     aria-hidden="true"
@@ -81,9 +86,29 @@ const NavbarClient = ({ categoriesSnapshot = '[]' }) => {
                   </svg>
                 </span>
               </Link>
-
             </li>
-            <li><Link href="/articles" className={styles.navLink}>مقالات</Link></li>
+            
+            <li
+              className={styles.navItem}
+              onMouseEnter={() => handleMouseEnter('articles')}
+              onMouseLeave={handleMouseLeave}
+            >
+              <Link href="/articles" className={styles.navLink}>
+                <span className={styles.navLinkContent}>
+                  مقالات
+                  <svg
+                    className={`${styles.dropdownIcon} ${activeMegaMenu === 'articles' ? styles.dropdownIconOpen : ''}`}
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </span>
+              </Link>
+            </li>
+
             <li><Link href="/courses" className={styles.navLink}>دوره‌ها</Link></li>
             <li><Link href="/services" className={styles.navLink}>خدمات</Link></li>
             <li><Link href="/about-us" className={styles.navLink}>درباره ما</Link></li>
@@ -142,10 +167,16 @@ const NavbarClient = ({ categoriesSnapshot = '[]' }) => {
               منو
             </button>
             <button
-              onClick={() => setActiveMobileTab('categories')}
-              className={`${styles.tabBtn} ${activeMobileTab === 'categories' ? styles.active : ''}`}
+              onClick={() => setActiveMobileTab('products')}
+              className={`${styles.tabBtn} ${activeMobileTab === 'products' ? styles.active : ''}`}
             >
-              دسته‌بندی‌ها
+              محصولات
+            </button>
+            <button
+              onClick={() => setActiveMobileTab('articles')}
+              className={`${styles.tabBtn} ${activeMobileTab === 'articles' ? styles.active : ''}`}
+            >
+              مقالات
             </button>
           </div>
 
@@ -161,11 +192,11 @@ const NavbarClient = ({ categoriesSnapshot = '[]' }) => {
               </ul>
             )}
 
-            {activeMobileTab === 'categories' && (
+            {activeMobileTab === 'products' && (
               <ul className={styles.mobileNavList}>
-                {categories.map(cat => (
+                {productCategories.map(cat => (
                   <li key={cat.id} className={styles.mobileCategoryGroup}>
-                    <Link href={`/products/${cat.slug}`} onClick={closeMobileMenu}>{cat.name}</Link>
+                    <Link href={`/products/${cat.slug}`} onClick={closeMobileMenu} className={styles.mobileCategoryTitle}>{cat.name}</Link>
                     {Array.isArray(cat.subCategories) && cat.subCategories.length > 0 && (
                       <ul className={styles.mobileSubList}>
                         {cat.subCategories.map(sub => (
@@ -181,42 +212,90 @@ const NavbarClient = ({ categoriesSnapshot = '[]' }) => {
                 ))}
               </ul>
             )}
+
+            {activeMobileTab === 'articles' && (
+               <ul className={styles.mobileNavList}>
+                  {articleCategories.map(cat => (
+                     <li key={cat.id} className={styles.mobileCategoryGroup}>
+                        <Link href={`/articles?category=${cat.slug}`} onClick={closeMobileMenu} className={styles.mobileCategoryTitle}>
+                           {cat.name}
+                        </Link>
+                     </li>
+                  ))}
+                  <li>
+                      <Link href="/articles" onClick={closeMobileMenu} className={styles.mobileCategoryTitle} style={{ color: 'var(--color-accent, #f39c12)' }}>
+                        مشاهده همه مقالات
+                      </Link>
+                  </li>
+               </ul>
+            )}
           </div>
         </div>
 
-        <div className={styles.mobileMenuOverlay} onClick={closeMobileMenu} />
-        {/* MegaMenu */}
-        {isClient && categories.length > 0 && (
-          <div
-            className={`${styles.megaMenu} ${isMegaMenuOpen ? styles.megaMenuVisible : ''}`}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            role="menu"
-            aria-label="منوی دسته‌بندی محصولات"
-            aria-hidden={!isMegaMenuOpen}
-          >
-            <span className={styles.megaBorder} aria-hidden="true" />
-            <div className={styles.megaMenuGrid}>
-              {categories.map(cat => (
-                <div key={cat.id} className={styles.megaMenuColumn}>
-                  <Link href={`/products/${cat.slug}`} className={styles.categoryTitle}>
-                    {cat.name}
-                  </Link>
-                  {cat.subCategories?.length > 0 && (
-                    <ul className={styles.subCategoryList}>
-                      {cat.subCategories.map(sub => (
-                        <li key={sub.id}>
-                          <Link href={`/products/${cat.slug}/${sub.slug}`}>
-                            {sub.name}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
+        <div className={`${styles.mobileMenuOverlay} ${isMobileMenuOpen ? styles.open : ''}`} onClick={closeMobileMenu} />
+        
+        {/* MegaMenus */}
+        {isClient && (
+          <>
+            {/* Products MegaMenu */}
+            <div
+              className={`${styles.megaMenu} ${activeMegaMenu === 'products' ? styles.megaMenuVisible : ''}`}
+              onMouseEnter={() => handleMouseEnter('products')}
+              onMouseLeave={handleMouseLeave}
+              role="menu"
+              aria-label="منوی دسته‌بندی محصولات"
+              aria-hidden={activeMegaMenu !== 'products'}
+            >
+              <span className={styles.megaBorder} aria-hidden="true" />
+              <div className={styles.megaMenuGrid}>
+                {productCategories.map(cat => (
+                  <div key={cat.id} className={styles.megaMenuColumn}>
+                    <Link href={`/products/${cat.slug}`} className={styles.categoryTitle}>
+                      {cat.name}
+                    </Link>
+                    {cat.subCategories?.length > 0 && (
+                      <ul className={styles.subCategoryList}>
+                        {cat.subCategories.map(sub => (
+                          <li key={sub.id}>
+                            <Link href={`/products/${cat.slug}/${sub.slug}`}>
+                              {sub.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+
+            {/* Articles MegaMenu */}
+            <div
+              className={`${styles.megaMenu} ${activeMegaMenu === 'articles' ? styles.megaMenuVisible : ''}`}
+              onMouseEnter={() => handleMouseEnter('articles')}
+              onMouseLeave={handleMouseLeave}
+              role="menu"
+              aria-label="منوی دسته‌بندی مقالات"
+              aria-hidden={activeMegaMenu !== 'articles'}
+            >
+               <span className={styles.megaBorder} aria-hidden="true" />
+               <div className={styles.megaMenuGrid}>
+                  {articleCategories.map(cat => (
+                    <div key={cat.id} className={styles.megaMenuColumn}>
+                      <Link href={`/articles?category=${cat.slug}`} className={styles.categoryTitle}>
+                          {cat.image && (
+                              <div className={styles.articleImage}>
+                                  <Image src={cat.image} alt={cat.name} fill sizes="(max-width: 768px) 100vw, 300px" />
+                              </div>
+                          )}
+                          {cat.name}
+                      </Link>
+                    </div>
+                  ))}
+
+               </div>
+            </div>
+          </>
         )}
 
     </>
