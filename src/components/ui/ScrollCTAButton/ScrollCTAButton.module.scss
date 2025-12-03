@@ -14,7 +14,7 @@
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  inline-size:360px;
+  inline-size:310px;
   block-size: 150px;
   color: var(--color-bg-primary);
   font-size: var(--font-lg);
@@ -37,5 +37,6 @@
 .heroButtonLabel {
   pointer-events: none;
   color: inherit;
+  font-size: var(--font-md);
 }
 

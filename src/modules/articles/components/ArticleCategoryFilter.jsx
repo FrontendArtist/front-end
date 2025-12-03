@@ -69,7 +69,7 @@ export default function ArticleCategoryFilter({ categories = [], activeSlug = ''
 
   return (
     <section className={styles.categoriesSection} aria-label="دسته‌بندی مقالات">
-      <div className={styles.categoriesHeader}>
+      {/* <div className={styles.categoriesHeader}>
         <h2 className={styles.sectionTitle}>دسته‌بندی‌ها</h2>
         {activeSlug && (
           <button
@@ -81,7 +81,7 @@ export default function ArticleCategoryFilter({ categories = [], activeSlug = ''
             نمایش همه
           </button>
         )}
-      </div>
+      </div> */}
       
       <div className={styles.categoriesGrid}>
         {normalizedCategories.map(renderCategoryCard)}

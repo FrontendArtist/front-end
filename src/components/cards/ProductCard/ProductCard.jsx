@@ -67,7 +67,7 @@ const ProductCard = ({ product }) => {
       </div>
       <div className={styles.cardContent}>
         <h3 className={`${styles.cardTitle} card-title`}>{title}</h3>
-        {shortDescription && <p className={`${styles.cardText} card-text`}>{shortDescription}</p>}
+        {/* {shortDescription && <p className={`${styles.cardText} card-text`}>{shortDescription}</p>} */}
         <div className={styles.footer}>
           {formattedPrice > 0 && <span className={styles.price}>{formattedPrice.toLocaleString()} تومان</span>}
           <AddToCartButton />

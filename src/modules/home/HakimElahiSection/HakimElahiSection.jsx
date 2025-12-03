@@ -6,6 +6,15 @@ const HakimElahiSection = () => {
   return (
     <section className={`${styles.hakimElahiSection} section`}>
       <div className={`${styles.container} container`}>
+        <div className={styles.imageWrapper}>
+          <Image
+            src="/images/hakimelahi.png"
+            alt="تصویری از حکیم الهی و یک شاگرد"
+            fill
+            sizes="(max-width: 768px) 480px, 360px"
+            style={{ objectFit: 'cover', borderRadius: '16px' }}
+          />
+        </div>
         <div className={styles.contentWrapper}>
           <h2 className={styles.title}>حکیم الهی</h2>
           <p className={styles.text}>
@@ -14,15 +23,6 @@ const HakimElahiSection = () => {
           <Link href="/contact-us" className={`${styles.ctaButton} card-button`}>
             ارتباط با حکیم الهی
           </Link>
-        </div>
-        <div className={styles.imageWrapper}>
-          <Image
-            src="https://picsum.photos/seed/hakimelahi/600/700"
-            alt="تصویری از حکیم الهی و یک شاگرد"
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            style={{ objectFit: 'cover', borderRadius: '16px' }}
-          />
         </div>
       </div>
     </section>
