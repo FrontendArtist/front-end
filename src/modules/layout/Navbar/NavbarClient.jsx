@@ -111,8 +111,8 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
 
             <li><Link href="/courses" className={styles.navLink}>دوره‌ها</Link></li>
             <li><Link href="/services" className={styles.navLink}>خدمات</Link></li>
-            <li><Link href="/about-us" className={styles.navLink}>درباره ما</Link></li>
-            <li><Link href="/contact-us" className={styles.navLink}>تماس با ما</Link></li>
+            <li><Link href="/about" className={styles.navLink}>درباره ما</Link></li>
+            <li><Link href="/contact" className={styles.navLink}>تماس با ما</Link></li>
           </ul>
 
           {/* 🟢 Actions + Mobile Toggle */}
