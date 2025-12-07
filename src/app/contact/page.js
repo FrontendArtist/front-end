@@ -5,6 +5,7 @@
  * Server Component که ContactForm را به‌عنوان Client Component استفاده می‌کند.
  */
 
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ContactForm from '@/modules/contact/components/ContactForm';
 import styles from './page.module.scss';
 
@@ -18,6 +19,8 @@ export default function ContactPage() {
     return (
         <main className={styles.contactPage}>
             <div className={styles.container}>
+                <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'تماس با ما' }]} />
+
                 {/* Header Section */}
                 <section className={styles.header}>
                     <h1 className={styles.title}>تماس با ما</h1>

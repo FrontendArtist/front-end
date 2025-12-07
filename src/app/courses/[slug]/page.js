@@ -8,6 +8,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import Accordion from '@/components/ui/Accordion/Accordion';
 import { getCourseBySlug } from '@/lib/coursesApi';
 import styles from './page.module.scss';
@@ -21,11 +22,11 @@ const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localho
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const rawCourse = await getCourseBySlug(slug);
-  
+
   if (!rawCourse) {
     return { title: 'دوره یافت نشد' };
   }
-  
+
   return {
     title: `${rawCourse.title} | وب‌سایت ما`,
     description: rawCourse.shortDescription,
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }) {
  */
 export default async function CoursePage({ params }) {
   const { slug } = await params;
-  
+
   // Data fetched via API Layer abstraction
   const rawCourse = await getCourseBySlug(slug);
 
@@ -66,6 +67,12 @@ export default async function CoursePage({ params }) {
   return (
     <main className={styles.coursePage}>
       <div className="container">
+        <Breadcrumb items={[
+          { label: 'خانه', href: '/' },
+          { label: 'دوره‌ها', href: '/courses' },
+          { label: course.title }
+        ]} />
+
         <div className={styles.mainInfoGrid}>
           <div className={styles.mediaWrapper}>
             <Image
@@ -90,10 +97,10 @@ export default async function CoursePage({ params }) {
         </div>
 
         {course.curriculum && course.curriculum.length > 0 && (
-           <div className={styles.curriculumSection}>
-             <h2 className={styles.sectionTitle}>سرفصل‌های دوره</h2>
-             <Accordion items={course.curriculum} />
-           </div>
+          <div className={styles.curriculumSection}>
+            <h2 className={styles.sectionTitle}>سرفصل‌های دوره</h2>
+            <Accordion items={course.curriculum} />
+          </div>
         )}
       </div>
     </main>

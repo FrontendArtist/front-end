@@ -10,6 +10,7 @@
  * بقیه آیتم‌ها با دکمه "بارگذاری بیشتر" از سمت کلاینت واکشی می‌شوند
  */
 
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ListGuard from '@/components/layout/ListGuard';
 import CourseGrid from '@/modules/courses/CourseGrid/CourseGrid';
 import { getCoursesPaginated } from '@/lib/coursesApi';
@@ -40,10 +41,12 @@ export default async function CoursesPage({ searchParams: spPromise }) {
   const hasFilters = Object.keys(normalizedSearchParams).length > 0;
   const result = await getCoursesPaginated(1, 6, 'createdAt:desc');
   const initialCourses = result.data;
-  
+
   return (
     <main className={styles.main}>
       <div className="container">
+        <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'دوره‌ها' }]} />
+
         <header className={styles.header}>
           <h1 className={styles.title}>دوره‌ها</h1>
         </header>

@@ -6,6 +6,7 @@
  */
 
 import Image from 'next/image';
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import styles from './page.module.scss';
 
 export const metadata = {
@@ -18,6 +19,8 @@ export default function AboutPage() {
     return (
         <main className={styles.main}>
             <div className={styles.container}>
+                <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'درباره ما' }]} />
+
                 {/* Header Section */}
                 <header className={styles.header}>
                     <h1 className={styles.title}>درباره ما</h1>
