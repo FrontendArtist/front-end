@@ -1,16 +1,18 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import ArticleCard from '@/components/cards/ArticleCard/ArticleCard';
 import SortControls from '@/components/ui/SortControls/SortControls';
 import ArticleCategoryFilter from '@/modules/articles/components/ArticleCategoryFilter';
+import EmptyState from '@/components/ui/EmptyState/EmptyState';
 import { ARTICLES_PAGE_SIZE } from '@/lib/constants';
 import styles from './ArticleGrid.module.scss';
 
-// تعریف گزینه‌های مرتب‌سازی
+// تعریف گزینه‌های مرتب‌سازی (فرمت مستقیم Strapi)
 const SORT_OPTIONS = [
-  { value: 'latest', label: 'جدیدترین' },
-  { value: 'oldest', label: 'قدیمی‌ترین' },
+  { value: 'publishedAt:desc', label: 'جدیدترین' },
+  { value: 'publishedAt:asc', label: 'قدیمی‌ترین' },
 ];
 
 /**
@@ -30,8 +32,11 @@ const SORT_OPTIONS = [
  * @param {string} activeSlug - slug دسته‌بندی فعال
  */
 const ArticleGrid = ({ initialArticles, categories = [], activeSlug = '', initialMeta = {} }) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const sortBy = searchParams.get('sort') || 'publishedAt:desc';
+
   const [articles, setArticles] = useState(initialArticles || []);
-  const [sortBy, setSortBy] = useState('latest');
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(initialMeta?.pagination?.page || 1);
   const [hasMore, setHasMore] = useState(
@@ -61,30 +66,29 @@ const ArticleGrid = ({ initialArticles, categories = [], activeSlug = '', initia
       try {
         // محاسبه تعداد آیتم‌های فعلی برای حفظ تعداد نمایش
         const itemsToFetch = Math.max(articles.length, ARTICLES_PAGE_SIZE);
-        const sortQuery = sortBy === 'latest' ? 'publishedAt:desc' : 'publishedAt:asc';
-        
+
         // ✅ استفاده از Route Handler داخلی Next.js به‌جای Strapi مستقیم
         // Client → /api/articles → Next.js Route Handler → Domain API → Strapi
         const categoryParam = activeSlug ? `&categorySlug=${activeSlug}` : '';
         const response = await fetch(
-          `/api/articles?page=1&pageSize=${itemsToFetch}&sort=${sortQuery}${categoryParam}`
+          `/api/articles?page=1&pageSize=${itemsToFetch}&sort=${sortBy}${categoryParam}`
         );
         const result = await response.json();
-        
+
         // داده‌ها از Route Handler قبلاً فرمت شده برمی‌گردند
         setArticles(result.data);
         const p = result?.meta?.pagination;
         setPage(p?.page || 1);
         setHasMore((p?.page || 1) < (p?.pageCount || 1));
-      } catch (error) { 
-        console.error("خطا در مرتب‌سازی مقالات:", error); 
-      } finally { 
-        setIsLoading(false); 
+      } catch (error) {
+        console.error("خطا در مرتب‌سازی مقالات:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     sortArticles();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy, activeSlug]);
 
   // Handler: بارگذاری صفحه بعدی مقالات
@@ -93,55 +97,70 @@ const ArticleGrid = ({ initialArticles, categories = [], activeSlug = '', initia
     setIsLoading(true);
     try {
       const nextPage = page + 1;
-      const sortQuery = sortBy === 'latest' ? 'publishedAt:desc' : 'publishedAt:asc';
-      
+
       // ✅ استفاده از Route Handler داخلی Next.js به‌جای Strapi مستقیم
       // Client → /api/articles → Next.js Route Handler → Domain API → Strapi
       const categoryParam = activeSlug ? `&categorySlug=${activeSlug}` : '';
       const response = await fetch(
-        `/api/articles?page=${nextPage}&pageSize=${ARTICLES_PAGE_SIZE}&sort=${sortQuery}${categoryParam}`
+        `/api/articles?page=${nextPage}&pageSize=${ARTICLES_PAGE_SIZE}&sort=${sortBy}${categoryParam}`
       );
       const result = await response.json();
-      
+
       // داده‌ها از Route Handler قبلاً فرمت شده برمی‌گردند
       setArticles(prev => [...prev, ...result.data]);
       const p = result?.meta?.pagination;
       setPage(p?.page || nextPage);
       setHasMore((p?.page || nextPage) < (p?.pageCount || 1));
-    } catch (error) { 
-      console.error("خطا در بارگذاری مقالات بیشتر:", error); 
-    } finally { 
-      setIsLoading(false); 
+    } catch (error) {
+      console.error("خطا در بارگذاری مقالات بیشتر:", error);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Handler: تغییر ترتیب مرتب‌سازی
+  const handleSortChange = (newSort) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('sort', newSort);
+    if (activeSlug) {
+      params.set('category', activeSlug);
+    }
+    router.push(`/articles?${params.toString()}`, { scroll: false });
   };
 
   return (
     <div>
       {/* فیلتر دسته‌بندی مقالات */}
-      <ArticleCategoryFilter 
+      <ArticleCategoryFilter
         categories={categories}
         activeSlug={activeSlug}
       />
-      
-      {/* 5. جایگزینی دکمه‌های قدیمی با کامپوننت جدید */}
-      <SortControls 
-        options={SORT_OPTIONS}
-        currentSort={sortBy}
-        onSortChange={setSortBy}
-      />
-      
-      <div className={styles.grid}>
-        {articles.map((article) => (
-          <ArticleCard key={article.id} article={article} />
-        ))}
-      </div>
 
-      {isLoading && <p>در حال بارگذاری...</p>}
+      {(!isLoading && articles.length === 0) ? (
+        <EmptyState title="هیچ مقاله‌ای با این مشخصات یافت نشد" />
+      ) : (
+        <>
+          {/* 5. جایگزینی دکمه‌های قدیمی با کامپوننت جدید */}
+          <SortControls
+            options={SORT_OPTIONS}
+            currentSort={sortBy}
+            onSortChange={handleSortChange}
+          />
 
-      {hasMore && !isLoading && (
-        <div className={styles.loadMoreContainer}>
-          <button onClick={handleLoadMore} className={styles.loadMoreButton}>بارگذاری بیشتر</button>
-        </div>
+          <div className={styles.grid}>
+            {articles.map((article) => (
+              <ArticleCard key={article.id} article={article} />
+            ))}
+          </div>
+
+          {isLoading && <p>در حال بارگذاری...</p>}
+
+          {hasMore && !isLoading && (
+            <div className={styles.loadMoreContainer}>
+              <button onClick={handleLoadMore} className={styles.loadMoreButton}>بارگذاری بیشتر</button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

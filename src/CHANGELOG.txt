@@ -1,6 +1,134 @@
 # CHANGELOG
 
-## [Latest] - 2025-11-29
+## [Latest] - 2025-12-07
+
+### Refactor: ArticleGrid URL-Driven Sorting
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ArticleGrid Component** (`src/modules/articles/ArticleGrid/ArticleGrid.jsx`)
+   - Imported Next.js navigation hooks: `useRouter` and `useSearchParams`.
+   - Replaced local state (`useState`) with URL-based sorting logic.
+   - Standardized SORT_OPTIONS values to direct Strapi format:
+     * `'publishedAt:desc'` (instead of `'latest'`)
+     * `'publishedAt:asc'` (instead of `'oldest'`)
+   - Created `handleSortChange` handler that updates URL search params via `router.push`.
+   - Removed mapping logic in fetch calls - now uses `sortBy` directly from URL.
+
+2. **Articles Page** (`src/app/articles/page.js`)
+   - Extract `sort` parameter from URL search params.
+   - Pass `sort` value to `getArticlesPaginated()` for SSR.
+   - Default value: `'publishedAt:desc'` when no sort param is present.
+
+#### Impact:
+- **URL-Driven State**: Sort preference is now in the URL, enabling bookmarking and sharing.
+- **SSR Compatible**: Server-side rendering respects the sort parameter from URL.
+- **Consistent Architecture**: Now matches ProductGrid pattern exactly.
+- **No Breaking Changes**: Default sort remains "newest first" (publishedAt:desc).
+
+---
+
+### Fix: ArticleGrid & ProductGrid Empty State Handling
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ArticleGrid & ProductGrid Components**
+   - Refactored `ArticleGrid.jsx` and `ProductGrid.jsx` to handle empty states internally.
+   - Now checks if `!isLoading && items.length === 0` to display `EmptyState` component.
+   - Hides Sort Controls and Grid when empty, but KEEPS Category Filters visible (critical fix).
+
+2. **Removed ListGuard Blocking**
+   - Removed `ListGuard` wrapper from `src/app/articles/page.js` and `src/app/products/page.js`.
+   - `ListGuard` was preventing the render of children (including filters) when the list was empty, causing a "dead end" UI.
+   - Removing it allows the internal logic of the Grids to take over, displaying the friendly empty state while allowing users to navigate away via filters.
+
+#### Impact:
+- **Better UX**: Users are no longer stuck on a blank screen when a category is empty.
+- **Navigation Preserved**: Category filters remain visible so users can easily switch to a different category.
+- **Visual Feedback**: Clearly shows "No items found" message using the standard `EmptyState` component.
+
+---
+
+### Refactor: Standardized Page Headers (Services, Contact, About)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Services Page** (`src/app/services/page.js` + `.module.scss`)
+   - Simplified header structure: removed subtitle and complex hero classes.
+   - Standardized class names to `.header` and `.title` matching Products/Articles pages.
+   - Removed BEM-style (`.servicesPage__hero`) in favor of clean CSS modules.
+
+2. **Contact Page** (`src/app/contact/page.js` + `.module.scss`)
+   - Removed subtitle (`pageSubtitle`) for consistency.
+   - Simplified header to just title.
+   - Fixed alignment: removed `text-align: center` to match left/right-aligned standard.
+
+3. **About Page** (`src/app/about/page.js` + `.module.scss`)
+   - Converted large "Hero Section" to standard simple Header.
+   - Removed introductory hero text.
+   - Wrapped content in a single top-level `container` and stripped redundant inner containers.
+
+#### Impact:
+- **Visual Consistency**: All main pages (Products, Articles, Courses, Services, Contact, About) now share the exact same header styling.
+- **Code Maintainability**: Unified CSS structure across all page modules.
+- **Cleaner UI**: Removed inconsistent subtitles and center-alignments.
+
+---
+
+### Feature: About Us & Contact Us Pages Implementation
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New Pages & Routes**
+   - Created `src/app/about/page.js` featuring Hero, Mission, Team, and CTA sections with responsive layout.
+   - Created `src/app/contact/page.js` featuring a functional contact form and information grid (Phone, Email, Address, Socials).
+   - Applied Glassmorphism design system with RTL support using `page.module.scss` files.
+
+2. **Contact Form Module** (`src/modules/contact/components/ContactForm.jsx`)
+   - Implemented functional form component using `react-hook-form`.
+   - Added validation rules: Name (required), Contact Info (Email/Phone regex), Body (min 20 chars).
+   - Integrated logic for loading state, success feedback, and auto-reset.
+
+3. **API Integration** (`src/lib/contactApi.js`)
+   - Added `submitContactMessage` function to handle POST requests to `/api/contact-messages`.
+   - Follows Repository Pattern consistent with `servicesApi` and `productsApi`.
+
+#### Impact:
+- Complete "About Us" and "Contact Us" sections now available.
+- Functional integration with Strapi backend for message collection.
+- Consistent visual experience with existing pages (Dark/Gold theme, Glassmorphism).
+
+---
+
+### Refactor: Services Module Standardization (Breadcrumbs, Styling & Empty States)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ServiceGrid Component** (`src/modules/services/ServiceGrid/ServiceGrid.jsx`)
+   - Replaced manual empty state check with `ListGuard` wrapper.
+   - Standardized "No services found" message consistent with other modules.
+   - Removed component-level empty state logic in favor of shared component.
+
+2. **Service Main Page** (`src/app/services/page.js` + `.module.scss`)
+   - Added `Breadcrumb` navigation component to the listing page.
+   - Standardized layout padding (`padding-top/bottom`) using design tokens to match Products page.
+   - Renamed CSS classes (`.servicesPage` → `.main`, `.servicesPage__hero` → `.header`) for consistency with codebase patterns.
+
+3. **Service Detail Page** (`src/app/services/[slug]/page.js` + `.module.scss`)
+   - Replaced inline breadcrumbs HTML with shared `<Breadcrumb />` component.
+   - Replaced custom empty state UI with standard Next.js `notFound()` call.
+   - Applied consistent vertical rhythm (`--space-section-top-desktop`) to match listing pages.
+   - Removed 230+ lines of unused styles (cleanup of breadcrumbs and empty state classes).
+
+#### Impact:
+- **Visual Consistency**: Services module (List & Detail) now matches Products module pixel-perfectly.
+- **Improved Navigation**: Breadcrumbs now present on all Service pages.
+- **Code Reduction**: Significant deletion of technical debt and duplicate styles.
+- **Improved SEO**: Proper schema markup for breadcrumbs and handling of 404s.
+
+---
+
+## [Previous] - 2025-11-29
 
 ### Feature: IntroTextSection Module
 **Status**: ✅ COMPLETED (100%)

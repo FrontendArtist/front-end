@@ -30,6 +30,7 @@
  */
 
 import ListGuard from '@/components/layout/ListGuard';
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ServiceGrid from '@/modules/services/ServiceGrid/ServiceGrid';
 import { getServicesPaginated } from '@/lib/servicesApi';
 import styles from './services.module.scss';
@@ -80,7 +81,7 @@ export default async function ServicesPage({ searchParams: spPromise }) {
   // ============================================================================
   // DATA FETCHING (SSR)
   // ============================================================================
-  
+
   /**
    * Fetch paginated services from Strapi via API abstraction layer
    * 
@@ -118,15 +119,22 @@ export default async function ServicesPage({ searchParams: spPromise }) {
   const hasFilters = Object.keys(normalizedSearchParams).length > 0;
   const result = await getServicesPaginated(1, 2, 'createdAt:desc');
   const services = result.data;
-  
+
+  // Breadcrumb items
+  const breadcrumbItems = [
+    { label: 'خانه', href: '/' },
+    { label: 'خدمات' }
+  ];
+
   // ============================================================================
   // COMPONENT RENDERING
   // ============================================================================
-  
+
   return (
-    <main className={styles.servicesPage}>
+    <main className={styles.main}>
       <div className="container">
-        
+        <Breadcrumb items={breadcrumbItems} />
+
         {/* ================================================================== */}
         {/* HERO SECTION                                                       */}
         {/* ================================================================== */}
@@ -136,15 +144,13 @@ export default async function ServicesPage({ searchParams: spPromise }) {
           - Follows design tokens from styles.md
           - Responsive typography (32px → 28px → 24px)
         */}
-        <header className={styles.servicesPage__hero}>
-          <h1 className={styles.servicesPage__title}>
+        <header className={styles.header}>
+          <h1 className={styles.title}>
             خدمات ما
           </h1>
-          <p className={styles.servicesPage__subtitle}>
-            در این بخش می‌توانید با خدمات ما آشنا شوید و بر اساس نیاز خود انتخاب کنید.
-          </p>
+
         </header>
-        
+
         {/* ================================================================== */}
         {/* SERVICES GRID                                                      */}
         {/* ================================================================== */}
@@ -183,7 +189,7 @@ export default async function ServicesPage({ searchParams: spPromise }) {
         >
           <ServiceGrid initialServices={services} />
         </ListGuard>
-        
+
       </div>
     </main>
   );

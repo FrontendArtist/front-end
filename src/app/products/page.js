@@ -51,7 +51,7 @@ export default async function ProductsPage({ searchParams: spPromise }) {
 
   // Fetch categories once for both logic and client component
   const categories = await getCategoryTree();
-  
+
   let currentCategory = null;
   let currentSubCategory = null;
   let subSlugs = [];
@@ -59,7 +59,7 @@ export default async function ProductsPage({ searchParams: spPromise }) {
   // Find current category objects if slugs exist
   if (categorySlug) {
     currentCategory = categories.find(c => c.slug === categorySlug);
-    
+
     if (currentCategory) {
       if (subCategorySlug) {
         currentSubCategory = currentCategory.subCategories?.find(s => s.slug === subCategorySlug);
@@ -89,21 +89,14 @@ export default async function ProductsPage({ searchParams: spPromise }) {
           <h1 className={styles.title}>محصولات</h1>
         </header>
 
-        <ListGuard
-          data={data}
-          hasFilters={hasFilters}
-          entityName="محصول"
-          resetLink="/products"
-        >
-          <ProductsPageClient
-            initialProducts={data}
-            initialMeta={meta}
-            categoriesSnapshot={JSON.stringify(categories)}
-            initialSort={sort}
-            initialCategory={categorySlug}
-            initialSubCategory={subCategorySlug}
-          />
-        </ListGuard>
+        <ProductsPageClient
+          initialProducts={data}
+          initialMeta={meta}
+          categoriesSnapshot={JSON.stringify(categories)}
+          initialSort={sort}
+          initialCategory={categorySlug}
+          initialSubCategory={subCategorySlug}
+        />
       </div>
     </main>
   );

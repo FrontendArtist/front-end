@@ -1,76 +1,13 @@
-@import '../../styles/base/mixins';
-
-/**
- * Services Page Styles
- * BEM naming with design tokens from styles.md
- */
-
-.servicesPage {
-  width: 100%;
+.main {
   padding-top: var(--space-section-top-desktop);
   padding-bottom: var(--space-section-bottom-desktop);
-  
-  @include respond(md) {
-    padding-top: 96px;
-    padding-bottom: 80px;
-  }
-  
-  @include respond(sm) {
-    padding-top: 64px;
-    padding-bottom: 56px;
-  }
 }
 
-// Hero Section
-.servicesPage__hero {
-  text-align: center;
+.header {
   margin-bottom: var(--space-title-content-desktop);
-  
-  @include respond(md) {
-    margin-bottom: 48px;
-  }
-  
-  @include respond(sm) {
-    margin-bottom: 40px;
-  }
 }
 
-// Title
-.servicesPage__title {
-  color: var(--color-text-primary);
+.title {
   font-size: var(--font-xl);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-sm);
-  margin: 0 0 var(--space-title-text-desktop) 0;
-  
-  @include respond(md) {
-    font-size: 28px;
-    margin-bottom: 20px;
-  }
-  
-  @include respond(sm) {
-    font-size: 24px;
-    margin-bottom: 16px;
-  }
+  color: var(--color-title-hover);
 }
-
-// Subtitle
-.servicesPage__subtitle {
-  color: var(--color-card-text);
-  font-size: var(--font-lg);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--line-height-md);
-  margin: 0;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-  
-  @include respond(md) {
-    font-size: var(--font-md);
-  }
-  
-  @include respond(sm) {
-    font-size: var(--font-sm);
-  }
-}
-

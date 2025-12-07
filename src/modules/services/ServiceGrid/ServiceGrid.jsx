@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import ServiceCard from '@/components/cards/ServiceCard/ServiceCard';
+import ListGuard from '@/components/layout/ListGuard';
 import styles from './ServiceGrid.module.scss';
 
 const PAGE_SIZE = 2;
@@ -31,7 +32,7 @@ const ServiceGrid = ({ initialServices }) => {
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialServices.length === PAGE_SIZE);
-  
+
   /**
    * Handler: بارگذاری صفحه بعدی خدمات
    * هنگام کلیک روی دکمه "بارگذاری بیشتر"
@@ -46,7 +47,7 @@ const ServiceGrid = ({ initialServices }) => {
     setIsLoading(true);
     try {
       const nextPage = page + 1;
-      
+
       // ✅ استفاده از Route Handler داخلی Next.js به‌جای Strapi مستقیم
       // Client → /api/services → Next.js Route Handler → Domain API → Strapi
       const response = await fetch(
@@ -64,57 +65,45 @@ const ServiceGrid = ({ initialServices }) => {
       setIsLoading(false);
     }
   };
-  
-  /**
-   * Empty State Rendering
-   * نمایش پیام هنگامی که هیچ خدمتی موجود نیست
-   */
-  if (!services || services.length === 0) {
-    return (
-      <div className={styles.emptyState}>
-        <p className={styles.emptyState__message}>
-          در حال حاضر هیچ خدمتی ثبت نشده است.
-        </p>
-      </div>
-    );
-  }
 
   /**
-   * Main Grid Rendering
+   * Main Grid Rendering with ListGuard
+   * ListGuard handles empty state automatically
    * نمایش شبکه کارت‌های خدمات با دکمه بارگذاری بیشتر
    */
   return (
-    <div className={styles.serviceGrid}>
-      {/* شبکه واکنش‌گرا با تنظیم خودکار ستون‌ها */}
-      <div className={styles.serviceGrid__container}>
-        {services.map((service) => (
-          <ServiceCard 
-            key={service.id} 
-            service={service} 
-          />
-        ))}
-      </div>
-
-      {/* دکمه بارگذاری بیشتر - فقط هنگامی که صفحات بیشتری وجود دارد */}
-      {hasMore && (
-        <div className={styles.loadMoreContainer}>
-          <button 
-            onClick={handleLoadMore} 
-            className={styles.loadMoreButton}
-            disabled={isLoading}
-          >
-            {isLoading ? 'در حال بارگذاری...' : 'بارگذاری بیشتر'}
-          </button>
+    <ListGuard data={services} entityName="خدمت" resetLink="/services">
+      <div className={styles.serviceGrid}>
+        {/* شبکه واکنش‌گرا با تنظیم خودکار ستون‌ها */}
+        <div className={styles.serviceGrid__container}>
+          {services.map((service) => (
+            <ServiceCard
+              key={service.id}
+              service={service}
+            />
+          ))}
         </div>
-      )}
 
-      {/* نمایش Loading State */}
-      {isLoading && !hasMore && (
-        <p className={styles.loadingText}>در حال بارگذاری...</p>
-      )}
-    </div>
+        {/* دکمه بارگذاری بیشتر - فقط هنگامی که صفحات بیشتری وجود دارد */}
+        {hasMore && (
+          <div className={styles.loadMoreContainer}>
+            <button
+              onClick={handleLoadMore}
+              className={styles.loadMoreButton}
+              disabled={isLoading}
+            >
+              {isLoading ? 'در حال بارگذاری...' : 'بارگذاری بیشتر'}
+            </button>
+          </div>
+        )}
+
+        {/* نمایش Loading State */}
+        {isLoading && !hasMore && (
+          <p className={styles.loadingText}>در حال بارگذاری...</p>
+        )}
+      </div>
+    </ListGuard>
   );
 };
 
 export default ServiceGrid;
-

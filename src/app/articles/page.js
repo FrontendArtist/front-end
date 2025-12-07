@@ -38,42 +38,38 @@ export default async function ArticlesPage({ searchParams: spPromise }) {
     searchParams && typeof searchParams.entries === 'function'
       ? Object.fromEntries(searchParams.entries())
       : searchParams || {};
-  
-  // خواندن دسته‌بندی فعال از پارامترهای URL
+
+
+  // خواندن دسته‌بندی و ترتیب مرتب‌سازی از پارامترهای URL
   const activeCategory = normalizedSearchParams.category || '';
+  const sort = normalizedSearchParams.sort || 'publishedAt:desc';
   const hasFilters = Object.keys(normalizedSearchParams).length > 0;
-  
+
   // واکشی مقالات و دسته‌بندی‌ها به‌صورت موازی
   const [result, categories] = await Promise.all([
-    getArticlesPaginated(1, ARTICLES_PAGE_SIZE, 'publishedAt:desc', activeCategory || null),
+    getArticlesPaginated(1, ARTICLES_PAGE_SIZE, sort, activeCategory || null),
     getArticleCategories()
   ]);
 
+
   // این خط را موقتاً اضافه کردیم و ترمینال VSCode را چک کنید
   console.log('Categories fetched from API:', JSON.stringify(categories, null, 2));
-  
+
   const initialArticles = result.data;
   const initialMeta = result.meta;
-  
+
   return (
     <main className={styles.main}>
       <div className="container">
         <header className={styles.header}>
           <h1 className={styles.title}>مقالات</h1>
         </header>
-        <ListGuard
-          data={initialArticles}
-          hasFilters={hasFilters}
-          entityName="مقاله"
-          resetLink="/articles"
-        >
-          <ArticleGrid 
-            initialArticles={initialArticles}
-            initialMeta={initialMeta}
-            categories={categories}
-            activeSlug={activeCategory}
-          />
-        </ListGuard>
+        <ArticleGrid
+          initialArticles={initialArticles}
+          initialMeta={initialMeta}
+          categories={categories}
+          activeSlug={activeCategory}
+        />
       </div>
     </main>
   );

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import ProductCard from '@/components/cards/ProductCard/ProductCard';
 import SortControls from '@/components/ui/SortControls/SortControls';
+import EmptyState from '@/components/ui/EmptyState/EmptyState';
 import styles from './ProductGrid.module.scss';
 
 const PAGE_SIZE = 6;
@@ -86,26 +87,32 @@ const ProductGrid = ({
 
   return (
     <div className={styles.productGridWrapper}>
-      <SortControls
-        options={SORT_OPTIONS}
-        currentSort={sort}
-        onSortChange={onSortChange}
-      />
+      {(!isLoading && products.length === 0) ? (
+        <EmptyState title="هیچ محصولی یافت نشد" />
+      ) : (
+        <>
+          <SortControls
+            options={SORT_OPTIONS}
+            currentSort={sort}
+            onSortChange={onSortChange}
+          />
 
-      <div className={styles.grid}>
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+          <div className={styles.grid}>
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
 
-      {isLoading && <p className={styles.loadingText}>در حال بارگذاری...</p>}
+          {isLoading && <p className={styles.loadingText}>در حال بارگذاری...</p>}
 
-      {hasMore && !isLoading && (
-        <div className={styles.loadMoreContainer}>
-          <button onClick={handleLoadMore} className={styles.loadMoreButton}>
-            بارگذاری بیشتر
-          </button>
-        </div>
+          {hasMore && !isLoading && (
+            <div className={styles.loadMoreContainer}>
+              <button onClick={handleLoadMore} className={styles.loadMoreButton}>
+                بارگذاری بیشتر
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

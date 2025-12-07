@@ -9,11 +9,10 @@
  * 
  * Structure:
  * 1. Main page container
- * 2. Breadcrumbs navigation
- * 3. Empty state (when service not found)
  * 
  * Note: ServiceSingle component has its own SCSS module
- * This file only handles page-level layout and breadcrumbs
+ * Breadcrumbs are handled by the shared Breadcrumb component
+ * Empty states are handled by notFound() and Next.js 404 page
  */
 
 // ============================================================================
@@ -24,259 +23,31 @@
   width: 100%;
   min-height: 100vh;
   background-color: var(--color-bg-primary);
-}
-
-// ============================================================================
-// BREADCRUMBS NAVIGATION
-// ============================================================================
-
-/**
- * Breadcrumbs provide hierarchical navigation
- * Shows: خانه / خدمات / [Current Service]
- * 
- * Layout: Horizontal inline with separators
- * Spacing: Above main content, below navbar
- * Colors: Primary for links, card text for current page
- */
-.breadcrumbs {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-top: 32px;
-  padding-bottom: 32px;
-  font-size: var(--font-md); // 16px
-  
-  // Responsive spacing adjustments
-  @include respond(md) {
-    padding-top: 24px;
-    padding-bottom: 24px;
-    font-size: var(--font-sm); // 14px
-    gap: 8px;
-  }
-  
-  @include respond(sm) {
-    padding-top: 20px;
-    padding-bottom: 20px;
-    gap: 6px;
-    flex-wrap: wrap; // Allow wrapping on very small screens
-  }
-}
-
-/**
- * Breadcrumb Links
- * Clickable navigation items (Home, Services)
- * Interactive with hover effects
- */
-.breadcrumbs__link {
-  color: var(--color-text-primary);
-  text-decoration: none;
-  @include hover-transition;
-  
-  /**
-   * Hover Effect
-   * Color shifts to hover variant for feedback
-   */
-  &:hover {
-    color: var(--color-title-hover);
-  }
-  
-  // Responsive font sizing
-  @include respond(sm) {
-    font-size: var(--font-sm);
-  }
-}
-
-/**
- * Breadcrumb Separator
- * Visual divider between navigation items
- * Non-interactive, purely decorative
- */
-.breadcrumbs__separator {
-  color: var(--color-card-text);
-  opacity: 0.6;
-  user-select: none; // Prevent text selection
-  
-  @include respond(sm) {
-    font-size: var(--font-sm);
-  }
-}
-
-/**
- * Current Page Indicator
- * Non-clickable, shows current location
- * Slightly muted color to indicate non-interactive state
- */
-.breadcrumbs__current {
-  color: var(--color-card-text);
-  font-weight: var(--font-weight-medium); // 500
-  
-  @include respond(sm) {
-    font-size: var(--font-sm);
-  }
-}
-
-// ============================================================================
-// EMPTY STATE (Service Not Found)
-// ============================================================================
-
-/**
- * Empty State Container
- * Displayed when service slug is invalid or service doesn't exist
- * 
- * Layout: Centered vertically and horizontally
- * Purpose: Graceful error handling with user-friendly message
- */
-.emptyState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  min-height: 50vh;
-  padding: var(--space-gap-desktop); // 48px
-  gap: var(--space-title-text-desktop); // 24px
-  
-  // Responsive padding adjustments
-  @include respond(md) {
-    min-height: 40vh;
-    padding: 40px 20px;
-    gap: 20px;
-  }
-  
-  @include respond(sm) {
-    min-height: 35vh;
-    padding: 32px 16px;
-    gap: 16px;
-  }
-}
-
-/**
- * Empty State Title
- * Main heading explaining the situation
- * Large, bold, attention-grabbing
- */
-.emptyState__title {
-  color: var(--color-text-primary);
-  font-size: var(--font-xl); // 32px
-  font-weight: var(--font-weight-bold); // 700
-  line-height: var(--line-height-sm); // 1.4
-  margin: 0;
-  
-  // Responsive font sizing
-  @include respond(md) {
-    font-size: 28px;
-  }
-  
-  @include respond(sm) {
-    font-size: 24px;
-  }
-}
-
-/**
- * Empty State Message
- * Explanatory text providing context and guidance
- * Readable, friendly tone
- */
-.emptyState__message {
-  color: var(--color-card-text);
-  font-size: var(--font-lg); // 20px
-  font-weight: var(--font-weight-regular); // 400
-  line-height: var(--line-height-md); // 1.6
-  max-width: 600px; // Constrain width for readability
-  margin: 0;
-  
-  // Responsive font sizing
-  @include respond(md) {
-    font-size: var(--font-md); // 16px
-    max-width: 500px;
-  }
-  
-  @include respond(sm) {
-    font-size: var(--font-md);
-    max-width: 100%;
-  }
-}
-
-/**
- * Empty State Button
- * Call-to-action link to return to services list
- * Styled as prominent button with hover effects
- */
-.emptyState__button {
-  display: inline-block;
-  margin-top: var(--space-text-button-desktop); // 24px
-  padding: 16px 48px;
-  color: var(--color-text-primary);
-  font-size: var(--font-lg); // 20px
-  font-weight: var(--font-weight-bold); // 700
-  text-decoration: none;
-  border: 2px solid var(--color-text-primary);
-  border-radius: 12px;
-  @include hover-transition;
-  
-  /**
-   * Hover Effect
-   * - Background fills with primary color
-   * - Text inverts to dark background
-   * - Border color changes to hover color
-   * - Subtle scale up for emphasis
-   */
-  &:hover {
-    background-color: var(--color-text-primary);
-    color: var(--color-bg-primary);
-    border-color: var(--color-title-hover);
-    transform: scale(1.03);
-  }
-  
-  // Responsive button sizing
-  @include respond(md) {
-    margin-top: 20px;
-    padding: 14px 40px;
-    font-size: var(--font-md);
-  }
-  
-  @include respond(sm) {
-    margin-top: 16px;
-    padding: 12px 32px;
-    font-size: var(--font-md);
-    width: 100%; // Full width on small mobile
-  }
+  padding-top: var(--space-section-top-desktop);
+  padding-bottom: var(--space-section-bottom-desktop);
 }
 
 /**
  * DESIGN SYSTEM COMPLIANCE:
  * 
  * ✅ BEM Naming Convention
- *    - Block: .serviceSinglePage, .breadcrumbs, .emptyState
- *    - Elements: __link, __separator, __current, __title, __message, __button
- *    - No modifiers needed in this component
+ *    - Block: .serviceSinglePage
  * 
  * ✅ Design Tokens from styles.md
- *    - Colors: --color-bg-primary, --color-text-primary, --color-card-text
- *    - Typography: --font-sm, --font-md, --font-lg, --font-xl
- *    - Spacing: --space-gap-desktop, --space-title-text-desktop
- *    - Line Heights: --line-height-sm, --line-height-md
- *    - Font Weights: --font-weight-regular, --font-weight-medium, --font-weight-bold
+ *    - Colors: --color-bg-primary
+ *    - Spacing: --space-section-top-desktop, --space-section-bottom-desktop
  * 
- * ✅ Responsive Design (Mobile-First Approach)
- *    - Desktop: Base styles
- *    - Tablet: @include respond(md) at 768px
- *    - Mobile: @include respond(sm) at 440px
- *    - Graceful degradation at each breakpoint
- * 
- * ✅ Mixins from _mixins.scss
- *    - @include respond($breakpoint): Responsive media queries
- *    - @include hover-transition: Smooth hover effects
+ * ✅ Component Reusability
+ *    - Breadcrumb component: @/components/ui/BreadCrumb/Breadcrumb
+ *    - EmptyState handled by Next.js notFound()
+ *    - ServiceSingle component: @/modules/services/ServiceSingle/ServiceSingle
  * 
  * ✅ RTL Support
- *    - Flex layouts handle RTL automatically
- *    - Text alignment follows document direction
- *    - Breadcrumb separators use gap (direction-agnostic)
+ *    - Layout handled by container class
+ *    - Component-specific RTL in ServiceSingle module
  * 
  * ✅ Accessibility
- *    - Sufficient color contrast ratios
- *    - Clear focus states on interactive elements
- *    - Semantic structure supported by styles
- *    - Readable font sizes at all breakpoints
+ *    - Semantic HTML (main) in page.js
+ *    - Breadcrumb component handles ARIA
+ *    - ServiceSingle handles content accessibility
  */
-
