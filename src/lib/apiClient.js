@@ -49,11 +49,11 @@ export async function apiClient(endpoint, options = {}) {
   // دریافت Base URL از متغیرهای محیطی
   // این امکان را می‌دهد که URL‌های متفاوت برای dev، staging و production داشته باشیم
   const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-  
+
   // ساخت URL کامل با ترکیب Base URL و endpoint
   // endpoint باید با "/" شروع شود (مثلاً "/api/services")
   const url = `${baseUrl}${endpoint}`;
-  
+
   try {
     // ارسال درخواست fetch با ادغام تنظیمات
     const response = await fetch(url, {
@@ -66,22 +66,30 @@ export async function apiClient(endpoint, options = {}) {
       cache: 'no-store',
       ...options, // سایر تنظیمات (method, body و...)
     });
-    
+
     // بررسی موفقیت پاسخ (status code بین 200-299)
     if (!response.ok) {
-      // ثبت جزئیات خطا برای دیباگ
-      console.error(`خطای API: ${response.status} ${response.statusText} در ${url}`);
+      // تلاش برای خواندن پاسخ خطا از Strapi
+      let errorDetails = '';
+      try {
+        const errorBody = await response.json();
+        errorDetails = JSON.stringify(errorBody, null, 2);
+        console.error(`خطای API: ${response.status} ${response.statusText} در ${url}`);
+        console.error('جزئیات خطا از Strapi:', errorDetails);
+      } catch (e) {
+        console.error(`خطای API: ${response.status} ${response.statusText} در ${url}`);
+      }
       throw new Error(`درخواست API با شکست مواجه شد: ${response.status}`);
     }
-    
+
     // پارس و بازگرداندن پاسخ JSON
     // Strapi داده را در قالب { data: [...], meta: {...} } برمی‌گرداند
     return await response.json();
-    
+
   } catch (error) {
     // ثبت خطا برای دیباگ
     console.error('خطای API Client:', error.message);
-    
+
     // پرتاب مجدد خطا تا ماژول‌های دامنه‌ای آن را مدیریت کنند
     throw error;
   }

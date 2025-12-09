@@ -9,8 +9,10 @@
 import { notFound } from 'next/navigation';
 import { getCategoryTree } from '@/lib/categoriesApi';
 import { getProductBySlug } from '@/lib/productsApi';
+import { getComments } from '@/lib/commentsApi';
 import { getProductBreadcrumbs } from '@/lib/breadcrumbs';
 import ProductDetails from '@/modules/products/ProductDetails/ProductDetails';
+import CommentsSection from '@/modules/comments/CommentsSection';
 
 /**
  * Generate Dynamic Metadata for SEO
@@ -19,11 +21,11 @@ import ProductDetails from '@/modules/products/ProductDetails/ProductDetails';
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  
+
   if (!product) {
     return { title: 'محصول یافت نشد' };
   }
-  
+
   return {
     title: `${product.title} | فروشگاه آنلاین`,
     description: product.shortDescription,
@@ -41,13 +43,16 @@ export async function generateMetadata({ params }) {
  */
 export default async function ProductPage({ params }) {
   const { category, subcategory, slug } = await params;
-  
+
   // Data fetched via API Layer abstraction
   const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
+
+  // Fetch comments for this product
+  const initialComments = await getComments('product', product.documentId);
 
   const tree = await getCategoryTree();
   const currentCategory = tree.find((c) => c.slug === category);
@@ -59,5 +64,18 @@ export default async function ProductPage({ params }) {
     product: product
   });
 
-  return <ProductDetails product={product} breadcrumbItems={breadcrumbItems} />;
+  return (
+    <>
+      <ProductDetails product={product} breadcrumbItems={breadcrumbItems} />
+
+      {/* Comments Section */}
+      <div className="container">
+        <CommentsSection
+          entityType="product"
+          entityId={product.documentId}
+          initialComments={initialComments}
+        />
+      </div>
+    </>
+  );
 }

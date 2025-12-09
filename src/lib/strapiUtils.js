@@ -57,16 +57,16 @@ export function formatStrapiProducts(apiResponse) {
         // Handle both "attributes" wrapper and direct object
         const categoryData = cat.data ? cat.data : cat;
         const categoryAttrs = categoryData.attributes || categoryData;
-        
+
         let parentData = null;
 
         // Case 1: Direct parent object (Your JSON structure)
         if (categoryAttrs.parent && categoryAttrs.parent.slug) {
-           const pAttrs = categoryAttrs.parent.attributes || categoryAttrs.parent;
-           parentData = {
-             slug: pAttrs.slug,
-             name: pAttrs.name
-           };
+          const pAttrs = categoryAttrs.parent.attributes || categoryAttrs.parent;
+          parentData = {
+            slug: pAttrs.slug,
+            name: pAttrs.name
+          };
         }
         // Case 2: Nested "data" wrapper (Old Strapi/Populate structure)
         else if (categoryAttrs.parent?.data) {
@@ -87,12 +87,13 @@ export function formatStrapiProducts(apiResponse) {
 
       return {
         id: item.id,
+        documentId: item.documentId, // ← اضافه شده برای سیستم کامنت‌ها
         title: item.title,
         slug: item.slug,
         price: priceObject,
         shortDescription: shortDescription,
         // Return both the full array and a single thumbnail
-        images: images, 
+        images: images,
         image: images.length > 0 ? images[0] : formatSingleImage(null),
         categories: categories, // Correctly structured for ProductCard
       };
@@ -108,6 +109,7 @@ export function formatStrapiArticles(apiResponse) {
     .filter(item => item && item.title)
     .map(item => ({
       id: item.id,
+      documentId: item.documentId, // ← اضافه شده برای سیستم کامنت‌ها
       slug: item.slug,
       title: item.title,
       excerpt: item.excerpt,
@@ -127,6 +129,7 @@ export function formatStrapiCourses(apiResponse) {
     .filter(item => item && item.title)
     .map(item => ({
       id: item.id,
+      documentId: item.documentId, // ← اضافه شده برای سیستم کامنت‌ها
       slug: item.slug,
       title: item.title,
       price: { toman: item.price || 0 },
@@ -162,14 +165,14 @@ export function formatStrapiServices(apiResponse) {
  */
 function formatPersianDate(isoDate) {
   if (!isoDate) return '';
-  
+
   const date = new Date(isoDate);
-  const options = { 
-    year: 'numeric', 
-    month: 'long', 
+  const options = {
+    year: 'numeric',
+    month: 'long',
     day: 'numeric',
   };
-  
+
   return new Intl.DateTimeFormat('fa-IR', options).format(date);
 }
 

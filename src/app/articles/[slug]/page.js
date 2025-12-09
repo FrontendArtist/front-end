@@ -1,14 +1,9 @@
-/**
- * Article Single Page - Dynamic Route
- * 
- * Data fetched via API Layer abstraction (articlesApi.js)
- * Implements Server-Side Rendering (SSR) for optimal SEO
- */
-
 import { marked } from 'marked';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getArticleBySlug } from '@/lib/articlesApi';
+import { getComments } from '@/lib/commentsApi';
+import CommentsSection from '@/modules/comments/CommentsSection';
 import styles from './page.module.scss';
 
 const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
@@ -20,14 +15,14 @@ const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localho
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const rawArticle = await getArticleBySlug(slug);
-  
+
   if (!rawArticle) {
     return { title: 'مقاله یافت نشد' };
   }
-  
+
   // Extract excerpt from content for description
   const excerpt = rawArticle.excerpt || '';
-  
+
   return {
     title: `${rawArticle.title} | وب‌سایت ما`,
     description: excerpt,
@@ -43,7 +38,7 @@ export async function generateMetadata({ params }) {
  */
 export default async function ArticlePage({ params }) {
   const { slug } = await params;
-  
+
   // Data fetched via API Layer abstraction
   const rawArticle = await getArticleBySlug(slug);
 
@@ -51,9 +46,13 @@ export default async function ArticlePage({ params }) {
     notFound();
   }
 
+  // Fetch comments for this article
+  const initialComments = await getComments('article', rawArticle.documentId);
+
   // Format the article data for display
   const article = {
     id: rawArticle.id,
+    documentId: rawArticle.documentId,
     title: rawArticle.title,
     date: new Date(rawArticle.date).toLocaleDateString('fa-IR'),
     cover: {
@@ -62,7 +61,7 @@ export default async function ArticlePage({ params }) {
     },
     content: rawArticle.excerpt, // Using excerpt as content for now
   };
-  
+
   // Convert content to HTML (if needed)
   const htmlContent = marked(article.content || '');
 
@@ -73,9 +72,9 @@ export default async function ArticlePage({ params }) {
           <h1 className={styles.title}>{article.title}</h1>
           <time className={styles.date}>{article.date}</time>
         </header>
-        
+
         <div className={styles.coverImageWrapper}>
-          <Image 
+          <Image
             src={article.cover.url}
             alt={article.cover.alt}
             width={800}
@@ -85,9 +84,16 @@ export default async function ArticlePage({ params }) {
           />
         </div>
 
-        <article 
+        <article
           className={styles.content}
-          dangerouslySetInnerHTML={{ __html: htmlContent }} 
+          dangerouslySetInnerHTML={{ __html: htmlContent }}
+        />
+
+        {/* Comments Section */}
+        <CommentsSection
+          entityType="article"
+          entityId={article.documentId}
+          initialComments={initialComments}
         />
       </div>
     </main>

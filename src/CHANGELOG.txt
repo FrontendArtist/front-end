@@ -1,6 +1,294 @@
 # CHANGELOG
 
-## [Latest] - 2025-12-07
+## [Latest] - 2025-12-09
+
+### Fix: Critical Strapi V5 Relation Persistence and Admin Display
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1.  **Frontend Component (`src/modules/comments/CommentItem.jsx`)**
+    * Updated the `handleReplyClick` function to pass the essential **`documentId`** instead of the numeric `id` to the `onReply` callback. This was crucial for proper relationship setting.
+2.  **Comments API (`src/lib/commentsApi.js`)**
+    * In `submitComment`, implemented the Strapi v5 **`connect`** syntax (`comment_parent: { connect: [documentId] }`) to ensure correct relationship saving in the database.
+3.  **Strapi Backend Schema (`src/api/comment/content-types/comment/schema.json`)**
+    * Added the **`"displayField": "content"`** property to the schema's root level to force the Admin Panel UI to display the comment text (content) instead of the Document ID in all relation fields.
+
+#### Impact:
+* Resolved the critical bug where relation fields (`comment_parent`, `comment_replies`) were saved incorrectly and displayed as empty in the Strapi Admin Panel.
+* Ensures that replies created on the frontend are correctly linked in the database.
+* Improved Admin UX by showing readable comment content in all relation fields.
+* **System Stability:** The comments module is now fully compliant with Strapi v5 architectural requirements for relations and filters.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Fix: Comments API - Approved Filters & DocumentId Migration
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Comments API** (`src/lib/commentsApi.js`)
+    - Added `isApproved` filter for Level 1 Replies: `'populate[comment_replies][filters][isApproved][$eq]': 'true'`
+    - Added `isApproved` filter for Level 2 Replies: `'populate[comment_replies][populate][comment_replies][filters][isApproved][$eq]': 'true'`
+    - Migrated all user fields from `'id'` to `'documentId'`:
+        * Root comments: `'populate[user][fields][1]': 'documentId'`
+        * Level 1 replies: `'populate[comment_replies][populate][user][fields][1]': 'documentId'`
+        * Level 2 replies: `'populate[comment_replies][populate][comment_replies][populate][user][fields][1]': 'documentId'`
+    - Improved code comments for better maintainability.
+
+#### Impact:
+- Only approved comments and replies are now displayed at all nesting levels.
+- Aligned with documentId migration strategy across the entire codebase.
+- Ensures consistency between comments system and other modules using documentId.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Fix: Enhanced Error Logging & Hardcoded User ID for Comments
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Comments API** (`src/lib/commentsApi.js`)
+    - Hardcoded `user: 1` in payload (replaced `MOCK_USER_ID` constant).
+    - Added descriptive comment with emoji (👇) to highlight temporary implementation.
+    - Added console logging of full payload before submission for debugging.
+
+2. **API Client** (`src/lib/apiClient.js`)
+    - Enhanced error handling to log Strapi error response body.
+    - Now shows detailed JSON error messages from backend (validation errors, missing fields, etc.).
+    - Improved debugging capability for 400 Bad Request errors.
+
+#### Impact:
+- Better debugging visibility when comment submission fails.
+- Clear identification of validation issues from Strapi backend.
+- Explicit hardcoded user ID until authentication system is implemented.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Feature: Polymorphic Comments System with Star Ratings
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New API Layer** (`src/lib/commentsApi.js`)
+    - `getComments(entityType, entityId)` - Fetch approved comments with threading (nested replies).
+    - `submitComment(commentData)` - Submit comment with Mutual Exclusivity (only one entity) and moderation (isApproved: false).
+    - Uses `MOCK_USER_ID = 1` until authentication is implemented.
+
+2. **New Components** (`src/modules/comments/`)
+    - `CommentItem.jsx` - Recursive component for rendering comments with avatar, username, stars (1-5), Persian date, and reply button.
+    - `CommentsSection.jsx` - Comment submission form (with validation), comments list, star rating input, success/error messages.
+    - Styling: Glassmorphism with RTL support and responsive design.
+
+3. **Page Integrations**
+    - Added `<CommentsSection />` to pages:
+        * `src/app/articles/[slug]/page.js`
+        * `src/app/courses/[slug]/page.js`
+        * `src/app/products/[category]/[subcategory]/[slug]/page.js`
+    - All comments are fetched via SSR (SEO-friendly).
+
+4. **SCSS Import Fix**
+    - Changed from `@use` to `@import '@/styles/base/mixins';` for Next.js/Turbopack compatibility.
+
+#### Impact:
+- Polymorphic comments system supporting articles, products, and courses.
+- Threading (nested replies) up to 3 levels deep.
+- Moderation workflow: all comments pending admin approval.
+- Star rating (1-5 stars) for each comment.
+
+**Files Created**: 5 new files (~1,500 lines of code)
+**Files Modified**: 3 pages (articles, courses, products)
+
+---
+
+## [Previous] - 2025-12-09
+
+### Feature: Breadcrumb Navigation Integration Across All Pages
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **About Page** (`src/app/about/page.js`)
+    - Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+    - Added breadcrumb navigation with items: `خانه > درباره ما`.
+    - Placed breadcrumb before the header section with proper spacing.
+
+2. **Contact Page** (`src/app/contact/page.js`)
+    - Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+    - Added breadcrumb navigation with items: `خانه > تماس با ما`.
+    - Placed breadcrumb before the header section with proper spacing.
+
+3. **Services Module** (Already Implemented)
+    - **Services Listing** (`src/app/services/page.js`):
+        * Breadcrumb already implemented: `خانه > خدمات`.
+    - **Service Detail** (`src/app/services/[slug]/page.js`):
+        * Breadcrumb already implemented with dynamic service title: `خانه > خدمات > [Service Title]`.
+        * No changes required - already using shared `Breadcrumb` component.
+
+4. **Courses Module**
+    - **Courses Listing** (`src/app/courses/page.js`):
+        * Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+        * Added breadcrumb navigation with items: `خانه > دوره‌ها`.
+        * Placed breadcrumb before the header section.
+    - **Course Detail** (`src/app/courses/[slug]/page.js`):
+        * Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+        * Added dynamic breadcrumb navigation: `خانه > دوره‌ها > [Course Title]`.
+        * Placed breadcrumb before the main content grid.
+
+
+# CHANGELOG
+
+## [Latest] - 2025-12-09
+
+### Fix: Critical Strapi V5 Relation Persistence and Admin Display
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1.  **Frontend Component (`src/modules/comments/CommentItem.jsx`)**
+    * Updated the `handleReplyClick` function to pass the essential **`documentId`** instead of the numeric `id` to the `onReply` callback. This was crucial for proper relationship setting.
+2.  **Comments API (`src/lib/commentsApi.js`)**
+    * In `submitComment`, implemented the Strapi v5 **`connect`** syntax (`comment_parent: { connect: [documentId] }`) to ensure correct relationship saving in the database.
+3.  **Strapi Backend Schema (`src/api/comment/content-types/comment/schema.json`)**
+    * Added the **`"displayField": "content"`** property to the schema's root level to force the Admin Panel UI to display the comment text (content) instead of the Document ID in all relation fields.
+
+#### Impact:
+* Resolved the critical bug where relation fields (`comment_parent`, `comment_replies`) were saved incorrectly and displayed as empty in the Strapi Admin Panel.
+* Ensures that replies created on the frontend are correctly linked in the database.
+* Improved Admin UX by showing readable comment content in all relation fields.
+* **System Stability:** The comments module is now fully compliant with Strapi v5 architectural requirements for relations and filters.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Fix: Comments API - Approved Filters & DocumentId Migration
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Comments API** (`src/lib/commentsApi.js`)
+    - Added `isApproved` filter for Level 1 Replies: `'populate[comment_replies][filters][isApproved][$eq]': 'true'`
+    - Added `isApproved` filter for Level 2 Replies: `'populate[comment_replies][populate][comment_replies][filters][isApproved][$eq]': 'true'`
+    - Migrated all user fields from `'id'` to `'documentId'`:
+        * Root comments: `'populate[user][fields][1]': 'documentId'`
+        * Level 1 replies: `'populate[comment_replies][populate][user][fields][1]': 'documentId'`
+        * Level 2 replies: `'populate[comment_replies][populate][comment_replies][populate][user][fields][1]': 'documentId'`
+    - Improved code comments for better maintainability.
+
+#### Impact:
+- Only approved comments and replies are now displayed at all nesting levels.
+- Aligned with documentId migration strategy across the entire codebase.
+- Ensures consistency between comments system and other modules using documentId.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Fix: Enhanced Error Logging & Hardcoded User ID for Comments
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Comments API** (`src/lib/commentsApi.js`)
+    - Hardcoded `user: 1` in payload (replaced `MOCK_USER_ID` constant).
+    - Added descriptive comment with emoji (👇) to highlight temporary implementation.
+    - Added console logging of full payload before submission for debugging.
+
+2. **API Client** (`src/lib/apiClient.js`)
+    - Enhanced error handling to log Strapi error response body.
+    - Now shows detailed JSON error messages from backend (validation errors, missing fields, etc.).
+    - Improved debugging capability for 400 Bad Request errors.
+
+#### Impact:
+- Better debugging visibility when comment submission fails.
+- Clear identification of validation issues from Strapi backend.
+- Explicit hardcoded user ID until authentication system is implemented.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Feature: Polymorphic Comments System with Star Ratings
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New API Layer** (`src/lib/commentsApi.js`)
+    - `getComments(entityType, entityId)` - Fetch approved comments with threading (nested replies).
+    - `submitComment(commentData)` - Submit comment with Mutual Exclusivity (only one entity) and moderation (isApproved: false).
+    - Uses `MOCK_USER_ID = 1` until authentication is implemented.
+
+2. **New Components** (`src/modules/comments/`)
+    - `CommentItem.jsx` - Recursive component for rendering comments with avatar, username, stars (1-5), Persian date, and reply button.
+    - `CommentsSection.jsx` - Comment submission form (with validation), comments list, star rating input, success/error messages.
+    - Styling: Glassmorphism with RTL support and responsive design.
+
+3. **Page Integrations**
+    - Added `<CommentsSection />` to pages:
+        * `src/app/articles/[slug]/page.js`
+        * `src/app/courses/[slug]/page.js`
+        * `src/app/products/[category]/[subcategory]/[slug]/page.js`
+    - All comments are fetched via SSR (SEO-friendly).
+
+4. **SCSS Import Fix**
+    - Changed from `@use` to `@import '@/styles/base/mixins';` for Next.js/Turbopack compatibility.
+
+#### Impact:
+- Polymorphic comments system supporting articles, products, and courses.
+- Threading (nested replies) up to 3 levels deep.
+- Moderation workflow: all comments pending admin approval.
+- Star rating (1-5 stars) for each comment.
+
+**Files Created**: 5 new files (~1,500 lines of code)
+**Files Modified**: 3 pages (articles, courses, products)
+
+---
+
+## [Previous] - 2025-12-09
+
+### Feature: Breadcrumb Navigation Integration Across All Pages
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **About Page** (`src/app/about/page.js`)
+    - Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+    - Added breadcrumb navigation with items: `خانه > درباره ما`.
+    - Placed breadcrumb before the header section with proper spacing.
+
+2. **Contact Page** (`src/app/contact/page.js`)
+    - Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+    - Added breadcrumb navigation with items: `خانه > تماس با ما`.
+    - Placed breadcrumb before the header section with proper spacing.
+
+3. **Services Module** (Already Implemented)
+    - **Services Listing** (`src/app/services/page.js`):
+        * Breadcrumb already implemented: `خانه > خدمات`.
+    - **Service Detail** (`src/app/services/[slug]/page.js`):
+        * Breadcrumb already implemented with dynamic service title: `خانه > خدمات > [Service Title]`.
+        * No changes required - already using shared `Breadcrumb` component.
+
+4. **Courses Module**
+    - **Courses Listing** (`src/app/courses/page.js`):
+        * Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+        * Added breadcrumb navigation with items: `خانه > دوره‌ها`.
+        * Placed breadcrumb before the header section.
+    - **Course Detail** (`src/app/courses/[slug]/page.js`):
+        * Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+        * Added dynamic breadcrumb navigation: `خانه > دوره‌ها > [Course Title]`.
+        * Placed breadcrumb before the main content grid.
+ 
+
+ #### Navigation:
+ Home (خانه) ├── About (درباره ما) ├── Contact (تماس با ما) ├── Services (خدمات) │ └── Service Detail (عنوان خدمت) └── Courses (دوره‌ها) └── Course Detail (عنوان دوره)
+
+
+#### Impact:
+- **Consistent Navigation**: All main pages now follow the same breadcrumb pattern using the centralized `Breadcrumb` component.
+- **Better UX**: Users can easily navigate back through the site hierarchy.
+- **SEO Improvement**: Breadcrumbs provide structured navigation signals to search engines.
+- **Accessibility**: Screen readers can better understand page hierarchy.
+- **Unified Styling**: All breadcrumbs use consistent spacing, RTL support, and design tokens.
+- **JSON-LD Support**: Breadcrumb component handles structured data for SEO rich snippets (if implemented).
+
+## [Previous] - 2025-12-07
 
 ### Refactor: ArticleGrid URL-Driven Sorting
 **Status**: ✅ COMPLETED (100%)

@@ -1,16 +1,11 @@
-/**
- * Course Single Page - Dynamic Route
- * 
- * Data fetched via API Layer abstraction (coursesApi.js)
- * Implements Server-Side Rendering (SSR) for optimal SEO
- */
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import Accordion from '@/components/ui/Accordion/Accordion';
 import { getCourseBySlug } from '@/lib/coursesApi';
+import { getComments } from '@/lib/commentsApi';
+import CommentsSection from '@/modules/comments/CommentsSection';
 import styles from './page.module.scss';
 
 const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
@@ -51,9 +46,13 @@ export default async function CoursePage({ params }) {
     notFound();
   }
 
+  // Fetch comments for this course
+  const initialComments = await getComments('course', rawCourse.documentId);
+
   // Format the course data for display
   const course = {
     id: rawCourse.id,
+    documentId: rawCourse.documentId,
     title: rawCourse.title,
     description: rawCourse.shortDescription,
     price: rawCourse.price,
@@ -102,6 +101,13 @@ export default async function CoursePage({ params }) {
             <Accordion items={course.curriculum} />
           </div>
         )}
+
+        {/* Comments Section */}
+        <CommentsSection
+          entityType="course"
+          entityId={course.documentId}
+          initialComments={initialComments}
+        />
       </div>
     </main>
   );

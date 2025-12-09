@@ -1,0 +1,216 @@
+@import '@/styles/base/mixins';
+
+.commentItem {
+    position: relative;
+    padding: 24px;
+    border-radius: 16px;
+    background: rgba(6, 24, 24, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(246, 217, 130, 0.1);
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background: rgba(6, 24, 24, 0.7);
+        border-color: rgba(246, 217, 130, 0.2);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+}
+
+.commentHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(246, 217, 130, 0.1);
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(246, 217, 130, 0.2), rgba(246, 217, 130, 0.05));
+    border: 1px solid rgba(246, 217, 130, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-lg);
+    color: var(--color-title-hover);
+    font-weight: var(--font-weight-bold);
+}
+
+.username {
+    font-size: var(--font-md);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.timestamp {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    opacity: 0.7;
+    direction: rtl;
+}
+
+.commentBody {
+    margin-bottom: 16px;
+}
+
+.rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 12px;
+    direction: ltr;
+    justify-content: flex-end;
+}
+
+.star {
+    font-size: 18px;
+    color: rgba(246, 217, 130, 0.3);
+    transition: color 0.2s ease;
+
+    &.filled {
+        color: #F6D982;
+        text-shadow: 0 0 8px rgba(246, 217, 130, 0.5);
+    }
+}
+
+.content {
+    font-size: var(--font-md);
+    color: var(--color-text-primary);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    direction: rtl;
+    text-align: right;
+}
+
+.commentActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.replyButton {
+    background: rgba(246, 217, 130, 0.08);
+    color: var(--color-text-primary);
+    border: 1px solid rgba(246, 217, 130, 0.2);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: var(--font-sm);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &:hover,
+    &:focus-visible {
+        background: var(--color-title-hover);
+        color: var(--color-bg-primary);
+        border-color: var(--color-title-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(246, 217, 130, 0.3);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+}
+
+.replies {
+    margin-top: 20px;
+    margin-right: 32px;
+    padding-right: 24px;
+    border-right: 2px solid rgba(246, 217, 130, 0.2);
+    position: relative;
+
+    &::before {
+        content: '';
+        position: absolute;
+        right: -2px;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        background: linear-gradient(180deg,
+                rgba(246, 217, 130, 0.4) 0%,
+                rgba(246, 217, 130, 0.1) 50%,
+                rgba(246, 217, 130, 0) 100%);
+    }
+
+    @include respond(sm) {
+        margin-right: 16px;
+        padding-right: 16px;
+    }
+}
+
+.maxDepthReached {
+    padding: 16px;
+    background: rgba(246, 217, 130, 0.05);
+    border: 1px dashed rgba(246, 217, 130, 0.2);
+    border-radius: 8px;
+    text-align: center;
+    color: var(--color-card-text);
+    font-size: var(--font-sm);
+    opacity: 0.8;
+}
+
+// RTL Specific adjustments
+[dir="rtl"] {
+    .rating {
+        flex-direction: row-reverse;
+    }
+
+    .replies {
+        margin-right: 0;
+        margin-left: 32px;
+        padding-right: 0;
+        padding-left: 24px;
+        border-right: none;
+        border-left: 2px solid rgba(246, 217, 130, 0.2);
+
+        &::before {
+            right: auto;
+            left: -2px;
+        }
+
+        @include respond(sm) {
+            margin-left: 16px;
+            padding-left: 16px;
+        }
+    }
+}
+
+// Depth variations for visual hierarchy
+.commentItem[data-depth="0"] {
+    background: rgba(6, 24, 24, 0.6);
+    border-width: 1px;
+}
+
+.commentItem[data-depth="1"] {
+    background: rgba(6, 24, 24, 0.5);
+    border-width: 1px;
+    padding: 20px;
+}
+
+.commentItem[data-depth="2"] {
+    background: rgba(6, 24, 24, 0.4);
+    border-width: 1px;
+    padding: 16px;
+}
+
+.commentItem[data-depth="3"] {
+    background: rgba(6, 24, 24, 0.3);
+    padding: 12px;
+}
