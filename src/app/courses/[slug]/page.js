@@ -6,9 +6,8 @@ import Accordion from '@/components/ui/Accordion/Accordion';
 import { getCourseBySlug } from '@/lib/coursesApi';
 import { getComments } from '@/lib/commentsApi';
 import CommentsSection from '@/modules/comments/CommentsSection';
+import { API_BASE_URL } from '@/lib/api';
 import styles from './page.module.scss';
-
-const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 
 /**
  * Generate Dynamic Metadata for SEO
@@ -57,7 +56,7 @@ export default async function CoursePage({ params }) {
     description: rawCourse.shortDescription,
     price: rawCourse.price,
     media: {
-      url: rawCourse.image.url.startsWith('http') ? rawCourse.image.url : `${STRAPI_API_URL}${rawCourse.image.url}`,
+      url: rawCourse.image.url.startsWith('http') ? rawCourse.image.url : `${API_BASE_URL}${rawCourse.image.url}`,
       alt: rawCourse.image.alt,
     },
     curriculum: [], // Curriculum needs to be populated from Strapi if available

@@ -21,6 +21,8 @@
  * @module lib/apiClient
  */
 
+import { API_BASE_URL } from './api';
+
 /**
  * تابع پایه برای ارسال درخواست HTTP به Strapi
  * 
@@ -46,13 +48,9 @@
  * });
  */
 export async function apiClient(endpoint, options = {}) {
-  // دریافت Base URL از متغیرهای محیطی
-  // این امکان را می‌دهد که URL‌های متفاوت برای dev، staging و production داشته باشیم
-  const baseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-
   // ساخت URL کامل با ترکیب Base URL و endpoint
   // endpoint باید با "/" شروع شود (مثلاً "/api/services")
-  const url = `${baseUrl}${endpoint}`;
+  const url = `${API_BASE_URL}${endpoint}`;
 
   try {
     // ارسال درخواست fetch با ادغام تنظیمات

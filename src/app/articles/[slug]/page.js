@@ -4,9 +4,8 @@ import { notFound } from 'next/navigation';
 import { getArticleBySlug } from '@/lib/articlesApi';
 import { getComments } from '@/lib/commentsApi';
 import CommentsSection from '@/modules/comments/CommentsSection';
+import { API_BASE_URL } from '@/lib/api';
 import styles from './page.module.scss';
-
-const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 
 /**
  * Generate Dynamic Metadata for SEO
@@ -56,7 +55,7 @@ export default async function ArticlePage({ params }) {
     title: rawArticle.title,
     date: new Date(rawArticle.date).toLocaleDateString('fa-IR'),
     cover: {
-      url: rawArticle.cover.url.startsWith('http') ? rawArticle.cover.url : `${STRAPI_API_URL}${rawArticle.cover.url}`,
+      url: rawArticle.cover.url.startsWith('http') ? rawArticle.cover.url : `${API_BASE_URL}${rawArticle.cover.url}`,
       alt: rawArticle.cover.alt,
     },
     content: rawArticle.excerpt, // Using excerpt as content for now

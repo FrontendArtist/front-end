@@ -4,8 +4,7 @@
  */
 import { apiClient } from './apiClient';
 import { formatSingleImage } from './strapiUtils';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
+import { API_BASE_URL } from './api';
 
 /**
  * ✅ گرفتن دسته‌های اصلی (Parent=null)
@@ -64,11 +63,11 @@ export async function getCategoryTree() {
         slug: attrs.slug || '',
         image: img
           ? {
-              url: img.formats?.thumbnail?.url
-                ? API_URL + img.formats.thumbnail.url
-                : API_URL + img.url,
-              alt: img.alternativeText || attrs.name || '',
-            }
+            url: img.formats?.thumbnail?.url
+              ? API_BASE_URL + img.formats.thumbnail.url
+              : API_BASE_URL + img.url,
+            alt: img.alternativeText || attrs.name || '',
+          }
           : null,
         subCategories: (attrs.subCategories || []).map(sub => ({
           id: sub.id,

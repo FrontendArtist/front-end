@@ -1,7 +1,7 @@
 // This is the definitive version of the data formatting utility file,
 // tailored to your specific flat Strapi API structure.
 
-const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+import { API_BASE_URL } from './api';
 
 /**
  * A generic helper to format a single image object.
@@ -20,7 +20,7 @@ export function formatSingleImage(imgData) {
     if (!dataObj.url) {
       return { url: 'https://picsum.photos/seed/placeholder/400/300', alt: 'Placeholder Image' };
     }
-    const imageUrl = dataObj.url.startsWith('http') ? dataObj.url : `${STRAPI_API_URL}${dataObj.url}`;
+    const imageUrl = dataObj.url.startsWith('http') ? dataObj.url : `${API_BASE_URL}${dataObj.url}`;
     return {
       url: imageUrl,
       alt: dataObj.alternativeText || '',
@@ -31,7 +31,7 @@ export function formatSingleImage(imgData) {
   if (!imgData.url) {
     return { url: 'https://picsum.photos/seed/placeholder/400/300', alt: 'Placeholder Image' };
   }
-  const imageUrl = imgData.url.startsWith('http') ? imgData.url : `${STRAPI_API_URL}${imgData.url}`;
+  const imageUrl = imgData.url.startsWith('http') ? imgData.url : `${API_BASE_URL}${imgData.url}`;
   return {
     url: imageUrl,
     alt: imgData.alternativeText || '',
