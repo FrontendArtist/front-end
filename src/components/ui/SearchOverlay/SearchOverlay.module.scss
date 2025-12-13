@@ -1,0 +1,103 @@
+@import '@/styles/base/mixins';
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4); // Standard backdrop
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+
+    &.open {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+.iconButton{
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    left: 0;
+    top: 33px;
+    font-weight: 300;
+
+}
+.searchContainer {
+    width: 90%;
+    max-width: 800px;
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+ 
+
+    .open & {
+        transform: translateY(0);
+    }
+
+    form{
+           display: flex;
+    align-items: end;
+        button {
+            cursor: pointer;
+            background-color: transparent;
+            border: none;
+            color: #fff;
+        }
+    }
+}
+
+.input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+    font-family: var(--font-iransans); // Ensure font consistency
+    font-size: 2rem;
+    color: #fff;
+    padding: 1rem 0;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.3s;
+
+    &::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    &:focus {
+        border-bottom-color: #fff;
+    }
+
+    @include respond(md) {
+        font-size: 3rem;
+    }
+}
+
+.closeButton {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 0.5rem;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    svg {
+        width: 32px;
+        height: 32px;
+    }
+}

@@ -1,0 +1,75 @@
+@import '@/styles/base/mixins';
+
+.resultsContainer {
+    padding: 2rem 0;
+    min-height: 50vh;
+}
+
+.title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    color: var(--color-text-main);
+}
+
+.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.5rem;
+    overflow-x: auto;
+}
+
+.tab {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-family: var(--font-iransans);
+    transition: all 0.2s;
+    white-space: nowrap;
+
+    &:hover {
+        color: var(--color-primary);
+    }
+
+    &.active {
+        color: var(--color-primary);
+        border-bottom: 2px solid var(--color-primary);
+        font-weight: bold;
+    }
+}
+
+.grid {
+    display: grid;
+    grid-template-columns:  repeat(4, 1fr);
+    gap: 1.5rem;
+    padding: 1rem 0;
+
+    @include respond(md) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include respond(lg) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    @include respond(xl) {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
+.emptyState {
+    text-align: center;
+    padding: 3rem;
+    color: var(--color-text-muted);
+    font-size: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}

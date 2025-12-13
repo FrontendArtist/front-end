@@ -1,6 +1,93 @@
 # CHANGELOG
 
-## [Latest] - 2025-12-09
+## [Latest] - 2025-12-12
+
+### Feature: Search Module UX Enhancements & Fixes
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1.  **Mobile Search Integration (`src/modules/layout/Navbar/NavbarClient.jsx`)**
+    *   Replaced the static mobile search input with a functional form.
+    *   Added a **Search Button** (magnifying glass icon) within the mobile search form.
+    *   Connected the form to `handleMobileSearch` which pushes to `/search?q=...` and closes the menu.
+    *   **Styling:** Created `.mobileSearchForm` container to group input and button seamlessly with RTL support.
+
+2.  **Search Overlay Update (`src/components/ui/SearchOverlay/SearchOverlay.jsx`)**
+    *   Added a submit button (magnifying glass icon) inside the search form next to the input.
+    *   Ensures consistent UX where users can click to search or press Enter.
+
+3.  **Search Type Filter (`src/components/ui/SearchBox/SearchBox.jsx`)**
+    *   Added a **"Type Selector"** dropdown (All, Products, Articles, Courses) next to the main search input.
+    *   Updated `router.push` to include the `&type=...` query parameter.
+    *   **API Update (`src/lib/searchApi.js`):** Modified `searchGlobal` to accept the `type` parameter and filter API endpoints strictly based on selection.
+
+4.  **Conditional 'All' Tab Logic (`src/modules/search/SearchResults.jsx`)**
+    *   Implemented smart tab logic: If results exist in only **one** category (e.g., only Products), the "All" tab is hidden.
+    *   `activeTab` automatically defaults to the single available category.
+    *   Ensures a cleaner UI when specific results are found.
+
+5.  **Grid Layout Fix (`src/modules/search/SearchResults.module.scss`)**
+    *   Enforced **4-column grid** on extra-large screens (`xl` breakpoint) using `grid-template-columns: repeat(4, 1fr) !important;`.
+
+#### Impact:
+*   **Mobile UX:** Fully functional search in mobile menu.
+*   **Precision:** Users can now filter search by content type directly from the search box.
+*   **Visual Polish:** Better grid layout on large screens and smarter tab management.
+*   **Consistency:** Search buttons now available in all input contexts (Overlay, Mobile, Results).
+
+---
+
+### Fix: Course Populate Field Mismatch in Search API
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1.  **Search API (`src/lib/searchApi.js`)**
+    *   Updated the Course query populate parameter from `'image'` to `'media'`.
+    *   This ensures the API returns the correct field (`media`) which contains the course image/video data, matching the Strapi content type schema.
+
+#### Impact:
+*   **Bug Fix**: Resolved critical issue where Course images/thumbnails were missing in search results.
+*   **Data Integrity**: Aligned API query with actual database schema for Courses.
+
+---
+
+## [Previous] - 2025-12-11
+
+### Feature: Global Search Module (API, Overlay, & Results Page)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1.  **Search API (`src/lib/searchApi.js`)**
+    *   Implemented `searchGlobal(q, type)` function with **Parallel Fetching** (`Promise.all`) for Products, Articles, and Courses.
+    *   Optimized queries using Strapi filters: `filters[title][$containsi]=q` and specific `populate` fields (images/cover/media).
+    *   Return normalized object `{ products, articles, courses }`.
+
+2.  **UI Components (Search Overlay & Box)**
+    *   **SearchTrigger (`src/components/layout/SearchTrigger.jsx`):** A simplified nav button that dispatches a custom event `open-search-overlay`.
+    *   **SearchOverlay (`src/components/ui/SearchOverlay`):** Full-screen, backdrop-blur modal with large input, animated transitions, and mobile responsiveness. Close on `Escape` key.
+    *   **SearchBox (`src/components/ui/SearchBox`):** A reusable search component with integrated "Type Select" dropdown ("All", "Products", "Articles", "Courses") used in the Results Page.
+
+3.  **Search Results Page (`src/app/search/page.js`)**
+    *   **Server Component (SSR):** Fetches initial results based on URL queries (`?q=...&type=...`).
+    *   **Strict Breadcrumb Integration:** Uses shared `Breadcrumb` component with strict import path compliance.
+    *   **Dynamic Metadata:** Generates page title based on search query.
+
+4.  **Refactor: Standardized Search Results Grid (`src/modules/search/SearchResults.jsx`)**
+    *   **Standard Cards:** Reused `ProductCard`, `ArticleCard`, and `CourseCard` components instead of ad-hoc markup.
+    *   **Data Normalization:** Implemented a robust **Data Normalizer** to handle complex/deep Strapi V5 JSON structures (e.g., `item.attributes.images.data[0]...`), ensuring images render correctly even with nested API responses.
+    *   **Responsive Grid:** Implemented `SearchResults.module.scss` using `@include respond(md/lg/xl)` mixins for a 1-to-4 column responsive layout.
+    *   **Smart Tabs:** Dynamic tabs that only appear if results exist for that category.
+    *   **Absolute URL Fix:** added `STRAPI_BASE_URL` logic to ensure all images use absolute paths.
+
+#### Impact:
+*   **User Experience:** Fast, accessible site-wide search with instant visual feedback and category filtering.
+*   **Maintainability:** Reuses all existing Card components, ensuring design consistency across the site.
+*   **Performance:** Parallel API requests minimize wait time; SSR ensures SEO friendliness for search result pages.
+*   **Reliability:** Robust image extraction logic prevents broken images from Strapi's deep nesting.
+
+---
+
+## [Previous] - 2025-12-09
 
 ### Fix: Critical Strapi V5 Relation Persistence and Admin Display
 **Status**: ✅ COMPLETED (100%)

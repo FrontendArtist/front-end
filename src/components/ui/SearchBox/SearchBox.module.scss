@@ -1,0 +1,79 @@
+@import '@/styles/base/mixins';
+
+.searchBox {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.selectContainer {
+    flex-shrink: 0;
+}
+
+.typeSelect {
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 50px;
+    background-color: var(--color-bg-paper);
+    color: var(--color-text-main);
+    font-family: var(--font-iransans);
+    font-size: 1rem;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    /* Remove default arrow to style manually if needed, or keep simpler */
+    /* Add a custom arrow if appearance is none, or just keep default for now */
+    padding-right: 2rem; // Extra padding if we want to mimic the input style
+
+    &:focus {
+        border-color: var(--color-primary);
+    }
+}
+
+.input {
+    flex: 1;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    padding-left: 3.5rem; // Space for icon
+    border: 1px solid var(--color-border);
+    border-radius: 50px;
+    background-color: var(--color-bg-paper);
+    color: var(--color-text-main);
+    font-family: var(--font-iransans);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    &:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.1);
+        outline: none;
+    }
+}
+
+.iconButton {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        color: var(--color-primary);
+    }
+
+    svg {
+        width: 20px;
+        height: 20px;
+    }
+}
