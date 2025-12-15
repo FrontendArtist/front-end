@@ -1,6 +1,78 @@
 # CHANGELOG
 
-## [Latest] - 2025-12-12
+## [Latest] - 2025-12-15
+
+### Feature: Authentication System with NextAuth OTP & User Status Component
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Zustand State Management** (`src/store/authStore.js`)
+   - Created global authentication state store with `isAuthModalOpen`, `authStep`, and `phoneNumber`.
+   - Implemented helper functions: `openAuthModal()`, `closeAuthModal()`, `setAuthStep()`, `setPhoneNumber()`.
+
+2. **Authentication Modal** (`src/components/auth/AuthModal.jsx` + `.module.scss`)
+   - Implemented 2-step OTP authentication flow:
+     * Step 1: Phone number input → Calls Strapi `/api/auth/otp/send`
+     * Step 2: OTP verification → Uses NextAuth `signIn('otp-login', ...)`
+   - Glassmorphism-styled modal with smooth fade-in/slide-up animations
+   - Form validation (11-digit phone, 6-digit OTP)
+   - Loading states and Persian error messages
+   - Responsive design with RTL support
+
+3. **NextAuth Configuration** (`src/lib/auth.js`)
+   - Fixed OTP verification endpoint URL to use Strapi backend (`/api/auth/otp/verify`)
+   - Implemented custom OTP credentials provider with proper error handling
+   - Added JWT and session callbacks for user data persistence
+   - Integrated Google OAuth provider (optional)
+
+4. **User Status Component** (`src/components/layout/Navbar/UserStatus.jsx` + `.module.scss`)
+   - Smart component with 3 states:
+     * Loading: Animated shimmer skeleton
+     * Unauthenticated: User icon button that opens AuthModal
+     * Authenticated: Avatar with green verification badge + dropdown menu
+   - Dropdown features:
+     * Profile link (`/profile`)
+     * Logout button with NextAuth `signOut()`
+     * Delayed close (300ms) using state management and setTimeout
+     * Glassmorphism styling with backdrop blur
+   - Hover-controlled visibility with smooth transitions
+
+5. **Layout Integration** (`src/app/layout.js`)
+   - Wrapped children with `<Providers>` (SessionProvider from NextAuth)
+   - Added `<AuthModal />` globally for site-wide access
+
+6. **Navbar Integration** (`src/modules/layout/Navbar/NavbarClient.jsx`)
+   - Replaced old login button with `<UserStatus />` component
+   - Removed unused `useAuthStore` import from NavbarClient
+
+7. **Environment Configuration** (`.env.local`)
+   - Added `NEXT_PUBLIC_STRAPI_API_URL` for backend connection
+   - Added `NEXTAUTH_URL` and `NEXTAUTH_SECRET` for NextAuth configuration
+
+#### Technical Implementation:
+- **State Management**: Zustand for modal state, NextAuth for session management
+- **Authentication Flow**: Phone → OTP SMS → NextAuth verification → Session creation
+- **API Integration**: Strapi custom endpoints for OTP send/verify
+- **Styling**: Glassmorphism design with CSS modules, RTL support, responsive breakpoints
+- **UX Enhancements**: 
+  * Delayed dropdown close prevents accidental dismissal
+  * Loading skeletons for better perceived performance
+  * Clear visual feedback with verification badge
+  * Smooth animations and transitions
+
+#### Impact:
+- **User Experience**: Seamless OTP-based authentication with modern UI
+- **Security**: Backend-verified OTP with NextAuth session management
+- **Accessibility**: Keyboard navigation, ARIA labels, high-contrast design
+- **Maintainability**: Modular components, centralized state, reusable styles
+- **Performance**: Conditional rendering, optimized re-renders, lazy registration flow
+
+**Files Created**: 4 new files (~600 lines of code)
+**Files Modified**: 4 files (layout, navbar, auth config, environment)
+
+---
+
+## [Previous] - 2025-12-12
 
 ### Feature: Search Module UX Enhancements & Fixes
 **Status**: ✅ COMPLETED (100%)

@@ -7,6 +7,7 @@ import Image from 'next/image';
 import styles from './Navbar.module.scss';
 import SearchTrigger from '@/components/layout/SearchTrigger';
 import SearchOverlay from '@/components/ui/SearchOverlay/SearchOverlay';
+import UserStatus from '@/components/layout/Navbar/UserStatus';
 
 const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '[]' }) => {
   const [isClient, setIsClient] = useState(false);
@@ -132,12 +133,7 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
           <div className={styles.actionsContainer}>
             <div className={styles.actionIcons}>
               <SearchTrigger className={styles.iconButton} />
-              <button className={styles.iconButton} aria-label="حساب کاربری">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M6 20c0-3.333 3-6 6-6s6 2.667 6 6" />
-                </svg>
-              </button>
+              <UserStatus />
               <button className={styles.iconButton} aria-label="سبد خرید">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none">
                   <circle cx="9" cy="21" r="1" />
