@@ -2,6 +2,230 @@
 
 ## [Latest] - 2025-12-16
 
+### Enhancement: Profile Form - Address Refactoring & Edit Mode
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+
+1. **Address Management Refactoring** (`src/components/profile/ProfileForm.jsx`)
+   - Replaced single `address` field with 7 individual address fields:
+     * `fullAddress` - Full detailed address (textarea)
+     * `province` - Province/state
+     * `city` - City
+     * `postalCode` - 10-digit postal code
+     * `recipientName` - Recipient full name
+     * `recipientPhone` - Recipient phone number
+   - Updated `useState` to include all 7 fields in component state.
+   - Modified `useEffect` (fetchUserData) to populate all 7 fields from Strapi response.
+   - Updated `handleSubmit` to send all 7 fields instead of hardcoded placeholders.
+   - Replaced single address textarea with structured UI:
+     * Section header "اطلاعات آدرس و گیرنده"
+     * Full address textarea with detailed placeholder
+     * Two-column grid layout for province/city
+     * Two-column grid layout for postal code/recipient name
+     * Recipient phone input field
+
+2. **Edit Mode Feature** (`src/components/profile/ProfileForm.jsx`)
+   - Added `isEditing` state to control form edit mode.
+   - Implemented "ویرایش" (Edit) button in form header (top-left position).
+   - All input fields now disabled by default until edit mode is activated.
+   - Added action button group with:
+     * "انصراف" (Cancel) button - exits edit mode without saving
+     * "ذخیره تغییرات" (Save Changes) button - submits form and exits edit mode
+   - Auto-exit edit mode after successful save.
+   - Phone number field remains permanently disabled (as designed).
+
+3. **Styling Updates** (`src/components/profile/ProfileForm.module.scss`)
+   - Added `.editButton` styles with glassmorphism effect and hover animations.
+   - Updated `.header` to flexbox layout for button placement.
+   - Added `.buttonGroup` for action buttons with RTL direction.
+   - Added `.cancelButton` styles matching glassmorphism theme.
+   - Updated `.submitButton` to work in flex layout (changed from `width: 100%` to `flex: 1`).
+   - Added `.addressSection` and `.addressTitle` styles for grouped address fields.
+   - Responsive adjustments for mobile devices (stacked layout).
+
+4. **API Route Fixes**
+   - **Address Update Route** (`src/app/api/addresses/[id]/route.js`):
+     * Fixed Next.js 15 async params error by awaiting `params` before accessing `id`.
+     * Error: "Route used `params.id` before awaiting params" → RESOLVED.
+   
+   - **Strapi V5 Compatibility** (`src/components/profile/ProfileForm.jsx`):
+     * Migrated from `addressId` to `addressDocumentId` throughout component.
+     * Changed state field name: `addressId` → `addressDocumentId`
+     * Updated data fetching to use `data.address?.documentId` instead of `data.address?.id`
+     * Updated address update logic to use `documentId` parameter
+     * Fixed new address creation to save `documentId` instead of `id`
+     * Resolves 404 errors when updating addresses in Strapi V5.
+
+5. **Debug Logging** (`src/app/api/profile/route.js`)
+   - Added console.log to track user data structure returned from Strapi.
+   - Helps diagnose field population issues in profile form.
+
+#### User Flow:
+```
+View Profile (Read-Only) 
+  ↓
+Click "ویرایش" Button
+  ↓
+All Fields Enabled (except phoneNumber)
+  ↓
+User Edits Data
+  ↓
+Click "ذخیره" → Save & Exit Edit Mode
+  OR
+Click "انصراف" → Discard & Exit Edit Mode
+```
+
+#### Address Data Structure:
+**Before (Single Field)**:
+- `address` (textarea) → with hardcoded defaults for missing fields
+
+**After (7 Individual Fields)**:
+- `fullAddress` (textarea)
+- `province` (text input)
+- `city` (text input)  
+- `postalCode` (text input, LTR)
+- `recipientName` (text input)
+- `recipientPhone` (tel input, LTR)
+- `addressDocumentId` (internal state for Strapi V5)
+
+#### Impact:
+- **Better Data Quality**: Users now provide complete address information instead of single text field.
+- **Improved UX**: Edit mode prevents accidental changes with clear save/cancel actions.
+- **Strapi V5 Compatible**: All address operations use `documentId` instead of deprecated `id` field.
+- **Visual Hierarchy**: Grouped address fields in dedicated section with clear labeling.
+- **Mobile Responsive**: Two-column layout on desktop, single column on mobile.
+- **API Stability**: Fixed Next.js 15 async params requirement.
+
+#### Files Modified:
+- `src/components/profile/ProfileForm.jsx` (major refactor)
+- `src/components/profile/ProfileForm.module.scss` (new styles added)
+- `src/app/api/addresses/[id]/route.js` (async params fix)
+- `src/app/api/profile/route.js` (debug logging)
+
+**Total**: 4 files modified, ~200 lines of code changed.
+
+---
+
+## [Previous] - 2025-12-16
+
+### Feature: Profile Dashboard & Address Management System
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+
+1. **Protected Profile Layout** (`src/app/profile/layout.js`)
+   - Implemented authentication-protected route using NextAuth `useSession`.
+   - Auto-redirect to home page for unauthenticated users.
+   - Responsive grid layout: 25% sidebar + 75% content (desktop).
+   - Mobile-first design with single column on mobile devices.
+   - Loading state during authentication check.
+
+2. **Profile Sidebar Component** (`src/components/profile/ProfileSidebar.jsx`)
+   - User summary section with avatar and phone number display.
+   - Navigation links with active state highlighting:
+     * "اطلاعات حساب" → `/profile`
+     * "سفارش‌های من" → `/profile/orders`
+   - Logout button with `signOut()` integration.
+   - Glassmorphism design matching AuthModal aesthetic.
+   - Sticky positioning on desktop, static on mobile.
+   - RTL support with directional transforms.
+
+3. **Profile Form Component** (`src/components/profile/ProfileForm.jsx`)
+   - Dual-fetch logic for User and Address data:
+     * Step 1: Update user (firstName, lastName) via `/api/profile`.
+     * Step 2: Create/update address via `/api/addresses`.
+   - State management with `addressId` tracking for updates.
+   - Form fields: firstName, lastName, phoneNumber (disabled), address.
+   - Success/error notifications with auto-dismiss.
+   - Loading states during fetch and save operations.
+
+4. **Profile API Routes**:
+   - **GET `/api/profile`** (`src/app/api/profile/route.js`):
+     * Fetches user data with `populate=address` from Strapi.
+     * Server-side authentication using `getServerSession`.
+     * Uses `STRAPI_ADMIN_TOKEN` for authorization.
+   
+   - **PUT `/api/profile`** (`src/app/api/profile/route.js`):
+     * Updates user firstName and lastName.
+     * Server-side session validation.
+   
+   - **POST `/api/addresses`** (`src/app/api/addresses/route.js`):
+     * Creates new address record in Strapi.
+     * Links address to user via relation.
+     * Handles all 7 address fields (title, fullAddress, province, city, postalCode, recipientName, recipientPhone).
+   
+   - **PUT `/api/addresses/[id]`** (`src/app/api/addresses/[id]/route.js`):
+     * Updates existing address by ID.
+     * Dynamic route with address ID parameter.
+
+5. **Profile Page** (`src/app/profile/page.js`)
+   - Main profile page rendering ProfileForm.
+   - SEO metadata (title, description).
+
+6. **Orders Placeholder** (`src/app/profile/orders/page.js`)
+   - Placeholder page for future orders feature.
+   - Glassmorphism card with floating icon animation.
+   - Consistent styling with profile page.
+
+7. **Styling** (`src/app/profile/profile.module.scss`, `src/components/profile/*.module.scss`)
+   - Glassmorphism design pattern:
+     * `backdrop-filter: blur(20px)`
+     * Golden borders: `rgba(246, 217, 130, 0.2)`
+     * Gradient backgrounds: `var(--gradient-card-vertical)`
+   - Responsive breakpoints for mobile/tablet/desktop.
+   - RTL support throughout.
+   - Hover effects and smooth transitions.
+
+8. **Root Layout Fix** (`src/app/layout.js`)
+   - Added `suppressHydrationWarning` to `<html>` tag.
+   - Fixes hydration mismatch warnings from browser extensions.
+
+#### Address Management Flow:
+```
+User Submit → PUT /api/profile (User data)
+           → Check addressId exists?
+           → YES: PUT /api/addresses/[id] (Update)
+           → NO:  POST /api/addresses (Create + Link to User)
+           → Update local state with addressId
+           → Show success message
+```
+
+#### Data Structure:
+**User Fields**: firstName, lastName, phoneNumber (read-only)
+**Address Fields**: title, fullAddress, province, city, postalCode, recipientName, recipientPhone
+
+#### Impact:
+- **User Experience**: Complete profile management with address handling.
+- **Authentication**: Protected routes ensure only logged-in users access profile.
+- **Data Integrity**: Separate User and Address models in Strapi.
+- **Lazy Registration**: Users can complete profile after OTP login.
+- **Scalability**: Address system ready for multiple addresses per user.
+- **Design Consistency**: Glassmorphism aesthetic matches AuthModal.
+
+#### Files Created:
+- `src/app/profile/layout.js`
+- `src/app/profile/page.js`
+- `src/app/profile/profile.module.scss`
+- `src/app/profile/orders/page.js`
+- `src/app/profile/orders/orders.module.scss`
+- `src/components/profile/ProfileSidebar.jsx`
+- `src/components/profile/ProfileSidebar.module.scss`
+- `src/components/profile/ProfileForm.jsx`
+- `src/components/profile/ProfileForm.module.scss`
+- `src/app/api/profile/route.js`
+- `src/app/api/addresses/route.js`
+- `src/app/api/addresses/[id]/route.js`
+
+#### Files Modified:
+- `src/app/layout.js` (hydration warning fix)
+
+**Total**: 12 new files, 1 file modified.
+
+---
+
+## [Previous] - 2025-12-16
+
 ### Enhancement: API Error Handling & Console Noise Reduction
 **Status**: ✅ COMPLETED (100%)
 

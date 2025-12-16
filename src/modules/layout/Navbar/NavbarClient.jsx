@@ -74,9 +74,15 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
         <nav className={`${styles.navbar} container`}>
           {/* 🟢 Logo */}
           <div className={styles.logo}>
-            <Link href="/">
-              <Image src="/images/Logo.png" alt="لوگو" width={130} height={60} />
-            </Link>
+              <Link href="/">
+                <Image 
+                  src="/images/Logo.png" 
+                  alt="لوگو" 
+                  width={130} 
+                  height={60} 
+                  priority 
+                />
+              </Link> 
           </div>
 
           {/* 🟢 Desktop Menu */}

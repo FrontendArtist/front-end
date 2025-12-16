@@ -1,0 +1,65 @@
+@import '@/styles/base/mixins';
+
+.profileLayout {
+    min-height: 100vh;
+    padding-top: var(--space-section-top-desktop);
+    padding-bottom: var(--space-section-bottom-desktop);
+
+    @include respond(md) {
+        padding-top: 80px;
+        padding-bottom: 60px;
+    }
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--space-container-x-desktop);
+    display: grid;
+    grid-template-columns: 25% 75%;
+    gap: 32px;
+    align-items: start;
+
+    @include respond(lg) {
+        grid-template-columns: 30% 70%;
+        padding: 0 40px;
+    }
+
+    @include respond(md) {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        padding: 0 20px;
+    }
+}
+
+.content {
+    width: 100%;
+}
+
+// Loading State
+.loadingContainer {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-primary);
+}
+
+.loader {
+    font-size: var(--font-lg);
+    color: var(--color-text-primary);
+    font-family: var(--font-lalezar);
+    animation: pulse 1.5s ease-in-out infinite;
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+}
