@@ -23,17 +23,44 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   height: 100px;
   padding: 0 1rem;
+
+  @include respond(lg) {
+
+    // چیدمان موبایل: [toggle راست] [logo وسط] [icons چپ]
+    .toggleWrapper{
+      width: 100px;
+    }
+    .mobileMenuToggle {
+      order: 1;
+    }
+
+    .logo {
+      order: 2;
+      margin: 0 auto;
+    }
+
+    .actionIcons {
+      order: 3;           
+      width: 100px;
+      justify-content: end;
+    }
+  }
 }
 
 .logo {
+  margin-left: 20px;
+
   a {
+    height: 60px;
     color: var(--color-text-primary);
     font-size: 1.5rem;
     font-weight: 700;
     text-decoration: none;
     transition: color 0.3s ease;
+    display: block;
 
     &:hover {
       color: var(--color-title-hover);
@@ -299,11 +326,19 @@
 */
 
 .actionIcons {
-  display: none; // Hidden on mobile
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 
-  @media (min-width: 1024px) {
-    display: flex;
-    gap: 1rem;
+  @include respond(lg) {
+    gap: 0.5rem;
+  }
+}
+
+// مخفی کردن جستجو در موبایل (فقط در دسکتاپ نمایش داده شود)
+.searchTrigger {
+  @include respond(lg) {
+    display: none !important;
   }
 }
 
@@ -313,11 +348,12 @@
   cursor: pointer;
   color: var(--color-text-primary);
   transition: color 0.3s ease;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   &:hover {
     color: var(--color-title-hover);
   }
@@ -394,6 +430,7 @@
   align-items: center;
   padding: 1rem 1.2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  height: 100px;
 
   .mobileSearchForm {
     flex: 1;
@@ -402,6 +439,7 @@
     background: rgba(255, 255, 255, 0.12);
     border-radius: 8px;
     padding: 0 0.5rem;
+    margin-right: 15px;
   }
 
   .mobileSearch {

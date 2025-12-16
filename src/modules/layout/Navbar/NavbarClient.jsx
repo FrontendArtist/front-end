@@ -74,15 +74,15 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
         <nav className={`${styles.navbar} container`}>
           {/* 🟢 Logo */}
           <div className={styles.logo}>
-              <Link href="/">
-                <Image 
-                  src="/images/Logo.png" 
-                  alt="لوگو" 
-                  width={130} 
-                  height={60} 
-                  priority 
-                />
-              </Link> 
+            <Link href="/">
+              <Image
+                src="/images/Logo.png"
+                alt="لوگو"
+                width={130}
+                height={60}
+                priority
+              />
+            </Link>
           </div>
 
           {/* 🟢 Desktop Menu */}
@@ -135,30 +135,31 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
             <li><Link href="/contact" className={styles.navLink}>تماس با ما</Link></li>
           </ul>
 
-          {/* 🟢 Actions + Mobile Toggle */}
-          <div className={styles.actionsContainer}>
-            <div className={styles.actionIcons}>
-              <SearchTrigger className={styles.iconButton} />
-              <UserStatus />
-              <button className={styles.iconButton} aria-label="سبد خرید">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none">
-                  <circle cx="9" cy="21" r="1" />
-                  <circle cx="20" cy="21" r="1" />
-                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                </svg>
-              </button>
-            </div>
-
-            <button
-              className={`${styles.mobileMenuToggle} ${isMobileMenuOpen ? styles.open : ''}`}
-              onClick={toggleMobileMenu}
-              aria-label="منوی موبایل"
-              aria-expanded={isMobileMenuOpen}
-            >
-              <span className={styles.hamburgerLine}></span>
-              <span className={styles.hamburgerLine}></span>
-              <span className={styles.hamburgerLine}></span>
+          {/* 🟢 Action Icons - سمت چپ */}
+          <div className={styles.actionIcons}>
+            <SearchTrigger className={`${styles.iconButton} ${styles.searchTrigger}`} />
+            <UserStatus />
+            <button className={styles.iconButton} aria-label="سبد خرید">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none">
+                <circle cx="9" cy="21" r="1" />
+                <circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+              </svg>
             </button>
+          </div>
+
+          {/* 🟢 Mobile Menu Toggle - سمت راست */}
+          <div className={styles.toggleWrapper}>
+          <button
+            className={`${styles.mobileMenuToggle} ${isMobileMenuOpen ? styles.open : ''}`}
+            onClick={toggleMobileMenu}
+            aria-label="منوی موبایل"
+            aria-expanded={isMobileMenuOpen}
+          >
+            <span className={styles.hamburgerLine}></span>
+            <span className={styles.hamburgerLine}></span>
+            <span className={styles.hamburgerLine}></span>
+          </button>
           </div>
         </nav>
 
@@ -166,6 +167,16 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
       {/* 🟣 Mobile Drawer */}
       <div className={`${styles.mobileMenuDrawer} ${isMobileMenuOpen ? styles.open : ''}`}>
         <div className={styles.mobileMenuTop}>
+          <button
+            className={`${styles.mobileMenuToggle} ${isMobileMenuOpen ? styles.open : ''}`}
+            onClick={toggleMobileMenu}
+            aria-label="منوی موبایل"
+            aria-expanded={isMobileMenuOpen}
+          >
+            <span className={styles.hamburgerLine}></span>
+            <span className={styles.hamburgerLine}></span>
+            <span className={styles.hamburgerLine}></span>
+          </button>
           <form
             onSubmit={handleMobileSearch}
             className={styles.mobileSearchForm}

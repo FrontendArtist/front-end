@@ -2,6 +2,44 @@
 
 ## [Latest] - 2025-12-16
 
+### Enhancement: Navbar Mobile Layout Restructure
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Navbar Component** (`src/modules/layout/Navbar/NavbarClient.jsx`)
+   - Separated `actionIcons` from `mobileMenuToggle` as independent elements.
+   - Added `toggleWrapper` container for mobile menu button.
+   - Structure: `[Toggle Button] [Logo] [Profile + Cart Icons]`
+
+2. **Navbar Styles** (`src/modules/layout/Navbar/Navbar.module.scss`)
+   - Implemented flexbox `order` for mobile layout control:
+     * `toggleWrapper` → order: 1 (right side)
+     * `logo` → order: 2 (center)
+     * `actionIcons` → order: 3 (left side)
+   - Added fixed widths (100px) for `toggleWrapper` and `actionIcons` in mobile.
+   - Search icon hidden in mobile using `!important` specificity.
+   - Removed `.actionsContainer` wrapper (no longer needed).
+
+3. **UserStatus Dropdown** (`src/components/layout/Navbar/UserStatus.module.scss`)
+   - Fixed RTL dropdown positioning for mobile view.
+   - Removed unnecessary size overrides for mobile.
+
+#### Mobile Layout:
+```
+[☰ Menu] ---------- [Logo] ---------- [👤 Profile] [🛒 Cart]
+```
+
+#### Impact:
+- **Better Mobile UX**: Action icons now balanced on both sides of logo.
+- **Cleaner Layout**: 100px fixed widths ensure consistent spacing.
+- **RTL Compliant**: All elements properly positioned in right-to-left layout.
+
+**Files Modified**: 3 files (~30 lines of code changed).
+
+---
+
+## [Previous] - 2025-12-16
+
 ### Enhancement: Profile Form - Address Refactoring & Edit Mode
 **Status**: ✅ COMPLETED (100%)
 
