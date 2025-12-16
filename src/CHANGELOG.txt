@@ -1,6 +1,133 @@
 # CHANGELOG
 
-## [Latest] - 2025-12-15
+## [Latest] - 2025-12-16
+
+### Enhancement: API Error Handling & Console Noise Reduction
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Next.js Image Configuration** (`next.config.mjs`)
+   - Added `qualities: [50, 75, 90, 100]` to images configuration.
+   - Fixed warning: "Images loaded lazily and replaced with placeholders".
+   - Fixed warning: "quality 100 not configured in images.qualities".
+   - Ensures compatibility with Next.js 16 requirements.
+
+2. **API Client Core** (`src/lib/apiClient.js`)
+   - Implemented intelligent network error detection.
+   - Added `BACKEND_UNAVAILABLE` error code for fetch failures.
+   - Changed error logging strategy:
+     * Network errors: `console.warn` + `console.info` with helpful messages.
+     * Other errors: `console.error` only in development mode.
+   - Improved error messages: "⚠️ Backend unavailable" instead of verbose stack traces.
+   - Added environment-aware logging (development vs production).
+
+3. **API Error Handler Utility** (`src/lib/apiErrorHandler.js`)
+   - Created centralized error handling utility for future use.
+   - Implemented `isBackendUnavailable()` helper function.
+   - Implemented `logApiError()` for consistent error logging.
+   - Implemented `withErrorHandling()` wrapper for API functions.
+
+4. **Categories API** (`src/lib/categoriesApi.js`)
+   - Updated `getMainCategories()` error handling.
+   - Updated `getCategoryTree()` error handling.
+   - Silenced errors when backend is unavailable.
+   - Maintained graceful degradation (returns empty array).
+
+5. **Articles API** (`src/lib/articlesApi.js`)
+   - Updated all 5 functions with improved error handling:
+     * `getArticleCategories()`
+     * `getAllArticles()`
+     * `getArticleBySlug()`
+     * `getArticles()`
+     * `getArticlesPaginated()`
+   - Consistent pattern: only log errors in development when backend is available.
+
+6. **Products API** (`src/lib/productsApi.js`)
+   - Updated all 5 functions with improved error handling:
+     * `getAllProducts()`
+     * `getProductBySlug()`
+     * `getProductCategoryPath()`
+     * `getProducts()`
+     * `getProductsPaginated()`
+   - Maintained existing fallback values (empty arrays/null).
+
+7. **Services API** (`src/lib/servicesApi.js`)
+   - Updated all 4 functions with improved error handling:
+     * `getAllServices()`
+     * `getServiceBySlug()`
+     * `getServices()`
+     * `getServicesPaginated()`
+   - Preserved detailed JSDoc comments while cleaning error logs.
+
+8. **Courses API** (`src/lib/coursesApi.js`)
+   - Updated all 4 functions with improved error handling:
+     * `getAllCourses()`
+     * `getCourseBySlug()`
+     * `getCourses()`
+     * `getCoursesPaginated()`
+   - Consistent with other API modules.
+
+9. **Testimonials API** (`src/lib/testimonialsApi.js`)
+   - Updated `getAllTestimonials()` error handling.
+   - Reduced console noise when backend is down.
+
+10. **FAQ API** (`src/lib/faqApi.js`)
+    - Updated `getAllFaqs()` error handling.
+    - Consistent error handling pattern.
+
+#### Error Handling Pattern:
+```javascript
+} catch (error) {
+  if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+    console.error('خطا در واکشی داده:', error.message);
+  }
+  return []; // or null, or appropriate fallback
+}
+```
+
+#### Console Output Comparison:
+
+**Before (Noisy & Repetitive):**
+```
+❌ خطای API Client: fetch failed
+❌ خطا در واکشی ساختار درختی دسته‌ها: TypeError: fetch failed
+❌ خطا در واکشی دسته‌بندی‌های مقالات: fetch failed
+❌ خطا در واکشی محصولات: fetch failed
+[... 20+ similar error messages ...]
+```
+
+**After (Clean & Informative):**
+```
+⚠️ Backend unavailable: /api/categories
+💡 Make sure your Strapi server is running on http://localhost:1337
+```
+
+#### Impact:
+- **Developer Experience**: Cleaner console with actionable error messages.
+- **Production Ready**: Zero error logs in production when backend is unavailable.
+- **Graceful Degradation**: All pages load with empty states instead of crashing.
+- **Debugging Efficiency**: Real errors (non-network) still logged in development.
+- **Code Consistency**: Unified error handling pattern across all 10 API modules.
+- **Performance**: No impact - error handling is lightweight and conditional.
+- **User Experience**: Pages load smoothly even when backend is down, showing appropriate empty states.
+
+#### Files Modified:
+- `next.config.mjs` (1 file)
+- `src/lib/apiClient.js` (1 file)
+- `src/lib/apiErrorHandler.js` (1 new file)
+- `src/lib/categoriesApi.js` (2 functions)
+- `src/lib/articlesApi.js` (5 functions)
+- `src/lib/productsApi.js` (5 functions)
+- `src/lib/servicesApi.js` (4 functions)
+- `src/lib/coursesApi.js` (4 functions)
+- `src/lib/testimonialsApi.js` (1 function)
+- `src/lib/faqApi.js` (1 function)
+
+**Total**: 11 files modified, 1 new file created, 22 functions improved.
+
+---
+
+## [Previous] - 2025-12-15
 
 ### Feature: Authentication System with NextAuth OTP & User Status Component
 **Status**: ✅ COMPLETED (100%)
