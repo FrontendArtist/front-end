@@ -72,12 +72,14 @@ export async function apiClient(endpoint, options = {}) {
       try {
         const errorBody = await response.json();
         errorDetails = JSON.stringify(errorBody, null, 2);
-        console.error(`خطای API: ${response.status} ${response.statusText} در ${url}`);
-        console.error('جزئیات خطا از Strapi:', errorDetails);
+        console.warn(`⚠️ API Error ${response.status}: ${endpoint}`);
+        if (process.env.NODE_ENV === 'development') {
+          console.debug('Response details:', errorDetails);
+        }
       } catch (e) {
-        console.error(`خطای API: ${response.status} ${response.statusText} در ${url}`);
+        console.warn(`⚠️ API Error ${response.status}: ${endpoint}`);
       }
-      throw new Error(`درخواست API با شکست مواجه شد: ${response.status}`);
+      throw new Error(`API_ERROR_${response.status}`);
     }
 
     // پارس و بازگرداندن پاسخ JSON
@@ -85,8 +87,24 @@ export async function apiClient(endpoint, options = {}) {
     return await response.json();
 
   } catch (error) {
-    // ثبت خطا برای دیباگ
-    console.error('خطای API Client:', error.message);
+    // بررسی اینکه آیا خطا مربوط به عدم دسترسی به سرور است
+    const isNetworkError = error.message === 'fetch failed' ||
+      error.code === 'ECONNREFUSED' ||
+      error.name === 'TypeError';
+
+    if (isNetworkError) {
+      // پیام ساده‌تر برای خطای شبکه
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`⚠️ Backend unavailable: ${endpoint}`);
+        console.info('💡 Make sure your Strapi server is running on', API_BASE_URL);
+      }
+      throw new Error('BACKEND_UNAVAILABLE');
+    }
+
+    // سایر خطاها
+    if (process.env.NODE_ENV === 'development') {
+      console.error('❌ API Client Error:', error.message);
+    }
 
     // پرتاب مجدد خطا تا ماژول‌های دامنه‌ای آن را مدیریت کنند
     throw error;

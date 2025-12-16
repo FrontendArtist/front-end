@@ -45,20 +45,17 @@ export async function getAllFaqs() {
     // واکشی سوالات متداول با مرتب‌سازی بر اساس فیلد No
     // Strapi از پارامتر "sort" برای مرتب‌سازی استفاده می‌کند
     const response = await apiClient('/api/faqs?populate=*&sort=No:asc');
-    
+
     // فرمت کردن پاسخ خام Strapi به داده‌های تمیز و قابل استفاده
     // strapiUtils مدیریت نگاشت فیلدها و بررسی null را انجام می‌دهد
     const formattedFaqs = formatStrapiFaqs(response);
-    
+
     return formattedFaqs;
-    
+
   } catch (error) {
-    // ثبت خطا برای دیباگ در لاگ‌های سرور
-    console.error('خطا در واکشی سوالات متداول:', error.message);
-    
-    // برگرداندن آرایه خالی به‌جای پرتاب خطا
-    // این به صفحه اجازه می‌دهد با EmptyState رندر شود
-    // تجربه کاربری بهتر از نمایش صفحه خطای 500
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی سوالات متداول:', error.message);
+    }
     return [];
   }
 }

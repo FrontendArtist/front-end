@@ -47,20 +47,17 @@ export async function getAllTestimonials() {
     // واکشی نظرات با مرتب‌سازی بر اساس تاریخ ایجاد
     // Strapi از پارامتر "sort" برای مرتب‌سازی استفاده می‌کند
     const response = await apiClient('/api/testimontials?sort=createdAt:desc');
-    
+
     // فرمت کردن پاسخ خام Strapi به داده‌های تمیز و قابل استفاده
     // strapiUtils مدیریت نگاشت فیلدها و بررسی null را انجام می‌دهد
     const formattedTestimonials = formatStrapiTestimonials(response);
-    
+
     return formattedTestimonials;
-    
+
   } catch (error) {
-    // ثبت خطا برای دیباگ در لاگ‌های سرور
-    console.error('خطا در واکشی نظرات:', error.message);
-    
-    // برگرداندن آرایه خالی به‌جای پرتاب خطا
-    // این به صفحه اجازه می‌دهد با EmptyState رندر شود
-    // تجربه کاربری بهتر از نمایش صفحه خطای 500
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی نظرات:', error.message);
+    }
     return [];
   }
 }

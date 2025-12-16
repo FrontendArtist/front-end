@@ -64,20 +64,17 @@ export async function getAllCourses() {
     // واکشی دوره‌ها با تمام رابطه‌ها populate شده
     // Strapi به پارامتر "populate" نیاز دارد تا داده‌های مرتبط را شامل شود
     const response = await apiClient('/api/courses?populate=*&sort=createdAt:desc');
-    
+
     // فرمت کردن پاسخ خام Strapi به داده‌های تمیز و قابل استفاده
     // strapiUtils مدیریت URL های تصاویر، نگاشت فیلدها و بررسی null را انجام می‌دهد
     const formattedCourses = formatStrapiCourses(response);
-    
+
     return formattedCourses;
-    
+
   } catch (error) {
-    // ثبت خطا برای دیباگ در لاگ‌های سرور
-    console.error('خطا در واکشی دوره‌ها:', error.message);
-    
-    // برگرداندن آرایه خالی به‌جای پرتاب خطا
-    // این به صفحه اجازه می‌دهد با EmptyState رندر شود
-    // تجربه کاربری بهتر از نمایش صفحه خطای 500
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی دوره‌ها:', error.message);
+    }
     return [];
   }
 }
@@ -103,14 +100,16 @@ export async function getCourseBySlug(slug) {
     const response = await apiClient(
       `/api/courses?filters[slug][$eq]=${slug}&populate=*`
     );
-    
+
     // فرمت کردن و برگرداندن اولین نتیجه
     // اگر نتیجه‌ای یافت نشد، null برمی‌گرداند
     const formattedCourses = formatStrapiCourses(response);
     return formattedCourses[0] || null;
-    
+
   } catch (error) {
-    console.error(`خطا در واکشی دوره با slug "${slug}":`, error.message);
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error(`خطا در واکشی دوره با slug "${slug}":`, error.message);
+    }
     return null;
   }
 }
@@ -134,12 +133,14 @@ export async function getCourses({ limit = 4 } = {}) {
     const response = await apiClient(
       `/api/courses?populate=*&sort=createdAt:desc&pagination[limit]=${limit}`
     );
-    
+
     const formattedCourses = formatStrapiCourses(response);
     return formattedCourses;
-    
+
   } catch (error) {
-    console.error('خطا در واکشی دوره‌ها:', error.message);
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی دوره‌ها:', error.message);
+    }
     return [];
   }
 }
@@ -170,19 +171,21 @@ export async function getCoursesPaginated(page = 1, pageSize = 6, sort = 'create
     const response = await apiClient(
       `/api/courses?populate=media&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`
     );
-    
+
     // فرمت کردن داده‌های دوره‌ها
     const formattedCourses = formatStrapiCourses(response);
-    
+
     // برگرداندن داده‌ها به همراه metadata صفحه‌بندی
     // metadata شامل: page, pageSize, pageCount, total
     return {
       data: formattedCourses,
       meta: response.meta || {}
     };
-    
+
   } catch (error) {
-    console.error('خطا در واکشی دوره‌های صفحه‌بندی‌شده:', error.message);
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی دوره‌های صفحه‌بندی‌شده:', error.message);
+    }
     // برگرداندن ساختار خالی اما معتبر
     return {
       data: [],

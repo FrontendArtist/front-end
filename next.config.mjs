@@ -18,6 +18,7 @@ const nextConfig = {
                 pathname: '/uploads/**',
             }
         ],
+        qualities: [50, 75, 90, 100],
     },
 };
 

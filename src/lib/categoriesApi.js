@@ -33,7 +33,9 @@ export async function getMainCategories() {
 
     return formatted;
   } catch (error) {
-    console.error('❌ خطا در واکشی دسته‌های اصلی:', error);
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('❌ خطا در واکشی دسته‌های اصلی:', error);
+    }
     return [];
   }
 }
@@ -77,7 +79,9 @@ export async function getCategoryTree() {
       };
     });
   } catch (error) {
-    console.error('❌ خطا در واکشی ساختار درختی دسته‌ها:', error);
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('❌ خطا در واکشی ساختار درختی دسته‌ها:', error);
+    }
     return [];
   }
 }

@@ -21,7 +21,7 @@ export async function getArticleCategories() {
     const categories = categoriesRaw.map((item) => {
       // هندل کردن ساختار Flat (v5) و Nested (v4)
       const data = item.attributes || item;
-      
+
       // استخراج تصویر با ایمنی بالا
       const imageSource = data.image?.data?.attributes || data.image || null;
       const imageUrl = imageSource?.url || null;
@@ -37,7 +37,9 @@ export async function getArticleCategories() {
 
     return categories;
   } catch (error) {
-    console.error('خطا در واکشی دسته‌بندی‌های مقالات:', error.message);
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی دسته‌بندی‌های مقالات:', error.message);
+    }
     return [];
   }
 }
@@ -50,7 +52,9 @@ export async function getAllArticles() {
     const response = await apiClient('/api/articles?populate=*&sort=publishedAt:desc');
     return formatStrapiArticles(response);
   } catch (error) {
-    console.error('خطا در واکشی مقالات:', error.message);
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی مقالات:', error.message);
+    }
     return [];
   }
 }
@@ -66,7 +70,9 @@ export async function getArticleBySlug(slug) {
     const formattedArticles = formatStrapiArticles(response);
     return formattedArticles[0] || null;
   } catch (error) {
-    console.error(`خطا در واکشی مقاله با slug "${slug}":`, error.message);
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error(`خطا در واکشی مقاله با slug "${slug}":`, error.message);
+    }
     return null;
   }
 }
@@ -90,7 +96,9 @@ export async function getArticles({
     const response = await apiClient(url);
     return formatStrapiArticles(response);
   } catch (error) {
-    console.error('خطا در واکشی مقالات:', error.message);
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی مقالات:', error.message);
+    }
     return [];
   }
 }
@@ -116,16 +124,18 @@ export async function getArticlesPaginated(
     }
 
     const response = await apiClient(url);
-    
+
     const formattedArticles = formatStrapiArticles(response);
-    
+
     return {
       data: formattedArticles,
       meta: response.meta || {}
     };
-    
+
   } catch (error) {
-    console.error('خطا در واکشی مقالات صفحه‌بندی‌شده:', error.message);
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی مقالات صفحه‌بندی‌شده:', error.message);
+    }
     return {
       data: [],
       meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } }
