@@ -8,6 +8,7 @@ import styles from './Navbar.module.scss';
 import SearchTrigger from '@/components/layout/SearchTrigger';
 import SearchOverlay from '@/components/ui/SearchOverlay/SearchOverlay';
 import UserStatus from '@/components/layout/Navbar/UserStatus';
+import CartIcon from '@/components/layout/Navbar/CartIcon';
 
 const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '[]' }) => {
   const [isClient, setIsClient] = useState(false);
@@ -137,29 +138,28 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
 
           {/* 🟢 Action Icons - سمت چپ */}
           <div className={styles.actionIcons}>
+            {/* آیکون جستجو - فقط در دسکتاپ نمایش داده می‌شود */}
             <SearchTrigger className={`${styles.iconButton} ${styles.searchTrigger}`} />
+
+            {/* وضعیت کاربر (ورود/پروفایل) */}
             <UserStatus />
-            <button className={styles.iconButton} aria-label="سبد خرید">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none">
-                <circle cx="9" cy="21" r="1" />
-                <circle cx="20" cy="21" r="1" />
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-              </svg>
-            </button>
+
+            {/* آیکون سبد خرید با Dropdown - کلیک برای رفتن به صفحه سبد، Hover برای نمایش پیش‌نمایش */}
+            <CartIcon />
           </div>
 
           {/* 🟢 Mobile Menu Toggle - سمت راست */}
           <div className={styles.toggleWrapper}>
-          <button
-            className={`${styles.mobileMenuToggle} ${isMobileMenuOpen ? styles.open : ''}`}
-            onClick={toggleMobileMenu}
-            aria-label="منوی موبایل"
-            aria-expanded={isMobileMenuOpen}
-          >
-            <span className={styles.hamburgerLine}></span>
-            <span className={styles.hamburgerLine}></span>
-            <span className={styles.hamburgerLine}></span>
-          </button>
+            <button
+              className={`${styles.mobileMenuToggle} ${isMobileMenuOpen ? styles.open : ''}`}
+              onClick={toggleMobileMenu}
+              aria-label="منوی موبایل"
+              aria-expanded={isMobileMenuOpen}
+            >
+              <span className={styles.hamburgerLine}></span>
+              <span className={styles.hamburgerLine}></span>
+              <span className={styles.hamburgerLine}></span>
+            </button>
           </div>
         </nav>
 

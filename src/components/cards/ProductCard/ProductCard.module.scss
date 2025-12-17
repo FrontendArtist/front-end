@@ -31,11 +31,11 @@
   aspect-ratio: 16 / 10;
   flex-shrink: 0;
   overflow: hidden;
-  
+
   @include respond(md) {
     aspect-ratio: 4 / 3;
   }
-  
+
   @include respond(sm) {
     aspect-ratio: 16 / 9;
   }
@@ -52,12 +52,12 @@
   flex-direction: column;
   flex-grow: 1;
   gap: 16px;
-  
+
   @include respond(md) {
     padding: 20px;
     gap: 12px;
   }
-  
+
   @include respond(sm) {
     padding: 16px;
     gap: 10px;
@@ -71,7 +71,7 @@
   line-height: var(--line-height-sm);
   margin: 0;
   @include hover-transition;
-  
+
   @include respond(md) {
     font-size: var(--font-md);
   }
@@ -84,12 +84,12 @@
   line-height: var(--line-height-md);
   flex-grow: 1;
   margin: 0;
-  
+
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  
+
   @include respond(md) {
     font-size: var(--font-sm);
   }
@@ -107,8 +107,100 @@
   color: var(--color-text-primary);
   font-size: var(--font-lg);
   font-weight: var(--font-weight-bold);
-  
+
   @include respond(md) {
     font-size: var(--font-md);
   }
-} 
+}
+
+// دکمه افزودن به سبد خرید
+.addToCartButton {
+  padding: 8px 16px;
+  background: rgba(246, 217, 130, 0.1);
+  border: 2px solid var(--color-text-primary);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  @include hover-transition;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  @include respond(md) {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+// کنترلر تعداد محصول در سبد
+.quantityController {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(246, 217, 130, 0.1);
+  border: 2px solid var(--color-text-primary);
+  border-radius: 8px;
+  padding: 4px 8px;
+
+  @include respond(md) {
+    gap: 6px;
+    padding: 3px 6px;
+  }
+}
+
+// دکمه‌های + و - در کنترلر تعداد
+.quantityButton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-text-primary);
+  color: var(--color-bg-primary);
+  border: none;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  @include hover-transition;
+  line-height: 1;
+
+  &:hover {
+    background: var(--color-title-hover);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  @include respond(md) {
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+  }
+}
+
+// نمایش تعداد در کنترلر
+.quantityDisplay {
+  min-width: 24px;
+  text-align: center;
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-bold);
+
+  @include respond(md) {
+    min-width: 20px;
+    font-size: var(--font-sm);
+  }
+}

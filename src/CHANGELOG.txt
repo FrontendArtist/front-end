@@ -1,6 +1,147 @@
 # CHANGELOG
 
-## [Latest] - 2025-12-16
+## [Latest] - 2025-12-17
+
+### Fix: Product URL Redirects in Cart & Cart Dropdown
+**Status**: ✅ COMPLETED (100%)
+
+#### Problem:
+Product links in the cart page and cart dropdown were using simplified URLs (`/product/{slug}`) that triggered permanent redirects to the correct category-based URLs (`/products/{category}/{subcategory}/{slug}`). This caused:
+- Poor user experience with extra page loads
+- SEO impact from redirect chains
+- Inconsistency with product links on homepage and products page
+
+#### Solution:
+Implemented category-aware URL construction across the entire cart system by:
+1. Storing category metadata when adding products to cart
+2. Building proper URLs using stored category information
+3. Fallback to legacy URLs for backward compatibility
+
+#### Changes Made:
+
+1. **ProductCard Component** (`src/components/cards/ProductCard/ProductCard.jsx`)
+   - Modified `handleAddToCart()` to extract `categorySlug` and `subcategorySlug` from product's categories array.
+   - Added category data to the `productToAdd` object sent to cart store.
+   - Uses same logic as `constructProductUrl()` to determine primary category/subcategory.
+
+2. **Cart Page** (`src/app/cart/page.jsx`)
+   - Added `constructProductUrl()` helper function to build category-based URLs.
+   - Updated product image link (line 136) to use helper function.
+   - Updated product info link (line 147) to use helper function.
+   - Fallback to `/product/{slug}` if category data missing (backward compatibility).
+
+3. **Cart Dropdown** (`src/components/layout/Navbar/CartIcon.jsx`)
+   - Added `constructItemUrl()` helper function for both products and courses.
+   - Updated cart item links (line 207) to use helper function.
+   - Product URLs now include full category paths.
+   - Course URLs remain simple (`/courses/{slug}`).
+
+#### Technical Details:
+- **Category Priority**: Subcategory (with parent) → Root category → Fallback
+- **Data Flow**: ProductCard → Cart Store → Cart Page/Dropdown
+- **Backward Compatibility**: Existing cart items without category data still work
+- **Consistency**: All cart interfaces now match homepage/products page URL structure
+
+#### Result:
+✅ No more redirects when clicking products in cart
+✅ Direct navigation to correct product detail pages
+✅ Improved page load performance
+✅ Better SEO with canonical URLs from the start
+✅ Consistent URL structure across entire application
+
+#### Files Modified:
+- `src/components/cards/ProductCard/ProductCard.jsx` (+19 lines in handleAddToCart)
+- `src/app/cart/page.jsx` (+23 lines helper function, 2 lines link updates)
+- `src/components/layout/Navbar/CartIcon.jsx` (+34 lines helper function, 1 line link update)
+
+**Total**: 3 files, ~79 lines added/modified.
+
+---
+
+### Feature: Complete Shopping Cart System Implementation (Previous Entry)
+
+### Feature: Complete Shopping Cart System Implementation
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+
+1. **Cart Store Refactoring** (`src/store/useCartStore.js`)
+   - Converted `totalPrice` and `itemsCount` from getters to selector functions for proper Zustand reactivity.
+   - Exported `selectTotalPrice` and `selectItemsCount` selector functions.
+   - Ensures components re-render correctly when cart state changes.
+
+2. **Cart Icon Component** (`src/components/layout/Navbar/CartIcon.jsx`)
+   - **Hydration Safety**: Implemented `mounted` state pattern to prevent SSR/client HTML mismatch.
+   - **Mobile Behavior**: Click toggles dropdown on mobile (<1024px), navigates to `/cart` on desktop.
+   - **Badge Styling**: Matched UserStatus design with circular border and bottom-left badge position.
+   - **Hover Effects**: Desktop-only hover to show dropdown preview.
+   - **URL Construction**: Added `constructItemUrl()` to build correct product URLs with category paths.
+
+3. **Cart Icon Styling** (`src/components/layout/Navbar/CartIcon.module.scss`)
+   - Circular wrapper: 40px × 40px with glassmorphism background.
+   - Badge positioned at `bottom: -2px, left: -2px` (matching UserStatus).
+   - Icon size: 22px × 22px.
+   - Border: `2px solid rgba(246, 217, 130, 0.3)`.
+
+4. **Product & Course Cards Hydration Fix**
+   - **ProductCard** (`src/components/cards/ProductCard/ProductCard.jsx`):
+     * Added `isHydrated` state pattern.
+     * Shows "Add to Cart" button before hydration, actual state after.
+     * Added category/subcategory slugs to cart items for proper URL construction.
+   - **CourseCard** (`src/components/cards/CourseCard/CourseCard.jsx`):
+     * Same `isHydrated` pattern.
+     * Prevents disabled button from showing before client hydration.
+   - Heavily commented in Persian explaining hydration logic.
+
+5. **Cart Page** (`src/app/cart/page.jsx` & `Cart.module.scss`)
+   - **Empty State**: Icon + message + "بازگشت به فروشگاه" button.
+   - **Product Section**: Image, title, price, quantity controller `[−] [qty] [+]`, remove button.
+   - **Course Section**: Image, title, price, label "دوره آموزشی", remove button (no quantity).
+   - **Sidebar**: Sticky summary with total price and "ادامه فرآیند خرید" button.
+   - **Clickable Items**: Image and info are `<Link>` components to product/course detail pages.
+   - **URL Construction**: `constructProductUrl()` builds correct URLs using category data.
+   - **Responsive**: Two-column grid on desktop, stacked on mobile.
+   - **Glassmorphism**: All cards with vertical gradient and hover effects.
+
+6. **Cart Dropdown** (`src/components/layout/Navbar/CartIcon.jsx`)
+   - Shows first 5 items with image, title, quantity/type, price.
+   - Total price display.
+   - "مشاهده و تسویه حساب" button linking to `/cart`.
+   - Uses `constructItemUrl()` for proper product navigation.
+
+#### Technical Improvements:
+- **No Hydration Errors**: Server and client HTML match perfectly.
+- **Proper Reactivity**: Zustand selectors ensure UI updates when cart changes.
+- **LocalStorage Persistence**: Cart data persists across sessions.
+- **Category-Aware URLs**: Products navigate to correct category paths.
+- **RTL Compliant**: All layouts support right-to-left direction.
+
+#### User Flow:
+```
+Add Item to Cart → Badge Updates
+  ↓
+Mobile: Click Cart Icon → Dropdown Toggle
+Desktop: Hover Cart Icon → Dropdown Preview
+  ↓
+Click Item in Dropdown/Cart → Navigate to Detail Page
+  ↓
+Cart Page: Manage Quantities → Remove Items → Checkout
+```
+
+#### Files Modified:
+- `src/store/useCartStore.js` (selector functions)
+- `src/components/layout/Navbar/CartIcon.jsx` (hydration + mobile behavior + URL construction)
+- `src/components/layout/Navbar/CartIcon.module.scss` (UserStatus-matched styling)
+- `src/components/cards/ProductCard/ProductCard.jsx` (hydration + category data)
+- `src/components/cards/CourseCard/CourseCard.jsx` (hydration)
+- `src/app/cart/page.jsx` (new cart page)
+- `src/app/cart/Cart.module.scss` (new cart styles)
+
+**Total**: 7 files (2 new), ~800 lines of code added/modified.
+
+---
+
+## [Previous] - 2025-12-16
 
 ### Enhancement: Navbar Mobile Layout Restructure
 **Status**: ✅ COMPLETED (100%)

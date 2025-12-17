@@ -12,7 +12,7 @@
 }
 
 .accordionItem {
-  background: var(--color-overlay);
+  background: var(--gradient-card-horizontal-rtl);
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid rgba(246, 217, 130, 0.1);
@@ -72,7 +72,8 @@
 
 .accordionContent {
   overflow: hidden;
-  background: rgba(0, 43, 32, 0.5);
+  margin-right: 10px;
+  
 }
 
 .contentInner {

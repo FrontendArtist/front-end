@@ -1,0 +1,522 @@
+@import '../../styles/base/mixins';
+
+// صفحه سبد خرید
+.cartPage {
+    min-height: 100vh;
+    padding: var(--space-section-top-desktop) 0 var(--space-section-bottom-desktop);
+
+    @include respond(md) {
+        padding: 100px 0 var(--space-section-bottom-desktop);
+    }
+}
+
+// عنوان صفحه
+.pageTitle {
+    font-size: var(--font-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: 40px;
+
+    @include respond(md) {
+        font-size: var(--font-2xl);
+        margin-bottom: 30px;
+    }
+}
+
+// Loading Container
+.loadingContainer {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loader {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(246, 217, 130, 0.2);
+    border-top-color: var(--color-text-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+}
+
+// Grid اصلی: لیست آیتم‌ها + Sidebar
+.cartGrid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 40px;
+    align-items: start;
+
+    @include respond(lg) {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+}
+
+// ستون آیتم‌ها
+.itemsColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+// بخش (محصولات یا دوره‌ها)
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sectionTitle {
+    font-size: var(--font-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+
+    @include respond(md) {
+        font-size: var(--font-lg);
+    }
+}
+
+// لیست آیتم‌ها
+.itemsList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+// هر آیتم در سبد خرید
+.cartItem {
+    @include card-container;
+    display: grid;
+    grid-template-columns: 120px 1fr auto auto auto;
+    gap: 20px;
+    align-items: center;
+    padding: 24px;
+    background: var(--gradient-card-vertical);
+    @include hover-transition;
+
+    &:hover {
+        background: var(--gradient-card-horizontal-rtl);
+        transform: translateY(-2px);
+    }
+
+    @include respond(md) {
+        grid-template-columns: 80px 1fr;
+        grid-template-rows: auto auto;
+        gap: 16px;
+        padding: 16px;
+    }
+}
+
+// تصویر آیتم - حالا Link است
+.itemImage {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(246, 217, 130, 0.05);
+    display: block;
+    text-decoration: none;
+    @include hover-transition;
+
+    &:hover {
+        transform: scale(1.02);
+    }
+
+    @include respond(md) {
+        width: 80px;
+        height: 80px;
+        grid-row: 1 / 3;
+    }
+}
+
+.image {
+    object-fit: cover;
+}
+
+// اطلاعات آیتم - حالا Link است
+.itemInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+    @include hover-transition;
+
+    &:hover .itemTitle {
+        color: var(--color-title-hover);
+    }
+
+    @include respond(md) {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}
+
+.itemTitle {
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+
+    @include respond(md) {
+        font-size: var(--font-md);
+        -webkit-line-clamp: 1;
+    }
+}
+
+.itemPrice {
+    font-size: var(--font-md);
+    color: var(--color-card-text);
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+    }
+}
+
+.courseLabel {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(246, 217, 130, 0.2);
+    color: var(--color-text-primary);
+    border-radius: 12px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    width: fit-content;
+}
+
+// کنترلر تعداد
+.quantityController {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(246, 217, 130, 0.1);
+    border: 2px solid rgba(246, 217, 130, 0.3);
+    border-radius: 12px;
+    padding: 8px 16px;
+
+    @include respond(md) {
+        grid-column: 2;
+        grid-row: 2;
+        justify-self: start;
+        padding: 6px 12px;
+        gap: 8px;
+    }
+}
+
+.quantityButton {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    border: none;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    @include hover-transition;
+    line-height: 1;
+
+    &:hover {
+        background: var(--color-title-hover);
+        transform: scale(1.1);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    @include respond(md) {
+        width: 28px;
+        height: 28px;
+        font-size: 18px;
+    }
+}
+
+.quantityDisplay {
+    min-width: 32px;
+    text-align: center;
+    color: var(--color-text-primary);
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+
+    @include respond(md) {
+        min-width: 24px;
+        font-size: var(--font-md);
+    }
+}
+
+// فضای خالی برای دوره‌ها (جایگزین کنترلر تعداد)
+.spacer {
+    @include respond(md) {
+        display: none;
+    }
+}
+
+// قیمت کل آیتم
+.itemTotal {
+    font-size: var(--font-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+
+    @include respond(md) {
+        display: none;
+    }
+}
+
+// دکمه حذف
+.removeButton {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(231, 76, 60, 0.1);
+    border: 2px solid rgba(231, 76, 60, 0.3);
+    border-radius: 12px;
+    cursor: pointer;
+    @include hover-transition;
+
+    svg {
+        width: 20px;
+        height: 20px;
+        color: #e74c3c;
+    }
+
+    &:hover {
+        background: rgba(231, 76, 60, 0.2);
+        border-color: #e74c3c;
+        transform: scale(1.05);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    @include respond(md) {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        width: 36px;
+        height: 36px;
+
+        svg {
+            width: 18px;
+            height: 18px;
+        }
+    }
+}
+
+// Sidebar خلاصه سفارش
+.sidebar {
+    position: sticky;
+    top: 120px;
+
+    @include respond(lg) {
+        position: relative;
+        top: 0;
+    }
+}
+
+.summary {
+    @include card-container;
+    background: var(--gradient-card-vertical);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    @include respond(md) {
+        padding: 24px;
+        gap: 16px;
+    }
+}
+
+.summaryTitle {
+    font-size: var(--font-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 12px;
+
+    @include respond(md) {
+        font-size: var(--font-lg);
+    }
+}
+
+.summaryRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-md);
+    color: var(--color-card-text);
+
+    strong {
+        color: var(--color-text-primary);
+        font-weight: var(--font-weight-bold);
+    }
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+    }
+}
+
+.divider {
+    height: 1px;
+    background: rgba(246, 217, 130, 0.2);
+    margin: 8px 0;
+}
+
+.summaryTotal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-xl);
+    color: var(--color-text-primary);
+    padding-top: 12px;
+    border-top: 2px solid rgba(246, 217, 130, 0.3);
+
+    strong {
+        font-weight: var(--font-weight-bold);
+    }
+
+    @include respond(md) {
+        font-size: var(--font-lg);
+    }
+}
+
+.checkoutButton {
+    width: 100%;
+    padding: 16px 32px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    @include hover-transition;
+    margin-top: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    @include respond(md) {
+        padding: 14px 24px;
+        font-size: var(--font-md);
+    }
+}
+
+.securityNote {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    margin-top: 8px;
+
+    svg {
+        width: 16px;
+        height: 16px;
+        color: #10b981;
+    }
+}
+
+// Empty State
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    gap: 24px;
+}
+
+.emptyIcon {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(246, 217, 130, 0.1);
+    border: 3px solid rgba(246, 217, 130, 0.3);
+    border-radius: 50%;
+
+    svg {
+        width: 60px;
+        height: 60px;
+        color: var(--color-card-text);
+    }
+}
+
+.emptyTitle {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-xl);
+    }
+}
+
+.emptyText {
+    font-size: var(--font-lg);
+    color: var(--color-card-text);
+    max-width: 500px;
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-md);
+    }
+}
+
+.emptyButton {
+    display: inline-block;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    @include hover-transition;
+    margin-top: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
