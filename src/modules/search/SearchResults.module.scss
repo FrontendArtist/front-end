@@ -1,75 +1,163 @@
 @import '@/styles/base/mixins';
 
 .resultsContainer {
-    padding: 2rem 0;
+    padding-top: var(--space-section-top-desktop);
+    padding-bottom: var(--space-section-bottom-desktop);
     min-height: 50vh;
 }
 
-.title {
-    font-size: 2rem;
-    margin-bottom: 1rem;
+.header {
+    margin-bottom: var(--space-title-content-desktop);
     text-align: center;
-    color: var(--color-text-main);
+}
+
+.title {
+    font-size: var(--font-xl);
+    color: var(--color-title-hover);
+    margin-bottom: 1rem;
+
+    span {
+        color: var(--color-text-primary);
+        font-weight: var(--font-weight-bold);
+    }
+}
+
+.searchBoxWrapper {
+    margin-bottom: var(--space-title-content-desktop);
+    display: flex;
+    justify-content: center;
 }
 
 .tabs {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 1rem;
-    margin-bottom: 2rem;
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 0.5rem;
+    margin-bottom: var(--space-gap-desktop);
+    padding: 1rem;
+    backdrop-filter: blur(10px);
     overflow-x: auto;
+
+    // Glassmorphism effect
+
+    @include respond(md) {
+        padding: 0.75rem;
+        gap: 0.5rem;
+    }
 }
 
 .tab {
-    background: none;
-    border: none;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
+    background: rgba(246, 217, 130, 0.05);
+    border: 1px solid rgba(246, 217, 130, 0.15);
+    border-radius: 50px;
+    padding: 0.75rem 1.5rem;
+    font-size: var(--font-md);
     cursor: pointer;
-    color: var(--color-text-muted);
+    color: var(--color-card-text);
     font-family: var(--font-iransans);
-    transition: all 0.2s;
+    font-weight: var(--font-weight-medium);
+    transition: all 0.3s ease;
     white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(246, 217, 130, 0.1), rgba(245, 196, 82, 0.05));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
 
     &:hover {
-        color: var(--color-primary);
+        border-color: var(--color-text-primary);
+        transform: translateY(-2px);
+
+        &::before {
+            opacity: 1;
+        }
     }
 
     &.active {
-        color: var(--color-primary);
-        border-bottom: 2px solid var(--color-primary);
-        font-weight: bold;
+        background: var(--color-text-primary);
+        color: var(--color-bg-primary);
+        border-color: var(--color-text-primary);
+        font-weight: var(--font-weight-bold);
+        box-shadow: 0 6px 16px rgba(246, 217, 130, 0.3);
+
+        &::before {
+            display: none;
+        }
+    }
+
+    @include respond(md) {
+        padding: 0.5rem 1rem;
+        font-size: var(--font-sm);
     }
 }
 
 .grid {
     display: grid;
-    grid-template-columns:  repeat(4, 1fr);
-    gap: 1.5rem;
-    padding: 1rem 0;
-
-    @include respond(md) {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    @include respond(xl) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;    
+    } 
 
     @include respond(lg) {
-        grid-template-columns: repeat(3, 1fr);
-    }
+    grid-template-columns: repeat(3, 1fr);
 
-    @include respond(xl) {
-        grid-template-columns: repeat(4, 1fr) !important;
-    }
+}
+@include respond(md) {
+    grid-template-columns: repeat(2, 1fr);
+
+}
+
+@include respond(sm) {
+    grid-template-columns: 1fr;
+
+}
+
+    
 }
 
 .emptyState {
     text-align: center;
-    padding: 3rem;
-    color: var(--color-text-muted);
-    font-size: 1.2rem;
+    padding: var(--space-card-padding-desktop);
+    color: var(--color-card-text);
+    font-size: var(--font-lg);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    justify-content: center;
+    gap: 1.5rem;
+    min-height: 40vh;
+
+    // Glassmorphism card
+    background: var(--gradient-card-vertical);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-card-xl);
+    border: 1px solid rgba(246, 217, 130, 0.1);
+    box-shadow: var(--shadow-card-strong);
+
+    p {
+        margin: 0;
+        line-height: var(--line-height-lg);
+    }
+
+    @include respond(md) {
+        padding: var(--space-card-padding-tablet);
+        font-size: var(--font-md);
+    }
+
+    @include respond(sm) {
+        padding: var(--space-card-padding-mobile);
+        font-size: var(--font-md);
+    }
 }
+
