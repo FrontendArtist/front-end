@@ -1,0 +1,319 @@
+@import '@/styles/base/mixins';
+
+// صفحه نتیجه پرداخت
+.callbackPage {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-section-top-desktop) 0 var(--space-section-bottom-desktop);
+
+    @include respond(md) {
+        padding: 100px 20px 60px;
+    }
+}
+
+// Loading Container
+.loadingContainer {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loader {
+    font-size: var(--font-lg);
+    color: var(--color-text-primary);
+    font-family: var(--font-lalezar);
+    animation: pulse 1.5s ease-in-out infinite;
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+}
+
+// کارت اصلی
+.card {
+    @include card-container;
+    background: var(--gradient-card-vertical);
+    padding: 60px 48px;
+    max-width: 600px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    text-align: center;
+
+    @include respond(md) {
+        padding: 40px 32px;
+        gap: 20px;
+    }
+}
+
+// آیکون وضعیت
+.icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: scaleIn 0.5s ease-out;
+
+    svg {
+        width: 56px;
+        height: 56px;
+    }
+
+    @keyframes scaleIn {
+        from {
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    @include respond(md) {
+        width: 80px;
+        height: 80px;
+
+        svg {
+            width: 44px;
+            height: 44px;
+        }
+    }
+}
+
+// حالت موفقیت (سبز)
+.success {
+    .icon {
+        background: rgba(16, 185, 129, 0.15);
+        border: 3px solid rgba(16, 185, 129, 0.4);
+
+        svg {
+            color: #10b981;
+            stroke-width: 3;
+        }
+    }
+
+    .title {
+        color: #10b981;
+    }
+
+    .primaryButton {
+        background: linear-gradient(135deg, #10b981, #059669);
+
+        &:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+        }
+    }
+}
+
+// حالت خطا (قرمز)
+.failure {
+    .icon {
+        background: rgba(231, 76, 60, 0.15);
+        border: 3px solid rgba(231, 76, 60, 0.4);
+
+        svg {
+            color: #e74c3c;
+            stroke-width: 3;
+        }
+    }
+
+    .title {
+        color: #e74c3c;
+    }
+
+    .primaryButton {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+
+        &:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+        }
+    }
+}
+
+// عنوان
+.title {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-weight-bold);
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-xl);
+    }
+}
+
+// پیام
+.message {
+    font-size: var(--font-lg);
+    color: var(--color-card-text);
+    margin: 0;
+    line-height: 1.6;
+
+    @include respond(md) {
+        font-size: var(--font-md);
+    }
+}
+
+// اطلاعات سفارش
+.orderInfo {
+    width: 100%;
+    padding: 20px;
+    background: rgba(246, 217, 130, 0.1);
+    border: 2px solid rgba(246, 217, 130, 0.3);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.orderRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+
+    @include respond(md) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+.label {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+}
+
+.value {
+    color: var(--color-card-text);
+    font-family: monospace;
+    background: rgba(0, 0, 0, 0.1);
+    padding: 4px 12px;
+    border-radius: 6px;
+}
+
+// جعبه اطلاعات
+.infoBox {
+    width: 100%;
+    padding: 20px;
+    background: rgba(246, 217, 130, 0.05);
+    border: 1px solid rgba(246, 217, 130, 0.2);
+    border-radius: 12px;
+    display: flex;
+    gap: 16px;
+    text-align: right;
+
+    svg {
+        width: 24px;
+        height: 24px;
+        color: var(--color-accent);
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    p {
+        margin: 0;
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+        line-height: 1.7;
+    }
+
+    @include respond(md) {
+        padding: 16px;
+        gap: 12px;
+
+        svg {
+            width: 20px;
+            height: 20px;
+        }
+    }
+}
+
+// دکمه‌های عملیات
+.actions {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+    margin-top: 12px;
+
+    @include respond(md) {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+
+.primaryButton {
+    flex: 1;
+    padding: 14px 32px;
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    @include hover-transition;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    @include respond(md) {
+        padding: 12px 24px;
+        font-size: var(--font-sm);
+    }
+}
+
+.secondaryButton {
+    flex: 1;
+    padding: 14px 32px;
+    background: rgba(246, 217, 130, 0.1);
+    border: 2px solid rgba(246, 217, 130, 0.3);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    border-radius: 12px;
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    @include hover-transition;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        background: rgba(246, 217, 130, 0.2);
+        border-color: rgba(246, 217, 130, 0.5);
+        transform: translateY(-2px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    @include respond(md) {
+        padding: 12px 24px;
+        font-size: var(--font-sm);
+    }
+}

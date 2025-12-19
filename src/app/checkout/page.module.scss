@@ -1,7 +1,7 @@
-@import '../../styles/base/mixins';
+@import '@/styles/base/mixins';
 
-// صفحه سبد خرید
-.cartPage {
+// صفحه تسویه حساب
+.checkoutPage {
     min-height: 100vh;
     padding: var(--space-section-top-desktop) 0 var(--space-section-bottom-desktop);
 
@@ -32,22 +32,113 @@
 }
 
 .loader {
-    width: 48px;
-    height: 48px;
-    border: 4px solid rgba(246, 217, 130, 0.2);
-    border-top-color: var(--color-text-primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+    font-size: var(--font-lg);
+    color: var(--color-text-primary);
+    font-family: var(--font-lalezar);
+    animation: pulse 1.5s ease-in-out infinite;
 
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
         }
     }
 }
 
-// Grid اصلی: لیست آیتم‌ها + Sidebar
-.cartGrid {
+// Skeleton Loading States
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeletonTitle {
+    height: 40px;
+    width: 200px;
+    background: linear-gradient(90deg, rgba(246, 217, 130, 0.1) 25%, rgba(246, 217, 130, 0.2) 50%, rgba(246, 217, 130, 0.1) 75%);
+    background-size: 200% 100%;
+    border-radius: 8px;
+    margin-bottom: 40px;
+    animation: shimmer 1.5s infinite;
+
+    @include respond(md) {
+        height: 32px;
+        width: 150px;
+        margin-bottom: 30px;
+    }
+}
+
+.skeletonSection {
+    @include card-container;
+    background: var(--gradient-card-vertical);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    @include respond(md) {
+        padding: 24px;
+    }
+}
+
+.skeletonHeader {
+    height: 24px;
+    width: 150px;
+    background: linear-gradient(90deg, rgba(246, 217, 130, 0.1) 25%, rgba(246, 217, 130, 0.2) 50%, rgba(246, 217, 130, 0.1) 75%);
+    background-size: 200% 100%;
+    border-radius: 6px;
+    animation: shimmer 1.5s infinite;
+}
+
+.skeletonCard {
+    height: 150px;
+    background: linear-gradient(90deg, rgba(246, 217, 130, 0.05) 25%, rgba(246, 217, 130, 0.15) 50%, rgba(246, 217, 130, 0.05) 75%);
+    background-size: 200% 100%;
+    border-radius: 12px;
+    animation: shimmer 1.5s infinite;
+}
+
+.skeletonSummary {
+    @include card-container;
+    background: var(--gradient-card-vertical);
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    @include respond(md) {
+        padding: 24px;
+    }
+}
+
+.skeletonRow {
+    height: 20px;
+    background: linear-gradient(90deg, rgba(246, 217, 130, 0.1) 25%, rgba(246, 217, 130, 0.2) 50%, rgba(246, 217, 130, 0.1) 75%);
+    background-size: 200% 100%;
+    border-radius: 6px;
+    animation: shimmer 1.5s infinite;
+}
+
+.skeletonButton {
+    height: 50px;
+    background: linear-gradient(90deg, rgba(246, 217, 130, 0.15) 25%, rgba(246, 217, 130, 0.25) 50%, rgba(246, 217, 130, 0.15) 75%);
+    background-size: 200% 100%;
+    border-radius: 12px;
+    margin-top: 12px;
+    animation: shimmer 1.5s infinite;
+}
+
+// Grid اصلی
+.checkoutGrid {
     display: grid;
     grid-template-columns: 1fr 380px;
     gap: 40px;
@@ -59,270 +150,199 @@
     }
 }
 
-// ستون آیتم‌ها
-.itemsColumn {
+// ستون اصلی
+.mainColumn {
     display: flex;
     flex-direction: column;
     gap: 30px;
 }
 
-// بخش (محصولات یا دوره‌ها)
+// بخش‌های صفحه
 .section {
+    @include card-container;
+    background: var(--gradient-card-vertical);
+    padding: 32px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
+
+    @include respond(md) {
+        padding: 24px;
+        gap: 20px;
+    }
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .sectionTitle {
     font-size: var(--font-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
+    margin: 0;
 
     @include respond(md) {
         font-size: var(--font-lg);
     }
 }
 
-// لیست آیتم‌ها
-.itemsList {
+.editLink {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-sm);
+    color: var(--color-accent);
+    text-decoration: none;
+    @include hover-transition;
+
+    &:hover {
+        color: var(--color-title-hover);
+        transform: translateX(-4px);
+    }
+}
+
+// کارت آدرس
+.addressCard {
+    @include card-container;
+    background: rgba(246, 217, 130, 0.05);
+    border: 2px solid rgba(246, 217, 130, 0.2);
+    padding: 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
 }
 
-// هر آیتم در سبد خرید
-.cartItem {
-    @include card-container;
-    display: grid;
-    grid-template-columns: 120px 1fr auto auto auto;
-    gap: 20px;
-    align-items: center;
-    padding: 24px;
-    background: var(--gradient-card-vertical);
-    @include hover-transition;
-
-    &:hover {
-        background: var(--gradient-card-horizontal-rtl);
-        transform: translateY(-2px);
-    }
-
-    @include respond(md) {
-        grid-template-columns: 80px 1fr;
-        grid-template-rows: auto auto;
-        gap: 16px;
-        padding: 16px;
-    }
+.addressLoading {
+    text-align: center;
+    color: var(--color-card-text);
+    padding: 20px;
 }
 
-// تصویر آیتم - حالا Link است
-.itemImage {
-    position: relative;
-    width: 120px;
-    height: 120px;
-    border-radius: 12px;
-    overflow: hidden;
+.addressRow {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.addressLabel {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    min-width: 80px;
     flex-shrink: 0;
-    background: rgba(246, 217, 130, 0.05);
-    display: block;
-    text-decoration: none;
-    @include hover-transition;
-
-    &:hover {
-        transform: scale(1.02);
-    }
 
     @include respond(md) {
-        width: 80px;
-        height: 80px;
-        grid-row: 1 / 3;
+        min-width: 70px;
+        font-size: var(--font-sm);
     }
 }
 
-.image {
-    object-fit: cover;
+.addressValue {
+    color: var(--color-card-text);
+    line-height: 1.6;
 }
 
-// اطلاعات آیتم - حالا Link است
-.itemInfo {
+// حالت بدون آدرس
+.noAddress {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 40px 20px;
+    text-align: center;
+
+    svg {
+        width: 48px;
+        height: 48px;
+        color: var(--color-card-text);
+    }
+
+    p {
+        margin: 0;
+        color: var(--color-card-text);
+        font-size: var(--font-md);
+    }
+}
+
+.addAddressButton {
+    display: inline-block;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
+    color: white;
     text-decoration: none;
-    color: inherit;
+    border-radius: 8px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
     @include hover-transition;
 
-    &:hover .itemTitle {
-        color: var(--color-title-hover);
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+}
+
+// لیست اقلام سفارش
+.itemsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.orderItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: rgba(246, 217, 130, 0.05);
+    border: 1px solid rgba(246, 217, 130, 0.2);
+    border-radius: 8px;
+    @include hover-transition;
+
+    &:hover {
+        background: rgba(246, 217, 130, 0.1);
     }
 
     @include respond(md) {
-        grid-column: 2;
-        grid-row: 1;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
     }
+}
+
+.itemInfo {
+    flex: 1;
 }
 
 .itemTitle {
-    font-size: var(--font-lg);
+    font-size: var(--font-md);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
-    margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-
-    @include respond(md) {
-        font-size: var(--font-md);
-        -webkit-line-clamp: 1;
-    }
-}
-
-.itemPrice {
-    font-size: var(--font-md);
-    color: var(--color-card-text);
-    margin: 0;
+    margin: 0 0 4px 0;
 
     @include respond(md) {
         font-size: var(--font-sm);
     }
 }
 
-.courseLabel {
-    display: inline-block;
-    padding: 4px 12px;
-    background: rgba(246, 217, 130, 0.2);
-    color: var(--color-text-primary);
-    border-radius: 12px;
+.itemMeta {
+    margin: 0;
     font-size: var(--font-sm);
-    font-weight: var(--font-weight-medium);
-    width: fit-content;
+    color: var(--color-card-text);
 }
 
-// کنترلر تعداد
-.quantityController {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(246, 217, 130, 0.1);
-    border: 2px solid rgba(246, 217, 130, 0.3);
-    border-radius: 12px;
-    padding: 8px 16px;
-
-    @include respond(md) {
-        grid-column: 2;
-        grid-row: 2;
-        justify-self: start;
-        padding: 6px 12px;
-        gap: 8px;
-    }
-}
-
-.quantityButton {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--color-text-primary);
-    color: var(--color-bg-primary);
-    border: none;
-    border-radius: 8px;
-    font-size: 20px;
-    font-weight: var(--font-weight-bold);
-    cursor: pointer;
-    @include hover-transition;
-    line-height: 1;
-
-    &:hover {
-        background: var(--color-title-hover);
-        transform: scale(1.1);
-    }
-
-    &:active {
-        transform: scale(0.95);
-    }
-
-    @include respond(md) {
-        width: 28px;
-        height: 28px;
-        font-size: 18px;
-    }
-}
-
-.quantityDisplay {
-    min-width: 32px;
-    text-align: center;
-    color: var(--color-text-primary);
+.itemPrice {
     font-size: var(--font-lg);
-    font-weight: var(--font-weight-bold);
-
-    @include respond(md) {
-        min-width: 24px;
-        font-size: var(--font-md);
-    }
-}
-
-// فضای خالی برای دوره‌ها (جایگزین کنترلر تعداد)
-.spacer {
-    @include respond(md) {
-        display: none;
-    }
-}
-
-// قیمت کل آیتم
-.itemTotal {
-    font-size: var(--font-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
     white-space: nowrap;
 
     @include respond(md) {
-        display: none;
-    }
-}
-
-// دکمه حذف
-.removeButton {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(231, 76, 60, 0.1);
-    border: 2px solid rgba(231, 76, 60, 0.3);
-    border-radius: 12px;
-    cursor: pointer;
-    @include hover-transition;
-
-    svg {
-        width: 20px;
-        height: 20px;
-        color: #e74c3c;
-    }
-
-    &:hover {
-        background: rgba(231, 76, 60, 0.2);
-        border-color: #e74c3c;
-        transform: scale(1.05);
-    }
-
-    &:active {
-        transform: scale(0.95);
-    }
-
-    @include respond(md) {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        width: 36px;
-        height: 36px;
-
-        svg {
-            width: 18px;
-            height: 18px;
-        }
+        font-size: var(--font-md);
+        width: 100%;
+        text-align: left;
     }
 }
 
@@ -403,7 +423,8 @@
     }
 }
 
-.checkoutButton {
+// دکمه پرداخت
+.paymentButton {
     width: 100%;
     padding: 16px 32px;
     background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
@@ -416,6 +437,10 @@
     @include hover-transition;
     margin-top: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
 
     &:hover:not(:disabled) {
         transform: translateY(-2px);
@@ -437,6 +462,22 @@
     }
 }
 
+// Spinner برای Loading State
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+}
+
 .securityNote {
     display: flex;
     align-items: center;
@@ -451,6 +492,17 @@
         height: 16px;
         color: #10b981;
     }
+}
+
+// پیام خطا
+.error {
+    padding: 12px 16px;
+    background: rgba(231, 76, 60, 0.1);
+    border: 2px solid rgba(231, 76, 60, 0.3);
+    border-radius: 8px;
+    color: #e74c3c;
+    font-size: var(--font-sm);
+    text-align: center;
 }
 
 // Empty State

@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore, selectTotalPrice, selectItemsCount } from '@/store/useCartStore';
+import useAuthStore from '@/store/authStore';
 import styles from './Cart.module.scss';
 
 /**
@@ -26,6 +29,14 @@ export default function CartPage() {
      */
     const [isHydrated, setIsHydrated] = useState(false);
 
+    // Get session status for auth check
+    const { data: session, status } = useSession();
+    const router = useRouter();
+    const openAuthModal = useAuthStore((state) => state.openAuthModal);
+
+    // Loading state for checkout button
+    const [isCheckingOut, setIsCheckingOut] = useState(false);
+
     useEffect(() => {
         setIsHydrated(true);
     }, []);
@@ -36,6 +47,21 @@ export default function CartPage() {
     const removeItem = useCartStore((state) => state.removeItem);
     const totalPrice = useCartStore(selectTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
+
+    /**
+     * هندلر دکمه تسویه حساب
+     * بررسی وضعیت لاگین و انجام عملیات مناسب
+     */
+    const handleCheckout = () => {
+        // اگر کاربر لاگین است، به صفحه checkout برو
+        if (status === 'authenticated') {
+            setIsCheckingOut(true);
+            router.push('/checkout');
+        } else {
+            // اگر لاگین نیست، AuthModal را باز کن
+            openAuthModal();
+        }
+    };
 
     /**
      * فرمت کردن قیمت به صورت فارسی با جداکننده هزارگان
@@ -295,8 +321,12 @@ export default function CartPage() {
                         </div>
 
                         {/* دکمه تسویه حساب */}
-                        <button className={styles.checkoutButton}>
-                            ادامه فرآیند خرید
+                        <button
+                            onClick={handleCheckout}
+                            className={styles.checkoutButton}
+                            disabled={status === 'loading' || isCheckingOut}
+                        >
+                            {status === 'loading' || isCheckingOut ? 'در حال بارگذاری...' : 'ادامه فرآیند خرید'}
                         </button>
 
                         {/* پیام امنیت */}
