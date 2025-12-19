@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
+import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
 import styles from './ProductCard.module.scss';
 
 /**
@@ -176,7 +177,12 @@ const ProductCard = ({ product }) => {
   const productUrl = constructProductUrl();
 
   return (
-    <Link href={productUrl} className={`${styles.productCard} card vertical-gradient`}>
+    <GradientBorderCard
+      as={Link}
+      wrapperProps={{ href: productUrl }}
+      gradient="vertical"
+      contentClassName={`${styles.productCard} card vertical-gradient`}
+    >
       <div className={styles.imageWrapper}>
         <Image
           src={image.url}
@@ -212,7 +218,7 @@ const ProductCard = ({ product }) => {
               onClick={handleAddToCart}
               aria-label={`افزودن ${title} به سبد خرید`}
             >
-              افزودن به سبد
+              خرید
             </button>
           ) : (
             // کنترلر تعداد (فقط زمانی که hydrate شده و محصول در سبد است)
@@ -236,7 +242,7 @@ const ProductCard = ({ product }) => {
           )}
         </div>
       </div>
-    </Link>
+    </GradientBorderCard>
   );
 };
 

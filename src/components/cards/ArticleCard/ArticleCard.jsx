@@ -1,6 +1,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
 import styles from './ArticleCard.module.scss';
 
 /**
@@ -20,7 +21,7 @@ const ArticleCard = ({ article }) => {
   if (!article) return null;
 
   const { slug, cover, title, date, excerpt } = article;
-  
+
   // A simple date formatting function
   const formattedDate = new Date(date).toLocaleDateString('fa-IR', {
     year: 'numeric',
@@ -29,7 +30,12 @@ const ArticleCard = ({ article }) => {
   });
 
   return (
-    <Link href={`/articles/${slug}`} className={`${styles.articleCard} card`}>
+    <GradientBorderCard
+      as={Link}
+      wrapperProps={{ href: `/articles/${slug}` }}
+      gradient="vertical"
+      contentClassName={`${styles.articleCard} card`}
+    >
       <div className={styles.imageWrapper}>
         <Image
           src={cover.url}
@@ -46,7 +52,7 @@ const ArticleCard = ({ article }) => {
           <span className={styles.date}>{formattedDate}</span>
         </div>
       </div>
-    </Link>
+    </GradientBorderCard>
   );
 };
 

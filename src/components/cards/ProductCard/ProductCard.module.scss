@@ -1,98 +1,34 @@
 @import '../../../styles/base/mixins';
 
 .productCard {
-  @include card-container;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: var(--gradient-card-vertical);
-  overflow: hidden;
-  padding: 0;
-  text-decoration: none;
+  @include base-card;
 
+  // Override نمایش hover effect چون GradientBorderCard آن را مدیریت می‌کند
   &:hover {
     background: var(--gradient-card-horizontal-rtl);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-
-    .productImage {
-      transform: scale(1.05);
-    }
-
-    .cardTitle {
-      color: var(--color-title-hover);
-    }
   }
 }
 
 .imageWrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  flex-shrink: 0;
-  overflow: hidden;
-
-  @include respond(md) {
-    aspect-ratio: 4 / 3;
-  }
-
-  @include respond(sm) {
-    aspect-ratio: 16 / 9;
-  }
+  @include card-image-wrapper;
 }
 
 .productImage {
-  object-fit: cover;
-  @include hover-transition;
+  @include card-image;
 }
 
 .cardContent {
-  padding: var(--space-title-text-desktop);
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  gap: 16px;
-
-  @include respond(md) {
-    padding: 20px;
-    gap: 12px;
-  }
-
-  @include respond(sm) {
-    padding: 16px;
-    gap: 10px;
-  }
+  @include card-content;
 }
 
 .cardTitle {
-  color: var(--color-text-primary);
-  font-size: var(--font-lg);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-sm);
-  margin: 0;
-  @include hover-transition;
-
-  @include respond(md) {
-    font-size: var(--font-md);
-  }
+  @include card-title;
+  // تنظیم سایز فونت کم‌تر برای ProductCard
+  font-size: var(--font-md);
 }
 
 .cardText {
-  color: var(--color-card-text);
-  font-size: var(--font-md);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--line-height-md);
-  flex-grow: 1;
-  margin: 0;
-
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-
-  @include respond(md) {
-    font-size: var(--font-sm);
-  }
+  @include card-text-truncate(2);
 }
 
 .footer {
@@ -105,7 +41,7 @@
 
 .price {
   color: var(--color-text-primary);
-  font-size: var(--font-lg);
+  font-size: var(--font-sm);
   font-weight: var(--font-weight-bold);
 
   @include respond(md) {

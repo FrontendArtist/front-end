@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
 import styles from './ServiceCard.module.scss';
 
 /**
@@ -17,18 +18,20 @@ import styles from './ServiceCard.module.scss';
 const ServiceCard = ({ service }) => {
   // Early return if no service data provided
   if (!service) return null;
-  
+
   const { slug, image, title, description } = service;
 
   return (
-    // Main card container with hover effects and gradient background
-    <div className={styles.serviceCard}>
+    <GradientBorderCard
+      gradient="vertical"
+      contentClassName={styles.serviceCard}
+    >
       {/* Image section with optimized Next.js Image component */}
       <div className={styles.serviceCard__imageWrapper}>
-        <Image 
-          src={image?.url || '/images/placeholder.jpg'} 
-          alt={image?.alt || title} 
-          fill 
+        <Image
+          src={image?.url || '/images/placeholder.jpg'}
+          alt={image?.alt || title}
+          fill
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
           className={styles.serviceCard__image}
           priority={false}
@@ -39,19 +42,19 @@ const ServiceCard = ({ service }) => {
       <div className={styles.serviceCard__content}>
         {/* Service title with primary color */}
         <h3 className={styles.serviceCard__title}>{title}</h3>
-        
+
         {/* Service description with card text color */}
         <p className={styles.serviceCard__description}>{description}</p>
-        
+
         {/* Call-to-action link to service detail page */}
-        <Link 
-          href={`/services/${slug}`} 
+        <Link
+          href={`/services/${slug}`}
           className={styles.serviceCard__link}
         >
           بیشتر بدانید
         </Link>
       </div>
-    </div>
+    </GradientBorderCard>
   );
 };
 

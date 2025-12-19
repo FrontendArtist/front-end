@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
+import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
 import styles from './CourseCard.module.scss';
 
 /**
@@ -95,7 +96,10 @@ const CourseCard = ({ course }) => {
   };
 
   return (
-    <div className={`${styles.courseCard} card`}>
+    <GradientBorderCard
+      gradient="vertical"
+      contentClassName={`${styles.courseCard} card`}
+    >
       <div className={styles.imageWrapper}>
         <Image
           src={image.url}
@@ -157,7 +161,7 @@ const CourseCard = ({ course }) => {
           </Link>
         </div>
       </div>
-    </div>
+    </GradientBorderCard>
   );
 };
 
