@@ -1,0 +1,330 @@
+@import '@/styles/base/mixins';
+
+.paymentStep {
+    @include card-container;
+    background: var(--gradient-card-vertical);
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+
+    @include respond(md) {
+        padding: 24px;
+        gap: 24px;
+    }
+}
+
+.title {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-xl);
+    }
+}
+
+.subtitle {
+    font-size: var(--font-md);
+    color: var(--color-card-text);
+    margin: -16px 0 0;
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+    }
+}
+
+.orderSummary {
+    padding: 24px;
+    background: rgba(246, 217, 130, 0.05);
+    border: 2px solid rgba(246, 217, 130, 0.2);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.summaryTitle {
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-md);
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+    }
+}
+
+.itemName {
+    color: var(--color-card-text);
+}
+
+.quantity {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.itemPrice {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-bold);
+    white-space: nowrap;
+}
+
+.divider {
+    height: 1px;
+    background: rgba(246, 217, 130, 0.3);
+    margin: 8px 0;
+}
+
+.summaryRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-md);
+    color: var(--color-card-text);
+
+    strong {
+        color: var(--color-text-primary);
+        font-weight: var(--font-weight-bold);
+    }
+}
+
+.summaryTotal {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-xl);
+    color: var(--color-text-primary);
+    padding-top: 12px;
+    border-top: 2px solid rgba(246, 217, 130, 0.3);
+
+    strong {
+        font-weight: var(--font-weight-bold);
+    }
+
+    @include respond(md) {
+        font-size: var(--font-lg);
+    }
+}
+
+.paymentMethods {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.methodsTitle {
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.methodsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.method {
+    cursor: pointer;
+    @include hover-transition;
+
+    input[type="radio"] {
+        display: none;
+    }
+
+    &.disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+
+        .methodContent {
+            &:hover {
+                background: rgba(246, 217, 130, 0.05);
+                border-color: rgba(246, 217, 130, 0.2);
+            }
+        }
+    }
+}
+
+.methodContent {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: rgba(246, 217, 130, 0.05);
+    border: 2px solid rgba(246, 217, 130, 0.2);
+    border-radius: 12px;
+    @include hover-transition;
+
+    .method:not(.disabled) &:hover {
+        background: rgba(246, 217, 130, 0.1);
+        border-color: rgba(246, 217, 130, 0.4);
+    }
+
+    .method.selected & {
+        background: rgba(246, 217, 130, 0.15);
+        border-color: var(--color-accent);
+        box-shadow: 0 4px 12px rgba(246, 217, 130, 0.2);
+    }
+}
+
+.methodIcon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(246, 217, 130, 0.1);
+    border-radius: 10px;
+    flex-shrink: 0;
+
+    svg {
+        width: 24px;
+        height: 24px;
+        color: var(--color-accent);
+    }
+
+    .method.selected & {
+        background: var(--color-accent);
+
+        svg {
+            color: white;
+        }
+    }
+}
+
+.methodInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.methodName {
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+}
+
+.methodDesc {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+}
+
+.checkmark {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    @include hover-transition;
+
+    svg {
+        color: var(--color-accent);
+    }
+
+    .method.selected & {
+        opacity: 1;
+    }
+}
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(246, 217, 130, 0.2);
+
+    @include respond(md) {
+        flex-direction: column;
+    }
+}
+
+.previousButton,
+.paymentButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 32px;
+    border: none;
+    border-radius: 12px;
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    @include hover-transition;
+
+    svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    @include respond(md) {
+        justify-content: center;
+        padding: 12px 24px;
+        font-size: var(--font-md);
+    }
+}
+
+.previousButton {
+    background: transparent;
+    color: var(--color-card-text);
+    border: 2px solid rgba(246, 217, 130, 0.3);
+
+    &:hover:not(:disabled) {
+        background: rgba(246, 217, 130, 0.1);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.paymentButton {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+}

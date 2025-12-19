@@ -404,6 +404,7 @@
 }
 
 .checkoutButton {
+    display: inline-block;
     width: 100%;
     padding: 16px 32px;
     background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
@@ -412,23 +413,20 @@
     border-radius: 12px;
     font-size: var(--font-lg);
     font-weight: var(--font-weight-bold);
+    text-decoration: none;
+    text-align: center;
     cursor: pointer;
     @include hover-transition;
     margin-top: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 
-    &:hover:not(:disabled) {
+    &:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
     }
 
-    &:active:not(:disabled) {
+    &:active {
         transform: translateY(0);
-    }
-
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
     }
 
     @include respond(md) {

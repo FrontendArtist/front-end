@@ -1,0 +1,331 @@
+@import '@/styles/base/mixins';
+
+.shippingStep {
+    @include card-container;
+    background: var(--gradient-card-vertical);
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+
+    @include respond(md) {
+        padding: 24px;
+        gap: 24px;
+    }
+}
+
+.title {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-xl);
+    }
+}
+
+.subtitle {
+    font-size: var(--font-md);
+    color: var(--color-card-text);
+    margin: -16px 0 0;
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+    }
+}
+
+.loadingState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 60px 20px;
+
+    p {
+        font-size: var(--font-md);
+        color: var(--color-card-text);
+        margin: 0;
+    }
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(246, 217, 130, 0.2);
+    border-top-color: var(--color-accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+}
+
+.addressDisplay {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.addressCard {
+    padding: 24px;
+    background: rgba(246, 217, 130, 0.05);
+    border: 2px solid rgba(246, 217, 130, 0.2);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.addressRow {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.label {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    min-width: 80px;
+    flex-shrink: 0;
+
+    @include respond(md) {
+        min-width: 70px;
+        font-size: var(--font-sm);
+    }
+}
+
+.value {
+    color: var(--color-card-text);
+    line-height: 1.6;
+}
+
+.editButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: transparent;
+    color: var(--color-accent);
+    border: 2px solid rgba(246, 217, 130, 0.3);
+    border-radius: 12px;
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    @include hover-transition;
+    align-self: flex-start;
+
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    &:hover {
+        background: rgba(246, 217, 130, 0.1);
+        border-color: var(--color-accent);
+    }
+}
+
+.addressForm {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+
+    @include respond(md) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    label {
+        font-size: var(--font-md);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary);
+    }
+
+    input,
+    textarea {
+        padding: 12px 16px;
+        background: rgba(246, 217, 130, 0.05);
+        border: 2px solid rgba(246, 217, 130, 0.3);
+        border-radius: 12px;
+        color: var(--color-text-primary);
+        font-size: var(--font-md);
+        @include hover-transition;
+
+        &:focus {
+            outline: none;
+            border-color: var(--color-accent);
+            background: rgba(246, 217, 130, 0.1);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 80px;
+        font-family: inherit;
+        line-height: 1.6;
+    }
+}
+
+.required {
+    color: #e74c3c;
+    margin-right: 4px;
+}
+
+.formActions {
+    display: flex;
+    gap: 16px;
+    justify-content: flex-end;
+
+    @include respond(md) {
+        flex-direction: column-reverse;
+    }
+}
+
+.saveButton {
+    padding: 12px 32px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    @include hover-transition;
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    @include respond(md) {
+        width: 100%;
+    }
+}
+
+.cancelButton {
+    padding: 12px 24px;
+    background: transparent;
+    color: var(--color-card-text);
+    border: 2px solid rgba(246, 217, 130, 0.3);
+    border-radius: 12px;
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    @include hover-transition;
+
+    &:hover:not(:disabled) {
+        background: rgba(246, 217, 130, 0.1);
+        border-color: rgba(246, 217, 130, 0.5);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    @include respond(md) {
+        width: 100%;
+    }
+}
+
+.error {
+    padding: 12px 16px;
+    background: rgba(231, 76, 60, 0.1);
+    border: 2px solid rgba(231, 76, 60, 0.3);
+    border-radius: 8px;
+    color: #e74c3c;
+    font-size: var(--font-sm);
+    text-align: center;
+}
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(246, 217, 130, 0.2);
+
+    @include respond(md) {
+        flex-direction: column;
+    }
+}
+
+.previousButton,
+.nextButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 32px;
+    border: none;
+    border-radius: 12px;
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    @include hover-transition;
+
+    svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    @include respond(md) {
+        justify-content: center;
+        padding: 12px 24px;
+        font-size: var(--font-md);
+    }
+}
+
+.previousButton {
+    background: transparent;
+    color: var(--color-card-text);
+    border: 2px solid rgba(246, 217, 130, 0.3);
+
+    &:hover {
+        background: rgba(246, 217, 130, 0.1);
+    }
+}
+
+.nextButton {
+    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}

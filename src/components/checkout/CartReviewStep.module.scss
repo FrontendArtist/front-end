@@ -1,0 +1,219 @@
+@import '@/styles/base/mixins';
+
+.cartReview {
+    @include card-container;
+    background: var(--gradient-card-vertical);
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+
+    @include respond(md) {
+        padding: 24px;
+        gap: 24px;
+    }
+}
+
+.title {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-xl);
+    }
+}
+
+.subtitle {
+    font-size: var(--font-md);
+    color: var(--color-card-text);
+    margin: -16px 0 0;
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+    }
+}
+
+.itemsList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: rgba(246, 217, 130, 0.05);
+    border: 1px solid rgba(246, 217, 130, 0.2);
+    border-radius: 12px;
+    @include hover-transition;
+
+    &:hover {
+        background: rgba(246, 217, 130, 0.1);
+    }
+
+    @include respond(md) {
+        padding: 12px;
+        gap: 12px;
+    }
+}
+
+.itemImage {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(246, 217, 130, 0.05);
+
+    @include respond(md) {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+.image {
+    object-fit: cover;
+}
+
+.itemInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.itemTitle {
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+    }
+}
+
+.itemMeta {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    margin: 0;
+}
+
+.itemPrice {
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+
+    @include respond(md) {
+        font-size: var(--font-md);
+    }
+}
+
+.summary {
+    padding: 24px;
+    background: rgba(246, 217, 130, 0.05);
+    border: 2px solid rgba(246, 217, 130, 0.2);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    @include respond(md) {
+        padding: 20px;
+        gap: 12px;
+    }
+}
+
+.summaryRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-md);
+    color: var(--color-card-text);
+
+    strong {
+        color: var(--color-text-primary);
+        font-weight: var(--font-weight-bold);
+    }
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+    }
+}
+
+.divider {
+    height: 1px;
+    background: rgba(246, 217, 130, 0.3);
+    margin: 4px 0;
+}
+
+.summaryTotal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-xl);
+    color: var(--color-text-primary);
+    padding-top: 8px;
+
+    strong {
+        font-weight: var(--font-weight-bold);
+    }
+
+    @include respond(md) {
+        font-size: var(--font-lg);
+    }
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+
+    @include respond(md) {
+        flex-direction: column;
+    }
+}
+
+.nextButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    @include hover-transition;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+    svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    @include respond(md) {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 24px;
+        font-size: var(--font-md);
+    }
+}

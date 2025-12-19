@@ -62,11 +62,11 @@ const CourseCard = ({ course }) => {
   }, []);
 
   // دریافت داده‌های سبد خرید و تابع افزودن از Zustand Store
-  const items = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
 
   // بررسی اینکه آیا این دوره در سبد خرید موجود است یا خیر
-  const isInCart = items.some((item) => item.id === id);
+  // استفاده از selector برای reactivity بهتر
+  const isInCart = useCartStore((state) => state.items.some((item) => item.id === id)) && isHydrated;
 
   /**
    * هندلر افزودن دوره به سبد خرید

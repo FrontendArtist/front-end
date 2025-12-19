@@ -27,11 +27,16 @@
   height: 100px;
   padding: 0 1rem;
 
+  .toggleWrapper{
+    width: 100px;
+    display: none;
+  }
   @include respond(lg) {
 
     // چیدمان موبایل: [toggle راست] [logo وسط] [icons چپ]
     .toggleWrapper{
       width: 100px;
+      display: block;
     }
     .mobileMenuToggle {
       order: 1;

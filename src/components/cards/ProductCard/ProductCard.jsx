@@ -60,14 +60,14 @@ const ProductCard = ({ product }) => {
   }, []);
 
   // دریافت داده‌های سبد خرید و توابع مرتبط از Zustand Store
-  const items = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
 
   // بررسی اینکه آیا این محصول در سبد خرید موجود است یا خیر
-  const cartItem = items.find((item) => item.id === id);
-  const isInCart = !!cartItem;
+  // استفاده از selector برای reactivity بهتر
+  const cartItem = useCartStore((state) => state.items.find((item) => item.id === id));
+  const isInCart = isHydrated && !!cartItem;
   const currentQuantity = cartItem?.quantity || 0;
 
   /**
