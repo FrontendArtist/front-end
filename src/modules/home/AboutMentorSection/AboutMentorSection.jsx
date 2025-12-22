@@ -8,7 +8,7 @@ const AboutMentorSection = () => {
       <div className={`${styles.container} container`}>
 
         <GradientBorderCard gradient="horizontal" enableHover={false} variant="aboutMentor" >
-          <div style={{ display: 'flex' }}>
+          <div className={styles.innerWrapper} >
 
             <div className={styles.contentWrapper}>
               <h2 className={styles.title}>مجید سعیدیان</h2>

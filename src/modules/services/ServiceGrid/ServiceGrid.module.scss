@@ -19,8 +19,8 @@
 // Responsive grid layout using CSS Grid with automatic column adjustments
 .serviceGrid__container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-gap-desktop); // 48px from design tokens
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px; // 48px from design tokens
   
   // Center items when fewer items than columns
   justify-items: center;
@@ -32,15 +32,12 @@
    */
   
   // Tablet Landscape (≤1280px): 3 columns
-  @include respond(xl) {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 40px;
-  }
+
   
   // Tablet Portrait (≤960px): 3 columns
   @include respond(lg) {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 32px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
   }
   
   // Mobile Landscape/Large Mobile (≤768px): 2 columns
@@ -51,7 +48,7 @@
   
   // Mobile Portrait (≤440px): 2 columns (maintained for consistency)
   @include respond(sm) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(1, 1fr);
     gap: 16px;
   }
   

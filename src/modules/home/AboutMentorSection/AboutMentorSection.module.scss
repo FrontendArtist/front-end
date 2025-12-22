@@ -11,23 +11,24 @@
 .container {
 
     gap: var(--space-gap-desktop, 48px);
-    max-width: 1200px;
     width: unset;
     border-radius: 30px;
     grid-template-columns: 1fr 1fr;
     justify-content: space-between;
     align-items: normal;
     margin: 0 auto;
-    padding: 0;
     display: flex;
     overflow: visible;
   @include respond(md) {
     grid-template-columns: 1fr;
     gap: 32px;
-  }
+  } 
 
 }
 
+.innerWrapper{
+  display: flex;
+}
 
 .imageWrapper {
   border-radius: 12px;
@@ -78,13 +79,12 @@
 }
 
 .text {
-  font-size: 18px;
+  font-size: var(--font-md);
   line-height: 1.8;
   color: var(--color-card-text);
   margin: 0;
 
   @include respond(md) {
-    font-size: 16px;
     line-height: 1.7;
   }
 }
@@ -96,7 +96,7 @@
   padding: 16px 32px;
   background: linear-gradient(135deg, #F6D982 0%, #F5C452 100%);
   color: #061818;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: var(--font-weight-bold, 700);
   border-radius: 8px;
   text-decoration: none;

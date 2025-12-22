@@ -1,47 +1,86 @@
-.sliderContainer {
-    position: relative;
-    width: 100%;
-  
-    // The :global selectors are now nested INSIDE our local class.
-    // This makes the rule "pure" because it's anchored to .sliderContainer.
-    :global(.swiper-button-next),
-    :global(.swiper-button-prev) {
-      color: var(--color-text-primary) !important;
-      transition: color 0.3s ease;
-  
-      &:hover {
-        color: var(--color-title-hover) !important;
-      }
-    }
-  
-    // You can also style other global swiper elements this way
-    :global(.swiper-pagination-bullet-active) {
-      background-color: var(--color-text-primary) !important;
-    }
-  }
-  
-  .swiper {
-    // We can keep styles for our local swiper wrapper class here
-    padding-bottom: 40px; 
-    padding-top: 5px;
-  }
-  
-  .swiperSlide {
+/* wrapper for slider + navigation buttons */
+.sliderWrapper {
+  position: relative;
+  width: 100%;
+}
 
+/* main slider container */
+.sliderContainer {
+  position: relative;
+  width: 100%;
+
+  /* fade-in after swiper init */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease-in-out;
+
+  &.swiperInitialized {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* swiper element */
+.swiper {
+  padding-top: 5px;
+  padding-bottom: 40px;
+}
+
+/* swiper slide */
+.swiperSlide {
   height: auto;
+}
+
+/* ===== Custom Navigation Buttons ===== */
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+
+  border-radius: 50%;
+  // width: 30px;
+  // height: 30px;
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  // background: var(--gradient-card-horizontal-ltr);
+  background: transparent;
+  color: var(--color-text-primary);
+  border: none;
+  cursor: pointer;
+
+  transition: color 0.3s ease, background-color 0.3s ease;
+
+  &:hover {
+    color: var(--color-title-hover);
   }
-  .sliderContainer {
-    position: relative;
-    width: 100%;
-  
-    // Initially, the slider is transparent and hidden
+
+  /* Hide buttons when not needed */
+  &.hidden {
     opacity: 0;
+    pointer-events: none;
     visibility: hidden;
-    transition: opacity 0.4s ease-in-out;
-  
-    // This class is added via state when Swiper's onInit event fires
-    &.swiperInitialized {
-      opacity: 1;
-      visibility: visible;
-    }
   }
+}
+
+/* left button */
+.prev {
+  // left: -38px;
+  left: -48px;
+}
+
+/* right button */
+.next {
+  // right: -38px;
+  right: -48px;
+}
+
+/* ===== Optional: pagination styling ===== */
+:global(.swiper-pagination-bullet-active) {
+  background-color: var(--color-text-primary) !important;
+}

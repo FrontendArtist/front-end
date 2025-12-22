@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './Accordion.module.scss';
+import GradientBorderCard from '../GradientBorderCard/GradientBorderCard';
 
 /**
  * A reusable accordion component where only one item can be open at a time.
@@ -24,6 +25,8 @@ const Accordion = ({ items }) => {
   return (
     <div className={styles.accordion}>
       {items.map((item, index) => (
+        <GradientBorderCard key={item.id} gradient={'horizontal-rtl'} >
+
         <div key={item.id} className={styles.accordionItem}>
           <button
             className={styles.accordionTitle}
@@ -60,6 +63,7 @@ const Accordion = ({ items }) => {
             )}
           </AnimatePresence>
         </div>
+        </GradientBorderCard>
       ))}
     </div>
   );

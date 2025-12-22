@@ -45,28 +45,28 @@ export async function GET(request) {
   try {
     // استخراج query parameters از URL
     const { searchParams } = new URL(request.url);
-    
+
     // دریافت پارامترها با مقادیر پیش‌فرض
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(searchParams.get('pageSize') || '6', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '3', 10);
     const sort = searchParams.get('sort') || 'createdAt:desc';
-    
+
     // فراخوانی تابع دامنه‌ای برای واکشی خدمات
     // این تابع از apiClient استفاده می‌کند و داده‌ها را فرمت می‌کند
     const result = await getServicesPaginated(page, pageSize, sort);
-    
+
     // برگرداندن پاسخ JSON
     // Next.js 13+ از Response.json() برای ساخت پاسخ استفاده می‌کند
     return Response.json(result);
-    
+
   } catch (error) {
     // مدیریت خطا و برگرداندن پاسخ 500
     console.error('خطا در Route Handler خدمات:', error.message);
-    
+
     return Response.json(
-      { 
-        error: 'خطا در دریافت خدمات', 
-        message: error.message 
+      {
+        error: 'خطا در دریافت خدمات',
+        message: error.message
       },
       { status: 500 }
     );

@@ -78,7 +78,7 @@ export default function SearchResults({ data, query }) {
             slug: data.slug,
             title: data.title,
             price: data.price,
-            image: imageObj || { url: '/images/placeholder.png', alt: data.title },
+            image: imageObj || { url: '/images/forempties2.png', alt: data.title },
             // Add other props if ProductCard needs them
         };
     };
@@ -100,7 +100,7 @@ export default function SearchResults({ data, query }) {
             title: data.title,
             date: data.date || data.publishedAt,
             excerpt: data.excerpt,
-            cover: coverObj || { url: '/images/placeholder.png', alt: data.title }
+            cover: coverObj || { url: '/images/forempties2.png', alt: data.title }
         };
     };
 
@@ -121,7 +121,7 @@ export default function SearchResults({ data, query }) {
             title: data.title,
             price: data.price,
             shortDescription: data.shortDescription,
-            image: imageObj || { url: '/images/placeholder.png', alt: data.title }
+            image: imageObj || { url: '/images/forempties2.png', alt: data.title }
         };
     };
 

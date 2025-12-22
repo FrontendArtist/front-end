@@ -31,5 +31,5 @@ export const COURSES_PAGE_SIZE = 6;
 /**
  * تعداد خدمات در هر صفحه
  */
-export const SERVICES_PAGE_SIZE = 6;
+export const SERVICES_PAGE_SIZE = 3;
 

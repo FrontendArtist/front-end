@@ -11,14 +11,14 @@ import { API_BASE_URL } from './api';
  */
 export function formatSingleImage(imgData) {
   if (!imgData) {
-    return { url: 'https://picsum.photos/seed/placeholder/400/300', alt: 'Placeholder Image' };
+    return { url: '/images/forempties2.png', alt: 'Placeholder Image' };
   }
 
   // Handle nested structure: { data: { url: '...', alternativeText: '...' } }
   if (imgData.data && typeof imgData.data === 'object') {
     const dataObj = imgData.data;
     if (!dataObj.url) {
-      return { url: 'https://picsum.photos/seed/placeholder/400/300', alt: 'Placeholder Image' };
+      return { url: '/images/forempties2.png', alt: 'Placeholder Image' };
     }
     const imageUrl = dataObj.url.startsWith('http') ? dataObj.url : `${API_BASE_URL}${dataObj.url}`;
     return {
@@ -29,7 +29,7 @@ export function formatSingleImage(imgData) {
 
   // Handle flat structure: { url: '...', alternativeText: '...' }
   if (!imgData.url) {
-    return { url: 'https://picsum.photos/seed/placeholder/400/300', alt: 'Placeholder Image' };
+    return { url: '/images/forempties2.png', alt: 'Placeholder Image' };
   }
   const imageUrl = imgData.url.startsWith('http') ? imgData.url : `${API_BASE_URL}${imgData.url}`;
   return {

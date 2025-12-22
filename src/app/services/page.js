@@ -117,7 +117,7 @@ export default async function ServicesPage({ searchParams: spPromise }) {
       ? Object.fromEntries(searchParams.entries())
       : searchParams || {};
   const hasFilters = Object.keys(normalizedSearchParams).length > 0;
-  const result = await getServicesPaginated(1, 2, 'createdAt:desc');
+  const result = await getServicesPaginated(1, 3, 'createdAt:desc');
   const services = result.data;
 
   // Breadcrumb items

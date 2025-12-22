@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import ServiceCard from '@/components/cards/ServiceCard/ServiceCard';
 import ListGuard from '@/components/layout/ListGuard';
+import { SERVICES_PAGE_SIZE } from '@/lib/constants';
 import styles from './ServiceGrid.module.scss';
-
-const PAGE_SIZE = 2;
 
 /**
  * ServiceGrid - نمایش شبکه‌ای خدمات با قابلیت بارگذاری بیشتر
@@ -31,7 +30,7 @@ const ServiceGrid = ({ initialServices }) => {
   const [services, setServices] = useState(initialServices || []);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(initialServices.length === PAGE_SIZE);
+  const [hasMore, setHasMore] = useState(initialServices.length === SERVICES_PAGE_SIZE);
 
   /**
    * Handler: بارگذاری صفحه بعدی خدمات
@@ -51,7 +50,7 @@ const ServiceGrid = ({ initialServices }) => {
       // ✅ استفاده از Route Handler داخلی Next.js به‌جای Strapi مستقیم
       // Client → /api/services → Next.js Route Handler → Domain API → Strapi
       const response = await fetch(
-        `/api/services?page=${nextPage}&pageSize=${PAGE_SIZE}`
+        `/api/services?page=${nextPage}&pageSize=${SERVICES_PAGE_SIZE}`
       );
       const result = await response.json();
 
