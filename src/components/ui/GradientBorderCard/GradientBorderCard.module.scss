@@ -10,11 +10,7 @@
     position: relative;
     height: 100%;
     width: 100%;
-    border-radius: 24px;
-    // گرادیانت از بالا به پایین: primary color -> transparent
-    background: linear-gradient(to bottom,
-            var(--color-text-primary),
-            transparent);
+    border-radius: 12px;
     // ضخامت بوردر = padding
     padding: 2px;
     transition: all 0.3s ease;
@@ -22,12 +18,40 @@
 }
 
 /**
+ * بوردر گرادیانتی عمودی (از بالا به پایین)
+ */
+.borderVertical {
+    background: linear-gradient(to bottom,
+            var(--color-text-primary),
+            transparent);
+}
+
+/**
+ * بوردر گرادیانتی افقی LTR (از چپ به راست)
+ */
+.borderHorizontal {
+    background: linear-gradient(to right,
+            var(--color-text-primary),
+            transparent);
+}
+
+/**
+ * بوردر گرادیانتی افقی RTL (از راست به چپ)
+ */
+.borderHorizontalRtl {
+    background: linear-gradient(to left,
+            var(--color-text-primary),
+            transparent);
+}
+
+/**
  * افکت hover برای wrapper
  */
 .enableHover:hover {
     transform: translateY(-5px);
-    img{
-        scale: 1.05  ;
+
+    img {
+        scale: 1.05;
     }
 }
 
@@ -38,7 +62,7 @@
 .cardBackground {
     width: 100%;
     height: 100%;
-    border-radius: 24px;
+    border-radius: 12px;
     overflow: hidden;
     background: var(--color-bg-primary);
 }
@@ -50,19 +74,19 @@
 .cardContent {
     width: 100%;
     height: 100%;
-    border-radius: 24px;
     overflow: hidden;
 }
 
 /**
- * گرادیانت‌های مختلف برای محتوا
- */
+* گرادیانت‌های مختلف برای محتوا
+*/
 .gradientVertical {
     background: var(--gradient-card-vertical);
 }
 
 .gradientHorizontal {
-    background: var(--gradient-card-horizontal);
+    background: var(--gradient-card-horizontal-ltr);
+
 }
 
 .gradientHorizontalRtl {
@@ -74,4 +98,17 @@
  */
 .enableHover:hover .cardContent {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+//aboutmentor
+.aboutMentor  .cardBackground     {
+  overflow: visible !important;
+
+}
+.aboutMentor  .cardContent    {
+  overflow: visible !important;
+
+}
+.gradientHorizontal{
+  border-radius: 12px;
 }

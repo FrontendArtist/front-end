@@ -3,30 +3,48 @@
 .aboutSection {
   padding: 80px 0;
   background-color: var(--color-bg-primary);
+
 }
 
-.container {
-  
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-gap-desktop, 48px);
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
 
+
+.container {
+
+    gap: var(--space-gap-desktop, 48px);
+    max-width: 1200px;
+    width: unset;
+    border-radius: 30px;
+    grid-template-columns: 1fr 1fr;
+    justify-content: space-between;
+    align-items: normal;
+    margin: 0 auto;
+    padding: 0;
+    display: flex;
+    overflow: visible;
   @include respond(md) {
     grid-template-columns: 1fr;
     gap: 32px;
   }
+
 }
 
+
 .imageWrapper {
+  border-radius: 12px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
   position: relative;
-  width: 370px;
-  height: 340px;
-  border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
+  width: 37%;
+  background: var(--color-overlay);
+
+  img {
+    width: auto;
+    height: 360px;
+    position: absolute;
+    bottom: 0;
+    left: 10px;
+  }
 
   @include respond(md) {
     height: 400px;
@@ -35,10 +53,12 @@
 }
 
 .contentWrapper {
-  display: flex;
   flex-direction: column;
-  gap: var(--space-title-content-desktop, 56px);
-  width: 700px;
+  display: flex;
+  gap: 20px;
+  padding: 32px 50px 50px 50px;
+  width: 65%;
+
   @include respond(md) {
     gap: 24px;
   }
@@ -46,10 +66,11 @@
 
 .title {
   font-size: var(--font-xl, 32px);
-  font-weight: var(--font-weight-bold, 700);
-  color: var(--color-text-primary, #F6D982);
+  color: var(--color-text-primary, #f6d982);
   margin: 0;
   line-height: 1.4;
+  font-family: 'Far Shafigh';
+  font-weight: 400;
 
   @include respond(md) {
     font-size: 24px;
@@ -59,7 +80,7 @@
 .text {
   font-size: 18px;
   line-height: 1.8;
-  color: #FFFAEA;
+  color: var(--color-card-text);
   margin: 0;
 
   @include respond(md) {
@@ -91,4 +112,4 @@
     width: 100%;
     padding: 14px 24px;
   }
-} 
+}
