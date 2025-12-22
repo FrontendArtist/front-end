@@ -113,12 +113,12 @@ const CourseCard = ({ course }) => {
         <h3 className={styles.cardTitle}>{title}</h3>
         <p className={styles.cardText}>{shortDescription}</p>
 
-        {/* نمایش قیمت در صورت وجود */}
-        {formattedPrice > 0 && (
-          <div className={styles.priceSection}>
-            <span className={styles.price}>{formattedPrice.toLocaleString()} تومان</span>
-          </div>
-        )}
+        {/* نمایش قیمت یا وضعیت رایگان */}
+        <div className={styles.priceSection}>
+          <span className={styles.price}>
+            {formattedPrice > 0 ? `${formattedPrice.toLocaleString()} تومان` : 'رایگان'}
+          </span>
+        </div>
 
         {/* نمایش شرطی دکمه بر اساس وضعیت hydration و سبد خرید */}
         <div className={styles.buttonSection}>

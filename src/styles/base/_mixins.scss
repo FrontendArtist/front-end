@@ -41,7 +41,7 @@ $breakpoint-sm: 440px;
 }
 
 @mixin card-container {
-  border-radius: 16px;
+
   @include hover-transition;
 
   @include respond(md) {
@@ -147,8 +147,9 @@ $breakpoint-sm: 440px;
   padding: var(--space-title-text-desktop);
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
+  flex-grow: 0;
   gap: 16px;
+  height: 100%;
 
   @include respond(md) {
     padding: 20px;
@@ -167,9 +168,9 @@ $breakpoint-sm: 440px;
  */
 @mixin card-title {
   color: var(--color-text-primary);
-  font-size: var(--font-lg);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-sm);
+  font-size: var(--font-md );
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-md);
   margin: 0;
   @include hover-transition;
 
@@ -184,10 +185,10 @@ $breakpoint-sm: 440px;
  */
 @mixin card-text-truncate($lines: 3) {
   color: var(--color-card-text);
-  font-size: var(--font-md);
+  font-size: var(--font-sm);
   font-weight: var(--font-weight-regular);
-  line-height: var(--line-height-md);
-  flex-grow: 1;
+  line-height: var(--line-height-lg );
+  flex-grow: 0;
   margin: 0;
   display: -webkit-box;
   -webkit-box-orient: vertical;

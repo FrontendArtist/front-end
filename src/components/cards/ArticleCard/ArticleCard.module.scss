@@ -22,11 +22,8 @@
 
 .cardExcerpt {
   @include card-text-truncate(3);
-  height: 68px;
-
-  @include respond(md) {
-    -webkit-line-clamp: 4;
-  }
+  font-weight: 300;
+  flex-grow: 0;
 }
 
 .footer {

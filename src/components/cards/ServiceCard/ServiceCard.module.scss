@@ -27,7 +27,6 @@
 
 .serviceCard__description {
   @include card-text-truncate(3);
-  height: 76px;
 
   @include respond(md) {
     -webkit-line-clamp: 4;

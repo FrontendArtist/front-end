@@ -36,15 +36,34 @@
 }
 
 .card-button {
-  background: var(--color-title-hover);
-  color: var(--color-bg-primary);
-  border: none;
-  padding: 12px 24px;
+
+  display: inline-block;
+  align-self: center;
+  
+  padding: 12px 32px;
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  border: 2px solid var(--color-text-primary);
   border-radius: 8px;
-  cursor: pointer;
   @include hover-transition;
 
   &:hover {
-    background: var(--color-text-primary);
+    background-color: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    transform: scale(1.05);
   }
-}
+
+  @include respond(md) {
+    margin-top: 16px;
+    padding: 10px 24px;
+    font-size: var(--font-sm);
+  }
+
+  @include respond(sm) {
+    margin-top: 12px;
+    padding: 8px 20px;
+    font-size: var(--font-sm);
+  }
+}   

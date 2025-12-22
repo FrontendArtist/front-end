@@ -14,6 +14,7 @@
   padding-bottom: 20px;
   border-bottom: 1px solid rgba(246, 217, 130, 0.1);
 }
+
 .sectionTitle {
   font-size: var(--font-xl);
   font-weight: var(--font-weight-bold);
@@ -71,7 +72,7 @@
   position: relative;
   width: 100%;
   padding: 32px 24px;
-  border-radius: 24px;
+  border-radius: 12px;
   background: rgba(6, 24, 24, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -101,8 +102,8 @@
     transform: translateY(-4px);
     border-color: rgba(246, 217, 130, 0.4);
     background: rgba(6, 24, 24, 0.8);
-    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4), 
-                0 0 0 1px rgba(246, 217, 130, 0.1) inset;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(246, 217, 130, 0.1) inset;
 
     &::before {
       opacity: 1;
@@ -118,8 +119,8 @@
 .categoryCardActive {
   background: linear-gradient(145deg, rgba(6, 24, 24, 0.9) 0%, rgba(0, 43, 32, 0.95) 100%);
   border-color: rgba(246, 217, 130, 0.5);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 
-              0 0 0 1px rgba(246, 217, 130, 0.3) inset;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(246, 217, 130, 0.3) inset;
 
   &::before {
     opacity: 1;
@@ -151,7 +152,7 @@
   justify-content: center;
   width: 88px;
   height: 88px;
-  border-radius: 24px;
+  border-radius: 12px;
   background: rgba(246, 217, 130, 0.05);
   border: 1px solid rgba(246, 217, 130, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -245,9 +246,7 @@
     height: 64px;
     border-radius: 18px;
 
-    img {
-      border-radius: 16px;
-    }
+
   }
 
   .categoryName {
@@ -259,4 +258,3 @@
     font-size: var(--font-xs);
   }
 }
-
