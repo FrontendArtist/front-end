@@ -1,6 +1,451 @@
 # CHANGELOG
 
-## [Latest] - 2025-12-17
+## [Latest] - 2025-12-24
+
+### Refactor: Services Pagination Standardization
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Standardized the services pagination to display 3 services initially and load 3 more with each "Load More" action. Previously, the system had inconsistent values (2 in ServiceGrid, 6 in constants), which has been unified across all layers.
+
+#### Changes Made:
+
+1. **Constants File** (`src/lib/constants.js`)
+   - Updated `SERVICES_PAGE_SIZE` from `6` to `3`
+   - This constant is now the single source of truth for services pagination
+
+2. **ServiceGrid Component** (`src/modules/services/ServiceGrid/ServiceGrid.jsx`)
+   - Removed local `PAGE_SIZE = 2` constant
+   - Imported and used `SERVICES_PAGE_SIZE` from `@/lib/constants`
+   - Updated `hasMore` state initialization to use `SERVICES_PAGE_SIZE`
+   - Updated fetch URL to use `SERVICES_PAGE_SIZE` in pageSize parameter
+
+3. **Services Page** (`src/app/services/page.js`)
+   - Updated SSR initial fetch from `getServicesPaginated(1, 2, ...)` to `getServicesPaginated(1, 3, ...)`
+   - Ensures initial server-side render shows exactly 3 services
+
+4. **Services API Route** (`src/app/api/services/route.js`)
+   - Updated default pageSize from `'6'` to `'3'`
+   - Ensures consistency when pageSize is not explicitly provided
+
+#### Technical Details:
+```javascript
+// Before:
+const PAGE_SIZE = 2; // Local constant in ServiceGrid
+export const SERVICES_PAGE_SIZE = 6; // Unused in constants
+
+// After:
+export const SERVICES_PAGE_SIZE = 3; // Single source of truth
+import { SERVICES_PAGE_SIZE } from '@/lib/constants'; // Used everywhere
+```
+
+#### Benefits:
+- ✅ **Consistency**: All layers (SSR, Client, API) use the same page size
+- ✅ **Maintainability**: Single constant to change pagination behavior
+- ✅ **Performance**: Optimized initial load with 3 items instead of 2 or 6
+- ✅ **User Experience**: Balanced between initial load speed and content visibility
+- ✅ **Architecture**: Follows DRY principle with centralized constants
+
+---
+
+## [2025-12-24]
+
+### Refactor: HakimElahiSection Standardization
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Refactored the `HakimElahiSection` component to match the exact structure and styling of `AboutMentorSection`, ensuring visual consistency across home page sections. This standardization improves maintainability and provides a unified design language.
+
+#### Changes Made:
+
+1. **HakimElahiSection Component** (`src/modules/home/HakimElahiSection/HakimElahiSection.jsx`)
+   - Added `GradientBorderCard` wrapper with `gradient="horizontal"`, `enableHover={false}`, `variant="aboutMentor"`
+   - Changed section class from `hakimElahiSection` to `aboutSection` (matching AboutMentor)
+   - Added section `id="hakim-elahi"` for anchor navigation
+   - Reordered layout: contentWrapper (left) → imageWrapper (right)
+   - Replaced Next.js `<Image>` component with regular `<img>` tag
+   - Removed CTA button to match AboutMentor structure
+   - Applied flex layout wrapper for content positioning
+
+2. **HakimElahiSection Styles** (`src/modules/home/HakimElahiSection/HakimElahiSection.module.scss`)
+   - Changed class name from `.hakimElahiSection` to `.aboutSection`
+   - Updated `.container` from CSS Grid to Flexbox layout
+   - Set width percentages: contentWrapper (65%), imageWrapper (37%)
+   - Added `var(--color-overlay)` background to imageWrapper
+   - Positioned image absolutely at bottom with `left: 10px`
+   - Updated title font to `'Far Shafigh'` with `font-weight: 400`
+   - Applied consistent padding: `32px 50px 50px 50px` to contentWrapper
+   - Updated button gradient: `linear-gradient(135deg, #F6D982 0%, #F5C452 100%)`
+   - Maintained responsive breakpoints for mobile layout
+
+#### Technical Details:
+```jsx
+<GradientBorderCard gradient="horizontal" enableHover={false} variant="aboutMentor">
+  <div style={{ display: 'flex' }}>
+    <div className={styles.contentWrapper}>
+      {/* Content */}
+    </div>
+    <div className={styles.imageWrapper}>
+      <img src="/images/hakimelahi.png" alt="hakimElahiImage" />
+    </div>
+  </div>
+</GradientBorderCard>
+```
+
+#### Benefits:
+- ✅ **Visual Consistency**: Identical structure to AboutMentorSection
+- ✅ **Maintainability**: Shared styling patterns reduce code duplication
+- ✅ **Design System**: Follows established component architecture
+- ✅ **Responsive**: Consistent mobile behavior across sections
+- ✅ **RTL Support**: Proper right-to-left layout handling
+
+---
+
+## [2025-12-24]
+
+### Feature: BaseSlider Conditional Navigation
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Enhanced the `BaseSlider` component to intelligently show/hide navigation buttons based on whether the slider actually needs scrolling. Previously, navigation buttons were always visible even when the number of items was less than the viewport capacity, creating unnecessary UI clutter.
+
+#### Changes Made:
+
+1. **BaseSlider Component** (`src/components/layout/BaseSlider/BaseSlider.jsx`)
+   - Added `showNavigation` state to track if navigation is needed
+   - Implemented logic to check if `slides.length > slidesPerView`
+   - Navigation buttons now conditionally hidden via CSS class instead of conditional rendering
+   - Added `onInit` event handler to check navigation needs on slider initialization
+   - Added `onResize` event handler to update navigation visibility on window resize
+   - Ensures refs remain in DOM for Swiper to properly bind navigation
+
+2. **BaseSlider Styles** (`src/components/layout/BaseSlider/BaseSlider.module.scss`)
+   - Added `.hidden` class for navigation buttons:
+     * `opacity: 0`
+     * `pointer-events: none`
+     * `visibility: hidden`
+   - Buttons remain in DOM but are visually and functionally hidden when not needed
+
+#### Technical Details:
+```javascript
+// Check if navigation is needed
+const needsNavigation = swiper.slides.length > swiper.params.slidesPerView;
+setShowNavigation(needsNavigation);
+
+// Apply hidden class conditionally
+className={`${styles.navBtn} ${styles.prev} ${!showNavigation ? styles.hidden : ''}`}
+```
+
+#### Benefits:
+- ✅ **Smart UI**: Navigation buttons only appear when actually needed
+- ✅ **Responsive**: Works correctly across all breakpoints (mobile, tablet, desktop)
+- ✅ **Clean Design**: Eliminates visual clutter on sliders with few items
+- ✅ **Functional**: Buttons remain in DOM so Swiper refs work properly
+- ✅ **Dynamic**: Updates on window resize to handle responsive slidesPerView changes
+
+---
+
+## [2025-12-24]
+
+### Feature: Reusable Gradient Border Card Component
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Created a highly reusable `GradientBorderCard` component implementing a premium three-layer gradient border technique. Applied this component across all card types (ProductCard, ArticleCard, CourseCard, ServiceCard) and implemented comprehensive DRY improvements to card styling using SCSS mixins.
+
+#### Changes Made:
+
+1. **GradientBorderCard Component** (`src/components/ui/GradientBorderCard/`)
+   - Three-layer architecture: gradient border wrapper → background layer → content
+   - Flexible wrapper component support (div, Link, or any React component)
+   - Multiple gradient directions:
+     * `vertical`: Border fades from top to bottom
+     * `horizontal`: Border fades from left to right (LTR)
+     * `horizontal-rtl`: Border fades from right to left (RTL)
+   - Customizable props: gradient direction, hover effects, CSS classes
+   - 2px border thickness with smooth hover animations
+   - Lift effect on hover (translateY -5px)
+   - Image scale effect on hover (1.05)
+
+2. **Card Components Refactoring**
+   - **ProductCard**: Wrapped with GradientBorderCard, vertical gradient
+   - **ArticleCard**: Wrapped with GradientBorderCard, vertical gradient
+   - **CourseCard**: Wrapped with GradientBorderCard, vertical gradient
+   - **ServiceCard**: Wrapped with GradientBorderCard, vertical gradient
+   - All cards now share consistent gradient border styling
+
+3. **DRY SCSS Improvements** (`src/styles/base/_mixins.scss`)
+   - Created reusable mixins for common card patterns:
+     * `@mixin base-card`: Base card structure with hover effects
+     * `@mixin card-image-wrapper`: Responsive aspect ratios (16/10, 4/3, 16/9)
+     * `@mixin card-image`: Image styling with transitions
+     * `@mixin card-content`: Content padding and layout
+     * `@mixin card-title`: Typography for card titles
+     * `@mixin card-text-truncate($lines)`: Multi-line text truncation
+   
+4. **Card SCSS Cleanup**
+   - **ArticleCard.module.scss**: Reduced from 110 lines to 46 lines (58% reduction)
+   - **ServiceCard.module.scss**: Reduced from 166 lines to 73 lines (56% reduction)
+   - **CourseCard.module.scss**: Reduced from 210 lines to 157 lines (25% reduction)
+   - **ProductCard.module.scss**: Reduced from 196 lines to 142 lines (28% reduction)
+   - All cards now use shared mixins while maintaining unique features
+
+5. **Horizontal Gradient Support**
+   - Border gradient classes for all directions:
+     * `.borderVertical`: top to bottom
+     * `.borderHorizontal`: left to right (LTR)
+     * `.borderHorizontalRtl`: right to left (RTL)
+   - Dynamic class application based on gradient prop
+   - Used in AboutMentorSection with horizontal LTR gradient
+
+#### Technical Details:
+```jsx
+// Example Usage
+<GradientBorderCard 
+  gradient="horizontal"
+  as={Link}
+  wrapperProps={{ href: '/path' }}
+  enableHover={true}
+>
+  {children}
+</GradientBorderCard>
+```
+
+#### Benefits:
+- ✅ **Reusability**: Single component for all gradient border needs
+- ✅ **Consistency**: All cards use identical border technique
+- ✅ **DRY Compliance**: Eliminated 300+ lines of duplicate SCSS code
+- ✅ **Flexibility**: Support for vertical and horizontal gradients
+- ✅ **Maintainability**: Style updates in one place affect all cards
+- ✅ **Performance**: No visual regressions, smooth animations
+- ✅ **RTL Support**: Full support for RTL layouts
+
+---
+
+### Enhancement: Unified CategoryCard Styling (DRY Principle)
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Migrated the premium glassmorphism category card styles from the products page to the shared CategoryCard component, ensuring visual consistency across homepage and products page while following DRY principles.
+
+#### Changes Made:
+
+1. **CategoryCard Component Styling** (`src/components/cards/CategoryCard/CategoryCard.module.scss`)
+   - Applied enhanced glassmorphism effects matching products page design
+   - Added backdrop blur (12px) for premium glass effect
+   - Implemented gradient overlay animation on hover
+   - Enhanced border styling with golden accent colors
+   - Added smooth cubic-bezier transitions for natural animations
+   - Icon wrapper now scales and rotates on hover (scale 1.1 + rotate 3deg)
+   - Added text glow effect with golden shadow on hover
+   - Improved shadow system with multi-layer depth
+   - Added responsive adjustments for mobile devices
+   - Maintained RTL support and accessibility features
+
+#### Benefits:
+- ✅ **Consistency**: Homepage and products page now share identical category card styling
+- ✅ **DRY Compliance**: Single source of truth for category card design
+- ✅ **Premium UX**: Enhanced visual appeal with glassmorphism and smooth animations
+- ✅ **Maintainability**: Future style updates only need to be made in one place
+
+---
+
+### Feature: Multi-Step Checkout Wizard with Inline Authentication
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Implemented a complete 4-step checkout wizard with visual progress tracking, inline OTP authentication, inline address editing, and payment method selection. This replaces the previous single-page checkout with a guided, user-friendly flow.
+
+#### Changes Made:
+
+1. **CheckoutStepper Component** (`src/components/checkout/CheckoutStepper.jsx` + `.module.scss`)
+   - Visual stepper with 4 steps: Cart Review → Authentication → Shipping → Payment
+   - Three distinct states:
+     * **Active**: Accent color with pulsing glow animation
+     * **Completed**: Green with checkmark icon
+     * **Pending**: Gray/disabled state
+   - Clickable completed steps for backward navigation
+   - Custom icons for each step (cart, user, location, payment)
+   - Fully responsive (horizontal on desktop, compact on mobile)
+   - RTL support with proper directional transforms
+
+2. **CartReviewStep Component** (`src/components/checkout/CartReviewStep.jsx` + `.module.scss`)
+   - Displays all cart items with images, titles, quantities, and prices
+   - Shows item type badges (محصول / دوره آموزشی)
+   - Summary box with item count and total price calculation
+   - Continue button to proceed to authentication
+   - Glassmorphism card design matching site aesthetic
+
+3. **AuthStep Component** (`src/components/checkout/AuthStep.jsx` + `.module.scss`)
+   - **Smart Authentication Flow**:
+     * If already logged in: Shows success message → auto-advances to next step (1.5s delay)
+     * If not logged in: Displays inline OTP form (no modal popup)
+   - **OTP Flow**:
+     * Phone number input → Send OTP code
+     * OTP verification (6 digits)
+     * Success → auto-advance to shipping step
+   - Reuses auth logic from AuthModal but integrated inline
+   - Loading state during session check
+   - Success animation with green checkmark on login
+
+4. **ShippingStep Component** (`src/components/checkout/ShippingStep.jsx` + `.module.scss`)
+   - **Display Mode**: Shows current address in card format
+     * Recipient name, phone
+     * City, province
+     * Full address, postal code
+     * Edit button to toggle edit mode
+   - **Edit Mode**: Inline form with 6 fields
+     * Recipient name (required)
+     * Recipient phone
+     * Province, City
+     * Full address (required)
+     * Postal code
+     * Save button updates profile via `/api/addresses`
+     * Cancel button returns to display mode
+   - Fetches address from `/api/profile` on mount
+   - Validation before allowing continue
+   - Previous/Next navigation buttons
+   - **No redirect to profile page** - all editing happens inline
+
+5. **PaymentStep Component** (`src/components/checkout/PaymentStep.jsx` + `.module.scss`)
+   - Order summary showing all items and total
+   - Payment method selection:
+     * ✅ Online payment (enabled)
+     * ❌ Cash on delivery (disabled/grayed out)
+   - Selected method highlighted with accent color
+   - Green "Complete Payment" button
+   - Mock payment processing (2s delay)
+   - Redirects to `/payment/callback?status=success`
+   - Previous button to go back to shipping
+
+6. **Main Checkout Page Refactor** (`src/app/checkout/page.jsx` + `page.module.scss`)
+   - **Complete rewrite** from single-page to multi-step wizard
+   - **State Management**:
+     * `currentStep` - tracks active step (1-4)
+     * `completedSteps` - array of completed step numbers
+   - **Navigation Logic**:
+     * `goToNextStep()` - marks current as completed, moves forward
+     * `goToPreviousStep()` - returns to previous step
+     * `goToStep(n)` - jump to completed step via stepper click
+   - **Empty Cart Handling**: Shows empty state with link to products
+   - **Conditional Rendering**: Renders appropriate step component based on currentStep
+   - Clean, centered layout with stepper at top
+
+7. **Cart Page Integration** (`src/app/cart/page.jsx`)
+   - **Simplified checkout button**: Removed auth check logic
+   - Changed from auth-checking button to simple `<Link href="/checkout">`
+   - **Before**: Opens AuthModal if not logged in
+   - **After**: Always navigates to `/checkout`
+   - Authentication now handled in step 2 of checkout flow
+
+8. **Cart Badge Reactivity Fix** (`src/components/cards/ProductCard/ProductCard.jsx` + `CourseCard.jsx`)
+   - **Problem**: After payment, cart cleared but "در سبد" badges remained on product cards
+   - **Solution**: Changed from reading entire `items` array to using Zustand selector
+   - **Before**: `const items = useCartStore(state => state.items); const isInCart = items.some(...)`
+   - **After**: `const isInCart = useCartStore(state => state.items.some(...)) && isHydrated`
+   - Ensures badges update immediately when `clearCart()` is called
+
+#### User Flow:
+
+**Scenario 1: User Already Logged In**
+```
+Cart Page → Click "ادامه فرآیند خرید"
+  ↓
+Step 1: Review cart items → Click "ادامه"
+  ↓
+Step 2: See "شما وارد شده‌اید" → Auto-advance (1.5s)
+  ↓
+Step 3: View address → Click "ادامه" (or edit if needed)
+  ↓
+Step 4: Select payment method → Click "پرداخت و تکمیل خرید"
+  ↓
+Redirect to payment gateway
+```
+
+**Scenario 2: User Not Logged In**
+```
+Cart Page → Click "ادامه فرآیند خرید"
+  ↓
+Step 1: Review cart items → Click "ادامه"
+  ↓
+Step 2: Enter phone → Receive OTP → Enter code → Login
+  ↓
+Auto-advance to Step 3
+  ↓
+Step 3: Enter address (first time) or view → Click "ادامه"
+  ↓
+Step 4: Select payment method → Complete payment
+```
+
+**Scenario 3: Editing Address**
+```
+Navigate to Step 3 → Click "ویرایش آدرس"
+  ↓
+Form appears inline with current values
+  ↓
+Modify fields → Click "ذخیره آدرس"
+  ↓
+Address updated via API → Form closes
+  ↓
+Shows updated address → Click "ادامه"
+```
+
+#### Technical Features:
+
+- **Stepper Navigation**: Visual progress indicator with click-to-navigate for completed steps
+- **Inline Authentication**: No modal popups, OTP flow integrated in checkout
+- **Inline Address Editing**: No redirect to profile page, edit and save within checkout
+- **Responsive Design**: Mobile-optimized stepper, stacked layouts on mobile
+- **RTL Support**: All components support right-to-left direction
+- **Empty State Handling**: Cart empty → message + link to products
+- **Glassmorphism Design**: Consistent with site aesthetic
+- **Mock Payment Logic**: Heavily commented for future Zarinpal integration
+
+#### Mock Logic Comments:
+All mock payment logic includes detailed Persian comments for future Zarinpal integration:
+```javascript
+/**
+ * 🚨 MOCK PAYMENT LOGIC
+ * این تابع فعلاً پرداخت را شبیه‌سازی می‌کند
+ * 
+ * برای اتصال به Zarinpal:
+ * 1. این تابع را با فراخوانی API Zarinpal جایگزین کنید
+ * 2. دریافت Authority و ریدارکت به درگاه Zarinpal
+ * 3. تنظیم CallbackURL به /payment/callback
+ */
+```
+
+#### Files Created:
+- `src/components/checkout/CheckoutStepper.jsx` + `.module.scss`
+- `src/components/checkout/CartReviewStep.jsx` + `.module.scss`
+- `src/components/checkout/AuthStep.jsx` + `.module.scss`
+- `src/components/checkout/ShippingStep.jsx` + `.module.scss`
+- `src/components/checkout/PaymentStep.jsx` + `.module.scss`
+
+**Total**: 10 new files (5 components + 5 SCSS modules)
+
+#### Files Modified:
+- `src/app/checkout/page.jsx` - Complete refactor to multi-step wizard
+- `src/app/checkout/page.module.scss` - Simplified layout for stepper
+- `src/app/cart/page.jsx` - Simplified checkout button (removed auth check)
+- `src/components/cards/ProductCard/ProductCard.jsx` - Fixed cart badge reactivity
+- `src/components/cards/CourseCard/CourseCard.jsx` - Fixed cart badge reactivity
+
+**Total**: 5 files modified
+
+#### Impact:
+- **Better UX**: Guided checkout flow with clear progress indication
+- **Reduced Friction**: Inline authentication and address editing (no page redirects)
+- **Visual Feedback**: Stepper shows progress and allows backward navigation
+- **Mobile Optimized**: Responsive design works seamlessly on all devices
+- **Maintainable**: Modular components, clear separation of concerns
+- **Future-Ready**: Mock payment logic well-documented for Zarinpal integration
+
+**Total Lines of Code**: ~2,500 lines added/modified across 15 files
+
+---
+
+## [Previous] - 2025-12-17
 
 ### Fix: Product URL Redirects in Cart & Cart Dropdown
 **Status**: ✅ COMPLETED (100%)
