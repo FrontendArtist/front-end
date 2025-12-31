@@ -5,6 +5,7 @@ import Navbar from "@/modules/layout/Navbar/Navbar";
 import AuthModal from "@/components/auth/AuthModal";
 import { Providers } from "./providers";
 import localFont from 'next/font/local';
+import CartSyncProvider from "@/components/layout/CartSyncProvider";
 const iranSans = localFont({
   src: '../assets/fonts/iransans_regular/iransans-regular-webfont.ttf',
   variable: '--font-iransans',
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <body>
         <Providers>
+        <CartSyncProvider />
           <Navbar />
           {children}
           <Footer />

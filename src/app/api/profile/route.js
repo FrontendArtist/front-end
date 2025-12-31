@@ -4,11 +4,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
+// تنظیم آدرس پایه استرپی (حذف /api اگر وجود داشته باشد تا آدرس‌ها درست ساخته شوند)
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL.replace('/api', '');
+// دریافت توکن ادمین از متغیرهای محیطی
 const STRAPI_ADMIN_TOKEN = process.env.STRAPI_API_TOKEN;
 
 // --------------------------------------------------------------------------
-// GET /api/profile : دریافت اطلاعات کاربر
+// GET /api/profile : دریافت اطلاعات کاربر + سبد خرید
 // --------------------------------------------------------------------------
 export async function GET(request) {
     const session = await getServerSession(authOptions);
@@ -17,14 +19,14 @@ export async function GET(request) {
         return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
     }
 
-    // مسیر Strapi: /api/users/[id] با populate برای دریافت آدرس
+    // مسیر Strapi: دریافت یوزر به همراه آدرس (cartData خودکار می‌آید چون در یوزر است)
     const url = `${STRAPI_URL}/api/users/${session.user.id}?populate=address`;
 
     try {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                // 🚨 استفاده از توکن قدرتمند (Admin/API Token)
+                // 🚨 Proxy Pattern: استفاده از توکن ادمین برای دور زدن محدودیت‌های کلاینت
                 'Authorization': `Bearer ${STRAPI_ADMIN_TOKEN}`,
                 'Content-Type': 'application/json',
             },
@@ -37,7 +39,7 @@ export async function GET(request) {
         }
 
         const userData = await response.json();
-        console.log('📊 User Data from Strapi:', JSON.stringify(userData, null, 2)); // Debug log
+        // console.log('📊 User Data:', JSON.stringify(userData, null, 2)); 
         return NextResponse.json(userData);
 
     } catch (error) {
@@ -47,33 +49,54 @@ export async function GET(request) {
 }
 
 // --------------------------------------------------------------------------
-// PUT /api/profile : به‌روزرسانی اطلاعات پروفایل
+// PUT /api/profile : به‌روزرسانی پروفایل و همگام‌سازی سبد خرید (Sync)
 // --------------------------------------------------------------------------
 export async function PUT(request) {
     const session = await getServerSession(authOptions);
-    const body = await request.json();
 
+    // 1. بررسی احراز هویت
     if (!session || !session.user || !session.user.id) {
         return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
     }
 
-    const url = `${STRAPI_URL}/api/users/${session.user.id}`;
-
     try {
+        const body = await request.json();
+
+        // 2. استخراج داده‌های مجاز (Security Layer)
+        // به جای ارسال کل body، فقط چیزهایی که اجازه داریم را جدا می‌کنیم
+        const { firstName, lastName, cartData } = body;
+
+        // 3. ساخت پی‌لود نهایی
+        const payload = {};
+        if (firstName !== undefined) payload.firstName = firstName;
+        if (lastName !== undefined) payload.lastName = lastName;
+        if (cartData !== undefined) payload.cartData = cartData; // ✅ اضافه شدن پشتیبانی از سبد خرید
+
+        // اگر هیچ دیتایی برای آپدیت نبود
+        if (Object.keys(payload).length === 0) {
+            return NextResponse.json({ message: "No valid fields to update" }, { status: 400 });
+        }
+
+        const url = `${STRAPI_URL}/api/users/${session.user.id}`;
+
+        // 4. ارسال به Strapi با توکن ادمین
         const response = await fetch(url, {
             method: 'PUT',
             headers: {
-                // 🚨 استفاده از توکن قدرتمند
-                'Authorization': `Bearer ${STRAPI_ADMIN_TOKEN}`,
+                'Authorization': `Bearer ${STRAPI_ADMIN_TOKEN}`, // دسترسی کامل ادمین
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(body),
+            body: JSON.stringify(payload),
             cache: 'no-store'
         });
 
         if (!response.ok) {
-            console.error("Strapi update failed with status:", response.status);
-            return NextResponse.json({ message: "Strapi Update Error" }, { status: response.status });
+            const errorData = await response.json();
+            console.error("Strapi update failed:", errorData);
+            return NextResponse.json(
+                { message: errorData?.error?.message || "Strapi Update Error" }, 
+                { status: response.status }
+            );
         }
 
         const updatedData = await response.json();

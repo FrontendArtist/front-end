@@ -1,6 +1,46 @@
 # CHANGELOG
 
-## [Latest] - 2025-12-24
+## [Latest] - 2025-12-31
+
+### Feature: Persistent Cart Sync & Commerce Loop (Commerce Loop)
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Successfully implemented a critical part of the Commerce Loop using a Proxy architecture. The cart has been transformed from a temporary browser-based state to a persistent database-backed state, ensuring data retention across different devices and browsers.
+
+#### Changes Made:
+
+1. **Security and Proxy Layer (Next.js API Proxy)**
+   - **Route**: `src/app/api/profile/route.js`
+   - **GET**: Fetches `cartData` from Strapi alongside the user profile.
+   - **PUT**: Accepts `cartData` from the frontend and updates Strapi using the Admin Token (bypassing 401/403 restrictions on direct user updates).
+
+2. **Client Intelligence Layer (Custom Sync Hook)**
+   - **Custom Hook**: `src/hooks/useCartSync.js`
+   - **Debounce Save**: Implemented a 2-second timer to prevent server spamming; saves only after inactivity.
+   - **Auto-Hydration**: Checks on login if the local cart is empty. If so, fetches the last saved cart from the DB and injects it into the Zustand store.
+
+3. **Global Connection Layer (Global Provider)**
+   - **Provider**: `src/components/layout/CartSyncProvider.jsx`
+   - **Integration**: `src/app/layout.js`
+   - Created `CartSyncProvider` (Client Component) to execute the sync hook.
+   - Integrated into the root layout to ensure the sync process runs in the background immediately upon site entry.
+
+#### Files Created/Modified:
+- `context/CONTEXT_CartSync.md`
+- `src/app/layout.js`
+- `src/app/api/profile/route.js`
+- `src/components/layout/CartSyncProvider.jsx`
+- `src/hooks/useCartSync.js`
+
+#### Result:
+- ✅ **Cloud-Synced Cart**: User's cart is fully synced with the cloud.
+- ✅ **Cross-Device Persistence**: Add products on mobile, complete purchase on laptop.
+- ✅ **Seamless Experience**: No data loss when switching contexts.
+
+---
+
+## [2025-12-24]
 
 ### Refactor: Services Pagination Standardization
 **Status**: ✅ COMPLETED (100%)
