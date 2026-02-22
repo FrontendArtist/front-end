@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import styles from './CategoryFilter.module.scss';
-
+import BaseSlider from '@/components/layout/BaseSlider/BaseSlider';
 
 
 const FALLBACK_IMAGE = '/images/placeholder.png';
@@ -76,9 +76,12 @@ export default function CategoryFilter({
   if (!selectedCategory) {
     return (
       <section className={styles.categoriesSection} aria-label="دسته‌بندی محصولات">
-        <div className={styles.categoriesGrid}>
-          {normalizedCategories.map(renderCategoryCard)}
-        </div>
+          <BaseSlider
+            items={categories}
+            renderItem={renderCategoryCard}
+            slidesPerView={6}
+            loop={true}
+          />
       </section>
     );
   }

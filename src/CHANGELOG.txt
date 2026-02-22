@@ -38,6 +38,22 @@ Successfully implemented a critical part of the Commerce Loop using a Proxy arch
 - ✅ **Cross-Device Persistence**: Add products on mobile, complete purchase on laptop.
 - ✅ **Seamless Experience**: No data loss when switching contexts.
 
+### Bug Fix: Product Card Quantity Reactivity
+**Status**: ✅ COMPLETED (100%)
+
+#### Problem:
+Clicking the `+` button on a product card after adding it to the cart did not update the displayed quantity number, even though the internal logic was executing.
+
+#### Diagnosis:
+The `useCartStore` was mutating item objects directly within the state array. React and Zustand rely on immutable updates (reference changes) to detect when to re-render components. Because the object reference didn't change, the `ProductCard` component didn't know it needed to update.
+
+#### Solution:
+Refactored `addItem` and `updateQuantity` in `src/store/useCartStore.js` to use immutable update patterns (creating shallow copies of the item objects before modifying them).
+
+#### Result:
+- ✅ **UI Updates**: Product quantity now updates immediately when clicking `+` or `-`.
+- ✅ **Code Quality**: Enforced immutable state best practices.
+
 ---
 
 ## [2025-12-24]

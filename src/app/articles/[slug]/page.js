@@ -9,7 +9,6 @@ import styles from './page.module.scss';
 
 /**
  * Generate Dynamic Metadata for SEO
- * Uses API Layer abstraction
  */
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -19,21 +18,14 @@ export async function generateMetadata({ params }) {
     return { title: 'مقاله یافت نشد' };
   }
 
-  // Extract excerpt from content for description
-  const excerpt = rawArticle.excerpt || '';
-
   return {
     title: `${rawArticle.title} | وب‌سایت ما`,
-    description: excerpt,
+    description: rawArticle.excerpt || '',
   };
 }
+
 /**
  * Article Page Component (Server Component)
- * 
- * Architecture:
- * - Uses getArticleBySlug() from articlesApi.js (no direct fetch)
- * - Follows Repository Pattern for clean separation of concerns
- * - Handles invalid slugs with notFound()
  */
 export default async function ArticlePage({ params }) {
   const { slug } = await params;
@@ -45,23 +37,35 @@ export default async function ArticlePage({ params }) {
     notFound();
   }
 
-  // Fetch comments for this article
+  // Fetch comments
   const initialComments = await getComments('article', rawArticle.documentId);
 
-  // Format the article data for display
+  // 🛠️ منطق هوشمند تشخیص تصویر
+  // 1. دریافت URL خام از API
+  const rawCoverUrl = rawArticle.cover?.url || '';
+
+  // 2. تشخیص اینکه آیا این تصویر، یک فال‌بک لوکال (از پوشه public) است؟
+  // معمولاً عکس‌های Strapi در /uploads هستند و عکس‌های لوکال در /images
+  const isLocalFallback = rawCoverUrl.startsWith('/images/') || rawCoverUrl.includes('forempties');
+
+  // 3. ساخت URL نهایی برای نمایش (فقط اگر تصویر واقعی باشد استفاده می‌شود)
+  let finalCoverUrl = rawCoverUrl;
+  if (!isLocalFallback && !rawCoverUrl.startsWith('http')) {
+      // اگر عکس واقعی Strapi است و آدرس نسبی دارد، آدرس پایه را اضافه کن
+      finalCoverUrl = `${API_BASE_URL}${rawCoverUrl}`;
+  }
+
+  // 4. تصمیم‌گیری برای نمایش: فقط اگر فال‌بک نباشد، عکس را نشان می‌دهیم
+  const showCoverImage = !isLocalFallback && rawCoverUrl;
+
   const article = {
     id: rawArticle.id,
     documentId: rawArticle.documentId,
     title: rawArticle.title,
     date: new Date(rawArticle.date).toLocaleDateString('fa-IR'),
-    cover: {
-      url: rawArticle.cover.url.startsWith('http') ? rawArticle.cover.url : `${API_BASE_URL}${rawArticle.cover.url}`,
-      alt: rawArticle.cover.alt,
-    },
-    content: rawArticle.excerpt, // Using excerpt as content for now
+    content: rawArticle.excerpt, 
   };
 
-  // Convert content to HTML (if needed)
   const htmlContent = marked(article.content || '');
 
   return (
@@ -72,23 +76,25 @@ export default async function ArticlePage({ params }) {
           <time className={styles.date}>{article.date}</time>
         </header>
 
-        <div className={styles.coverImageWrapper}>
-          <Image
-            src={article.cover.url}
-            alt={article.cover.alt}
-            width={800}
-            height={450}
-            priority
-            className={styles.coverImage}
-          />
-        </div>
+        {/* ✅ رندر شرطی: اگر عکس واقعی داریم نشان بده، اگر نه (لوگو/فال‌بک) هیچی نشان نده */}
+        {showCoverImage && (
+          <div className={styles.coverImageWrapper}>
+            <Image
+              src={finalCoverUrl}
+              alt={rawArticle.cover?.alt || article.title}
+              width={800}
+              height={450}
+              priority
+              className={styles.coverImage}
+            />
+          </div>
+        )}
 
         <article
           className={styles.content}
           dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
 
-        {/* Comments Section */}
         <CommentsSection
           entityType="article"
           entityId={article.documentId}

@@ -196,7 +196,7 @@ const ProductCard = ({ product }) => {
         <h3 className={`${styles.cardTitle} card-title`}>{title}</h3>
         {/* {shortDescription && <p className={`${styles.cardText} card-text`}>{shortDescription}</p>} */}
         <div className={styles.footer}>
-          {formattedPrice > 0 && <span className={styles.price}>{formattedPrice.toLocaleString()} تومان</span>}
+          {formattedPrice > 0 && <span className={styles.price}>{formattedPrice.toLocaleString()}<br/> تومان</span>}
 
           {/* 
             منطق نمایش شرطی بر اساس hydration:

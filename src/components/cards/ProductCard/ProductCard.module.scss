@@ -37,6 +37,7 @@
   align-items: center;
   margin-top: auto;
   padding-top: 12px;
+  gap: 20px;
 }
 
 .price {
@@ -86,11 +87,11 @@
   background: rgba(246, 217, 130, 0.1);
   border: 2px solid var(--color-text-primary);
   border-radius: 8px;
-  padding: 4px 8px;
+  overflow: hidden;
 
   @include respond(md) {
     gap: 6px;
-    padding: 3px 6px;
+
   }
 }
 
@@ -100,19 +101,20 @@
   height: 28px;
   display: flex;
   align-items: center;
+  background-color: unset;
   justify-content: center;
-  background: var(--color-text-primary);
-  color: var(--color-bg-primary);
+  color: var(--color-text-primary);
   border: none;
-  border-radius: 6px;
   font-size: 18px;
   font-weight: var(--font-weight-bold);
+  padding: 17px 0;
   cursor: pointer;
   @include hover-transition;
   line-height: 1;
 
   &:hover {
-    background: var(--color-title-hover);
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
     transform: scale(1.1);
   }
 
@@ -129,7 +131,7 @@
 
 // نمایش تعداد در کنترلر
 .quantityDisplay {
-  min-width: 24px;
+
   text-align: center;
   color: var(--color-text-primary);
   font-size: var(--font-md);

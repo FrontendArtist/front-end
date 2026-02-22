@@ -41,7 +41,11 @@ export const useCartStore = create(
 
                     // اگر نوع آیتم 'product' باشد، تعداد آن را یکی افزایش می‌دهیم
                     const updatedItems = [...currentItems];
-                    updatedItems[existingItemIndex].quantity += 1;
+                    const existingItem = updatedItems[existingItemIndex];
+                    updatedItems[existingItemIndex] = {
+                        ...existingItem,
+                        quantity: existingItem.quantity + 1,
+                    };
 
                     set({ items: updatedItems });
                 } else {
@@ -102,7 +106,11 @@ export const useCartStore = create(
 
                 // به‌روزرسانی تعداد آیتم
                 const updatedItems = [...currentItems];
-                updatedItems[itemIndex].quantity = newQuantity;
+                const itemToUpdate = updatedItems[itemIndex];
+                updatedItems[itemIndex] = {
+                    ...itemToUpdate,
+                    quantity: newQuantity,
+                };
 
                 set({ items: updatedItems });
             },
