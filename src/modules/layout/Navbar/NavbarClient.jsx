@@ -77,7 +77,7 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
           <div className={styles.logo}>
             <Link href="/">
               <Image
-                src="/images/Logo.png"
+                src="/images/logo.png"
                 alt="لوگو"
                 width={130}
                 height={60}
