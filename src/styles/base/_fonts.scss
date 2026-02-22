@@ -3,12 +3,12 @@
 /* IRANSans Regular */
 @font-face {
   font-family: 'IRANSans';
-  src: url('../../assets/fonts/iransans_regular/iransans-regular-webfont.eot');
+  src: url('@/assets/fonts/iransans_regular/iransans-regular-webfont.eot');
   src:
-    url('../../assets/fonts/iransans_regular/iransans-regular-webfont.eot?#iefix') format('embedded-opentype'),
-    url('../../assets/fonts/iransans_regular/iransans-regular-webfont.woff2') format('woff2'),
-    url('../../assets/fonts/iransans_regular/iransans-regular-webfont.woff') format('woff'),
-    url('../../assets/fonts/iransans_regular/iransans-regular-webfont.ttf') format('truetype');
+    url('@/assets/fonts/iransans_regular/iransans-regular-webfont.eot?#iefix') format('embedded-opentype'),
+    url('@/assets/fonts/iransans_regular/iransans-regular-webfont.woff2') format('woff2'),
+    url('@/assets/fonts/iransans_regular/iransans-regular-webfont.woff') format('woff'),
+    url('@/assets/fonts/iransans_regular/iransans-regular-webfont.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -17,12 +17,12 @@
 /* IRANSans Light */
 @font-face {
   font-family: 'IRANSans';
-  src: url('../../assets/fonts/iransans_light/iransans-light-webfont.eot');
+  src: url('@/assets/fonts/iransans_light/iransans-light-webfont.eot');
   src:
-    url('../../assets/fonts/iransans_light/iransans-light-webfont.eot?#iefix') format('embedded-opentype'),
-    url('../../assets/fonts/iransans_light/iransans-light-webfont.woff2') format('woff2'),
-    url('../../assets/fonts/iransans_light/iransans-light-webfont.woff') format('woff'),
-    url('../../assets/fonts/iransans_light/iransans-light-webfont.ttf') format('truetype');
+    url('@/assets/fonts/iransans_light/iransans-light-webfont.eot?#iefix') format('embedded-opentype'),
+    url('@/assets/fonts/iransans_light/iransans-light-webfont.woff2') format('woff2'),
+    url('@/assets/fonts/iransans_light/iransans-light-webfont.woff') format('woff'),
+    url('@/assets/fonts/iransans_light/iransans-light-webfont.ttf') format('truetype');
   font-weight: 300;
   font-style: normal;
   font-display: swap;
@@ -31,12 +31,12 @@
 /* IRANSans Medium */
 @font-face {
   font-family: 'IRANSans';
-  src: url('../../assets/fonts/iransans_medium/iransans-medium-webfont.eot');
+  src: url('@/assets/fonts/iransans_medium/iransans-medium-webfont.eot');
   src:
-    url('../../assets/fonts/iransans_medium/iransans-medium-webfont.eot?#iefix') format('embedded-opentype'),
-    url('../../assets/fonts/iransans_medium/iransans-medium-webfont.woff2') format('woff2'),
-    url('../../assets/fonts/iransans_medium/iransans-medium-webfont.woff') format('woff'),
-    url('../../assets/fonts/iransans_medium/iransans-medium-webfont.ttf') format('truetype');
+    url('@/assets/fonts/iransans_medium/iransans-medium-webfont.eot?#iefix') format('embedded-opentype'),
+    url('@/assets/fonts/iransans_medium/iransans-medium-webfont.woff2') format('woff2'),
+    url('@/assets/fonts/iransans_medium/iransans-medium-webfont.woff') format('woff'),
+    url('@/assets/fonts/iransans_medium/iransans-medium-webfont.ttf') format('truetype');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -45,12 +45,12 @@
 /* IRANSans Bold */
 @font-face {
   font-family: 'IRANSans';
-  src: url('../../assets/fonts/iransans_bold/iransans-bold-webfont.eot');
+  src: url('@/assets/fonts/iransans_bold/iransans-bold-webfont.eot');
   src:
-    url('../../assets/fonts/iransans_bold/iransans-bold-webfont.eot?#iefix') format('embedded-opentype'),
-    url('../../assets/fonts/iransans_bold/iransans-bold-webfont.woff2') format('woff2'),
-    url('../../assets/fonts/iransans_bold/iransans-bold-webfont.woff') format('woff'),
-    url('../../assets/fonts/iransans_bold/iransans-bold-webfont.ttf') format('truetype');
+    url('@/assets/fonts/iransans_bold/iransans-bold-webfont.eot?#iefix') format('embedded-opentype'),
+    url('@/assets/fonts/iransans_bold/iransans-bold-webfont.woff2') format('woff2'),
+    url('@/assets/fonts/iransans_bold/iransans-bold-webfont.woff') format('woff'),
+    url('@/assets/fonts/iransans_bold/iransans-bold-webfont.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -59,11 +59,11 @@
 /* IRANSans UltraLight */
 @font-face {
   font-family: 'IRANSans';
-  src: url('../../assets/fonts/iransans_ultralight/iransans-ultralight-webfont.eot');
+  src: url('@/assets/fonts/iransans_ultralight/iransans-ultralight-webfont.eot');
   src:
-    url('../../assets/fonts/iransans_ultralight/iransans-ultralight-webfont.eot?#iefix') format('embedded-opentype'),
-    url('../../assets/fonts/iransans_ultralight/iransans-ultralight-webfont.woff2') format('woff2'),
-    url('../../assets/fonts/iransans_ultralight/iransans-ultralight-webfont.ttf') format('truetype');
+    url('@/assets/fonts/iransans_ultralight/iransans-ultralight-webfont.eot?#iefix') format('embedded-opentype'),
+    url('@/assets/fonts/iransans_ultralight/iransans-ultralight-webfont.woff2') format('woff2'),
+    url('@/assets/fonts/iransans_ultralight/iransans-ultralight-webfont.ttf') format('truetype');
   font-weight: 200;
   font-style: normal;
   font-display: swap;
@@ -72,7 +72,7 @@
 /* Lalezar Regular */
 @font-face {
   font-family: 'Lalezar';
-  src: url('../../assets/fonts/LALEZAR-REGULAR.TTF') format('truetype');
+  src: url('@/assets/fonts/LALEZAR-REGULAR.TTF') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -81,10 +81,8 @@
 /* Far Shafigh */
 @font-face {
   font-family: 'Far Shafigh';
-  src: url('../../assets/fonts/Far_Shafigh.ttf') format('truetype');
+  src: url('@/assets/fonts/Far_Shafigh.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
-
-

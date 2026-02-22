@@ -20,7 +20,7 @@ const shafigh = localFont({
 });
 
 const lalezar = localFont({
-  src: '../assets/fonts/lalezar-regular.ttf',
+  src: '../assets/fonts/LALEZAR-REGULAR.TTF',
   variable: '--font-lalezar',
   display: 'swap',
 });
