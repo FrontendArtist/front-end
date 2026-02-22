@@ -1,5 +1,5 @@
-// Import mixins using relative path (required for SCSS modules)
-@import '../../../styles/base/mixins';
+// Use mixins using relative path (required for SCSS modules)
+@use '../../../styles/base/mixins' as *;
 
 /**
  * ServiceGrid Component Styles
@@ -21,42 +21,42 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px; // 48px from design tokens
-  
+
   // Center items when fewer items than columns
   justify-items: center;
   align-items: stretch; // Ensure all cards have equal height
-  
+
   /**
    * Responsive Breakpoints
    * Following mobile-first approach with progressive enhancement
    */
-  
+
   // Tablet Landscape (≤1280px): 3 columns
 
-  
+
   // Tablet Portrait (≤960px): 3 columns
   @include respond(lg) {
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
   }
-  
+
   // Mobile Landscape/Large Mobile (≤768px): 2 columns
   @include respond(md) {
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
   }
-  
+
   // Mobile Portrait (≤440px): 2 columns (maintained for consistency)
   @include respond(sm) {
     grid-template-columns: repeat(1, 1fr);
     gap: 16px;
   }
-  
+
   /**
    * Card Width Control
    * Ensure cards don't exceed container or become too narrow
    */
-  > * {
+  >* {
     width: 100%;
     max-width: 100%;
     min-width: 0; // Prevents grid blowout with long content
@@ -69,11 +69,11 @@
   width: 100%;
   padding: var(--space-section-top-desktop) 0;
   text-align: center;
-  
+
   @include respond(md) {
     padding: 80px 0;
   }
-  
+
   @include respond(sm) {
     padding: 60px 0;
   }
@@ -87,11 +87,11 @@
   line-height: var(--line-height-md);
   margin: 0;
   opacity: 0.7;
-  
+
   @include respond(md) {
     font-size: var(--font-md);
   }
-  
+
   @include respond(sm) {
     font-size: var(--font-md);
     padding: 0 var(--space-title-text-desktop);
@@ -106,12 +106,12 @@
   align-items: center;
   margin-top: var(--space-section-button-desktop); // 40px from design tokens
   padding-bottom: var(--space-section-bottom-desktop); // 100px from design tokens
-  
+
   @include respond(md) {
     margin-top: 32px;
     padding-bottom: 80px;
   }
-  
+
   @include respond(sm) {
     margin-top: 24px;
     padding-bottom: 60px;
@@ -123,22 +123,22 @@
   // Layout
   padding: 16px 48px;
   min-width: 200px;
-  
+
   // Typography - using design tokens from styles.md
   color: var(--color-text-primary);
   font-size: var(--font-md);
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-md);
-  
+
   // Visual styling
   background: transparent;
   border: 2px solid var(--color-text-primary);
   border-radius: 8px;
   cursor: pointer;
-  
+
   // Transition for smooth hover effect
   transition: all 0.3s ease;
-  
+
   // Hover state - using design token color
   &:hover:not(:disabled) {
     background: var(--color-text-primary);
@@ -146,25 +146,25 @@
     border-color: var(--color-title-hover);
     transform: translateY(-2px);
   }
-  
+
   // Active state
   &:active:not(:disabled) {
     transform: translateY(0);
   }
-  
+
   // Disabled state - when loading or no more items
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   // Responsive adjustments
   @include respond(md) {
     padding: 14px 40px;
     min-width: 180px;
     font-size: var(--font-md);
   }
-  
+
   @include respond(sm) {
     width: 100%; // Full width on mobile
     padding: 12px 32px;
@@ -181,4 +181,3 @@
   margin-top: var(--space-title-text-desktop);
   opacity: 0.7;
 }
-

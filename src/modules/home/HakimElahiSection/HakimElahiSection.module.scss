@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .aboutSection {
   padding: 80px 0;
@@ -10,7 +10,7 @@
 .container {
 
   gap: var(--space-gap-desktop, 48px);
-  width: unset;   
+  width: unset;
   border-radius: 30px;
   grid-template-columns: 1fr 1fr;
   justify-content: space-between;
@@ -25,7 +25,8 @@
   }
 
 }
-.innerWrapper{
+
+.innerWrapper {
   display: flex;
   border-radius: 12px;
 }

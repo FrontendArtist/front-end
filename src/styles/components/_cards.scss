@@ -1,3 +1,5 @@
+@use '../base/mixins' as *;
+
 // ===================================
 // Legacy Card Classes (for backwards compatibility)
 // ===================================
@@ -39,7 +41,7 @@
 
   display: inline-block;
   align-self: center;
-  
+
   padding: 12px 32px;
   color: var(--color-text-primary);
   font-size: var(--font-md);
@@ -66,4 +68,4 @@
     padding: 8px 20px;
     font-size: var(--font-sm);
   }
-}   
+}

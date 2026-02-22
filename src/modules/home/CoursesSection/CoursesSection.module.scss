@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .coursesSection {
   padding: 2rem 0;
@@ -37,4 +37,4 @@
   color: var(--color-text-secondary);
   padding: 3rem 1rem;
   font-size: var(--font-size-md);
-} 
+}

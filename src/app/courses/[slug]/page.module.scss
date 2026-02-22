@@ -1,3 +1,4 @@
+@use '../../../styles/base/mixins' as *;
 // =============================================================================
 // Single Course Page Styles
 // =============================================================================
@@ -11,9 +12,8 @@
 // 3. Fully responsive with mobile-first approach
 // 4. RTL (Right-to-Left) support for Persian language
 
-// Import mixins for responsive breakpoints and utility functions
-// Note: We use relative path, NOT the @/ alias (SCSS doesn't support it)
-@import '../../../styles/base/mixins';
+// Mixins are used via @use for responsive breakpoints and utility functions
+// Note: We use relative path, NOT the @/ alias (SCSS modules require relative paths)
 
 // =============================================================================
 // MAIN PAGE CONTAINER
@@ -251,4 +251,3 @@
 // 5. The .container class is a global class that provides consistent page padding
 // 6. All responsive breakpoints are handled by the respond() mixin from _mixins.scss
 // 7. This layout follows the design patterns from our CONTEXT_SingleCoursePage.md document
-

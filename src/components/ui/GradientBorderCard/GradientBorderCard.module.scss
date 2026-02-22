@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 /**
  * دیو خارجی (Border Wrapper)
@@ -101,17 +101,20 @@
 }
 
 //aboutmentor
-.aboutMentor  .cardBackground     {
-  overflow: visible !important;
+.aboutMentor .cardBackground {
+    overflow: visible !important;
 
 }
-.aboutMentor  .cardContent    {
-  overflow: visible !important;
+
+.aboutMentor .cardContent {
+    overflow: visible !important;
 
 }
-.gradientHorizontal{
-  border-radius: 12px;
+
+.gradientHorizontal {
+    border-radius: 12px;
 }
-.gradientHorizontalRtl{
-  border-radius: 12px;
+
+.gradientHorizontalRtl {
+    border-radius: 12px;
 }

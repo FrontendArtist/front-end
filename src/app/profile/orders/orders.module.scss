@@ -1,4 +1,4 @@
-@import '@/styles/base/mixins';
+@use '@/styles/base/mixins' as *;
 
 .ordersCard {
     background: var(--gradient-card-vertical);

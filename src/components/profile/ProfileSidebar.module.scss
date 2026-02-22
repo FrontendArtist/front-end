@@ -1,4 +1,4 @@
-@import '@/styles/base/mixins';
+@use '@/styles/base/mixins' as *;
 
 .sidebar {
     background: var(--gradient-card-vertical);

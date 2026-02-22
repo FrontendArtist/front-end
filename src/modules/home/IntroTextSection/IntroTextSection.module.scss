@@ -1,4 +1,4 @@
-@import '@/styles/base/mixins';
+@use '@/styles/base/mixins' as *;
 
 .introSection {
   background-color: var(--color-bg-primary);

@@ -1,6 +1,6 @@
+@use '../../../styles/base/mixins' as *;
 /* ContactForm.module.scss - استایل فرم تماس با طراحی Glassmorphism */
 
-@import '../../../styles/base/mixins';
 
 .formContainer {
   background: var(--gradient-card-vertical);
@@ -71,7 +71,7 @@
   font-size: var(--font-md);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
-  
+
   @include respond(sm) {
     font-size: var(--font-sm);
   }
@@ -124,7 +124,7 @@
 
 .inputError {
   border-color: #ff6b6b;
-  
+
   &:focus {
     border-color: #ff6b6b;
     box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
@@ -135,7 +135,7 @@
   font-size: 14px;
   color: #ff6b6b;
   margin-top: -4px;
-  
+
   @include respond(sm) {
     font-size: 12px;
   }
@@ -206,6 +206,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

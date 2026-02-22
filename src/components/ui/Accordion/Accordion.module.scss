@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .accordion {
   width: 100%;
@@ -69,25 +69,24 @@
 .accordionContent {
   overflow: hidden;
   margin-right: 10px;
-  
+
 }
 
 .contentInner {
-  padding:10px 24px 24px;
+  padding: 10px 24px 24px;
   color: var(--color-card-text);
   font-size: var(--font-md);
   line-height: var(--line-height-lg);
   text-align: right;
 
   @include respond(md) {
-    padding:0 20px 24px;
+    padding: 0 20px 24px;
     font-size: var(--font-sm);
     line-height: var(--line-height-md);
   }
-  
+
   @include respond(sm) {
-    padding:0 16px 14px;
+    padding: 0 16px 14px;
 
   }
 }
-

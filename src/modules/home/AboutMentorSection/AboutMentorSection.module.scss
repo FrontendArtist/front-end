@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .aboutSection {
   padding: 80px 0;
@@ -10,23 +10,24 @@
 
 .container {
 
-    gap: var(--space-gap-desktop, 48px);
-    width: unset;
-    border-radius: 30px;
-    grid-template-columns: 1fr 1fr;
-    justify-content: space-between;
-    align-items: normal;
-    margin: 0 auto;
-    display: flex;
-    overflow: visible;
+  gap: var(--space-gap-desktop, 48px);
+  width: unset;
+  border-radius: 30px;
+  grid-template-columns: 1fr 1fr;
+  justify-content: space-between;
+  align-items: normal;
+  margin: 0 auto;
+  display: flex;
+  overflow: visible;
+
   @include respond(md) {
     grid-template-columns: 1fr;
     gap: 32px;
-  } 
+  }
 
 }
 
-.innerWrapper{
+.innerWrapper {
   display: flex;
 }
 

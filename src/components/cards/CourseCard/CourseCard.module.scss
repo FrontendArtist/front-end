@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .courseCard {
   @include base-card;
@@ -62,7 +62,7 @@
 // بخش نمایش قیمت
 .priceSection {
   margin-top: auto;
-  padding: 16px  0;
+  padding: 16px 0;
   border-top: 1px solid rgba(246, 217, 130, 0.1);
 }
 

@@ -1,5 +1,5 @@
-// Import mixins using relative path (required for SCSS modules)
-@import '../../../styles/base/mixins';
+// Use mixins using relative path (required for SCSS modules)
+@use '../../../styles/base/mixins' as *;
 
 /**
  * ServiceSingle Component Styles
@@ -17,13 +17,13 @@
   width: 100%;
   padding-top: var(--space-section-top-desktop); // 120px
   padding-bottom: var(--space-section-bottom-desktop); // 100px
-  
+
   // Responsive vertical padding adjustments
   @include respond(md) {
     padding-top: 96px;
     padding-bottom: 80px;
   }
-  
+
   @include respond(sm) {
     padding-top: 64px;
     padding-bottom: 56px;
@@ -37,18 +37,18 @@
   grid-template-columns: 1fr 1fr; // Equal columns on desktop
   gap: var(--space-gap-desktop); // 48px gap between image and content
   align-items: start; // Align items to top of grid
-  
+
   // Tablet: Maintain two columns but reduce gap
   @include respond(lg) {
     gap: 40px;
   }
-  
+
   // Mobile: Stack vertically (image on top, content below)
   @include respond(md) {
     grid-template-columns: 1fr;
     gap: var(--space-image-title-desktop); // 32px
   }
-  
+
   @include respond(sm) {
     gap: 24px;
   }
@@ -62,16 +62,16 @@
   aspect-ratio: 16 / 10; // Consistent aspect ratio across breakpoints
   border-radius: 16px;
   overflow: hidden;
-  
+
   // Grid order for RTL: image appears on right (order 2)
   order: 2;
-  
+
   @include respond(md) {
     // On mobile, image appears first (top)
     order: 1;
     aspect-ratio: 16 / 9; // Slightly taller on mobile
   }
-  
+
   @include respond(sm) {
     aspect-ratio: 4 / 3;
   }
@@ -89,16 +89,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-title-text-desktop); // 24px spacing between elements
-  
+
   // Grid order for RTL: content appears on left (order 1)
   order: 1;
-  
+
   @include respond(md) {
     // On mobile, content appears second (bottom)
     order: 2;
     gap: 20px;
   }
-  
+
   @include respond(sm) {
     gap: 16px;
   }
@@ -112,12 +112,12 @@
   font-weight: var(--font-weight-bold); // 700
   line-height: var(--line-height-sm); // 1.4
   margin: 0;
-  
+
   // Responsive font size adjustments
   @include respond(md) {
     font-size: 28px;
   }
-  
+
   @include respond(sm) {
     font-size: 24px;
   }
@@ -131,13 +131,13 @@
   font-weight: var(--font-weight-regular); // 400
   line-height: var(--line-height-lg); // 1.8 for better readability
   margin: 0;
-  
+
   // Responsive font size adjustments
   @include respond(md) {
     font-size: var(--font-md);
     line-height: var(--line-height-md); // Slightly tighter on mobile
   }
-  
+
   @include respond(sm) {
     font-size: var(--font-sm);
   }
@@ -157,7 +157,7 @@
   border: 2px solid var(--color-text-primary);
   border-radius: 12px;
   @include hover-transition;
-  
+
   /**
    * Hover Effects
    * - Background fills with primary color
@@ -171,14 +171,14 @@
     border-color: var(--color-title-hover);
     transform: scale(1.03);
   }
-  
+
   // Responsive button sizing
   @include respond(md) {
     margin-top: 20px;
     padding: 14px 40px;
     font-size: var(--font-md);
   }
-  
+
   @include respond(sm) {
     margin-top: 16px;
     padding: 12px 32px;
@@ -187,4 +187,3 @@
     text-align: center;
   }
 }
-

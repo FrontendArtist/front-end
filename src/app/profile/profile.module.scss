@@ -1,4 +1,4 @@
-@import '@/styles/base/mixins';
+@use '@/styles/base/mixins' as *;
 
 .profileLayout {
     min-height: 100vh;

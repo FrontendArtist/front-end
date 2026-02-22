@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .productGridWrapper {
   width: 100%;
@@ -17,7 +17,7 @@
     color: var(--color-text-primary);
     border-radius: 8px;
     transition: all 0.2s ease;
-    
+
     &:hover:not(:disabled) {
       background-color: var(--color-text-primary);
       color: var(--color-bg-primary);

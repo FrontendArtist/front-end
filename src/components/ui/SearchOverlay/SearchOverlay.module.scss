@@ -1,4 +1,4 @@
-@import '@/styles/base/mixins';
+@use '@/styles/base/mixins' as *;
 
 .overlay {
     position: fixed;
@@ -21,7 +21,8 @@
         visibility: visible;
     }
 }
-.iconButton{
+
+.iconButton {
     width: 50px;
     height: 50px;
     position: absolute;
@@ -30,21 +31,23 @@
     font-weight: 300;
 
 }
+
 .searchContainer {
     width: 90%;
     max-width: 800px;
     position: relative;
     transform: translateY(20px);
     transition: transform 0.3s ease;
- 
+
 
     .open & {
         transform: translateY(0);
     }
 
-    form{
-           display: flex;
-    align-items: end;
+    form {
+        display: flex;
+        align-items: end;
+
         button {
             cursor: pointer;
             background-color: transparent;

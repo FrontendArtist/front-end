@@ -1,4 +1,4 @@
-@import '../../../../../styles/base/mixins';
+@use '../../../../../styles/base/mixins' as *;
 
 .productPage {
   padding: var(--space-section-top-desktop) 0;
@@ -77,4 +77,3 @@
     }
   }
 }
-

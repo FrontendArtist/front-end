@@ -1,4 +1,4 @@
-@import '@/styles/base/mixins';
+@use '@/styles/base/mixins' as *;
 
 .resultsContainer {
     padding-top: var(--space-section-top-desktop);
@@ -104,26 +104,28 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 2rem;
+
     @include respond(xl) {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;    
-    } 
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+    }
 
     @include respond(lg) {
-    grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, 1fr);
 
-}
-@include respond(md) {
-    grid-template-columns: repeat(2, 1fr);
+    }
 
-}
+    @include respond(md) {
+        grid-template-columns: repeat(2, 1fr);
 
-@include respond(sm) {
-    grid-template-columns: 1fr;
+    }
 
-}
+    @include respond(sm) {
+        grid-template-columns: 1fr;
 
-    
+    }
+
+
 }
 
 .emptyState {
@@ -160,4 +162,3 @@
         font-size: var(--font-md);
     }
 }
-

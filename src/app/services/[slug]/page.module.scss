@@ -1,5 +1,5 @@
-// Import mixins using relative path (required for SCSS modules)
-@import '../../../styles/base/mixins';
+// Use mixins using relative path (required for SCSS modules)
+@use '../../../styles/base/mixins' as *;
 
 /**
  * Service Single Page Styles

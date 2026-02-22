@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .productsSection {
   // The global .section class will handle the padding
@@ -30,4 +30,4 @@
 .sliderWrapper {
   margin-top: 2rem;
   // The BaseSlider component handles its own internal styling
-} 
+}
