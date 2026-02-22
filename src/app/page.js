@@ -32,19 +32,15 @@ export default async function HomePage() {
     console.warn("⚠️ Failed to fetch home data (Strapi may be offline):", err.message);
   }
 
-  if (!homeData) {
-    return (
-      <div className={styles.container} style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem", padding: "4rem 1rem", textAlign: "center" }}>
-        <HeroSection />
-        <div style={{ marginTop: "2rem" }}>
-          <p style={{ fontSize: "1.25rem", color: "var(--color-text-muted, #888)" }}>🔌 سرور در دسترس نیست</p>
-          <p style={{ fontSize: "0.95rem", color: "var(--color-text-muted, #aaa)", marginTop: "0.5rem" }}>لطفاً چند لحظه دیگر مجدداً تلاش کنید.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const { categories, faqs, testimonials, products, articles, services, courses } = homeData;
+  const {
+    categories = [],
+    faqs = [],
+    testimonials = [],
+    products = [],
+    articles = [],
+    services = [],
+    courses = [],
+  } = homeData || {};
 
   return (
     <div className={styles.container}>
