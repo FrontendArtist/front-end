@@ -14,13 +14,13 @@ const iranSans = localFont({
 });
 
 const shafigh = localFont({
-  src: '../assets/fonts/Far_Shafigh.ttf',
+  src: '../assets/fonts/far_shafigh.ttf',
   variable: '--font-shafigh',
   display: 'swap',
 });
 
 const lalezar = localFont({
-  src: '../assets/fonts/LALEZAR-REGULAR.TTF',
+  src: '../assets/fonts/lalezar-regular.ttf',
   variable: '--font-lalezar',
   display: 'swap',
 });
