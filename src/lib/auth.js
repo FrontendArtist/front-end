@@ -5,7 +5,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 // آدرس پایه Strapi API از .env.local
-const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL;
+const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
 
 export const authOptions = {
     providers: [
