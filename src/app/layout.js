@@ -1,3 +1,4 @@
+import "@/styles/variables.css";
 import "@/styles/main.scss";
 import '@/app/globals.css';
 import Footer from "@/modules/layout/Footer/Footer";
@@ -34,7 +35,7 @@ export default function RootLayout({ children }) {
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <body>
         <Providers>
-        <CartSyncProvider />
+          <CartSyncProvider />
           <Navbar />
           {children}
           <Footer />
