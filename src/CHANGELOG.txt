@@ -1,6 +1,136 @@
 # CHANGELOG
 
-## [Latest] - 2025-12-31
+## [Latest] - 2026-02-24
+
+### Bug Fix: Strapi Error Resilience & Logo Asset
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Resolved critical visual and stability issues by implementing soft-failure logic for Strapi connection errors and fixing asset path casing.
+
+#### Changes Made:
+1. **Home Page Error Resilience** (`src/app/page.js`)
+   - Wrapped the main data fetch in a `try...catch` block to prevent site-wide 500 crashes when the Strapi backend is unreachable.
+   - Implemented default empty array values for all sections (`categories`, `products`, `services`, etc.).
+   - This ensures the Hero and layout render correctly even if data is missing, allowing components to show their own "no items" states gracefully.
+2. **Logo Filename Case Sensitivity** (`src/modules/layout/Navbar/NavbarClient.jsx`)
+   - Fixed a 404 error where the logo was referenced as `Logo.png` (uppercase) while the file on disk was `logo.png` (lowercase).
+   - This ensures the logo displays correctly on case-sensitive hosting environments (Linux).
+
+---
+
+### Bug Fix: Environment Variable Build Safety
+**Status**: ✅ COMPLETED (100%)
+
+#### Problem:
+Encountered `TypeError: Cannot read properties of undefined (reading 'replace')` during the build process. This occurred because `process.env.NEXT_PUBLIC_STRAPI_API_URL` was being accessed without a safety check in API routes.
+
+#### Changes Made:
+- **API Route Hardening** (`src/app/api/addresses/route.js`):
+    - Added a fallback empty string to the `STRAPI_URL` definition: `(process.env.NEXT_PUBLIC_STRAPI_API_URL || '').replace('/api', '')`.
+    - This ensures the build process doesn't crash if environment variables are missing or not yet loaded.
+
+---
+
+### Architecture: Standardized Global CSS Variables
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Resolved the "Selector :root is not pure" build error by migrating CSS custom properties from SCSS files to a dedicated global CSS file. This architectural change ensures that design tokens are loaded globally without being incorrectly processed as local CSS Modules.
+
+#### Changes Made:
+
+1. **Global Variables Core** (`src/styles/variables.css`)
+   - Created a new pure CSS file dedicated to `:root` definitions.
+   - Moved all color, typography, spacing, and shadow variables here.
+   - This file is treated as "Global CSS" by Next.js, bypassing CSS Modules purity checks.
+
+2. **SCSS Variables Cleanup** (`src/styles/base/_variables.scss`)
+   - Removed the `:root` block to prevent duplicate definitions in SCSS context.
+   - Added documentation explaining the new variable management strategy.
+   - Kept the file for future SCSS-specific variables if needed.
+
+3. **Layout Integration** (`src/app/layout.js`)
+   - Imported `variables.css` as the very first styling import in the root layout.
+   - Ensures CSS variables are available to all components before any other styles are loaded.
+
+#### Benefits:
+- ✅ **Build Error Fixed**: Eliminated the "Selector :root is not pure" error in Turbopack/Webpack.
+- ✅ **Architecture**: Clear separation between design tokens (Global CSS) and component styles (CSS Modules).
+- ✅ **Reliability**: Direct CSS injection ensures variables are always available in the DOM.
+- ✅ **Maintainability**: Centralized source of truth for the entire design system.
+
+### Maintenance: Strapi API URL Safety & Build Stability
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Refactored Strapi API URL handling to prevent build-time crashes and ensured compatibility with Next.js dynamic route requirements.
+
+#### Changes Made:
+1. **Build Safety (API Proxy Routes)**
+   - Added fallbacks `|| 'http://127.0.0.1:1337'` before string manipulation (`.replace()`) on `NEXT_PUBLIC_STRAPI_API_URL`.
+   - This prevents `TypeError: Cannot read properties of undefined (reading 'replace')` during build or SSR when environment variables are unavailable.
+   - Affected: `src/app/api/profile/route.js`, `src/app/api/addresses/route.js`, `src/app/api/addresses/[id]/route.js`.
+2. **Auth Library Robustness**
+   - Applied consistent fallback logic to `STRAPI_API_URL` in `src/lib/auth.js`.
+3. **Next.js Dynamic Route Compliance**
+   - Verified that dynamic API routes await `params` before accessing IDs, adhering to Next.js requirements.
+
+#### Files Modified:
+- `src/app/api/profile/route.js`
+- `src/app/api/addresses/route.js`
+- `src/app/api/addresses/[id]/route.js`
+- `src/lib/auth.js`
+
+---
+---
+
+### Styling: Sass Refactoring & Font Build Fixes
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Resolved critical build failures related to the modern Sass module system and font asset resolution. Standardized the project to use a single, reliable font loading system.
+
+#### Changes Made:
+
+1. **Sass Module Dependencies** (`src/styles/components/`)
+   - Added explicit `@use '../base/mixins' as *;` imports to `_cards.scss`, `_containers.scss`, and `_sections.scss`.
+   - Fixed "Undefined mixin" errors where `hover-transition` and `respond` were missing during compilation.
+
+2. **Font Asset Resolution & OS Compatibility**
+   - **Case Sensitivity**: Corrected font filenames (e.g., `LALEZAR-REGULAR.TTF`) to ensure compatibility with case-sensitive Linux build environments.
+   - **Path Standardisation**: Fixed SCSS `url()` resolution by using correct relative paths for assets.
+
+3. **NextFont Cleanup** (`src/app/layout.js`)
+   - Removed redundant `localFont` configurations that were conflicting with Turbopack.
+   - Resolved "Unknown font file extension" errors caused by uppercase file extensions in `next/font`.
+   - Centralised all font loading through the global `@font-face` definitions in `src/styles/base/_fonts.scss`.
+
+### Refactor: Project-wide Sass @use Migration
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Migrated the entire styling architecture from legacy `@import` to the modern Sass `@use` module system. This resolves Sass deprecation warnings and ensures full compatibility with Next.js Turbopack.
+
+#### Changes Made:
+1. **Global Styles Refactor** (`src/styles/main.scss`):
+   - Converted the main stylesheet to use `@use` and `@forward` patterns.
+   - Base mixins and variables are now shared using `as *` to maintain global accessibility.
+2. **Project-wide Module Migration** (52 files):
+   - Replaced all instances of `@import` with `@use` in all `.module.scss` and page-level SCSS files across the project.
+   - Updated paths to use both `@/styles/` aliases and relative paths where appropriate.
+   - Verified that all `@use` declarations are at the absolute top of files to meet Sass compiler requirements.
+3. **Redundancy Cleanup**:
+   - Removed legacy imports that were causing duplicate symbol errors and "Undefined mixin" warnings during build.
+
+#### Benefits:
+- ✅ **Future-Proof**: Complies with the modern Sass module specification.
+- ✅ **Turbopack Ready**: Fixes internal Next.js build errors related to CSS evaluation.
+- ✅ **Reliability**: Ensures that mixins like `respond` and `hover-transition` are correctly scoped and available in all modules.
+
+---
+
+## [2025-12-31]
 
 ### Feature: Persistent Cart Sync & Commerce Loop (Commerce Loop)
 **Status**: ✅ COMPLETED (100%)
@@ -2265,4 +2395,4 @@ User Submit → PUT /api/profile (User data)
 - Articles listing page can now integrate category filtering UI.
 - Consistent visual language with products section.
 - SEO-friendly URL structure with query params.
-- Ready for integration with ArticleGrid and /articles page.
+- Ready for integration with ArticleGrid and /articles page
