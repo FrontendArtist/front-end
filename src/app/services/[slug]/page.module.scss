@@ -1,0 +1,53 @@
+// Use mixins using relative path (required for SCSS modules)
+@use '../../../styles/base/mixins' as *;
+
+/**
+ * Service Single Page Styles
+ * 
+ * Page-level styles for individual service detail pages
+ * Follows BEM naming convention and uses design tokens from styles.md
+ * 
+ * Structure:
+ * 1. Main page container
+ * 
+ * Note: ServiceSingle component has its own SCSS module
+ * Breadcrumbs are handled by the shared Breadcrumb component
+ * Empty states are handled by notFound() and Next.js 404 page
+ */
+
+// ============================================================================
+// MAIN PAGE CONTAINER
+// ============================================================================
+
+.serviceSinglePage {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+  padding-top: var(--space-section-top-desktop);
+  padding-bottom: var(--space-section-bottom-desktop);
+}
+
+/**
+ * DESIGN SYSTEM COMPLIANCE:
+ * 
+ * ✅ BEM Naming Convention
+ *    - Block: .serviceSinglePage
+ * 
+ * ✅ Design Tokens from styles.md
+ *    - Colors: --color-bg-primary
+ *    - Spacing: --space-section-top-desktop, --space-section-bottom-desktop
+ * 
+ * ✅ Component Reusability
+ *    - Breadcrumb component: @/components/ui/BreadCrumb/Breadcrumb
+ *    - EmptyState handled by Next.js notFound()
+ *    - ServiceSingle component: @/modules/services/ServiceSingle/ServiceSingle
+ * 
+ * ✅ RTL Support
+ *    - Layout handled by container class
+ *    - Component-specific RTL in ServiceSingle module
+ * 
+ * ✅ Accessibility
+ *    - Semantic HTML (main) in page.js
+ *    - Breadcrumb component handles ARIA
+ *    - ServiceSingle handles content accessibility
+ */

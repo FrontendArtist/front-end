@@ -1,41 +1,71 @@
+@use '../base/mixins' as *;
+
+// ===================================
+// Legacy Card Classes (for backwards compatibility)
+// ===================================
+
 .card {
-    @include card-container;
-    color: var(--color-card-text);
-    border: 1px solid var(--color-text-primary);
-    @include hover-transition;
-  
-    &.vertical-gradient { background: var(--gradient-card-vertical); }
-    &.horizontal-ltr { background: var(--gradient-card-horizontal-ltr); }
-    &.horizontal-rtl { background: var(--gradient-card-horizontal-rtl); }
-  
-    &:hover {
-      transform: scale(1.02);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    }
+  color: var(--color-card-text);
+  @include hover-transition;
+
+  &.vertical-gradient {
+    background: var(--gradient-card-vertical);
   }
-  
-  .card-title {
-    margin-top: var(--space-image-title-desktop);
-    margin-bottom: var(--space-title-text-desktop);
-    font-size: var(--font-lg);
-    font-weight: var(--font-weight-medium);
+
+  &.horizontal-ltr {
+    background: var(--gradient-card-horizontal-ltr);
   }
-  
-  .card-text {
-    margin-bottom: var(--space-text-button-desktop);
-    font-size: var(--font-md);
+
+  &.horizontal-rtl {
+    background: var(--gradient-card-horizontal-rtl);
   }
-  
-  .card-button {
-    background: var(--color-title-hover);
+
+  &:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.card-title {
+  margin-top: var(--space-image-title-desktop);
+  margin-bottom: var(--space-title-text-desktop);
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-medium);
+}
+
+.card-text {
+  margin-bottom: var(--space-text-button-desktop);
+  font-size: var(--font-md);
+}
+
+.card-button {
+
+  display: inline-block;
+  align-self: center;
+
+  padding: 12px 32px;
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  border: 2px solid var(--color-text-primary);
+  border-radius: 8px;
+  @include hover-transition;
+
+  &:hover {
+    background-color: var(--color-text-primary);
     color: var(--color-bg-primary);
-    border: none;
-    padding: 12px 24px;
-    border-radius: 8px;
-    cursor: pointer;
-    @include hover-transition;
-  
-    &:hover {
-      background: var(--color-text-primary);
-    }
+    transform: scale(1.05);
   }
+
+  @include respond(md) {
+    margin-top: 16px;
+    padding: 10px 24px;
+    font-size: var(--font-sm);
+  }
+
+  @include respond(sm) {
+    margin-top: 12px;
+    padding: 8px 20px;
+    font-size: var(--font-sm);
+  }
+}

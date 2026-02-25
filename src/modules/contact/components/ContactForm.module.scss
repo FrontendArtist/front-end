@@ -1,0 +1,214 @@
+@use '../../../styles/base/mixins' as *;
+/* ContactForm.module.scss - استایل فرم تماس با طراحی Glassmorphism */
+
+
+.formContainer {
+  background: var(--gradient-card-vertical);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-card-xl);
+  padding: var(--space-card-padding-desktop);
+  box-shadow: var(--shadow-card-strong);
+  border: 1px solid rgba(246, 217, 130, 0.1);
+  @include hover-transition;
+
+  @include respond(md) {
+    padding: var(--space-card-padding-tablet);
+    border-radius: var(--radius-card);
+  }
+
+  @include respond(sm) {
+    padding: var(--space-card-padding-mobile);
+  }
+}
+
+.formTitle {
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: 16px;
+  text-align: center;
+
+  @include respond(md) {
+    font-size: 28px;
+  }
+
+  @include respond(sm) {
+    font-size: 24px;
+  }
+}
+
+.formDescription {
+  font-size: var(--font-md);
+  color: var(--color-card-text);
+  text-align: center;
+  margin-bottom: var(--space-title-content-desktop);
+  line-height: var(--line-height-md);
+  opacity: 0.9;
+
+  @include respond(md) {
+    margin-bottom: 32px;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  @include respond(sm) {
+    gap: 20px;
+  }
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+
+  @include respond(sm) {
+    font-size: var(--font-sm);
+  }
+}
+
+.required {
+  color: #ff6b6b;
+  margin-inline-start: 4px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: var(--font-md);
+  color: var(--color-card-text);
+  background: rgba(6, 24, 24, 0.5);
+  border: 1px solid rgba(246, 217, 130, 0.2);
+  border-radius: 12px;
+  @include hover-transition;
+  font-family: inherit;
+
+  &::placeholder {
+    color: rgba(255, 250, 234, 0.5);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-text-primary);
+    background: rgba(6, 24, 24, 0.7);
+    box-shadow: 0 0 0 3px rgba(246, 217, 130, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @include respond(sm) {
+    padding: 12px 16px;
+    font-size: var(--font-sm);
+  }
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 140px;
+  line-height: var(--line-height-md);
+}
+
+.inputError {
+  border-color: #ff6b6b;
+
+  &:focus {
+    border-color: #ff6b6b;
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+  }
+}
+
+.errorMessage {
+  font-size: 14px;
+  color: #ff6b6b;
+  margin-top: -4px;
+
+  @include respond(sm) {
+    font-size: 12px;
+  }
+}
+
+.submitButton {
+  width: 100%;
+  padding: 16px 32px;
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-bg-primary);
+  background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  @include hover-transition;
+  margin-top: 8px;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(246, 217, 130, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @include respond(sm) {
+    padding: 14px 24px;
+    font-size: var(--font-md);
+  }
+}
+
+.statusMessage {
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+  line-height: var(--line-height-md);
+  animation: slideIn 0.3s ease-out;
+
+  @include respond(sm) {
+    padding: 12px 16px;
+    font-size: var(--font-sm);
+  }
+}
+
+.statusSuccess {
+  background: rgba(46, 213, 115, 0.15);
+  border: 1px solid rgba(46, 213, 115, 0.3);
+  color: #2ed573;
+}
+
+.statusError {
+  background: rgba(255, 107, 107, 0.15);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: #ff6b6b;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

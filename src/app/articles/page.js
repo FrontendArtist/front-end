@@ -1,5 +1,19 @@
-import { formatStrapiArticles } from '@/lib/strapiUtils';
+/**
+ * Articles Page - Main Listing Page
+ * 
+ * Data fetched via API Layer abstraction (articlesApi.js)
+ * Implements Server-Side Rendering (SSR) for optimal SEO and performance
+ * 
+ * جریان داده (Data Flow):
+ * این صفحه → getArticlesPaginated() → apiClient → Strapi
+ * فقط صفحه اول با تعداد محدود آیتم واکشی می‌شود
+ * بقیه آیتم‌ها با دکمه "بارگذاری بیشتر" از سمت کلاینت واکشی می‌شوند
+ */
+
+import ListGuard from '@/components/layout/ListGuard';
 import ArticleGrid from '@/modules/articles/ArticleGrid/ArticleGrid';
+import { getArticlesPaginated, getArticleCategories } from '@/lib/articlesApi';
+import { ARTICLES_PAGE_SIZE } from '@/lib/constants';
 import styles from './articles.module.scss';
 
 export const metadata = {
@@ -7,42 +21,56 @@ export const metadata = {
   description: 'آخرین مقالات و نوشته‌ها را مطالعه کنید.',
 };
 
-const PAGE_SIZE = 6;
+/**
+ * Articles Page Component (Server Component)
+ * 
+ * Architecture:
+ * - Uses getArticlesPaginated() برای واکشی صفحه اول با pagination
+ * - PAGE_SIZE از lib/constants.js وارد می‌شود (Single Source of Truth)
+ * - Follows Repository Pattern for clean separation of concerns
+ * - SSR renders complete HTML with initial article data
+ */
+export default async function ArticlesPage({ searchParams: spPromise }) {
+  // واکشی صفحه اول مقالات با pagination
+  // تعداد مقالات از ARTICLES_PAGE_SIZE در lib/constants.js
+  const searchParams = await spPromise;
+  const normalizedSearchParams =
+    searchParams && typeof searchParams.entries === 'function'
+      ? Object.fromEntries(searchParams.entries())
+      : searchParams || {};
 
-async function getInitialArticles() {
-  const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-  try {
-    console.log('Fetching initial articles from:', STRAPI_API_URL);
 
-    const response = await fetch(
-        `${STRAPI_API_URL}/api/articles?sort=publishedAt:desc&pagination[page]=1&pagination[pageSize]=${PAGE_SIZE}&populate=cover`
-      );
-    if (!response.ok) {
-      console.error('Failed to fetch articles:', response.status, response.statusText);
-      throw new Error('Failed to fetch initial articles');
-    }
-    const result = await response.json();
-    console.log('Received articles data:', result);
-    const formattedArticles = formatStrapiArticles(result, STRAPI_API_URL);
-    console.log('Formatted articles:', formattedArticles);
-    return formattedArticles;
-  } catch (error) {
-    console.error("Initial Articles Fetch Error:", error);
-    return [];
-  }
-}
+  // خواندن دسته‌بندی و ترتیب مرتب‌سازی از پارامترهای URL
+  const activeCategory = normalizedSearchParams.category || '';
+  const sort = normalizedSearchParams.sort || 'publishedAt:desc';
+  const hasFilters = Object.keys(normalizedSearchParams).length > 0;
 
-export default async function ArticlesPage() {
-  const initialArticles = await getInitialArticles();
+  // واکشی مقالات و دسته‌بندی‌ها به‌صورت موازی
+  const [result, categories] = await Promise.all([
+    getArticlesPaginated(1, ARTICLES_PAGE_SIZE, sort, activeCategory || null),
+    getArticleCategories()
+  ]);
+
+
+  // این خط را موقتاً اضافه کردیم و ترمینال VSCode را چک کنید
+  console.log('Categories fetched from API:', JSON.stringify(categories, null, 2));
+
+  const initialArticles = result.data;
+  const initialMeta = result.meta;
+
   return (
     <main className={styles.main}>
       <div className="container">
         <header className={styles.header}>
           <h1 className={styles.title}>مقالات</h1>
         </header>
-        <ArticleGrid initialArticles={initialArticles} />
+        <ArticleGrid
+          initialArticles={initialArticles}
+          initialMeta={initialMeta}
+          categories={categories}
+          activeSlug={activeCategory}
+        />
       </div>
     </main>
   );
 }
-

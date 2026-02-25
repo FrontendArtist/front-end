@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .faqSection {
   @include section-spacing;
@@ -41,4 +41,3 @@
     max-width: 100%;
   }
 }
-

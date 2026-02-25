@@ -1,55 +1,77 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
-.hakimElahiSection {
+.aboutSection {
   padding: 80px 0;
   background-color: var(--color-bg-primary);
+
 }
 
+
 .container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+
   gap: var(--space-gap-desktop, 48px);
-  align-items: center;
-  max-width: 1200px;
+  width: unset;
+  border-radius: 30px;
+  grid-template-columns: 1fr 1fr;
+  justify-content: space-between;
+  align-items: normal;
   margin: 0 auto;
-  padding: 0 24px;
+  display: flex;
+  overflow: visible;
 
   @include respond(md) {
     grid-template-columns: 1fr;
     gap: 32px;
   }
+
 }
 
-.contentWrapper {
+.innerWrapper {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-title-content-desktop, 56px);
-
-  @include respond(md) {
-    gap: 24px;
-    order: 1;
-  }
+  border-radius: 12px;
 }
 
 .imageWrapper {
+  border-radius: 12px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
   position: relative;
-  width: 100%;
-  height: 700px;
-  border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
+  width: 37%;
+  background: var(--color-overlay);
+
+  img {
+    width: 100%;
+    height: 100%;
+    bottom: 0;
+    left: 10px;
+  }
 
   @include respond(md) {
     height: 400px;
-    order: -1;
+    order: -1; // Move image on top on mobile
+  }
+}
+
+.contentWrapper {
+  flex-direction: column;
+  display: flex;
+  gap: 20px;
+  padding: 32px 50px 50px 50px;
+  width: 65%;
+
+  @include respond(md) {
+    gap: 24px;
   }
 }
 
 .title {
   font-size: var(--font-xl, 32px);
-  font-weight: var(--font-weight-bold, 700);
-  color: var(--color-text-primary, #F6D982);
+  color: var(--color-text-primary, #f6d982);
   margin: 0;
   line-height: 1.4;
+  font-family: 'Far Shafigh';
+  font-weight: 400;
 
   @include respond(md) {
     font-size: 24px;
@@ -57,13 +79,12 @@
 }
 
 .text {
-  font-size: 18px;
+  font-size: var(--font-md);
   line-height: 1.8;
-  color: var(--color-card-text, #FFFAEA);
+  color: var(--color-card-text);
   margin: 0;
 
   @include respond(md) {
-    font-size: 16px;
     line-height: 1.7;
   }
 }
@@ -73,9 +94,9 @@
   align-items: center;
   justify-content: center;
   padding: 16px 32px;
-  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-title-hover) 100%);
-  color: var(--color-bg-primary);
-  font-size: 16px;
+  background: linear-gradient(135deg, #F6D982 0%, #F5C452 100%);
+  color: #061818;
+  font-size: var(--font-md);
   font-weight: var(--font-weight-bold, 700);
   border-radius: 8px;
   text-decoration: none;
@@ -92,4 +113,3 @@
     padding: 14px 24px;
   }
 }
-

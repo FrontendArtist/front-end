@@ -1,6 +1,7 @@
 import ProductsSection from "@/modules/home/ProductsSection/ProductsSection";
 import styles from "./page.module.css";
 import HeroSection from "@/modules/home/HeroSection/HeroSection";
+import IntroTextSection from "@/modules/home/IntroTextSection/IntroTextSection";
 import AboutMentorSection from "@/modules/home/AboutMentorSection/AboutMentorSection";
 import CoursesSection from "@/modules/home/CoursesSection/CoursesSection";
 import HakimElahiSection from "@/modules/home/HakimElahiSection/HakimElahiSection";
@@ -9,21 +10,51 @@ import ServicesSection from "@/modules/home/ServicesSection/ServicesSection";
 import ArticlesSection from "@/modules/home/ArticlesSection/ArticlesSection";
 import FaqSection from "@/modules/home/FaqSection/FaqSection";
 import TestimonialsSection from "@/modules/home/TestimonialsSection/TestimonialsSection";
+import { headers } from "next/headers";
 
+export const revalidate = 300;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const hdrs = await headers();
+  const protocol = hdrs.get("x-forwarded-proto") || "http";
+  const host = hdrs.get("host");
+  const baseUrl = `${protocol}://${host}`;
+
+  let homeData = null;
+  try {
+    const res = await fetch(`${baseUrl}/api/home`, { next: { revalidate: 300 } });
+    if (res.ok) {
+      homeData = await res.json();
+    } else {
+      console.warn(`⚠️ /api/home responded with status ${res.status}`);
+    }
+  } catch (err) {
+    console.warn("⚠️ Failed to fetch home data (Strapi may be offline):", err.message);
+  }
+
+  const {
+    categories = [],
+    faqs = [],
+    testimonials = [],
+    products = [],
+    articles = [],
+    services = [],
+    courses = [],
+  } = homeData || {};
+
   return (
     <div className={styles.container}>
       <HeroSection />
+      <IntroTextSection />
       <AboutMentorSection />
-      <CoursesSection />
+      <CoursesSection data={courses} />
       <HakimElahiSection />
-      <ProductCategoriesSection />
-      <ProductsSection />
-      <ServicesSection />
-      <ArticlesSection />
-      <FaqSection />
-      <TestimonialsSection />
+      <ProductCategoriesSection data={categories} />
+      <ProductsSection data={products} />
+      <ServicesSection data={services} />
+      <ArticlesSection data={articles} />
+      <FaqSection data={faqs} />
+      <TestimonialsSection data={testimonials} />
     </div>
   );
 }

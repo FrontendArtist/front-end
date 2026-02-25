@@ -1,11 +1,12 @@
 // Base files that define variables, mixins, and base styles
-@import 'base/variables';
-@import 'base/mixins';
-@import 'base/typography';
-@import 'base/reset';
+@use 'base/variables' as *;
+@use 'base/mixins' as *;
+@use 'base/fonts' as *;
+@use 'base/typography' as *;
+@use 'base/reset' as *;
 
 // Global component classes
-@import 'components/cards';
-@import 'components/containers';
-@import 'components/sections';
-@import 'components/overlays'; 
+@use 'components/cards' as *;
+@use 'components/containers' as *;
+@use 'components/sections' as *;
+@use 'components/overlays' as *;

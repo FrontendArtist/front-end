@@ -1,0 +1,2398 @@
+# CHANGELOG
+
+## [Latest] - 2026-02-24
+
+### Bug Fix: Strapi Error Resilience & Logo Asset
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Resolved critical visual and stability issues by implementing soft-failure logic for Strapi connection errors and fixing asset path casing.
+
+#### Changes Made:
+1. **Home Page Error Resilience** (`src/app/page.js`)
+   - Wrapped the main data fetch in a `try...catch` block to prevent site-wide 500 crashes when the Strapi backend is unreachable.
+   - Implemented default empty array values for all sections (`categories`, `products`, `services`, etc.).
+   - This ensures the Hero and layout render correctly even if data is missing, allowing components to show their own "no items" states gracefully.
+2. **Logo Filename Case Sensitivity** (`src/modules/layout/Navbar/NavbarClient.jsx`)
+   - Fixed a 404 error where the logo was referenced as `Logo.png` (uppercase) while the file on disk was `logo.png` (lowercase).
+   - This ensures the logo displays correctly on case-sensitive hosting environments (Linux).
+
+---
+
+### Bug Fix: Environment Variable Build Safety
+**Status**: ✅ COMPLETED (100%)
+
+#### Problem:
+Encountered `TypeError: Cannot read properties of undefined (reading 'replace')` during the build process. This occurred because `process.env.NEXT_PUBLIC_STRAPI_API_URL` was being accessed without a safety check in API routes.
+
+#### Changes Made:
+- **API Route Hardening** (`src/app/api/addresses/route.js`):
+    - Added a fallback empty string to the `STRAPI_URL` definition: `(process.env.NEXT_PUBLIC_STRAPI_API_URL || '').replace('/api', '')`.
+    - This ensures the build process doesn't crash if environment variables are missing or not yet loaded.
+
+---
+
+### Architecture: Standardized Global CSS Variables
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Resolved the "Selector :root is not pure" build error by migrating CSS custom properties from SCSS files to a dedicated global CSS file. This architectural change ensures that design tokens are loaded globally without being incorrectly processed as local CSS Modules.
+
+#### Changes Made:
+
+1. **Global Variables Core** (`src/styles/variables.css`)
+   - Created a new pure CSS file dedicated to `:root` definitions.
+   - Moved all color, typography, spacing, and shadow variables here.
+   - This file is treated as "Global CSS" by Next.js, bypassing CSS Modules purity checks.
+
+2. **SCSS Variables Cleanup** (`src/styles/base/_variables.scss`)
+   - Removed the `:root` block to prevent duplicate definitions in SCSS context.
+   - Added documentation explaining the new variable management strategy.
+   - Kept the file for future SCSS-specific variables if needed.
+
+3. **Layout Integration** (`src/app/layout.js`)
+   - Imported `variables.css` as the very first styling import in the root layout.
+   - Ensures CSS variables are available to all components before any other styles are loaded.
+
+#### Benefits:
+- ✅ **Build Error Fixed**: Eliminated the "Selector :root is not pure" error in Turbopack/Webpack.
+- ✅ **Architecture**: Clear separation between design tokens (Global CSS) and component styles (CSS Modules).
+- ✅ **Reliability**: Direct CSS injection ensures variables are always available in the DOM.
+- ✅ **Maintainability**: Centralized source of truth for the entire design system.
+
+### Maintenance: Strapi API URL Safety & Build Stability
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Refactored Strapi API URL handling to prevent build-time crashes and ensured compatibility with Next.js dynamic route requirements.
+
+#### Changes Made:
+1. **Build Safety (API Proxy Routes)**
+   - Added fallbacks `|| 'http://127.0.0.1:1337'` before string manipulation (`.replace()`) on `NEXT_PUBLIC_STRAPI_API_URL`.
+   - This prevents `TypeError: Cannot read properties of undefined (reading 'replace')` during build or SSR when environment variables are unavailable.
+   - Affected: `src/app/api/profile/route.js`, `src/app/api/addresses/route.js`, `src/app/api/addresses/[id]/route.js`.
+2. **Auth Library Robustness**
+   - Applied consistent fallback logic to `STRAPI_API_URL` in `src/lib/auth.js`.
+3. **Next.js Dynamic Route Compliance**
+   - Verified that dynamic API routes await `params` before accessing IDs, adhering to Next.js requirements.
+
+#### Files Modified:
+- `src/app/api/profile/route.js`
+- `src/app/api/addresses/route.js`
+- `src/app/api/addresses/[id]/route.js`
+- `src/lib/auth.js`
+
+---
+---
+
+### Styling: Sass Refactoring & Font Build Fixes
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Resolved critical build failures related to the modern Sass module system and font asset resolution. Standardized the project to use a single, reliable font loading system.
+
+#### Changes Made:
+
+1. **Sass Module Dependencies** (`src/styles/components/`)
+   - Added explicit `@use '../base/mixins' as *;` imports to `_cards.scss`, `_containers.scss`, and `_sections.scss`.
+   - Fixed "Undefined mixin" errors where `hover-transition` and `respond` were missing during compilation.
+
+2. **Font Asset Resolution & OS Compatibility**
+   - **Case Sensitivity**: Corrected font filenames (e.g., `LALEZAR-REGULAR.TTF`) to ensure compatibility with case-sensitive Linux build environments.
+   - **Path Standardisation**: Fixed SCSS `url()` resolution by using correct relative paths for assets.
+
+3. **NextFont Cleanup** (`src/app/layout.js`)
+   - Removed redundant `localFont` configurations that were conflicting with Turbopack.
+   - Resolved "Unknown font file extension" errors caused by uppercase file extensions in `next/font`.
+   - Centralised all font loading through the global `@font-face` definitions in `src/styles/base/_fonts.scss`.
+
+### Refactor: Project-wide Sass @use Migration
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Migrated the entire styling architecture from legacy `@import` to the modern Sass `@use` module system. This resolves Sass deprecation warnings and ensures full compatibility with Next.js Turbopack.
+
+#### Changes Made:
+1. **Global Styles Refactor** (`src/styles/main.scss`):
+   - Converted the main stylesheet to use `@use` and `@forward` patterns.
+   - Base mixins and variables are now shared using `as *` to maintain global accessibility.
+2. **Project-wide Module Migration** (52 files):
+   - Replaced all instances of `@import` with `@use` in all `.module.scss` and page-level SCSS files across the project.
+   - Updated paths to use both `@/styles/` aliases and relative paths where appropriate.
+   - Verified that all `@use` declarations are at the absolute top of files to meet Sass compiler requirements.
+3. **Redundancy Cleanup**:
+   - Removed legacy imports that were causing duplicate symbol errors and "Undefined mixin" warnings during build.
+
+#### Benefits:
+- ✅ **Future-Proof**: Complies with the modern Sass module specification.
+- ✅ **Turbopack Ready**: Fixes internal Next.js build errors related to CSS evaluation.
+- ✅ **Reliability**: Ensures that mixins like `respond` and `hover-transition` are correctly scoped and available in all modules.
+
+---
+
+## [2025-12-31]
+
+### Feature: Persistent Cart Sync & Commerce Loop (Commerce Loop)
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Successfully implemented a critical part of the Commerce Loop using a Proxy architecture. The cart has been transformed from a temporary browser-based state to a persistent database-backed state, ensuring data retention across different devices and browsers.
+
+#### Changes Made:
+
+1. **Security and Proxy Layer (Next.js API Proxy)**
+   - **Route**: `src/app/api/profile/route.js`
+   - **GET**: Fetches `cartData` from Strapi alongside the user profile.
+   - **PUT**: Accepts `cartData` from the frontend and updates Strapi using the Admin Token (bypassing 401/403 restrictions on direct user updates).
+
+2. **Client Intelligence Layer (Custom Sync Hook)**
+   - **Custom Hook**: `src/hooks/useCartSync.js`
+   - **Debounce Save**: Implemented a 2-second timer to prevent server spamming; saves only after inactivity.
+   - **Auto-Hydration**: Checks on login if the local cart is empty. If so, fetches the last saved cart from the DB and injects it into the Zustand store.
+
+3. **Global Connection Layer (Global Provider)**
+   - **Provider**: `src/components/layout/CartSyncProvider.jsx`
+   - **Integration**: `src/app/layout.js`
+   - Created `CartSyncProvider` (Client Component) to execute the sync hook.
+   - Integrated into the root layout to ensure the sync process runs in the background immediately upon site entry.
+
+#### Files Created/Modified:
+- `context/CONTEXT_CartSync.md`
+- `src/app/layout.js`
+- `src/app/api/profile/route.js`
+- `src/components/layout/CartSyncProvider.jsx`
+- `src/hooks/useCartSync.js`
+
+#### Result:
+- ✅ **Cloud-Synced Cart**: User's cart is fully synced with the cloud.
+- ✅ **Cross-Device Persistence**: Add products on mobile, complete purchase on laptop.
+- ✅ **Seamless Experience**: No data loss when switching contexts.
+
+### Bug Fix: Product Card Quantity Reactivity
+**Status**: ✅ COMPLETED (100%)
+
+#### Problem:
+Clicking the `+` button on a product card after adding it to the cart did not update the displayed quantity number, even though the internal logic was executing.
+
+#### Diagnosis:
+The `useCartStore` was mutating item objects directly within the state array. React and Zustand rely on immutable updates (reference changes) to detect when to re-render components. Because the object reference didn't change, the `ProductCard` component didn't know it needed to update.
+
+#### Solution:
+Refactored `addItem` and `updateQuantity` in `src/store/useCartStore.js` to use immutable update patterns (creating shallow copies of the item objects before modifying them).
+
+#### Result:
+- ✅ **UI Updates**: Product quantity now updates immediately when clicking `+` or `-`.
+- ✅ **Code Quality**: Enforced immutable state best practices.
+
+---
+
+## [2025-12-24]
+
+### Refactor: Services Pagination Standardization
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Standardized the services pagination to display 3 services initially and load 3 more with each "Load More" action. Previously, the system had inconsistent values (2 in ServiceGrid, 6 in constants), which has been unified across all layers.
+
+#### Changes Made:
+
+1. **Constants File** (`src/lib/constants.js`)
+   - Updated `SERVICES_PAGE_SIZE` from `6` to `3`
+   - This constant is now the single source of truth for services pagination
+
+2. **ServiceGrid Component** (`src/modules/services/ServiceGrid/ServiceGrid.jsx`)
+   - Removed local `PAGE_SIZE = 2` constant
+   - Imported and used `SERVICES_PAGE_SIZE` from `@/lib/constants`
+   - Updated `hasMore` state initialization to use `SERVICES_PAGE_SIZE`
+   - Updated fetch URL to use `SERVICES_PAGE_SIZE` in pageSize parameter
+
+3. **Services Page** (`src/app/services/page.js`)
+   - Updated SSR initial fetch from `getServicesPaginated(1, 2, ...)` to `getServicesPaginated(1, 3, ...)`
+   - Ensures initial server-side render shows exactly 3 services
+
+4. **Services API Route** (`src/app/api/services/route.js`)
+   - Updated default pageSize from `'6'` to `'3'`
+   - Ensures consistency when pageSize is not explicitly provided
+
+#### Technical Details:
+```javascript
+// Before:
+const PAGE_SIZE = 2; // Local constant in ServiceGrid
+export const SERVICES_PAGE_SIZE = 6; // Unused in constants
+
+// After:
+export const SERVICES_PAGE_SIZE = 3; // Single source of truth
+import { SERVICES_PAGE_SIZE } from '@/lib/constants'; // Used everywhere
+```
+
+#### Benefits:
+- ✅ **Consistency**: All layers (SSR, Client, API) use the same page size
+- ✅ **Maintainability**: Single constant to change pagination behavior
+- ✅ **Performance**: Optimized initial load with 3 items instead of 2 or 6
+- ✅ **User Experience**: Balanced between initial load speed and content visibility
+- ✅ **Architecture**: Follows DRY principle with centralized constants
+
+---
+
+## [2025-12-24]
+
+### Refactor: HakimElahiSection Standardization
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Refactored the `HakimElahiSection` component to match the exact structure and styling of `AboutMentorSection`, ensuring visual consistency across home page sections. This standardization improves maintainability and provides a unified design language.
+
+#### Changes Made:
+
+1. **HakimElahiSection Component** (`src/modules/home/HakimElahiSection/HakimElahiSection.jsx`)
+   - Added `GradientBorderCard` wrapper with `gradient="horizontal"`, `enableHover={false}`, `variant="aboutMentor"`
+   - Changed section class from `hakimElahiSection` to `aboutSection` (matching AboutMentor)
+   - Added section `id="hakim-elahi"` for anchor navigation
+   - Reordered layout: contentWrapper (left) → imageWrapper (right)
+   - Replaced Next.js `<Image>` component with regular `<img>` tag
+   - Removed CTA button to match AboutMentor structure
+   - Applied flex layout wrapper for content positioning
+
+2. **HakimElahiSection Styles** (`src/modules/home/HakimElahiSection/HakimElahiSection.module.scss`)
+   - Changed class name from `.hakimElahiSection` to `.aboutSection`
+   - Updated `.container` from CSS Grid to Flexbox layout
+   - Set width percentages: contentWrapper (65%), imageWrapper (37%)
+   - Added `var(--color-overlay)` background to imageWrapper
+   - Positioned image absolutely at bottom with `left: 10px`
+   - Updated title font to `'Far Shafigh'` with `font-weight: 400`
+   - Applied consistent padding: `32px 50px 50px 50px` to contentWrapper
+   - Updated button gradient: `linear-gradient(135deg, #F6D982 0%, #F5C452 100%)`
+   - Maintained responsive breakpoints for mobile layout
+
+#### Technical Details:
+```jsx
+<GradientBorderCard gradient="horizontal" enableHover={false} variant="aboutMentor">
+  <div style={{ display: 'flex' }}>
+    <div className={styles.contentWrapper}>
+      {/* Content */}
+    </div>
+    <div className={styles.imageWrapper}>
+      <img src="/images/hakimelahi.png" alt="hakimElahiImage" />
+    </div>
+  </div>
+</GradientBorderCard>
+```
+
+#### Benefits:
+- ✅ **Visual Consistency**: Identical structure to AboutMentorSection
+- ✅ **Maintainability**: Shared styling patterns reduce code duplication
+- ✅ **Design System**: Follows established component architecture
+- ✅ **Responsive**: Consistent mobile behavior across sections
+- ✅ **RTL Support**: Proper right-to-left layout handling
+
+---
+
+## [2025-12-24]
+
+### Feature: BaseSlider Conditional Navigation
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Enhanced the `BaseSlider` component to intelligently show/hide navigation buttons based on whether the slider actually needs scrolling. Previously, navigation buttons were always visible even when the number of items was less than the viewport capacity, creating unnecessary UI clutter.
+
+#### Changes Made:
+
+1. **BaseSlider Component** (`src/components/layout/BaseSlider/BaseSlider.jsx`)
+   - Added `showNavigation` state to track if navigation is needed
+   - Implemented logic to check if `slides.length > slidesPerView`
+   - Navigation buttons now conditionally hidden via CSS class instead of conditional rendering
+   - Added `onInit` event handler to check navigation needs on slider initialization
+   - Added `onResize` event handler to update navigation visibility on window resize
+   - Ensures refs remain in DOM for Swiper to properly bind navigation
+
+2. **BaseSlider Styles** (`src/components/layout/BaseSlider/BaseSlider.module.scss`)
+   - Added `.hidden` class for navigation buttons:
+     * `opacity: 0`
+     * `pointer-events: none`
+     * `visibility: hidden`
+   - Buttons remain in DOM but are visually and functionally hidden when not needed
+
+#### Technical Details:
+```javascript
+// Check if navigation is needed
+const needsNavigation = swiper.slides.length > swiper.params.slidesPerView;
+setShowNavigation(needsNavigation);
+
+// Apply hidden class conditionally
+className={`${styles.navBtn} ${styles.prev} ${!showNavigation ? styles.hidden : ''}`}
+```
+
+#### Benefits:
+- ✅ **Smart UI**: Navigation buttons only appear when actually needed
+- ✅ **Responsive**: Works correctly across all breakpoints (mobile, tablet, desktop)
+- ✅ **Clean Design**: Eliminates visual clutter on sliders with few items
+- ✅ **Functional**: Buttons remain in DOM so Swiper refs work properly
+- ✅ **Dynamic**: Updates on window resize to handle responsive slidesPerView changes
+
+---
+
+## [2025-12-24]
+
+### Feature: Reusable Gradient Border Card Component
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Created a highly reusable `GradientBorderCard` component implementing a premium three-layer gradient border technique. Applied this component across all card types (ProductCard, ArticleCard, CourseCard, ServiceCard) and implemented comprehensive DRY improvements to card styling using SCSS mixins.
+
+#### Changes Made:
+
+1. **GradientBorderCard Component** (`src/components/ui/GradientBorderCard/`)
+   - Three-layer architecture: gradient border wrapper → background layer → content
+   - Flexible wrapper component support (div, Link, or any React component)
+   - Multiple gradient directions:
+     * `vertical`: Border fades from top to bottom
+     * `horizontal`: Border fades from left to right (LTR)
+     * `horizontal-rtl`: Border fades from right to left (RTL)
+   - Customizable props: gradient direction, hover effects, CSS classes
+   - 2px border thickness with smooth hover animations
+   - Lift effect on hover (translateY -5px)
+   - Image scale effect on hover (1.05)
+
+2. **Card Components Refactoring**
+   - **ProductCard**: Wrapped with GradientBorderCard, vertical gradient
+   - **ArticleCard**: Wrapped with GradientBorderCard, vertical gradient
+   - **CourseCard**: Wrapped with GradientBorderCard, vertical gradient
+   - **ServiceCard**: Wrapped with GradientBorderCard, vertical gradient
+   - All cards now share consistent gradient border styling
+
+3. **DRY SCSS Improvements** (`src/styles/base/_mixins.scss`)
+   - Created reusable mixins for common card patterns:
+     * `@mixin base-card`: Base card structure with hover effects
+     * `@mixin card-image-wrapper`: Responsive aspect ratios (16/10, 4/3, 16/9)
+     * `@mixin card-image`: Image styling with transitions
+     * `@mixin card-content`: Content padding and layout
+     * `@mixin card-title`: Typography for card titles
+     * `@mixin card-text-truncate($lines)`: Multi-line text truncation
+   
+4. **Card SCSS Cleanup**
+   - **ArticleCard.module.scss**: Reduced from 110 lines to 46 lines (58% reduction)
+   - **ServiceCard.module.scss**: Reduced from 166 lines to 73 lines (56% reduction)
+   - **CourseCard.module.scss**: Reduced from 210 lines to 157 lines (25% reduction)
+   - **ProductCard.module.scss**: Reduced from 196 lines to 142 lines (28% reduction)
+   - All cards now use shared mixins while maintaining unique features
+
+5. **Horizontal Gradient Support**
+   - Border gradient classes for all directions:
+     * `.borderVertical`: top to bottom
+     * `.borderHorizontal`: left to right (LTR)
+     * `.borderHorizontalRtl`: right to left (RTL)
+   - Dynamic class application based on gradient prop
+   - Used in AboutMentorSection with horizontal LTR gradient
+
+#### Technical Details:
+```jsx
+// Example Usage
+<GradientBorderCard 
+  gradient="horizontal"
+  as={Link}
+  wrapperProps={{ href: '/path' }}
+  enableHover={true}
+>
+  {children}
+</GradientBorderCard>
+```
+
+#### Benefits:
+- ✅ **Reusability**: Single component for all gradient border needs
+- ✅ **Consistency**: All cards use identical border technique
+- ✅ **DRY Compliance**: Eliminated 300+ lines of duplicate SCSS code
+- ✅ **Flexibility**: Support for vertical and horizontal gradients
+- ✅ **Maintainability**: Style updates in one place affect all cards
+- ✅ **Performance**: No visual regressions, smooth animations
+- ✅ **RTL Support**: Full support for RTL layouts
+
+---
+
+### Enhancement: Unified CategoryCard Styling (DRY Principle)
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Migrated the premium glassmorphism category card styles from the products page to the shared CategoryCard component, ensuring visual consistency across homepage and products page while following DRY principles.
+
+#### Changes Made:
+
+1. **CategoryCard Component Styling** (`src/components/cards/CategoryCard/CategoryCard.module.scss`)
+   - Applied enhanced glassmorphism effects matching products page design
+   - Added backdrop blur (12px) for premium glass effect
+   - Implemented gradient overlay animation on hover
+   - Enhanced border styling with golden accent colors
+   - Added smooth cubic-bezier transitions for natural animations
+   - Icon wrapper now scales and rotates on hover (scale 1.1 + rotate 3deg)
+   - Added text glow effect with golden shadow on hover
+   - Improved shadow system with multi-layer depth
+   - Added responsive adjustments for mobile devices
+   - Maintained RTL support and accessibility features
+
+#### Benefits:
+- ✅ **Consistency**: Homepage and products page now share identical category card styling
+- ✅ **DRY Compliance**: Single source of truth for category card design
+- ✅ **Premium UX**: Enhanced visual appeal with glassmorphism and smooth animations
+- ✅ **Maintainability**: Future style updates only need to be made in one place
+
+---
+
+### Feature: Multi-Step Checkout Wizard with Inline Authentication
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Implemented a complete 4-step checkout wizard with visual progress tracking, inline OTP authentication, inline address editing, and payment method selection. This replaces the previous single-page checkout with a guided, user-friendly flow.
+
+#### Changes Made:
+
+1. **CheckoutStepper Component** (`src/components/checkout/CheckoutStepper.jsx` + `.module.scss`)
+   - Visual stepper with 4 steps: Cart Review → Authentication → Shipping → Payment
+   - Three distinct states:
+     * **Active**: Accent color with pulsing glow animation
+     * **Completed**: Green with checkmark icon
+     * **Pending**: Gray/disabled state
+   - Clickable completed steps for backward navigation
+   - Custom icons for each step (cart, user, location, payment)
+   - Fully responsive (horizontal on desktop, compact on mobile)
+   - RTL support with proper directional transforms
+
+2. **CartReviewStep Component** (`src/components/checkout/CartReviewStep.jsx` + `.module.scss`)
+   - Displays all cart items with images, titles, quantities, and prices
+   - Shows item type badges (محصول / دوره آموزشی)
+   - Summary box with item count and total price calculation
+   - Continue button to proceed to authentication
+   - Glassmorphism card design matching site aesthetic
+
+3. **AuthStep Component** (`src/components/checkout/AuthStep.jsx` + `.module.scss`)
+   - **Smart Authentication Flow**:
+     * If already logged in: Shows success message → auto-advances to next step (1.5s delay)
+     * If not logged in: Displays inline OTP form (no modal popup)
+   - **OTP Flow**:
+     * Phone number input → Send OTP code
+     * OTP verification (6 digits)
+     * Success → auto-advance to shipping step
+   - Reuses auth logic from AuthModal but integrated inline
+   - Loading state during session check
+   - Success animation with green checkmark on login
+
+4. **ShippingStep Component** (`src/components/checkout/ShippingStep.jsx` + `.module.scss`)
+   - **Display Mode**: Shows current address in card format
+     * Recipient name, phone
+     * City, province
+     * Full address, postal code
+     * Edit button to toggle edit mode
+   - **Edit Mode**: Inline form with 6 fields
+     * Recipient name (required)
+     * Recipient phone
+     * Province, City
+     * Full address (required)
+     * Postal code
+     * Save button updates profile via `/api/addresses`
+     * Cancel button returns to display mode
+   - Fetches address from `/api/profile` on mount
+   - Validation before allowing continue
+   - Previous/Next navigation buttons
+   - **No redirect to profile page** - all editing happens inline
+
+5. **PaymentStep Component** (`src/components/checkout/PaymentStep.jsx` + `.module.scss`)
+   - Order summary showing all items and total
+   - Payment method selection:
+     * ✅ Online payment (enabled)
+     * ❌ Cash on delivery (disabled/grayed out)
+   - Selected method highlighted with accent color
+   - Green "Complete Payment" button
+   - Mock payment processing (2s delay)
+   - Redirects to `/payment/callback?status=success`
+   - Previous button to go back to shipping
+
+6. **Main Checkout Page Refactor** (`src/app/checkout/page.jsx` + `page.module.scss`)
+   - **Complete rewrite** from single-page to multi-step wizard
+   - **State Management**:
+     * `currentStep` - tracks active step (1-4)
+     * `completedSteps` - array of completed step numbers
+   - **Navigation Logic**:
+     * `goToNextStep()` - marks current as completed, moves forward
+     * `goToPreviousStep()` - returns to previous step
+     * `goToStep(n)` - jump to completed step via stepper click
+   - **Empty Cart Handling**: Shows empty state with link to products
+   - **Conditional Rendering**: Renders appropriate step component based on currentStep
+   - Clean, centered layout with stepper at top
+
+7. **Cart Page Integration** (`src/app/cart/page.jsx`)
+   - **Simplified checkout button**: Removed auth check logic
+   - Changed from auth-checking button to simple `<Link href="/checkout">`
+   - **Before**: Opens AuthModal if not logged in
+   - **After**: Always navigates to `/checkout`
+   - Authentication now handled in step 2 of checkout flow
+
+8. **Cart Badge Reactivity Fix** (`src/components/cards/ProductCard/ProductCard.jsx` + `CourseCard.jsx`)
+   - **Problem**: After payment, cart cleared but "در سبد" badges remained on product cards
+   - **Solution**: Changed from reading entire `items` array to using Zustand selector
+   - **Before**: `const items = useCartStore(state => state.items); const isInCart = items.some(...)`
+   - **After**: `const isInCart = useCartStore(state => state.items.some(...)) && isHydrated`
+   - Ensures badges update immediately when `clearCart()` is called
+
+#### User Flow:
+
+**Scenario 1: User Already Logged In**
+```
+Cart Page → Click "ادامه فرآیند خرید"
+  ↓
+Step 1: Review cart items → Click "ادامه"
+  ↓
+Step 2: See "شما وارد شده‌اید" → Auto-advance (1.5s)
+  ↓
+Step 3: View address → Click "ادامه" (or edit if needed)
+  ↓
+Step 4: Select payment method → Click "پرداخت و تکمیل خرید"
+  ↓
+Redirect to payment gateway
+```
+
+**Scenario 2: User Not Logged In**
+```
+Cart Page → Click "ادامه فرآیند خرید"
+  ↓
+Step 1: Review cart items → Click "ادامه"
+  ↓
+Step 2: Enter phone → Receive OTP → Enter code → Login
+  ↓
+Auto-advance to Step 3
+  ↓
+Step 3: Enter address (first time) or view → Click "ادامه"
+  ↓
+Step 4: Select payment method → Complete payment
+```
+
+**Scenario 3: Editing Address**
+```
+Navigate to Step 3 → Click "ویرایش آدرس"
+  ↓
+Form appears inline with current values
+  ↓
+Modify fields → Click "ذخیره آدرس"
+  ↓
+Address updated via API → Form closes
+  ↓
+Shows updated address → Click "ادامه"
+```
+
+#### Technical Features:
+
+- **Stepper Navigation**: Visual progress indicator with click-to-navigate for completed steps
+- **Inline Authentication**: No modal popups, OTP flow integrated in checkout
+- **Inline Address Editing**: No redirect to profile page, edit and save within checkout
+- **Responsive Design**: Mobile-optimized stepper, stacked layouts on mobile
+- **RTL Support**: All components support right-to-left direction
+- **Empty State Handling**: Cart empty → message + link to products
+- **Glassmorphism Design**: Consistent with site aesthetic
+- **Mock Payment Logic**: Heavily commented for future Zarinpal integration
+
+#### Mock Logic Comments:
+All mock payment logic includes detailed Persian comments for future Zarinpal integration:
+```javascript
+/**
+ * 🚨 MOCK PAYMENT LOGIC
+ * این تابع فعلاً پرداخت را شبیه‌سازی می‌کند
+ * 
+ * برای اتصال به Zarinpal:
+ * 1. این تابع را با فراخوانی API Zarinpal جایگزین کنید
+ * 2. دریافت Authority و ریدارکت به درگاه Zarinpal
+ * 3. تنظیم CallbackURL به /payment/callback
+ */
+```
+
+#### Files Created:
+- `src/components/checkout/CheckoutStepper.jsx` + `.module.scss`
+- `src/components/checkout/CartReviewStep.jsx` + `.module.scss`
+- `src/components/checkout/AuthStep.jsx` + `.module.scss`
+- `src/components/checkout/ShippingStep.jsx` + `.module.scss`
+- `src/components/checkout/PaymentStep.jsx` + `.module.scss`
+
+**Total**: 10 new files (5 components + 5 SCSS modules)
+
+#### Files Modified:
+- `src/app/checkout/page.jsx` - Complete refactor to multi-step wizard
+- `src/app/checkout/page.module.scss` - Simplified layout for stepper
+- `src/app/cart/page.jsx` - Simplified checkout button (removed auth check)
+- `src/components/cards/ProductCard/ProductCard.jsx` - Fixed cart badge reactivity
+- `src/components/cards/CourseCard/CourseCard.jsx` - Fixed cart badge reactivity
+
+**Total**: 5 files modified
+
+#### Impact:
+- **Better UX**: Guided checkout flow with clear progress indication
+- **Reduced Friction**: Inline authentication and address editing (no page redirects)
+- **Visual Feedback**: Stepper shows progress and allows backward navigation
+- **Mobile Optimized**: Responsive design works seamlessly on all devices
+- **Maintainable**: Modular components, clear separation of concerns
+- **Future-Ready**: Mock payment logic well-documented for Zarinpal integration
+
+**Total Lines of Code**: ~2,500 lines added/modified across 15 files
+
+---
+
+## [Previous] - 2025-12-17
+
+### Fix: Product URL Redirects in Cart & Cart Dropdown
+**Status**: ✅ COMPLETED (100%)
+
+#### Problem:
+Product links in the cart page and cart dropdown were using simplified URLs (`/product/{slug}`) that triggered permanent redirects to the correct category-based URLs (`/products/{category}/{subcategory}/{slug}`). This caused:
+- Poor user experience with extra page loads
+- SEO impact from redirect chains
+- Inconsistency with product links on homepage and products page
+
+#### Solution:
+Implemented category-aware URL construction across the entire cart system by:
+1. Storing category metadata when adding products to cart
+2. Building proper URLs using stored category information
+3. Fallback to legacy URLs for backward compatibility
+
+#### Changes Made:
+
+1. **ProductCard Component** (`src/components/cards/ProductCard/ProductCard.jsx`)
+   - Modified `handleAddToCart()` to extract `categorySlug` and `subcategorySlug` from product's categories array.
+   - Added category data to the `productToAdd` object sent to cart store.
+   - Uses same logic as `constructProductUrl()` to determine primary category/subcategory.
+
+2. **Cart Page** (`src/app/cart/page.jsx`)
+   - Added `constructProductUrl()` helper function to build category-based URLs.
+   - Updated product image link (line 136) to use helper function.
+   - Updated product info link (line 147) to use helper function.
+   - Fallback to `/product/{slug}` if category data missing (backward compatibility).
+
+3. **Cart Dropdown** (`src/components/layout/Navbar/CartIcon.jsx`)
+   - Added `constructItemUrl()` helper function for both products and courses.
+   - Updated cart item links (line 207) to use helper function.
+   - Product URLs now include full category paths.
+   - Course URLs remain simple (`/courses/{slug}`).
+
+#### Technical Details:
+- **Category Priority**: Subcategory (with parent) → Root category → Fallback
+- **Data Flow**: ProductCard → Cart Store → Cart Page/Dropdown
+- **Backward Compatibility**: Existing cart items without category data still work
+- **Consistency**: All cart interfaces now match homepage/products page URL structure
+
+#### Result:
+✅ No more redirects when clicking products in cart
+✅ Direct navigation to correct product detail pages
+✅ Improved page load performance
+✅ Better SEO with canonical URLs from the start
+✅ Consistent URL structure across entire application
+
+#### Files Modified:
+- `src/components/cards/ProductCard/ProductCard.jsx` (+19 lines in handleAddToCart)
+- `src/app/cart/page.jsx` (+23 lines helper function, 2 lines link updates)
+- `src/components/layout/Navbar/CartIcon.jsx` (+34 lines helper function, 1 line link update)
+
+**Total**: 3 files, ~79 lines added/modified.
+
+---
+
+### Feature: Complete Shopping Cart System Implementation (Previous Entry)
+
+### Feature: Complete Shopping Cart System Implementation
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+
+1. **Cart Store Refactoring** (`src/store/useCartStore.js`)
+   - Converted `totalPrice` and `itemsCount` from getters to selector functions for proper Zustand reactivity.
+   - Exported `selectTotalPrice` and `selectItemsCount` selector functions.
+   - Ensures components re-render correctly when cart state changes.
+
+2. **Cart Icon Component** (`src/components/layout/Navbar/CartIcon.jsx`)
+   - **Hydration Safety**: Implemented `mounted` state pattern to prevent SSR/client HTML mismatch.
+   - **Mobile Behavior**: Click toggles dropdown on mobile (<1024px), navigates to `/cart` on desktop.
+   - **Badge Styling**: Matched UserStatus design with circular border and bottom-left badge position.
+   - **Hover Effects**: Desktop-only hover to show dropdown preview.
+   - **URL Construction**: Added `constructItemUrl()` to build correct product URLs with category paths.
+
+3. **Cart Icon Styling** (`src/components/layout/Navbar/CartIcon.module.scss`)
+   - Circular wrapper: 40px × 40px with glassmorphism background.
+   - Badge positioned at `bottom: -2px, left: -2px` (matching UserStatus).
+   - Icon size: 22px × 22px.
+   - Border: `2px solid rgba(246, 217, 130, 0.3)`.
+
+4. **Product & Course Cards Hydration Fix**
+   - **ProductCard** (`src/components/cards/ProductCard/ProductCard.jsx`):
+     * Added `isHydrated` state pattern.
+     * Shows "Add to Cart" button before hydration, actual state after.
+     * Added category/subcategory slugs to cart items for proper URL construction.
+   - **CourseCard** (`src/components/cards/CourseCard/CourseCard.jsx`):
+     * Same `isHydrated` pattern.
+     * Prevents disabled button from showing before client hydration.
+   - Heavily commented in Persian explaining hydration logic.
+
+5. **Cart Page** (`src/app/cart/page.jsx` & `Cart.module.scss`)
+   - **Empty State**: Icon + message + "بازگشت به فروشگاه" button.
+   - **Product Section**: Image, title, price, quantity controller `[−] [qty] [+]`, remove button.
+   - **Course Section**: Image, title, price, label "دوره آموزشی", remove button (no quantity).
+   - **Sidebar**: Sticky summary with total price and "ادامه فرآیند خرید" button.
+   - **Clickable Items**: Image and info are `<Link>` components to product/course detail pages.
+   - **URL Construction**: `constructProductUrl()` builds correct URLs using category data.
+   - **Responsive**: Two-column grid on desktop, stacked on mobile.
+   - **Glassmorphism**: All cards with vertical gradient and hover effects.
+
+6. **Cart Dropdown** (`src/components/layout/Navbar/CartIcon.jsx`)
+   - Shows first 5 items with image, title, quantity/type, price.
+   - Total price display.
+   - "مشاهده و تسویه حساب" button linking to `/cart`.
+   - Uses `constructItemUrl()` for proper product navigation.
+
+#### Technical Improvements:
+- **No Hydration Errors**: Server and client HTML match perfectly.
+- **Proper Reactivity**: Zustand selectors ensure UI updates when cart changes.
+- **LocalStorage Persistence**: Cart data persists across sessions.
+- **Category-Aware URLs**: Products navigate to correct category paths.
+- **RTL Compliant**: All layouts support right-to-left direction.
+
+#### User Flow:
+```
+Add Item to Cart → Badge Updates
+  ↓
+Mobile: Click Cart Icon → Dropdown Toggle
+Desktop: Hover Cart Icon → Dropdown Preview
+  ↓
+Click Item in Dropdown/Cart → Navigate to Detail Page
+  ↓
+Cart Page: Manage Quantities → Remove Items → Checkout
+```
+
+#### Files Modified:
+- `src/store/useCartStore.js` (selector functions)
+- `src/components/layout/Navbar/CartIcon.jsx` (hydration + mobile behavior + URL construction)
+- `src/components/layout/Navbar/CartIcon.module.scss` (UserStatus-matched styling)
+- `src/components/cards/ProductCard/ProductCard.jsx` (hydration + category data)
+- `src/components/cards/CourseCard/CourseCard.jsx` (hydration)
+- `src/app/cart/page.jsx` (new cart page)
+- `src/app/cart/Cart.module.scss` (new cart styles)
+
+**Total**: 7 files (2 new), ~800 lines of code added/modified.
+
+---
+
+## [Previous] - 2025-12-16
+
+### Enhancement: Navbar Mobile Layout Restructure
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Navbar Component** (`src/modules/layout/Navbar/NavbarClient.jsx`)
+   - Separated `actionIcons` from `mobileMenuToggle` as independent elements.
+   - Added `toggleWrapper` container for mobile menu button.
+   - Structure: `[Toggle Button] [Logo] [Profile + Cart Icons]`
+
+2. **Navbar Styles** (`src/modules/layout/Navbar/Navbar.module.scss`)
+   - Implemented flexbox `order` for mobile layout control:
+     * `toggleWrapper` → order: 1 (right side)
+     * `logo` → order: 2 (center)
+     * `actionIcons` → order: 3 (left side)
+   - Added fixed widths (100px) for `toggleWrapper` and `actionIcons` in mobile.
+   - Search icon hidden in mobile using `!important` specificity.
+   - Removed `.actionsContainer` wrapper (no longer needed).
+
+3. **UserStatus Dropdown** (`src/components/layout/Navbar/UserStatus.module.scss`)
+   - Fixed RTL dropdown positioning for mobile view.
+   - Removed unnecessary size overrides for mobile.
+
+#### Mobile Layout:
+```
+[☰ Menu] ---------- [Logo] ---------- [👤 Profile] [🛒 Cart]
+```
+
+#### Impact:
+- **Better Mobile UX**: Action icons now balanced on both sides of logo.
+- **Cleaner Layout**: 100px fixed widths ensure consistent spacing.
+- **RTL Compliant**: All elements properly positioned in right-to-left layout.
+
+**Files Modified**: 3 files (~30 lines of code changed).
+
+---
+
+## [Previous] - 2025-12-16
+
+### Enhancement: Profile Form - Address Refactoring & Edit Mode
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+
+1. **Address Management Refactoring** (`src/components/profile/ProfileForm.jsx`)
+   - Replaced single `address` field with 7 individual address fields:
+     * `fullAddress` - Full detailed address (textarea)
+     * `province` - Province/state
+     * `city` - City
+     * `postalCode` - 10-digit postal code
+     * `recipientName` - Recipient full name
+     * `recipientPhone` - Recipient phone number
+   - Updated `useState` to include all 7 fields in component state.
+   - Modified `useEffect` (fetchUserData) to populate all 7 fields from Strapi response.
+   - Updated `handleSubmit` to send all 7 fields instead of hardcoded placeholders.
+   - Replaced single address textarea with structured UI:
+     * Section header "اطلاعات آدرس و گیرنده"
+     * Full address textarea with detailed placeholder
+     * Two-column grid layout for province/city
+     * Two-column grid layout for postal code/recipient name
+     * Recipient phone input field
+
+2. **Edit Mode Feature** (`src/components/profile/ProfileForm.jsx`)
+   - Added `isEditing` state to control form edit mode.
+   - Implemented "ویرایش" (Edit) button in form header (top-left position).
+   - All input fields now disabled by default until edit mode is activated.
+   - Added action button group with:
+     * "انصراف" (Cancel) button - exits edit mode without saving
+     * "ذخیره تغییرات" (Save Changes) button - submits form and exits edit mode
+   - Auto-exit edit mode after successful save.
+   - Phone number field remains permanently disabled (as designed).
+
+3. **Styling Updates** (`src/components/profile/ProfileForm.module.scss`)
+   - Added `.editButton` styles with glassmorphism effect and hover animations.
+   - Updated `.header` to flexbox layout for button placement.
+   - Added `.buttonGroup` for action buttons with RTL direction.
+   - Added `.cancelButton` styles matching glassmorphism theme.
+   - Updated `.submitButton` to work in flex layout (changed from `width: 100%` to `flex: 1`).
+   - Added `.addressSection` and `.addressTitle` styles for grouped address fields.
+   - Responsive adjustments for mobile devices (stacked layout).
+
+4. **API Route Fixes**
+   - **Address Update Route** (`src/app/api/addresses/[id]/route.js`):
+     * Fixed Next.js 15 async params error by awaiting `params` before accessing `id`.
+     * Error: "Route used `params.id` before awaiting params" → RESOLVED.
+   
+   - **Strapi V5 Compatibility** (`src/components/profile/ProfileForm.jsx`):
+     * Migrated from `addressId` to `addressDocumentId` throughout component.
+     * Changed state field name: `addressId` → `addressDocumentId`
+     * Updated data fetching to use `data.address?.documentId` instead of `data.address?.id`
+     * Updated address update logic to use `documentId` parameter
+     * Fixed new address creation to save `documentId` instead of `id`
+     * Resolves 404 errors when updating addresses in Strapi V5.
+
+5. **Debug Logging** (`src/app/api/profile/route.js`)
+   - Added console.log to track user data structure returned from Strapi.
+   - Helps diagnose field population issues in profile form.
+
+#### User Flow:
+```
+View Profile (Read-Only) 
+  ↓
+Click "ویرایش" Button
+  ↓
+All Fields Enabled (except phoneNumber)
+  ↓
+User Edits Data
+  ↓
+Click "ذخیره" → Save & Exit Edit Mode
+  OR
+Click "انصراف" → Discard & Exit Edit Mode
+```
+
+#### Address Data Structure:
+**Before (Single Field)**:
+- `address` (textarea) → with hardcoded defaults for missing fields
+
+**After (7 Individual Fields)**:
+- `fullAddress` (textarea)
+- `province` (text input)
+- `city` (text input)  
+- `postalCode` (text input, LTR)
+- `recipientName` (text input)
+- `recipientPhone` (tel input, LTR)
+- `addressDocumentId` (internal state for Strapi V5)
+
+#### Impact:
+- **Better Data Quality**: Users now provide complete address information instead of single text field.
+- **Improved UX**: Edit mode prevents accidental changes with clear save/cancel actions.
+- **Strapi V5 Compatible**: All address operations use `documentId` instead of deprecated `id` field.
+- **Visual Hierarchy**: Grouped address fields in dedicated section with clear labeling.
+- **Mobile Responsive**: Two-column layout on desktop, single column on mobile.
+- **API Stability**: Fixed Next.js 15 async params requirement.
+
+#### Files Modified:
+- `src/components/profile/ProfileForm.jsx` (major refactor)
+- `src/components/profile/ProfileForm.module.scss` (new styles added)
+- `src/app/api/addresses/[id]/route.js` (async params fix)
+- `src/app/api/profile/route.js` (debug logging)
+
+**Total**: 4 files modified, ~200 lines of code changed.
+
+---
+
+## [Previous] - 2025-12-16
+
+### Feature: Profile Dashboard & Address Management System
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+
+1. **Protected Profile Layout** (`src/app/profile/layout.js`)
+   - Implemented authentication-protected route using NextAuth `useSession`.
+   - Auto-redirect to home page for unauthenticated users.
+   - Responsive grid layout: 25% sidebar + 75% content (desktop).
+   - Mobile-first design with single column on mobile devices.
+   - Loading state during authentication check.
+
+2. **Profile Sidebar Component** (`src/components/profile/ProfileSidebar.jsx`)
+   - User summary section with avatar and phone number display.
+   - Navigation links with active state highlighting:
+     * "اطلاعات حساب" → `/profile`
+     * "سفارش‌های من" → `/profile/orders`
+   - Logout button with `signOut()` integration.
+   - Glassmorphism design matching AuthModal aesthetic.
+   - Sticky positioning on desktop, static on mobile.
+   - RTL support with directional transforms.
+
+3. **Profile Form Component** (`src/components/profile/ProfileForm.jsx`)
+   - Dual-fetch logic for User and Address data:
+     * Step 1: Update user (firstName, lastName) via `/api/profile`.
+     * Step 2: Create/update address via `/api/addresses`.
+   - State management with `addressId` tracking for updates.
+   - Form fields: firstName, lastName, phoneNumber (disabled), address.
+   - Success/error notifications with auto-dismiss.
+   - Loading states during fetch and save operations.
+
+4. **Profile API Routes**:
+   - **GET `/api/profile`** (`src/app/api/profile/route.js`):
+     * Fetches user data with `populate=address` from Strapi.
+     * Server-side authentication using `getServerSession`.
+     * Uses `STRAPI_ADMIN_TOKEN` for authorization.
+   
+   - **PUT `/api/profile`** (`src/app/api/profile/route.js`):
+     * Updates user firstName and lastName.
+     * Server-side session validation.
+   
+   - **POST `/api/addresses`** (`src/app/api/addresses/route.js`):
+     * Creates new address record in Strapi.
+     * Links address to user via relation.
+     * Handles all 7 address fields (title, fullAddress, province, city, postalCode, recipientName, recipientPhone).
+   
+   - **PUT `/api/addresses/[id]`** (`src/app/api/addresses/[id]/route.js`):
+     * Updates existing address by ID.
+     * Dynamic route with address ID parameter.
+
+5. **Profile Page** (`src/app/profile/page.js`)
+   - Main profile page rendering ProfileForm.
+   - SEO metadata (title, description).
+
+6. **Orders Placeholder** (`src/app/profile/orders/page.js`)
+   - Placeholder page for future orders feature.
+   - Glassmorphism card with floating icon animation.
+   - Consistent styling with profile page.
+
+7. **Styling** (`src/app/profile/profile.module.scss`, `src/components/profile/*.module.scss`)
+   - Glassmorphism design pattern:
+     * `backdrop-filter: blur(20px)`
+     * Golden borders: `rgba(246, 217, 130, 0.2)`
+     * Gradient backgrounds: `var(--gradient-card-vertical)`
+   - Responsive breakpoints for mobile/tablet/desktop.
+   - RTL support throughout.
+   - Hover effects and smooth transitions.
+
+8. **Root Layout Fix** (`src/app/layout.js`)
+   - Added `suppressHydrationWarning` to `<html>` tag.
+   - Fixes hydration mismatch warnings from browser extensions.
+
+#### Address Management Flow:
+```
+User Submit → PUT /api/profile (User data)
+           → Check addressId exists?
+           → YES: PUT /api/addresses/[id] (Update)
+           → NO:  POST /api/addresses (Create + Link to User)
+           → Update local state with addressId
+           → Show success message
+```
+
+#### Data Structure:
+**User Fields**: firstName, lastName, phoneNumber (read-only)
+**Address Fields**: title, fullAddress, province, city, postalCode, recipientName, recipientPhone
+
+#### Impact:
+- **User Experience**: Complete profile management with address handling.
+- **Authentication**: Protected routes ensure only logged-in users access profile.
+- **Data Integrity**: Separate User and Address models in Strapi.
+- **Lazy Registration**: Users can complete profile after OTP login.
+- **Scalability**: Address system ready for multiple addresses per user.
+- **Design Consistency**: Glassmorphism aesthetic matches AuthModal.
+
+#### Files Created:
+- `src/app/profile/layout.js`
+- `src/app/profile/page.js`
+- `src/app/profile/profile.module.scss`
+- `src/app/profile/orders/page.js`
+- `src/app/profile/orders/orders.module.scss`
+- `src/components/profile/ProfileSidebar.jsx`
+- `src/components/profile/ProfileSidebar.module.scss`
+- `src/components/profile/ProfileForm.jsx`
+- `src/components/profile/ProfileForm.module.scss`
+- `src/app/api/profile/route.js`
+- `src/app/api/addresses/route.js`
+- `src/app/api/addresses/[id]/route.js`
+
+#### Files Modified:
+- `src/app/layout.js` (hydration warning fix)
+
+**Total**: 12 new files, 1 file modified.
+
+---
+
+## [Previous] - 2025-12-16
+
+### Enhancement: API Error Handling & Console Noise Reduction
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Next.js Image Configuration** (`next.config.mjs`)
+   - Added `qualities: [50, 75, 90, 100]` to images configuration.
+   - Fixed warning: "Images loaded lazily and replaced with placeholders".
+   - Fixed warning: "quality 100 not configured in images.qualities".
+   - Ensures compatibility with Next.js 16 requirements.
+
+2. **API Client Core** (`src/lib/apiClient.js`)
+   - Implemented intelligent network error detection.
+   - Added `BACKEND_UNAVAILABLE` error code for fetch failures.
+   - Changed error logging strategy:
+     * Network errors: `console.warn` + `console.info` with helpful messages.
+     * Other errors: `console.error` only in development mode.
+   - Improved error messages: "⚠️ Backend unavailable" instead of verbose stack traces.
+   - Added environment-aware logging (development vs production).
+
+3. **API Error Handler Utility** (`src/lib/apiErrorHandler.js`)
+   - Created centralized error handling utility for future use.
+   - Implemented `isBackendUnavailable()` helper function.
+   - Implemented `logApiError()` for consistent error logging.
+   - Implemented `withErrorHandling()` wrapper for API functions.
+
+4. **Categories API** (`src/lib/categoriesApi.js`)
+   - Updated `getMainCategories()` error handling.
+   - Updated `getCategoryTree()` error handling.
+   - Silenced errors when backend is unavailable.
+   - Maintained graceful degradation (returns empty array).
+
+5. **Articles API** (`src/lib/articlesApi.js`)
+   - Updated all 5 functions with improved error handling:
+     * `getArticleCategories()`
+     * `getAllArticles()`
+     * `getArticleBySlug()`
+     * `getArticles()`
+     * `getArticlesPaginated()`
+   - Consistent pattern: only log errors in development when backend is available.
+
+6. **Products API** (`src/lib/productsApi.js`)
+   - Updated all 5 functions with improved error handling:
+     * `getAllProducts()`
+     * `getProductBySlug()`
+     * `getProductCategoryPath()`
+     * `getProducts()`
+     * `getProductsPaginated()`
+   - Maintained existing fallback values (empty arrays/null).
+
+7. **Services API** (`src/lib/servicesApi.js`)
+   - Updated all 4 functions with improved error handling:
+     * `getAllServices()`
+     * `getServiceBySlug()`
+     * `getServices()`
+     * `getServicesPaginated()`
+   - Preserved detailed JSDoc comments while cleaning error logs.
+
+8. **Courses API** (`src/lib/coursesApi.js`)
+   - Updated all 4 functions with improved error handling:
+     * `getAllCourses()`
+     * `getCourseBySlug()`
+     * `getCourses()`
+     * `getCoursesPaginated()`
+   - Consistent with other API modules.
+
+9. **Testimonials API** (`src/lib/testimonialsApi.js`)
+   - Updated `getAllTestimonials()` error handling.
+   - Reduced console noise when backend is down.
+
+10. **FAQ API** (`src/lib/faqApi.js`)
+    - Updated `getAllFaqs()` error handling.
+    - Consistent error handling pattern.
+
+#### Error Handling Pattern:
+```javascript
+} catch (error) {
+  if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+    console.error('خطا در واکشی داده:', error.message);
+  }
+  return []; // or null, or appropriate fallback
+}
+```
+
+#### Console Output Comparison:
+
+**Before (Noisy & Repetitive):**
+```
+❌ خطای API Client: fetch failed
+❌ خطا در واکشی ساختار درختی دسته‌ها: TypeError: fetch failed
+❌ خطا در واکشی دسته‌بندی‌های مقالات: fetch failed
+❌ خطا در واکشی محصولات: fetch failed
+[... 20+ similar error messages ...]
+```
+
+**After (Clean & Informative):**
+```
+⚠️ Backend unavailable: /api/categories
+💡 Make sure your Strapi server is running on http://localhost:1337
+```
+
+#### Impact:
+- **Developer Experience**: Cleaner console with actionable error messages.
+- **Production Ready**: Zero error logs in production when backend is unavailable.
+- **Graceful Degradation**: All pages load with empty states instead of crashing.
+- **Debugging Efficiency**: Real errors (non-network) still logged in development.
+- **Code Consistency**: Unified error handling pattern across all 10 API modules.
+- **Performance**: No impact - error handling is lightweight and conditional.
+- **User Experience**: Pages load smoothly even when backend is down, showing appropriate empty states.
+
+#### Files Modified:
+- `next.config.mjs` (1 file)
+- `src/lib/apiClient.js` (1 file)
+- `src/lib/apiErrorHandler.js` (1 new file)
+- `src/lib/categoriesApi.js` (2 functions)
+- `src/lib/articlesApi.js` (5 functions)
+- `src/lib/productsApi.js` (5 functions)
+- `src/lib/servicesApi.js` (4 functions)
+- `src/lib/coursesApi.js` (4 functions)
+- `src/lib/testimonialsApi.js` (1 function)
+- `src/lib/faqApi.js` (1 function)
+
+**Total**: 11 files modified, 1 new file created, 22 functions improved.
+
+---
+
+## [Previous] - 2025-12-15
+
+### Feature: Authentication System with NextAuth OTP & User Status Component
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Zustand State Management** (`src/store/authStore.js`)
+   - Created global authentication state store with `isAuthModalOpen`, `authStep`, and `phoneNumber`.
+   - Implemented helper functions: `openAuthModal()`, `closeAuthModal()`, `setAuthStep()`, `setPhoneNumber()`.
+
+2. **Authentication Modal** (`src/components/auth/AuthModal.jsx` + `.module.scss`)
+   - Implemented 2-step OTP authentication flow:
+     * Step 1: Phone number input → Calls Strapi `/api/auth/otp/send`
+     * Step 2: OTP verification → Uses NextAuth `signIn('otp-login', ...)`
+   - Glassmorphism-styled modal with smooth fade-in/slide-up animations
+   - Form validation (11-digit phone, 6-digit OTP)
+   - Loading states and Persian error messages
+   - Responsive design with RTL support
+
+3. **NextAuth Configuration** (`src/lib/auth.js`)
+   - Fixed OTP verification endpoint URL to use Strapi backend (`/api/auth/otp/verify`)
+   - Implemented custom OTP credentials provider with proper error handling
+   - Added JWT and session callbacks for user data persistence
+   - Integrated Google OAuth provider (optional)
+
+4. **User Status Component** (`src/components/layout/Navbar/UserStatus.jsx` + `.module.scss`)
+   - Smart component with 3 states:
+     * Loading: Animated shimmer skeleton
+     * Unauthenticated: User icon button that opens AuthModal
+     * Authenticated: Avatar with green verification badge + dropdown menu
+   - Dropdown features:
+     * Profile link (`/profile`)
+     * Logout button with NextAuth `signOut()`
+     * Delayed close (300ms) using state management and setTimeout
+     * Glassmorphism styling with backdrop blur
+   - Hover-controlled visibility with smooth transitions
+
+5. **Layout Integration** (`src/app/layout.js`)
+   - Wrapped children with `<Providers>` (SessionProvider from NextAuth)
+   - Added `<AuthModal />` globally for site-wide access
+
+6. **Navbar Integration** (`src/modules/layout/Navbar/NavbarClient.jsx`)
+   - Replaced old login button with `<UserStatus />` component
+   - Removed unused `useAuthStore` import from NavbarClient
+
+7. **Environment Configuration** (`.env.local`)
+   - Added `NEXT_PUBLIC_STRAPI_API_URL` for backend connection
+   - Added `NEXTAUTH_URL` and `NEXTAUTH_SECRET` for NextAuth configuration
+
+#### Technical Implementation:
+- **State Management**: Zustand for modal state, NextAuth for session management
+- **Authentication Flow**: Phone → OTP SMS → NextAuth verification → Session creation
+- **API Integration**: Strapi custom endpoints for OTP send/verify
+- **Styling**: Glassmorphism design with CSS modules, RTL support, responsive breakpoints
+- **UX Enhancements**: 
+  * Delayed dropdown close prevents accidental dismissal
+  * Loading skeletons for better perceived performance
+  * Clear visual feedback with verification badge
+  * Smooth animations and transitions
+
+#### Impact:
+- **User Experience**: Seamless OTP-based authentication with modern UI
+- **Security**: Backend-verified OTP with NextAuth session management
+- **Accessibility**: Keyboard navigation, ARIA labels, high-contrast design
+- **Maintainability**: Modular components, centralized state, reusable styles
+- **Performance**: Conditional rendering, optimized re-renders, lazy registration flow
+
+**Files Created**: 4 new files (~600 lines of code)
+**Files Modified**: 4 files (layout, navbar, auth config, environment)
+
+---
+
+## [Previous] - 2025-12-12
+
+### Feature: Search Module UX Enhancements & Fixes
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1.  **Mobile Search Integration (`src/modules/layout/Navbar/NavbarClient.jsx`)**
+    *   Replaced the static mobile search input with a functional form.
+    *   Added a **Search Button** (magnifying glass icon) within the mobile search form.
+    *   Connected the form to `handleMobileSearch` which pushes to `/search?q=...` and closes the menu.
+    *   **Styling:** Created `.mobileSearchForm` container to group input and button seamlessly with RTL support.
+
+2.  **Search Overlay Update (`src/components/ui/SearchOverlay/SearchOverlay.jsx`)**
+    *   Added a submit button (magnifying glass icon) inside the search form next to the input.
+    *   Ensures consistent UX where users can click to search or press Enter.
+
+3.  **Search Type Filter (`src/components/ui/SearchBox/SearchBox.jsx`)**
+    *   Added a **"Type Selector"** dropdown (All, Products, Articles, Courses) next to the main search input.
+    *   Updated `router.push` to include the `&type=...` query parameter.
+    *   **API Update (`src/lib/searchApi.js`):** Modified `searchGlobal` to accept the `type` parameter and filter API endpoints strictly based on selection.
+
+4.  **Conditional 'All' Tab Logic (`src/modules/search/SearchResults.jsx`)**
+    *   Implemented smart tab logic: If results exist in only **one** category (e.g., only Products), the "All" tab is hidden.
+    *   `activeTab` automatically defaults to the single available category.
+    *   Ensures a cleaner UI when specific results are found.
+
+5.  **Grid Layout Fix (`src/modules/search/SearchResults.module.scss`)**
+    *   Enforced **4-column grid** on extra-large screens (`xl` breakpoint) using `grid-template-columns: repeat(4, 1fr) !important;`.
+
+#### Impact:
+*   **Mobile UX:** Fully functional search in mobile menu.
+*   **Precision:** Users can now filter search by content type directly from the search box.
+*   **Visual Polish:** Better grid layout on large screens and smarter tab management.
+*   **Consistency:** Search buttons now available in all input contexts (Overlay, Mobile, Results).
+
+---
+
+### Fix: Course Populate Field Mismatch in Search API
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1.  **Search API (`src/lib/searchApi.js`)**
+    *   Updated the Course query populate parameter from `'image'` to `'media'`.
+    *   This ensures the API returns the correct field (`media`) which contains the course image/video data, matching the Strapi content type schema.
+
+#### Impact:
+*   **Bug Fix**: Resolved critical issue where Course images/thumbnails were missing in search results.
+*   **Data Integrity**: Aligned API query with actual database schema for Courses.
+
+---
+
+## [Previous] - 2025-12-11
+
+### Feature: Global Search Module (API, Overlay, & Results Page)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1.  **Search API (`src/lib/searchApi.js`)**
+    *   Implemented `searchGlobal(q, type)` function with **Parallel Fetching** (`Promise.all`) for Products, Articles, and Courses.
+    *   Optimized queries using Strapi filters: `filters[title][$containsi]=q` and specific `populate` fields (images/cover/media).
+    *   Return normalized object `{ products, articles, courses }`.
+
+2.  **UI Components (Search Overlay & Box)**
+    *   **SearchTrigger (`src/components/layout/SearchTrigger.jsx`):** A simplified nav button that dispatches a custom event `open-search-overlay`.
+    *   **SearchOverlay (`src/components/ui/SearchOverlay`):** Full-screen, backdrop-blur modal with large input, animated transitions, and mobile responsiveness. Close on `Escape` key.
+    *   **SearchBox (`src/components/ui/SearchBox`):** A reusable search component with integrated "Type Select" dropdown ("All", "Products", "Articles", "Courses") used in the Results Page.
+
+3.  **Search Results Page (`src/app/search/page.js`)**
+    *   **Server Component (SSR):** Fetches initial results based on URL queries (`?q=...&type=...`).
+    *   **Strict Breadcrumb Integration:** Uses shared `Breadcrumb` component with strict import path compliance.
+    *   **Dynamic Metadata:** Generates page title based on search query.
+
+4.  **Refactor: Standardized Search Results Grid (`src/modules/search/SearchResults.jsx`)**
+    *   **Standard Cards:** Reused `ProductCard`, `ArticleCard`, and `CourseCard` components instead of ad-hoc markup.
+    *   **Data Normalization:** Implemented a robust **Data Normalizer** to handle complex/deep Strapi V5 JSON structures (e.g., `item.attributes.images.data[0]...`), ensuring images render correctly even with nested API responses.
+    *   **Responsive Grid:** Implemented `SearchResults.module.scss` using `@include respond(md/lg/xl)` mixins for a 1-to-4 column responsive layout.
+    *   **Smart Tabs:** Dynamic tabs that only appear if results exist for that category.
+    *   **Absolute URL Fix:** added `STRAPI_BASE_URL` logic to ensure all images use absolute paths.
+
+#### Impact:
+*   **User Experience:** Fast, accessible site-wide search with instant visual feedback and category filtering.
+*   **Maintainability:** Reuses all existing Card components, ensuring design consistency across the site.
+*   **Performance:** Parallel API requests minimize wait time; SSR ensures SEO friendliness for search result pages.
+*   **Reliability:** Robust image extraction logic prevents broken images from Strapi's deep nesting.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Fix: Critical Strapi V5 Relation Persistence and Admin Display
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1.  **Frontend Component (`src/modules/comments/CommentItem.jsx`)**
+    * Updated the `handleReplyClick` function to pass the essential **`documentId`** instead of the numeric `id` to the `onReply` callback. This was crucial for proper relationship setting.
+2.  **Comments API (`src/lib/commentsApi.js`)**
+    * In `submitComment`, implemented the Strapi v5 **`connect`** syntax (`comment_parent: { connect: [documentId] }`) to ensure correct relationship saving in the database.
+3.  **Strapi Backend Schema (`src/api/comment/content-types/comment/schema.json`)**
+    * Added the **`"displayField": "content"`** property to the schema's root level to force the Admin Panel UI to display the comment text (content) instead of the Document ID in all relation fields.
+
+#### Impact:
+* Resolved the critical bug where relation fields (`comment_parent`, `comment_replies`) were saved incorrectly and displayed as empty in the Strapi Admin Panel.
+* Ensures that replies created on the frontend are correctly linked in the database.
+* Improved Admin UX by showing readable comment content in all relation fields.
+* **System Stability:** The comments module is now fully compliant with Strapi v5 architectural requirements for relations and filters.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Fix: Comments API - Approved Filters & DocumentId Migration
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Comments API** (`src/lib/commentsApi.js`)
+    - Added `isApproved` filter for Level 1 Replies: `'populate[comment_replies][filters][isApproved][$eq]': 'true'`
+    - Added `isApproved` filter for Level 2 Replies: `'populate[comment_replies][populate][comment_replies][filters][isApproved][$eq]': 'true'`
+    - Migrated all user fields from `'id'` to `'documentId'`:
+        * Root comments: `'populate[user][fields][1]': 'documentId'`
+        * Level 1 replies: `'populate[comment_replies][populate][user][fields][1]': 'documentId'`
+        * Level 2 replies: `'populate[comment_replies][populate][comment_replies][populate][user][fields][1]': 'documentId'`
+    - Improved code comments for better maintainability.
+
+#### Impact:
+- Only approved comments and replies are now displayed at all nesting levels.
+- Aligned with documentId migration strategy across the entire codebase.
+- Ensures consistency between comments system and other modules using documentId.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Fix: Enhanced Error Logging & Hardcoded User ID for Comments
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Comments API** (`src/lib/commentsApi.js`)
+    - Hardcoded `user: 1` in payload (replaced `MOCK_USER_ID` constant).
+    - Added descriptive comment with emoji (👇) to highlight temporary implementation.
+    - Added console logging of full payload before submission for debugging.
+
+2. **API Client** (`src/lib/apiClient.js`)
+    - Enhanced error handling to log Strapi error response body.
+    - Now shows detailed JSON error messages from backend (validation errors, missing fields, etc.).
+    - Improved debugging capability for 400 Bad Request errors.
+
+#### Impact:
+- Better debugging visibility when comment submission fails.
+- Clear identification of validation issues from Strapi backend.
+- Explicit hardcoded user ID until authentication system is implemented.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Feature: Polymorphic Comments System with Star Ratings
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New API Layer** (`src/lib/commentsApi.js`)
+    - `getComments(entityType, entityId)` - Fetch approved comments with threading (nested replies).
+    - `submitComment(commentData)` - Submit comment with Mutual Exclusivity (only one entity) and moderation (isApproved: false).
+    - Uses `MOCK_USER_ID = 1` until authentication is implemented.
+
+2. **New Components** (`src/modules/comments/`)
+    - `CommentItem.jsx` - Recursive component for rendering comments with avatar, username, stars (1-5), Persian date, and reply button.
+    - `CommentsSection.jsx` - Comment submission form (with validation), comments list, star rating input, success/error messages.
+    - Styling: Glassmorphism with RTL support and responsive design.
+
+3. **Page Integrations**
+    - Added `<CommentsSection />` to pages:
+        * `src/app/articles/[slug]/page.js`
+        * `src/app/courses/[slug]/page.js`
+        * `src/app/products/[category]/[subcategory]/[slug]/page.js`
+    - All comments are fetched via SSR (SEO-friendly).
+
+4. **SCSS Import Fix**
+    - Changed from `@use` to `@import '@/styles/base/mixins';` for Next.js/Turbopack compatibility.
+
+#### Impact:
+- Polymorphic comments system supporting articles, products, and courses.
+- Threading (nested replies) up to 3 levels deep.
+- Moderation workflow: all comments pending admin approval.
+- Star rating (1-5 stars) for each comment.
+
+**Files Created**: 5 new files (~1,500 lines of code)
+**Files Modified**: 3 pages (articles, courses, products)
+
+---
+
+## [Previous] - 2025-12-09
+
+### Feature: Breadcrumb Navigation Integration Across All Pages
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **About Page** (`src/app/about/page.js`)
+    - Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+    - Added breadcrumb navigation with items: `خانه > درباره ما`.
+    - Placed breadcrumb before the header section with proper spacing.
+
+2. **Contact Page** (`src/app/contact/page.js`)
+    - Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+    - Added breadcrumb navigation with items: `خانه > تماس با ما`.
+    - Placed breadcrumb before the header section with proper spacing.
+
+3. **Services Module** (Already Implemented)
+    - **Services Listing** (`src/app/services/page.js`):
+        * Breadcrumb already implemented: `خانه > خدمات`.
+    - **Service Detail** (`src/app/services/[slug]/page.js`):
+        * Breadcrumb already implemented with dynamic service title: `خانه > خدمات > [Service Title]`.
+        * No changes required - already using shared `Breadcrumb` component.
+
+4. **Courses Module**
+    - **Courses Listing** (`src/app/courses/page.js`):
+        * Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+        * Added breadcrumb navigation with items: `خانه > دوره‌ها`.
+        * Placed breadcrumb before the header section.
+    - **Course Detail** (`src/app/courses/[slug]/page.js`):
+        * Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+        * Added dynamic breadcrumb navigation: `خانه > دوره‌ها > [Course Title]`.
+        * Placed breadcrumb before the main content grid.
+
+
+# CHANGELOG
+
+## [Latest] - 2025-12-09
+
+### Fix: Critical Strapi V5 Relation Persistence and Admin Display
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1.  **Frontend Component (`src/modules/comments/CommentItem.jsx`)**
+    * Updated the `handleReplyClick` function to pass the essential **`documentId`** instead of the numeric `id` to the `onReply` callback. This was crucial for proper relationship setting.
+2.  **Comments API (`src/lib/commentsApi.js`)**
+    * In `submitComment`, implemented the Strapi v5 **`connect`** syntax (`comment_parent: { connect: [documentId] }`) to ensure correct relationship saving in the database.
+3.  **Strapi Backend Schema (`src/api/comment/content-types/comment/schema.json`)**
+    * Added the **`"displayField": "content"`** property to the schema's root level to force the Admin Panel UI to display the comment text (content) instead of the Document ID in all relation fields.
+
+#### Impact:
+* Resolved the critical bug where relation fields (`comment_parent`, `comment_replies`) were saved incorrectly and displayed as empty in the Strapi Admin Panel.
+* Ensures that replies created on the frontend are correctly linked in the database.
+* Improved Admin UX by showing readable comment content in all relation fields.
+* **System Stability:** The comments module is now fully compliant with Strapi v5 architectural requirements for relations and filters.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Fix: Comments API - Approved Filters & DocumentId Migration
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Comments API** (`src/lib/commentsApi.js`)
+    - Added `isApproved` filter for Level 1 Replies: `'populate[comment_replies][filters][isApproved][$eq]': 'true'`
+    - Added `isApproved` filter for Level 2 Replies: `'populate[comment_replies][populate][comment_replies][filters][isApproved][$eq]': 'true'`
+    - Migrated all user fields from `'id'` to `'documentId'`:
+        * Root comments: `'populate[user][fields][1]': 'documentId'`
+        * Level 1 replies: `'populate[comment_replies][populate][user][fields][1]': 'documentId'`
+        * Level 2 replies: `'populate[comment_replies][populate][comment_replies][populate][user][fields][1]': 'documentId'`
+    - Improved code comments for better maintainability.
+
+#### Impact:
+- Only approved comments and replies are now displayed at all nesting levels.
+- Aligned with documentId migration strategy across the entire codebase.
+- Ensures consistency between comments system and other modules using documentId.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Fix: Enhanced Error Logging & Hardcoded User ID for Comments
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Comments API** (`src/lib/commentsApi.js`)
+    - Hardcoded `user: 1` in payload (replaced `MOCK_USER_ID` constant).
+    - Added descriptive comment with emoji (👇) to highlight temporary implementation.
+    - Added console logging of full payload before submission for debugging.
+
+2. **API Client** (`src/lib/apiClient.js`)
+    - Enhanced error handling to log Strapi error response body.
+    - Now shows detailed JSON error messages from backend (validation errors, missing fields, etc.).
+    - Improved debugging capability for 400 Bad Request errors.
+
+#### Impact:
+- Better debugging visibility when comment submission fails.
+- Clear identification of validation issues from Strapi backend.
+- Explicit hardcoded user ID until authentication system is implemented.
+
+---
+
+## [Previous] - 2025-12-09
+
+### Feature: Polymorphic Comments System with Star Ratings
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New API Layer** (`src/lib/commentsApi.js`)
+    - `getComments(entityType, entityId)` - Fetch approved comments with threading (nested replies).
+    - `submitComment(commentData)` - Submit comment with Mutual Exclusivity (only one entity) and moderation (isApproved: false).
+    - Uses `MOCK_USER_ID = 1` until authentication is implemented.
+
+2. **New Components** (`src/modules/comments/`)
+    - `CommentItem.jsx` - Recursive component for rendering comments with avatar, username, stars (1-5), Persian date, and reply button.
+    - `CommentsSection.jsx` - Comment submission form (with validation), comments list, star rating input, success/error messages.
+    - Styling: Glassmorphism with RTL support and responsive design.
+
+3. **Page Integrations**
+    - Added `<CommentsSection />` to pages:
+        * `src/app/articles/[slug]/page.js`
+        * `src/app/courses/[slug]/page.js`
+        * `src/app/products/[category]/[subcategory]/[slug]/page.js`
+    - All comments are fetched via SSR (SEO-friendly).
+
+4. **SCSS Import Fix**
+    - Changed from `@use` to `@import '@/styles/base/mixins';` for Next.js/Turbopack compatibility.
+
+#### Impact:
+- Polymorphic comments system supporting articles, products, and courses.
+- Threading (nested replies) up to 3 levels deep.
+- Moderation workflow: all comments pending admin approval.
+- Star rating (1-5 stars) for each comment.
+
+**Files Created**: 5 new files (~1,500 lines of code)
+**Files Modified**: 3 pages (articles, courses, products)
+
+---
+
+## [Previous] - 2025-12-09
+
+### Feature: Breadcrumb Navigation Integration Across All Pages
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **About Page** (`src/app/about/page.js`)
+    - Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+    - Added breadcrumb navigation with items: `خانه > درباره ما`.
+    - Placed breadcrumb before the header section with proper spacing.
+
+2. **Contact Page** (`src/app/contact/page.js`)
+    - Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+    - Added breadcrumb navigation with items: `خانه > تماس با ما`.
+    - Placed breadcrumb before the header section with proper spacing.
+
+3. **Services Module** (Already Implemented)
+    - **Services Listing** (`src/app/services/page.js`):
+        * Breadcrumb already implemented: `خانه > خدمات`.
+    - **Service Detail** (`src/app/services/[slug]/page.js`):
+        * Breadcrumb already implemented with dynamic service title: `خانه > خدمات > [Service Title]`.
+        * No changes required - already using shared `Breadcrumb` component.
+
+4. **Courses Module**
+    - **Courses Listing** (`src/app/courses/page.js`):
+        * Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+        * Added breadcrumb navigation with items: `خانه > دوره‌ها`.
+        * Placed breadcrumb before the header section.
+    - **Course Detail** (`src/app/courses/[slug]/page.js`):
+        * Imported `Breadcrumb` component from `@/components/ui/BreadCrumb/Breadcrumb`.
+        * Added dynamic breadcrumb navigation: `خانه > دوره‌ها > [Course Title]`.
+        * Placed breadcrumb before the main content grid.
+ 
+
+ #### Navigation:
+ Home (خانه) ├── About (درباره ما) ├── Contact (تماس با ما) ├── Services (خدمات) │ └── Service Detail (عنوان خدمت) └── Courses (دوره‌ها) └── Course Detail (عنوان دوره)
+
+
+#### Impact:
+- **Consistent Navigation**: All main pages now follow the same breadcrumb pattern using the centralized `Breadcrumb` component.
+- **Better UX**: Users can easily navigate back through the site hierarchy.
+- **SEO Improvement**: Breadcrumbs provide structured navigation signals to search engines.
+- **Accessibility**: Screen readers can better understand page hierarchy.
+- **Unified Styling**: All breadcrumbs use consistent spacing, RTL support, and design tokens.
+- **JSON-LD Support**: Breadcrumb component handles structured data for SEO rich snippets (if implemented).
+
+## [Previous] - 2025-12-07
+
+### Refactor: ArticleGrid URL-Driven Sorting
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ArticleGrid Component** (`src/modules/articles/ArticleGrid/ArticleGrid.jsx`)
+   - Imported Next.js navigation hooks: `useRouter` and `useSearchParams`.
+   - Replaced local state (`useState`) with URL-based sorting logic.
+   - Standardized SORT_OPTIONS values to direct Strapi format:
+     * `'publishedAt:desc'` (instead of `'latest'`)
+     * `'publishedAt:asc'` (instead of `'oldest'`)
+   - Created `handleSortChange` handler that updates URL search params via `router.push`.
+   - Removed mapping logic in fetch calls - now uses `sortBy` directly from URL.
+
+2. **Articles Page** (`src/app/articles/page.js`)
+   - Extract `sort` parameter from URL search params.
+   - Pass `sort` value to `getArticlesPaginated()` for SSR.
+   - Default value: `'publishedAt:desc'` when no sort param is present.
+
+#### Impact:
+- **URL-Driven State**: Sort preference is now in the URL, enabling bookmarking and sharing.
+- **SSR Compatible**: Server-side rendering respects the sort parameter from URL.
+- **Consistent Architecture**: Now matches ProductGrid pattern exactly.
+- **No Breaking Changes**: Default sort remains "newest first" (publishedAt:desc).
+
+---
+
+### Fix: ArticleGrid & ProductGrid Empty State Handling
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ArticleGrid & ProductGrid Components**
+   - Refactored `ArticleGrid.jsx` and `ProductGrid.jsx` to handle empty states internally.
+   - Now checks if `!isLoading && items.length === 0` to display `EmptyState` component.
+   - Hides Sort Controls and Grid when empty, but KEEPS Category Filters visible (critical fix).
+
+2. **Removed ListGuard Blocking**
+   - Removed `ListGuard` wrapper from `src/app/articles/page.js` and `src/app/products/page.js`.
+   - `ListGuard` was preventing the render of children (including filters) when the list was empty, causing a "dead end" UI.
+   - Removing it allows the internal logic of the Grids to take over, displaying the friendly empty state while allowing users to navigate away via filters.
+
+#### Impact:
+- **Better UX**: Users are no longer stuck on a blank screen when a category is empty.
+- **Navigation Preserved**: Category filters remain visible so users can easily switch to a different category.
+- **Visual Feedback**: Clearly shows "No items found" message using the standard `EmptyState` component.
+
+---
+
+### Refactor: Standardized Page Headers (Services, Contact, About)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Services Page** (`src/app/services/page.js` + `.module.scss`)
+   - Simplified header structure: removed subtitle and complex hero classes.
+   - Standardized class names to `.header` and `.title` matching Products/Articles pages.
+   - Removed BEM-style (`.servicesPage__hero`) in favor of clean CSS modules.
+
+2. **Contact Page** (`src/app/contact/page.js` + `.module.scss`)
+   - Removed subtitle (`pageSubtitle`) for consistency.
+   - Simplified header to just title.
+   - Fixed alignment: removed `text-align: center` to match left/right-aligned standard.
+
+3. **About Page** (`src/app/about/page.js` + `.module.scss`)
+   - Converted large "Hero Section" to standard simple Header.
+   - Removed introductory hero text.
+   - Wrapped content in a single top-level `container` and stripped redundant inner containers.
+
+#### Impact:
+- **Visual Consistency**: All main pages (Products, Articles, Courses, Services, Contact, About) now share the exact same header styling.
+- **Code Maintainability**: Unified CSS structure across all page modules.
+- **Cleaner UI**: Removed inconsistent subtitles and center-alignments.
+
+---
+
+### Feature: About Us & Contact Us Pages Implementation
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New Pages & Routes**
+   - Created `src/app/about/page.js` featuring Hero, Mission, Team, and CTA sections with responsive layout.
+   - Created `src/app/contact/page.js` featuring a functional contact form and information grid (Phone, Email, Address, Socials).
+   - Applied Glassmorphism design system with RTL support using `page.module.scss` files.
+
+2. **Contact Form Module** (`src/modules/contact/components/ContactForm.jsx`)
+   - Implemented functional form component using `react-hook-form`.
+   - Added validation rules: Name (required), Contact Info (Email/Phone regex), Body (min 20 chars).
+   - Integrated logic for loading state, success feedback, and auto-reset.
+
+3. **API Integration** (`src/lib/contactApi.js`)
+   - Added `submitContactMessage` function to handle POST requests to `/api/contact-messages`.
+   - Follows Repository Pattern consistent with `servicesApi` and `productsApi`.
+
+#### Impact:
+- Complete "About Us" and "Contact Us" sections now available.
+- Functional integration with Strapi backend for message collection.
+- Consistent visual experience with existing pages (Dark/Gold theme, Glassmorphism).
+
+---
+
+### Refactor: Services Module Standardization (Breadcrumbs, Styling & Empty States)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ServiceGrid Component** (`src/modules/services/ServiceGrid/ServiceGrid.jsx`)
+   - Replaced manual empty state check with `ListGuard` wrapper.
+   - Standardized "No services found" message consistent with other modules.
+   - Removed component-level empty state logic in favor of shared component.
+
+2. **Service Main Page** (`src/app/services/page.js` + `.module.scss`)
+   - Added `Breadcrumb` navigation component to the listing page.
+   - Standardized layout padding (`padding-top/bottom`) using design tokens to match Products page.
+   - Renamed CSS classes (`.servicesPage` → `.main`, `.servicesPage__hero` → `.header`) for consistency with codebase patterns.
+
+3. **Service Detail Page** (`src/app/services/[slug]/page.js` + `.module.scss`)
+   - Replaced inline breadcrumbs HTML with shared `<Breadcrumb />` component.
+   - Replaced custom empty state UI with standard Next.js `notFound()` call.
+   - Applied consistent vertical rhythm (`--space-section-top-desktop`) to match listing pages.
+   - Removed 230+ lines of unused styles (cleanup of breadcrumbs and empty state classes).
+
+#### Impact:
+- **Visual Consistency**: Services module (List & Detail) now matches Products module pixel-perfectly.
+- **Improved Navigation**: Breadcrumbs now present on all Service pages.
+- **Code Reduction**: Significant deletion of technical debt and duplicate styles.
+- **Improved SEO**: Proper schema markup for breadcrumbs and handling of 404s.
+
+---
+
+## [Previous] - 2025-11-29
+
+### Feature: IntroTextSection Module
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New Module** (`modules/home/IntroTextSection/IntroTextSection.jsx` + `.module.scss`)
+   - Created simple intro section with Persian text between HeroSection and AboutMentorSection.
+   - Used design tokens for colors and responsive spacing.
+
+#### Impact:
+- Homepage now features the intro text between hero and about mentor sections.
+
+---
+
+## [Latest] - 2025-11-27
+
+### Enhancement: Hero Scroll CTA matches ornate badge asset
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Scroll CTA Component** (`components/ui/ScrollCTAButton/ScrollCTAButton.jsx`)
+   - Replaced generic `.card-button` markup with bespoke hero button structure.
+   - Added default Persian label fallback and preserved smooth-scroll behavior.
+   - Wired new SCSS module className handling so other sections can extend styles safely.
+
+2. **Component Styling** (`components/ui/ScrollCTAButton/ScrollCTAButton.module.scss`)
+   - Implemented ornate badge background using `/images/herobutton.png`.
+   - Added hover/focus states, RTL alignment, and typography aligned with hero art direction.
+   - Ensured overlay text sits centered with non-interactive label span.
+
+3. **Design Tokens** (`styles/base/_variables.scss`)
+   - Introduced hero button sizing + shadow custom properties for reuse across sections.
+
+#### Impact:
+- Hero CTA now visually matches the provided badge image with centered copy.
+- Keeps accessible text, smooth scroll UX, and reusable tokens for future ornate CTAs.
+
+---
+
+## [Previous] - 2025-11-24
+
+### Fix: ArticleGrid Load More Button Logic (Replicated from ProductGrid)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ArticleGrid Component** (`modules/articles/ArticleGrid/ArticleGrid.jsx`)
+   - Added `initialMeta` prop to receive pagination metadata from server.
+   - Changed `hasMore` calculation from `initialArticles.length === PAGE_SIZE` to `(page < pageCount)` logic.
+   - Updated initial state to use `initialMeta.pagination.page` and `initialMeta.pagination.pageCount`.
+   - Refactored `useEffect` sync logic to compare `page` vs `pageCount` instead of array length vs total.
+   - Refactored sort effect to use `(p?.page || 1) < (p?.pageCount || 1)` pattern.
+   - Refactored `handleLoadMore` to use `(p?.page || nextPage) < (p?.pageCount || 1)` pattern.
+   - Changed `setArticles([...articles, ...result.data])` to `setArticles(prev => [...prev, ...result.data])`.
+
+2. **Articles Page** (`app/articles/page.js`)
+   - Extracted `initialMeta = result.meta` from API response.
+   - Passed `initialMeta` prop to ArticleGrid component.
+
+#### Technical Details:
+- **Before**: `hasMore` compared `articles.length < total` which was unreliable.
+- **After**: `hasMore` compares `currentPage < totalPageCount` matching ProductGrid pattern.
+- **Logic Pattern**: `setHasMore((p?.page || nextPage) < (p?.pageCount || 1))`
+- **State Management**: Uses pagination metadata from Strapi response for accurate button visibility.
+
+#### Impact:
+- Load More button now disappears correctly when all articles are loaded.
+- Behavior matches ProductGrid exactly (working reference implementation).
+- No more false-positive button display when pagination is exhausted.
+- Clean Architecture maintained with API Layer abstraction.
+
+---
+
+## [Previous] - 2025-11-24
+
+### Refactor: Centralized Pagination Constants (Single Source of Truth)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New Constants File** (`lib/constants.js`)
+   - Created centralized configuration file for pagination settings.
+   - Defined `ARTICLES_PAGE_SIZE = 6` as single source of truth.
+   - Added constants for other entities: `PRODUCTS_PAGE_SIZE`, `COURSES_PAGE_SIZE`, `SERVICES_PAGE_SIZE`.
+
+2. **ArticleGrid Component** (`modules/articles/ArticleGrid/ArticleGrid.jsx`)
+   - Removed hardcoded `const PAGE_SIZE = 1`.
+   - Imported `ARTICLES_PAGE_SIZE` from `lib/constants`.
+   - Updated all references from `PAGE_SIZE` to `ARTICLES_PAGE_SIZE`.
+
+3. **Articles Page** (`app/articles/page.js`)
+   - Imported `ARTICLES_PAGE_SIZE` from `lib/constants`.
+   - Changed hardcoded `6` to `ARTICLES_PAGE_SIZE` in `getArticlesPaginated` call.
+   - Updated comments to reference constants file.
+
+4. **API Route Handler** (`app/api/articles/route.js`)
+   - Imported `ARTICLES_PAGE_SIZE` from `lib/constants`.
+   - Changed default pageSize from `'6'` to `String(ARTICLES_PAGE_SIZE)`.
+   - Updated JSDoc to reflect dynamic default value.
+
+#### Impact:
+- **Single Source of Truth**: Only need to change `ARTICLES_PAGE_SIZE` in one file (`lib/constants.js`).
+- **Consistency**: All three layers (Client, Server, API) now use the same value.
+- **Maintainability**: Easier to manage pagination settings across the app.
+- **Scalability**: Template ready for other entities (products, courses, services).
+- **No Breaking Changes**: Existing functionality preserved, only improved architecture.
+
+---
+
+## [Previous] - 2025-11-24
+
+### Fix: ArticleGrid Category Filter Persistence & Load More Logic
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ArticleGrid Component** (`modules/articles/ArticleGrid/ArticleGrid.jsx`)
+   - **FIX 1: Category Filter Persistence**
+     * Added `categoryParam` variable that includes `activeSlug` in fetch URLs for sorting and pagination.
+     * Now passes `&categorySlug=${activeSlug}` to all `/api/articles` requests when a category is selected.
+     * Ensures category filter persists across sort changes and load more actions.
+   
+   - **FIX 2: Load More Button Visibility**
+     * Changed `hasMore` calculation from comparing page count to comparing total items.
+     * New logic: `setHasMore(articles.length < meta.pagination.total)` or `setHasMore(updatedArticles.length < totalArticles)`.
+     * Prevents button from showing when all items are loaded.
+   
+   - **FIX 3: State Synchronization**
+     * Added `activeSlug` to useEffect dependency array for props sync.
+     * Resets `isInitialMount` ref when `activeSlug` changes to allow proper re-filtering.
+
+2. **API Route Handler** (`app/api/articles/route.js`)
+   - Added `categorySlug` query parameter support.
+   - Extracts `categorySlug` from search params and passes to `getArticlesPaginated()`.
+   - Updated JSDoc comments to document the new parameter.
+
+#### Technical Details:
+- Sort effect now constructs URL: `/api/articles?page=1&pageSize=${itemsToFetch}&sort=${sortQuery}${categoryParam}`
+- Load more constructs URL: `/api/articles?page=${nextPage}&pageSize=${PAGE_SIZE}&sort=${sortQuery}${categoryParam}`
+- Where `categoryParam = activeSlug ? `&categorySlug=${activeSlug}` : ''`
+- API route signature: `getArticlesPaginated(page, pageSize, sort, categorySlug)`
+
+#### Impact:
+- Category filter now works correctly with sorting and pagination.
+- Load more button accurately reflects when all articles are loaded.
+- No data duplication or missing items during filter transitions.
+- Maintains Clean Architecture with proper data flow through API layers.
+
+---
+
+### Fix: ArticleGrid stale state sync
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. `modules/articles/ArticleGrid/ArticleGrid.jsx`
+   - Added hydration effect to align local `articles`, `page`, and `hasMore` with new `initialArticles` props when category filter updates.
+   - Prevented stale grids when navigating between categories via SSR data refresh.
+
+---
+
+### Feature: Navbar Articles MegaMenu
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Server Component Updates (modules/layout/Navbar/Navbar.jsx)**
+   - Imported `getArticleCategories` from articlesApi.
+   - Fetched article categories in parallel with product categories.
+   - Passed `articleCategoriesSnapshot` to client.
+
+2. **Client Component Updates (modules/layout/Navbar/NavbarClient.jsx)**
+   - Implemented generic `activeMegaMenu` state ('products' | 'articles').
+   - Added "Articles" MegaMenu with image card layout.
+   - Updated Mobile Drawer to include "Articles" tab and list.
+   - Refactored hover logic to support multiple mega menus.
+
+3. **Styling (modules/layout/Navbar/Navbar.module.scss)**
+   - Added `.articleImage` and `.viewAllLink` styles for Article MegaMenu cards.
+   - Reused existing grid and column styles.
+
+---
+
+## [Previous] - 2025-11-24
+
+### Feature: Article Category Filter Integration
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Server Component Updates (app/articles/page.js)**
+   - Imported `getArticleCategories` from articlesApi
+   - Fetch categories and articles in parallel with Promise.all
+   - Extract `activeCategory` from searchParams
+   - Pass `categorySlug` to `getArticlesPaginated` for filtered results
+   - Pass `categories` and `activeSlug` props to ArticleGrid
+
+2. **Client Component Updates (ArticleGrid.jsx)**
+   - Imported `ArticleCategoryFilter` component
+   - Accept `categories` and `activeSlug` props
+   - Render filter component before SortControls
+   - No prop-drilling errors
+
+3. **Integration Verification**
+   - Category filter appears at top of articles page
+   - Clicking category updates URL with ?category=slug
+   - Server re-renders with filtered articles
+   - Clean Architecture maintained with API Layer abstraction
+
+---
+
+## [Previous] - 2025-11-02
+
+### Feature: Navbar MegaMenu with SSR Category Fetching
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **SSR Category Fetching**
+   - Created: `src/modules/layout/Navbar/NavbarClient.jsx` (client component)
+   - Updated: `src/modules/layout/Navbar/Navbar.jsx` (server component)
+   - Integrated: `getCategoryTree()` from `categoriesApi.js` with ISR caching (revalidate: 300s)
+   - Data flows from SSR parent to client child component
+
+2. **Desktop MegaMenu**
+   - Hover-activated dropdown with 3-column grid (responsive: 2 columns @ tablet, 1 @ mobile)
+   - Category titles with subcategories listed beneath each parent
+   - Smooth fade-in/fade-down animation (translateY + opacity)
+   - Backdrop blur effect with dark overlay background
+   - Persistent on hover with pointer-events management
+
+3. **Mobile Accordion Menu**
+   - "محصولات" button expands to show all categories
+   - Each category displays with nested subcategories
+   - Animated slideDown expansion with border accent
+   - Proper state management for open/closed accordion
+   - Closes menu on navigation link click
+
+4. **SCSS Module Updates**
+   - Added: `.megaMenuWrapper`, `.megaMenu`, `.megaMenuGrid`, `.megaMenuColumn`
+   - Added: `.mobileCategoryToggle`, `.mobileSubMenu`, `.mobileCategoryGroup`, `.mobileSubList`
+   - Used design tokens: `var(--color-overlay)`, `var(--color-text-primary)`, `var(--font-md)`, etc.
+   - Applied mixins: `@include m.hover-transition`, `@include m.respond()`
+   - Animations: slideDown keyframe for mobile accordion
+
+5. **Accessibility Features**
+   - aria-expanded on mobile category toggle
+   - aria-label for navigation elements
+   - role="menu" and role="menuitem" for semantic structure
+   - Keyboard-friendly buttons
+   - Focus management with body scroll lock
+
+#### Architecture Maintained:
+- Server-Side Rendering (SSR) for category data
+- Client-Side Interactivity (CSR) for UI state
+- Clean component separation (Navbar → NavbarClient)
+- API Layer abstraction (categoriesApi.js)
+- SCSS Modules with design tokens
+- RTL layout support
+- Performance optimized (useCallback, ISR caching)
+
+#### Technical Implementation:
+- Server Component: Fetches categories via `getCategoryTree()`
+- Client Component: Handles state (menu open/close, accordion expansion)
+- Prop drilling: categories passed from server to client
+- URL structure: `/products?category={slug}&subcategory={subslug}`
+
+---
+
+## [Latest] - 2025-11-03
+
+### Refactor: Navbar MegaMenu Hover Stability & Animation
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Always-render mega menu with state-driven visibility class (`.megaMenuVisible`) to prevent flicker and gaps.
+2. Unified SCSS: removed duplicate `.megaMenu` blocks and hover-coupled open rules; single transition source of truth.
+3. Smooth open/close with opacity+translate transitions; pointer-events managed for stability.
+4. Hover intent: delayed close (300ms) with enter/leave handlers to avoid accidental dismiss.
+5. Accessibility: added `aria-label` and `aria-hidden`, and focus enter/leave to support keyboard.
+
+#### Files Updated:
+- `src/modules/layout/Navbar/NavbarClient.jsx`
+- `src/modules/layout/Navbar/Navbar.module.scss`
+
+#### Architecture & Styling:
+- Preserved SSR snapshot from `Navbar.jsx` and API layer.
+- SCSS Modules with design tokens; RTL friendly.
+
+### Migration: Product Detail Page Route Refactor
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Route Migration**
+   - Moved: `src/app/products/[slug]/page.js` → `src/app/product/[slug]/page.js`
+   - Moved: `src/app/products/[slug]/page.module.scss` → `src/app/product/[slug]/page.module.scss`
+   - Rationale: Distinguish singular product detail page from plural products listing page
+
+2. **Component Updates**
+   - `src/components/cards/ProductCard/ProductCard.jsx`: Updated link from `/products/${slug}` to `/product/${slug}`
+   - ProductGrid.jsx uses ProductCard component, so links are automatically updated
+
+3. **Verification**
+   - ✅ SSR rendering preserved (metadata generation intact)
+   - ✅ Dynamic route params properly handled with `await params`
+   - ✅ API Layer abstraction maintained (getProductBySlug from productsApi.js)
+   - ✅ Error handling preserved (notFound() for invalid slugs)
+   - ✅ Styles and layout unchanged
+
+#### Architecture Maintained:
+- Clean Architecture with API Layer abstraction
+- Repository Pattern (productsApi.js)
+- Server-Side Rendering (SSR) for SEO
+- SCSS Module structure
+- RTL layout support
+
+#### Old Route:
+- `src/app/products/[slug]/page.js` still exists (can be cleaned up or repurposed for categories)
+
+#### New Route:
+- `src/app/product/[slug]/page.js` now active for singular product detail pages
+## [Latest] - 2025-11-04
+
+### Enhancement: Dropdown Arrow on "محصولات" with Open State
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Added a toggleable arrow icon next to the "محصولات" link that rotates upward when the MegaMenu is open.
+2. Updated `src/modules/layout/Navbar/NavbarClient.jsx` to render the arrow SVG and bind its open state to `isMegaMenuOpen`.
+3. Updated `src/modules/layout/Navbar/Navbar.module.scss` with `.navLinkContent`, `.dropdownIcon`, and `.dropdownIconOpen` classes using design tokens (no hard-coded values).
+
+#### Impact:
+- Clear affordance for dropdown behavior on desktop navigation, aligned with RTL and theme tokens.
+
+---
+
+## [Latest] - 2025-11-06
+
+### Enhancement: productsApi.getProductsPaginated category/subcategory filters
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Extended `src/lib/productsApi.js` → `getProductsPaginated(page, pageSize, sort, options?)` to accept optional `{ categorySlug, subCategorySlug, subSlugs = [] }` without breaking existing callers.
+2. Implemented Strapi v4 filters via `URLSearchParams`:
+   - If `subCategorySlug` → `filters[subCategory][slug][$eq] = {subCategorySlug}`
+   - Else if `categorySlug` → OR filter:
+     - `filters[$or][0][category][slug][$eq] = {categorySlug}`
+     - `filters[$or][1][subCategory][slug][$in] = subSlugs.join(',')` (when provided)
+3. Preserved output structure: `{ data, meta }` unchanged, including pagination meta and error fallback.
+
+#### Notes:
+- `subSlugs` should be provided by SSR from `categoriesApi` when a category is selected to include all its subcategories.
+- No UI/component changes required; API remains backward-compatible with previous 3-arg calls.
+
+### Feature: SSR Initial Render from URL for /products
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Updated `src/app/products/page.js` to read `searchParams` → `category`, `sub`, `sort`, `page`.
+2. When `category` present and `sub` absent, fetched `getCategoryTree()` and derived `subSlugs` for that category.
+3. Called `getProductsPaginated(page, 6, sort, { categorySlug, subCategorySlug, subSlugs })` for initial SSR data.
+4. Fetched categories snapshot via `getCategoryTree()` and passed to client.
+5. Added `src/modules/products/ProductsPageClient/ProductsPageClient.jsx` (client) to receive initial props and render `ProductGrid`.
+
+#### Impact:
+- Enables direct URL-driven SSR filtering and pagination for better SEO and first paint.
+- Keeps Clean Architecture with API Layer and server→client data flow.
+
+### Feature: CategoryFilter component (UI-only, emits events)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Added `src/modules/products/components/CategoryFilter.jsx` (client component) with two states:
+   - No active category: shows scrollable category pills.
+   - Active category: large selected box on the right + subcategory pills on the left.
+2. Added `src/modules/products/components/CategoryFilter.module.scss` styled with theme tokens:
+   - Dark background, gold accents, RTL-friendly layout.
+   - Hover/active states, subtle elevation, responsive grid (2→1 columns on mobile).
+3. Accessibility: `aria-label`, `aria-pressed`, `type="button"` on interactive elements.
+
+#### Usage Notes:
+- Receives data via props; emits only events: `onSelectCategory(slug)`, `onSelectSubCategory(slug)`.
+- Update URL handling in the parent to set `?category=` and `?sub=` as needed.
+
+### Enhancement: ProductGrid filtering + pagination reset logic
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. `src/modules/products/ProductGrid/ProductGrid.jsx`
+   - Added `category` and `sub` query params to all fetches.
+   - On `sort`, `activeCategory`, or `activeSubCategory` change: refetch from page 1 and replace products.
+   - On load more: fetch next page in current filters and append.
+   - Standardized `PAGE_SIZE` to 6 and aligned `page`/`hasMore` with API meta.
+
+### Enhancement: /api/products route supports filters (category, sub, sort, page, pageSize)
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Updated `src/app/api/products/route.js` to parse `category`, `sub`, `sort`, `page`, `pageSize`.
+2. When a category is selected without a subcategory, derive `subSlugs` via `getCategoryTree()` for inclusive filtering.
+3. Call `getProductsPaginated(page, pageSize, sort, { categorySlug, subCategorySlug, subSlugs })` and return `{ data, meta }` unchanged.
+
+#### Impact:
+- Ensures URL-driven UX for `/products`, `/products/{category}`, and `/products/{category}/{sub}` with correct filtering and pagination.
+
+### Fix: Align product filters with `categories` relation slug equality
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Updated `src/lib/productsApi.js` → `getProductsPaginated` query build to:
+   - If `subCategorySlug`: `filters[categories][slug][$eq] = subCategorySlug`
+   - Else if `categorySlug`: `filters[categories][slug][$eq] = categorySlug`
+
+#### Rationale:
+- Backend expects filtering via unified `categories` relation; removes previous OR/in logic.
+
+---
+
+## [Latest] - 2025-11-17
+
+### Enhancement: Products List Category UI Refresh
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Rebuilt the `/products` category selector UI to visually match `ProductCategoriesSection`:
+   - Updated `src/modules/products/ProductsPageClient/components/CategoryFilter.jsx` to render circular icon cards with Next/Image and fallback placeholders.
+   - Added structured layout states: full grid when no category is selected and split layout (selected card on the right, subcategories list on the left) when a category is active.
+2. Created `src/modules/products/ProductsPageClient/components/CategoryFilter.module.scss` mirroring the home category card styling:
+   - Reused theme tokens (`var(--color-overlay)`, `var(--gradient-card-vertical)`, etc.), RTL grid, hover/focus transitions, and pill-style subcategory highlights.
+   - Added responsive rules to collapse the two-column layout on tablet/mobile while keeping typography/spacing consistent with the homepage.
+3. Preserved SPA filtering contracts by keeping `onSelectCategory`/`onSelectSubCategory` signatures untouched and including reset actions ("بازگشت" + "همه زیر‌دسته‌ها") to avoid URL or pagination regressions.
+4. Fixed back navigation by preventing the category reset button from firing the subcategory router logic, eliminating the stuck state on `/products/{category}`.
+5. Added `public/images/placeholder.png` fallback so circular category icons always render even when Strapi lacks an image.
+
+#### Impact:
+- Category icons, typography, and spacing now stay consistent between Home and Products pages.
+- Subcategory list provides clear active states without interfering with existing load-more, sort, or routing logic.
+
+
+## [Latest] - 2025-11-18
+
+### Fix: Remove forced `page` query resets in ProductsPageClient
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. `src/modules/products/ProductsPageClient/ProductsPageClient.jsx`
+   - Deleted the `params.set('page', '1')` calls in `handleSelectCategory`, `handleSelectSub`, and `handleChangeSort`.
+   - Keeps existing search params intact so URLs no longer auto-append `?page=`.
+
+#### Impact:
+- Prevents redundant `page` query strings during category/subcategory selection and sort changes.
+- Router updates now preserve whatever paging logic already exists in the URL or defaults.
+
+### UI Update: Modern Glassmorphism Styles for CategoryFilter
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. `src/modules/products/ProductsPageClient/components/CategoryFilter.module.scss`
+    - Completely overhauled styles to use modern glassmorphism.
+    - Added `backdrop-filter: blur`, semi-transparent backgrounds, and subtle borders.
+    - Enhanced gradients for cards and active states to match the dark/gold theme.
+    - Improved hover and focus states with smooth transitions, scaling, and shadows.
+    - Refined layout spacing and responsiveness.
+    - Used complex box-shadows for depth and glowing effects.
+
+#### Impact:
+- Significant visual upgrade to the category filter on the products page, aligning it with a more premium, modern aesthetic.
+
+## [Latest] - 2025-11-19
+
+### Feature: Nested Route Structure for Products
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Nested Routing Implementation**
+   - Created `src/app/products/[category]/page.js`: SSR listing page for categories.
+   - Created `src/app/products/[category]/[subcategory]/page.js`: SSR listing page for subcategories.
+   - Created `src/app/products/[category]/[subcategory]/[slug]/page.js`: SSR single product page (deep link).
+   - Created `src/app/products/[category]/[subcategory]/[slug]/page.module.scss`: Styles for the deep product page.
+
+2. **SSR Data Flow**
+   - Listing pages await `params` and `searchParams` (Next.js 15 compatible).
+   - Listing pages fetch data via `getProductsPaginated` with `categorySlug` or `subCategorySlug` filters.
+   - Listing pages fetch `getCategoryTree` for sidebar/filter context.
+   - Single product page fetches data via `getProductBySlug`.
+
+3. **Component Reuse**
+   - Reused `ProductsPageClient` for listing pages, passing initial data and category context.
+   - Reused `ProductGallery` and styles for the single product page.
+
+#### Architecture Maintained:
+- **Clean Architecture**: API calls abstracted in `lib/productsApi.js`.
+- **SSR First**: All initial data fetching happens on the server for SEO.
+- **Client Hydration**: `ProductsPageClient` takes over for interactive filtering.
+- **Backward Compatibility**: Old `src/app/product/[slug]` route preserved for future redirects.
+
+### Feature: Breadcrumb Navigation & Legacy Redirects
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Added `src/components/ui/Breadcrumb.jsx` + `.module.scss` with LD-JSON schema output, RTL styling, and design tokens.
+2. Injected `<Breadcrumb />` into `/products`, `/products/[category]`, `/products/[category]/[subcategory]`, and the deep product page to mirror URL hierarchy.
+3. Refactored legacy `src/app/product/[slug]/page.js` into a pure `permanentRedirect` handler that resolves canonical category paths via `productsApi`.
+
+#### Impact:
+- Ensures consistent UX breadcrumbs with structured data for SEO rich snippets.
+- Guarantees 301 redirects from legacy `/product/:slug` URLs to the nested `/products/:category/:sub/:slug` routes.
+- Keeps Clean Architecture by reusing API layer helpers and SCSS modules.
+
+### Enhancement: ProductCard Nested Route Support
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **ProductCard Component** (`src/components/cards/ProductCard/ProductCard.jsx`)
+   - Added `constructProductUrl()` logic to dynamically build nested route URLs based on product categories.
+   - Implements priority-based URL construction:
+     * Priority 1: Subcategory (category with parent) → `/products/{parent}/{subcategory}/{slug}`
+     * Priority 2: Root category → `/products/{category}/{slug}`
+     * Priority 3: Fallback to legacy route → `/product/{slug}` (triggers 301 redirect)
+   - Gracefully handles missing category data with fallback mechanism.
+
+2. **Data Layer Enhancement** (`src/lib/strapiUtils.js`)
+   - Updated `formatStrapiProducts()` to include `categories` array with parent relationship.
+   - Each category now includes: `{ slug, name, parent: { slug, name } | null }`.
+   - Supports both nested Strapi v4 structure (`attributes.parent.data`) and flat structure.
+
+#### Impact:
+- ProductCard now generates SEO-friendly nested URLs automatically.
+- Backward compatible: cards without category data fall back to legacy route with 301 redirect.
+- Maintains Clean Architecture with data formatting in strapiUtils layer.
+- No breaking changes to existing ProductCard usage.
+
+### Refactor: Extract ProductDetails Reusable Component
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **New Component** (`src/modules/products/ProductDetails/ProductDetails.jsx`)
+   - Extracted UI structure from single product page into reusable component.
+   - Props: `{ product, breadcrumbItems }`.
+   - Renders: Breadcrumb, ProductGallery, product info (title, price, description), add-to-cart button.
+   
+2. **Styles Module** (`src/modules/products/ProductDetails/ProductDetails.module.scss`)
+   - Migrated styles from page-level to component-level.
+   - Responsive grid layout (2 columns desktop, 1 column mobile).
+   - Uses design tokens for colors, spacing, and typography.
+
+3. **Page Refactor** (`src/app/products/[category]/[subcategory]/[slug]/page.js`)
+   - Removed inline JSX and styles import.
+   - Now imports and renders `<ProductDetails />` component.
+   - Keeps SSR data fetching logic (getProductBySlug, getCategoryTree, getProductBreadcrumbs).
+   - Maintains metadata generation for SEO.
+
+#### Impact:
+- ProductDetails component ready for reuse in hybrid `/product/[slug]` route.
+- Separates UI concerns from data fetching logic.
+- Maintains Clean Architecture and SSR patterns.
+- No visual or functional changes to the product detail page.
+
+### Feature: Hybrid Route Resolver for /products/[category]/[subcategory]
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Hybrid Route Logic** (`src/app/products/[category]/[subcategory]/page.js`)
+   - Step 1: Fetch category tree and validate category param.
+   - Step 2: Check if `subcategory` param is a valid subcategory of `category`:
+     * **YES**: Render subcategory listing page with ProductsPageClient.
+     * **NO**: Attempt to fetch product using `getProductBySlug(subcategory)`:
+       - **Product found**: Render ProductDetails component with correct breadcrumbs.
+       - **Product not found**: Call `notFound()`.
+
+2. **Dynamic Metadata Generation**
+   - Detects route type (subcategory vs product) before generating metadata.
+   - Subcategory: Generates listing page title/description.
+   - Product: Generates product detail title/description using product data.
+   - Invalid route: Returns "صفحه یافت نشد".
+
+3. **Smart Breadcrumb Resolution**
+   - For products: Attempts to match product's categories with URL category param.
+   - Falls back to URL-based category if no match found in product data.
+   - Ensures breadcrumbs remain accurate regardless of URL structure.
+
+4. **Component Reuse**
+   - Uses existing `ProductsPageClient` for listing pages.
+   - Uses new `ProductDetails` component for product detail pages.
+   - Maintains consistent UI/UX across both route types.
+
+#### Architecture Maintained:
+- **SSR First**: All data fetching on server for SEO optimization.
+- **Clean Architecture**: API Layer abstraction (productsApi, categoriesApi).
+- **DRY Principle**: Reuses ProductDetails component instead of duplicate JSX.
+- **Next.js 15 Compatible**: Properly awaits params and searchParams.
+
+#### Impact:
+- Resolves routing collision: `/products/cat/slug` now intelligently determines if "slug" is a subcategory or product.
+- Eliminates need for separate deep route at `/products/[category]/[subcategory]/[slug]`.
+- Maintains backward compatibility with existing subcategory listing pages.
+- Improves SEO with dynamic metadata generation based on route type.
+
+## [Latest] - 2025-11-22
+
+### Feature: ListGuard SSR Wrapper & EmptyState Upgrade
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Added `src/components/layout/ListGuard.jsx` server component to guard list views by rendering children, filter-based empty states, or global empty messaging using configurable `entityName` and `resetLink`.
+2. Enhanced `src/components/ui/EmptyState/EmptyState.jsx` to support optional `description`, `actionLabel`, and `actionHref` props, enabling reusable messaging with contextual CTAs.
+3. Updated `src/components/ui/EmptyState/EmptyState.module.scss` with design tokens, layout refinements, and button styling to match the dark theme with gold accents while remaining RTL-friendly.
+4. Integrated `ListGuard` across `/products`, `/articles`, `/courses`, and `/services` pages so all grids now share consistent empty feedback driven by URL filters.
+
+## [Latest] - 2025-11-24
+
+### Fix: Article filter populate consistency
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Updated `lib/articlesApi.js` → `getArticlesPaginated` to include `articles_categories` in `populate` while keeping the confirmed filter key `filters[articles_categories][slug][$eq]` for reliable Strapi filtering.
+
+---
+
+### Fix: Article category filter query alignment
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Updated `lib/articlesApi.js` → `getArticles` and `getArticlesPaginated` to use Strapi’s exact relation key `filters[articles_categories][slug][$eq]` when filtering by category slug.
+2. Ensured both limited and paginated article fetchers query the correct `articles_categories` relation to restore backend filtering.
+
+---
+
+### Feature: ArticleCategoryFilter Component
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. Created `src/modules/articles/components/ArticleCategoryFilter.jsx` (client component):
+   - Accepts `categories` array and `activeSlug` from URL query param.
+   - Handles category selection via Next.js router.push with query param `?category=slug`.
+   - Resets pagination on category change (removes `page` param).
+   - Flat category structure (no subcategories logic).
+   - Includes "نمایش همه" clear button when a category is active.
+
+2. Created `src/modules/articles/components/ArticleCategoryFilter.module.scss`:
+   - Glassmorphism design matching ProductCategoryFilter aesthetics.
+   - Uses design tokens (`var(--color-text-primary)`, `var(--color-title-hover)`, etc.).
+   - Responsive grid layout (auto-fit, minmax).
+   - Active category indicator with checkmark badge.
+   - Hover effects with transform, glow, and backdrop-filter.
+   - RTL-friendly layout with proper spacing and alignment.
+
+3. Visual Features:
+   - Category cards with circular icon wrappers.
+   - Gold accent borders and hover states.
+   - Active state highlighting with checkmark badge.
+   - Smooth transitions (0.4s cubic-bezier).
+   - Responsive breakpoints (1024px, 600px).
+
+#### Architecture Maintained:
+- Client-side component for interactivity.
+- URL-driven state management via Next.js router.
+- Clean separation from products CategoryFilter (no code reuse).
+- SCSS Modules with design token system.
+- Accessibility features (aria-label, aria-current, focus states).
+
+#### Impact:
+- Articles listing page can now integrate category filtering UI.
+- Consistent visual language with products section.
+- SEO-friendly URL structure with query params.
+- Ready for integration with ArticleGrid and /articles page

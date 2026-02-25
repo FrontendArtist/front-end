@@ -1,108 +1,118 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import ProductCard from '@/components/cards/ProductCard/ProductCard';
-import { formatStrapiProducts } from '@/lib/strapiUtils';
-import SortControls from '@/components/ui/SortControls/SortControls'; // 1. ایمپورت کامپوننت جدید
+import SortControls from '@/components/ui/SortControls/SortControls';
+import EmptyState from '@/components/ui/EmptyState/EmptyState';
 import styles from './ProductGrid.module.scss';
 
-const PAGE_SIZE = 3;
-// 2. تعریف گزینه‌های مرتب‌سازی برای پاس دادن به کامپوننت جدید
+const PAGE_SIZE = 6;
+
 const SORT_OPTIONS = [
-  { value: 'latest', label: 'جدیدترین' },
+  { value: 'createdAt:desc', label: 'جدیدترین' },
   { value: 'price:asc', label: 'ارزان‌ترین' },
-  { value: 'price:desc', label: 'گران‌ترین' },
+  { value: 'price:desc', label: 'گران‌ترین' }
 ];
 
-const ProductGrid = ({ initialProducts }) => {
+/**
+ * ProductGrid - Grid with sorting, pagination, and category/subcategory filtering
+ */
+const ProductGrid = ({
+  initialProducts = [],
+  initialMeta = {},
+  activeCategory = '',
+  activeSubCategory = '',
+  sort = 'createdAt:desc',
+  onSortChange
+}) => {
   const [products, setProducts] = useState(initialProducts || []);
-  const [sortBy, setSortBy] = useState('latest');
   const [isLoading, setIsLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(initialProducts.length === PAGE_SIZE);
+  const [page, setPage] = useState(initialMeta?.pagination?.page || 1);
+  const [hasMore, setHasMore] = useState(
+    (initialMeta?.pagination?.page || 1) < (initialMeta?.pagination?.pageCount || 1)
+  );
 
-  // ... (تمام منطق useEffect و handleLoadMore شما بدون تغییر باقی می‌ماند)
+  const queryBase = useMemo(() => {
+    const params = new URLSearchParams();
+    if (activeCategory) params.set('category', activeCategory);
+    if (activeSubCategory) params.set('sub', activeSubCategory);
+    return params;
+  }, [activeCategory, activeSubCategory]);
 
-  const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-
+  // Refetch on sort/category/sub change → reset to page 1 and replace products
   useEffect(() => {
-    const sortProducts = async () => {
-      // Don't run on initial load if sortBy is the default
-      if (page === 1 && sortBy === 'latest') {
-        setProducts(initialProducts);
-        return;
-      }
-
+    const refetch = async () => {
       setIsLoading(true);
       try {
-        const itemsToFetch = Math.max(products.length, PAGE_SIZE);
-        const sortQuery = sortBy === 'latest' ? 'createdAt:desc' : sortBy;
-        
-        const response = await fetch(
-          `${STRAPI_API_URL}/api/products?populate=*&sort=${sortQuery}&pagination[page]=1&pagination[pageSize]=${itemsToFetch}`
-        );
-        const result = await response.json();
-        const newProducts = formatStrapiProducts(result, STRAPI_API_URL);
-        
-        setProducts(newProducts);
-        setPage(Math.ceil(itemsToFetch / PAGE_SIZE));
-        setHasMore(result.meta.pagination.page < result.meta.pagination.pageCount);
-      } catch (error) {
-        console.error("Failed to sort products:", error);
+        const params = new URLSearchParams(queryBase.toString());
+        params.set('page', '1');
+        params.set('pageSize', String(PAGE_SIZE));
+        params.set('sort', sort);
+        const res = await fetch(`/api/products?${params.toString()}`);
+        const result = await res.json();
+        setProducts(result.data);
+        const p = result?.meta?.pagination;
+        setPage(p?.page || 1);
+        setHasMore((p?.page || 1) < (p?.pageCount || 1));
+      } catch (e) {
+        console.error('خطا در واکشی محصولات:', e);
       } finally {
         setIsLoading(false);
       }
     };
-
-    sortProducts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortBy]);
+    refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sort, activeCategory, activeSubCategory]);
 
   const handleLoadMore = async () => {
     setIsLoading(true);
     try {
       const nextPage = page + 1;
-      const sortQuery = sortBy === 'latest' ? 'createdAt:desc' : sortBy;
-      const response = await fetch(
-        `${STRAPI_API_URL}/api/products?populate=*&sort=${sortQuery}&pagination[page]=${nextPage}&pagination[pageSize]=${PAGE_SIZE}`
-      );
+      const params = new URLSearchParams(queryBase.toString());
+      params.set('page', String(nextPage));
+      params.set('pageSize', String(PAGE_SIZE));
+      params.set('sort', sort);
+      const response = await fetch(`/api/products?${params.toString()}`);
       const result = await response.json();
-      const newProducts = formatStrapiProducts(result, STRAPI_API_URL);
-
-      setProducts(prevProducts => [...prevProducts, ...newProducts]);
-      setPage(nextPage);
-      setHasMore(result.meta.pagination.page < result.meta.pagination.pageCount);
+      setProducts(prev => [...prev, ...result.data]);
+      const p = result?.meta?.pagination;
+      setPage(p?.page || nextPage);
+      setHasMore((p?.page || nextPage) < (p?.pageCount || 1));
     } catch (error) {
-      console.error("Failed to load more products:", error);
+      console.error('خطا در بارگذاری محصولات بیشتر:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-
   return (
     <div className={styles.productGridWrapper}>
-      {/* 3. جایگزینی دکمه‌های قدیمی با کامپوننت جدید */}
-      <SortControls
-        options={SORT_OPTIONS}
-        currentSort={sortBy}
-        onSortChange={setSortBy}
-      />
-      
-      <div className={styles.grid}>
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      {(!isLoading && products.length === 0) ? (
+        <EmptyState title="هیچ محصولی یافت نشد" />
+      ) : (
+        <>
+          <SortControls
+            options={SORT_OPTIONS}
+            currentSort={sort}
+            onSortChange={onSortChange}
+          />
 
-      {isLoading && <p className={styles.loadingText}>در حال بارگذاری...</p>}
+          <div className={styles.grid}>
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
 
-      {hasMore && !isLoading && (
-        <div className={styles.loadMoreContainer}>
-          <button onClick={handleLoadMore} className={styles.loadMoreButton}>
-            بارگذاری بیشتر
-          </button>
-        </div>
+          {isLoading && <p className={styles.loadingText}>در حال بارگذاری...</p>}
+
+          {hasMore && !isLoading && (
+            <div className={styles.loadMoreContainer}>
+              <button onClick={handleLoadMore} className={styles.loadMoreButton}>
+                بارگذاری بیشتر
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

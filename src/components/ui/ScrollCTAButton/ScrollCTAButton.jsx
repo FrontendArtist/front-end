@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import styles from './ScrollCTAButton.module.scss';
 
 /**
  * A client component button that smoothly scrolls to a target element.
  * @param {{
  * targetId: string;
- * children: React.ReactNode;
+ * children?: React.ReactNode;
  * className?: string;
  * }} props
  */
@@ -21,13 +22,23 @@ const ScrollCTAButton = ({ targetId, children, className }) => {
     }
   }, [targetId]);
 
-  const buttonClassName = className ? `card-button ${className}` : 'card-button';
+  const label = useMemo(() => {
+    if (typeof children === 'string' && children.trim().length > 0) {
+      return children;
+    }
+
+    return children || 'مشاهده محصولات';
+  }, [children]);
+
+  const buttonClassName = className
+    ? `${styles.heroButton} ${className}`
+    : styles.heroButton;
 
   return (
     <button type="button" onClick={handleClick} className={buttonClassName}>
-      {children}
+      <span className={styles.heroButtonLabel}>{label}</span>
     </button>
   );
 };
 
-export default ScrollCTAButton; 
+export default ScrollCTAButton;

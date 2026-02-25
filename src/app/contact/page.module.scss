@@ -1,0 +1,244 @@
+@use '../../styles/base/mixins' as *;
+/* Contact Page Styles - استایل صفحه تماس با ما */
+
+
+.contactPage {
+    min-height: 100vh;
+    background: var(--color-bg-primary);
+    @include section-spacing;
+}
+
+.container {
+    @include container;
+}
+
+/* Header Section */
+.header {
+    margin-bottom: var(--space-title-content-desktop);
+}
+
+.title {
+    font-size: var(--font-xl);
+    color: var(--color-title-hover);
+}
+
+/* Content Grid */
+.contentGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-gap-desktop);
+
+    @include respond(lg) {
+        grid-template-columns: 1fr;
+        gap: 48px;
+    }
+
+    @include respond(sm) {
+        gap: 32px;
+    }
+}
+
+.formSection {
+    /* فرم در ستون چپ (راست در RTL) */
+}
+
+/* Info Section */
+.infoSection {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.infoTitle {
+    font-size: 28px;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: 8px;
+
+    @include respond(sm) {
+        font-size: 24px;
+    }
+}
+
+/* Info Cards Grid */
+.infoCards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+
+    @include respond(md) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include respond(sm) {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+.infoCard {
+    background: var(--gradient-card-vertical);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    border: 1px solid rgba(246, 217, 130, 0.1);
+    display: flex;
+    gap: 16px;
+    @include hover-transition;
+
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(0, 43, 32, 0.25);
+        border-color: rgba(246, 217, 130, 0.2);
+    }
+
+    @include respond(sm) {
+        padding: 20px;
+    }
+}
+
+.iconWrapper {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(246, 217, 130, 0.1);
+    border-radius: 12px;
+
+    @include respond(sm) {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+.icon {
+    width: 24px;
+    height: 24px;
+    color: var(--color-text-primary);
+
+    @include respond(sm) {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+.cardContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cardTitle {
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+
+    @include respond(sm) {
+        font-size: var(--font-md);
+    }
+}
+
+.cardText {
+    font-size: var(--font-md);
+    color: var(--color-card-text);
+    line-height: var(--line-height-md);
+    opacity: 0.9;
+
+    @include respond(sm) {
+        font-size: var(--font-sm);
+    }
+}
+
+.socialLinks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.socialLink {
+    font-size: var(--font-md);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    padding: 6px 14px;
+    background: rgba(246, 217, 130, 0.1);
+    border-radius: 8px;
+    @include hover-transition;
+
+    &:hover {
+        background: rgba(246, 217, 130, 0.2);
+        transform: translateY(-2px);
+    }
+
+    @include respond(sm) {
+        font-size: var(--font-sm);
+        padding: 5px 12px;
+    }
+}
+
+/* Working Hours */
+.workingHours {
+    background: var(--gradient-card-vertical);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: var(--radius-card);
+    padding: 28px;
+    border: 1px solid rgba(246, 217, 130, 0.1);
+
+    @include respond(sm) {
+        padding: 24px;
+    }
+}
+
+.hoursTitle {
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: 20px;
+
+    @include respond(sm) {
+        font-size: var(--font-md);
+        margin-bottom: 16px;
+    }
+}
+
+.hoursList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hoursItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(246, 217, 130, 0.1);
+
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.day {
+    font-size: var(--font-md);
+    color: var(--color-card-text);
+    font-weight: var(--font-weight-medium);
+
+    @include respond(sm) {
+        font-size: var(--font-sm);
+    }
+}
+
+.time {
+    font-size: var(--font-md);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+
+    @include respond(sm) {
+        font-size: var(--font-sm);
+    }
+}

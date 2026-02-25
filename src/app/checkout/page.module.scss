@@ -1,0 +1,104 @@
+@use '@/styles/base/mixins' as *;
+
+// صفحه Checkout
+.checkoutPage {
+    min-height: 100vh;
+    padding: var(--space-section-top-desktop) 0 var(--space-section-bottom-desktop);
+
+    @include respond(md) {
+        padding: 100px 0 var(--space-section-bottom-desktop);
+    }
+}
+
+// عنوان صفحه
+.pageTitle {
+    font-size: var(--font-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: 32px;
+    text-align: center;
+
+    @include respond(md) {
+        font-size: var(--font-2xl);
+        margin-bottom: 24px;
+    }
+}
+
+// Container مرحله فعلی
+.stepContainer {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+// Empty State
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    gap: 24px;
+}
+
+.emptyIcon {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(246, 217, 130, 0.1);
+    border: 3px solid rgba(246, 217, 130, 0.3);
+    border-radius: 50%;
+
+    svg {
+        width: 60px;
+        height: 60px;
+        color: var(--color-card-text);
+    }
+}
+
+.emptyTitle {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-xl);
+    }
+}
+
+.emptyText {
+    font-size: var(--font-lg);
+    color: var(--color-card-text);
+    max-width: 500px;
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-md);
+    }
+}
+
+.emptyButton {
+    display: inline-block;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
+    color: white;
+    text-decoration: none;
+    border-radius: 12px;
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    @include hover-transition;
+    margin-top: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}

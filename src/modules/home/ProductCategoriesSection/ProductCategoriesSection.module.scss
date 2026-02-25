@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .categoriesSection {
   // The global .section class will handle the padding
@@ -31,4 +31,3 @@
   margin-top: 2rem;
   // The BaseSlider component handles its own internal styling
 }
-

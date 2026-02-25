@@ -1,104 +1,72 @@
-// All comments from the previous version are still valid.
 import { marked } from 'marked';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { getArticleBySlug } from '@/lib/articlesApi';
+import { getComments } from '@/lib/commentsApi';
+import CommentsSection from '@/modules/comments/CommentsSection';
+import { API_BASE_URL } from '@/lib/api';
 import styles from './page.module.scss';
 
-const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-
 /**
- * Fetches a single article from Strapi based on its slug, corrected for a FLAT data structure.
- */
-async function getArticleBySlug(slug) {
-  try {
-    const response = await fetch(
-      `${STRAPI_API_URL}/api/articles?populate=cover&filters[slug][$eq]=${slug}`,
-      { next: { revalidate: 3600 } }
-    );
-    if (!response.ok) return null;
-    const result = await response.json();
-    if (!result.data || result.data.length === 0) return null;
-
-    // The raw article data from Strapi (no .attributes)
-    const rawArticle = result.data[0];
-
-    // Format the cover image from the flat structure
-    let coverImage = { url: 'https://picsum.photos/seed/placeholder/800/450', alt: 'Placeholder', width: 800, height: 450 };
-    if (rawArticle.cover && rawArticle.cover.url) {
-      coverImage = {
-        url: STRAPI_API_URL + rawArticle.cover.url,
-        alt: rawArticle.cover.alternativeText || '',
-        width: rawArticle.cover.width,
-        height: rawArticle.cover.height,
-      };
-    }
-
-    // Format the final object without accessing .attributes
-    const formattedArticle = {
-      id: rawArticle.id,
-      title: rawArticle.title,
-      content: rawArticle.content,
-      cover: coverImage,
-      date: new Date(rawArticle.publishedAt).toLocaleDateString('fa-IR'),
-    };
-    return formattedArticle;
-  } catch (error) {
-    console.error("Failed to fetch article by slug:", error);
-    return null;
-  }
-}
-
-/**
- * Generates all possible article slugs at build time. Corrected for a FLAT data structure.
- */
-export async function generateStaticParams() {
-  try {
-    const response = await fetch(`${STRAPI_API_URL}/api/articles`);
-    const result = await response.json();
-    // Access slug directly, no .attributes
-    return result.data.map((article) => ({
-      slug: article.slug,
-    }));
-  } catch (error) {
-    console.error("Failed to generate static params for articles:", error);
-    return [];
-  }
-}
-
-/**
- * Generates dynamic SEO metadata.
+ * Generate Dynamic Metadata for SEO
  */
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const article = await getArticleBySlug(slug);
-  if (!article) {
+  const rawArticle = await getArticleBySlug(slug);
+
+  if (!rawArticle) {
     return { title: 'مقاله یافت نشد' };
   }
-  const excerpt = Array.isArray(article.content) ? article.content[0]?.children[0]?.text.substring(0, 150) : '';
+
   return {
-    title: `${article.title} | وب‌سایت ما`,
-    description: excerpt,
+    title: `${rawArticle.title} | وب‌سایت ما`,
+    description: rawArticle.excerpt || '',
   };
 }
 
-
+/**
+ * Article Page Component (Server Component)
+ */
 export default async function ArticlePage({ params }) {
   const { slug } = await params;
-  const article = await getArticleBySlug(slug);
 
-  if (!article) {
+  // Data fetched via API Layer abstraction
+  const rawArticle = await getArticleBySlug(slug);
+
+  if (!rawArticle) {
     notFound();
   }
-  
-  // Convert Strapi's Rich Text JSON to a Markdown string, then to HTML
-  const markdownContent = (article.content || [])
-    .map(block => 
-      (block.children || [])
-      .map(child => child.text || '')
-      .join('')
-    )
-    .join('\n\n');
-  const htmlContent = marked(markdownContent);
+
+  // Fetch comments
+  const initialComments = await getComments('article', rawArticle.documentId);
+
+  // 🛠️ منطق هوشمند تشخیص تصویر
+  // 1. دریافت URL خام از API
+  const rawCoverUrl = rawArticle.cover?.url || '';
+
+  // 2. تشخیص اینکه آیا این تصویر، یک فال‌بک لوکال (از پوشه public) است؟
+  // معمولاً عکس‌های Strapi در /uploads هستند و عکس‌های لوکال در /images
+  const isLocalFallback = rawCoverUrl.startsWith('/images/') || rawCoverUrl.includes('forempties');
+
+  // 3. ساخت URL نهایی برای نمایش (فقط اگر تصویر واقعی باشد استفاده می‌شود)
+  let finalCoverUrl = rawCoverUrl;
+  if (!isLocalFallback && !rawCoverUrl.startsWith('http')) {
+      // اگر عکس واقعی Strapi است و آدرس نسبی دارد، آدرس پایه را اضافه کن
+      finalCoverUrl = `${API_BASE_URL}${rawCoverUrl}`;
+  }
+
+  // 4. تصمیم‌گیری برای نمایش: فقط اگر فال‌بک نباشد، عکس را نشان می‌دهیم
+  const showCoverImage = !isLocalFallback && rawCoverUrl;
+
+  const article = {
+    id: rawArticle.id,
+    documentId: rawArticle.documentId,
+    title: rawArticle.title,
+    date: new Date(rawArticle.date).toLocaleDateString('fa-IR'),
+    content: rawArticle.excerpt, 
+  };
+
+  const htmlContent = marked(article.content || '');
 
   return (
     <main className={styles.articlePage}>
@@ -107,21 +75,30 @@ export default async function ArticlePage({ params }) {
           <h1 className={styles.title}>{article.title}</h1>
           <time className={styles.date}>{article.date}</time>
         </header>
-        
-        <div className={styles.coverImageWrapper}>
-          <Image 
-            src={article.cover.url}
-            alt={article.cover.alt}
-            width={article.cover.width}
-            height={article.cover.height}
-            priority
-            className={styles.coverImage}
-          />
-        </div>
 
-        <article 
+        {/* ✅ رندر شرطی: اگر عکس واقعی داریم نشان بده، اگر نه (لوگو/فال‌بک) هیچی نشان نده */}
+        {showCoverImage && (
+          <div className={styles.coverImageWrapper}>
+            <Image
+              src={finalCoverUrl}
+              alt={rawArticle.cover?.alt || article.title}
+              width={800}
+              height={450}
+              priority
+              className={styles.coverImage}
+            />
+          </div>
+        )}
+
+        <article
           className={styles.content}
-          dangerouslySetInnerHTML={{ __html: htmlContent }} 
+          dangerouslySetInnerHTML={{ __html: htmlContent }}
+        />
+
+        <CommentsSection
+          entityType="article"
+          entityId={article.documentId}
+          initialComments={initialComments}
         />
       </div>
     </main>

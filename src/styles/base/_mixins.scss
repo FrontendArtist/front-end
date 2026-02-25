@@ -1,14 +1,33 @@
 // Breakpoints for mixin logic
 $breakpoint-xl: 1280px;
-$breakpoint-lg: 960px;
+$breakpoint-lg: 1024px;
 $breakpoint-md: 768px;
 $breakpoint-sm: 440px;
 
 @mixin respond($breakpoint) {
-  @if $breakpoint == xl { @media (max-width: $breakpoint-xl) { @content; } }
-  @if $breakpoint == lg { @media (max-width: $breakpoint-lg) { @content; } }
-  @if $breakpoint == md { @media (max-width: $breakpoint-md) { @content; } }
-  @if $breakpoint == sm { @media (max-width: $breakpoint-sm) { @content; } }
+  @if $breakpoint ==xl {
+    @media (max-width: $breakpoint-xl) {
+      @content;
+    }
+  }
+
+  @if $breakpoint ==lg {
+    @media (max-width: $breakpoint-lg) {
+      @content;
+    }
+  }
+
+  @if $breakpoint ==md {
+    @media (max-width: $breakpoint-md) {
+      @content;
+    }
+  }
+
+  @if $breakpoint ==sm {
+    @media (max-width: $breakpoint-sm) {
+      @content;
+    }
+  }
 }
 
 @mixin flex-center {
@@ -23,18 +42,22 @@ $breakpoint-sm: 440px;
 
 @mixin card-container {
 
-  border-radius: 16px;
   @include hover-transition;
-  @include respond(md) { padding: 16px; }
+
+  @include respond(md) {
+    padding: 16px;
+  }
 }
 
 @mixin section-spacing {
   padding-top: var(--space-section-top-desktop);
   padding-bottom: var(--space-section-bottom-desktop);
+
   @include respond(md) {
     padding-top: 96px;
     padding-bottom: 80px;
   }
+
   @include respond(sm) {
     padding-top: 64px;
     padding-bottom: 56px;
@@ -46,16 +69,133 @@ $breakpoint-sm: 440px;
   padding-left: var(--space-container-x-desktop);
   padding-right: var(--space-container-x-desktop);
   max-width: $breakpoint-xl;
+
   @include respond(lg) {
     padding-left: 60px;
     padding-right: 60px;
   }
+
   @include respond(md) {
     padding-left: 40px;
     padding-right: 40px;
   }
+
   @include respond(sm) {
     padding-left: 20px;
     padding-right: 20px;
   }
-} 
+}
+
+// ===================================
+// Card Component Mixins (DRY)
+// ===================================
+
+/**
+ * Base Card Structure
+ * Common styles for all card containers
+ */
+@mixin base-card {
+  @include card-container;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--gradient-card-vertical);
+  overflow: hidden;
+  padding: 0;
+  text-decoration: none;
+
+  &:hover {
+    background: var(--gradient-card-horizontal-rtl);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/**
+ * Card Image Wrapper
+ * Responsive aspect ratios for card images
+ */
+@mixin card-image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  flex-shrink: 0;
+  overflow: hidden;
+
+  @include respond(md) {
+    aspect-ratio: 4 / 3;
+  }
+
+  @include respond(sm) {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/**
+ * Card Image Element
+ * Common image styles with hover effect
+ */
+@mixin card-image {
+  object-fit: cover;
+  @include hover-transition;
+}
+
+/**
+ * Card Content Section
+ * Padding and layout for card content
+ */
+@mixin card-content {
+  padding: var(--space-title-text-desktop);
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
+  gap: 16px;
+  height: 100%;
+
+  @include respond(md) {
+    padding: 20px;
+    gap: 12px;
+  }
+
+  @include respond(sm) {
+    padding: 16px;
+    gap: 10px;
+  }
+}
+
+/**
+ * Card Title
+ * Typography for card titles
+ */
+@mixin card-title {
+  color: var(--color-text-primary);
+  font-size: var(--font-md );
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-md);
+  margin: 0;
+  @include hover-transition;
+
+  @include respond(md) {
+    font-size: var(--font-md);
+  }
+}
+
+/**
+ * Card Description Text
+ * Multi-line truncation for descriptions
+ */
+@mixin card-text-truncate($lines: 3) {
+  color: var(--color-card-text);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-lg );
+  flex-grow: 0;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: $lines;
+  overflow: hidden;
+
+  @include respond(md) {
+    font-size: var(--font-sm);
+  }
+}

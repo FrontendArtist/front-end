@@ -1,45 +1,143 @@
+@use '../../../styles/base/mixins' as *;
+
 .courseCard {
-  display: flex;
-  flex-direction: column;
-  height: 100%; // Ensures cards in a row have the same height
+  @include base-card;
 }
 
 .imageWrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 10; // Gives the image a consistent shape
-  flex-shrink: 0;
+  @include card-image-wrapper;
 }
 
 .courseImage {
-  object-fit: cover;
+  @include card-image;
 }
 
 .cardContent {
-  padding: var(--space-title-text-desktop);
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1; // Allows this section to fill available space
+  @include card-content;
+
 }
 
 .cardTitle {
-  color: var(--color-text-primary);
-  font-size: var(--font-lg);
-  margin-bottom: 1rem;
+  @include card-title;
 }
 
 .cardText {
-  color: var(--color-card-text);
-  font-size: var(--font-md);
-  line-height: var(--line-height-md);
-  flex-grow: 1; // Pushes the button down
+  @include card-text-truncate(3);
 
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  display: -webkit-box;
+  @include respond(md) {
+    -webkit-line-clamp: 4;
+  }
 }
 
 .ctaButton {
-  margin-top: var(--space-text-button-desktop); // Pushes button away from text
-  align-self: center; // Centers the button horizontally
+  display: inline-block;
+  align-self: center;
+  padding: 12px 32px;
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  border: 2px solid var(--color-text-primary);
+  border-radius: 8px;
+  @include hover-transition;
+
+  &:hover {
+    background-color: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    transform: scale(1.05);
+  }
+
+  @include respond(md) {
+    margin-top: 16px;
+    padding: 10px 24px;
+    font-size: var(--font-sm);
+  }
+
+  @include respond(sm) {
+    margin-top: 12px;
+    padding: 8px 20px;
+  }
+}
+
+// بخش نمایش قیمت
+.priceSection {
+  margin-top: auto;
+  padding: 16px 0;
+  border-top: 1px solid rgba(246, 217, 130, 0.1);
+}
+
+.price {
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-bold);
+  display: block;
+
+  @include respond(md) {
+    font-size: var(--font-md);
+  }
+}
+
+// بخش دکمه‌ها
+.buttonSection {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+
+  @include respond(md) {
+    gap: 10px;
+    margin-top: 12px;
+  }
+}
+
+// دکمه افزودن به سبد خرید
+.addToCartButton {
+  display: inline-block;
+  text-align: center;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
+  color: white;
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-bold);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  @include hover-transition;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @include respond(md) {
+    padding: 10px 20px;
+    font-size: var(--font-sm);
+  }
+}
+
+// دکمه غیرفعال (زمانی که دوره در سبد است)
+.disabledButton {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  padding: 12px 24px;
+  background: rgba(246, 217, 130, 0.1);
+  color: var(--color-card-text);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-medium);
+  border: 2px solid rgba(246, 217, 130, 0.3);
+  border-radius: 8px;
+  cursor: not-allowed;
+  opacity: 0.6;
+
+  @include respond(md) {
+    padding: 10px 20px;
+    font-size: var(--font-sm);
+  }
 }

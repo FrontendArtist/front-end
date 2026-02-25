@@ -1,13 +1,20 @@
+/**
+ * ProductCategoriesSection Component
+ * This section now uses live Strapi categories via API Layer abstraction.
+ * 
+ * Displays main product categories fetched from Strapi (parent=null)
+ * Data flow: HomePage → /api/home → getAllCategories() → formatStrapiCategories() → ProductCategoriesSection
+ */
+
 'use client';
+
 import Link from 'next/link';
 import CategoryCard from '@/components/cards/CategoryCard/CategoryCard';
 import BaseSlider from '@/components/layout/BaseSlider/BaseSlider';
-import { mockCategories } from '@/data/mock';
 import styles from './ProductCategoriesSection.module.scss';
 
-const ProductCategoriesSection = () => {
-  const categories = mockCategories;
-
+const ProductCategoriesSection = ({ data = [] }) => {
+  const categories = data;
   const renderCategoryCard = (category) => {
     return <CategoryCard category={category} />;
   };
@@ -17,7 +24,7 @@ const ProductCategoriesSection = () => {
       <div className="container">
         <header className={styles.header}>
           <h2 className={styles.title}>دسته بندی</h2>
-          <Link href="/categories" className={styles.viewAllLink}>
+          <Link href="/products" className={styles.viewAllLink}>
             مشاهده همه دسته بندی ها ...
           </Link>
         </header>

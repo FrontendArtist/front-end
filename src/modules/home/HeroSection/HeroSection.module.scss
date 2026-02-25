@@ -1,5 +1,4 @@
-
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .heroSection {
   position: relative;
@@ -9,6 +8,8 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  box-shadow: 0px 630px 620px -170px #061818 inset;
+
 }
 
 .backgroundImage {
@@ -26,7 +27,6 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: var(--color-overlay);
   opacity: 0.7;
   z-index: -1;
 }
@@ -35,27 +35,39 @@
   text-align: center;
   z-index: 1;
   padding: 0 20px;
-  
+
   @include respond(sm) {
     padding: 0 16px;
   }
 }
 
+.titleWrapper {
+  margin-bottom: 340px;
+  margin-top: 110px;
+
+  .navline {
+    width: 70%;
+    margin-bottom: 10px;
+  }
+}
+
 .title {
   color: var(--color-text-primary);
-  font-weight: var(--font-weight-bold);
-  font-size: 3.5rem;
+  font-size: 2.5rem;
+  font-weight: var(--font-weight-medium);
   line-height: 1.2;
   margin-bottom: var(--space-title-text-desktop);
-  
+  font-family: 'Far Shafigh';
+
   &:hover {
     color: var(--color-title-hover);
   }
-  
+
   @include respond(sm) {
     font-size: 2.5rem;
     margin-bottom: 16px;
   }
+
 }
 
 .subtitle {
@@ -66,7 +78,7 @@
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
-  
+
   @include respond(sm) {
     font-size: 1rem;
     margin-bottom: 32px;
@@ -83,14 +95,14 @@
   font-weight: var(--font-weight-bold);
   font-size: 1.1rem;
   transition: all 0.3s ease;
-  
+
   &:hover {
     background-color: var(--color-title-hover);
     transform: translateY(-2px);
   }
-  
+
   @include respond(sm) {
     padding: 14px 28px;
     font-size: 1rem;
   }
-} 
+}

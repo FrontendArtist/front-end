@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .accordion {
   width: 100%;
@@ -12,15 +12,11 @@
 }
 
 .accordionItem {
-  background: var(--color-overlay);
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(246, 217, 130, 0.1);
   @include hover-transition;
 
-  &:hover {
-    border-color: rgba(246, 217, 130, 0.3);
-  }
+
 }
 
 .accordionTitle {
@@ -32,8 +28,8 @@
   background: transparent;
   border: none;
   color: var(--color-text-primary);
-  font-size: var(--font-lg);
-  font-weight: var(--font-weight-medium);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-bold);
   text-align: right;
   cursor: pointer;
   @include hover-transition;
@@ -53,7 +49,6 @@
   }
 
   &:focus {
-    outline: 2px solid var(--color-text-primary);
     outline-offset: -2px;
   }
 }
@@ -73,24 +68,25 @@
 
 .accordionContent {
   overflow: hidden;
-  background: rgba(0, 43, 32, 0.5);
+  margin-right: 10px;
+
 }
 
 .contentInner {
-  padding: 20px 24px;
+  padding: 10px 24px 24px;
   color: var(--color-card-text);
   font-size: var(--font-md);
   line-height: var(--line-height-lg);
   text-align: right;
 
   @include respond(md) {
-    padding: 16px 20px;
+    padding: 0 20px 24px;
     font-size: var(--font-sm);
     line-height: var(--line-height-md);
   }
 
   @include respond(sm) {
-    padding: 14px 16px;
+    padding: 0 16px 14px;
+
   }
 }
-

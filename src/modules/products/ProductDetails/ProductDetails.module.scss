@@ -1,0 +1,48 @@
+@use '@/styles/base/mixins' as *;
+
+.productPage {
+  padding: 2rem 0;
+  min-height: 100vh;
+  margin-top: var(--space-section-top-desktop);
+}
+
+.layoutGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin-top: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+.gallery {
+  width: 100%;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--color-primary-text);
+  margin: 0;
+}
+
+.price {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-title-hover);
+}
+
+.description {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--color-card-text);
+}

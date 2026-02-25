@@ -1,0 +1,42 @@
+@use '../../../styles/base/mixins' as *;
+
+.heroButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  background-image: url('/images/herobutton.png');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  inline-size:310px;
+  block-size: 150px;
+  color: var(--color-bg-primary);
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-bold);
+  text-shadow:  0 4px 12px rgba(0, 0, 0, 0.35);
+  color: var(--color-overlay);
+  direction: rtl;
+  @include hover-transition;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-title-hover);
+    outline-offset: 4px;
+  }
+}
+
+.heroButtonLabel {
+  pointer-events: none;
+  color: inherit;
+  font-size: var(--font-md);
+}
+

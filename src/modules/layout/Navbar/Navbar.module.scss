@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .header {
   position: fixed;
@@ -7,30 +7,67 @@
   right: 0;
   width: 100%;
   z-index: 1000;
-  background-color:#002b20d0;
+  background-color: var(--color-overlay-blured);
   transition: box-shadow 0.3s ease;
   backdrop-filter: blur(3px);
+
 
   &.scrolled {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
 }
 
+// (header border animation moved to bottom and commented)
+
 .navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   height: 100px;
   padding: 0 1rem;
+
+  .toggleWrapper {
+    width: 100px;
+    display: none;
+  }
+
+  @include respond(lg) {
+
+    // چیدمان موبایل: [toggle راست] [logo وسط] [icons چپ]
+    .toggleWrapper {
+      width: 100px;
+      display: block;
+    }
+
+    .mobileMenuToggle {
+      order: 1;
+    }
+
+    .logo {
+      order: 2;
+      margin: 0 auto;
+    }
+
+    .actionIcons {
+      order: 3;
+      width: 100px;
+      justify-content: end;
+    }
+  }
 }
 
 .logo {
+  margin-left: 20px;
+
   a {
+    height: 60px;
     color: var(--color-text-primary);
     font-size: 1.5rem;
     font-weight: 700;
     text-decoration: none;
     transition: color 0.3s ease;
+    display: block;
 
     &:hover {
       color: var(--color-title-hover);
@@ -39,7 +76,7 @@
 }
 
 .navList {
-  display: none; // Hidden on mobile
+  display: none;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -47,40 +84,282 @@
   @media (min-width: 1024px) {
     display: flex;
     gap: 2rem;
-
     margin-left: 2rem;
+  }
+}
 
-    li {
-      a {
-        color: var(--color-text-primary);
-        text-decoration: none;
-        font-size: 1rem;
-        transition: color 0.3s ease;
+.navItem {
+  position: relative;
+}
 
-        &:hover {
-          color: var(--color-title-hover);
-        }
+.navLink {
+  color: var(--color-text-primary);
+  text-decoration: none;
+  font-size: var(--font-md);
+  @include hover-transition;
+
+  &:hover {
+    color: var(--color-title-hover);
+  }
+}
+
+// Nav link content with dropdown arrow
+.navLinkContent {
+  display: inline-flex;
+  align-items: center;
+}
+
+.dropdownIcon {
+  width: var(--font-md);
+  height: var(--font-md);
+  margin-inline-start: calc(var(--font-sm) / 2);
+  transition: transform 0.3s ease;
+}
+
+.dropdownIconOpen {
+  transform: rotate(180deg);
+}
+
+// MegaMenu Wrapper
+.megaMenuWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+// MegaMenu Dropdown
+.megaMenu {
+  width: min-content;
+  position: fixed;
+  top: calc(var(--space-section-top-desktop) - 20px);
+  right: 0;
+  left: 0;
+  margin: 0 auto;
+  min-width: 600px;
+  max-width: 800px;
+  background: var(--color-overlay-blured);
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 24px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px);
+  pointer-events: none;
+  @include hover-transition;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  will-change: opacity, transform;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 1001;
+  position: fixed;
+
+  // (mega menu bottom border animation moved to bottom and commented)
+
+  @include respond(lg) {
+    min-width: 500px;
+  }
+}
+
+.megaMenuVisible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+  // (border animation trigger moved to bottom and commented)
+}
+
+// Vertical border animator (two sides)
+// (mega menu vertical border animation moved to bottom and commented)
+
+// (reduced motion overrides moved to bottom and commented)
+
+.megaMenuGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+
+  @include respond(lg) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  @include respond(md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.megaMenuColumn {
+  .categoryTitle {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    font-size: var(--font-md);
+    margin-bottom: 12px;
+    display: block;
+    text-decoration: none;
+    @include hover-transition;
+
+    &:hover {
+      color: var(--color-title-hover);
+      padding-right: 4px;
+    }
+  }
+}
+
+.subCategoryList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    margin-bottom: 8px;
+
+    a {
+      display: block;
+      padding: 4px 0;
+      color: var(--color-card-text);
+      font-size: var(--font-sm);
+      text-decoration: none;
+      @include hover-transition;
+
+      &:hover {
+        color: var(--color-title-hover);
+        padding-right: 4px;
       }
     }
   }
 }
 
-.actionIcons {
-  display: none; // Hidden on mobile
+/* =============================================
+   MOVED & DISABLED: Header/MegaMenu border animations
+   ============================================= 
 
-  @media (min-width: 1024px) {
-    display: flex;
-    gap: 1rem;
+.header {
+  // animated bottom border pieces (left and right)
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    height: var(--border-strong, 2px);
+    width: 50%;
+    background: var(--color-title-hover);
+    transform: scaleX(0);
+    transition: transform var(--transition-fast, 0.35s) ease;
+  }
+
+  &::before { left: 0; transform-origin: left center; }
+  &::after { right: 0; transform-origin: right center; }
+}
+
+// when mega menu is open, animate borders from edges to center
+.megaOpen {
+  &::before,
+  &::after {
+    transform: scaleX(1);
+  }
+}
+
+.megaMenu {
+  // bottom border halves
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50%;
+    height: var(--border-strong, 2px);
+    background: var(--color-title-hover);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform var(--transition-fast, 0.35s) ease;
+    transition-delay: 0.3s;
+  }
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 50%;
+    height: var(--border-strong, 2px);
+    background: var(--color-title-hover);
+    transform: scaleX(0);
+    transform-origin: right center;
+    transition: transform var(--transition-fast, 0.35s) ease;
+    transition-delay: 0.3s;
+  }
+}
+
+.megaMenuVisible {
+  // animate border halves in when visible
+  &::before,
+  &::after {
+    transform: scaleX(1);
+  }
+}
+
+// Vertical border animator (two sides)
+.megaBorder {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: var(--border-strong, 2px);
+    height: 100%;
+    background: var(--color-title-hover);
+    transform: scaleY(0);
+    transform-origin: top center;
+    transition: transform var(--transition-fast, 0.3s) ease;
+  }
+  &::before { left: 0; }
+  &::after { right: 0; }
+}
+.megaMenuVisible .megaBorder::before,
+.megaMenuVisible .megaBorder::after { transform: scaleY(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .header::before,
+  .header::after { transition: none; }
+  .megaMenu::before,
+  .megaMenu::after { transition: none; }
+  .megaBorder::before,
+  .megaBorder::after { transition: none; }
+}
+*/
+
+.actionIcons {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  @include respond(lg) {
+    gap: 0.5rem;
+  }
+}
+
+// مخفی کردن جستجو در موبایل (فقط در دسکتاپ نمایش داده شود)
+.searchTrigger {
+  @include respond(lg) {
+    display: none !important;
   }
 }
 
 .iconButton {
   background: none;
   border: none;
-  padding: 0.5rem;
   cursor: pointer;
   color: var(--color-text-primary);
   transition: color 0.3s ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     color: var(--color-title-hover);
@@ -121,9 +400,11 @@
       &:first-child {
         transform: translateY(9px) rotate(45deg);
       }
+
       &:nth-child(2) {
         opacity: 0;
       }
+
       &:last-child {
         transform: translateY(-9px) rotate(-45deg);
       }
@@ -131,61 +412,321 @@
   }
 }
 
-// Mobile Menu Drawer
+/* ==== MOBILE MENU WITH TABS ==== */
+
 .mobileMenuDrawer {
   position: fixed;
   top: 0;
   right: -100%;
-  width: 100%;
+  width: 75%;
   height: 100vh;
-  z-index: 1000;
-  transition: right 0.3s ease;
+  background: var(--color-bg-primary-transparent);
+  backdrop-filter: blur(8px);
+  transition: right 0.35s ease;
+  z-index: 1099;
+  color: var(--color-text-primary);
+  overflow-y: auto;
 
   &.open {
     right: 0;
   }
 }
 
+.mobileMenuTop {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  height: 100px;
+
+  .mobileSearchForm {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 0 0.5rem;
+    margin-right: 15px;
+  }
+
+  .mobileSearch {
+    flex: 1;
+    padding: 0.6rem 0.5rem;
+    border: none;
+    background: transparent;
+    color: #fff;
+    font-size: 0.95rem;
+    outline: none;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+  }
+
+  .mobileSearchButton {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.2rem;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #fff;
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .closeBtn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.8rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+  }
+}
+
+.mobileTabs {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 0.8rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease;
+
+  &.active {
+    color: var(--color-text-primary);
+    border-bottom: 2px solid var(--color-text-primary);
+  }
+}
+
 .mobileMenuContent {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 80%;
-  max-width: 400px;
-  height: 100%;
-  background-color: var(--color-bg-primary);
-  padding: 5rem 2rem 2rem;
-  overflow-y: auto;
-  z-index: 1001;
+  padding: 1.5rem;
+}
+
+.mobileNavList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    margin-bottom: 1rem;
+
+    a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 1rem;
+
+      &:hover {
+        color: var(--color-accent, #16a085);
+      }
+    }
+  }
+}
+
+.mobileSubList {
+  list-style: none;
+  padding-left: 1rem;
+  margin-top: 0.5rem;
+
+  li a {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+  }
 }
 
 .mobileMenuOverlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+  z-index: 1098;
+
+  .open+& {
+    opacity: 1;
+    visibility: visible;
+  }
 }
 
-.mobileNavList {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.mobileMenuOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+  z-index: 1098;
 
-  li {
-    margin-bottom: 1.5rem;
+  &.open {
+    opacity: 1;
+    visibility: visible;
+  }
+}
 
-    a {
-      color: var(--color-text-primary);
-      text-decoration: none;
-      font-size: 1.2rem;
-      transition: color 0.3s ease;
 
-      &:hover {
-        color: var(--color-title-hover);
-      }
+.mobileNavItem {
+  margin-bottom: 1.5rem;
+
+  >a {
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-size: 1.2rem;
+    display: block;
+    @include hover-transition;
+
+    &:hover {
+      color: var(--color-title-hover);
     }
   }
-} 
+}
+
+// Mobile Category Toggle (Accordion)
+.mobileCategoryToggle {
+  width: 100%;
+  text-align: right;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 1.2rem;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  @include hover-transition;
+
+  &:hover {
+    color: var(--color-title-hover);
+  }
+
+  span {
+    flex: 1;
+    text-align: right;
+  }
+}
+
+.accordionIcon {
+  width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  @include hover-transition;
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+// Mobile Sub Menu (Accordion Content)
+.mobileSubMenu {
+  margin-top: 12px;
+  padding-right: 16px;
+  border-right: 2px solid var(--color-text-primary);
+  animation: slideDown 0.3s ease-in-out;
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+.mobileSubMenuItem {
+  display: block;
+  color: var(--color-card-text);
+  font-size: var(--font-md);
+  text-decoration: none;
+  padding: 8px 0;
+  @include hover-transition;
+
+  &:hover {
+    color: var(--color-title-hover);
+    padding-right: 4px;
+  }
+}
+
+.mobileCategoryGroup {
+  margin-bottom: 16px;
+}
+
+.mobileCategoryTitle {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-bold);
+  text-decoration: none;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  @include hover-transition;
+
+  &:hover {
+    color: var(--color-title-hover);
+  }
+}
+
+/* ==== NEW: Article MegaMenu Styles ==== */
+.articleImage {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+
+  img {
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  &:hover img {
+    transform: scale(1.05);
+  }
+}
+
+.viewAllLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 120px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  font-weight: bold;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-title-hover);
+  }
+}

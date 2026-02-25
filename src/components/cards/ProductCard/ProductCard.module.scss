@@ -1,63 +1,34 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .productCard {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
+  @include base-card;
 
-  border-radius: 10px;
-  overflow: hidden;
-  background-color: var(--color-card-bg);
-  transition: transform 0.3s ease;
-  direction: rtl;
-
+  // Override نمایش hover effect چون GradientBorderCard آن را مدیریت می‌کند
   &:hover {
-    transform: translateY(-4px);
-
-    .productImage {
-      transform: scale(1.05);
-    }
-
-    .cardTitle {
-      color: var(--color-title-hover);
-    }
+    background: var(--gradient-card-horizontal-rtl);
   }
 }
 
 .imageWrapper {
-  position: relative;
-  width: 100%;
-  height: 240px;
-  overflow: hidden;
+  @include card-image-wrapper;
 }
 
 .productImage {
-  object-fit: cover;
-  transition: transform 0.3s ease;
+  @include card-image;
 }
 
 .cardContent {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.5rem;
-  flex: 1;
+  @include card-content;
 }
 
 .cardTitle {
-  font-size: 16px;
-  color: var(--color-title-hover);
-  margin: 0;
-  transition: color 0.3s ease;
+  @include card-title;
+  // تنظیم سایز فونت کم‌تر برای ProductCard
+  font-size: var(--font-md);
 }
 
 .cardText {
-  color: var(--color-card-text);
-  font-size: 14px;
-  line-height: 1.5;
-  margin: 0;
+  @include card-text-truncate(2);
 }
 
 .footer {
@@ -65,24 +36,109 @@
   justify-content: space-between;
   align-items: center;
   margin-top: auto;
+  padding-top: 12px;
+  gap: 20px;
 }
 
 .price {
-    font-size: 16px;
-  color: var(--color-title-hover);
-  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-bold);
+
+  @include respond(md) {
+    font-size: var(--font-md);
+  }
 }
 
-.ctaButton {
-  padding: 0.5rem 1rem;
-  border-radius: 10px;
-  background-color: var(--color-title-hover);
-  color: var(--color-card-bg);
-  border: none;
+// دکمه افزودن به سبد خرید
+.addToCartButton {
+  padding: 8px 16px;
+  background: rgba(246, 217, 130, 0.1);
+  border: 2px solid var(--color-text-primary);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  @include hover-transition;
+  white-space: nowrap;
 
   &:hover {
-    background-color: var(--color-title-hover);
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    transform: scale(1.05);
   }
-} 
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  @include respond(md) {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+// کنترلر تعداد محصول در سبد
+.quantityController {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(246, 217, 130, 0.1);
+  border: 2px solid var(--color-text-primary);
+  border-radius: 8px;
+  overflow: hidden;
+
+  @include respond(md) {
+    gap: 6px;
+
+  }
+}
+
+// دکمه‌های + و - در کنترلر تعداد
+.quantityButton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  background-color: unset;
+  justify-content: center;
+  color: var(--color-text-primary);
+  border: none;
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+  padding: 17px 0;
+  cursor: pointer;
+  @include hover-transition;
+  line-height: 1;
+
+  &:hover {
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    transform: scale(1.1);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  @include respond(md) {
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+  }
+}
+
+// نمایش تعداد در کنترلر
+.quantityDisplay {
+
+  text-align: center;
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-bold);
+
+  @include respond(md) {
+    min-width: 20px;
+    font-size: var(--font-sm);
+  }
+}

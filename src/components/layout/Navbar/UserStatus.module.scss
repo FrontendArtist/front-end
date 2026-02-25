@@ -1,0 +1,252 @@
+@use '@/styles/base/mixins' as *;
+
+// Loading Skeleton
+.skeleton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+}
+
+.skeletonCircle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, rgba(246, 217, 130, 0.1) 25%, rgba(246, 217, 130, 0.2) 50%, rgba(246, 217, 130, 0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+
+    @keyframes shimmer {
+        0% {
+            background-position: 200% 0;
+        }
+
+        100% {
+            background-position: -200% 0;
+        }
+    }
+}
+
+// Icon Button (Unauthenticated - matches Navbar style)
+.iconButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: none;
+    border: none;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: all .3s;
+
+    svg {
+        width: 26px;
+        height: 26px;
+    }
+
+    &:hover {
+        background: rgba(246, 217, 130, 0.1);
+        border-color: var(--color-text-primary);
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+
+}
+
+// Authenticated User Container
+.userContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+// Avatar Wrapper
+.avatarWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(246, 217, 130, 0.1);
+    border: 2px solid rgba(246, 217, 130, 0.3);
+    transition: all 0.3s ease;
+
+    &:hover {
+        border-color: var(--color-text-primary);
+        background: rgba(246, 217, 130, 0.15);
+    }
+}
+
+// User Avatar Icon
+.avatar {
+    width: 24px;
+    height: 24px;
+    color: var(--color-text-primary);
+}
+
+// Verification Badge
+.badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--color-bg-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+    svg {
+        width: 10px;
+        height: 10px;
+        color: white;
+    }
+}
+
+// Dropdown Menu
+.dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    background: var(--color-overlay-blured);
+    backdrop-filter: blur(8px);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    border: 1px solid rgba(246, 217, 130, 0.2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    overflow: hidden;
+    width: max-content;
+
+    // Arrow indicator
+    &::before {
+        content: '';
+        position: absolute;
+        top: -6px;
+        left: 16px;
+        width: 12px;
+        height: 12px;
+        background: var(--color-overlay);
+        border-top: 1px solid rgba(246, 217, 130, 0.2);
+        border-right: 1px solid rgba(246, 217, 130, 0.2);
+        transform: rotate(-45deg);
+    }
+}
+
+// Dropdown Open State
+.dropdownOpen {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+// Dropdown Item
+.dropdownItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    color: var(--color-card-text);
+    font-size: var(--font-sm);
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: right;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(246, 217, 130, 0.1);
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    svg {
+        width: 20px;
+        height: 20px;
+        color: var(--color-text-primary);
+        flex-shrink: 0;
+    }
+
+    span {
+        flex: 1;
+    }
+
+    &:hover {
+        background: rgba(246, 217, 130, 0.1);
+        color: var(--color-text-primary);
+
+        svg {
+            color: var(--color-title-hover);
+        }
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+}
+
+// RTL Support
+[dir="rtl"] {
+    .dropdown {
+        left: 0;
+
+    }
+
+    .dropdownItem {
+        text-align: right;
+    }
+
+    .badge {
+        right: auto;
+        left: -2px;
+    }
+}
+
+// Mobile Responsive
+@include respond(md) {
+    .dropdown {
+        min-width: 180px;
+    }
+
+    .dropdownItem {
+        padding: 12px 16px;
+        font-size: var(--font-sm);
+    }
+
+    .avatarWrapper {
+        width: 36px;
+        height: 36px;
+    }
+
+    .avatar {
+        width: 20px;
+        height: 20px;
+    }
+
+    .badge {
+        width: 14px;
+        height: 14px;
+
+        svg {
+            width: 9px;
+            height: 9px;
+        }
+    }
+}

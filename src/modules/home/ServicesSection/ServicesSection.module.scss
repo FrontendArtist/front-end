@@ -1,4 +1,4 @@
-@import '../../../styles/base/mixins';
+@use '../../../styles/base/mixins' as *;
 
 .servicesSection {
   padding: 2rem 0;
@@ -30,4 +30,3 @@
 .sliderWrapper {
   margin-top: 2rem;
 }
-
