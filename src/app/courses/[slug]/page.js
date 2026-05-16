@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
-import Accordion from '@/components/ui/Accordion/Accordion';
+import CourseContentManager from '@/modules/courses/CourseContentManager';
 import { getCourseBySlug } from '@/lib/coursesApi';
 import { getComments } from '@/lib/commentsApi';
 import CommentsSection from '@/modules/comments/CommentsSection';
@@ -45,6 +45,11 @@ export default async function CoursePage({ params }) {
     notFound();
   }
 
+  // اضافه کردن لاگ برای دیباگ دیتای خام دریافتی از استراپی
+  console.log('--- DEBUG: Raw Course Data from Strapi ---');
+  console.log(JSON.stringify(rawCourse, null, 2));
+  console.log('-----------------------------------------');
+
   // Fetch comments for this course
   const initialComments = await getComments('course', rawCourse.documentId);
 
@@ -59,7 +64,7 @@ export default async function CoursePage({ params }) {
       url: rawCourse.image.url.startsWith('http') ? rawCourse.image.url : `${API_BASE_URL}${rawCourse.image.url}`,
       alt: rawCourse.image.alt,
     },
-    curriculum: [], // Curriculum needs to be populated from Strapi if available
+    curriculum: rawCourse.curriculum || [],
   };
 
   return (
@@ -94,12 +99,8 @@ export default async function CoursePage({ params }) {
           </div>
         </div>
 
-        {course.curriculum && course.curriculum.length > 0 && (
-          <div className={styles.curriculumSection}>
-            <h2 className={styles.sectionTitle}>سرفصل‌های دوره</h2>
-            <Accordion items={course.curriculum} />
-          </div>
-        )}
+        {/* Course Content Manager for Player and Playlist */}
+        <CourseContentManager course={course} styles={styles} />
 
         {/* Comments Section */}
         <CommentsSection

@@ -48,9 +48,15 @@ import { API_BASE_URL } from './api';
  * });
  */
 export async function apiClient(endpoint, options = {}) {
+  // === HACK: Forcefully replace the bugged cached string if Next.js is still sending it ===
+  let finalEndpoint = endpoint;
+  if (finalEndpoint.includes('populate[curriculum]=*&populate[media]=*')) {
+    finalEndpoint = finalEndpoint.replace('populate[curriculum]=*&populate[media]=*', 'populate=*');
+  }
+  
   // ساخت URL کامل با ترکیب Base URL و endpoint
   // endpoint باید با "/" شروع شود (مثلاً "/api/services")
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${API_BASE_URL}${finalEndpoint}`;
 
   try {
     // ارسال درخواست fetch با ادغام تنظیمات
@@ -72,12 +78,10 @@ export async function apiClient(endpoint, options = {}) {
       try {
         const errorBody = await response.json();
         errorDetails = JSON.stringify(errorBody, null, 2);
-        console.warn(`⚠️ API Error ${response.status}: ${endpoint}`);
-        if (process.env.NODE_ENV === 'development') {
-          console.debug('Response details:', errorDetails);
-        }
+        console.error(`⚠️ API Error ${response.status}: ${endpoint}`);
+        console.error(`🔴 STRAPI ERROR DETAILS:`, errorDetails);
       } catch (e) {
-        console.warn(`⚠️ API Error ${response.status}: ${endpoint}`);
+        console.error(`⚠️ API Error ${response.status}: ${endpoint}`);
       }
       throw new Error(`API_ERROR_${response.status}`);
     }

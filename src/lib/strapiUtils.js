@@ -136,6 +136,14 @@ export function formatStrapiCourses(apiResponse) {
       shortDescription: (item.description && item.description[0]?.children[0]?.text) || '',
       // Courses have a 'media' array, we take the first one.
       image: formatSingleImage(item.media ? item.media[0] : null),
+      curriculum: (item.curriculum || []).map(session => ({
+        id: session.id,
+        title: session.title,
+        videoUrl: session.videoUrl || null,
+        audioUrl: session.audioUrl || null,
+        isFree: session.isFree || false,
+        duration: session.duration || '00:00'
+      })),
     }));
 }
 

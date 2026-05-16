@@ -95,11 +95,15 @@ export async function getAllCourses() {
  */
 export async function getCourseBySlug(slug) {
   try {
-    // کوئری Strapi با فیلتر slug
-    // از سینتکس Strapi v4/v5 برای فیلتر دقیق استفاده می‌کند
+    // --- DEBUG MARKER: FRESH QUERY ---
     const response = await apiClient(
       `/api/courses?filters[slug][$eq]=${slug}&populate=*`
     );
+
+    // لاگ دیتای کاملاً خام از سمت API (قبل از فرمت شدن)
+    console.log('--- REAL RAW STRAPI RESPONSE ---');
+    console.log(JSON.stringify(response, null, 2));
+    console.log('-------------------------------');
 
     // فرمت کردن و برگرداندن اولین نتیجه
     // اگر نتیجه‌ای یافت نشد، null برمی‌گرداند
