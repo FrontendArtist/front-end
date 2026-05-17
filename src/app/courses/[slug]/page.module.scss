@@ -196,22 +196,8 @@
 
 // Container for the curriculum section (below the main info grid)
 .curriculumSection {
-  // Limit width for better readability of text-heavy content
-  max-width: 800px;
-  // Center the section horizontally
   margin: 0 auto;
-  // Top padding to separate from main info section
-  padding-top: var(--space-section-top-desktop); // 120px
-
-  // Responsive adjustments
-  @include respond(md) {
-    max-width: 100%; // Full width on tablet
-    padding-top: 80px;
-  }
-
-  @include respond(sm) {
-    padding-top: 60px;
-  }
+  padding: 0 16px 24px 16px; // Add padding inside the border wrapper
 }
 
 // Section Title - "سرفصل‌های دوره"
@@ -219,25 +205,25 @@
   // Center align for section headers
   text-align: center;
   // Use extra large font for section headers
-  font-size: var(--font-xl); // 32px
+  font-size: var(--font-lg);
   // Primary gold color
   color: var(--color-text-primary);
   // Medium weight
   font-weight: var(--font-weight-medium);
   // Spacing before accordion items
-  margin-bottom: var(--space-title-content-desktop); // 56px
-  // Remove default top margin
-  margin-top: 0;
+  margin-bottom: 24px;
+  // Margin top so it doesn't hug the video
+  margin-top: 24px;
 
   // Responsive typography
   @include respond(md) {
-    font-size: var(--font-lg); // 20px on tablet
-    margin-bottom: 40px;
+    font-size: var(--font-md);
+    margin-bottom: 24px;
   }
 
   @include respond(sm) {
-    font-size: var(--font-md); // 16px on mobile
-    margin-bottom: 32px;
+    font-size: var(--font-sm);
+    margin-bottom: 24px;
   }
 }
 
@@ -258,6 +244,10 @@
 
 .contentManager {
   margin-top: var(--space-section-top-desktop);
+
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(246, 217, 130, 0.2);
   
   @include respond(md) {
     margin-top: 80px;
@@ -265,11 +255,8 @@
 }
 
 .playerSection {
-  background: var(--color-overlay);
-  border-radius: 16px;
-  overflow: hidden;
-  margin-bottom: 40px;
-  border: 1px solid rgba(246, 217, 130, 0.2);
+  // background and border moved to .contentManager
+  width: 100%;
 }
 
 .playerWrapper {
@@ -291,25 +278,36 @@
       border: 0;
     }
   }
-}
 
-.activeTitle {
-  padding: 16px 20px;
-  margin: 0;
-  font-size: var(--font-lg);
-  color: var(--color-text-primary);
-  background: rgba(0, 0, 0, 0.5);
-  text-align: right;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  // Custom styles for Plyr Player (Audio/Video)
+  :global(.plyr) {
+    // Override Plyr CSS Variables to match site theme
+    --plyr-color-main: var(--color-primary, #f6d982);
+    --plyr-audio-controls-background: var(--color-card-bg, #1a1a1a);
+    --plyr-audio-control-color: rgba(255, 255, 255, 0.7);
+    --plyr-audio-control-color-hover: #000;
+    --plyr-audio-control-background-hover: var(--color-primary, #f6d982);
+    --plyr-control-radius: 12px;
+    --plyr-range-thumb-background: var(--color-primary, #f6d982);
+    --plyr-range-track-background: rgba(255, 255, 255, 0.1);
+    
+    // Apply border-radius and border directly to controls
+    :global(.plyr__controls) {
+      border-radius: 16px !important;
+      border: 1px solid rgba(246, 217, 130, 0.15) !important;
+      padding: 12px 16px !important;
+      background: var(--color-overlay, #111) !important;
+    }
 
-  .modeLabel {
-    font-size: var(--font-sm);
-    color: var(--color-primary, #f6d982);
-    opacity: 0.8;
+    // For audio player, we might want to offset it slightly if the wrapper has padding
+    &.plyr--audio {
+      border-radius: 16px;
+      overflow: hidden;
+    }
   }
 }
+
+// activeTitle removed as requested
 
 .mediaToggle {
   display: flex;
@@ -361,6 +359,30 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  height: 290px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-left: 4px; // جلوگیری از چسبیدن اسکرول‌بار به محتوا
+  padding-right: 12px; // spacing for the content itself inside the border
+
+  /* استایل‌های کاستوم اسکرول‌بار */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(246, 217, 130, 0.3);
+    border-radius: 10px;
+
+    &:hover {
+      background: rgba(246, 217, 130, 0.6);
+    }
+  }
 }
 
 .lessonItem {
@@ -421,4 +443,4 @@
 .lessonDuration {
   font-size: var(--font-sm);
   color: var(--color-card-text);
-}
+}

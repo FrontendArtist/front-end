@@ -45,14 +45,20 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, on
         }
 
         // شنونده رویداد timeupdate برای ذخیره‌سازی زمان فعلی کاربر
-        // از یک throttle ساده استفاده می‌کنیم تا به ازای هر میلی‌ثانیه مرورگر درگیر نشود
-        let lastSaveTime = 0;
+        // ذخیره‌سازی هر 5 ثانیه (0, 5, 10, 15, ...)
+        let lastSavedSecond = -1;
         player.on('timeupdate', () => {
-          const now = Date.now();
-          if (now - lastSaveTime > 1000) { // ذخیره‌سازی هر 1 ثانیه
+          const currentSecond = Math.floor(player.currentTime());
+          // فقط زمانی ذخیره کن که به مضرب 5 جدیدی رسیده باشیم
+          if (currentSecond % 5 === 0 && currentSecond !== lastSavedSecond) {
             localStorage.setItem(storageKey, player.currentTime().toString());
-            lastSaveTime = now;
+            lastSavedSecond = currentSecond;
           }
+        });
+
+        // ذخیره‌سازی فوری هنگام توقف (pause/stop) — زمان دقیق توقف ذخیره می‌شود
+        player.on('pause', () => {
+          localStorage.setItem(storageKey, player.currentTime().toString());
         });
       });
     } else {

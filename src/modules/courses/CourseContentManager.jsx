@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import clsx from 'clsx';
 import VideoJSPlayer from './VideoJSPlayer';
+import PlyrAudioPlayer from './PlyrAudioPlayer';
 
 /**
  * مدیر محتوای دوره (Course Content Manager)
@@ -19,6 +20,7 @@ export default function CourseContentManager({ course, styles }) {
   const [activeLesson, setActiveLesson] = useState(null);
   // حالت پخش: پیش‌فرض روی صوت
   const [playMode, setPlayMode] = useState('audio');
+  const listRef = useRef(null);
 
   const hasPurchased = session?.user?.courses?.some(
     (c) => c.documentId === course.documentId || c.id === course.id
@@ -26,7 +28,7 @@ export default function CourseContentManager({ course, styles }) {
   const isAuthenticated = status === 'authenticated';
 
   // هندلر انتخاب جلسه - وقتی جلسه عوض می‌شود، حالت پخش را ریست می‌کنیم
-  const handleLessonClick = (lesson) => {
+  const handleLessonClick = (lesson, event) => {
     if (lesson.isFree) {
       if (!isAuthenticated) {
         alert('برای مشاهده جلسات رایگان باید وارد حساب کاربری خود شوید');
@@ -35,6 +37,7 @@ export default function CourseContentManager({ course, styles }) {
       setActiveLesson(lesson);
       // اگر صوت دارد با صوت شروع کن، وگرنه ویدیو
       setPlayMode(lesson.audioUrl ? 'audio' : 'video');
+      scrollToItem(event);
       return;
     }
 
@@ -45,6 +48,27 @@ export default function CourseContentManager({ course, styles }) {
 
     setActiveLesson(lesson);
     setPlayMode(lesson.audioUrl ? 'audio' : 'video');
+    scrollToItem(event);
+  };
+
+  const scrollToItem = (event) => {
+    if (event && listRef.current) {
+      const listItem = event.currentTarget;
+      const listContainer = listRef.current;
+      
+      const containerTop = listContainer.getBoundingClientRect().top;
+      const itemTop = listItem.getBoundingClientRect().top;
+      const currentScroll = listContainer.scrollTop;
+      
+      const targetScroll = currentScroll + (itemTop - containerTop) - 10;
+      
+      setTimeout(() => {
+        listContainer.scrollTo({
+          top: targetScroll,
+          behavior: 'smooth'
+        });
+      }, 50);
+    }
   };
 
   // --- محاسبات پلیر ---
@@ -71,20 +95,20 @@ export default function CourseContentManager({ course, styles }) {
     return `https://www.aparat.com/video/video/embed/videohash/${videoId}/vt/frame`;
   };
 
-  // تنظیمات Video.js برای فایل‌های مستقیم
+  // تنظیمات Video.js (فقط برای ویدیو - صوت از Plyr استفاده می‌کند)
   const videoJsOptions =
-    activeLesson && !isAparat
+    activeLesson && !isAparat && !isAudio
       ? {
           autoplay: true,
           controls: true,
           responsive: true,
-          fluid: !isAudio,
+          fluid: true,
           fill: false,
           poster: course.media.url,
           sources: [
             {
               src: activeUrl,
-              type: isAudio ? 'audio/mp3' : 'video/mp4',
+              type: 'video/mp4',
             },
           ],
         }
@@ -116,7 +140,7 @@ export default function CourseContentManager({ course, styles }) {
               </div>
             )}
 
-            {/* --- پلیر آپارات یا Video.js --- */}
+            {/* --- پلیر: آپارات / صوت Plyr / ویدیو Video.js --- */}
             {isAparat ? (
               <div className={styles.aparatWrapper}>
                 <iframe
@@ -127,24 +151,31 @@ export default function CourseContentManager({ course, styles }) {
                   mozallowfullscreen="true"
                 ></iframe>
               </div>
+            ) : isAudio ? (
+              <PlyrAudioPlayer
+                key={`${activeLesson.id}-audio`}
+                src={activeUrl}
+                courseId={course.documentId || course.id}
+                lessonId={activeLesson.id}
+              />
             ) : (
               <VideoJSPlayer
-                key={`${activeLesson.id}-${playMode}`}
+                key={`${activeLesson.id}-video`}
                 options={videoJsOptions}
                 courseId={course.documentId || course.id}
-                lessonId={`${activeLesson.id}-${playMode}`}
-                isAudio={isAudio}
+                lessonId={`${activeLesson.id}-video`}
+                isAudio={false}
               />
             )}
 
-            <h3 className={styles.activeTitle}>
+            {/* <h3 className={styles.sectionTitle}>
               در حال پخش: {activeLesson.title}
               {hasBoth && (
                 <span className={styles.modeLabel}>
                   {playMode === 'audio' ? ' (صوتی)' : ' (ویدیویی)'}
                 </span>
               )}
-            </h3>
+            </h3> */}
           </div>
         </div>
       )}
@@ -153,7 +184,7 @@ export default function CourseContentManager({ course, styles }) {
       {course.curriculum && course.curriculum.length > 0 && (
         <div className={styles.curriculumSection}>
           <h2 className={styles.sectionTitle}>سرفصل‌های دوره</h2>
-          <ul className={styles.lessonList}>
+          <ul className={styles.lessonList} ref={listRef}>
             {course.curriculum.map((lesson) => {
               const isLocked = !lesson.isFree && (!isAuthenticated || !hasPurchased);
               const isActive = activeLesson?.id === lesson.id;
@@ -165,7 +196,7 @@ export default function CourseContentManager({ course, styles }) {
                     [styles.active]: isActive,
                     [styles.locked]: isLocked,
                   })}
-                  onClick={() => handleLessonClick(lesson)}
+                  onClick={(e) => handleLessonClick(lesson, e)}
                 >
                   <div className={styles.lessonInfo}>
                     <span className={styles.lessonIcon}>

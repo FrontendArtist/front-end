@@ -1,7 +1,89 @@
 # CHANGELOG
 
-## [Latest] - 2026-02-24
+## [Latest] - 2026-05-17
 
+### Enhancement: Interactive Course Player Styling & Auto-Scroll
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Enhanced the user interface and functionality of the course video/audio player (`CourseContentManager.jsx`), providing a more seamless, integrated design between the media player and the curriculum list. Customized the default Plyr styling to match the site's premium dark and golden aesthetics and implemented automatic scrolling for the curriculum list.
+
+#### Changes Made:
+1. **Course Content Manager Layout** (`src/app/courses/[slug]/page.module.scss`):
+   - Merged the `.playerSection` and `.curriculumSection` inside a single unified `.contentManager` wrapper.
+   - Applied a unified `border` and `var(--color-overlay)` background with `16px` border-radius to the entire wrapper.
+   - Replaced `.activeTitle` with `.sectionTitle` to ensure typography consistency between the "Now Playing" and "Course Syllabus" headers.
+   - Added appropriate `padding` to the curriculum section to separate it from the new wrapper border.
+
+2. **Lesson List Styling & Auto-Scroll** (`src/modules/courses/CourseContentManager.jsx` & `page.module.scss`):
+   - Restricted the `.lessonList` to a fixed height of `290px` with `overflow-y: auto` and `overflow-x: hidden`.
+   - Designed a custom, elegant scrollbar (`::-webkit-scrollbar`) styled with the site's primary golden colors.
+   - Added `useRef` to the lesson list and implemented a `scrollToItem` function in `CourseContentManager.jsx`.
+   - Now, when a lesson is clicked, the list automatically and smoothly scrolls to position the active lesson exactly `10px` from the top of the container.
+
+3. **Plyr Player Theming** (`src/app/courses/[slug]/page.module.scss`):
+   - Overrode Plyr CSS variables globally for `.plyr` components inside the player wrapper.
+   - Set `--plyr-color-main` to `var(--color-primary, #f6d982)`.
+   - Set control backgrounds to `var(--color-overlay, #111)` with `16px` border-radius and customized hover effects.
+   - Styled volume slider, progress bar, and play buttons to perfectly match the application's golden/dark theme.
+
+---
+
+### Feature: Complete Interactive Course Player System
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Designed and implemented a full-stack, robust, and interactive course player system. This includes fetching curriculum data from Strapi, enforcing access controls (Free vs. Premium), handling multiple media types (Direct Video/Audio, Aparat Embeds), bypassing browser CSP constraints, and persistently saving user playback progress.
+
+#### Changes Made:
+
+1. **API Integration & Bug Fixes** (`apiClient.js` & `strapiUtils.js`)
+   - **Fixed Next.js Caching Bug (400 Errors)**: Cleared the `.next` cache and implemented workarounds for Next.js persistently sending outdated query parameters to Strapi.
+   - **Data Mapping**: Updated `formatStrapiCourses` in `strapiUtils.js` to correctly map the `curriculum` array (including `videoUrl`, `audioUrl`, `isFree`, `duration`) from the raw API response to the frontend components.
+
+2. **Access Control Guards** (`CourseContentManager.jsx`)
+   - Integrated `next-auth/react` to verify authentication status.
+   - **Free Sessions**: Allows anyone (or logged-in users, based on requirements) to play sessions marked as `isFree: true`.
+   - **Premium Sessions**: Verifies if the currently logged-in user owns the specific course (`session.user.courses.some(...)`).
+   - Visually locks inaccessible sessions in the playlist (🔒 icon) and shows browser alerts if a user tries to play them without permission.
+
+3. **Content Manager Structure & Layout** (`CourseContentManager.jsx` & `page.module.scss`)
+   - Built a dynamic layout featuring a **Player Section** on top and a **Playlist Section** (Curriculum) at the bottom.
+   - The Player Section is completely hidden until a user selects a session to avoid empty boxes.
+   - Active lessons are highlighted in the playlist with dynamic CSS (`clsx`).
+
+4. **Dual Player Architecture** (`CourseContentManager.jsx`)
+   - Implemented a smart media toggle to switch between Video and Audio modes when a lesson provides both formats.
+   - Defaults to Audio playback if audio is present.
+   - Supports 3 distinct playback methods dynamically:
+     - **Aparat Embeds**: Renders `iframe` for Aparat video links with responsive 16:9 wrappers.
+     - **Video.js**: Handles direct `.mp4` video files with default styling (`VideoJSPlayer.jsx`).
+     - **Plyr**: Handles direct `.mp3` audio files, replacing Video.js for audio to provide a better native audio UI (`PlyrAudioPlayer.jsx`).
+
+5. **Playback Progress Persistence** (`VideoJSPlayer.jsx` & `PlyrAudioPlayer.jsx`)
+   - Implemented `localStorage` syncing for playback time uniquely per course and lesson.
+   - Automatically saves progress every 5 seconds (`timeupdate` event on 5-second multiples).
+   - Instantly saves exact progress upon `pause` or `stop`.
+   - Automatically resumes from the saved timestamp upon revisiting the lesson.
+
+6. **CORS & CSP Resolution (Media Proxy)** (`src/app/api/media/[...path]/route.js`)
+   - Fixed an issue where Strapi's CSP header (`media-src 'self'`) forced browsers to download audio files instead of streaming them.
+   - Created a Next.js API route (`/api/media`) that proxies file requests to Strapi.
+   - Maintains byte-range support for seeking inside media files.
+   - Updated `strapiUtils.js` to automatically rewrite Strapi `/uploads/` URLs to the Next.js `/api/media/uploads/` proxy.
+
+#### Files Created/Modified:
+- `src/lib/apiClient.js` & `src/app/courses/[slug]/page.js`: Fixed API fetching and curriculum prop passing.
+- `src/app/courses/[slug]/page.module.scss`: Styling for layout, access control badges, and responsive iframe wrappers.
+- `src/modules/courses/CourseContentManager.jsx`: Added core logic for access control, state management, and media toggling.
+- `src/modules/courses/PlyrAudioPlayer.jsx`: Created new component for audio-specific playback.
+- `src/modules/courses/VideoJSPlayer.jsx`: Created and later refined resume logic for video playback.
+- `src/app/api/media/[...path]/route.js`: Created Next.js media proxy.
+- `src/lib/strapiUtils.js`: Implemented URL rewriting for proxied media and curriculum mapping.
+
+---
+
+## [Previous] - 2026-02-24
 ### Bug Fix: Strapi Error Resilience & Logo Asset
 **Status**: ✅ COMPLETED (100%)
 
