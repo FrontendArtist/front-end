@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession, signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import styles from './AuthStep.module.scss';
 
 /**
@@ -9,25 +10,32 @@ import styles from './AuthStep.module.scss';
  * نمایش فرم OTP inline یا پیام success اگر لاگین است
  * 
  * @param {function} onNext - callback برای رفتن به مرحله بعد
+ * @param {number} totalPrice - مبلغ کل سفارش (اگر صفر باشد، دوره رایگان است)
  */
-export default function AuthStep({ onNext }) {
+export default function AuthStep({ onNext, totalPrice = 0 }) {
     const { data: session, status } = useSession();
+    const router = useRouter();
     const [authStep, setAuthStep] = useState('phone'); // 'phone' | 'otp'
     const [phone, setPhone] = useState('');
     const [otp, setOtp] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    // اگر کاربر لاگین است، به مرحله بعد برود
+    // اگر کاربر لاگین است، بررسی می‌کنیم که آیا سفارش رایگان است یا نه
     useEffect(() => {
         if (status === 'authenticated') {
-            // کمی تأخیر برای نمایش پیام موفقیت
             const timer = setTimeout(() => {
-                onNext();
+                if (totalPrice === 0) {
+                    // دوره رایگان: مستقیم به صفحه موفقیت
+                    router.replace('/payment/callback?status=success');
+                } else {
+                    // سفارش پولی: به مرحله بعد (Shipping) برو
+                    onNext();
+                }
             }, 1500);
             return () => clearTimeout(timer);
         }
-    }, [status, onNext]);
+    }, [status, onNext, totalPrice, router]);
 
     const handlePhoneSubmit = async (e) => {
         e.preventDefault();

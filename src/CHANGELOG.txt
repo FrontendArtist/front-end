@@ -1,6 +1,54 @@
 # CHANGELOG
 
-## [Latest] - 2026-05-17
+## [Latest] - 2026-05-18
+
+### Feature & Bug Fix: Complete Order History System & Nested Routing
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Finalized the integration of a robust, secure order history feature connecting Strapi v5 dynamic zones to the Next.js user profile dashboard. Resolved strict Strapi schema validation errors, ensured accurate item metadata persistence (saving product/course attributes directly to the invoice), and solved complex nested routing constraints for clickable product links within the order details modal.
+
+#### Changes Made:
+1. **Dynamic Zone Schema Expansion** (`backend/src/components/order/...`):
+   - Added `title`, `price`, `courseId`/`productId`, `slug`, and `itemUrl` directly to the `course-order-item.json` and `product-order-item.json` component schemas in Strapi. This ensures all purchased item metadata is immutably captured at checkout and prevents missing data on deleted products.
+2. **Enhanced API Proxy Logic** (`src/app/api/orders/route.js`):
+   - Implemented dynamic `itemUrl` construction utilizing `categorySlug` and `subcategorySlug` stored within the cart state to construct the correct canonical nested routes (e.g. `/products/books/spiritualbooks/product-8`) before sending payload to Strapi.
+3. **Robust Key Iteration & React Fixes** (`OrderDetailsModal.jsx`):
+   - Resolved `Encountered two children with the same key` console errors by combining the iterator index (`idx`) to generate a guaranteed unique key for dynamic zone components rather than relying on component DB IDs.
+4. **Order History UI - Clickable Modals** (`OrderDetailsModal.jsx` & `.module.scss`):
+   - Wrapped entire order items (icon, title, badges, pricing) inside Next.js `<Link>` components pointing to the preserved `itemUrl`.
+   - Applied specific `.modal__itemClickable` SCSS properties including smooth pointer transitions, background hover states, and golden text glow on the title when the row is hovered to dramatically improve UX.
+
+---
+
+### Feature & Optimization: Free Courses Instant Enrollment & UI Refinements
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Streamlined the enrollment process for free courses (total order price = 0) by completely bypassing shipping/address entry and payment method selection steps. Once a user logs in (or if they are already logged in), they are immediately redirected to the payment success callback. Additionally, multiple UI refinements and consistency updates were applied across Course Cards, Course Detail Pages, Cart, Checkout Steps, and Payment Callbacks.
+
+#### Changes Made:
+1. **Instant Enrollment for Free Courses** (`src/app/checkout/page.jsx` & `src/components/checkout/AuthStep.jsx`):
+   - Implemented a `useEffect` inside `CheckoutPage` to automatically redirect users to `/payment/callback?status=success` if the order is free (`totalPrice === 0`) and they are already authenticated (`status === 'authenticated'`).
+   - Updated `AuthStep` to receive the `totalPrice` prop and redirect directly to `/payment/callback?status=success` after a successful login if the order is free, completely skipping subsequent checkout steps.
+
+2. **Integration of "Add to Cart" on Course Pages** (`src/app/courses/[slug]/page.js`, `CourseCard.jsx`, & `AddToCartButton.jsx`):
+   - Safely commented out the old inline cart/hydration logic (lines 123-162) in `CourseCard.jsx` to clean up old direct shopping actions and consistently show the "بیشتر بدانید" CTA button.
+   - Built a robust, reusable `AddToCartButton` Client Component (`src/components/ui/AddToCartButton/AddToCartButton.jsx`) designed to safely interact with Zustand and `localStorage` using a hydration-safe state pattern to prevent SSR mismatch errors.
+   - Replaced the static "ثبت‌نام در دوره" registration `Link` on the Course Detail Page (`src/app/courses/[slug]/page.js`) with the new dynamic `AddToCartButton` component, passing dynamic course properties to handle full cart additions.
+
+3. **Cart & Checkout Pricing UI Adjustments** (`src/app/cart/page.jsx` & `CartReviewStep.jsx`):
+   - Cleaned up redundant price breakdowns by commenting out the `جمع جزء` (subtotal) row in both the Cart Sidebar and Checkout Step 1 (Cart Review), showing only the `جمع کل` (total price) for a cleaner UI.
+
+4. **Premium Visual Styling & Layout Enhancements** (Multiple `.module.scss` files):
+   - Applied consistent `border-radius: 12px` to the checkout components (`CartReviewStep`, `ShippingStep`, `AuthStep`, `PaymentStep`) and the final Payment Callback Card (`page.module.scss`) to match the premium design system.
+   - Updated `.cartItem` background on the Cart Page to use `var(--gradient-card-horizontal-rtl)` for a cohesive horizontal flow.
+   - Adjusted item totals and summary total font sizes (`--font-lg` & `--font-md` respectively) for better typography hierarchy in `Cart.module.scss` and `PaymentStep.module.scss`.
+   - Commented out the redundant `انتخاب روش پرداخت` title in `PaymentStep.jsx`.
+
+---
+
+## [2026-05-17]
 
 ### Enhancement: Interactive Course Player Styling & Auto-Scroll
 **Status**: ✅ COMPLETED (100%)

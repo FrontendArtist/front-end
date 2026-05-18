@@ -55,10 +55,10 @@ export default function CartReviewStep({ onNext }) {
                     <span>تعداد اقلام:</span>
                     <strong>{itemsCount} مورد</strong>
                 </div>
-                <div className={styles.summaryRow}>
+                {/* <div className={styles.summaryRow}>
                     <span>جمع جزء:</span>
                     <strong>{formatPrice(totalPrice)} تومان</strong>
-                </div>
+                </div> */}
                 <div className={styles.divider}></div>
                 <div className={styles.summaryTotal}>
                     <span>جمع کل:</span>

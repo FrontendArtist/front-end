@@ -25,17 +25,42 @@ export default function PaymentStep({ onPrevious }) {
     };
 
     /**
-     * 🚨 MOCK PAYMENT LOGIC
-     * پردازش پرداخت (Mock)
+     * 🚨 ACTUAL PAYMENT LOGIC
+     * پردازش پرداخت و ثبت سفارش
      */
     const handlePayment = async () => {
         setIsProcessing(true);
 
-        // 🚨 MOCK: شبیه‌سازی تاخیر پردازش
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        try {
+            // فراخوانی API ثبت سفارش
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cartItems: items,
+                    totalPrice: totalPrice,
+                    // آدرس از بک‌اند به سفارش متصل می‌شود یا اینجا فرستاده می‌شود
+                    shippingAddress: null
+                })
+            });
 
-        // 🚨 MOCK: ریدایرکت به صفحه نتیجه پرداخت
-        router.push('/payment/callback?status=success');
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.message || 'خطا در ثبت سفارش');
+            }
+
+            // پاک کردن سبد خرید محلی
+            useCartStore.getState().clearCart();
+
+            // انتقال به صفحه سفارشات کاربر
+            router.push('/profile/orders');
+        } catch (error) {
+            console.error('Payment Error:', error);
+            alert(error.message); // می‌توان از توستر استفاده کرد
+            setIsProcessing(false);
+        }
     };
 
     return (
@@ -76,7 +101,7 @@ export default function PaymentStep({ onPrevious }) {
 
             {/* انتخاب روش پرداخت */}
             <div className={styles.paymentMethods}>
-                <h3 className={styles.methodsTitle}>انتخاب روش پرداخت</h3>
+                {/* <h3 className={styles.methodsTitle}>انتخاب روش پرداخت</h3> */}
 
                 <div className={styles.methodsList}>
                     <label className={`${styles.method} ${paymentMethod === 'online' ? styles.selected : ''}`}>

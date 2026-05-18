@@ -9,6 +9,7 @@
     gap: 24px;
     max-width: 500px;
     margin: 0 auto;
+    border-radius: 12px;
 
     @include respond(md) {
         padding: 24px;
@@ -201,6 +202,7 @@
     gap: 20px;
     padding: 40px 20px;
     text-align: center;
+    border-radius: 12px;
 }
 
 .successIcon {
@@ -238,6 +240,7 @@
     font-weight: var(--font-weight-bold);
     color: #10b981;
     margin: 0;
+    border-radius: 12px;
 }
 
 .successMessage {

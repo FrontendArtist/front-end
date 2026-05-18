@@ -120,9 +120,9 @@ const CourseCard = ({ course }) => {
           </span>
         </div>
 
-        {/* نمایش شرطی دکمه بر اساس وضعیت hydration و سبد خرید */}
+        {/* نمایش شرطی دکمه بر اساس وضعیت hydration و سبد خرید
         <div className={styles.buttonSection}>
-          {/* 
+          
             منطق نمایش شرطی بر اساس hydration:
             
             1. اگر !isHydrated (سرور یا اولین رندر کلاینت):
@@ -134,7 +134,7 @@ const CourseCard = ({ course }) => {
             
             3. اگر isHydrated && isInCart (بعد از hydration و دوره در سبد است):
                - دکمه غیرفعال "موجود در سبد خرید" نمایش داده می‌شود
-          */}
+          
           {!isHydrated || !isInCart ? (
             // دکمه افزودن به سبد (زمانی که hydrate نشده یا دوره در سبد نیست)
             <button
@@ -154,12 +154,13 @@ const CourseCard = ({ course }) => {
               موجود در سبد خرید
             </button>
           )}
+        </div>
+            */}
 
-          {/* لینک اطلاعات بیشتر */}
+         
           <Link href={`/courses/${slug}`} className={`${styles.ctaButton} card-button`}>
             بیشتر بدانید
           </Link>
-        </div>
       </div>
     </GradientBorderCard>
   );

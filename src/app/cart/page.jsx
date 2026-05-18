@@ -270,8 +270,8 @@ export default function CartPage() {
 
                 {/* Sidebar: خلاصه سفارش */}
                 <aside className={styles.sidebar}>
-                    <div className={styles.summary}>
                         <h2 className={styles.summaryTitle}>خلاصه سفارش</h2>
+                    <div className={styles.summary}>
 
                         {/* تعداد کل آیتم‌ها */}
                         <div className={styles.summaryRow}>
@@ -280,13 +280,12 @@ export default function CartPage() {
                         </div>
 
                         {/* جمع جزء */}
-                        <div className={styles.summaryRow}>
+                        {/* <div className={styles.summaryRow}>
                             <span>جمع جزء:</span>
                             <strong>{formatPrice(totalPrice)} تومان</strong>
-                        </div>
+                        </div> */}
 
-                        {/* خط جداکننده */}
-                        <div className={styles.divider}></div>
+
 
                         {/* مجموع کل */}
                         <div className={styles.summaryTotal}>

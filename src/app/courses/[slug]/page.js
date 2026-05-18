@@ -1,11 +1,11 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import CourseContentManager from '@/modules/courses/CourseContentManager';
 import { getCourseBySlug } from '@/lib/coursesApi';
 import { getComments } from '@/lib/commentsApi';
 import CommentsSection from '@/modules/comments/CommentsSection';
+import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import { API_BASE_URL } from '@/lib/api';
 import styles from './page.module.scss';
 
@@ -93,9 +93,15 @@ export default async function CoursePage({ params }) {
             <div className={styles.price}>
               {course.price.toman === 0 ? 'رایگان' : `${course.price.toman.toLocaleString()} تومان`}
             </div>
-            <Link href="/checkout" className="card-button">
-              ثبت‌نام در دوره
-            </Link>
+            <AddToCartButton
+              course={{
+                id: course.id,
+                slug: rawCourse.slug,
+                title: course.title,
+                price: course.price.toman,
+                image: course.media.url,
+              }}
+            />
           </div>
         </div>
 

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useCartStore, selectItemsCount } from '@/store/useCartStore';
+import { useCartStore, selectItemsCount, selectTotalPrice } from '@/store/useCartStore';
 import CheckoutStepper from '@/components/checkout/CheckoutStepper';
 import CartReviewStep from '@/components/checkout/CartReviewStep';
 import AuthStep from '@/components/checkout/AuthStep';
@@ -23,9 +23,18 @@ import styles from './page.module.scss';
  */
 export default function CheckoutPage() {
     const router = useRouter();
+    const { data: session, status } = useSession();
     const itemsCount = useCartStore(selectItemsCount);
+    const totalPrice = useCartStore(selectTotalPrice);
     const [currentStep, setCurrentStep] = useState(1);
     const [completedSteps, setCompletedSteps] = useState([]);
+
+    // اگر سفارش رایگان است و کاربر لاگین است، مستقیم به صفحه موفقیت برو
+    useEffect(() => {
+        if (totalPrice === 0 && status === 'authenticated') {
+            router.replace('/payment/callback?status=success');
+        }
+    }, [totalPrice, status, router]);
 
     // بررسی سبد خرید خالی
     if (itemsCount === 0) {
@@ -78,7 +87,7 @@ export default function CheckoutPage() {
             case 1:
                 return <CartReviewStep onNext={goToNextStep} />;
             case 2:
-                return <AuthStep onNext={goToNextStep} />;
+                return <AuthStep onNext={goToNextStep} totalPrice={totalPrice} />;
             case 3:
                 return (
                     <ShippingStep

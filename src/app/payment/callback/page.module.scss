@@ -52,6 +52,7 @@
     align-items: center;
     gap: 24px;
     text-align: center;
+    border-radius: 12px;
 
     @include respond(md) {
         padding: 40px 32px;
