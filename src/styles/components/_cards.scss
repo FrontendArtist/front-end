@@ -41,7 +41,7 @@
 
   display: inline-block;
   align-self: center;
-
+  background: transparent;
   padding: 12px 32px;
   color: var(--color-text-primary);
   font-size: var(--font-md);
@@ -49,6 +49,7 @@
   text-decoration: none;
   border: 2px solid var(--color-text-primary);
   border-radius: 8px;
+  cursor: pointer;
   @include hover-transition;
 
   &:hover {

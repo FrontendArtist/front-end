@@ -7,6 +7,8 @@ import { getComments } from '@/lib/commentsApi';
 import CommentsSection from '@/modules/comments/CommentsSection';
 import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import { API_BASE_URL } from '@/lib/api';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import styles from './page.module.scss';
 
 /**
@@ -45,10 +47,38 @@ export default async function CoursePage({ params }) {
     notFound();
   }
 
-  // اضافه کردن لاگ برای دیباگ دیتای خام دریافتی از استراپی
-  console.log('--- DEBUG: Raw Course Data from Strapi ---');
-  console.log(JSON.stringify(rawCourse, null, 2));
-  console.log('-----------------------------------------');
+  const session = await getServerSession(authOptions);
+
+  let hasPurchasedServer = false;
+  const isFreeCourse = rawCourse.price?.toman === 0 || rawCourse.price === 0;
+
+  if (session?.user?.id) {
+    try {
+      const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+      const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+      
+      const ordersRes = await fetch(`${STRAPI_BASE_URL}/api/orders?filters[user][id][$eq]=${session.user.id}&populate=*`, {
+        headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
+        cache: 'no-store'
+      });
+      
+      if (ordersRes.ok) {
+        const ordersData = await ordersRes.json();
+        const ordersList = ordersData.data || [];
+        
+        hasPurchasedServer = ordersList.some(order => {
+          const items = order.attributes?.items || order.items || [];
+          return items.some(item => 
+            item.slug === rawCourse.slug || 
+            String(item.courseId) === String(rawCourse.id) ||
+            String(item.id) === String(rawCourse.id)
+          );
+        });
+      }
+    } catch (e) {
+      console.error("Error fetching purchases on server via orders:", e);
+    }
+  }
 
   // Fetch comments for this course
   const initialComments = await getComments('course', rawCourse.documentId);
@@ -57,6 +87,7 @@ export default async function CoursePage({ params }) {
   const course = {
     id: rawCourse.id,
     documentId: rawCourse.documentId,
+    slug: rawCourse.slug,
     title: rawCourse.title,
     description: rawCourse.shortDescription,
     price: rawCourse.price,
@@ -64,7 +95,18 @@ export default async function CoursePage({ params }) {
       url: rawCourse.image.url.startsWith('http') ? rawCourse.image.url : `${API_BASE_URL}${rawCourse.image.url}`,
       alt: rawCourse.image.alt,
     },
-    curriculum: rawCourse.curriculum || [],
+    curriculum: rawCourse.curriculum?.map((lesson) => {
+      // برای تمام دوره‌ها، اگر کاربر لاگین نیست یا اگر دوره پولی است و آن را نخریده، لینک‌های مدیا را برای امنیت حذف می‌کنیم
+      const shouldStrip = !session || (!isFreeCourse && !hasPurchasedServer);
+      if (shouldStrip) {
+        return {
+          ...lesson,
+          videoUrl: null,
+          audioUrl: null,
+        };
+      }
+      return lesson;
+    }) || [],
   };
 
   return (

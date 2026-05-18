@@ -2,6 +2,35 @@
 
 ## [Latest] - 2026-05-18
 
+### Security & UX: Secure Course Access & Dynamic Media Gating
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Implemented a robust, high-security course access control system to protect premium and free resources. Restricts all media links dynamically on the server based on authenticated purchase status, completely preventing inspect-element leaks. Enhances the frontend playlist UX with strict lock guards, auto-login modals, immediate cart integration, and seamless router hydration upon authentication.
+
+#### Changes Made:
+1. **Server-Side Media Decryption & Protection** (`src/app/courses/[slug]/page.js`):
+   - Integrated secure server-side purchase verification using the Strapi admin API. If the user is unauthenticated or hasn't purchased the course, all dynamic `videoUrl` and `audioUrl` fields are completely stripped and replaced with `null` before React rendering.
+   - This prevents unpaid users from stealing media links via Inspect Element, Network tools, or the serialized `__NEXT_DATA__` JSON hydration payload.
+   - Resolved dynamic page rendering crash by fixing a `ReferenceError` regarding `initialComments`.
+2. **Interactive Playlist Access Control** (`CourseContentManager.jsx`):
+   - Refined the curriculum list logic so all premium lessons are completely locked (🔒 icon, low opacity) for unauthenticated or unpaid users.
+   - Updated the click handler (`handleLessonClick`) to strictly enforce the locked state, blocking playback and triggering either the `AuthModal` (for unlogged users) or a purchase alert.
+   - Integrated `useOrdersStore` from Zustand inside the component to track bought items seamlessly and reactively.
+   - Set up an auto-refresh listener using Next.js `router.refresh()` to immediately hydration-update the page and retrieve media links once the user logs in.
+3. **Inline Call-To-Action (CTA) Integration** (`CourseContentManager.jsx` & `AddToCartButton.jsx`):
+   - Developed a placeholder view inside the player section for paid but unpurchased courses, showing "برای مشاهده این دوره باید آن را خریداری کنید" and the restored `AddToCartButton`.
+   - Restored and uncommented the `AddToCartButton.jsx` component to allow users to directly add the course to the cart.
+4. **Enhanced Course Cards Purchase Badges** (`CourseCard.jsx` & `CourseCard.module.scss`):
+   - Integrated the Zustand order store in the main listing view to check if the current user purchased a course.
+   - Displays a green "خریداری شده" (Purchased) badge and changes the "بیشتر بدانید" CTA to "مشاهده دوره" for students, dramatically improving the course catalog experience.
+5. **Real-time Orders List Refresh & Cache Eviction** (`page.jsx`, `OrdersList.jsx`, & `PurchasesList.jsx`):
+   - Integrated the `useOrdersStore` in the payment success callback page (`/payment/callback/page.jsx`) to automatically clear and reset the cached orders store (`hasFetched: false`, `orders: []`) upon successful payment.
+   - Updated the mounting `useEffect` in `OrdersList.jsx` and `PurchasesList.jsx` to call `fetchOrders(true)` with the force parameter enabled.
+   - This ensures that whenever a user navigates to their profile orders or purchases tab after a successful checkout, the newly purchased orders/courses are fetched and displayed in real-time without requiring a manual browser refresh.
+
+---
+
 ### Feature & Bug Fix: Complete Order History System & Nested Routing
 **Status**: ✅ COMPLETED (100%)
 
@@ -18,6 +47,13 @@ Finalized the integration of a robust, secure order history feature connecting S
 4. **Order History UI - Clickable Modals** (`OrderDetailsModal.jsx` & `.module.scss`):
    - Wrapped entire order items (icon, title, badges, pricing) inside Next.js `<Link>` components pointing to the preserved `itemUrl`.
    - Applied specific `.modal__itemClickable` SCSS properties including smooth pointer transitions, background hover states, and golden text glow on the title when the row is hovered to dramatically improve UX.
+5. **Unified Global Caching Store** (`src/store/useOrdersStore.js`):
+   - Created a Zustand-powered caching state manager for orders (`useOrdersStore`). This ensures order history and purchased items are fetched exactly once and reused across different tabs inside the user profile, completely avoiding redundant backend requests.
+6. **"My Purchases" Unified View & Caching Integration** (`src/app/profile/purchases/...` & `src/components/profile/PurchasesList.jsx`):
+   - Created a new navigation link called **"سفارش های من"** (My Orders) in the `ProfileSidebar.jsx` that routes to `/profile/purchases`.
+   - Developed `PurchasesList.jsx` which flattens the items from all orders, automatically deduplicates items (and aggregates total quantity bought for physical products), and visually splits them into separate sections: "دوره‌های آموزشی" (Courses) and "محصولات فیزیکی" (Physical Products).
+   - Styled the items using the exact 5-column CSS Grid layout from the checkout cart (`Cart.module.scss`), substituting the deletion action with an elegant custom "مشاهده" (View) button that redirects users directly to their purchased content.
+   - Standardized the physical product fallback route to use `/product/[slug]` rather than `/products/[slug]`, ensuring old order items (which lack a saved `itemUrl` in the database) safely trigger Next.js canonical category routing redirects instead of hitting a blank page.
 
 ---
 

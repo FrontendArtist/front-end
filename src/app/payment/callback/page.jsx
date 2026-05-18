@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
+import { useOrdersStore } from '@/store/useOrdersStore';
 import styles from './page.module.scss';
 
 /**
@@ -41,6 +42,8 @@ function PaymentCallbackContent() {
         if (isHydrated && status === 'success') {
             // پاکسازی سبد خرید
             useCartStore.getState().clearCart();
+            // بازنشانی حافظه کش سفارش‌ها تا در ورود بعدی به پروفایل مجدداً فچ شوند
+            useOrdersStore.setState({ hasFetched: false, orders: [] });
         }
     }, [isHydrated, status]);
 

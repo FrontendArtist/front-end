@@ -259,6 +259,43 @@
   width: 100%;
 }
 
+.authPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed rgba(246, 217, 130, 0.4);
+  border-radius: 12px;
+  margin: 20px;
+  text-align: center;
+
+  h3 {
+    color: var(--color-text-primary);
+    font-size: var(--font-md);
+    margin-bottom: 20px;
+    font-weight: var(--font-weight-medium);
+  }
+
+  .loginBtn {
+    background: var(--color-primary);
+    color: var(--color-bg-primary);
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: var(--color-text-primary);
+      transform: translateY(-2px);
+    }
+  }
+}
+
 .playerWrapper {
   display: flex;
   flex-direction: column;

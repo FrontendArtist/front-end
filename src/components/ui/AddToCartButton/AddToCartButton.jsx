@@ -56,7 +56,7 @@ export default function AddToCartButton({ course }) {
         onClick={handleAddToCart}
         aria-label={`افزودن ${title} به سبد خرید`}
       >
-        ثبت‌نام در دوره
+        افزودن به سبد خرید
       </button>
     );
   }

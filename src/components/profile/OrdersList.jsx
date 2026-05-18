@@ -3,37 +3,18 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
+import { useOrdersStore } from '@/store/useOrdersStore';
 import OrderDetailsModal from './OrderDetailsModal';
 import styles from './OrdersList.module.scss';
 
 export default function OrdersList({ limit }) {
-    const [orders, setOrders] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const { orders, isLoading, error, fetchOrders, hasFetched } = useOrdersStore();
     const [activeOrder, setActiveOrder] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                const response = await fetch('/api/orders');
-                if (!response.ok) {
-                    throw new Error('خطا در دریافت لیست سفارشات');
-                }
-                const result = await response.json();
-                
-                // Strapi v5 usually returns { data: [...] }
-                const ordersData = result.data || result || [];
-                setOrders(ordersData);
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchOrders();
-    }, []);
+        fetchOrders(true);
+    }, [fetchOrders]);
 
     const handleViewDetails = (order) => {
         setActiveOrder(order);

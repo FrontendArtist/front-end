@@ -1,10 +1,14 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import useAuthStore from '@/store/authStore';
+import { useOrdersStore } from '@/store/useOrdersStore';
 import clsx from 'clsx';
 import VideoJSPlayer from './VideoJSPlayer';
 import PlyrAudioPlayer from './PlyrAudioPlayer';
+import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 
 /**
  * مدیر محتوای دوره (Course Content Manager)
@@ -17,36 +21,68 @@ import PlyrAudioPlayer from './PlyrAudioPlayer';
  */
 export default function CourseContentManager({ course, styles }) {
   const { data: session, status } = useSession();
+  const router = useRouter();
+  const openAuthModal = useAuthStore((state) => state.openAuthModal);
+  const { fetchOrders } = useOrdersStore();
+
   const [activeLesson, setActiveLesson] = useState(null);
   // حالت پخش: پیش‌فرض روی صوت
   const [playMode, setPlayMode] = useState('audio');
+  const [wasUnauthenticated, setWasUnauthenticated] = useState(false);
   const listRef = useRef(null);
 
-  const hasPurchased = session?.user?.courses?.some(
-    (c) => c.documentId === course.documentId || c.id === course.id
-  );
   const isAuthenticated = status === 'authenticated';
+  const isFreeCourse = course.price?.toman === 0 || course.price === 0;
+
+  const isPurchased = useOrdersStore(state => {
+    const allItems = state.orders.flatMap(order => {
+        const items = order.attributes?.items || order.items;
+        return Array.isArray(items) ? items : [];
+    });
+    return allItems.some(item => item.slug === course.slug || item.id === course.id || item.documentId === course.documentId);
+  });
+
+  const hasPurchased = isPurchased || isFreeCourse;
+
+  const hasUrlsOnServer = course.curriculum?.some(l => l.videoUrl || l.audioUrl);
+  const [prevPurchased, setPrevPurchased] = useState(hasPurchased || hasUrlsOnServer);
+
+  useEffect(() => {
+     if (status === 'unauthenticated') {
+        setWasUnauthenticated(true);
+     }
+     if (status === 'authenticated') {
+        fetchOrders();
+        if (wasUnauthenticated) {
+           // User logged in on this page, refresh to get media URLs from server
+           router.refresh();
+           setWasUnauthenticated(false);
+        }
+     }
+  }, [status, wasUnauthenticated, router, fetchOrders]);
+
+  useEffect(() => {
+    // If the purchase status transitioned to true on the client, refresh server to get URLs
+    if (hasPurchased && !prevPurchased) {
+      router.refresh();
+      setPrevPurchased(true);
+    }
+  }, [hasPurchased, prevPurchased, router]);
 
   // هندلر انتخاب جلسه - وقتی جلسه عوض می‌شود، حالت پخش را ریست می‌کنیم
   const handleLessonClick = (lesson, event) => {
-    if (lesson.isFree) {
+    const isLocked = !isAuthenticated || (!isFreeCourse && !hasPurchased);
+    if (isLocked) {
       if (!isAuthenticated) {
-        alert('برای مشاهده جلسات رایگان باید وارد حساب کاربری خود شوید');
-        return;
+        openAuthModal();
+      } else {
+        alert('این جلسه مخصوص خریداران دوره است. لطفاً دوره را تهیه کنید.');
       }
-      setActiveLesson(lesson);
-      // اگر صوت دارد با صوت شروع کن، وگرنه ویدیو
-      setPlayMode(lesson.audioUrl ? 'audio' : 'video');
-      scrollToItem(event);
-      return;
-    }
-
-    if (!isAuthenticated || !hasPurchased) {
-      alert('این جلسه مخصوص خریداران دوره است');
       return;
     }
 
     setActiveLesson(lesson);
+    // اگر صوت دارد با صوت شروع کن، وگرنه ویدیو
     setPlayMode(lesson.audioUrl ? 'audio' : 'video');
     scrollToItem(event);
   };
@@ -117,8 +153,14 @@ export default function CourseContentManager({ course, styles }) {
   return (
     <div className={styles.contentManager}>
       {/* ---------- بخش میانی (Player) ---------- */}
-      {/* باکس پلیر فقط زمانی رندر می‌شود که جلسه‌ای انتخاب شده باشد */}
-      {activeLesson && (
+      {!isAuthenticated ? (
+        <div className={styles.playerSection}>
+          <div className={styles.authPlaceholder}>
+             <h3>برای مشاهده دوره باید در سایت عضو باشید</h3>
+             <button onClick={openAuthModal} className={styles.loginBtn}>ثبت نام / ورود</button>
+          </div>
+        </div>
+      ) : activeLesson ? (
         <div className={styles.playerSection}>
           <div className={styles.playerWrapper}>
 
@@ -178,7 +220,24 @@ export default function CourseContentManager({ course, styles }) {
             </h3> */}
           </div>
         </div>
-      )}
+      ) : (!isFreeCourse && !hasPurchased) ? (
+        <div className={styles.playerSection}>
+          <div className={styles.authPlaceholder}>
+             <h3>برای مشاهده این دوره باید آن را خریداری کنید</h3>
+             <div style={{ marginTop: '16px' }}>
+               <AddToCartButton
+                 course={{
+                   id: course.id || course.documentId,
+                   slug: course.slug,
+                   title: course.title,
+                   price: course.price?.toman ?? course.price ?? 0,
+                   image: course.media?.url,
+                 }}
+               />
+             </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* ---------- بخش پایینی (Playlist) ---------- */}
       {course.curriculum && course.curriculum.length > 0 && (
@@ -186,7 +245,7 @@ export default function CourseContentManager({ course, styles }) {
           <h2 className={styles.sectionTitle}>سرفصل‌های دوره</h2>
           <ul className={styles.lessonList} ref={listRef}>
             {course.curriculum.map((lesson) => {
-              const isLocked = !lesson.isFree && (!isAuthenticated || !hasPurchased);
+              const isLocked = !isAuthenticated || (!isFreeCourse && !hasPurchased);
               const isActive = activeLesson?.id === lesson.id;
 
               return (
