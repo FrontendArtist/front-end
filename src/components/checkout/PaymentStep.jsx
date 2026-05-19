@@ -7,8 +7,15 @@ import styles from './PaymentStep.module.scss';
 
 /**
  * مرحله 4: روش پرداخت
- * انتخاب روش پرداخت و تکمیل خرید
- * 
+ * انتخاب روش پرداخت (آنلاین یا کارت‌به‌کارت) و تکمیل خرید.
+ *
+ * جریان کارت‌به‌کارت:
+ *  1. کاربر گزینه «کارت به کارت» را انتخاب می‌کند.
+ *  2. دکمه «ثبت نهایی سفارش» را می‌زند.
+ *  3. سفارش با paymentMethod: 'card_to_card' و paymentStatus: 'pending_payment' ثبت می‌شود.
+ *  4. سبد خرید (Zustand CartStore) پاک می‌شود.
+ *  5. کاربر به /profile/orders/[documentId] هدایت می‌شود تا فیش آپلود کند.
+ *
  * @param {function} onPrevious - callback برای برگشت به مرحله قبل
  */
 export default function PaymentStep({ onPrevious }) {
@@ -17,33 +24,38 @@ export default function PaymentStep({ onPrevious }) {
     const totalPrice = useCartStore(selectTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
 
+    // مقدار پیش‌فرض: آنلاین (مطابق وضعیت قبلی)
     const [paymentMethod, setPaymentMethod] = useState('online');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
 
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('fa-IR').format(price);
-    };
+    const formatPrice = (price) =>
+        new Intl.NumberFormat('fa-IR').format(price);
 
     /**
-     * 🚨 ACTUAL PAYMENT LOGIC
-     * پردازش پرداخت و ثبت سفارش
+     * ثبت سفارش — منطق مشترک برای هر دو روش پرداخت.
+     * paymentMethod و paymentStatus بسته به انتخاب کاربر ارسال می‌شوند.
      */
     const handlePayment = async () => {
         setIsProcessing(true);
+        setErrorMessage(null);
+
+        // تعیین وضعیت اولیه پرداخت بر اساس روش انتخاب‌شده
+        const isCardToCard = paymentMethod === 'card_to_card';
+        const initialPaymentStatus = isCardToCard ? 'pending_payment' : 'pending_payment';
 
         try {
-            // فراخوانی API ثبت سفارش
             const response = await fetch('/api/orders', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     cartItems: items,
                     totalPrice: totalPrice,
-                    // آدرس از بک‌اند به سفارش متصل می‌شود یا اینجا فرستاده می‌شود
-                    shippingAddress: null
-                })
+                    shippingAddress: null,
+                    // فیلدهای جدید — ارسال به API route که آن‌ها را به Strapi پاس می‌دهد
+                    paymentMethod: paymentMethod,        // 'online' | 'card_to_card'
+                    paymentStatus: initialPaymentStatus, // 'pending_payment'
+                }),
             });
 
             if (!response.ok) {
@@ -51,14 +63,26 @@ export default function PaymentStep({ onPrevious }) {
                 throw new Error(errData.message || 'خطا در ثبت سفارش');
             }
 
-            // پاک کردن سبد خرید محلی
+            const newOrder = await response.json();
+
+            // ── پاک کردن سبد خرید (Zustand) ──────────────────────────────────
             useCartStore.getState().clearCart();
 
-            // انتقال به صفحه سفارشات کاربر
-            router.push('/profile/orders');
+            if (isCardToCard) {
+                const documentId = newOrder?.data?.documentId;
+                let redirectUrl = '/payment/callback?status=success&source=card_to_card';
+                if (documentId) {
+                    redirectUrl += `&orderId=${encodeURIComponent(documentId)}`;
+                }
+                router.push(redirectUrl);
+            } else {
+                // پرداخت آنلاین هم از callback رد می‌شود تا پیام «پرداخت موفق» نشان داده شود
+                router.push('/payment/callback?status=success');
+            }
+
         } catch (error) {
             console.error('Payment Error:', error);
-            alert(error.message); // می‌توان از توستر استفاده کرد
+            setErrorMessage(error.message);
             setIsProcessing(false);
         }
     };
@@ -68,7 +92,7 @@ export default function PaymentStep({ onPrevious }) {
             <h2 className={styles.title}>روش پرداخت</h2>
             <p className={styles.subtitle}>روش پرداخت خود را انتخاب کنید</p>
 
-            {/* خلاصه سفارش */}
+            {/* ─── خلاصه سفارش ──────────────────────────────────────────────── */}
             <div className={styles.orderSummary}>
                 <h3 className={styles.summaryTitle}>خلاصه سفارش</h3>
 
@@ -77,7 +101,9 @@ export default function PaymentStep({ onPrevious }) {
                         <div key={item.id} className={styles.item}>
                             <span className={styles.itemName}>
                                 {item.title}
-                                {item.quantity > 1 && <span className={styles.quantity}> × {item.quantity}</span>}
+                                {item.quantity > 1 && (
+                                    <span className={styles.quantity}> × {item.quantity}</span>
+                                )}
                             </span>
                             <span className={styles.itemPrice}>
                                 {formatPrice(item.price * item.quantity)} تومان
@@ -86,7 +112,7 @@ export default function PaymentStep({ onPrevious }) {
                     ))}
                 </div>
 
-                <div className={styles.divider}></div>
+                <div className={styles.divider} />
 
                 <div className={styles.summaryRow}>
                     <span>تعداد اقلام:</span>
@@ -99,13 +125,17 @@ export default function PaymentStep({ onPrevious }) {
                 </div>
             </div>
 
-            {/* انتخاب روش پرداخت */}
+            {/* ─── انتخاب روش پرداخت ───────────────────────────────────────── */}
             <div className={styles.paymentMethods}>
-                {/* <h3 className={styles.methodsTitle}>انتخاب روش پرداخت</h3> */}
-
                 <div className={styles.methodsList}>
-                    <label className={`${styles.method} ${paymentMethod === 'online' ? styles.selected : ''}`}>
+
+                    {/* گزینه ۱: پرداخت آنلاین (موجود قبلی) */}
+                    <label
+                        className={`${styles.method} ${paymentMethod === 'online' ? styles.selected : ''}`}
+                        htmlFor="method-online"
+                    >
                         <input
+                            id="method-online"
                             type="radio"
                             name="paymentMethod"
                             value="online"
@@ -114,7 +144,7 @@ export default function PaymentStep({ onPrevious }) {
                         />
                         <div className={styles.methodContent}>
                             <div className={styles.methodIcon}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
                                     <line x1="1" y1="10" x2="23" y2="10" />
                                 </svg>
@@ -124,13 +154,55 @@ export default function PaymentStep({ onPrevious }) {
                                 <span className={styles.methodDesc}>پرداخت امن از طریق درگاه بانکی</span>
                             </div>
                             <div className={styles.checkmark}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
                             </div>
                         </div>
                     </label>
 
+                    {/* گزینه ۲: پرداخت کارت‌به‌کارت (جدید) */}
+                    <label
+                        className={`${styles.method} ${paymentMethod === 'card_to_card' ? styles.selected : ''}`}
+                        htmlFor="method-card-to-card"
+                    >
+                        <input
+                            id="method-card-to-card"
+                            type="radio"
+                            name="paymentMethod"
+                            value="card_to_card"
+                            checked={paymentMethod === 'card_to_card'}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                        />
+                        <div className={styles.methodContent}>
+                            <div className={styles.methodIcon}>
+                                {/* آیکون انتقال بین‌بانکی */}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                                    <path d="M2 10h20" />
+                                    <path d="M7 15h2" />
+                                    <path d="M11 15h4" />
+                                </svg>
+                            </div>
+                            <div className={styles.methodInfo}>
+                                <span className={styles.methodName}>
+                                    پرداخت کارت به کارت
+                                    {/* بج «توصیه‌شده» یا «بدون کارمزد» */}
+                                    <span className={styles.methodBadge}>بدون کارمزد</span>
+                                </span>
+                                <span className={styles.methodDesc}>
+                                    واریز مستقیم به کارت فروشگاه و ارسال فیش
+                                </span>
+                            </div>
+                            <div className={styles.checkmark}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            </div>
+                        </div>
+                    </label>
+
+                    {/* گزینه ۳: پرداخت در محل (غیرفعال — بدون تغییر) */}
                     <label className={`${styles.method} ${styles.disabled}`}>
                         <input
                             type="radio"
@@ -140,7 +212,7 @@ export default function PaymentStep({ onPrevious }) {
                         />
                         <div className={styles.methodContent}>
                             <div className={styles.methodIcon}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                                     <circle cx="12" cy="10" r="3" />
                                 </svg>
@@ -154,30 +226,63 @@ export default function PaymentStep({ onPrevious }) {
                 </div>
             </div>
 
-            {/* دکمه‌های عملیات */}
+            {/* ─── پیام خطا ────────────────────────────────────────────────── */}
+            {errorMessage && (
+                <div className={styles.errorBox} role="alert">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    {errorMessage}
+                </div>
+            )}
+
+            {/* ─── دکمه‌های عملیات ─────────────────────────────────────────── */}
             <div className={styles.actions}>
-                <button onClick={onPrevious} className={styles.previousButton} disabled={isProcessing}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <button
+                    onClick={onPrevious}
+                    className={styles.previousButton}
+                    disabled={isProcessing}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="9 18 15 12 9 6" />
                     </svg>
                     <span>مرحله قبل</span>
                 </button>
+
                 <button
                     onClick={handlePayment}
                     className={styles.paymentButton}
                     disabled={isProcessing}
+                    id="finalize-order-btn"
                 >
                     {isProcessing ? (
                         <>
-                            <span className={styles.spinner}></span>
-                            در حال انتقال به درگاه...
+                            <span className={styles.spinner} />
+                            {paymentMethod === 'card_to_card'
+                                ? 'در حال ثبت سفارش...'
+                                : 'در حال انتقال به درگاه...'}
                         </>
                     ) : (
                         <>
-                            <span>پرداخت و تکمیل خرید</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            <span>
+                                {paymentMethod === 'card_to_card'
+                                    ? 'ثبت نهایی سفارش'
+                                    : 'پرداخت و تکمیل خرید'}
+                            </span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                {paymentMethod === 'card_to_card' ? (
+                                    /* آیکون چک برای ثبت سفارش */
+                                    <polyline points="20 6 9 17 4 12" />
+                                ) : (
+                                    /* آیکون قفل برای پرداخت آنلاین */
+                                    <>
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                    </>
+                                )}
                             </svg>
                         </>
                     )}

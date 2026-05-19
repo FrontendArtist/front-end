@@ -29,12 +29,9 @@ export default function CheckoutPage() {
     const [currentStep, setCurrentStep] = useState(1);
     const [completedSteps, setCompletedSteps] = useState([]);
 
-    // اگر سفارش رایگان است و کاربر لاگین است، مستقیم به صفحه موفقیت برو
-    useEffect(() => {
-        if (totalPrice === 0 && status === 'authenticated') {
-            router.replace('/payment/callback?status=success');
-        }
-    }, [totalPrice, status, router]);
+    // ملاحظه: redirect پس از پرداخت توسط PaymentStep مدیریت می‌شود، نه اینجا.
+    // حذف این useEffect جلوگیری می‌کند از بازنویسی URL ?source=card_to_card
+    // که PaymentStep برای کارت‌به‌کارت ساخته است.
 
     // بررسی سبد خرید خالی
     if (itemsCount === 0) {

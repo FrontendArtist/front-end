@@ -16,10 +16,28 @@ export async function GET(request) {
     }
 
     try {
-        // واکشی سفارشات کاربر (courses ارتباطی با سفارش ندارد و متعلق به یوزر است)
-        const url = `${STRAPI_BASE_URL}/api/orders?filters[user][id][$eq]=${session.user.id}&sort=createdAt:desc&populate=*`;
+        // ── BUG FIX ─────────────────────────────────────────────────────────────
+        // صفحه /profile/orders/[id] می‌تواند ?documentId=xyz بفرستد تا فقط
+        // یک سفارش خاص برگردد. قبلاً این پارامتر کاملاً نادیده گرفته می‌شد.
+        const { searchParams } = new URL(request.url);
+        const documentId = searchParams.get('documentId');
 
-        const res = await fetch(url, {
+        let strapiUrl;
+        if (documentId) {
+            // دریافت یک سفارش خاص با documentId + تأیید مالکیت کاربر
+            strapiUrl = `${STRAPI_BASE_URL}/api/orders`
+                + `?filters[documentId][$eq]=${encodeURIComponent(documentId)}`
+                + `&filters[user][id][$eq]=${session.user.id}`
+                + `&populate=*`;
+        } else {
+            // دریافت همه سفارشات کاربر (رفتار قبلی)
+            strapiUrl = `${STRAPI_BASE_URL}/api/orders`
+                + `?filters[user][id][$eq]=${session.user.id}`
+                + `&sort=createdAt:desc`
+                + `&populate=*`;
+        }
+
+        const res = await fetch(strapiUrl, {
             headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
             cache: 'no-store'
         });
@@ -50,7 +68,7 @@ export async function POST(request) {
 
     try {
         const body = await request.json();
-        const { cartItems, totalPrice, shippingAddress } = body;
+        const { cartItems, totalPrice, shippingAddress, paymentMethod, paymentStatus } = body;
 
         if (!cartItems || !Array.isArray(cartItems)) {
             return NextResponse.json({ message: "Invalid cartItems" }, { status: 400 });
@@ -90,18 +108,28 @@ export async function POST(request) {
             }
         });
 
+        // ── BUG FIX ─────────────────────────────────────────────────────────────
+        // قبلاً orderStatus همیشه 'paid ' بود — حتی برای کارت‌به‌کارت!
+        // حالا: کارت‌به‌کارت → 'pending'  |  آنلاین → 'paid '
+        const resolvedPaymentMethod = paymentMethod || 'online';
+        const resolvedOrderStatus = resolvedPaymentMethod === 'card_to_card'
+            ? 'pending'
+            : 'paid ';
+
         // ساخت بدنه پِیلود بر اساس فیلدهای واقعی دیتابیس شما
         const orderPayload = {
             data: {
                 totalPrice: Number(totalPrice) || 0,
-                orderStatus: 'paid ', // According to Strapi enum "paid " (with space)
+                orderStatus: resolvedOrderStatus,
                 fullName: session.user.firstName ? `${session.user.firstName} ${session.user.lastName}` : "کاربر",
                 address: shippingAddress || "آدرس وارد نشده است",
                 postalCode: "0000000000",
                 phone: session.user.phoneNumber || "00000000000",
                 email: session.user.email || "no-email@tarhelahi.com",
-                user: session.user.id, // متصل کردن سفارش به کاربر لاگین شده
-                items: itemsPayload    // اضافه کردن سبد خرید به Order
+                user: session.user.id,
+                items: itemsPayload,
+                paymentMethod: resolvedPaymentMethod,
+                paymentStatus: paymentStatus || 'pending_payment',
             }
         };
 
@@ -126,19 +154,19 @@ export async function POST(request) {
         // آپدیت cartData کاربر به null برای خالی شدن سبد خرید در دیتابیس
         // و اضافه کردن دوره‌های جدید به کاربر
         let userUpdatePayload = { cartData: null };
-        
+
         if (courseIds.length > 0) {
             // دریافت دوره‌های فعلی کاربر برای جلوگیری از بازنویسی
             const userRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}?populate=courses`, {
                 headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` }
             });
-            
+
             if (userRes.ok) {
                 const userData = await userRes.json();
                 const existingCourses = userData.courses ? userData.courses.map(c => c.id) : [];
                 // ادغام دوره‌های قبلی با دوره‌های جدید (حذف تکراری‌ها)
                 const mergedCourses = [...new Set([...existingCourses, ...courseIds])];
-                
+
                 // پلاگین users-permissions معمولا آرایه آی‌دی‌ها را مستقیما دریافت می‌کند
                 userUpdatePayload.courses = mergedCourses;
             }

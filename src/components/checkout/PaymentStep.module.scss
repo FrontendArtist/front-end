@@ -8,6 +8,7 @@
     flex-direction: column;
     gap: 32px;
     border-radius: 12px;
+
     @include respond(md) {
         padding: 24px;
         gap: 24px;
@@ -240,6 +241,56 @@
 
     .method.selected & {
         opacity: 1;
+    }
+}
+
+// بج کوچک کنار نام روش پرداخت
+.methodBadge {
+    display: inline-block;
+    margin-right: 8px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: var(--font-weight-medium);
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #6ee7b7;
+    vertical-align: middle;
+    letter-spacing: 0.2px;
+}
+
+// باکس خطای inline (جایگزین alert())
+.errorBox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(220, 38, 38, 0.15);
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    color: #fca5a5;
+    font-size: var(--font-md);
+    animation: fadeIn 0.3s ease;
+
+    svg {
+        flex-shrink: 0;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+        padding: 12px 14px;
     }
 }
 

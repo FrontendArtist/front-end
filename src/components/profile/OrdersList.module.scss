@@ -48,7 +48,7 @@
         align-items: center;
         border-bottom: 1px solid rgba(246, 217, 130, 0.15);
         padding-bottom: 16px;
-        
+
         @include respond(md) {
             flex-direction: column;
             align-items: flex-start;
@@ -90,7 +90,7 @@
             height: 4px;
             border-radius: 50%;
             background: rgba(246, 217, 130, 0.4);
-            
+
             @include respond(md) {
                 display: none;
             }
@@ -121,6 +121,12 @@
             color: #fca5a5;
         }
 
+        &Pending {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: #a5b4fc;
+        }
+
         &Default {
             background: rgba(6, 24, 24, 0.6);
             color: var(--color-card-text);
@@ -134,7 +140,7 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 16px;
-        
+
         @include respond(md) {
             flex-direction: column;
             align-items: flex-start;
@@ -182,7 +188,7 @@
         &:active {
             transform: translateY(0);
         }
-        
+
         @include respond(md) {
             width: 100%;
             margin-right: 0;
@@ -252,7 +258,7 @@
         justify-content: center;
         margin-bottom: 24px;
         color: rgba(246, 217, 130, 0.6);
-        
+
         svg {
             width: 40px;
             height: 40px;
@@ -297,15 +303,31 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

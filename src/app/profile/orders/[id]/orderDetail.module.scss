@@ -1,0 +1,434 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// orderDetail.module.scss
+// استایل صفحه جزئیات سفارش — /profile/orders/[id]
+// سازگار با پالت تاریک-طلایی سایت
+// ─────────────────────────────────────────────────────────────────────────────
+
+@use '@/styles/base/mixins' as *;
+
+// ─── صفحه اصلی ────────────────────────────────────────────────────────────────
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-bottom: 40px;
+}
+
+// ─── دکمه برگشت ───────────────────────────────────────────────────────────────
+.backBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    text-decoration: none;
+    opacity: 0.8;
+    transition: all 0.2s ease;
+    width: fit-content;
+
+    &:hover {
+        opacity: 1;
+        color: var(--color-text-primary);
+    }
+}
+
+// ─── هدر سفارش ────────────────────────────────────────────────────────────────
+.orderHeader {
+    background: var(--gradient-card-vertical);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(246, 217, 130, 0.2);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card-strong);
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+
+    @include respond(md) {
+        padding: 20px;
+        gap: 14px;
+    }
+}
+
+.orderHeaderTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.orderTitle {
+    font-family: var(--font-lalezar);
+    font-size: var(--font-xl);
+    color: var(--color-text-primary);
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-lg);
+    }
+}
+
+.orderBadges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+// ─── متا اطلاعات سفارش ────────────────────────────────────────────────────────
+.orderMeta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 24px;
+
+    @include respond(sm) {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+.metaItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--font-sm);
+}
+
+.metaLabel {
+    color: var(--color-card-text);
+    opacity: 0.75;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.metaValue {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+    word-break: break-all;
+}
+
+.metaPrice {
+    font-weight: var(--font-weight-bold);
+    background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+// ─── بج‌های وضعیت ──────────────────────────────────────────────────────────────
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: var(--font-weight-medium);
+}
+
+.badgeSuccess {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #6ee7b7;
+}
+
+.badgePending {
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    color: #a5b4fc;
+}
+
+.badgeWarning {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: #fcd34d;
+}
+
+.badgeDanger {
+    background: rgba(220, 38, 38, 0.15);
+    border: 1px solid rgba(220, 38, 38, 0.35);
+    color: #fca5a5;
+}
+
+.badgeInfo {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    color: #93c5fd;
+}
+
+.badgeDefault {
+    background: rgba(6, 24, 24, 0.5);
+    border: 1px solid rgba(246, 217, 130, 0.2);
+    color: var(--color-card-text);
+}
+
+// ─── بخش‌های صفحه ─────────────────────────────────────────────────────────────
+.section {
+    background: var(--gradient-card-vertical);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(246, 217, 130, 0.2);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card-strong);
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    @include respond(md) {
+        padding: 18px 16px;
+        gap: 16px;
+    }
+}
+
+.sectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-lalezar);
+    font-size: var(--font-lg);
+    color: var(--color-text-primary);
+    margin: 0;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(246, 217, 130, 0.15);
+
+    svg {
+        color: var(--color-title-hover);
+        flex-shrink: 0;
+    }
+
+    @include respond(md) {
+        font-size: var(--font-md);
+        padding-bottom: 12px;
+    }
+}
+
+// ─── لیست اقلام ───────────────────────────────────────────────────────────────
+.itemList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.orderItem {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: rgba(6, 24, 24, 0.4);
+    border: 1px solid rgba(246, 217, 130, 0.1);
+    border-radius: 10px;
+    transition: border-color 0.2s ease;
+
+    &:hover {
+        border-color: rgba(246, 217, 130, 0.25);
+    }
+
+    @include respond(md) {
+        padding: 12px;
+        gap: 10px;
+    }
+}
+
+.itemThumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: rgba(246, 217, 130, 0.08);
+    border: 1px solid rgba(246, 217, 130, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-primary);
+    flex-shrink: 0;
+}
+
+.itemBody {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.itemTitle {
+    font-size: var(--font-md);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+    }
+}
+
+.itemType {
+    font-size: 11px;
+    color: var(--color-card-text);
+    opacity: 0.65;
+}
+
+.itemMeta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.itemQty {
+    font-size: 12px;
+    color: var(--color-card-text);
+    opacity: 0.7;
+}
+
+.itemPrice {
+    font-size: var(--font-sm);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+}
+
+// ─── یادداشت راهنما ───────────────────────────────────────────────────────────
+.infoNote {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: var(--color-card-text);
+    font-size: var(--font-sm);
+    line-height: 1.65;
+
+    svg {
+        color: #a5b4fc;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    strong {
+        color: var(--color-text-primary);
+    }
+}
+
+// ─── باکس تأییدیه در انتظار بررسی ────────────────────────────────────────────
+.pendingVerificationBox {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 20px 22px;
+    border-radius: 14px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    animation: slideIn 0.35s ease;
+
+    svg {
+        color: #6ee7b7;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    >div {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    strong {
+        font-size: var(--font-md);
+        color: #6ee7b7;
+    }
+
+    p {
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    @include respond(md) {
+        padding: 16px;
+        gap: 12px;
+    }
+}
+
+.trackingInfo {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    opacity: 0.85;
+
+    strong {
+        color: var(--color-text-primary);
+    }
+}
+
+// ─── حالت‌های Loading / Error / Back link ─────────────────────────────────────
+.loadingState {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: var(--font-lg);
+    color: var(--color-text-primary);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.errorState {
+    text-align: center;
+    padding: 48px 24px;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 14px;
+    color: #fca5a5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    font-size: var(--font-md);
+}
+
+.backLink {
+    padding: 10px 24px;
+    border-radius: 10px;
+    border: 1px solid rgba(246, 217, 130, 0.3);
+    background: rgba(6, 24, 24, 0.5);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-size: var(--font-sm);
+    transition: all 0.25s ease;
+
+    &:hover {
+        border-color: var(--color-text-primary);
+        background: rgba(6, 24, 24, 0.8);
+    }
+}
+
+// ─── Keyframes ────────────────────────────────────────────────────────────────
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}

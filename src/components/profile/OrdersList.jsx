@@ -34,14 +34,30 @@ export default function OrdersList({ limit }) {
         }).format(new Date(dateString));
     };
 
+    // ─── بج وضعیت سفارش (orderStatus) ────────────────────────────────────────
     const StatusBadge = ({ status }) => {
         const normalizedStatus = status?.trim();
         const map = {
-            paid:    { label: 'پرداخت شده',       cls: styles.orders__badgeSuccess },
+            'paid ': { label: 'پرداخت شده', cls: styles.orders__badgeSuccess },
+            paid: { label: 'پرداخت شده', cls: styles.orders__badgeSuccess },
             pending: { label: 'در انتظار پرداخت', cls: styles.orders__badgeWarning },
-            failed:  { label: 'ناموفق',            cls: styles.orders__badgeDanger  },
+            'shipped ': { label: 'ارسال شده', cls: styles.orders__badgeDefault },
+            failed: { label: 'ناموفق', cls: styles.orders__badgeDanger },
         };
         const { label, cls } = map[normalizedStatus] ?? { label: status || 'نامشخص', cls: styles.orders__badgeDefault };
+        return <span className={`${styles.orders__badge} ${cls}`}>{label}</span>;
+    };
+
+    // ─── BUG FIX: بج وضعیت پرداخت (paymentStatus) ─────────────────────────
+    // قبلاً فقط orderStatus نمایش داده می‌شد — برای کارت‌به‌کارت باید paymentStatus هم نشان داده شود.
+    const PaymentStatusBadge = ({ status }) => {
+        const map = {
+            pending_payment: { label: 'منتظر فیش واریز', cls: styles.orders__badgeWarning },
+            pending_verification: { label: 'در انتظار تأیید', cls: styles.orders__badgePending },
+            paid: { label: 'تأیید شد', cls: styles.orders__badgeSuccess },
+            failed: { label: 'رد شد', cls: styles.orders__badgeDanger },
+        };
+        const { label, cls } = map[status] ?? { label: status || 'نامشخص', cls: styles.orders__badgeDefault };
         return <span className={`${styles.orders__badge} ${cls}`}>{label}</span>;
     };
 
@@ -88,14 +104,14 @@ export default function OrdersList({ limit }) {
             <h2 className={styles.orders__title}>
                 {limit ? 'سفارش‌های اخیر' : 'تاریخچه سفارشات'}
             </h2>
-            
+
             <div className={styles.orders__list}>
                 {displayedOrders.map((orderData) => {
                     // depending on strapi version, the order data might be flat or nested under attributes
                     const order = orderData.attributes || orderData;
                     const id = orderData.id;
                     const items = Array.isArray(order.items) ? order.items : [];
-                    
+
                     return (
                         <GradientBorderCard key={id} className={styles.orders__cardWrapper} contentClassName={styles.orders__card} enableHover={false}>
                             <div className={styles.orders__header}>
@@ -103,9 +119,16 @@ export default function OrdersList({ limit }) {
                                     <span className={styles.orders__id}>سفارش #{id}</span>
                                     <span className={styles.orders__date}>{formatDate(order.createdAt)}</span>
                                 </div>
-                                <StatusBadge status={order.orderStatus} />
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                    {/* برای کارت‌به‌کارت فقط paymentStatus نشان می‌دهیم —
+                                        orderStatus آن همیشه 'pending' است و زائد است */}
+                                    {order.paymentMethod === 'card_to_card'
+                                        ? <PaymentStatusBadge status={order.paymentStatus} />
+                                        : <StatusBadge status={order.orderStatus} />
+                                    }
+                                </div>
                             </div>
-                            
+
                             <div className={styles.orders__details}>
                                 <div className={styles.orders__detailItem}>
                                     <span className={styles.orders__label}>مبلغ کل:</span>
@@ -115,22 +138,41 @@ export default function OrdersList({ limit }) {
                                     <span className={styles.orders__label}>تعداد اقلام:</span>
                                     <span className={styles.orders__value}>{items.length} آیتم</span>
                                 </div>
-                                
-                                <button 
-                                    className={styles.orders__viewBtn}
-                                    onClick={() => handleViewDetails(order)}
-                                    aria-label={`مشاهده جزئیات سفارش ${id}`}
-                                >
-                                    مشاهده جزئیات
-                                </button>
+
+                                {/*
+                                 * ── BUG FIX ────────────────────────────────────────────────────────────
+                                 * کارت‌به‌کارت با paymentStatus === 'pending_payment':
+                                 *   → دکمه «آپلود فیش» که به /profile/orders/[documentId] لینک می‌دهد
+                                 * بقیه سفارشات:
+                                 *   → دکمه «مشاهده جزئیات» که مودال باز می‌کند (unchanged)
+                                 */}
+                                {order.paymentMethod === 'card_to_card' ? (
+                                    <Link
+                                        href={`/profile/orders/${orderData.documentId}`}
+                                        className={styles.orders__viewBtn}
+                                        aria-label={`ارسال فیش سفارش ${id}`}
+                                    >
+                                        {order.paymentStatus === 'pending_payment'
+                                            ? 'آپلود فیش پرداخت'
+                                            : 'مشاهده جزئیات'}
+                                    </Link>
+                                ) : (
+                                    <button
+                                        className={styles.orders__viewBtn}
+                                        onClick={() => handleViewDetails(order)}
+                                        aria-label={`مشاهده جزئیات سفارش ${id}`}
+                                    >
+                                        مشاهده جزئیات
+                                    </button>
+                                )}
                             </div>
                         </GradientBorderCard>
                     );
                 })}
             </div>
 
-            <OrderDetailsModal 
-                isOpen={isModalOpen} 
+            <OrderDetailsModal
+                isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 order={activeOrder}
             />

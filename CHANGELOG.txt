@@ -1,0 +1,1025 @@
+[2026-05-19] - Card-to-Card Payment Feature Implementation (100% Complete)
+
+─── BACKEND (Strapi v5) ───────────────────────────────────────────────────────
+
+| Schema: Order Content-Type
+|- Added field: paymentMethod (enum: online | card_to_card)
+|- Added field: paymentStatus (enum: pending_payment | pending_verification | paid | failed)
+|- Added field: receiptImage (single media relation)
+|- Added field: trackingNumber (string)
+|- Added field: cardHolderName (string) 
+
+
+| Schema: bank-setting (new Single Type)
+|- Created with fields: bankName (string), cardNumber (string), accountHolder (string)
+|- Used to store store bank account info displayed to card-to-card customers
+
+─── API PROXY ROUTES (Next.js 15) ────────────────────────────────────────────
+
+| /src/app/api/orders/route.js — GET handler fix
+|- Added ?documentId= query param support so /profile/orders/[id] can fetch a single order
+|- Added ownership verification: filters by both documentId and session user.id
+|- Previously: GET handler ignored all query params and always returned all orders
+
+| /src/app/api/orders/route.js — POST handler fix
+|- card_to_card orders now set orderStatus: 'pending' (was incorrectly 'paid ' for all orders)
+|- online orders continue to use orderStatus: 'paid '
+|- paymentMethod and paymentStatus fields now correctly forwarded to Strapi payload
+
+| /src/app/api/orders/upload-receipt/route.js — new server-side proxy
+|- Accepts multipart/form-data with: orderId, file, trackingNumber, cardHolderName
+|- STEP 1: validates file type (JPEG/PNG/WebP/GIF), size (max 5MB), and required text fields
+|- STEP 2: uploads image to Strapi /api/upload using server-side STRAPI_API_TOKEN (never exposed to client)
+|- STEP 3: PATCHes the order via documentId — sets receiptImage, trackingNumber, cardHolderName, paymentStatus → 'pending_verification'
+|- Returns { success: true, order: { documentId, paymentStatus, trackingNumber } }
+
+─── FRONTEND COMPONENTS ──────────────────────────────────────────────────────
+
+| /src/components/checkout/PaymentStep.jsx
+|- Added "پرداخت کارت به کارت" radio option alongside online payment
+|- Added "بدون کارمزد" badge on the card-to-card option
+|- Submit button label changes to "ثبت نهایی سفارش" when card-to-card is selected
+|- Post-order redirect for card_to_card: /payment/callback?status=success&source=card_to_card&orderId=[documentId]
+|- Post-order redirect for online: /payment/callback?status=success
+|- Added inline error state display via errorMessage
+
+| /src/components/checkout/PaymentStep.module.scss
+|- Added .methodBadge class for the "بدون کارمزد" inline badge
+|- Added .errorBox class for inline submission error display
+
+| /src/components/profile/OrderReceiptUpload.jsx — new component
+|- Fetches bank-setting data from Strapi (bankName, cardNumber, accountHolder)
+|- Displays bank info with a one-click copy button for card number (navigator.clipboard)
+|- Form fields: trackingNumber (text), cardHolderName (text), receiptImage (file)
+|- Drag-and-drop zone + hidden file input for image upload
+|- Client-side validation: MIME type, max 5MB, required text fields
+|- Submits via POST multipart/form-data to /api/orders/upload-receipt proxy
+|- Shows success message and calls onSuccess() callback after confirmed upload
+|- BUG FIX: moved hidden <input type="file"> outside the clickable dropzone <div> to prevent double file-picker open caused by click event bubbling
+
+| /src/components/profile/OrdersList.jsx
+|- Added PaymentStatusBadge sub-component for card_to_card paymentStatus display
+|- StatusBadge now handles 'paid ' (with trailing space) Strapi enum correctly
+|- For card_to_card orders: only PaymentStatusBadge shown (not StatusBadge) to avoid redundant "در انتظار پرداخت" badge after status advances
+|- For card_to_card with paymentStatus='pending_payment': shows link "آپلود فیش پرداخت" → /profile/orders/[documentId]
+|- For card_to_card with other paymentStatus: shows link "مشاهده جزئیات" → /profile/orders/[documentId]
+|- For non-card_to_card orders: shows modal button "مشاهده جزئیات" (unchanged)
+
+| /src/components/profile/OrdersList.module.scss
+|- Added .orders__badgePending (indigo/purple) for pending_verification paymentStatus
+
+| /src/app/profile/orders/[id]/page.jsx — new dynamic page
+|- Fetches single order by documentId via /api/orders?documentId=[id]
+|- Conditionally renders <OrderReceiptUpload> if paymentMethod=card_to_card and paymentStatus=pending_payment
+|- Hides upload form and shows success message after onSuccess callback fires
+|- Added console.log of raw orderData for development diagnostics
+
+| /src/app/payment/callback/page.jsx
+|- Reads ?source=card_to_card and ?orderId= from URL (via window.location.search after mount)
+|- card_to_card: shows clock icon, amber/gold styling, title "در انتظار پرداخت",
+     message guiding user to upload receipt, button "رفتن به سفارش و آپلود فیش" → /profile/orders/[orderId]
+|- online: shows green checkmark icon, title "پرداخت موفق!", standard success message
+|- Root fix: uses window.location.search (not searchParams hook) after mount to guarantee params
+     are read from the real browser URL and not a stale SSR/hydration snapshot
+|- Removed unused useRouter import
+
+| /src/app/payment/callback/page.module.scss
+|- Added .pending class: amber/gold icon ring, gold title color, amber gradient primary button
+|- Added @keyframes tickPulse: pulsing ring animation on the clock icon
+
+| /src/app/checkout/page.jsx
+|- REMOVED useEffect that called router.replace('/payment/callback?status=success') when totalPrice===0
+|- This effect was firing immediately after clearCart() (triggered by PaymentStep) and overwriting
+     the ?source=card_to_card URL that PaymentStep had just built — causing card_to_card users
+     to always see the online-payment success screen
+
+─── FILES MODIFIED ───────────────────────────────────────────────────────────
+- front-end/src/app/api/orders/route.js
+- front-end/src/app/api/orders/upload-receipt/route.js  (new)
+- front-end/src/components/checkout/PaymentStep.jsx
+- front-end/src/components/checkout/PaymentStep.module.scss
+- front-end/src/components/profile/OrderReceiptUpload.jsx  (new)
+- front-end/src/components/profile/OrdersList.jsx
+- front-end/src/components/profile/OrdersList.module.scss
+- front-end/src/app/profile/orders/[id]/page.jsx  (new)
+- front-end/src/app/payment/callback/page.jsx
+- front-end/src/app/payment/callback/page.module.scss
+- front-end/src/app/checkout/page.jsx
+- backend/src/api/order/content-types/order/schema.json
+- backend/src/api/bank-setting/content-types/bank-setting/schema.json  (new)
+
+[2025-11-02] - Categories & Products API System Rebuild v2.1 (100% Complete)
+|- Refactored src/lib/categoriesApi.js with three new API functions
+|- Added getMainCategories() - fetches parent categories (parent=null) for Home page
+|- Added getCategoryTree() - fetches hierarchical category structure for Navbar
+|- Added getCategoryWithProducts(slug) - fetches complete category with sub-categories and products
+|- Each function implements error handling with try/catch and returns empty array on failure
+|- All functions follow Clean Architecture with apiClient abstraction layer
+|- All functions use formatStrapiCategories for consistent data formatting
+|- Refactored src/lib/strapiUtils.js with new category data structure
+|- Replaced formatStrapiCategories() to work with Strapi's attributes structure
+|- Function now properly handles item.attributes pattern for category data
+|- Added formatStrapiProduct() helper function for product formatting within categories
+|- Function extracts id, title, slug, price, and image URL from Strapi product data
+|- Enhanced formatStrapiCategories() to handle nested subCategories structure
+|- Function supports both parent categories and their sub-categories with products
+|- Properly formats image URLs using formatSingleImage() with fallback handling
+|- Fixed corrupted strapiUtils.js file by removing duplications and cleaning up code
+|- Removed duplicate function definitions and corrupted code sections
+|- Preserved all other formatters: formatStrapiProducts, formatStrapiArticles, formatStrapiCourses, formatStrapiServices, formatStrapiTestimonials, formatStrapiFaqs
+|- All functions follow Repository Pattern for API abstraction
+|- API queries properly use Strapi populate syntax with nested relations
+|- Data structure compliance: Category → SubCategory → Product relationships intact
+|- Zero hardcoded values - all configurations follow project standards
+|- Zero linting errors - code quality verified across both files
+|- Followed CONTEXT_CATEGORIES_SYSTEM_API_v2.md specifications exactly
+|- Architecture compliance: ✅ Clean Architecture, ✅ API Layer abstraction, ✅ Error handling, ✅ SSR ready
+|- All code follows project modular structure in src/lib/
+
+[2025-11-03] - Global Fonts Registration (100% Complete)
+- Added src/styles/base/_fonts.scss with @font-face for IRANSans (200/300/400/500/700), Lalezar, and Far Shafigh
+- Imported fonts in src/styles/main.scss before typography to ensure availability
+- No runtime changes; typography now can use registered families via CSS
+
+[2025-10-27] - ProductCategoriesSection Strapi Integration (100% Complete)
+- Refactored categoriesApi.js to fetch only main categories (parent=null)
+- Updated API query to include image population: populate[image][fields]
+- Modified formatStrapiCategories() in strapiUtils.js to use item.attributes structure
+- Updated CategoryCard.jsx to handle full Strapi image URLs (already prefixed)
+- Added unoptimized flag for placeholder images
+- ProductCategoriesSection now receives data from /api/home → getAllCategories()
+- Removed dependency on mock category data
+- All category icons prefixed with STRAPI_API_URL via formatSingleImage()
+- Added top-level documentation comments: "This section now uses live Strapi categories via API Layer abstraction"
+- Architecture compliance: ✅ Clean Architecture, ✅ API Layer abstraction, ✅ SSR data flow
+- Data flow: HomePage → /api/home → getAllCategories() → formatStrapiCategories() → ProductCategoriesSection
+
+[2025-10-25] - Domain Pages Refactoring to Use Centralized API Modules (100% Complete)
+- Refactored /src/app/products/page.js to use getAllProducts() from productsApi.js
+- Removed direct fetch() call and manual URL construction
+- Removed getInitialProducts() helper function (no longer needed)
+- Removed STRAPI_API_URL constant and formatStrapiProducts import
+- Simplified to single await: const initialProducts = await getAllProducts()
+- Added architectural documentation explaining API Layer abstraction
+- Refactored /src/app/products/[slug]/page.js to use getProductBySlug()
+- Removed local getProductBySlug() function with direct fetch
+- Removed generateStaticParams() (not needed with current approach)
+- Uses API Layer abstraction for metadata generation
+- Clean implementation following Repository Pattern
+- Refactored /src/app/articles/page.js to use getAllArticles() from articlesApi.js
+- Removed direct fetch() call and manual URL construction
+- Removed getInitialArticles() helper function (no longer needed)
+- Removed STRAPI_API_URL constant and formatStrapiArticles import
+- Simplified to single await: const initialArticles = await getAllArticles()
+- Added architectural documentation explaining API Layer abstraction
+- Refactored /src/app/articles/[slug]/page.js to use getArticleBySlug()
+- Removed local getArticleBySlug() function with direct fetch
+- Removed generateStaticParams() (not needed with current approach)
+- Uses API Layer abstraction for metadata generation
+- Clean implementation following Repository Pattern
+- Refactored /src/app/courses/page.js to use getAllCourses() from coursesApi.js
+- Removed direct fetch() call and manual URL construction
+- Removed getInitialCourses() helper function (no longer needed)
+- Removed STRAPI_API_URL constant and formatStrapiCourses import
+- Simplified to single await: const initialCourses = await getAllCourses()
+- Added architectural documentation explaining API Layer abstraction
+- Refactored /src/app/courses/[slug]/page.js to use getCourseBySlug()
+- Removed local getCourseBySlug() function with direct fetch
+- Removed generateStaticParams() (not needed with current approach)
+- Uses API Layer abstraction for metadata generation
+- Clean implementation following Repository Pattern
+- All refactored pages now follow Clean Architecture principles
+- Zero direct fetch() calls anywhere in domain pages
+- Consistent architecture across Products, Articles, Courses, Services domains
+- All pages use SSR with API Layer abstraction (Repository Pattern)
+- Reduced code duplication by removing local data fetching functions
+- Improved maintainability - backend changes only affect API modules
+- Better separation of concerns - pages focus on UI, API modules handle data
+- Each refactored file includes clear documentation comments:
+  * "Data fetched via API Layer abstraction (XApi.js)"
+  * Architecture compliance notes
+  * Repository Pattern benefits
+  * Clean separation of concerns
+- Architecture compliance: ✅ No direct fetch, ✅ Repository Pattern, ✅ Clean Architecture, ✅ SSR
+
+[2025-10-25] - Domain API Modules Implementation (100% Complete)
+- Created /src/lib/productsApi.js following Repository Pattern architecture
+- Function getAllProducts() fetches all products with populated relations
+- Endpoint: /api/products?populate=*
+- Uses apiClient for HTTP communication (follows abstraction pattern)
+- Uses formatStrapiProducts from strapiUtils.js for data formatting
+- Returns empty array on error for graceful degradation (never throws)
+- Function getProductBySlug(slug) fetches single product by slug
+- Implements Strapi filter syntax: filters[slug][$eq]={slug}&populate=*
+- Returns null on error or if product not found
+- Added 180+ lines of comprehensive documentation in Persian
+- All comments explain Repository Pattern, SSR flow, error handling
+- Data contract: id, slug, title, price, shortDescription, images, image
+- Created /src/lib/articlesApi.js following Repository Pattern architecture
+- Function getAllArticles() fetches all articles sorted by publishedAt
+- Endpoint: /api/articles?populate=*&sort=publishedAt:desc
+- Uses apiClient for HTTP communication (follows abstraction pattern)
+- Uses formatStrapiArticles from strapiUtils.js for data formatting
+- Returns empty array on error for graceful degradation (never throws)
+- Function getArticleBySlug(slug) fetches single article by slug
+- Implements Strapi filter syntax: filters[slug][$eq]={slug}&populate=*
+- Returns null on error or if article not found
+- Added 180+ lines of comprehensive documentation in Persian
+- All comments explain Repository Pattern, SSR flow, error handling
+- Data contract: id, slug, title, excerpt, date, cover
+- Created /src/lib/coursesApi.js following Repository Pattern architecture
+- Function getAllCourses() fetches all courses sorted by createdAt
+- Endpoint: /api/courses?populate=*&sort=createdAt:desc
+- Uses apiClient for HTTP communication (follows abstraction pattern)
+- Uses formatStrapiCourses from strapiUtils.js for data formatting
+- Returns empty array on error for graceful degradation (never throws)
+- Function getCourseBySlug(slug) fetches single course by slug
+- Implements Strapi filter syntax: filters[slug][$eq]={slug}&populate=*
+- Returns null on error or if course not found
+- Added 180+ lines of comprehensive documentation in Persian
+- All comments explain Repository Pattern, SSR flow, error handling
+- Data contract: id, slug, title, price, shortDescription, image
+- All three modules follow identical architecture pattern for consistency
+- No direct fetch() calls anywhere - all use apiClient abstraction
+- KISS principle maintained with clean, readable code
+- Architecture compliance: ✅ Repository Pattern, ✅ Domain-specific APIs, ✅ Graceful error handling
+- Each module includes comprehensive documentation explaining:
+  * Purpose and role in architecture
+  * Repository Pattern benefits
+  * SSR data flow (5-step process)
+  * Error handling strategy (Graceful Degradation)
+  * Caching strategy and revalidation options
+  * Data contract with example structure
+  * Four architectural benefits (Separation, Testability, Maintainability, Flexibility)
+  * Usage examples showing wrong vs correct patterns
+
+[2025-10-25] - Service Single Page Implementation (100% Complete)
+- Created /src/app/services/[slug]/page.js as dynamic route for individual service details
+- Implements Server-Side Rendering (SSR) with async/await pattern for optimal SEO
+- Uses Next.js 15 async params pattern: const { slug } = await params
+- Fetches data via getServiceBySlug(slug) from servicesApi.js (no direct fetch)
+- Implements generateMetadata() for dynamic SEO with service title and description
+- Handles invalid slugs gracefully with inline EmptyState (no crashes)
+- EmptyState displays user-friendly message with breadcrumbs and return link
+- Renders ServiceSingle component when service is found
+- Includes Breadcrumbs navigation: خانه / خدمات / [Service Title]
+- Breadcrumbs provide hierarchical navigation and SEO benefits
+- Added 350+ lines of comprehensive architectural documentation explaining:
+  * Purpose and SSR implementation details
+  * Architecture compliance checklist
+  * Complete data flow from URL to HTML (8-step visualization)
+  * Params extraction pattern for Next.js 15
+  * Why NOT to use fetch() directly with comparison
+  * Empty state handling strategy vs notFound()
+  * SEO optimization with metadata generation
+  * Error handling at 3 levels (API, page, component)
+  * Future enhancements (structured data, related services, reviews)
+  * Testing strategy and performance considerations
+  * Accessibility features and semantic HTML
+- Created /src/app/services/[slug]/page.module.scss with BEM naming
+- Implements breadcrumbs navigation styles with hover effects
+- Styles for empty state (title, message, button) with centered layout
+- Responsive design with mobile-first approach (desktop → tablet → mobile)
+- Uses design tokens from styles.md for colors, typography, spacing
+- Includes hover effects on links and buttons with smooth transitions
+- RTL support with direction-agnostic flex layouts
+- Full accessibility compliance (color contrast, focus states, semantic structure)
+- Added 200+ lines of SCSS documentation explaining:
+  * BEM structure and component organization
+  * Design system compliance checklist
+  * Responsive breakpoints and adjustments
+  * Color and typography token usage
+  * Hover effects and transitions
+  * RTL and accessibility support
+
+[2025-10-25] - Services Page API Abstraction Layer Implementation (100% Complete)
+- Created /src/lib/apiClient.js as foundational HTTP wrapper for all API communication
+- Implements base fetch abstraction following Repository Pattern architecture
+- Function apiClient(endpoint, options) handles all HTTP requests to Strapi backend
+- Constructs full URLs using NEXT_PUBLIC_STRAPI_API_URL environment variable
+- Merges custom headers with default Content-Type: application/json
+- Defaults to cache: 'no-store' for always-fresh SSR data (can be overridden)
+- Implements comprehensive error handling with try/catch and status logging
+- Throws errors to allow domain APIs to handle recovery strategies
+- Added 100+ lines of detailed documentation in Persian (Farsi) as per CONTEXT_apiClient.md
+- All comments explain architecture, data flow, usage patterns in Persian
+- Documented why components should never use fetch() or apiClient() directly
+- Explained layered architecture: Component → Domain API → apiClient → Strapi
+- Includes future extensibility notes (JWT Authentication, Retry Logic, Interceptors, Rate Limiting)
+- Created /src/lib/servicesApi.js as domain-specific API layer for services
+- Function getAllServices() fetches all services with populated image relation
+- Endpoint: /api/services?populate=image&sort=createdAt:desc
+- Uses apiClient for HTTP communication (follows abstraction pattern)
+- Uses formatStrapiServices for data formatting (strapiUtils.js)
+- Returns empty array on error for graceful degradation (never throws)
+- Function getServiceBySlug(slug) fetches single service (future use for detail page)
+- Implements Strapi filter syntax: filters[slug][$eq]={slug}
+- Returns null on error or if service not found
+- Added 150+ lines of comprehensive documentation in Persian (Farsi) as per CONTEXT_servicesApi.md
+- All comments explain Repository Pattern, SSR flow, error handling in Persian
+- Added detailed Persian documentation explaining:
+  * Architecture role and design pattern (Repository Pattern)
+  * SSR data flow (6-step process from Next.js to browser)
+  * Error handling strategy and graceful degradation
+  * Caching strategy and revalidation options
+  * Data contract (service object structure)
+  * Architectural benefits (separation of concerns, testability, maintainability, flexibility)
+  * Usage examples showing wrong vs correct patterns
+- Refactored /src/app/services/page.js to use new API abstraction layer
+- Replaced direct fetch() call with getAllServices() import from servicesApi.js
+- Removed getInitialServices() helper function (no longer needed)
+- Removed STRAPI_API_URL constant and manual URL construction
+- Removed fetch configuration (options, error handling, response parsing)
+- Simplified page to single await: const services = await getAllServices()
+- Added 200+ lines of architectural documentation explaining:
+  * Purpose and SSR implementation
+  * Architecture compliance checklist (✅ Server Component, API layer, project structure, etc.)
+  * Complete SSR data flow (6 steps from Next.js to HTML response)
+  * Why SSR benefits (SEO, performance, UX, bundle size)
+  * Component type and execution context
+  * All 6 architectural layers involved
+  * Error handling and empty state flow
+  * Why NOT to use fetch() directly (3 reasons with examples)
+  * Hero section design and responsive typography
+  * ServiceGrid behavior and data shape
+  * Separation of concerns visualization
+  * Data flow ASCII diagram (Browser → Next.js → getAllServices → apiClient → Strapi → format → render)
+  * Future enhancements (breadcrumbs, filtering, search, pagination, loading.js, error.js)
+  * Testing strategy (mocking, empty state, various counts, visual regression)
+  * Performance considerations (SSR benefits, caching, images, bundle size)
+- Zero direct fetch() calls in any component (follows ARCHITECTURE_RULES.md)
+- Zero hardcoded API URLs in components (only in apiClient.js)
+- All Strapi query logic centralized in servicesApi.js
+- Consistent error handling pattern across all API functions
+- Enhanced maintainability: API changes only need updates in API layer
+- Improved testability: API layer can be mocked independently
+- Better code organization: Clear separation between UI and data layers
+- Zero linter errors - code quality verified across all files
+- Followed CONTEXT_ServicePage.md specifications for API structure
+- Followed ARCHITECTURE_RULES.md Rule 2.2: All fetch through lib/api.js pattern
+- All code heavily documented with JSDoc, inline comments, and architectural notes
+- Implementation includes comprehensive comments explaining SSR data flow and architectural compliance per requirements
+
+[2025-10-25] - Complete API Layer Refactor - Data Fetching Centralization (100% Complete)
+- Created centralized API abstraction layer: src/lib/api.js per ARCHITECTURE_RULES.md Rule 2.2
+- Refactored ALL Server Components to eliminate direct fetch() calls
+- All API communication now flows through single source of truth: api.js
+- Implemented 12 primary API functions for Products, Articles, Courses, Services, Categories
+- All functions return standardized { data, error } format for consistent error handling
+- Added comprehensive JSDoc documentation for every API function with @param and @returns
+- Documented Strapi v5 query syntax (populate, filters, sort, pagination) in detail
+- Products API: getProducts() and getProductBySlug() with pagination and sorting support
+- Articles API: getArticles() and getArticleBySlug() with publishedAt sorting
+- Courses API: getCourses() and getCourseBySlug() with price sorting
+- Services API: getServices() and getServiceBySlug() - fetches all services at once (no pagination)
+- Categories API: getCategories() for future category navigation
+- Encapsulated complex Strapi filter syntax: filters[slug][$eq] for exact match queries
+- Implemented pagination syntax: pagination[page] and pagination[pageSize]
+- All API functions use populate: '*' to fetch all related fields
+- Refactored /products page.js to use getProducts() instead of direct fetch
+- Removed STRAPI_API_URL constant and URL construction logic from component
+- Updated getInitialProducts() to use centralized API with proper error handling
+- Validates { data, error } response and provides empty array fallback
+- Refactored /products/[slug] page.js to use getProductBySlug()
+- Updated generateStaticParams() to use getProducts() for SSG slug generation
+- Removed all hardcoded API URLs and query parameter logic
+- Refactored /articles page.js to use getArticles() instead of direct fetch
+- Updated getInitialArticles() with centralized API and formatStrapiArticles
+- Removed console.log debugging statements and STRAPI_API_URL references
+- Refactored /articles/[slug] page.js to use getArticleBySlug()
+- Updated to use getStrapiURL() for consistent image URL handling
+- Removed manual URL construction and fetch configuration
+- Refactored /courses page.js to use getCourses() instead of direct fetch
+- Updated getInitialCourses() with proper error handling and data validation
+- Removed manual population parameter construction
+- Refactored /courses/[slug] page.js to use getCourseBySlug()
+- Updated to use getStrapiURL() for media/image URL handling
+- Improved curriculum mapping and fallback handling
+- Refactored /services page.js to use getServices() instead of direct fetch
+- Updated extensive existing documentation to reflect API layer usage
+- Simplified getInitialServices() by removing manual fetch and URL logic
+- Refactored /services/[slug] page.js to use getServiceBySlug()
+- Updated to use getStrapiURL() for consistent URL construction
+- Removed all STRAPI_API_URL constant references from component
+- All pages now import API functions: import { getProducts } from '@/lib/api'
+- Removed unused strapiUtils imports where formatters are not needed
+- Added error logging with descriptive messages for debugging
+- All components handle { data, error } destructuring pattern consistently
+- Validate data.data exists before accessing (Strapi structure)
+- All generateStaticParams() functions now use centralized API
+- Use large pageSize (1000) to fetch all items for static generation
+- Filter out items without slugs to prevent build errors
+- All functions include try/catch blocks for error resilience
+- Empty array returns on error allow graceful degradation
+- Pages still render with empty states when API unavailable
+- Zero direct fetch() calls remaining in any Server Component
+- Zero hardcoded STRAPI_API_URL references in pages (only in api.js and strapiUtils.js)
+- All Strapi query logic centralized and documented in one place
+- Consistent code patterns across all listing and detail pages
+- Improved maintainability: API changes only need updates in api.js
+- Better testability: API layer can be mocked independently
+- Reduced code duplication: No repeated fetch logic across components
+- Enhanced error handling: Centralized error management with { data, error }
+- Zero linter errors - code quality verified across all refactored files
+- Followed ARCHITECTURE_RULES.md Rule 2.2: "All fetch requests must be handled by lib/api.js"
+- All code heavily commented explaining refactor purpose and centralized architecture
+
+[2025-10-25] - StrapiUtils Core API Functions Enhancement (100% Complete)
+- Enhanced strapiUtils.js with comprehensive documentation following CONTEXT_StrapiUtils.md
+- Added getStrapiURL(path) function for URL construction with base URL handling
+- Function combines NEXT_PUBLIC_STRAPI_API_URL with any path (e.g., "/api/services")
+- Handles both empty paths and paths with/without leading slashes
+- Added fetchStrapiAPI({ endpoint, params, options }) as primary API communication function
+- Function is the single source of truth for all Strapi fetch() operations per ARCHITECTURE_RULES.md
+- Converts params object to URLSearchParams for proper query string encoding
+- Handles complex Strapi filters like 'filters[slug][$eq]' correctly in URLs
+- Implements comprehensive error handling with try/catch for network and parsing errors
+- Returns standardized { data, error } format as mandated by architecture rules
+- Success response: { data: {...}, error: null }
+- Error response: { data: null, error: { status: number, message: string } }
+- Logs errors with status codes and URLs for debugging purposes
+- Merges user-provided headers with default Content-Type: application/json
+- Added extensive JSDoc documentation for all functions with @param and @returns
+- Added detailed inline comments explaining every step of the fetch process
+- Enhanced formatSingleImage() with comprehensive documentation
+- Function handles both absolute URLs (http/https) and relative paths
+- Prepends STRAPI_API_URL for relative paths, uses absolute URLs as-is
+- Provides placeholder image (Picsum) when image data is missing
+- Extracts alternativeText for accessibility with empty string fallback
+- Enhanced all formatter functions (Products, Articles, Courses, Services) with detailed JSDoc
+- Added Strapi structure documentation showing input data format
+- Added output structure documentation showing formatted data format
+- Documented rich text extraction pattern: description[0].children[0].text
+- Explained image handling differences (arrays vs single objects) per content type
+- Products: Multiple images array + single thumbnail for cards
+- Articles: Single cover image field
+- Courses: Media array (takes first item)
+- Services: Single image field + optional link field
+- Added detailed inline comments throughout all formatters explaining each transformation
+- Organized file with clear section headers and separators
+- All functions follow consistent documentation patterns
+- Zero linter errors - code quality verified
+- File structure: Core API → Image Utilities → Domain Formatters
+- All code heavily commented to explain purpose, logic, and architecture decisions
+
+[2025-10-25] - Single Service Detail Page Implementation (100% Complete)
+- Created /services/[slug] dynamic route: src/app/services/[slug]/page.js as async Server Component
+- Implemented comprehensive JSDoc and inline documentation explaining every aspect of the code
+- Added detailed block comments for component purpose, architecture, data flow, SEO, and user flow
+- Documented getServiceBySlug async function with full API details, data formatting, and error handling
+- Function fetches single service by slug: /api/services?populate=image&filters[slug][$eq]={slug}
+- Implemented ISR (Incremental Static Regeneration) with 3600 second (1 hour) revalidation
+- Added extensive image formatting logic handling Strapi flat structure with fallback placeholder
+- Extracts description from Strapi rich text structure: description[0].children[0].text
+- Handles relative/absolute image URLs with proper prepending of STRAPI_API_URL
+- Implemented generateStaticParams for SSG (Static Site Generation) at build time
+- Function fetches all service slugs and generates pre-rendered pages for optimal performance
+- Added generateMetadata for dynamic SEO with Persian title and description
+- Fallback metadata for 404 cases: "خدمت یافت نشد"
+- Main component uses Next.js 15 async params pattern (await params)
+- Implements notFound() for proper 404 handling when service doesn't exist
+- Added back button navigation to /services listing with arrow icon and hover effects
+- Implemented two-column layout: Details (left in RTL) + Image (right in RTL)
+- Details section includes: title (h1), description, and CTA button
+- CTA button links to service.link (external page, contact form, or booking)
+- External link detection: Opens in new tab with rel="noopener noreferrer" for security
+- Internal links stay in same tab (better UX)
+- Conditional rendering: CTA only shown if service.link exists
+- Used Next.js Image component with priority loading for above-the-fold content
+- Responsive sizes prop for image optimization: "(max-width: 768px) 100vw, 50vw"
+- All code follows accessibility best practices with aria-labels and semantic HTML
+- Created page.module.scss with extensive block and inline comments
+- Documented every CSS class with multi-line comments explaining purpose, layout, and behavior
+- Added detailed header explaining styling strategy, BEM methodology, and design system
+- Implemented .servicePage container with responsive vertical padding (120/100px → 96/80px → 64/56px)
+- Created .backButtonWrapper with spacing below (56px → 40px → 32px)
+- Styled .backButton with transparent background, gold border, hover fill effect
+- Button hover: Background fills with gold, text inverts to dark, subtle scale(1.02)
+- Added focus states for keyboard navigation accessibility
+- Implemented .contentGrid with CSS Grid: 2 columns (desktop) → 1 column (mobile/tablet)
+- Grid gap: 48px (desktop) → 40px (md) → 32px (sm)
+- Used align-items: center for vertical alignment of columns
+- Mobile layout: Image moves to top using order: -1 (better UX)
+- Created .details section with flexbox column layout and right text alignment (RTL)
+- Styled .title with responsive typography: --font-xl (32px → 28px → 24px)
+- Styled .description with generous line-height (1.8) and flex-grow for available space
+- Typography scales: --font-lg (20px) → --font-md (16px) → --font-sm (14px)
+- Implemented .ctaButton with gold background, dark text, prominent styling
+- Button padding: 16px/48px (desktop) → 14px/40px (md) → 12px/32px (sm)
+- Full-width button on mobile for easier touch target
+- Hover effects: Lift up (translateY -2px), shadow, color change
+- Active state: Scale down for tactile feedback
+- Created .imageWrapper with 4:3 aspect ratio (desktop), 16:9 (mobile)
+- Rounded corners: 16px → 12px → 8px responsive scaling
+- Subtle border with low opacity for definition
+- Background color during image loading for smooth experience
+- All colors use CSS variables (--color-text-primary, --color-bg-primary, --color-card-text, --color-overlay)
+- All spacing uses CSS variables (--space-section-top-desktop, --space-title-content-desktop, --space-gap-desktop, --space-title-text-desktop)
+- All typography uses CSS variables (--font-xl, --font-lg, --font-md, --font-sm, --font-weight-bold, --font-weight-medium, --line-height-lg, --line-height-md)
+- Imported mixins with relative path following project rules
+- Full responsive design with @include respond() mixin for md and sm breakpoints
+- Zero linter errors - code quality verified
+- Followed all project architecture rules from CONTEXT_RULES.md and CONTEXT_SingleServicePage.md
+- All code heavily commented to explain purpose and logic as requested
+
+[2025-10-25] - Services Listing Page Implementation (100% Complete)
+- Created /services page route: src/app/services/page.js as async Server Component
+- Implemented comprehensive JSDoc and inline documentation explaining every aspect of the code
+- Added detailed block comments for component purpose, architecture, data flow, and SEO strategy
+- Documented getInitialServices async function with full API details and error handling
+- Added formatStrapiServices utility function to strapiUtils.js with heavy commenting
+- Function extracts id, slug, title, description (from rich text), image, and optional link
+- Handles Strapi's nested rich text structure: description[0].children[0].text
+- Uses formatSingleImage for consistent image URL formatting with fallbacks
+- API endpoint: /api/services?populate=image&sort=createdAt:desc
+- Implemented ISR (Incremental Static Regeneration) with 3600 second (1 hour) revalidation
+- No pagination or "Load More" - fetches all services in single request per specifications
+- Added metadata export for SEO: Persian title and description
+- Implemented hero section with title "خدمات ما" and descriptive subtitle
+- Created responsive services grid that renders ServiceCard components
+- Implemented empty state handling with Persian message when no services available
+- Empty state message: "در حال حاضر هیچ خدمتی ثبت نشده است."
+- Conditional rendering: Grid display vs empty state based on services array
+- Created services.module.scss with extensive block and inline comments
+- Documented every CSS class with multi-line comments explaining purpose and strategy
+- Added detailed header explaining styling strategy, BEM methodology, design system integration
+- Implemented .main container with responsive vertical padding (120/100px → 96/80px → 64/56px)
+- Created .hero section with centered layout and responsive bottom margin (56px → 48px → 40px)
+- Styled .title with responsive typography: --font-xl (32px → 28px → 24px)
+- Styled .subtitle with max-width 800px, responsive font sizes (--font-lg → md → sm)
+- Implemented responsive CSS Grid layout for services
+- Grid columns: 3 cols (desktop) → 3 cols (lg) → 2 cols (tablet) → 1 col (mobile)
+- Grid gap: 48px (desktop) → 40px (xl) → 32px (lg) → 24px (md) → 16px (sm)
+- Used align-items: stretch for equal card heights across rows
+- Implemented .emptyState section with centered layout and responsive padding
+- All colors use CSS variables (--color-title-hover, --color-card-text)
+- All spacing uses CSS variables (--space-section-top-desktop, --space-title-content-desktop, --space-gap-desktop)
+- All typography uses CSS variables (--font-xl, --font-lg, --font-md, --font-sm, --font-weight-bold, --line-height-lg)
+- Imported mixins with relative path following project rules
+- Full responsive design with @include respond() mixin for xl, lg, md, sm breakpoints
+- Zero linter errors - code quality verified
+- Followed all project architecture rules from CONTEXT_RULES.md and CONTEXT_ServicesListingPage.md
+- All code heavily commented to explain purpose and logic as requested
+
+[2025-10-25] - ServiceCard Component Heavy Documentation (100% Complete)
+- Completely rewrote ServiceCard.jsx with comprehensive JSDoc documentation and inline comments
+- Added detailed block comments explaining component purpose, architecture, and data flow
+- Documented all props with @param JSDoc tags including types and descriptions
+- Added inline comments for every major code block: guard clauses, destructuring, Link wrapper, Image section, content section
+- Enhanced accessibility with aria-label for screen readers in Persian
+- Updated image handling to support both object (image.url) and string formats
+- Added priority={false} for lazy loading below-the-fold images
+- Changed CTA from Link to span element (.ctaText) since card itself is wrapped in Link
+- Completely rewrote ServiceCard.module.scss with extensive block and inline comments
+- Added detailed header documentation explaining styling strategy, BEM methodology, and design system integration
+- Documented every CSS class with multi-line block comments explaining purpose, layout strategy, and behavior
+- Added inline comments for every CSS property explaining its purpose and values
+- Documented hover states, focus states, and responsive breakpoints with clear explanations
+- Explained flexbox layout strategy, aspect ratios, transitions, and accessibility features
+- Enhanced styling with transparent dark background, subtle borders, and premium hover effects
+- Implemented card lift animation (translateY -8px), image zoom (scale 1.08), and title color change on hover
+- Added focus state for keyboard navigation accessibility
+- Enhanced CTA text with color change and RTL-aware translateX movement on hover
+- Implemented responsive typography: --font-lg → --font-md → --font-sm
+- Implemented responsive spacing: 24px → 20px → 16px padding
+- Added multi-line text truncation with -webkit-line-clamp: 3 lines (desktop) → 2 lines (mobile)
+- All colors use CSS variables (--color-text-primary, --color-card-text, --color-title-hover)
+- All spacing uses CSS variables (--space-title-text-desktop, --space-text-button-desktop)
+- All typography uses CSS variables (--font-lg, --font-md, --font-sm, --font-weight-medium)
+- Imported mixins with relative path following project rules
+- Full responsive design with @include respond() mixin for md and sm breakpoints
+- Zero linter errors - code quality verified
+- Followed all project architecture rules from CONTEXT_RULES.md and CONTEXT_ServiceCard.md
+- Component heavily commented to explain purpose and logic as requested
+
+[2025-10-25] - All Card Components Styling Refactor (100% Complete)
+- Refactored ProductCard.module.scss with BEM naming and design system
+- Refactored ArticleCard.module.scss with BEM naming and design system
+- Refactored CourseCard.module.scss with BEM naming and design system
+- Refactored CategoryCard.module.scss with BEM naming and design system
+- Refactored TestimonialCard.module.scss with BEM naming and design system
+- All cards now use @include card-container mixin
+- All cards use gradient backgrounds: var(--gradient-card-vertical)
+- All cards have hover effect: var(--gradient-card-horizontal-rtl)
+- Consistent hover effects: translateY(-4px), box-shadow, image scale(1.05)
+- All cards use responsive aspect ratios: 16/10 → 4/3 → 16/9
+- All cards have responsive padding and gap spacing
+- All typography uses CSS variables (--font-lg, --font-md, --font-sm)
+- All spacing uses CSS variables from styles.md
+- All colors use CSS variables from styles.md
+- Title hover color change to --color-title-hover on all cards
+- Imported mixins using relative paths in all SCSS files
+- Full responsive design with @include respond() across all breakpoints
+- Zero hardcoded values - all styling from design tokens
+
+[2025-10-25] - Services Page Implementation (100% Complete)
+- Created page.js in src/app/services/ for services listing route
+- Implemented getInitialServices async function for SSR data fetching
+- API endpoint: /api/services?populate=image&sort=createdAt:desc
+- Configured ISR with 3600 second revalidation
+- Uses formatStrapiServices from strapiUtils for data formatting
+- Added metadata for SEO: title and description in Persian
+- Created hero section with title "خدمات ما" and descriptive subtitle
+- Integrated ServiceGrid component with initialServices prop
+- Created services.module.scss following BEM naming convention
+- Imported mixins using relative path
+- Section padding: 120px/100px → 96px/80px → 64px/56px responsive
+- Hero section centered with bottom margin: 56px → 48px → 40px
+- Title styling: --font-xl (32px → 28px → 24px), --font-weight-bold
+- Subtitle styling: --font-lg (→ md → sm), max-width 800px, centered
+- All spacing uses CSS variables from styles.md
+- All typography uses CSS variables from styles.md
+- All colors use CSS variables from styles.md
+- Full responsive design with @include respond() mixin
+- Followed CONTEXT_ServicePage.md specifications
+- Zero hardcoded values
+
+[2025-10-25] - ServiceSingle Component & Page Implementation (100% Complete)
+- Created ServiceSingle.jsx server component in src/modules/services/ServiceSingle/
+- Implemented detailed service view with image, title, description, and CTA link
+- Added comprehensive JSDoc documentation explaining component structure and data flow
+- Component receives formatted service data from parent page component
+- Implemented responsive two-column layout: image right (RTL), content left on desktop
+- Mobile layout stacks vertically: image top, content bottom using CSS Grid order property
+- Enhanced CTA link with external link detection (opens in new tab with rel="noopener noreferrer")
+- Created ServiceSingle.module.scss following strict BEM naming convention
+- Imported mixins using relative path (@import '../../../styles/base/mixins')
+- Used CSS Grid for responsive layout with automatic column adjustment
+- Applied grid order property for RTL layout: content (order: 1), image (order: 2)
+- Implemented responsive aspect ratios: 16/10 (desktop), 16/9 (tablet), 4/3 (mobile)
+- Title styling: --font-xl (32px), --font-weight-bold, responsive down to 24px mobile
+- Description styling: --font-md, --line-height-lg (1.8) for optimal readability
+- CTA button: 2px border, 16px/48px padding, hover fill effect with scale transform
+- Responsive spacing: padding reduces from 120px/100px to 64px/56px on mobile
+- Gap between image and content: 48px (desktop) down to 24px (mobile)
+- All spacing uses CSS variables (--space-section-top-desktop, --space-gap-desktop, --space-title-text-desktop)
+- All typography uses CSS variables (--font-xl, --font-lg, --font-md, --font-sm, --font-weight-bold)
+- All colors use CSS variables (--color-text-primary, --color-card-text, --color-bg-primary, --color-title-hover)
+- Created page route: src/app/services/[slug]/page.js for dynamic service pages
+- Implemented getServiceBySlug async function for server-side data fetching
+- API endpoint: /api/services?populate=image&filters[slug][$eq]={slug}
+- Configured ISR with 3600 second (1 hour) revalidation for optimal performance
+- Handles image URL formatting: prepends STRAPI_API_URL for relative paths
+- Extracts description text from Strapi rich text structure (array of blocks)
+- Implements proper error handling with try/catch and null returns
+- Added generateStaticParams for Static Site Generation (SSG) at build time
+- Fetches all service slugs and generates static paths for pre-rendering
+- Added generateMetadata function for dynamic SEO optimization
+- Sets page title and description based on service data
+- Fallback metadata for 404 cases: "خدمت یافت نشد"
+- Main page component uses Next.js 15 async params pattern
+- Implements notFound() for proper 404 handling when service doesn't exist
+- Wraps ServiceSingle in .container class for consistent page width
+- Added extensive inline comments explaining data fetching logic, formatting, and flow
+- Followed all project architecture rules from CONTEXT_RULES.md and CONTEXT_ServiceSingle.md
+- Zero hardcoded values - all styling references design tokens from styles.md
+- Component and page follow Next.js App Router SSR/ISR best practices
+
+[2025-10-25] - ServiceGrid Component Implementation (100% Complete)
+- Created ServiceGrid.jsx client component in src/modules/services/ServiceGrid/
+- Implemented responsive grid layout displaying ServiceCard components
+- Grid columns adapt to viewport: 4 cols (desktop), 3 cols (tablet/lg), 2 cols (mobile)
+- Added comprehensive JSDoc documentation explaining component purpose and props
+- Implemented empty state handling with Persian message: "در حال حاضر هیچ خدمتی ثبت نشده است."
+- Component receives initialServices prop from server-side data fetching
+- Created ServiceGrid.module.scss following strict BEM naming convention
+- Imported mixins using relative path (@import '../../../styles/base/mixins')
+- Used CSS Grid with responsive gap spacing: 48px (desktop), 40px (xl), 32px (lg), 24px (md), 16px (sm)
+- Applied justify-items: center for proper alignment when fewer items than columns
+- Set align-items: stretch to ensure equal card heights across grid rows
+- Implemented width control (width: 100%, min-width: 0) to prevent grid blowout
+- Created empty state section with centered message and responsive padding
+- All spacing uses CSS variables (--space-gap-desktop, --space-section-top-desktop)
+- All typography uses CSS variables (--font-lg, --font-md, --font-weight-medium)
+- All colors use CSS variables (--color-text-primary)
+- Full responsive breakpoints using @include respond() mixin (xl, lg, md, sm)
+- Added formatStrapiServices function to strapiUtils.js for data formatting
+- Function extracts id, slug, title, description (from rich text), image, and link fields
+- Uses formatSingleImage helper for consistent image URL formatting with fallback
+- Filters out invalid items and maps Strapi response to clean service objects
+- Added detailed inline comments explaining grid behavior, layout logic, and responsive strategy
+- Component follows 'use client' pattern for future state management capabilities
+- Followed all project architecture rules from CONTEXT_RULES.md and CONTEXT_ServiceGrid.md
+- Zero hardcoded values - all styling references design tokens from styles.md
+
+[2025-10-25] - ServiceCard Component Refactor (100% Complete)
+- Refactored ServiceCard.jsx with comprehensive JSDoc documentation and inline comments
+- Updated component to use proper BEM naming convention in JSX (serviceCard__imageWrapper, serviceCard__content, etc.)
+- Enhanced error handling with optional chaining for image data and fallback placeholder
+- Improved Image component with responsive sizes prop for better performance across devices
+- Completely rewrote ServiceCard.module.scss following strict BEM methodology
+- Imported mixins using relative path (@import '../../../styles/base/mixins')
+- Applied card-container mixin for consistent card styling with padding override for full-width images
+- Implemented gradient background with vertical gradient base and horizontal-rtl gradient on hover
+- Added smooth hover effects: translateY(-4px), box-shadow, and background gradient transition
+- Implemented image zoom effect (scale 1.05) on card hover using nested selector
+- Added responsive aspect ratios: 16/10 (desktop), 4/3 (tablet), 16/9 (mobile)
+- Title color transitions from --color-text-primary to --color-title-hover on hover
+- Description uses -webkit-line-clamp for text truncation: 3 lines (desktop/mobile), 4 lines (tablet)
+- Created styled CTA link button with border, hover background fill, and scale effect
+- All spacing uses CSS variables (--space-title-text-desktop, --space-text-button-desktop)
+- All typography uses CSS variables (--font-lg, --font-md, --font-sm, --font-weight-bold, --line-height-md)
+- All colors use CSS variables (--color-text-primary, --color-card-text, --color-title-hover)
+- Full responsive breakpoints with mobile-first approach using @include respond() mixin
+- Added detailed SCSS comments explaining purpose of each section and style rule
+- Component is server-only with no client-side interactivity (no 'use client' directive)
+- Followed all project architecture rules from CONTEXT_RULES.md and CONTEXT_ServiceCard.md
+- Zero hardcoded values - all styling references design tokens from styles.md
+
+[2025-10-10] - Courses Listing Page & CourseGrid Component Implementation (100% Complete)
+- Created courses listing page route: src/app/courses/page.js
+- Implemented page.js as async server component with Next.js App Router patterns
+- Added getInitialCourses function to fetch 6 courses from Strapi (PAGE_SIZE=6)
+- Implemented formatStrapiCourses utility helper function in strapiUtils.js
+- Function handles cover image formatting with fallback to placeholder
+- Extracts price as toman object and shortDescription from rich text array
+- Created CourseGrid client component: src/modules/courses/CourseGrid/CourseGrid.jsx
+- Integrated CourseCard component for displaying course items
+- Added SortControls component with three sorting options: جدیدترین, ارزان‌ترین, گران‌ترین
+- Implemented getSortQuery helper function to map sort values to Strapi query parameters
+- Sort options: 'latest' (createdAt:desc), 'price:asc', 'price:desc'
+- Implemented sorting functionality with useRef to prevent initial mount fetch
+- Added "Load More" pagination functionality for loading more courses
+- Reused ArticleGrid.module.scss for consistent styling across listing pages
+- Reused articles.module.scss for page-level styling
+- Added metadata for SEO with Persian title and description
+- Used CSS variables for all styling (colors, spacing, typography)
+- Followed all project rules: server components, client directives, SCSS modules, no hardcoded styles
+
+[2025-10-09] - SortControls Reusable Component Implementation (100% Complete)
+- Created SortControls.jsx as a reusable client component in src/components/ui/SortControls/
+- Implemented generic sorting button interface with options array, currentSort, and onSortChange props
+- Added SortControls.module.scss with transparent button styling and active state
+- Styled buttons with border, hover effects, and gold accent colors matching project theme
+- Active button displays filled background with var(--color-text-primary)
+- Used CSS variables for all styling (colors, spacing, transitions)
+- Component accepts options array with value/label pairs for flexibility
+- Followed all project rules: client component, SCSS modules, no hardcoded styles
+
+[2025-10-09] - Articles Listing Page Implementation (100% Complete)
+- Created dynamic articles listing route: src/app/articles/page.js
+- Implemented page.js as async server component with Next.js App Router patterns
+- Added getInitialArticles function to fetch 6 articles from Strapi (PAGE_SIZE=6)
+- Implemented formatStrapiArticles utility helper function in strapiUtils.js
+- Added formatStrapiImage helper function to handle Strapi media field formatting
+- Created ArticleGrid client component: src/modules/articles/ArticleGrid/ArticleGrid.jsx
+- Integrated ArticleCard component for displaying article items
+- Added sorting functionality with two options: جدیدترین (latest) and قدیمی‌ترین (oldest)
+- Implemented useEffect hook for handling sort changes without extra initial fetch
+- Added "Load More" pagination functionality similar to ProductGrid
+- Created ArticleGrid.module.scss with sortControls, grid, and loadMore styles
+- Sort controls styled with transparent background and hover effects
+- Implemented articles.module.scss reusing styles from products page
+- Added 3-column responsive grid layout (3 → 2 → 1 columns on breakpoints)
+- Added metadata for SEO with Persian title and description
+- Used CSS variables for all styling (colors, spacing, typography)
+- Followed all project rules: server components, SCSS modules, no hardcoded styles, heavy commenting
+
+[2025-10-09] - Single Course Page Dynamic Route Implementation (100% Complete)
+- Created dynamic route structure: src/app/courses/[slug]/
+- Implemented page.js as async server component with Next.js App Router patterns
+- Added getCourseBySlug function with ISR (revalidate: 3600 seconds / 1 hour)
+- Implemented generateStaticParams for static path generation at build time
+- Added generateMetadata for dynamic SEO with Persian fallback
+- Integrated existing Accordion component for curriculum display
+- Created two-column responsive grid layout (media + details)
+- Used Next.js Image component with fill layout for course media
+- Implemented page.module.scss with responsive breakpoints
+- Added curriculum section with centered layout (max-width 800px)
+- Added extensive inline comments explaining every function and code block
+- Used CSS variables for all styling (colors, spacing, typography)
+- Integrated notFound() for proper 404 handling
+- Added price display with Persian number formatting and "رایگان" for free courses
+- Implemented CTA button for course enrollment
+- Followed all project rules: server components, SCSS modules, no hardcoded styles, heavy commenting
+
+[2025-10-09] - Single Article Page Dynamic Route Implementation (100% Complete)
+- Created dynamic route structure: src/app/articles/[slug]/
+- Implemented page.js as async server component with Next.js App Router patterns
+- Added getArticleBySlug function with ISR (revalidate: 3600 seconds / 1 hour)
+- Implemented generateStaticParams for static path generation at build time
+- Added generateMetadata for dynamic SEO with Persian fallback
+- Integrated 'marked' library to convert markdown/rich text content to HTML
+- Used Next.js Image component with priority loading for cover images
+- Implemented dangerouslySetInnerHTML for safe CMS content rendering
+- Created responsive single-column layout with centered content (max-width 800px)
+- Implemented page.module.scss with cinematic 16:9 aspect ratio for cover images
+- Added extensive inline comments explaining every function and code block
+- Styled HTML elements (h2, h3, p, a, ul, ol) within article content
+- Used CSS variables for all styling (colors, spacing, typography)
+- Integrated notFound() for proper 404 handling
+- Added Persian date formatting using fa-IR locale
+- Followed all project rules: server components, SCSS modules, no hardcoded styles, heavy commenting
+
+[2025-10-08] - Single Product Page Dynamic Route Implementation (100% Complete)
+- Created dynamic route structure: src/app/products/[slug]/
+- Implemented page.js as server component with Next.js App Router patterns
+- Added getProductBySlug function with ISR (revalidate: 60 seconds)
+- Implemented generateStaticParams for static path generation at build time
+- Added generateMetadata for dynamic SEO with Persian fallback
+- Integrated formatStrapiProducts utility for consistent data formatting
+- Created two-column responsive grid layout (gallery + details)
+- Used Next.js Image component for optimized image loading
+- Implemented page.module.scss with responsive breakpoints
+- Added mobile-first responsive design (stacks vertically on tablets/mobile)
+- Used CSS variables for all styling (colors, spacing, typography)
+- Integrated notFound() for proper 404 handling
+- Followed all project rules: server components, SCSS modules, no hardcoded styles
+
+[2025-10-07] - ProductGrid Component Refactor with Load More Pagination (100% Complete)
+- Refactored ProductGrid.jsx to add "Load More" pagination functionality
+- Added page state management with initial page set to 1
+- Added hasMore state to track if more products are available
+- Modified fetchProducts to accept isLoadMore parameter for append vs replace logic
+- Implemented Strapi pagination query parameters (pagination[page] and pagination[pageSize]=20)
+- Added handleLoadMore function to fetch next page and append products to existing list
+- Integrated meta.pagination from Strapi response to determine if more pages exist
+- Added loading indicator that displays during fetch operations
+- Created loadMoreButton component that only shows when hasMore is true and not loading
+- Updated ProductGrid.module.scss with loadingText, loadMoreContainer, and loadMoreButton styles
+- Styled button with gold background and hover effects matching project theme
+- Ensured sort functionality resets pagination to page 1
+- Fixed useEffect dependency to only trigger on sortBy changes (not on page changes)
+- Followed all project rules: modern syntax, SCSS modules, no hardcoded styles
+
+[2025-10-05] - TestimonialsSection Component Implementation (100% Complete)
+- Created TestimonialsSection.jsx with BaseSlider and TestimonialCard integration
+- Implemented TestimonialsSection.module.scss with centered layout and decorative bird ornaments
+- Configured BaseSlider with 1 slide per view and loop enabled
+- Added Persian section title "نظرات"
+- Positioned decorative bird images using absolute positioning on left and right sides
+- Used mockTestimonials data from mock.js
+- Implemented responsive design that hides ornaments on mobile
+- Applied CSS variables for spacing and colors
+- Followed all project rules: modern syntax, SCSS modules, no hardcoded styles
+
+[2025-10-05] - TestimonialCard Component Implementation (100% Complete)
+- Created TestimonialCard.jsx with header and text layout
+- Implemented TestimonialCard.module.scss with semi-transparent background and border
+- Added centered flexbox header with author name and user icon
+- Used CSS variables for colors, fonts, and spacing
+- Set max-width to 500px for optimal readability
+- Applied centered text alignment and appropriate line height
+- Followed all project rules: modern syntax, SCSS modules, no hardcoded styles
+
+[2025-10-05] - Accordion Component Refactor with Framer Motion (100% Complete)
+- Refactored Accordion.jsx to use framer-motion library for animations
+- Replaced CSS transitions with motion.div and AnimatePresence for content animations
+- Used motion.span for smooth icon rotation animation (0deg to 180deg)
+- Implemented smooth height animation using variants (collapsed/open states)
+- Added custom easing function [0.04, 0.62, 0.23, 0.98] for natural accordion feel
+- Simplified Accordion.module.scss by removing max-height, transition properties
+- Removed .iconActive and .contentActive classes (no longer needed)
+- Moved padding from conditional classes to .contentInner for consistency
+- Framer Motion now handles all animation logic (height, opacity, rotation)
+- Maintained all accessibility features and responsive design
+- Followed all project rules: modern syntax, SCSS modules, no hardcoded styles
+
+[2025-10-05] - FaqSection Component Implementation (100% Complete)
+- Created FaqSection.jsx as server component in modules/home/FaqSection
+- Implemented FaqSection.module.scss with centered layout and section spacing
+- Integrated Accordion component to display FAQ items
+- Used mockFaqs data from mock.js (6 FAQ items)
+- Added Persian section title "سوالات متداول" (Frequently Asked Questions)
+- Centered title with responsive margin-bottom spacing
+- Limited accordion wrapper to max-width 900px for better readability on large screens
+- Applied responsive design with breakpoints for mobile, tablet, and desktop
+- Used CSS variables for colors, fonts, and spacing
+- Followed all project rules: modern syntax, SCSS modules, no hardcoded styles
+
+[2025-10-05] - Accordion Component Implementation (100% Complete)
+- Created Accordion.jsx as 'use client' component with state management
+- Implemented Accordion.module.scss with smooth open/close animations
+- Added support for array of items with id, title, and content properties
+- Only one item can be expanded at a time (controlled accordion behavior)
+- Included accessibility features with aria-expanded attribute
+- Added icon rotation animation for visual feedback
+- Styled with dark theme matching project design system (overlay background, gold text)
+- Implemented responsive design with breakpoints for mobile, tablet, and desktop
+- Used CSS variables for colors, fonts, and spacing
+- Applied hover effects on accordion titles with color transition
+- Followed all project rules: modern syntax, SCSS modules, no hardcoded styles
+
+[2025-10-04] - ArticlesSection Component Implementation (100% Complete)
+- Created ArticlesSection.jsx with BaseSlider and ArticleCard integration
+- Implemented ArticlesSection.module.scss with minimal styling matching ProductsSection
+- Added Persian section title "مقالات" and "مشاهده همه مقالات ..." link to /articles
+- Configured BaseSlider with 3 slides per view and loop enabled as per specifications
+- Used mockArticles data from mock.js for development
+- Maintained visual consistency with other homepage sections (ProductsSection, CoursesSection)
+- Ensured RTL support and Persian text integration
+- Followed all project rules: modern syntax, SCSS modules, no hardcoded styles
+
+[2025-10-04] - ServicesSection & ServiceCard Implementation (100% Complete)
+- Created ServiceCard.jsx with image, title, description, and CTA button
+- Implemented ServiceCard.module.scss identical to CourseCard styling for visual consistency
+- Created ServicesSection.jsx with BaseSlider and ServiceCard integration
+- Implemented ServicesSection.module.scss matching CoursesSection styling
+- Added Persian section title "خدمات" and "مشاهده همه خدمات ..." link to /services
+- Configured BaseSlider with 2 slides per view and loop enabled
+- Used mockServices data from mock.js for development
+- Maintained visual consistency across all homepage sections
+- Ensured RTL support and Persian text integration
+- Followed all project rules: modern syntax, SCSS modules, no hardcoded styles
+
+[2025-10-04] - ProductCategoriesSection Component Implementation (100% Complete)
+- Created ProductCategoriesSection.jsx with BaseSlider and CategoryCard integration
+- Implemented ProductCategoriesSection.module.scss with minimal styling matching other homepage sections
+- Added Persian section title "دسته بندی" and "مشاهده همه دسته بندی ها ..." link to /categories
+- Configured BaseSlider with 6 slides per view on desktop as per specifications
+- Used mockCategories data from mock.js for development
+- Maintained visual consistency with CoursesSection and ProductsSection styling
+- Ensured RTL support and Persian text integration
+- Followed all project rules: modern syntax, SCSS modules, no hardcoded styles
+
+[2025-10-04] - CategoryCard Component Implementation (100% Complete)
+- Created CategoryCard.jsx with exact JSX structure from specifications
+- Implemented CategoryCard.module.scss with transparent background and subtle gradient overlay on hover
+- Added centered flexbox layout with column direction and gap between icon and name
+- Used CSS variables for colors, spacing, and typography following design system
+- Implemented hover effects with scale transform and box-shadow
+- Added circular icon wrapper with background changes on hover
+- Ensured focus accessibility with outline styles
+- Followed all project rules: modern syntax, SCSS modules, no hardcoded styles
+
+[2025-10-04] - HakimElahiSection Component Implementation (100% Complete)
+- Created HakimElahiSection.jsx with responsive two-column grid layout
+- Implemented HakimElahiSection.module.scss using CSS Grid with text left, image right
+- Added responsive design that stacks vertically on screens ≤768px with image on top
+- Used CSS variables from design system (_variables.scss) for colors and spacing
+- Implemented image wrapper with Next.js Image optimization and proper sizing
+- Added gradient CTA button with hover effects matching design system
+- Ensured RTL support and Persian text integration
+- Followed all project rules: modern syntax, SCSS modules, no hardcoded styles
+
+[2025-09-30] - ArticleCard Component Implementation (100% Complete)
+- Created ArticleCard.jsx with image, title, excerpt, and date display
+- Implemented ArticleCard.module.scss following project card patterns
+- Added 3-line excerpt truncation with ellipsis using -webkit-line-clamp
+- Integrated Persian date formatting using fa-IR locale
+- Links to /articles/{slug} route
+- Used CSS variables for colors, spacing, and typography
+- Maintained consistency with CourseCard and ProductCard styling
+- Ensured RTL support and proper aspect ratio (16:10) for article images
+
+[2025-09-30] - CoursesSection Module Implementation (100% Complete)
+- Created CoursesSection.jsx with BaseSlider integration
+- Implemented CoursesSection.module.scss with identical structure to ProductsSection
+- Configured slider with 2 slides per view as per specifications
+- Integrated CourseCard component for rendering course items
+- Added Persian section title "آخرین دوره‌ها" and "مشاهده همه" link to /courses
+- Used mockCourses data from mock.js
+- Maintained visual consistency with ProductsSection styling
+- Ensured RTL support and responsive design
+
+[2025-09-30] - CourseCard Component Implementation (100% Complete)
+- Created CourseCard.jsx with identical structure to ProductCard for visual consistency
+- Implemented CourseCard.module.scss with same styling as ProductCard
+- Added support for free courses (displays "رایگان" when price is 0)
+- Implemented 2-line text truncation with ellipsis for shortDescription
+- Added CTA button styled as div with "ثبت‌نام در دوره" text
+- Links to /courses/{slug} route
+- Ensured RTL support and Persian text integration
+- Used global card classes (card, vertical-gradient, card-title, card-button)
+
+[2025-09-30] - AboutMentorSection Component Implementation (100% Complete)
+- Created AboutMentorSection.jsx with responsive two-column grid layout
+- Implemented AboutMentorSection.module.scss using CSS Grid
+- Added responsive design that stacks vertically on screens ≤768px
+- Used CSS variables from design system (_variables.scss)
+- Implemented image wrapper with Next.js Image optimization
+- Added hover effects on CTA button with gradient background
+- Ensured RTL support and Persian text integration
+
+[2025-09-29] - ScrollCTAButton Client Component (100% Complete)
+- Added src/components/ui/ScrollCTAButton/ScrollCTAButton.jsx as 'use client'
+- Implemented smooth scroll to targetId using scrollIntoView with behavior 'smooth'
+- Accepts className for external styling; no SCSS file created
+
+[2025-09-29] - HeroSection Component Implementation (100% Complete)
+- Created HeroSection.jsx with full-width, full-height hero layout
+- Implemented HeroSection.module.scss using only provided CSS variables
+- Added responsive design with mobile breakpoints
+- Integrated Next.js Image optimization with background cover
+- Added overlay effect and RTL Persian text support
+- Implemented CTA button with hover animations
+
+[2025-09-27] Footer Component Implementation (90% Complete)
+- Created Footer.jsx with RTL support and responsive grid layout
+- Implemented Footer.module.scss with dark theme and gold accents
+- Added newsletter subscription form
+- Added responsive breakpoints for tablet and mobile
+TODO: Replace social media icon placeholders 
+
+[2025-09-27] - Navbar Component Creation (100% Complete)
+- Created Navbar.jsx as a client component with mobile-first approach
+- Implemented responsive navigation with mobile drawer
+- Added scroll-based header styling
+- Integrated action icons with SVG icons
+- Added RTL support and Persian text
+- Implemented mobile menu animations and overlay 
+
+[2025-09-27] - ProductCard Component Fix (100% Complete)
+- Split interactive button into separate client component (AddToCartButton)
+- Fixed runtime error with event handlers in server component
+- Maintained all existing functionality and styling 

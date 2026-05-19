@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
 import { useOrdersStore } from '@/store/useOrdersStore';
@@ -13,42 +13,20 @@ import styles from './page.module.scss';
  */
 function PaymentCallbackContent() {
     const searchParams = useSearchParams();
-    const router = useRouter();
-    const [isHydrated, setIsHydrated] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
-    // دریافت وضعیت پرداخت از URL
-    const status = searchParams.get('status');
-
-    // 🚨 MOCK: تولید شماره سفارش Mock
-    // در Zarinpal واقعی، این شماره از API دریافت می‌شود
-    const mockOrderId = `MOCK_${Date.now()}`;
-
-    /**
-     * Hydration Fix
-     */
     useEffect(() => {
-        setIsHydrated(true);
-    }, []);
-
-    /**
-     * 🚨 MOCK LOGIC: پاکسازی سبد خرید در صورت موفقیت
-     * 
-     * در Zarinpal واقعی:
-     * 1. ابتدا باید Verify API فراخوانی شود
-     * 2. اگر Verify موفق بود، سبد خرید پاک می‌شود
-     * 3. سفارش در دیتابیس ثبت می‌شود
-     */
-    useEffect(() => {
-        if (isHydrated && status === 'success') {
-            // پاکسازی سبد خرید
+        setMounted(true);
+        // پاکسازی سبد خرید وقتی status=success است
+        const sp = new URLSearchParams(window.location.search);
+        if (sp.get('status') === 'success') {
             useCartStore.getState().clearCart();
-            // بازنشانی حافظه کش سفارش‌ها تا در ورود بعدی به پروفایل مجدداً فچ شوند
             useOrdersStore.setState({ hasFetched: false, orders: [] });
         }
-    }, [isHydrated, status]);
+    }, []);
 
-    // نمایش Loading تا Hydration کامل شود
-    if (!isHydrated) {
+    // قبل از mount، صبر می‌کنیم تا URL واقعی خوانده شود
+    if (!mounted) {
         return (
             <div className={styles.loadingContainer}>
                 <div className={styles.loader}>در حال بارگذاری...</div>
@@ -56,51 +34,89 @@ function PaymentCallbackContent() {
         );
     }
 
-    /**
-     * حالت موفقیت - پرداخت موفق
-     */
+    // ── مهم: از window.location.search می‌خوانیم تا 100% مطمئن باشیم
+    // که پارامترها بعد از hydration درست هستند
+    const sp = new URLSearchParams(window.location.search);
+    const status = sp.get('status');
+    const source = sp.get('source');   // 'card_to_card' | null
+    const orderId = sp.get('orderId');  // Strapi documentId
+
+    // ─── حالت موفقیت ──────────────────────────────────────────────────────────
     if (status === 'success') {
+        const isCardToCard = source === 'card_to_card';
+        const primaryHref = isCardToCard && orderId
+            ? `/profile/orders/${orderId}`
+            : '/profile/orders';
+
         return (
-            <div className={`${styles.callbackPage} ${styles.success} container`}>
+            <div className={`${styles.callbackPage} ${isCardToCard ? styles.pending : styles.success} container`}>
                 <div className={styles.card}>
-                    {/* آیکون موفقیت */}
+
+                    {/* ── آیکون ──────────────────────────────────────────────── */}
                     <div className={styles.icon}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                            <polyline points="22 4 12 14.01 9 11.01" />
-                        </svg>
+                        {isCardToCard ? (
+                            /* ساعت — در انتظار پرداخت */
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" strokeWidth="2"
+                                strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        ) : (
+                            /* تیک سبز — پرداخت آنلاین موفق */
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                <polyline points="22 4 12 14.01 9 11.01" />
+                            </svg>
+                        )}
                     </div>
 
-                    <h1 className={styles.title}>پرداخت موفق!</h1>
+                    {/* ── عنوان و پیام ────────────────────────────────────────── */}
+                    {isCardToCard ? (
+                        <>
+                            <h1 className={styles.title}>در انتظار پرداخت</h1>
+                            <p className={styles.message}>
+                                سفارش شما ثبت شد. برای تکمیل خرید، مبلغ را به کارت فروشگاه واریز کرده و فیش آن را آپلود کنید.
+                            </p>
+                            <div className={styles.infoBox}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="16" x2="12" y2="12" />
+                                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                                </svg>
+                                <p>
+                                    با کلیک روی دکمه زیر به صفحه سفارش هدایت می‌شوید.
+                                    در آنجا شماره کارت فروشگاه را مشاهده کرده، مبلغ را واریز و فیش را آپلود کنید.
+                                </p>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <h1 className={styles.title}>پرداخت موفق!</h1>
+                            <p className={styles.message}>
+                                سفارش شما با موفقیت ثبت شد و پرداخت انجام گردید.
+                            </p>
+                            <div className={styles.infoBox}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="16" x2="12" y2="12" />
+                                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                                </svg>
+                                <p>
+                                    اطلاعات کامل سفارش و رسید پرداخت به ایمیل شما ارسال خواهد شد.
+                                    همچنین می‌توانید وضعیت سفارش را در پروفایل خود مشاهده کنید.
+                                </p>
+                            </div>
+                        </>
+                    )}
 
-                    <p className={styles.message}>
-                        سفارش شما با موفقیت ثبت شد و پرداخت انجام گردید.
-                    </p>
-
-                    {/* شماره سفارش Mock */}
-                    <div className={styles.orderInfo}>
-                        <div className={styles.orderRow}>
-                            <span className={styles.label}>شماره سفارش:</span>
-                            <span className={styles.value} dir="ltr">{mockOrderId}</span>
-                        </div>
-                    </div>
-
-                    <div className={styles.infoBox}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="12" y1="16" x2="12" y2="12" />
-                            <line x1="12" y1="8" x2="12.01" y2="8" />
-                        </svg>
-                        <p>
-                            اطلاعات کامل سفارش و رسید پرداخت به ایمیل شما ارسال خواهد شد.
-                            همچنین می‌توانید وضعیت سفارش را در پروفایل خود مشاهده کنید.
-                        </p>
-                    </div>
-
-                    {/* دکمه‌های عملیات */}
+                    {/* ── دکمه‌های عملیات ─────────────────────────────────────── */}
                     <div className={styles.actions}>
-                        <Link href="/profile/orders" className={styles.primaryButton}>
-                            مشاهده سفارش‌ها
+                        <Link href={primaryHref} className={styles.primaryButton}>
+                            {isCardToCard ? 'رفتن به سفارش و آپلود فیش' : 'مشاهده سفارش‌ها'}
                         </Link>
                         <Link href="/products" className={styles.secondaryButton}>
                             بازگشت به فروشگاه
@@ -110,6 +126,7 @@ function PaymentCallbackContent() {
             </div>
         );
     }
+
 
     /**
      * حالت خطا - پرداخت ناموفق
