@@ -80,6 +80,7 @@ function formatComments(rawComments) {
         return {
             id: item.id,
             documentId: item.documentId, // جهت احتیاط برای عملیات بعدی
+            name: attrs.name, // 👈 نام وارد شده توسط کاربر در هنگام ثبت
             content: attrs.content || '',
             rating: attrs.rating || 0,
             createdAt: attrs.createdAt || new Date().toISOString(),
@@ -104,9 +105,8 @@ function formatUser(userData) {
  */
 export async function submitComment(commentData) {
     try {
-        // ... (اعتبارسنجی های اولیه)
-
         const dataPayload = {
+            name: commentData.name, // 👈 اضافه شد
             content: commentData.content.trim(),
             rating: Number(commentData.rating) || 5,
             isApproved: false,
@@ -121,28 +121,36 @@ export async function submitComment(commentData) {
             dataPayload.course = commentData.entityId;
         }
 
-        // 👇👇👇 تغییر حیاتی اینجاست 👇👇👇
+        // 👇 اتصال پاسخ به والد
         if (commentData.parentId) {
             console.log("🔗 Connecting reply to parent:", commentData.parentId);
-
-            // به جای انتساب مستقیم، از سینتکس connect استفاده می‌کنیم
-            // این کار باعث می‌شود حتی اگر باگ UI باشد، دیتابیس مجبور به لینک کردن شود
             dataPayload.comment_parent = {
                 connect: [commentData.parentId]
             };
         }
-        // 👆👆👆 پایان تغییر حیاتی 👆👆👆
 
-        console.log('📤 Sending Payload:', JSON.stringify({ data: dataPayload }, null, 2));
+        console.log('📤 Sending Request to local API Proxy: /api/comments', {
+            payload: dataPayload
+        });
 
-        const response = await apiClient('/api/comments', {
+        // فراخوانی مستقیم API Proxy فرانت‌اند جهت امنیت و سازگاری آسان‌تر با تمام سشن‌ها و احراز هویت
+        const response = await fetch('/api/comments', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify({ data: dataPayload })
         });
 
+        if (!response.ok) {
+            const errorMsg = await response.text();
+            throw new Error(`API_ERROR_${response.status}`);
+        }
+
+        const resData = await response.json();
+
         // چون فرمت خروجی Strapi ممکنه هنوز comment_replies باشه، از فرمتر ردش می‌کنیم
-        // اما چون response.data معمولاً یک آبجکت تکی هست، آرایه می‌کنیم
-        const formatted = formatComments([response.data]);
+        const formatted = formatComments([resData.data || resData]);
         return formatted[0];
 
     } catch (error) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import CommentItem from './CommentItem';
 import { submitComment, getComments } from '@/lib/commentsApi';
 import styles from './CommentsSection.module.scss';
@@ -21,6 +22,8 @@ import styles from './CommentsSection.module.scss';
  * @param {Array} props.initialComments - SSR-fetched comments (optional)
  */
 const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
+    const { data: session } = useSession();
+
     // State management
     const [comments, setComments] = useState(initialComments);
     const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +33,7 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
     const [errorMessage, setErrorMessage] = useState('');
 
     // Form data
+    const [name, setName] = useState('');
     const [content, setContent] = useState('');
     const [rating, setRating] = useState(0);
     const [hoveredRating, setHoveredRating] = useState(0);
@@ -39,7 +43,8 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
     const MAX_CONTENT_LENGTH = 1000;
     const contentLength = content.trim().length;
     const isContentValid = contentLength >= MIN_CONTENT_LENGTH && contentLength <= MAX_CONTENT_LENGTH;
-    const isFormValid = isContentValid && rating > 0;
+    const isNameValid = name.trim().length >= 2;
+    const isFormValid = isContentValid && rating > 0 && isNameValid;
 
     /**
      * Handle star rating selection
@@ -54,6 +59,13 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // بررسی اینکه آیا کاربر لاگین است یا خیر
+        if (!session) {
+            setErrorMessage('برای ثبت نظر ابتدا باید وارد حساب کاربری خود شوید');
+            setSubmitStatus('error');
+            return;
+        }
+
         // Validation
         if (!isFormValid) {
             setErrorMessage('لطفاً تمام فیلدهای الزامی را پر کنید');
@@ -66,8 +78,11 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
         setErrorMessage('');
 
         try {
+            console.log('🔑 Submission initiated. Current Session User:', session.user);
+
             // Prepare comment data
             const commentData = {
+                name: name.trim(),
                 content: content.trim(),
                 rating,
                 entityType,
@@ -75,13 +90,14 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
                 parentId: replyingTo
             };
 
-            // Submit comment
+            // Submit comment از طریق پروکسی داخلی
             await submitComment(commentData);
 
             // Show success message
             setSubmitStatus('success');
 
             // Reset form
+            setName('');
             setContent('');
             setRating(0);
             setReplyingTo(null);
@@ -220,6 +236,24 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
                             </span>
                         )}
                     </div>
+                </div>
+
+                {/* Name Input */}
+                <div className={styles.formGroup}>
+                    <label htmlFor="comment-name" className={styles.label}>
+                        نام شما
+                        <span className={styles.required}>*</span>
+                    </label>
+                    <input
+                        id="comment-name"
+                        type="text"
+                        className={styles.inputStyle}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="نام خود را وارد کنید..."
+                        disabled={isSubmitting}
+                        maxLength={50}
+                    />
                 </div>
 
                 {/* Comment Content */}

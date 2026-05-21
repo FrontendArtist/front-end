@@ -19,7 +19,8 @@ const CommentItem = ({ comment, onReply, depth = 0 }) => {
     const {
         id,
         // ✅ فیکس: documentId را به صورت صریح استخراج می‌کنیم
-        documentId, 
+        documentId,
+        name,
         content = '',
         rating = 0,
         user = { username: 'کاربر مهمان' },
@@ -27,17 +28,20 @@ const CommentItem = ({ comment, onReply, depth = 0 }) => {
         replies = []
     } = comment;
 
+    // Determine the name to display (priority: custom name > user.username > 'کاربر مهمان')
+    const displayUsername = name || user.username || 'کاربر مهمان';
+
     // Format timestamp to Persian date
     const formattedDate = createdAt
         ? new Date(createdAt).toLocaleDateString('fa-IR', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-          })
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        })
         : '';
 
     // Get first letter of username for avatar
-    const avatarLetter = user.username ? user.username.charAt(0) : 'ک';
+    const avatarLetter = displayUsername ? displayUsername.charAt(0) : 'ک';
 
     // Render star rating (1-5 stars)
     const renderStars = () => {
@@ -56,7 +60,7 @@ const CommentItem = ({ comment, onReply, depth = 0 }) => {
         if (onReply && documentId) {
             // ✅✅✅ فیکس اصلی: ارسال documentId به جای ID عددی
             // documentId همان شناسه رشته‌ای (مثل k1oy...) است که Strapi v5 برای ریلیشن نیاز دارد.
-            onReply(documentId); 
+            onReply(documentId);
         }
     };
 
@@ -66,7 +70,7 @@ const CommentItem = ({ comment, onReply, depth = 0 }) => {
             <div className={styles.commentHeader}>
                 <div className={styles.userInfo}>
                     <div className={styles.avatar}>{avatarLetter}</div>
-                    <span className={styles.username}>{user.username}</span>
+                    <span className={styles.username}>{displayUsername}</span>
                 </div>
                 <time className={styles.timestamp}>{formattedDate}</time>
             </div>
