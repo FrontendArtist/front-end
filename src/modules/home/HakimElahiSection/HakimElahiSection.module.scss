@@ -29,6 +29,10 @@
 .innerWrapper {
   display: flex;
   border-radius: 12px;
+  @include respond(md){
+    flex-direction: column;
+
+  }
 }
 
 .imageWrapper {
@@ -48,8 +52,10 @@
   }
 
   @include respond(md) {
-    height: 400px;
+    width: 100%;
+    height: auto;
     order: -1; // Move image on top on mobile
+    background: none;
   }
 }
 
@@ -62,6 +68,7 @@
 
   @include respond(md) {
     gap: 24px;
+    width: 100%;
   }
 }
 

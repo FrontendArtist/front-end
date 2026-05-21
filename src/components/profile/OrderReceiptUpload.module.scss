@@ -87,7 +87,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-
+flex-wrap: wrap;
     @include respond(sm) {
         flex-direction: column;
         align-items: flex-start;
@@ -101,6 +101,8 @@
     font-weight: var(--font-weight-bold);
     letter-spacing: 4px;
     direction: ltr;
+    display: flex;
+    gap: 10px;
     // گرادیان طلایی مشابه modal__price
     background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
     -webkit-background-clip: text;

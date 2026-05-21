@@ -113,7 +113,7 @@ export default function OrdersList({ limit }) {
                     const items = Array.isArray(order.items) ? order.items : [];
 
                     return (
-                        <GradientBorderCard key={id} className={styles.orders__cardWrapper} contentClassName={styles.orders__card} enableHover={false}>
+                        <GradientBorderCard gradient={'horizontal-rtl'} key={id} className={styles.orders__cardWrapper} contentClassName={styles.orders__card} enableHover={false}>
                             <div className={styles.orders__header}>
                                 <div className={styles.orders__headerInfo}>
                                     <span className={styles.orders__id}>سفارش #{id}</span>

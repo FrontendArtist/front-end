@@ -9,7 +9,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import styles from './BaseSlider.module.scss';
 
-const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4 }) => {
+const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4, breakpoints }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [showNavigation, setShowNavigation] = useState(false);
 
@@ -21,12 +21,14 @@ const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4 }) => {
     return <div>No items to display.</div>;
   }
 
-  const breakpoints = {
+  const defaultBreakpoints = {
     320: { slidesPerView: 2, spaceBetween: 15 },
     768: { slidesPerView: 3, spaceBetween: 20 },
     1024: { slidesPerView: 4, spaceBetween: 30 },
     1280: { slidesPerView, spaceBetween: 30 },
   };
+
+  const swiperBreakpoints = breakpoints || defaultBreakpoints;
 
   return (
     <div className={styles.sliderWrapper}>
@@ -56,7 +58,7 @@ const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4 }) => {
         <Swiper
           modules={[Navigation]}
           loop={loop}
-          breakpoints={breakpoints}
+          breakpoints={swiperBreakpoints}
           className={styles.swiper}
           onBeforeInit={(swiper) => {
             swiper.params.navigation.prevEl = prevRef.current;

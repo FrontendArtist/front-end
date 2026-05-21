@@ -34,10 +34,9 @@
 
 // ─── هدر سفارش ────────────────────────────────────────────────────────────────
 .orderHeader {
-    background: var(--gradient-card-vertical);
+    background: var(--gradient-card-horizontal-rtl);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(246, 217, 130, 0.2);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card-strong);
     padding: 24px 28px;
@@ -167,7 +166,40 @@
     background: var(--gradient-card-vertical);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(246, 217, 130, 0.2);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card-strong);
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    @include respond(md) {
+        padding: 18px 16px;
+        gap: 16px;
+    }
+}
+
+.orderItemsSection {
+    background: var(--gradient-card-horizontal-rtl);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card-strong);
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    @include respond(md) {
+        padding: 18px 16px;
+        gap: 16px;
+    }
+}
+
+.receiptUploadSection {
+    background: var(--gradient-card-vertical);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card-strong);
     padding: 24px 28px;

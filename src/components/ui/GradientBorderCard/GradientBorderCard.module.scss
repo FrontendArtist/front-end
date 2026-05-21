@@ -101,14 +101,31 @@
 }
 
 //aboutmentor
-.aboutMentor .cardBackground {
-    overflow: visible !important;
+.aboutMentor {
 
-}
+    &.borderHorizontal,
+    &.borderHorizontalRtl {
+        @include respond(md) {
+            background: linear-gradient(to bottom,
+                    var(--color-text-primary),
+                    transparent);
+        }
+    }
 
-.aboutMentor .cardContent {
-    overflow: visible !important;
+    .cardBackground {
+        overflow: visible !important;
+    }
 
+    .cardContent {
+        overflow: visible !important;
+
+        &.gradientHorizontal,
+        &.gradientHorizontalRtl {
+            @include respond(md) {
+                background: var(--gradient-card-vertical);
+            }
+        }
+    }
 }
 
 .gradientHorizontal {
