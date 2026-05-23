@@ -11,7 +11,7 @@
         margin: 0 0 32px 0;
         position: relative;
         padding-bottom: 12px;
-        border-bottom: 1px solid rgba(246, 217, 130, 0.15);
+        border-bottom: 1px solid var(--color-primary-op-15);
 
         @include respond(md) {
             font-size: var(--font-lg-xl);
@@ -45,19 +45,19 @@
     &__spinner {
         width: 44px;
         height: 44px;
-        border: 3px solid rgba(246, 217, 130, 0.15);
+        border: 3px solid var(--color-primary-op-15);
         border-radius: 50%;
         border-top-color: var(--color-text-primary);
         animation: spin 1s ease-in-out infinite;
     }
 
     &__error {
-        color: #fca5a5;
-        background: rgba(220, 38, 38, 0.15);
+        color: var(--color-error);
+        background: var(--color-error-op-15);
         padding: 20px;
         border-radius: var(--border-radius);
         text-align: center;
-        border: 1px solid rgba(220, 38, 38, 0.4);
+        border: 1px solid var(--color-error-op-40);
         font-size: var(--font-md);
         line-height: 1.6;
     }
@@ -67,25 +67,25 @@
         padding: 60px 20px;
         color: var(--color-card-text);
         font-size: var(--font-md);
-        background: rgba(6, 24, 24, 0.4);
+        background: var(--color-bg-primary-op-40);
         border-radius: var(--border-radius);
-        border: 1px dashed rgba(246, 217, 130, 0.3);
+        border: 1px dashed var(--color-primary-op-30);
     }
 }
 
 .viewBtn {
     padding: 8px 16px;
     border-radius: 8px;
-    background: rgba(246, 217, 130, 0.1);
+    background: var(--color-primary-op-10);
     color: var(--color-text-primary);
-    border: 1px solid rgba(246, 217, 130, 0.3);
+    border: 1px solid var(--color-primary-op-30);
     font-size: var(--font-sm);
     text-decoration: none;
     transition: all 0.2s ease;
 
     &:hover {
-        background: rgba(246, 217, 130, 0.2);
-        border-color: rgba(246, 217, 130, 0.5);
+        background: var(--color-primary-op-20);
+        border-color: var(--color-primary-op-50);
     }
 }
 

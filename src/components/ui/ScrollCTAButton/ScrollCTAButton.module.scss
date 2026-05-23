@@ -19,7 +19,7 @@
   color: var(--color-bg-primary);
   font-size: var(--font-lg);
   font-weight: var(--font-weight-bold);
-  text-shadow:  0 4px 12px rgba(0, 0, 0, 0.35);
+  text-shadow:  0 4px 12px var(--color-black-op-35);
   color: var(--color-overlay);
   direction: rtl;
   @include hover-transition;

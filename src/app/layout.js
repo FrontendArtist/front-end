@@ -1,4 +1,5 @@
 import "@/styles/variables.css";
+import "@/styles/light-theme.css";
 import "@/styles/main.scss";
 import '@/app/globals.css';
 import Footer from "@/modules/layout/Footer/Footer";

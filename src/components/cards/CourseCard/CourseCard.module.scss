@@ -16,14 +16,14 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  background: rgba(26, 153, 91, 0.9);
+  background: var(--color-success-green-badge);
   color: white;
   padding: 4px 12px;
   border-radius: var(--border-radius);
   font-size: var(--font-ssm);
   font-weight: var(--font-weight-bold);
   z-index: 2;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--color-black-op-20);
 }
 
 .cardContent {
@@ -77,7 +77,7 @@
 .priceSection {
   margin-top: auto;
   padding: 16px 0;
-  border-top: 1px solid rgba(246, 217, 130, 0.1);
+  border-top: 1px solid var(--color-primary-op-10);
 }
 
 .price {
@@ -92,7 +92,7 @@
 }
 
 .purchasedText {
-  color: #1a995b;
+  color: var(--color-success-green-text);
   /* سبز ملایم و هماهنگ */
   font-size: var(--font-md);
   font-weight: var(--font-weight-bold);
@@ -126,11 +126,11 @@
   border-radius: 8px;
   cursor: pointer;
   @include hover-transition;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--color-black-op-20);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px var(--color-black-op-30);
   }
 
   &:active {
@@ -149,11 +149,11 @@
   width: 100%;
   text-align: center;
   padding: 12px 24px;
-  background: rgba(246, 217, 130, 0.1);
+  background: var(--color-primary-op-10);
   color: var(--color-card-text);
   font-size: var(--font-md);
   font-weight: var(--font-weight-medium);
-  border: 2px solid rgba(246, 217, 130, 0.3);
+  border: 2px solid var(--color-primary-op-30);
   border-radius: 8px;
   cursor: not-allowed;
   opacity: 0.6;

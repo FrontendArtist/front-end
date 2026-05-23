@@ -94,7 +94,7 @@
 
 .title {
   font-size: var(--font-xl, 32px);
-  color: var(--color-text-primary, #f6d982);
+  color: var(--color-text-primary, var(--color-text-primary));
   margin: 0;
   line-height: 1.4;
   font-family: 'Far Shafigh';
@@ -121,8 +121,8 @@
   align-items: center;
   justify-content: center;
   padding: 16px 32px;
-  background: linear-gradient(135deg, #F6D982 0%, #F5C452 100%);
-  color: #061818;
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-title-hover) 100%);
+  color: var(--color-bg-primary);
   font-size: var(--font-md);
   font-weight: var(--font-weight-bold, 700);
   border-radius: 8px;
@@ -132,7 +132,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(246, 217, 130, 0.3);
+    box-shadow: 0 8px 16px var(--color-primary-op-30);
   }
 
   @include respond(md) {

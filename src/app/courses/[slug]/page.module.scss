@@ -81,7 +81,7 @@
   // Hide any content that overflows the rounded corners
   overflow: hidden;
   // Subtle border using our primary text color with low opacity
-  border: 1px solid rgba(246, 217, 130, 0.2);
+  border: 1px solid var(--color-primary-op-20);
   // Background color while image is loading
   background: var(--color-overlay);
 
@@ -247,7 +247,7 @@
 
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(246, 217, 130, 0.2);
+  border: 1px solid var(--color-primary-op-20);
 
   @include respond(md) {
     margin-top: 80px;
@@ -265,8 +265,8 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px dashed rgba(246, 217, 130, 0.4);
+  background: var(--color-black-op-20);
+  border: 1px dashed var(--color-primary-op-40);
   border-radius: var(--border-radius);
   margin: 20px;
   text-align: center;
@@ -320,21 +320,21 @@
   // Custom styles for Plyr Player (Audio/Video)
   :global(.plyr) {
     // Override Plyr CSS Variables to match site theme
-    --plyr-color-main: var(--color-primary, #f6d982);
-    --plyr-audio-controls-background: var(--color-card-bg, #1a1a1a);
-    --plyr-audio-control-color: rgba(255, 255, 255, 0.7);
-    --plyr-audio-control-color-hover: #000;
-    --plyr-audio-control-background-hover: var(--color-primary, #f6d982);
+    --plyr-color-main: var(--color-primary, var(--color-text-primary));
+    --plyr-audio-controls-background: var(--color-card-bg, var(--color-dark-1a));
+    --plyr-audio-control-color: var(--color-white-op-70);
+    --plyr-audio-control-color-hover: var(--color-black);
+    --plyr-audio-control-background-hover: var(--color-primary, var(--color-text-primary));
     --plyr-control-radius: 12px;
-    --plyr-range-thumb-background: var(--color-primary, #f6d982);
-    --plyr-range-track-background: rgba(255, 255, 255, 0.1);
+    --plyr-range-thumb-background: var(--color-primary, var(--color-text-primary));
+    --plyr-range-track-background: var(--color-white-op-10);
 
     // Apply border-radius and border directly to controls
     :global(.plyr__controls) {
       border-radius: 16px !important;
-      border: 1px solid rgba(246, 217, 130, 0.15) !important;
+      border: 1px solid var(--color-primary-op-15) !important;
       padding: 12px 16px !important;
-      background: var(--color-overlay, #111) !important;
+      background: var(--color-overlay, var(--color-overlay)) !important;
     }
 
     // For audio player, we might want to offset it slightly if the wrapper has padding
@@ -351,29 +351,29 @@
   display: flex;
   gap: 8px;
   padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.4);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-black-op-40);
+  border-bottom: 1px solid var(--color-white-op-08);
 
   .toggleBtn {
     flex: 1;
     padding: 8px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--color-white-op-20);
     border-radius: 8px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-white-op-60);
     cursor: pointer;
     font-size: var(--font-sm);
     transition: all 0.2s ease;
     font-family: inherit;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+      background: var(--color-white-op-10);
+      color: var(--color-white);
     }
 
     &.toggleActive {
-      background: var(--color-primary, #f6d982);
-      color: #000;
+      background: var(--color-primary, var(--color-text-primary));
+      color: var(--color-black);
       border-color: transparent;
       font-weight: 600;
     }
@@ -384,9 +384,9 @@
   font-size: 10px;
   padding: 2px 7px;
   border-radius: 10px;
-  background: rgba(100, 180, 255, 0.2);
-  color: #6ab4ff;
-  border: 1px solid rgba(100, 180, 255, 0.4);
+  background: var(--color-blue-op-20);
+  color: var(--color-blue-light);
+  border: 1px solid var(--color-blue-op-40);
   white-space: nowrap;
 }
 
@@ -409,16 +409,16 @@
   }
 
   &::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--color-white-op-05);
     border-radius: 10px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgba(246, 217, 130, 0.3);
+    background: var(--color-primary-op-30);
     border-radius: 10px;
 
     &:hover {
-      background: rgba(246, 217, 130, 0.6);
+      background: var(--color-primary-op-60);
     }
   }
 }
@@ -429,25 +429,25 @@
   align-items: center;
   padding: 16px 24px;
   background: var(--color-card-bg);
-  border: 1px solid rgba(246, 217, 130, 0.1);
+  border: 1px solid var(--color-primary-op-10);
   border-radius: var(--border-radius);
   cursor: pointer;
   @include hover-transition;
 
   &:hover:not(.locked) {
-    background: rgba(246, 217, 130, 0.05);
-    border-color: rgba(246, 217, 130, 0.3);
+    background: var(--color-primary-op-05);
+    border-color: var(--color-primary-op-30);
   }
 
   &.locked {
     opacity: 0.6;
     cursor: not-allowed;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--color-white-op-02);
   }
 
   &.active {
     border-color: var(--color-text-primary);
-    background: rgba(246, 217, 130, 0.1);
+    background: var(--color-primary-op-10);
   }
 }
 
@@ -471,7 +471,7 @@
 
 .freeBadge {
   background: var(--color-success);
-  color: #fff;
+  color: var(--color-white);
   font-size: var(--font-ssm);
   padding: 2px 8px;
   border-radius: 4px;

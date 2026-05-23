@@ -53,7 +53,7 @@
 // دکمه افزودن به سبد خرید
 .addToCartButton {
   padding: 8px 16px;
-  background: rgba(246, 217, 130, 0.1);
+  background: var(--color-primary-op-10);
   border: 2px solid var(--color-text-primary);
   border-radius: 8px;
   color: var(--color-text-primary);
@@ -84,7 +84,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(246, 217, 130, 0.1);
+  background: var(--color-primary-op-10);
   border: 2px solid var(--color-text-primary);
   border-radius: 8px;
   overflow: hidden;

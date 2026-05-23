@@ -13,7 +13,7 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: var(--radius-card);
-    border: 1px solid rgba(246, 217, 130, 0.2);
+    border: 1px solid var(--color-primary-op-20);
     box-shadow: var(--shadow-card-strong);
     padding: var(--space-card-padding-desktop);
     display: flex;
@@ -41,7 +41,7 @@
     color: var(--color-text-primary);
     margin: 0;
     padding-bottom: 14px;
-    border-bottom: 1px solid rgba(246, 217, 130, 0.15);
+    border-bottom: 1px solid var(--color-primary-op-15);
 
     svg {
         color: var(--color-title-hover);
@@ -58,8 +58,8 @@
 // ─── باکس اطلاعات بانکی ───────────────────────────────────────────────────────
 // قاب نمایش شماره کارت، بانک و نام صاحب حساب
 .bankInfoBox {
-    background: rgba(6, 24, 24, 0.45);
-    border: 1px solid rgba(246, 217, 130, 0.2);
+    background: var(--color-bg-primary-op-45);
+    border: 1px solid var(--color-primary-op-20);
     border-radius: 14px;
     padding: 22px 24px;
     display: flex;
@@ -124,8 +124,8 @@
     gap: 6px;
     padding: 8px 16px;
     border-radius: 8px;
-    border: 1px solid rgba(246, 217, 130, 0.3);
-    background: rgba(6, 24, 24, 0.6);
+    border: 1px solid var(--color-primary-op-30);
+    background: var(--color-bg-primary-op-60);
     color: var(--color-text-primary);
     font-size: var(--font-sm);
     font-weight: var(--font-weight-medium);
@@ -140,9 +140,9 @@
 
     &:hover {
         border-color: var(--color-text-primary);
-        background: rgba(6, 24, 24, 0.85);
+        background: var(--color-bg-primary-op-85);
         transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(246, 217, 130, 0.15);
+        box-shadow: 0 4px 10px var(--color-primary-op-15);
     }
 
     &:active {
@@ -151,9 +151,9 @@
 
     // حالت Copied — رنگ سبز تأیید
     &.copied {
-        border-color: rgba(16, 185, 129, 0.5);
-        background: rgba(16, 185, 129, 0.1);
-        color: #6ee7b7;
+        border-color: var(--color-success-op-50);
+        background: var(--color-success-op-10);
+        color: var(--color-success);
     }
 }
 
@@ -204,22 +204,22 @@
 .input {
     padding: 14px 16px;
     border-radius: var(--border-radius);
-    border: 2px solid rgba(246, 217, 130, 0.3);
-    background: rgba(6, 24, 24, 0.6);
+    border: 2px solid var(--color-primary-op-30);
+    background: var(--color-bg-primary-op-60);
     color: var(--color-card-text);
     font-size: var(--font-md);
     transition: all 0.3s ease;
     font-family: inherit;
 
     &::placeholder {
-        color: rgba(255, 250, 234, 0.4);
+        color: var(--color-cream-op-40);
     }
 
     &:focus {
         outline: none;
         border-color: var(--color-text-primary);
-        background: rgba(6, 24, 24, 0.8);
-        box-shadow: 0 0 0 4px rgba(246, 217, 130, 0.1);
+        background: var(--color-bg-primary-op-80);
+        box-shadow: 0 0 0 4px var(--color-primary-op-10);
     }
 
     &:disabled {
@@ -237,9 +237,9 @@
 // ظاهر خطی-دَش با پس‌زمینه شفاف، مطابق CONTEXT_CardToCardPayment.md
 .dropzone {
     position: relative;
-    border: 2px dashed rgba(246, 217, 130, 0.3);
+    border: 2px dashed var(--color-primary-op-30);
     border-radius: 14px;
-    background: rgba(6, 24, 24, 0.35);
+    background: var(--color-bg-primary-op-35);
     padding: 36px 24px;
     display: flex;
     flex-direction: column;
@@ -264,9 +264,9 @@
     // حالت hover
     &:hover,
     &.dragOver {
-        border-color: rgba(246, 217, 130, 0.65);
-        background: rgba(246, 217, 130, 0.05);
-        box-shadow: 0 0 0 4px rgba(246, 217, 130, 0.07);
+        border-color: var(--color-primary-op-65);
+        background: var(--color-primary-op-05);
+        box-shadow: 0 0 0 4px var(--color-primary-op-07);
 
         .dropzoneIcon {
             color: var(--color-title-hover);
@@ -276,8 +276,8 @@
 
     // زمانی که فایل انتخاب شده
     &.hasFile {
-        border-color: rgba(16, 185, 129, 0.5);
-        background: rgba(16, 185, 129, 0.05);
+        border-color: var(--color-success-op-50);
+        background: var(--color-success-op-05);
     }
 
     @include respond(md) {
@@ -287,7 +287,7 @@
 
 // آیکون بالای dropzone
 .dropzoneIcon {
-    color: rgba(246, 217, 130, 0.5);
+    color: var(--color-primary-op-50);
     transition: all 0.3s ease;
     pointer-events: none;
 }
@@ -320,9 +320,9 @@
     gap: 8px;
     padding: 10px 16px;
     border-radius: 8px;
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #6ee7b7;
+    background: var(--color-success-op-12);
+    border: 1px solid var(--color-success-op-30);
+    color: var(--color-success);
     font-size: var(--font-sm);
     margin-top: 4px;
     pointer-events: none;
@@ -356,15 +356,15 @@
 }
 
 .error {
-    background: rgba(220, 38, 38, 0.15);
-    border: 1px solid rgba(220, 38, 38, 0.4);
-    color: #fca5a5;
+    background: var(--color-error-op-15);
+    border: 1px solid var(--color-error-op-40);
+    color: var(--color-error);
 }
 
 .success {
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.4);
-    color: #6ee7b7;
+    background: var(--color-success-op-15);
+    border: 1px solid var(--color-success-op-40);
+    color: var(--color-success);
 }
 
 // ─── دکمه ارسال (عین .submitButton در ProfileForm) ───────────────────────────
@@ -387,7 +387,7 @@
 
     &:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(246, 217, 130, 0.3);
+        box-shadow: 0 8px 16px var(--color-primary-op-30);
     }
 
     &:active:not(:disabled) {
@@ -418,7 +418,7 @@
 .spinner {
     width: 18px;
     height: 18px;
-    border: 2px solid rgba(6, 24, 24, 0.3);
+    border: 2px solid var(--color-bg-primary-op-30);
     border-top-color: var(--color-bg-primary);
     border-radius: 50%;
     animation: spin 0.75s linear infinite;

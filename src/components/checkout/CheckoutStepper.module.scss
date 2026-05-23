@@ -71,8 +71,8 @@
 // حالت Pending (خاکستری)
 .step.pending {
     .stepCircle {
-        background: rgba(246, 217, 130, 0.05);
-        border-color: rgba(246, 217, 130, 0.3);
+        background: var(--color-primary-op-05);
+        border-color: var(--color-primary-op-30);
         color: var(--color-card-text);
     }
 
@@ -92,7 +92,7 @@
         background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
         border-color: var(--color-accent);
         color: white;
-        box-shadow: 0 4px 12px rgba(246, 217, 130, 0.4);
+        box-shadow: 0 4px 12px var(--color-primary-op-40);
         animation: pulse-glow 2s ease-in-out infinite;
     }
 
@@ -110,11 +110,11 @@
 
         0%,
         100% {
-            box-shadow: 0 4px 12px rgba(246, 217, 130, 0.4);
+            box-shadow: 0 4px 12px var(--color-primary-op-40);
         }
 
         50% {
-            box-shadow: 0 6px 20px rgba(246, 217, 130, 0.6);
+            box-shadow: 0 6px 20px var(--color-primary-op-60);
         }
     }
 }
@@ -122,10 +122,10 @@
 // حالت Completed (سبز)
 .step.completed {
     .stepCircle {
-        background: linear-gradient(135deg, #10b981, #059669);
-        border-color: #10b981;
+        background: linear-gradient(135deg, var(--color-success), var(--color-success));
+        border-color: var(--color-success);
         color: white;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        box-shadow: 0 4px 12px var(--color-success-op-30);
     }
 
     .stepNumber {
@@ -138,7 +138,7 @@
 
     &.clickable:hover .stepCircle {
         transform: scale(1.05);
-        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        box-shadow: 0 6px 16px var(--color-success-op-40);
     }
 }
 
@@ -172,14 +172,14 @@
 .connector {
     flex: 1;
     height: 3px;
-    background: rgba(246, 217, 130, 0.2);
+    background: var(--color-primary-op-20);
     margin: 0 -20px;
     position: relative;
     top: -32px;
     @include hover-transition;
 
     &.completed {
-        background: linear-gradient(90deg, #10b981, #059669);
+        background: linear-gradient(90deg, var(--color-success), var(--color-success));
     }
 
     @include respond(md) {

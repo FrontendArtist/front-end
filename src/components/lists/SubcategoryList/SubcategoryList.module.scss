@@ -2,7 +2,7 @@
     margin: 2rem 0;
   
     .title {
-      color: #F6D982;
+      color: var(--color-text-primary);
       font-size: 1.5rem;
       margin-bottom: 1rem;
     }
@@ -15,15 +15,15 @@
   
     .item {
       padding: 0.5rem 1rem;
-      background: rgba(246, 217, 130, 0.1);
+      background: var(--color-primary-op-10);
       border-radius: 4px;
-      color: #FFFAEA;
+      color: var(--color-cream-light);
       text-decoration: none;
       transition: all 0.2s ease;
   
       &:hover {
-        background: rgba(246, 217, 130, 0.2);
-        color: #F5C452;
+        background: var(--color-primary-op-20);
+        color: var(--color-title-hover);
       }
     }
   }

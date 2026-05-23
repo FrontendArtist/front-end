@@ -38,8 +38,8 @@
 
 .orderSummary {
     padding: 24px;
-    background: rgba(246, 217, 130, 0.05);
-    border: 2px solid rgba(246, 217, 130, 0.2);
+    background: var(--color-primary-op-05);
+    border: 2px solid var(--color-primary-op-20);
     border-radius: var(--border-radius);
     display: flex;
     flex-direction: column;
@@ -87,7 +87,7 @@
 
 .divider {
     height: 1px;
-    background: rgba(246, 217, 130, 0.3);
+    background: var(--color-primary-op-30);
     margin: 8px 0;
 }
 
@@ -110,7 +110,7 @@
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
     padding-top: 12px;
-    border-top: 2px solid rgba(246, 217, 130, 0.3);
+    border-top: 2px solid var(--color-primary-op-30);
 
     strong {
         font-weight: var(--font-weight-bold);
@@ -154,8 +154,8 @@
 
         .methodContent {
             &:hover {
-                background: rgba(246, 217, 130, 0.05);
-                border-color: rgba(246, 217, 130, 0.2);
+                background: var(--color-primary-op-05);
+                border-color: var(--color-primary-op-20);
             }
         }
     }
@@ -166,20 +166,20 @@
     align-items: center;
     gap: 16px;
     padding: 20px;
-    background: rgba(246, 217, 130, 0.05);
-    border: 2px solid rgba(246, 217, 130, 0.2);
+    background: var(--color-primary-op-05);
+    border: 2px solid var(--color-primary-op-20);
     border-radius: var(--border-radius);
     @include hover-transition;
 
     .method:not(.disabled) &:hover {
-        background: rgba(246, 217, 130, 0.1);
-        border-color: rgba(246, 217, 130, 0.4);
+        background: var(--color-primary-op-10);
+        border-color: var(--color-primary-op-40);
     }
 
     .method.selected & {
-        background: rgba(246, 217, 130, 0.15);
+        background: var(--color-primary-op-15);
         border-color: var(--color-accent);
-        box-shadow: 0 4px 12px rgba(246, 217, 130, 0.2);
+        box-shadow: 0 4px 12px var(--color-primary-op-20);
     }
 }
 
@@ -189,7 +189,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(246, 217, 130, 0.1);
+    background: var(--color-primary-op-10);
     border-radius: 10px;
     flex-shrink: 0;
 
@@ -252,9 +252,9 @@
     border-radius: 20px;
     font-size: 11px;
     font-weight: var(--font-weight-medium);
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #6ee7b7;
+    background: var(--color-success-op-15);
+    border: 1px solid var(--color-success-op-35);
+    color: var(--color-success);
     vertical-align: middle;
     letter-spacing: 0.2px;
 }
@@ -266,9 +266,9 @@
     gap: 10px;
     padding: 14px 16px;
     border-radius: var(--border-radius);
-    background: rgba(220, 38, 38, 0.15);
-    border: 1px solid rgba(220, 38, 38, 0.4);
-    color: #fca5a5;
+    background: var(--color-error-op-15);
+    border: 1px solid var(--color-error-op-40);
+    color: var(--color-error);
     font-size: var(--font-md);
     animation: fadeIn 0.3s ease;
 
@@ -299,7 +299,7 @@
     justify-content: space-between;
     gap: 16px;
     padding-top: 16px;
-    border-top: 1px solid rgba(246, 217, 130, 0.2);
+    border-top: 1px solid var(--color-primary-op-20);
 
     @include respond(md) {
         flex-direction: column;
@@ -334,10 +334,10 @@
 .previousButton {
     background: transparent;
     color: var(--color-card-text);
-    border: 2px solid rgba(246, 217, 130, 0.3);
+    border: 2px solid var(--color-primary-op-30);
 
     &:hover:not(:disabled) {
-        background: rgba(246, 217, 130, 0.1);
+        background: var(--color-primary-op-10);
     }
 
     &:disabled {
@@ -347,13 +347,13 @@
 }
 
 .paymentButton {
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, var(--color-success), var(--color-success));
     color: white;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px var(--color-success-op-30);
 
     &:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        box-shadow: 0 6px 16px var(--color-success-op-40);
     }
 
     &:active:not(:disabled) {
@@ -369,7 +369,7 @@
 .spinner {
     width: 20px;
     height: 20px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
+    border: 3px solid var(--color-white-op-30);
     border-top-color: white;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;

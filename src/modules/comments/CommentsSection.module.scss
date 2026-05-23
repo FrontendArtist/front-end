@@ -3,7 +3,7 @@
 .commentsSection {
     margin-top: 64px;
     padding-top: 48px;
-    border-top: 2px solid rgba(246, 217, 130, 0.15);
+    border-top: 2px solid var(--color-primary-op-15);
     position: relative;
 
     &::before {
@@ -15,7 +15,7 @@
         height: 2px;
         background: linear-gradient(90deg,
                 transparent 0%,
-                rgba(246, 217, 130, 0.5) 50%,
+                var(--color-primary-op-50) 50%,
                 transparent 100%);
     }
 }
@@ -44,10 +44,10 @@
 
 // Submit Form Section
 .submitForm {
-    background: rgba(6, 24, 24, 0.6);
+    background: var(--color-bg-primary-op-60);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(246, 217, 130, 0.15);
+    border: 1px solid var(--color-primary-op-15);
     border-radius: 20px;
     padding: 32px;
     margin-bottom: 48px;
@@ -63,7 +63,7 @@
         height: 1px;
         background: linear-gradient(90deg,
                 transparent,
-                rgba(246, 217, 130, 0.5),
+                var(--color-primary-op-50),
                 transparent);
     }
 }
@@ -120,20 +120,20 @@
     border: none;
     cursor: pointer;
     font-size: var(--font-xl);
-    color: rgba(246, 217, 130, 0.3);
+    color: var(--color-primary-op-30);
     transition: all 0.2s ease;
     padding: 0;
     line-height: 1;
 
     &:hover,
     &:focus-visible {
-        color: rgba(246, 217, 130, 0.6);
+        color: var(--color-primary-op-60);
         transform: scale(1.2);
     }
 
     &.active {
-        color: #F6D982;
-        text-shadow: 0 0 12px rgba(246, 217, 130, 0.6);
+        color: var(--color-text-primary);
+        text-shadow: 0 0 12px var(--color-primary-op-60);
     }
 }
 
@@ -149,8 +149,8 @@
     width: 100%;
     padding: 16px;
     border-radius: var(--border-radius);
-    border: 1px solid rgba(246, 217, 130, 0.2);
-    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--color-primary-op-20);
+    background: var(--color-black-op-30);
     color: var(--color-text-primary);
     font-size: var(--font-md);
     font-family: inherit;
@@ -165,9 +165,9 @@
 
     &:focus {
         outline: none;
-        border-color: rgba(246, 217, 130, 0.5);
-        background: rgba(0, 0, 0, 0.4);
-        box-shadow: 0 0 0 3px rgba(246, 217, 130, 0.1);
+        border-color: var(--color-primary-op-50);
+        background: var(--color-black-op-40);
+        box-shadow: 0 0 0 3px var(--color-primary-op-10);
     }
 
     &:disabled {
@@ -189,14 +189,14 @@
     text-align: left;
 
     &.error {
-        color: #ff6b6b;
+        color: var(--color-error);
     }
 }
 
 // Submit Button
 .submitButton {
-    background: linear-gradient(135deg, rgba(246, 217, 130, 0.2), rgba(246, 217, 130, 0.1));
-    border: 1px solid rgba(246, 217, 130, 0.3);
+    background: linear-gradient(135deg, var(--color-primary-op-20), var(--color-primary-op-10));
+    border: 1px solid var(--color-primary-op-30);
     color: var(--color-title-hover);
     padding: 14px 32px;
     border-radius: var(--border-radius);
@@ -215,7 +215,7 @@
         color: var(--color-bg-primary);
         border-color: var(--color-title-hover);
         transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(246, 217, 130, 0.3);
+        box-shadow: 0 8px 24px var(--color-primary-op-30);
     }
 
     &:disabled {
@@ -248,9 +248,9 @@
 }
 
 .successMessage {
-    background: rgba(34, 197, 94, 0.15);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    color: #86efac;
+    background: var(--color-success-op-15);
+    border: 1px solid var(--color-success-op-30);
+    color: var(--color-success-light);
 
     &::before {
         content: '✓';
@@ -260,9 +260,9 @@
 }
 
 .errorMessage {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #fca5a5;
+    background: var(--color-error-op-15);
+    border: 1px solid var(--color-error-op-30);
+    color: var(--color-error);
 
     &::before {
         content: '✕';
@@ -318,8 +318,8 @@
 .emptyState {
     text-align: center;
     padding: 64px 32px;
-    background: rgba(6, 24, 24, 0.4);
-    border: 1px dashed rgba(246, 217, 130, 0.2);
+    background: var(--color-bg-primary-op-40);
+    border: 1px dashed var(--color-primary-op-20);
     border-radius: 16px;
     color: var(--color-card-text);
     opacity: 0.8;
@@ -352,7 +352,7 @@
     display: inline-block;
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(246, 217, 130, 0.2);
+    border: 3px solid var(--color-primary-op-20);
     border-top-color: var(--color-title-hover);
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -369,8 +369,8 @@
 .replyFormWrapper {
     margin-top: 16px;
     padding: 20px;
-    background: rgba(246, 217, 130, 0.05);
-    border: 1px solid rgba(246, 217, 130, 0.2);
+    background: var(--color-primary-op-05);
+    border: 1px solid var(--color-primary-op-20);
     border-radius: var(--border-radius);
     position: relative;
 }

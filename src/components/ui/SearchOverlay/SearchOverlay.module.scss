@@ -6,7 +6,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.4); // Standard backdrop
+    background-color: var(--color-black-op-40); // Standard backdrop
     backdrop-filter: blur(8px);
     z-index: 9999;
     display: flex;
@@ -52,7 +52,7 @@
             cursor: pointer;
             background-color: transparent;
             border: none;
-            color: #fff;
+            color: var(--color-white);
         }
     }
 }
@@ -61,21 +61,21 @@
     width: 100%;
     background: transparent;
     border: none;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+    border-bottom: 2px solid var(--color-white-op-50);
     font-family: var(--font-iransans); // Ensure font consistency
     font-size: 2rem;
-    color: #fff;
+    color: var(--color-white);
     padding: 1rem 0;
     text-align: center;
     outline: none;
     transition: border-color 0.3s;
 
     &::placeholder {
-        color: rgba(255, 255, 255, 0.5);
+        color: var(--color-white-op-50);
     }
 
     &:focus {
-        border-bottom-color: #fff;
+        border-bottom-color: var(--color-white);
     }
 
     @include respond(md) {
@@ -89,7 +89,7 @@
     right: 2rem;
     background: none;
     border: none;
-    color: #fff;
+    color: var(--color-white);
     cursor: pointer;
     padding: 0.5rem;
     opacity: 0.8;

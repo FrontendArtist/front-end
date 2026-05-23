@@ -47,13 +47,13 @@
     align-items: center;
     gap: 16px;
     padding: 16px;
-    background: rgba(246, 217, 130, 0.05);
-    border: 1px solid rgba(246, 217, 130, 0.2);
+    background: var(--color-primary-op-05);
+    border: 1px solid var(--color-primary-op-20);
     border-radius: var(--border-radius);
     @include hover-transition;
 
     &:hover {
-        background: rgba(246, 217, 130, 0.1);
+        background: var(--color-primary-op-10);
     }
 
     @include respond(md) {
@@ -69,7 +69,7 @@
     border-radius: 8px;
     overflow: hidden;
     flex-shrink: 0;
-    background: rgba(246, 217, 130, 0.05);
+    background: var(--color-primary-op-05);
 
     @include respond(md) {
         width: 60px;
@@ -119,8 +119,8 @@
 
 .summary {
     padding: 24px;
-    background: rgba(246, 217, 130, 0.05);
-    border: 2px solid rgba(246, 217, 130, 0.2);
+    background: var(--color-primary-op-05);
+    border: 2px solid var(--color-primary-op-20);
     border-radius: var(--border-radius);
     display: flex;
     flex-direction: column;
@@ -151,7 +151,7 @@
 
 .divider {
     height: 1px;
-    background: rgba(246, 217, 130, 0.3);
+    background: var(--color-primary-op-30);
     margin: 4px 0;
 }
 
@@ -195,7 +195,7 @@
     font-weight: var(--font-weight-bold);
     cursor: pointer;
     @include hover-transition;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px var(--color-black-op-20);
 
     svg {
         width: 20px;
@@ -204,7 +204,7 @@
 
     &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 6px 16px var(--color-black-op-30);
     }
 
     &:active {

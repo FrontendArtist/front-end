@@ -5,7 +5,7 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: var(--radius-card);
-    border: 1px solid rgba(246, 217, 130, 0.2);
+    border: 1px solid var(--color-primary-op-20);
     box-shadow: var(--shadow-card-strong);
     padding: var(--space-card-padding-desktop);
     display: flex;
@@ -31,15 +31,15 @@
     align-items: center;
     gap: 16px;
     padding-bottom: 24px;
-    border-bottom: 1px solid rgba(246, 217, 130, 0.15);
+    border-bottom: 1px solid var(--color-primary-op-15);
 }
 
 .avatar {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: rgba(246, 217, 130, 0.1);
-    border: 2px solid rgba(246, 217, 130, 0.3);
+    background: var(--color-primary-op-10);
+    border: 2px solid var(--color-primary-op-30);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -108,8 +108,8 @@
     }
 
     &:hover {
-        background: rgba(246, 217, 130, 0.1);
-        border-color: rgba(246, 217, 130, 0.2);
+        background: var(--color-primary-op-10);
+        border-color: var(--color-primary-op-20);
         color: var(--color-text-primary);
 
         svg {
@@ -119,8 +119,8 @@
     }
 
     &.active {
-        background: rgba(246, 217, 130, 0.15);
-        border-color: rgba(246, 217, 130, 0.3);
+        background: var(--color-primary-op-15);
+        border-color: var(--color-primary-op-30);
         color: var(--color-text-primary);
         font-weight: var(--font-weight-medium);
 
@@ -143,9 +143,9 @@
     gap: 12px;
     padding: 14px 20px;
     border-radius: var(--border-radius);
-    border: 2px solid rgba(220, 38, 38, 0.3);
-    background: rgba(220, 38, 38, 0.1);
-    color: #fca5a5;
+    border: 2px solid var(--color-error-op-30);
+    background: var(--color-error-op-10);
+    color: var(--color-error);
     font-size: var(--font-md);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
@@ -158,8 +158,8 @@
     }
 
     &:hover {
-        background: rgba(220, 38, 38, 0.2);
-        border-color: rgba(220, 38, 38, 0.5);
+        background: var(--color-error-op-20);
+        border-color: var(--color-error-op-50);
         transform: translateY(-2px);
 
         svg {

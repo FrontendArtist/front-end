@@ -17,8 +17,8 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: rgba(246, 217, 130, 0.1);
-    border: 2px solid rgba(246, 217, 130, 0.3);
+    background: var(--color-primary-op-10);
+    border: 2px solid var(--color-primary-op-30);
     cursor: pointer;
     transition: all 0.3s ease;
     padding: 0;
@@ -31,7 +31,7 @@
 
     &:hover {
         border-color: var(--color-text-primary);
-        background: rgba(246, 217, 130, 0.15);
+        background: var(--color-primary-op-15);
     }
 
     &:active {
@@ -48,13 +48,13 @@
     min-width: 18px;
     height: 18px;
     padding: 0 4px;
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    background: linear-gradient(135deg, var(--color-error), var(--color-error));
     border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid var(--color-bg-primary);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px var(--color-black-op-30);
     font-size: 10px;
     font-weight: bold;
     color: white;
@@ -69,8 +69,8 @@
     background: var(--color-overlay-blured);
     backdrop-filter: blur(20px);
     border-radius: var(--border-radius);
-    border: 1px solid rgba(246, 217, 130, 0.2);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--color-primary-op-20);
+    box-shadow: 0 8px 24px var(--color-black-op-30);
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
@@ -89,8 +89,8 @@
         width: 12px;
         height: 12px;
         background: var(--color-overlay);
-        border-top: 1px solid rgba(246, 217, 130, 0.2);
-        border-right: 1px solid rgba(246, 217, 130, 0.2);
+        border-top: 1px solid var(--color-primary-op-20);
+        border-right: 1px solid var(--color-primary-op-20);
         transform: rotate(-45deg);
     }
 }
@@ -108,8 +108,8 @@
     align-items: center;
     gap: 12px;
     padding: 14px 20px;
-    border-bottom: 1px solid rgba(246, 217, 130, 0.1);
-    background: rgba(246, 217, 130, 0.05);
+    border-bottom: 1px solid var(--color-primary-op-10);
+    background: var(--color-primary-op-05);
 
     svg {
         width: 20px;
@@ -136,15 +136,15 @@
     }
 
     &::-webkit-scrollbar-track {
-        background: rgba(246, 217, 130, 0.05);
+        background: var(--color-primary-op-05);
     }
 
     &::-webkit-scrollbar-thumb {
-        background: rgba(246, 217, 130, 0.2);
+        background: var(--color-primary-op-20);
         border-radius: 3px;
 
         &:hover {
-            background: rgba(246, 217, 130, 0.3);
+            background: var(--color-primary-op-30);
         }
     }
 }
@@ -159,14 +159,14 @@
     text-decoration: none;
     background: transparent;
     transition: all 0.2s ease;
-    border-bottom: 1px solid rgba(246, 217, 130, 0.05);
+    border-bottom: 1px solid var(--color-primary-op-05);
 
     &:last-child {
         border-bottom: none;
     }
 
     &:hover {
-        background: rgba(246, 217, 130, 0.1);
+        background: var(--color-primary-op-10);
     }
 
     &:active {
@@ -181,7 +181,7 @@
     border-radius: 8px;
     overflow: hidden;
     flex-shrink: 0;
-    background: rgba(246, 217, 130, 0.05);
+    background: var(--color-primary-op-05);
 
     img {
         width: 100%;
@@ -238,14 +238,14 @@
     font-size: var(--font-ssm);
     color: var(--color-card-text);
     font-style: italic;
-    border-top: 1px solid rgba(246, 217, 130, 0.05);
+    border-top: 1px solid var(--color-primary-op-05);
 }
 
 // Dropdown Footer - مجموع قیمت و دکمه مشاهده
 .dropdownFooter {
     padding: 14px 20px;
-    border-top: 1px solid rgba(246, 217, 130, 0.1);
-    background: rgba(246, 217, 130, 0.05);
+    border-top: 1px solid var(--color-primary-op-10);
+    background: var(--color-primary-op-05);
 }
 
 .totalPrice {
@@ -275,11 +275,11 @@
     font-size: var(--font-sm);
     font-weight: var(--font-weight-bold);
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px var(--color-black-op-20);
 
     &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 12px var(--color-black-op-30);
     }
 
     &:active {

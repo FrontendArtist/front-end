@@ -5,7 +5,7 @@
     position: fixed;
     inset: 0;
     z-index: 9999;
-    background-color: rgba(0, 0, 0, 0.72);
+    background-color: var(--color-black-op-72);
     backdrop-filter: blur(6px);
     display: flex;
     align-items: center;
@@ -24,7 +24,7 @@
     background: var(--gradient-card-vertical);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(246, 217, 130, 0.2);
+    border: 1px solid var(--color-primary-op-20);
     box-shadow: var(--shadow-card-strong);
     border-radius: var(--radius-card);
     width: 100%;
@@ -49,8 +49,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 22px 28px;
-    border-bottom: 1px solid rgba(246, 217, 130, 0.15);
-    background: rgba(6, 24, 24, 0.4);
+    border-bottom: 1px solid var(--color-primary-op-15);
+    background: var(--color-bg-primary-op-40);
     flex-shrink: 0;
 
     @include respond(md) {
@@ -76,17 +76,17 @@
     width: 36px;
     height: 36px;
     border-radius: 8px;
-    border: 1px solid rgba(246, 217, 130, 0.2);
-    background: rgba(6, 24, 24, 0.5);
+    border: 1px solid var(--color-primary-op-20);
+    background: var(--color-bg-primary-op-50);
     color: var(--color-card-text);
     cursor: pointer;
     transition: all 0.25s ease;
     flex-shrink: 0;
 
     &:hover {
-        border-color: rgba(220, 38, 38, 0.5);
-        background: rgba(220, 38, 38, 0.12);
-        color: #fca5a5;
+        border-color: var(--color-error-op-50);
+        background: var(--color-error-op-12);
+        color: var(--color-error);
     }
 }
 
@@ -105,11 +105,11 @@
     }
 
     &::-webkit-scrollbar-track {
-        background: rgba(6, 24, 24, 0.3);
+        background: var(--color-bg-primary-op-30);
     }
 
     &::-webkit-scrollbar-thumb {
-        background: rgba(246, 217, 130, 0.25);
+        background: var(--color-primary-op-25);
         border-radius: 10px;
     }
 
@@ -125,8 +125,8 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
     padding: 20px;
-    background: rgba(6, 24, 24, 0.35);
-    border: 1px solid rgba(246, 217, 130, 0.12);
+    background: var(--color-bg-primary-op-35);
+    border: 1px solid var(--color-primary-op-12);
     border-radius: var(--border-radius);
 
     @include respond(md) {
@@ -172,26 +172,26 @@
 }
 
 .modal__badgeSuccess {
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #6ee7b7;
+    background: var(--color-success-op-15);
+    border: 1px solid var(--color-success-op-35);
+    color: var(--color-success);
 }
 
 .modal__badgeWarning {
-    background: rgba(245, 158, 11, 0.15);
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    color: #fcd34d;
+    background: var(--color-warning-op-15);
+    border: 1px solid var(--color-warning-op-35);
+    color: var(--color-warning);
 }
 
 .modal__badgeDanger {
-    background: rgba(220, 38, 38, 0.15);
-    border: 1px solid rgba(220, 38, 38, 0.35);
-    color: #fca5a5;
+    background: var(--color-error-op-15);
+    border: 1px solid var(--color-error-op-35);
+    color: var(--color-error);
 }
 
 .modal__badgeDefault {
-    background: rgba(6, 24, 24, 0.5);
-    border: 1px solid rgba(246, 217, 130, 0.2);
+    background: var(--color-bg-primary-op-50);
+    border: 1px solid var(--color-primary-op-20);
     color: var(--color-card-text);
 }
 
@@ -211,7 +211,7 @@
     color: var(--color-text-primary);
     margin: 0;
     padding-bottom: 12px;
-    border-bottom: 1px solid rgba(246, 217, 130, 0.15);
+    border-bottom: 1px solid var(--color-primary-op-15);
 
     svg {
         color: var(--color-title-hover);
@@ -247,13 +247,13 @@
     align-items: center;
     gap: 14px;
     padding: 14px 16px;
-    background: rgba(6, 24, 24, 0.4);
-    border: 1px solid rgba(246, 217, 130, 0.1);
+    background: var(--color-bg-primary-op-40);
+    border: 1px solid var(--color-primary-op-10);
     border-radius: 10px;
     transition: border-color 0.2s ease, background-color 0.2s ease;
 
     &:hover {
-        border-color: rgba(246, 217, 130, 0.25);
+        border-color: var(--color-primary-op-25);
     }
 }
 
@@ -263,8 +263,8 @@
     cursor: pointer;
 
     &:hover {
-        background: rgba(246, 217, 130, 0.04);
-        border-color: rgba(246, 217, 130, 0.35);
+        background: var(--color-primary-op-04);
+        border-color: var(--color-primary-op-35);
 
         .modal__itemTitle {
             color: var(--color-primary);
@@ -277,8 +277,8 @@
     width: 44px;
     height: 44px;
     border-radius: 8px;
-    background: rgba(246, 217, 130, 0.08);
-    border: 1px solid rgba(246, 217, 130, 0.15);
+    background: var(--color-primary-op-08);
+    border: 1px solid var(--color-primary-op-15);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -347,8 +347,8 @@
 
 // ─── Address ─────────────────────────────────────────────────────────────────
 .modal__addressBox {
-    background: rgba(6, 24, 24, 0.4);
-    border: 1px solid rgba(246, 217, 130, 0.1);
+    background: var(--color-bg-primary-op-40);
+    border: 1px solid var(--color-primary-op-10);
     border-radius: 10px;
     padding: 16px;
     display: flex;
@@ -378,8 +378,8 @@
 // ─── Footer ──────────────────────────────────────────────────────────────────
 .modal__footer {
     padding: 18px 28px;
-    border-top: 1px solid rgba(246, 217, 130, 0.15);
-    background: rgba(6, 24, 24, 0.3);
+    border-top: 1px solid var(--color-primary-op-15);
+    background: var(--color-bg-primary-op-30);
     display: flex;
     justify-content: flex-end;
     flex-shrink: 0;
@@ -392,8 +392,8 @@
 .modal__closeAction {
     padding: 10px 28px;
     border-radius: 10px;
-    border: 2px solid rgba(246, 217, 130, 0.3);
-    background: rgba(6, 24, 24, 0.6);
+    border: 2px solid var(--color-primary-op-30);
+    background: var(--color-bg-primary-op-60);
     color: var(--color-text-primary);
     font-size: var(--font-md);
     font-weight: var(--font-weight-medium);
@@ -402,9 +402,9 @@
 
     &:hover {
         border-color: var(--color-text-primary);
-        background: rgba(6, 24, 24, 0.85);
+        background: var(--color-bg-primary-op-85);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(246, 217, 130, 0.15);
+        box-shadow: 0 4px 12px var(--color-primary-op-15);
     }
 
     &:active {

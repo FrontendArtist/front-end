@@ -47,8 +47,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(246, 217, 130, 0.1);
-    border: 3px solid rgba(246, 217, 130, 0.3);
+    background: var(--color-primary-op-10);
+    border: 3px solid var(--color-primary-op-30);
     border-radius: 50%;
 
     svg {
@@ -91,11 +91,11 @@
     font-weight: var(--font-weight-bold);
     @include hover-transition;
     margin-top: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px var(--color-black-op-20);
 
     &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 6px 16px var(--color-black-op-30);
     }
 
     &:active {

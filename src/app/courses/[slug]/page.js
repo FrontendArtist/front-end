@@ -91,7 +91,9 @@ export default async function CoursePage({ params }) {
     description: rawCourse.shortDescription,
     price: rawCourse.price,
     media: {
-      url: rawCourse.image.url.startsWith('http') ? rawCourse.image.url : `${API_BASE_URL}${rawCourse.image.url}`,
+      url: rawCourse.image.url.startsWith('http') || rawCourse.image.url.startsWith('/images/')
+        ? rawCourse.image.url
+        : `${API_BASE_URL}${rawCourse.image.url}`,
       alt: rawCourse.image.alt,
     },
     curriculum: rawCourse.curriculum?.map((lesson) => {
@@ -135,7 +137,7 @@ export default async function CoursePage({ params }) {
               {course.price.toman === 0 ? 'رایگان' : `${course.price.toman.toLocaleString()} تومان`}
             </div>
             {hasPurchasedServer && (
-              <div style={{ color: 'var(--color-primary)', fontWeight: 'bold', fontSize: '18px', marginTop: '10px' }}>
+              <div style={{ color: '#1a995b', fontWeight: 'bold', fontSize: '18px', marginTop: '10px' }}>
                 ✓ شما دانشجوی این دوره هستید
               </div>
             )}

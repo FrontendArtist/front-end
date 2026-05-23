@@ -126,38 +126,38 @@
 }
 
 .badgeSuccess {
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #6ee7b7;
+    background: var(--color-success-op-15);
+    border: 1px solid var(--color-success-op-35);
+    color: var(--color-success);
 }
 
 .badgePending {
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.35);
-    color: #a5b4fc;
+    background: var(--color-indigo-op-15);
+    border: 1px solid var(--color-indigo-op-35);
+    color: var(--color-accent-indigo);
 }
 
 .badgeWarning {
-    background: rgba(245, 158, 11, 0.15);
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    color: #fcd34d;
+    background: var(--color-warning-op-15);
+    border: 1px solid var(--color-warning-op-35);
+    color: var(--color-warning);
 }
 
 .badgeDanger {
-    background: rgba(220, 38, 38, 0.15);
-    border: 1px solid rgba(220, 38, 38, 0.35);
-    color: #fca5a5;
+    background: var(--color-error-op-15);
+    border: 1px solid var(--color-error-op-35);
+    color: var(--color-error);
 }
 
 .badgeInfo {
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid rgba(59, 130, 246, 0.35);
-    color: #93c5fd;
+    background: var(--color-blue-op-15);
+    border: 1px solid var(--color-blue-op-35);
+    color: var(--color-blue-light-93);
 }
 
 .badgeDefault {
-    background: rgba(6, 24, 24, 0.5);
-    border: 1px solid rgba(246, 217, 130, 0.2);
+    background: var(--color-bg-primary-op-50);
+    border: 1px solid var(--color-primary-op-20);
     color: var(--color-card-text);
 }
 
@@ -222,7 +222,7 @@
     color: var(--color-text-primary);
     margin: 0;
     padding-bottom: 14px;
-    border-bottom: 1px solid rgba(246, 217, 130, 0.15);
+    border-bottom: 1px solid var(--color-primary-op-15);
 
     svg {
         color: var(--color-title-hover);
@@ -250,13 +250,13 @@
     align-items: center;
     gap: 14px;
     padding: 14px 16px;
-    background: rgba(6, 24, 24, 0.4);
-    border: 1px solid rgba(246, 217, 130, 0.1);
+    background: var(--color-bg-primary-op-40);
+    border: 1px solid var(--color-primary-op-10);
     border-radius: 10px;
     transition: border-color 0.2s ease;
 
     &:hover {
-        border-color: rgba(246, 217, 130, 0.25);
+        border-color: var(--color-primary-op-25);
     }
 
     @include respond(md) {
@@ -269,8 +269,8 @@
     width: 44px;
     height: 44px;
     border-radius: 8px;
-    background: rgba(246, 217, 130, 0.08);
-    border: 1px solid rgba(246, 217, 130, 0.15);
+    background: var(--color-primary-op-08);
+    border: 1px solid var(--color-primary-op-15);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -333,14 +333,14 @@
     gap: 10px;
     padding: 14px 16px;
     border-radius: 10px;
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: var(--color-indigo-op-08);
+    border: 1px solid var(--color-indigo-op-20);
     color: var(--color-card-text);
     font-size: var(--font-sm);
     line-height: 1.65;
 
     svg {
-        color: #a5b4fc;
+        color: var(--color-accent-indigo);
         flex-shrink: 0;
         margin-top: 2px;
     }
@@ -357,12 +357,12 @@
     gap: 14px;
     padding: 20px 22px;
     border-radius: 14px;
-    background: rgba(16, 185, 129, 0.08);
-    border: 1px solid rgba(16, 185, 129, 0.25);
+    background: var(--color-success-op-08);
+    border: 1px solid var(--color-success-op-25);
     animation: slideIn 0.35s ease;
 
     svg {
-        color: #6ee7b7;
+        color: var(--color-success);
         flex-shrink: 0;
         margin-top: 2px;
     }
@@ -375,7 +375,7 @@
 
     strong {
         font-size: var(--font-md);
-        color: #6ee7b7;
+        color: var(--color-success);
     }
 
     p {
@@ -413,10 +413,10 @@
 .errorState {
     text-align: center;
     padding: 48px 24px;
-    background: rgba(220, 38, 38, 0.08);
-    border: 1px solid rgba(220, 38, 38, 0.2);
+    background: var(--color-error-op-08);
+    border: 1px solid var(--color-error-op-20);
     border-radius: 14px;
-    color: #fca5a5;
+    color: var(--color-error);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -427,8 +427,8 @@
 .backLink {
     padding: 10px 24px;
     border-radius: 10px;
-    border: 1px solid rgba(246, 217, 130, 0.3);
-    background: rgba(6, 24, 24, 0.5);
+    border: 1px solid var(--color-primary-op-30);
+    background: var(--color-bg-primary-op-50);
     color: var(--color-text-primary);
     text-decoration: none;
     font-size: var(--font-sm);
@@ -436,7 +436,7 @@
 
     &:hover {
         border-color: var(--color-text-primary);
-        background: rgba(6, 24, 24, 0.8);
+        background: var(--color-bg-primary-op-80);
     }
 }
 

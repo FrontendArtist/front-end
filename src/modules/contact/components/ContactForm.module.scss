@@ -9,7 +9,7 @@
   border-radius: var(--radius-card-xl);
   padding: var(--space-card-padding-desktop);
   box-shadow: var(--shadow-card-strong);
-  // border: 1px solid rgba(246, 217, 130, 0.1);
+  // border: 1px solid var(--color-primary-op-10);
   @include hover-transition;
 
   @include respond(md) {
@@ -78,7 +78,7 @@
 }
 
 .required {
-  color: #ff6b6b;
+  color: var(--color-error);
   margin-inline-start: 4px;
 }
 
@@ -88,21 +88,21 @@
   padding: 14px 18px;
   font-size: var(--font-md);
   color: var(--color-card-text);
-  background: rgba(6, 24, 24, 0.5);
-  border: 1px solid rgba(246, 217, 130, 0.2);
+  background: var(--color-bg-primary-op-50);
+  border: 1px solid var(--color-primary-op-20);
   border-radius: var(--border-radius);
   @include hover-transition;
   font-family: inherit;
 
   &::placeholder {
-    color: rgba(255, 250, 234, 0.5);
+    color: var(--color-cream-op-40);
   }
 
   &:focus {
     outline: none;
     border-color: var(--color-text-primary);
-    background: rgba(6, 24, 24, 0.7);
-    box-shadow: 0 0 0 3px rgba(246, 217, 130, 0.1);
+    background: var(--color-bg-primary-op-70);
+    box-shadow: 0 0 0 3px var(--color-primary-op-10);
   }
 
   &:disabled {
@@ -123,17 +123,17 @@
 }
 
 .inputError {
-  border-color: #ff6b6b;
+  border-color: var(--color-error);
 
   &:focus {
-    border-color: #ff6b6b;
-    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 3px var(--color-error-op-10);
   }
 }
 
 .errorMessage {
   font-size: var(--font-sm);
-  color: #ff6b6b;
+  color: var(--color-error);
   margin-top: -4px;
 
   @include respond(sm) {
@@ -156,7 +156,7 @@
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(246, 217, 130, 0.3);
+    box-shadow: 0 8px 20px var(--color-primary-op-30);
   }
 
   &:active:not(:disabled) {
@@ -190,15 +190,15 @@
 }
 
 .statusSuccess {
-  background: rgba(46, 213, 115, 0.15);
-  border: 1px solid rgba(46, 213, 115, 0.3);
-  color: #2ed573;
+  background: var(--color-success-op-15);
+  border: 1px solid var(--color-success-op-30);
+  color: var(--color-success);
 }
 
 .statusError {
-  background: rgba(255, 107, 107, 0.15);
-  border: 1px solid rgba(255, 107, 107, 0.3);
-  color: #ff6b6b;
+  background: var(--color-error-op-15);
+  border: 1px solid var(--color-error-op-30);
+  color: var(--color-error);
 }
 
 @keyframes slideIn {

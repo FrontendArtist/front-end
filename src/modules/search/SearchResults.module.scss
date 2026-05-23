@@ -47,8 +47,8 @@
 }
 
 .tab {
-    background: rgba(246, 217, 130, 0.05);
-    border: 1px solid rgba(246, 217, 130, 0.15);
+    background: var(--color-primary-op-05);
+    border: 1px solid var(--color-primary-op-15);
     border-radius: 50px;
     padding: 0.75rem 1.5rem;
     font-size: var(--font-md);
@@ -68,7 +68,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(135deg, rgba(246, 217, 130, 0.1), rgba(245, 196, 82, 0.05));
+        background: linear-gradient(135deg, var(--color-primary-op-10), var(--color-primary-op-05));
         opacity: 0;
         transition: opacity 0.3s ease;
     }
@@ -87,7 +87,7 @@
         color: var(--color-bg-primary);
         border-color: var(--color-text-primary);
         font-weight: var(--font-weight-bold);
-        box-shadow: 0 6px 16px rgba(246, 217, 130, 0.3);
+        box-shadow: 0 6px 16px var(--color-primary-op-30);
 
         &::before {
             display: none;
@@ -144,7 +144,7 @@
     background: var(--gradient-card-vertical);
     backdrop-filter: blur(10px);
     border-radius: var(--radius-card-xl);
-    border: 1px solid rgba(246, 217, 130, 0.1);
+    border: 1px solid var(--color-primary-op-10);
     box-shadow: var(--shadow-card-strong);
 
     p {

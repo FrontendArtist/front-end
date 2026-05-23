@@ -7,10 +7,10 @@
   height: 220px;
   padding: 32px 24px;
   border-radius: 24px;
-  background: rgba(6, 24, 24, 0.6);
+  background: var(--color-bg-primary-op-60);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(246, 217, 130, 0.1);
+  border: 1px solid var(--color-primary-op-10);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -26,7 +26,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(246, 217, 130, 0) 0%, rgba(246, 217, 130, 0.05) 100%);
+    background: linear-gradient(180deg, var(--color-primary-op-0) 0%, var(--color-primary-op-05) 100%);
     opacity: 0;
     transition: opacity 0.4s ease;
   }
@@ -34,10 +34,10 @@
   &:hover,
   &:focus-visible {
     transform: translateY(-4px);
-    border-color: rgba(246, 217, 130, 0.4);
-    background: rgba(6, 24, 24, 0.8);
-    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4),
-      0 0 0 1px rgba(246, 217, 130, 0.1) inset;
+    border-color: var(--color-primary-op-40);
+    background: var(--color-bg-primary-op-80);
+    box-shadow: 0 16px 32px var(--color-black-op-40),
+      0 0 0 1px var(--color-primary-op-10) inset;
 
     &::before {
       opacity: 1;
@@ -58,8 +58,8 @@
   width: 88px;
   height: 88px;
   border-radius: 24px;
-  background: rgba(246, 217, 130, 0.05);
-  border: 1px solid rgba(246, 217, 130, 0.1);
+  background: var(--color-primary-op-05);
+  border: 1px solid var(--color-primary-op-10);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
 
@@ -69,10 +69,10 @@
 
   .categoryCard:hover &,
   .categoryCard:focus-visible & {
-    background: rgba(246, 217, 130, 0.15);
-    border-color: rgba(246, 217, 130, 0.3);
+    background: var(--color-primary-op-15);
+    border-color: var(--color-primary-op-30);
     transform: scale(1.1) rotate(3deg);
-    box-shadow: 0 0 20px rgba(246, 217, 130, 0.15);
+    box-shadow: 0 0 20px var(--color-primary-op-15);
 
     img {
       transform: scale(1.1);
@@ -93,7 +93,7 @@
   .categoryCard:hover &,
   .categoryCard:focus-visible & {
     color: var(--color-title-hover);
-    text-shadow: 0 0 12px rgba(246, 217, 130, 0.3);
+    text-shadow: 0 0 12px var(--color-primary-op-30);
   }
 }
 

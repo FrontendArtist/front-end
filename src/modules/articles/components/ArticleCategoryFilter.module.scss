@@ -12,7 +12,7 @@
   justify-content: space-between;
   margin-bottom: 32px;
   padding-bottom: 20px;
-  border-bottom: 1px solid rgba(246, 217, 130, 0.1);
+  border-bottom: 1px solid var(--color-primary-op-10);
 }
 
 .sectionTitle {
@@ -34,9 +34,9 @@
 }
 
 .clearButton {
-  background: rgba(246, 217, 130, 0.1);
+  background: var(--color-primary-op-10);
   color: var(--color-text-primary);
-  border: 1px solid rgba(246, 217, 130, 0.2);
+  border: 1px solid var(--color-primary-op-20);
   border-radius: var(--border-radius);
   padding: 10px 24px;
   font-size: var(--font-sm);
@@ -52,7 +52,7 @@
     color: var(--color-bg-primary);
     border-color: var(--color-title-hover);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(246, 217, 130, 0.3);
+    box-shadow: 0 4px 12px var(--color-primary-op-30);
   }
 
   &:focus-visible {
@@ -73,10 +73,10 @@
   width: 100%;
   padding: 32px 24px;
   border-radius: var(--border-radius);
-  background: rgba(6, 24, 24, 0.6);
+  background: var(--color-bg-primary-op-60);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(246, 217, 130, 0.1);
+  border: 1px solid var(--color-primary-op-10);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -92,7 +92,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(246, 217, 130, 0) 0%, rgba(246, 217, 130, 0.05) 100%);
+    background: linear-gradient(180deg, var(--color-primary-op-0) 0%, var(--color-primary-op-05) 100%);
     opacity: 0;
     transition: opacity 0.4s ease;
   }
@@ -100,10 +100,10 @@
   &:hover,
   &:focus-visible {
     transform: translateY(-4px);
-    border-color: rgba(246, 217, 130, 0.4);
-    background: rgba(6, 24, 24, 0.8);
-    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4),
-      0 0 0 1px rgba(246, 217, 130, 0.1) inset;
+    border-color: var(--color-primary-op-40);
+    background: var(--color-bg-primary-op-80);
+    box-shadow: 0 16px 32px var(--color-black-op-40),
+      0 0 0 1px var(--color-primary-op-10) inset;
 
     &::before {
       opacity: 1;
@@ -117,10 +117,10 @@
 }
 
 .categoryCardActive {
-  background: linear-gradient(145deg, rgba(6, 24, 24, 0.9) 0%, rgba(0, 43, 32, 0.95) 100%);
-  border-color: rgba(246, 217, 130, 0.5);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(246, 217, 130, 0.3) inset;
+  background: linear-gradient(145deg, var(--color-bg-primary-op-90) 0%, var(--color-bg-dark-green-op-95) 100%);
+  border-color: var(--color-primary-op-50);
+  box-shadow: 0 8px 24px var(--color-black-op-30),
+    0 0 0 1px var(--color-primary-op-30) inset;
 
   &::before {
     opacity: 1;
@@ -141,7 +141,7 @@
     justify-content: center;
     font-size: var(--font-md);
     font-weight: var(--font-weight-bold);
-    box-shadow: 0 4px 12px rgba(246, 217, 130, 0.4);
+    box-shadow: 0 4px 12px var(--color-primary-op-40);
   }
 }
 
@@ -153,8 +153,8 @@
   width: 88px;
   height: 88px;
   border-radius: var(--border-radius);
-  background: rgba(246, 217, 130, 0.05);
-  border: 1px solid rgba(246, 217, 130, 0.1);
+  background: var(--color-primary-op-05);
+  border: 1px solid var(--color-primary-op-10);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
 
@@ -164,10 +164,10 @@
 
   .categoryCard:hover &,
   .categoryCard:focus-visible & {
-    background: rgba(246, 217, 130, 0.15);
-    border-color: rgba(246, 217, 130, 0.3);
+    background: var(--color-primary-op-15);
+    border-color: var(--color-primary-op-30);
     transform: scale(1.1) rotate(3deg);
-    box-shadow: 0 0 20px rgba(246, 217, 130, 0.15);
+    box-shadow: 0 0 20px var(--color-primary-op-15);
 
     img {
       transform: scale(1.1);
@@ -175,9 +175,9 @@
   }
 
   .categoryCardActive & {
-    background: rgba(246, 217, 130, 0.2);
-    border-color: rgba(246, 217, 130, 0.4);
-    box-shadow: 0 0 24px rgba(246, 217, 130, 0.2);
+    background: var(--color-primary-op-20);
+    border-color: var(--color-primary-op-40);
+    box-shadow: 0 0 24px var(--color-primary-op-20);
   }
 }
 
@@ -194,7 +194,7 @@
   .categoryCard:hover &,
   .categoryCard:focus-visible & {
     color: var(--color-title-hover);
-    text-shadow: 0 0 12px rgba(246, 217, 130, 0.3);
+    text-shadow: 0 0 12px var(--color-primary-op-30);
   }
 
   .categoryCardActive & {

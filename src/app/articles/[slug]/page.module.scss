@@ -37,7 +37,7 @@
 /* Uses the largest font size and hover color for prominence */
 .title {
   font-size: var(--font-xl); // 32px - largest heading size
-  color: var(--color-title-hover); // Gold accent color (#F5C452)
+  color: var(--color-title-hover); // Gold accent color (var(--color-title-hover))
   margin-bottom: 1rem; // Space between title and date
   /* Font weight is inherited from global typography settings */
 }
@@ -45,7 +45,7 @@
 /* Publication date display */
 /* Slightly muted to be less prominent than the title */
 .date {
-  color: var(--color-text-primary); // Primary gold text (#F6D982)
+  color: var(--color-text-primary); // Primary gold text (var(--color-text-primary))
   opacity: 0.8; // Reduce opacity for subtle effect
   /* Using the <time> element ensures semantic HTML for SEO */
 }

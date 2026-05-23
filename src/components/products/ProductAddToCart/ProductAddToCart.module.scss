@@ -37,7 +37,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    background: rgba(246, 217, 130, 0.1);
+    background: var(--color-primary-op-10);
     border: 2px solid var(--color-text-primary);
     border-radius: 8px;
     overflow: hidden;

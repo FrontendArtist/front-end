@@ -106,7 +106,7 @@ $breakpoint-sm: 440px;
 
   &:hover {
     background: var(--gradient-card-horizontal-rtl);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 24px var(--color-black-op-30);
   }
 }
 
