@@ -79,7 +79,7 @@
 
     &::before {
         content: '✍';
-        font-size: 24px;
+        font-size: var(--font-lg-xl);
     }
 }
 
@@ -119,7 +119,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 32px;
+    font-size: var(--font-xl);
     color: rgba(246, 217, 130, 0.3);
     transition: all 0.2s ease;
     padding: 0;
@@ -148,7 +148,7 @@
 .textarea {
     width: 100%;
     padding: 16px;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     border: 1px solid rgba(246, 217, 130, 0.2);
     background: rgba(0, 0, 0, 0.3);
     color: var(--color-text-primary);
@@ -199,7 +199,7 @@
     border: 1px solid rgba(246, 217, 130, 0.3);
     color: var(--color-title-hover);
     padding: 14px 32px;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     font-size: var(--font-md);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
@@ -231,14 +231,14 @@
 }
 
 .buttonIcon {
-    font-size: 20px;
+    font-size: var(--font-lg)px;
 }
 
 // Messages
 .successMessage,
 .errorMessage {
     padding: 20px;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     margin-bottom: 24px;
     display: flex;
     align-items: center;
@@ -254,7 +254,7 @@
 
     &::before {
         content: '✓';
-        font-size: 24px;
+        font-size: var(--font-lg-xl);
         font-weight: bold;
     }
 }
@@ -266,7 +266,7 @@
 
     &::before {
         content: '✕';
-        font-size: 24px;
+        font-size: var(--font-lg-xl);
         font-weight: bold;
     }
 }
@@ -371,7 +371,7 @@
     padding: 20px;
     background: rgba(246, 217, 130, 0.05);
     border: 1px solid rgba(246, 217, 130, 0.2);
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     position: relative;
 }
 
@@ -405,7 +405,7 @@
     }
 
     .starButton {
-        font-size: 28px;
+        font-size: var(--font-lg-xl);
     }
 }
 
@@ -424,7 +424,7 @@
     }
 
     .starButton {
-        font-size: 24px;
+        font-size: var(--font-lg-xl);
     }
 
     .submitButton {

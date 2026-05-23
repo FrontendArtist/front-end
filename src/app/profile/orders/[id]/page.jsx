@@ -90,9 +90,6 @@ export default function OrderDetailPage() {
             // Strapi v5: data یک آرایه است (حتی برای یک نتیجه)
             const orderData = json?.data?.[0] ?? null;
 
-            // — Debug: در حال توسعه می‌توان این را ببینی تا مطمئن شوی فیلدها درست می‌رسن
-            console.log('[OrderDetailPage] raw orderData:', JSON.stringify(orderData, null, 2));
-
             if (!orderData) throw new Error('سفارشی با این شناسه یافت نشد.');
 
             setOrder(orderData);

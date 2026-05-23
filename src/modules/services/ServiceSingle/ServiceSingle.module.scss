@@ -115,11 +115,11 @@
 
   // Responsive font size adjustments
   @include respond(md) {
-    font-size: 28px;
+    font-size: var(--font-lg-xl);
   }
 
   @include respond(sm) {
-    font-size: 24px;
+    font-size: var(--font-lg-xl);
   }
 }
 
@@ -155,7 +155,7 @@
   font-weight: var(--font-weight-bold); // 700
   text-decoration: none;
   border: 2px solid var(--color-text-primary);
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   @include hover-transition;
 
   /**

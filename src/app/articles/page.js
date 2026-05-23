@@ -51,10 +51,6 @@ export default async function ArticlesPage({ searchParams: spPromise }) {
     getArticleCategories()
   ]);
 
-
-  // این خط را موقتاً اضافه کردیم و ترمینال VSCode را چک کنید
-  console.log('Categories fetched from API:', JSON.stringify(categories, null, 2));
-
   const initialArticles = result.data;
   const initialMeta = result.meta;
 

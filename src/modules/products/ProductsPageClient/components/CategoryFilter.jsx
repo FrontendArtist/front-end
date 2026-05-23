@@ -16,40 +16,37 @@ export default function CategoryFilter({
 }) {
   const normalizedCategories = Array.isArray(categories) ? categories : [];
   const selectedCategory = normalizedCategories.find(cat => cat.slug === activeCategory);
-  
-  console.log("CategoryFilter categories:", categories);
-  console.log("CategoryFilter selectedCategory:", selectedCategory);
-  
+
   const resolveImage = category => {
     const source = category?.image || category?.icon || category?.thumbnail;
     const url = source?.url || source?.src || FALLBACK_IMAGE;
     const alt =
-    source?.alt ||
-    source?.alternativeText ||
-    category?.name ||
-    category?.title ||
-    'دسته‌بندی';
-    
+      source?.alt ||
+      source?.alternativeText ||
+      category?.name ||
+      category?.title ||
+      'دسته‌بندی';
+
     return {
       url,
       alt,
       unoptimized: Boolean(url?.includes?.('picsum.photos'))
     };
   };
-  
+
   const handleSelectCategory = slug => {
     onSelectCategory?.(slug || '');
   };
-  
+
   const handleSelectSubCategory = slug => {
     onSelectSubCategory?.(slug || '');
   };
-  
+
   const renderCategoryCard = category => {
     if (!category?.slug) return null;
     const { url, alt, unoptimized } = resolveImage(category);
     const isActive = activeCategory === category.slug;
-    
+
     return (
       <button
         key={category.slug}
@@ -66,35 +63,35 @@ export default function CategoryFilter({
             width={64}
             height={64}
             unoptimized={unoptimized}
-            />
+          />
         </div>
         <span className={styles.categoryName}>{category.name || category.title}</span>
       </button>
     );
   };
-  
+
   if (!selectedCategory) {
     return (
       <section className={styles.categoriesSection} aria-label="دسته‌بندی محصولات">
-          <BaseSlider
-            items={categories}
-            renderItem={renderCategoryCard}
-            slidesPerView={6}
-            loop={true}
-          />
+        <BaseSlider
+          items={categories}
+          renderItem={renderCategoryCard}
+          slidesPerView={6}
+          loop={true}
+        />
       </section>
     );
   }
 
   const { url, alt, unoptimized } = resolveImage(selectedCategory);
   const subCategories = Array.isArray(selectedCategory.subCategories)
-  ? selectedCategory.subCategories
-  : [];
-  
+    ? selectedCategory.subCategories
+    : [];
+
   return (
     <section
-    className={`${styles.categoriesSection} ${styles.selectedState}`}
-    aria-label={`زیر‌دسته‌های ${selectedCategory.name || selectedCategory.title || ''}`}
+      className={`${styles.categoriesSection} ${styles.selectedState}`}
+      aria-label={`زیر‌دسته‌های ${selectedCategory.name || selectedCategory.title || ''}`}
     >
       <div className={styles.selectedLayout}>
         <div className={styles.selectedColumn}>
@@ -105,7 +102,7 @@ export default function CategoryFilter({
                 type="button"
                 className={styles.backButton}
                 onClick={() => handleSelectCategory('')}
-                >
+              >
                 بازگشت
               </button>
             </div>
@@ -117,7 +114,7 @@ export default function CategoryFilter({
                   width={64}
                   height={64}
                   unoptimized={unoptimized}
-                  />
+                />
               </div>
               <span className={styles.categoryName}>
                 {selectedCategory.name || selectedCategory.title}
@@ -146,11 +143,10 @@ export default function CategoryFilter({
 
               {subCategories.map(sub => (
                 <button
-                key={sub.slug}
-                type="button"
-                className={`${styles.subItem} ${
-                  activeSubCategory === sub.slug ? styles.subItemActive : ''
-                  }`}
+                  key={sub.slug}
+                  type="button"
+                  className={`${styles.subItem} ${activeSubCategory === sub.slug ? styles.subItemActive : ''
+                    }`}
                   onClick={() => handleSelectSubCategory(sub.slug)}
                 >
                   {sub.name || sub.title}

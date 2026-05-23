@@ -74,7 +74,7 @@
 }
 
 .star {
-    font-size: 18px;
+    font-size: var(--font-md-lg);
     color: rgba(246, 217, 130, 0.3);
     transition: color 0.2s ease;
 

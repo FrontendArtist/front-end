@@ -9,7 +9,7 @@
   border-radius: var(--radius-card-xl);
   padding: var(--space-card-padding-desktop);
   box-shadow: var(--shadow-card-strong);
-  border: 1px solid rgba(246, 217, 130, 0.1);
+  // border: 1px solid rgba(246, 217, 130, 0.1);
   @include hover-transition;
 
   @include respond(md) {
@@ -30,11 +30,11 @@
   text-align: center;
 
   @include respond(md) {
-    font-size: 28px;
+    font-size: var(--font-lg-xl);
   }
 
   @include respond(sm) {
-    font-size: 24px;
+    font-size: var(--font-lg-xl);
   }
 }
 
@@ -90,7 +90,7 @@
   color: var(--color-card-text);
   background: rgba(6, 24, 24, 0.5);
   border: 1px solid rgba(246, 217, 130, 0.2);
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   @include hover-transition;
   font-family: inherit;
 
@@ -132,12 +132,12 @@
 }
 
 .errorMessage {
-  font-size: 14px;
+  font-size: var(--font-sm);
   color: #ff6b6b;
   margin-top: -4px;
 
   @include respond(sm) {
-    font-size: 12px;
+    font-size: var(--font-ssm);
   }
 }
 
@@ -149,7 +149,7 @@
   color: var(--color-bg-primary);
   background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
   border: none;
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   cursor: pointer;
   @include hover-transition;
   margin-top: 8px;
@@ -176,7 +176,7 @@
 
 .statusMessage {
   padding: 16px 20px;
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   font-size: var(--font-md);
   font-weight: var(--font-weight-medium);
   text-align: center;

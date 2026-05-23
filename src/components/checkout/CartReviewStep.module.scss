@@ -7,7 +7,8 @@
     display: flex;
     flex-direction: column;
     gap: 32px;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
+
     @include respond(md) {
         padding: 24px;
         gap: 24px;
@@ -48,7 +49,7 @@
     padding: 16px;
     background: rgba(246, 217, 130, 0.05);
     border: 1px solid rgba(246, 217, 130, 0.2);
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     @include hover-transition;
 
     &:hover {
@@ -120,7 +121,7 @@
     padding: 24px;
     background: rgba(246, 217, 130, 0.05);
     border: 2px solid rgba(246, 217, 130, 0.2);
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -189,7 +190,7 @@
     background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
     color: white;
     border: none;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     font-size: var(--font-lg);
     font-weight: var(--font-weight-bold);
     cursor: pointer;

@@ -86,7 +86,7 @@
     background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
     color: white;
     text-decoration: none;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     font-size: var(--font-md);
     font-weight: var(--font-weight-bold);
     @include hover-transition;

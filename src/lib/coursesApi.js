@@ -100,11 +100,6 @@ export async function getCourseBySlug(slug) {
       `/api/courses?filters[slug][$eq]=${slug}&populate=*`
     );
 
-    // لاگ دیتای کاملاً خام از سمت API (قبل از فرمت شدن)
-    console.log('--- REAL RAW STRAPI RESPONSE ---');
-    console.log(JSON.stringify(response, null, 2));
-    console.log('-------------------------------');
-
     // فرمت کردن و برگرداندن اولین نتیجه
     // اگر نتیجه‌ای یافت نشد، null برمی‌گرداند
     const formattedCourses = formatStrapiCourses(response);

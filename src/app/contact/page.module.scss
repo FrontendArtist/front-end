@@ -50,13 +50,13 @@
 }
 
 .infoTitle {
-    font-size: 28px;
+    font-size: var(--font-lg-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
     margin-bottom: 8px;
 
     @include respond(sm) {
-        font-size: 24px;
+        font-size: var(--font-lg-xl);
     }
 }
 
@@ -77,12 +77,11 @@
 }
 
 .infoCard {
-    background: var(--gradient-card-vertical);
+    background: var(--gradient-card-horizontal-rtl);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border-radius: var(--radius-card);
     padding: 24px;
-    border: 1px solid rgba(246, 217, 130, 0.1);
     display: flex;
     gap: 16px;
     @include hover-transition;
@@ -106,7 +105,7 @@
     align-items: center;
     justify-content: center;
     background: rgba(246, 217, 130, 0.1);
-    border-radius: 12px;
+    border-radius: var(--border-radius);
 
     @include respond(sm) {
         width: 40px;
@@ -186,7 +185,6 @@
     -webkit-backdrop-filter: blur(15px);
     border-radius: var(--radius-card);
     padding: 28px;
-    border: 1px solid rgba(246, 217, 130, 0.1);
 
     @include respond(sm) {
         padding: 24px;

@@ -14,7 +14,7 @@
         border-bottom: 1px solid rgba(246, 217, 130, 0.15);
 
         @include respond(md) {
-            font-size: 28px;
+            font-size: var(--font-lg-xl);
             margin-bottom: 24px;
         }
     }
@@ -223,7 +223,7 @@
         color: #fca5a5;
         background: rgba(220, 38, 38, 0.15);
         padding: 20px;
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         text-align: center;
         border: 1px solid rgba(220, 38, 38, 0.4);
         font-size: var(--font-md);
@@ -283,7 +283,7 @@
 
     &__shopBtn {
         padding: 14px 32px;
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
         color: var(--color-bg-primary);
         font-size: var(--font-md);

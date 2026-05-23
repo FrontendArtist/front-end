@@ -15,7 +15,6 @@ export async function getMainCategories() {
     const res = await apiClient(
       '/api/categories?filters[parent][$null]=true&populate[image][fields][0]=url&populate[image][fields][1]=alternativeText'
     );
-    console.log("getMainCategories res:", res);
     // هم ساختار قدیمی { data: [...] } و هم آرایهٔ مستقیم
     const raw = res?.data?.data || res?.data || [];
     if (!Array.isArray(raw)) return [];

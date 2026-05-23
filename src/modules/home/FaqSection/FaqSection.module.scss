@@ -25,11 +25,11 @@
   line-height: var(--line-height-sm);
 
   @include respond(md) {
-    font-size: 28px;
+    font-size: var(--font-lg-xl);
   }
 
   @include respond(sm) {
-    font-size: 24px;
+    font-size: var(--font-lg-xl);
   }
 }
 

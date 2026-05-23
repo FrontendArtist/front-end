@@ -28,15 +28,16 @@
 
 .innerWrapper {
   display: flex;
-  border-radius: 12px;
-  @include respond(md){
+  border-radius: var(--border-radius);
+
+  @include respond(md) {
     flex-direction: column;
 
   }
 }
 
 .imageWrapper {
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   position: relative;
@@ -81,7 +82,7 @@
   font-weight: 400;
 
   @include respond(md) {
-    font-size: 24px;
+    font-size: var(--font-lg-xl);
   }
 }
 

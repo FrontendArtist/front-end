@@ -29,13 +29,14 @@
 
 .innerWrapper {
   display: flex;
+
   @include respond(md) {
     flex-direction: column;
   }
 }
 
 .imageWrapper {
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   position: relative;
@@ -56,19 +57,22 @@
     height: 200px;
     order: -1; // Move image on top on mobile
     border-radius: 12px 12px 0 0;
-      img {
-    width: auto;
-    height: 300px;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    margin: 0 auto;
-    right: 0;
+
+    img {
+      width: auto;
+      height: 300px;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      margin: 0 auto;
+      right: 0;
+    }
   }
-}
-  @include respond(sm){
+
+  @include respond(sm) {
     height: 160px;
-    img{
+
+    img {
       height: 240px;
     }
   }
@@ -81,7 +85,7 @@
   gap: 20px;
   padding: 32px 50px 50px 50px;
   width: 65%;
-  
+
   @include respond(md) {
     width: 100%;
     gap: 24px;
@@ -97,7 +101,7 @@
   font-weight: 400;
 
   @include respond(md) {
-    font-size: 24px;
+    font-size: var(--font-lg-xl);
   }
 }
 

@@ -11,8 +11,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
   gap: 24px;
-  
-  @include respond(xl){
+
+  @include respond(xl) {
     grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
 
   }
@@ -23,7 +23,7 @@
   width: 100%;
   height: 222px;
   padding: 32px 24px;
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   background: rgba(6, 24, 24, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -74,7 +74,7 @@
   justify-content: center;
   width: 88px;
   height: 88px;
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   background: rgba(246, 217, 130, 0.05);
   border: 1px solid rgba(246, 217, 130, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -98,7 +98,7 @@
 }
 
 .categoryName {
-  font-size: var(--font-md  );
+  font-size: var(--font-md);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
   text-align: center;
@@ -189,7 +189,7 @@
   background: rgba(246, 217, 130, 0.1);
   color: var(--color-text-primary);
   border: 1px solid rgba(246, 217, 130, 0.2);
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   padding: 8px 20px;
   font-size: var(--font-sm);
   cursor: pointer;
@@ -320,7 +320,7 @@
 
   &::after {
     content: '←';
-    font-size: 18px;
+    font-size: var(--font-md-lg);
     opacity: 0;
     transform: translateX(10px);
     transition: all 0.3s ease;

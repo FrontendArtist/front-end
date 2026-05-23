@@ -75,7 +75,7 @@
 
   @include respond(md) {
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: var(--font-ssm);
   }
 }
 
@@ -105,7 +105,7 @@
   justify-content: center;
   color: var(--color-text-primary);
   border: none;
-  font-size: 18px;
+  font-size: var(--font-md-lg);
   font-weight: var(--font-weight-bold);
   padding: 17px 0;
   cursor: pointer;
@@ -125,7 +125,7 @@
   @include respond(md) {
     width: 24px;
     height: 24px;
-    font-size: 16px;
+    font-size: var(--font-md);
   }
 }
 

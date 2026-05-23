@@ -19,8 +19,8 @@
   background: rgba(26, 153, 91, 0.9);
   color: white;
   padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+  border-radius: var(--border-radius);
+  font-size: var(--font-ssm);
   font-weight: var(--font-weight-bold);
   z-index: 2;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -92,7 +92,8 @@
 }
 
 .purchasedText {
-  color: #1a995b; /* سبز ملایم و هماهنگ */
+  color: #1a995b;
+  /* سبز ملایم و هماهنگ */
   font-size: var(--font-md);
   font-weight: var(--font-weight-bold);
   display: block;

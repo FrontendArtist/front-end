@@ -23,7 +23,7 @@
 
 .serviceCard__title {
   @include card-title;
-  font-size: 24px;
+  font-size: var(--font-lg-xl);
   font-family: shafigh;
   text-align: center
 }

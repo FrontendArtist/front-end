@@ -87,7 +87,7 @@
 
   // Responsive adjustments
   @include respond(md) {
-    border-radius: 12px; // Slightly smaller radius on tablet
+    border-radius: var(--border-radius); // Slightly smaller radius on tablet
   }
 
   @include respond(sm) {
@@ -248,7 +248,7 @@
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid rgba(246, 217, 130, 0.2);
-  
+
   @include respond(md) {
     margin-top: 80px;
   }
@@ -267,7 +267,7 @@
   padding: 60px 20px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px dashed rgba(246, 217, 130, 0.4);
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   margin: 20px;
   text-align: center;
 
@@ -302,7 +302,8 @@
 
   .aparatWrapper {
     position: relative;
-    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    padding-bottom: 56.25%;
+    /* 16:9 Aspect Ratio */
     height: 0;
     overflow: hidden;
 
@@ -327,7 +328,7 @@
     --plyr-control-radius: 12px;
     --plyr-range-thumb-background: var(--color-primary, #f6d982);
     --plyr-range-track-background: rgba(255, 255, 255, 0.1);
-    
+
     // Apply border-radius and border directly to controls
     :global(.plyr__controls) {
       border-radius: 16px !important;
@@ -429,7 +430,7 @@
   padding: 16px 24px;
   background: var(--color-card-bg);
   border: 1px solid rgba(246, 217, 130, 0.1);
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   cursor: pointer;
   @include hover-transition;
 
@@ -457,7 +458,7 @@
 }
 
 .lessonIcon {
-  font-size: 20px;
+  font-size: var(--font-lg)px;
   min-width: 24px;
   text-align: center;
 }
@@ -471,7 +472,7 @@
 .freeBadge {
   background: var(--color-success);
   color: #fff;
-  font-size: 12px;
+  font-size: var(--font-ssm);
   padding: 2px 8px;
   border-radius: 4px;
   font-weight: bold;

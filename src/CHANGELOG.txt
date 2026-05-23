@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## [Latest] - 2026-05-21
+
+### Features & Security: Comments API Proxy & Name Field Support
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Revamped the comments posting and rendering pipeline by resolving backend 403/401 token authentication errors. Transitioned comment submission from direct client-to-Strapi calls to an internal Next.js server-side API proxy method utilizing elevated admin tokens. Users are now properly enforced to login before commenting, and an extra, fully-functional "Name" field was explicitly integrated across the frontend comment UI and Strapi payload mappings for a personalized review experience.
+
+#### Changes Made:
+1. **Secure API Proxy Pattern**:
+   - Built a new reliable API Proxy endpoint for comments at `src/app/api/comments/route.js`.
+   - Updated `submitComment` function (`commentsApi.js`) to target the local proxy rather than directly communicating with the Strapi API endpoint to avoid tricky JWT and 401 Unauthorized limitations.
+2. **Comment Submissions & Auth Binding**:
+   - Refactored `CommentsSection.jsx` to parse and require `next-auth/react` `useSession()` user logins prior to triggering the submit functionality.
+   - Tied backend comment entities reliably to their author by mapping `dataPayload.user` using the authenticated NextAuth user ID.
+3. **Robust Name Field Integration**:
+   - Introduced a new required `name` parameter logic seamlessly passed from UI inputs to the server requests and directly injected it toward the database schema payload.
+   - Crafted and linked a matching styled input block layout (`.inputStyle`) into `CommentsSection.module.scss`.
+   - Updated `.map` extractions in `formatComments` (within `commentsApi.js`) and `<CommentItem />` rendering logic precisely to show custom entered names (overriding `user.username` relation if present).
+
+---
+
 ## [Latest] - 2026-05-18
 
 ### Security & UX: Secure Course Access & Dynamic Media Gating

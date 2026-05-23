@@ -40,17 +40,17 @@
 }
 
 .sectionTitle {
-    font-size: 40px;
+    font-size: var(--font-2xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
     margin-bottom: 24px;
 
     @include respond(md) {
-        font-size: 36px;
+        font-size: var(--font-xl2);
     }
 
     @include respond(sm) {
-        font-size: 28px;
+        font-size: var(--font-lg-xl);
         margin-bottom: 16px;
     }
 }
@@ -123,7 +123,7 @@
     align-items: start;
     padding: 16px;
     background: rgba(246, 217, 130, 0.05);
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     border: 1px solid rgba(246, 217, 130, 0.1);
     @include hover-transition;
 
@@ -144,7 +144,7 @@
     color: var(--color-bg-primary);
     border-radius: 8px;
     font-weight: var(--font-weight-bold);
-    font-size: 18px;
+    font-size: var(--font-md-lg);
 }
 
 .valueTitle {
@@ -320,17 +320,17 @@
 }
 
 .memberName {
-    font-size: 32px;
+    font-size: var(--font-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
 
     @include respond(md) {
-        font-size: 28px;
+        font-size: var(--font-lg-xl);
         text-align: center;
     }
 
     @include respond(sm) {
-        font-size: 24px;
+        font-size: var(--font-lg-xl);
     }
 }
 
@@ -385,12 +385,12 @@
 }
 
 .statNumber {
-    font-size: 28px;
+    font-size: var(--font-lg-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
 
     @include respond(sm) {
-        font-size: 24px;
+        font-size: var(--font-lg-xl);
     }
 }
 
@@ -400,7 +400,7 @@
     opacity: 0.8;
 
     @include respond(sm) {
-        font-size: 12px;
+        font-size: var(--font-ssm);
     }
 }
 
@@ -436,17 +436,17 @@
 }
 
 .ctaTitle {
-    font-size: 40px;
+    font-size: var(--font-2xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
     margin-bottom: 16px;
 
     @include respond(md) {
-        font-size: 32px;
+        font-size: var(--font-xl);
     }
 
     @include respond(sm) {
-        font-size: 24px;
+        font-size: var(--font-lg-xl);
     }
 }
 
@@ -469,7 +469,7 @@
     font-weight: var(--font-weight-bold);
     color: var(--color-bg-primary);
     background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     text-decoration: none;
     @include hover-transition;
 

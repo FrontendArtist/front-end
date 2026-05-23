@@ -14,7 +14,7 @@
         border-bottom: 1px solid rgba(246, 217, 130, 0.15);
 
         @include respond(md) {
-            font-size: 28px;
+            font-size: var(--font-lg-xl);
             margin-bottom: 24px;
         }
     }
@@ -55,7 +55,7 @@
         color: #fca5a5;
         background: rgba(220, 38, 38, 0.15);
         padding: 20px;
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         text-align: center;
         border: 1px solid rgba(220, 38, 38, 0.4);
         font-size: var(--font-md);
@@ -68,7 +68,7 @@
         color: var(--color-card-text);
         font-size: var(--font-md);
         background: rgba(6, 24, 24, 0.4);
-        border-radius: 12px;
+        border-radius: var(--border-radius);
         border: 1px dashed rgba(246, 217, 130, 0.3);
     }
 }
@@ -90,15 +90,31 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

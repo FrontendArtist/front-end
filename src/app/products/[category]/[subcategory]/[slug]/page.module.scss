@@ -45,11 +45,11 @@
     margin-bottom: 1rem;
 
     @include respond(md) {
-      font-size: 28px;
+      font-size: var(--font-lg-xl);
     }
 
     @include respond(sm) {
-      font-size: 24px;
+      font-size: var(--font-lg-xl);
     }
   }
 
@@ -60,7 +60,7 @@
     margin-bottom: 1.5rem;
 
     @include respond(md) {
-      font-size: 18px;
+      font-size: var(--font-md-lg);
       margin-bottom: 1rem;
     }
   }
