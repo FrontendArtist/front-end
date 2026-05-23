@@ -5,7 +5,6 @@ import CourseContentManager from '@/modules/courses/CourseContentManager';
 import { getCourseBySlug } from '@/lib/coursesApi';
 import { getComments } from '@/lib/commentsApi';
 import CommentsSection from '@/modules/comments/CommentsSection';
-import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import { API_BASE_URL } from '@/lib/api';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
@@ -56,20 +55,20 @@ export default async function CoursePage({ params }) {
     try {
       const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
       const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
-      
+
       const ordersRes = await fetch(`${STRAPI_BASE_URL}/api/orders?filters[user][id][$eq]=${session.user.id}&populate=*`, {
         headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
         cache: 'no-store'
       });
-      
+
       if (ordersRes.ok) {
         const ordersData = await ordersRes.json();
         const ordersList = ordersData.data || [];
-        
+
         hasPurchasedServer = ordersList.some(order => {
           const items = order.attributes?.items || order.items || [];
-          return items.some(item => 
-            item.slug === rawCourse.slug || 
+          return items.some(item =>
+            item.slug === rawCourse.slug ||
             String(item.courseId) === String(rawCourse.id) ||
             String(item.id) === String(rawCourse.id)
           );
@@ -135,15 +134,11 @@ export default async function CoursePage({ params }) {
             <div className={styles.price}>
               {course.price.toman === 0 ? 'رایگان' : `${course.price.toman.toLocaleString()} تومان`}
             </div>
-            <AddToCartButton
-              course={{
-                id: course.id,
-                slug: rawCourse.slug,
-                title: course.title,
-                price: course.price.toman,
-                image: course.media.url,
-              }}
-            />
+            {hasPurchasedServer && (
+              <div style={{ color: 'var(--color-primary)', fontWeight: 'bold', fontSize: '18px', marginTop: '10px' }}>
+                ✓ شما دانشجوی این دوره هستید
+              </div>
+            )}
           </div>
         </div>
 

@@ -9,6 +9,7 @@
 
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ProductGallery from '@/components/products/ProductGallery/ProductGallery';
+import ProductAddToCart from '@/components/products/ProductAddToCart/ProductAddToCart';
 import styles from './ProductDetails.module.scss';
 
 export default function ProductDetails({ product, breadcrumbItems }) {
@@ -25,7 +26,7 @@ export default function ProductDetails({ product, breadcrumbItems }) {
             <h1 className={styles.title}>{product.title}</h1>
             <div className={styles.price}>{product.price.toman.toLocaleString()} تومان</div>
             <p className={styles.description}>{product.shortDescription}</p>
-            <button className="card-button">افزودن به سبد خرید</button>
+            <ProductAddToCart product={product} />
           </div>
         </div>
       </div>

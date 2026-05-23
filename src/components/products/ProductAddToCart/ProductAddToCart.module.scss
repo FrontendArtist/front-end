@@ -1,0 +1,94 @@
+@use '@/styles/base/mixins' as *;
+
+.wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.addToCartButton {
+    display: inline-block;
+    align-self: center;
+    background: transparent;
+    padding: 12px 32px;
+    color: var(--color-text-primary);
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    border: 2px solid var(--color-text-primary);
+    border-radius: 8px;
+    cursor: pointer;
+    @include hover-transition;
+
+    &:hover {
+        background-color: var(--color-text-primary);
+        color: var(--color-bg-primary);
+        transform: scale(1.05);
+    }
+
+    @include respond(md) {
+        padding: 10px 24px;
+        font-size: var(--font-sm);
+    }
+}
+
+.quantityController {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(246, 217, 130, 0.1);
+    border: 2px solid var(--color-text-primary);
+    border-radius: 8px;
+    overflow: hidden;
+    height: 48px;
+    width: 154px;
+    justify-content: space-between;
+
+    @include respond(md) {
+        height: 42px;
+        width: 130px;
+        gap: 8px;
+    }
+}
+
+.quantityButton {
+    width: 40px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    background-color: unset;
+    justify-content: center;
+    color: var(--color-text-primary);
+    border: none;
+    font-size: var(--font-lg)px;
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    @include hover-transition;
+    line-height: 1;
+
+    &:hover {
+        background: var(--color-text-primary);
+        color: var(--color-bg-primary);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    @include respond(md) {
+        width: 32px;
+        font-size: var(--font-md);
+    }
+}
+
+.quantityDisplay {
+    text-align: center;
+    color: var(--color-text-primary);
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+
+    @include respond(md) {
+        font-size: var(--font-md);
+    }
+}

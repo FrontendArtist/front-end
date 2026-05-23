@@ -8,6 +8,7 @@
 import { notFound, permanentRedirect } from 'next/navigation';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ProductGallery from '@/components/products/ProductGallery/ProductGallery';
+import ProductAddToCart from '@/components/products/ProductAddToCart/ProductAddToCart';
 import { getProductBySlug, getProductCategoryPath } from '@/lib/productsApi';
 import styles from './page.module.scss';
 
@@ -44,9 +45,8 @@ export default async function ProductPage({ params }) {
 
   const pathInfo = await getProductCategoryPath(slug);
   if (pathInfo?.categorySlug) {
-    const target = `/products/${pathInfo.categorySlug}${
-      pathInfo.subcategorySlug ? `/${pathInfo.subcategorySlug}` : ''
-    }/${slug}`;
+    const target = `/products/${pathInfo.categorySlug}${pathInfo.subcategorySlug ? `/${pathInfo.subcategorySlug}` : ''
+      }/${slug}`;
 
     permanentRedirect(target);
   }
@@ -70,7 +70,7 @@ export default async function ProductPage({ params }) {
             <h1 className={styles.detailsTitle}>{product.title}</h1>
             <div className={styles.detailsPrice}>{product.price.toman.toLocaleString()} تومان</div>
             <p className={styles.detailsDescription}>{product.shortDescription}</p>
-            <button className="card-button">افزودن به سبد خرید</button>
+            <ProductAddToCart product={product} />
           </div>
         </div>
       </div>
