@@ -84,7 +84,7 @@
     display: inline-block;
     padding: 14px 32px;
     background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
-    color: white;
+    color: var(--card-text);
     text-decoration: none;
     border-radius: var(--border-radius);
     font-size: var(--font-md);

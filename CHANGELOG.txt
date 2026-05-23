@@ -1,3 +1,25 @@
+[2026-05-23] - Dark/Light Theme Switcher Feature (100% Complete)
+ 
+─── FRONTEND SYSTEM ───────────────────────────────────────────────────────────
+ 
+| Styles: /src/app/layout.js & /src/styles/light-theme.css & /src/styles/variables.css
+|- Created light mode system under data-theme="light" with full color variable inversion
+|- Refined background to high-contrast Sage Pastel (#F6F8F3) and card overlay panels to pure white (#FFFFFF)
+|- Overhauled font color (--color-white equivalent variables) to premium emerald-black (#0c1815)
+|- Reflowed lower opacity variables (--color-bg-primary-op-XX and --color-white-op-XX) to use dark-translucent colors (rgba(12, 24, 21, opacity)) over light backgrounds to keep layout contrast pristine
+|- Upgraded gold accents (--color-gold / --color-title-hover) to vibrant premium hues (#C79A2B / #E4BE63)
+|- Added a render-blocking synchronous inline <script> in layout.js <head> to retrieve theme state from localStorage before first frame paint, completely eliminating Hydration Flash (FOUC)
+ 
+| Navbar: /src/modules/layout/Navbar/NavbarClient.jsx
+|- Integrated theme toggle state utilizing localStorage and state syncing
+|- Added an interactive switcher button to the header with animations and dynamic moon/sun indicators
+ 
+─── FILES MODIFIED ───────────────────────────────────────────────────────────
+- front-end/src/styles/light-theme.css (new)
+- front-end/src/app/layout.js
+- front-end/src/modules/layout/Navbar/NavbarClient.jsx
+- front-end/src/styles/variables.css
+ 
 [2026-05-19] - Card-to-Card Payment Feature Implementation (100% Complete)
 
 ─── BACKEND (Strapi v5) ───────────────────────────────────────────────────────

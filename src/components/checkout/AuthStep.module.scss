@@ -117,7 +117,7 @@
 .submitButton {
     padding: 14px 32px;
     background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
-    color: white;
+    color: var(--card-text);
     border: none;
     border-radius: var(--border-radius);
     font-size: var(--font-lg);

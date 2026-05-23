@@ -91,7 +91,7 @@
     .stepCircle {
         background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
         border-color: var(--color-accent);
-        color: white;
+        color: var(--card-text);
         box-shadow: 0 4px 12px var(--color-primary-op-40);
         animation: pulse-glow 2s ease-in-out infinite;
     }
@@ -124,7 +124,7 @@
     .stepCircle {
         background: linear-gradient(135deg, var(--color-success), var(--color-success));
         border-color: var(--color-success);
-        color: white;
+        color: var(--card-text);
         box-shadow: 0 4px 12px var(--color-success-op-30);
     }
 

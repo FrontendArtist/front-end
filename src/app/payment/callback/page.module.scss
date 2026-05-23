@@ -302,7 +302,7 @@
 .primaryButton {
     flex: 1;
     padding: 14px 32px;
-    color: white;
+    color: var(--card-text);
     text-decoration: none;
     border-radius: var(--border-radius);
     font-size: var(--font-md);
