@@ -46,8 +46,9 @@
   margin-top: 110px;
 
   .navline {
-    width: 70%;
+    width: 50%;
     margin-bottom: 10px;
+    margin: 0 auto;
   }
 }
 
@@ -104,5 +105,31 @@
   @include respond(sm) {
     padding: 14px 28px;
     font-size: 1rem;
+  }
+}
+
+.heroLight {
+  display: none !important;
+}
+
+.navlineLight {
+  display: none !important;
+}
+
+:global([data-theme="light"]) {
+  .heroDark {
+    display: none !important;
+  }
+
+  .heroLight {
+    display: block !important;
+  }
+
+  .navlineDark {
+    display: none !important;
+  }
+
+  .navlineLight {
+    display: block !important;
   }
 }

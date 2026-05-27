@@ -36,8 +36,8 @@
     transform: translateY(-4px);
     border-color: var(--color-primary-op-40);
     background: var(--color-bg-primary-op-80);
-    box-shadow: 0 16px 32px var(--color-black-op-40),
-      0 0 0 1px var(--color-primary-op-10) inset;
+    // box-shadow: 0 16px 32px var(--color-black-op-40),
+    //   0 0 0 1px var(--color-primary-op-10) inset;
 
     &::before {
       opacity: 1;

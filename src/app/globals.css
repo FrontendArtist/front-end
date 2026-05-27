@@ -18,8 +18,7 @@ body {
 
 body {
 
-font-weight: 300
-  ;
+  font-weight: 300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
@@ -29,6 +28,7 @@ font-weight: 300
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, fill 0.3s ease, stroke 0.3s ease, box-shadow 0.3s ease;
 }
 
 a {
@@ -41,12 +41,15 @@ a {
     color-scheme: dark;
   }
 }
-body{
-  font-family: 'IRANSans'!important;
-  button{
-    font-family: 'IRANSans'!important;
+
+body {
+  font-family: 'IRANSans' !important;
+
+  button {
+    font-family: 'IRANSans' !important;
   }
 }
-.section{
+
+.section {
   border-bottom: 1px solid var(--color-text-primary);
 }

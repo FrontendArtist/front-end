@@ -11,22 +11,33 @@ const HeroSection = () => {
           src="/hero/heropicshadow.webp"
           alt="Spiritual and tranquil background"
           fill
-          quality={100}
+          quality={[100 , 70]}
           priority={true}
           style={{ objectFit: 'cover' }}
+          className={styles.heroDark}
+        />
+        <Image
+          src="/hero/heropiclight.webp"
+          alt="Spiritual and tranquil background"
+          fill
+          quality={ [100 , 70 ]}
+          priority={true}
+          style={{ objectFit: 'cover' }}
+          className={styles.heroLight}
         />
         <div className={styles.overlay}></div>
       </div>
       <div className={`${styles.content} container`}>
         <div className={styles.titleWrapper}>
-        <img src="/images/navline.png" alt="navline" className={styles.navline} />
-        <h1 className={styles.title}>طرح الهی | سفر عاشقانه از تاریکی به نور و بیداری</h1>
+          <img src="/images/navline.png" alt="navline" className={`${styles.navline} ${styles.navlineDark}`} />
+          <img src="/images/navlinelight.png" alt="navline" className={`${styles.navline} ${styles.navlineLight}`} />
+          <h1 className={styles.title}>طرح الهی | سفر عاشقانه از تاریکی به نور و بیداری</h1>
         </div>
         <p className={styles.subtitle}>
         </p>
         <ScrollCTAButton targetId="about-mentor">
           شروع سفر
-        </ScrollCTAButton>  
+        </ScrollCTAButton>
       </div>
     </section>
   );
