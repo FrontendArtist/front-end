@@ -47,9 +47,6 @@ export default async function CoursesPage({ searchParams: spPromise }) {
       <div className="container">
         <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'دوره‌ها' }]} />
 
-        <header className={styles.header}>
-          <h1 className={styles.title}>دوره‌ها</h1>
-        </header>
         <ListGuard
           data={initialCourses}
           hasFilters={hasFilters}

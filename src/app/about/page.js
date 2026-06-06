@@ -21,11 +21,6 @@ export default function AboutPage() {
             <div className={styles.container}>
                 <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'درباره ما' }]} />
 
-                {/* Header Section */}
-                <header className={styles.header}>
-                    <h1 className={styles.title}>درباره ما</h1>
-                </header>
-
                 {/* Mission Section */}
                 <section className={styles.missionSection}>
                     <div className={styles.missionGrid}>

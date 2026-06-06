@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import { useCartStore, selectTotalPrice, selectItemsCount } from '@/store/useCartStore';
 import styles from './Cart.module.scss';
 
@@ -109,12 +110,18 @@ export default function CartPage() {
     const products = items.filter(item => item.type === 'product');
     const courses = items.filter(item => item.type === 'course');
 
+    const breadcrumbItems = [
+        { label: 'خانه', href: '/' },
+        { label: 'سبد خرید' }
+    ];
+
     /**
      * Empty State - زمانی که سبد خرید خالی است
      */
     if (itemsCount === 0) {
         return (
             <div className={`${styles.cartPage} container`}>
+                <Breadcrumb items={breadcrumbItems} />
                 <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>
                         {/* آیکون سبد خرید خالی */}
@@ -142,7 +149,7 @@ export default function CartPage() {
      */
     return (
         <div className={`${styles.cartPage} container`}>
-            <h1 className={styles.pageTitle}>سبد خرید</h1>
+            <Breadcrumb items={breadcrumbItems} />
 
             <div className={styles.cartGrid}>
                 {/* ستون اصلی: لیست آیتم‌ها */}
@@ -270,7 +277,7 @@ export default function CartPage() {
 
                 {/* Sidebar: خلاصه سفارش */}
                 <aside className={styles.sidebar}>
-                        <h2 className={styles.summaryTitle}>خلاصه سفارش</h2>
+                    <h2 className={styles.summaryTitle}>خلاصه سفارش</h2>
                     <div className={styles.summary}>
 
                         {/* تعداد کل آیتم‌ها */}

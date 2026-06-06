@@ -77,6 +77,18 @@ export async function POST(request) {
         // استخراج آیدی دوره‌ها از سبد خرید برای اتصال به ریلیشن courses در مدل User
         const courseIds = cartItems.filter(item => item.type === 'course').map(item => Number(item.id));
 
+        // دریافت اطلاعات کامل کاربر از استراپی همراه با آدرس و دوره‌ها
+        const userRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}?populate[0]=address&populate[1]=courses`, {
+            headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` }
+        });
+
+        if (!userRes.ok) {
+            const errText = await userRes.text();
+            console.error("Strapi Fetch User for Order Error:", errText);
+            throw new Error("Failed to fetch user profiles from Strapi");
+        }
+        const userData = await userRes.json();
+
         // ایجاد آرایه dynamic zone برای اتصال به فیلد items در سفارش
         const itemsPayload = cartItems.map(item => {
             if (item.type === 'course') {
@@ -116,16 +128,36 @@ export async function POST(request) {
             ? 'pending'
             : 'paid ';
 
+        // استخراج نام کاربر/گیرنده
+        const dbFullName = (userData.firstName || userData.lastName)
+            ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
+            : "";
+        const resolvedFullName = userData.address?.recipientName || dbFullName || session.user.name || "کاربر";
+
+        // استخراج آدرس کامل
+        let resolvedAddress = "آدرس وارد نشده است";
+        if (userData.address) {
+            const { province, city, fullAddress } = userData.address;
+            resolvedAddress = [province, city, fullAddress].filter(Boolean).join(" - ");
+        } else if (shippingAddress) {
+            resolvedAddress = shippingAddress;
+        }
+
+        // استخراج سایر اطلاعات پستی و تماس
+        const resolvedPostalCode = userData.address?.postalCode || "0000000000";
+        const resolvedPhone = userData.address?.recipientPhone || userData.phoneNumber || session.user.phoneNumber || "00000000000";
+        const resolvedEmail = userData.email || session.user.email || "no-email@tarhelahi.com";
+
         // ساخت بدنه پِیلود بر اساس فیلدهای واقعی دیتابیس شما
         const orderPayload = {
             data: {
                 totalPrice: Number(totalPrice) || 0,
                 orderStatus: resolvedOrderStatus,
-                fullName: session.user.firstName ? `${session.user.firstName} ${session.user.lastName}` : "کاربر",
-                address: shippingAddress || "آدرس وارد نشده است",
-                postalCode: "0000000000",
-                phone: session.user.phoneNumber || "00000000000",
-                email: session.user.email || "no-email@tarhelahi.com",
+                fullName: resolvedFullName,
+                address: resolvedAddress,
+                postalCode: resolvedPostalCode,
+                phone: resolvedPhone,
+                email: resolvedEmail,
                 user: session.user.id,
                 items: itemsPayload,
                 paymentMethod: resolvedPaymentMethod,
@@ -156,20 +188,13 @@ export async function POST(request) {
         let userUpdatePayload = { cartData: null };
 
         if (courseIds.length > 0) {
-            // دریافت دوره‌های فعلی کاربر برای جلوگیری از بازنویسی
-            const userRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}?populate=courses`, {
-                headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` }
-            });
+            // استفاده از دوره‌های لود شده قبلی
+            const existingCourses = userData.courses ? userData.courses.map(c => c.id) : [];
+            // ادغام دوره‌های قبلی با دوره‌های جدید (حذف تکراری‌ها)
+            const mergedCourses = [...new Set([...existingCourses, ...courseIds])];
 
-            if (userRes.ok) {
-                const userData = await userRes.json();
-                const existingCourses = userData.courses ? userData.courses.map(c => c.id) : [];
-                // ادغام دوره‌های قبلی با دوره‌های جدید (حذف تکراری‌ها)
-                const mergedCourses = [...new Set([...existingCourses, ...courseIds])];
-
-                // پلاگین users-permissions معمولا آرایه آی‌دی‌ها را مستقیما دریافت می‌کند
-                userUpdatePayload.courses = mergedCourses;
-            }
+            // پلاگین users-permissions معمولا آرایه آی‌دی‌ها را مستقیما دریافت می‌کند
+            userUpdatePayload.courses = mergedCourses;
         }
 
         const userUpdateRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}`, {

@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    allowedDevOrigins: ['192.168.1.101'],
     images: {
         // در حالت dev، بهینه‌سازی را غیرفعال کن تا به IP لوکال گیر ندهد
-        unoptimized: process.env.NODE_ENV === 'development', 
-        
+        unoptimized: process.env.NODE_ENV === 'development',
+
         remotePatterns: [
             {
                 protocol: "http",

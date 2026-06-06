@@ -85,9 +85,6 @@ export default async function ProductsPage({ searchParams: spPromise }) {
     <main className={styles.main}>
       <div className="container">
         <Breadcrumb items={breadcrumbItems} />
-        <header className={styles.header}>
-          <h1 className={styles.title}>محصولات</h1>
-        </header>
 
         <ProductsPageClient
           initialProducts={data}

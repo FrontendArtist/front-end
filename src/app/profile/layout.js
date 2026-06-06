@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import ProfileSidebar from '@/components/profile/ProfileSidebar';
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import styles from './profile.module.scss';
 
 export default function ProfileLayout({ children }) {
@@ -32,6 +33,9 @@ export default function ProfileLayout({ children }) {
 
     return (
         <div className={styles.profileLayout}>
+            <div className="container">
+                <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'پنل کاربری', href: '/profile' }]} />
+            </div>
             <div className={styles.container}>
                 <ProfileSidebar />
                 <main className={styles.content}>

@@ -136,22 +136,6 @@ export default async function ServicesPage({ searchParams: spPromise }) {
         <Breadcrumb items={breadcrumbItems} />
 
         {/* ================================================================== */}
-        {/* HERO SECTION                                                       */}
-        {/* ================================================================== */}
-        {/* 
-          Page header with title and description
-          - Centered layout for emphasis
-          - Follows design tokens from styles.md
-          - Responsive typography (32px → 28px → 24px)
-        */}
-        <header className={styles.header}>
-          <h1 className={styles.title}>
-            خدمات ما
-          </h1>
-
-        </header>
-
-        {/* ================================================================== */}
         {/* SERVICES GRID                                                      */}
         {/* ================================================================== */}
         {/*

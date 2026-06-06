@@ -25,14 +25,14 @@ export default async function CategoryPage({ params, searchParams }) {
   // Await params and searchParams (Next.js 15 requirement)
   const { category } = await params;
   const sp = await searchParams;
-  
+
   const page = Number(sp?.page || 1);
   const sort = sp?.sort || 'createdAt:desc';
 
   // Fetch category tree to find subcategories for this category
   const tree = await getCategoryTree();
   const currentCategory = tree.find(c => c.slug === category);
-  
+
   let subSlugs = [];
   if (currentCategory?.subCategories?.length) {
     subSlugs = currentCategory.subCategories.map(s => s.slug);
@@ -53,9 +53,6 @@ export default async function CategoryPage({ params, searchParams }) {
     <main className={styles.main}>
       <div className="container">
         <Breadcrumb items={breadcrumbItems} />
-        <header className={styles.header}>
-          <h1 className={styles.title}>محصولات: {currentCategory?.name || category}</h1>
-        </header>
 
         <ProductsPageClient
           initialProducts={data}

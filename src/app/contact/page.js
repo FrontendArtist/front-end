@@ -21,11 +21,6 @@ export default function ContactPage() {
             <div className={styles.container}>
                 <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'تماس با ما' }]} />
 
-                {/* Header Section */}
-                <section className={styles.header}>
-                    <h1 className={styles.title}>تماس با ما</h1>
-                </section>
-
                 {/* Main Content Grid */}
                 <div className={styles.contentGrid}>
                     {/* Contact Form */}

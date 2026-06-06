@@ -14,6 +14,7 @@ import ListGuard from '@/components/layout/ListGuard';
 import ArticleGrid from '@/modules/articles/ArticleGrid/ArticleGrid';
 import { getArticlesPaginated, getArticleCategories } from '@/lib/articlesApi';
 import { ARTICLES_PAGE_SIZE } from '@/lib/constants';
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import styles from './articles.module.scss';
 
 export const metadata = {
@@ -54,12 +55,15 @@ export default async function ArticlesPage({ searchParams: spPromise }) {
   const initialArticles = result.data;
   const initialMeta = result.meta;
 
+  const breadcrumbItems = [
+    { label: 'خانه', href: '/' },
+    { label: 'مقالات' }
+  ];
+
   return (
     <main className={styles.main}>
       <div className="container">
-        <header className={styles.header}>
-          <h1 className={styles.title}>مقالات</h1>
-        </header>
+        <Breadcrumb items={breadcrumbItems} />
         <ArticleGrid
           initialArticles={initialArticles}
           initialMeta={initialMeta}

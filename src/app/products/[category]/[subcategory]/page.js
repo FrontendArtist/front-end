@@ -26,12 +26,12 @@ import styles from '../../products.module.scss';
  */
 export async function generateMetadata({ params }) {
   const { category, subcategory } = await params;
-  
+
   // First check if it's a valid subcategory
   const tree = await getCategoryTree();
   const currentCategory = tree.find(c => c.slug === category);
   const currentSubCategory = currentCategory?.subCategories?.find(s => s.slug === subcategory);
-  
+
   if (currentSubCategory) {
     // It's a subcategory listing page
     return {
@@ -39,10 +39,10 @@ export async function generateMetadata({ params }) {
       description: `مشاهده محصولات در زیردسته ${currentSubCategory.name || subcategory} از دسته ${currentCategory?.name || category}`,
     };
   }
-  
+
   // Check if it's a product
   const product = await getProductBySlug(subcategory);
-  
+
   if (product) {
     // It's a product detail page
     return {
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }) {
       description: product.shortDescription,
     };
   }
-  
+
   // Neither subcategory nor product
   return {
     title: 'صفحه یافت نشد',
@@ -76,7 +76,7 @@ export default async function HybridPage({ params, searchParams }) {
   // Step 1: Fetch category tree
   const tree = await getCategoryTree();
   const currentCategory = tree.find(c => c.slug === category);
-  
+
   if (!currentCategory) {
     notFound();
   }
@@ -103,11 +103,6 @@ export default async function HybridPage({ params, searchParams }) {
       <main className={styles.main}>
         <div className="container">
           <Breadcrumb items={breadcrumbItems} />
-          <header className={styles.header}>
-            <h1 className={styles.title}>
-              محصولات: {currentSubCategory.name || subcategory}
-            </h1>
-          </header>
 
           <ProductsPageClient
             initialProducts={data}
