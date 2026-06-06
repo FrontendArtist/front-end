@@ -43,7 +43,13 @@ const CoursesSection = ({ data = [] }) => {
       </section>
     );
   }
-
+  const coursesBreakpoints = {
+    0: { slidesPerView: 1, spaceBetween: 15 },
+    576: { slidesPerView: 2, spaceBetween: 15 },
+    768: { slidesPerView: 2, spaceBetween: 20 },
+    1024: { slidesPerView: 2, spaceBetween: 30 },
+    1280: { slidesPerView: 2, spaceBetween: 30 },
+  };
   return (
     <section id="courses-section" className={`${styles.coursesSection} section`}>
       <div className="container">
@@ -57,9 +63,11 @@ const CoursesSection = ({ data = [] }) => {
           <BaseSlider
             items={data}
             renderItem={renderCourseCard}
-            slidesPerView={2}
+            slidesPerView={1}
             loop={true}
+            breakpoints={coursesBreakpoints}
           />
+
         </div>
       </div>
     </section>

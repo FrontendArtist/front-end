@@ -23,7 +23,13 @@ const ServicesSection = ({ data = [] }) => {
       </section>
     );
   }
-
+  const servicesBreakpoints = {
+    0: { slidesPerView: 1, spaceBetween: 15 },
+    576: { slidesPerView: 2, spaceBetween: 15 },
+    768: { slidesPerView: 2, spaceBetween: 20 },
+    1024: { slidesPerView: 2, spaceBetween: 30 },
+    1280: { slidesPerView: 2, spaceBetween: 30 },
+  };
   return (
     <section className={`${styles.servicesSection} section`}>
       <div className="container">
@@ -39,6 +45,7 @@ const ServicesSection = ({ data = [] }) => {
             renderItem={renderServiceCard}
             slidesPerView={2}
             loop={true}
+            breakpoints={servicesBreakpoints}
           />
         </div>
       </div>

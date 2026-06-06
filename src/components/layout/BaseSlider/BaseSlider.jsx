@@ -22,7 +22,8 @@ const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4, breakp
   }
 
   const defaultBreakpoints = {
-    320: { slidesPerView: 2, spaceBetween: 15 },
+    0: { slidesPerView: 1, spaceBetween: 15 },
+    576: { slidesPerView: 2, spaceBetween: 15 },
     768: { slidesPerView: 3, spaceBetween: 20 },
     1024: { slidesPerView: 4, spaceBetween: 30 },
     1280: { slidesPerView, spaceBetween: 30 },

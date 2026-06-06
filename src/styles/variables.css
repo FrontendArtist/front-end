@@ -65,7 +65,7 @@
     /* طیف طلایی پس‌زمینه با شفافیت‌های متفاوت */
     --color-primary-op-0: rgba(246, 217, 130, 0);
     --color-primary-op-04: rgba(246, 217, 130, 0.04);
-    --color-primary-op-05: rgba(92, 172, 112, 0.315);
+    --color-primary-op-05: rgba(246, 217, 130, 0.05);
     --color-primary-op-07: rgba(246, 217, 130, 0.07);
     --color-primary-op-08: rgba(246, 217, 130, 0.08);
     --color-primary-op-10: rgba(246, 217, 130, 0.1);
@@ -193,5 +193,5 @@
     --color-accent-indigo: #a5b4fc;
 
 
-    
+
 }
