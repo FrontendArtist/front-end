@@ -10,37 +10,55 @@ import ServicesSection from "@/modules/home/ServicesSection/ServicesSection";
 import ArticlesSection from "@/modules/home/ArticlesSection/ArticlesSection";
 import FaqSection from "@/modules/home/FaqSection/FaqSection";
 import TestimonialsSection from "@/modules/home/TestimonialsSection/TestimonialsSection";
-import { headers } from "next/headers";
 
-export const revalidate = 300;
+import { getMainCategories } from '@/lib/categoriesApi';
+import { getAllFaqs } from '@/lib/faqApi';
+import { getAllTestimonials } from '@/lib/testimonialsApi';
+import { getProducts } from '@/lib/productsApi';
+import { getArticles } from '@/lib/articlesApi';
+import { getServices } from '@/lib/servicesApi';
+import { getCourses } from '@/lib/coursesApi';
+
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const hdrs = await headers();
-  const protocol = hdrs.get("x-forwarded-proto") || "http";
-  const host = hdrs.get("host");
-  const baseUrl = `${protocol}://${host}`;
+  let categories = [];
+  let faqs = [];
+  let testimonials = [];
+  let products = [];
+  let articles = [];
+  let services = [];
+  let courses = [];
 
-  let homeData = null;
   try {
-    const res = await fetch(`${baseUrl}/api/home`, { next: { revalidate: 300 } });
-    if (res.ok) {
-      homeData = await res.json();
-    } else {
-      console.warn(`⚠️ /api/home responded with status ${res.status}`);
-    }
+    const [
+      fetchedCategories,
+      fetchedFaqs,
+      fetchedTestimonials,
+      fetchedProducts,
+      fetchedArticles,
+      fetchedServices,
+      fetchedCourses
+    ] = await Promise.all([
+      getMainCategories(),
+      getAllFaqs(),
+      getAllTestimonials(),
+      getProducts({ limit: 20 }),
+      getArticles({ limit: 20 }),
+      getServices({ limit: 20 }),
+      getCourses({ limit: 20 }),
+    ]);
+
+    categories = fetchedCategories || [];
+    faqs = fetchedFaqs || [];
+    testimonials = fetchedTestimonials || [];
+    products = fetchedProducts || [];
+    articles = fetchedArticles || [];
+    services = fetchedServices || [];
+    courses = fetchedCourses || [];
   } catch (err) {
     console.warn("⚠️ Failed to fetch home data (Strapi may be offline):", err.message);
   }
-
-  const {
-    categories = [],
-    faqs = [],
-    testimonials = [],
-    products = [],
-    articles = [],
-    services = [],
-    courses = [],
-  } = homeData || {};
 
   return (
     <div className={styles.container}>
@@ -58,3 +76,4 @@ export default async function HomePage() {
     </div>
   );
 }
+

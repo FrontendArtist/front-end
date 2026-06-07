@@ -16,8 +16,10 @@ import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import { getProductsPaginated, getProductBySlug } from '@/lib/productsApi';
 import { getCategoryTree } from '@/lib/categoriesApi';
 import { getProductBreadcrumbs } from '@/lib/breadcrumbs';
+import { getComments } from '@/lib/commentsApi';
 import ProductsPageClient from '@/modules/products/ProductsPageClient/ProductsPageClient';
 import ProductDetails from '@/modules/products/ProductDetails/ProductDetails';
+import CommentsSection from '@/modules/comments/CommentsSection';
 import styles from '../../products.module.scss';
 
 /**
@@ -147,7 +149,23 @@ export default async function HybridPage({ params, searchParams }) {
       product: product
     });
 
-    return <ProductDetails product={product} breadcrumbItems={breadcrumbItems} />;
+    // Fetch comments for this product
+    const initialComments = await getComments('product', product.documentId);
+
+    return (
+      <>
+        <ProductDetails product={product} breadcrumbItems={breadcrumbItems} />
+
+        {/* Comments Section */}
+        <div className="container">
+          <CommentsSection
+            entityType="product"
+            entityId={product.documentId}
+            initialComments={initialComments}
+          />
+        </div>
+      </>
+    );
   }
 
   // CASE 3: Neither Subcategory nor Product → Not Found

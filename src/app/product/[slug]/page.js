@@ -10,6 +10,8 @@ import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ProductGallery from '@/components/products/ProductGallery/ProductGallery';
 import ProductAddToCart from '@/components/products/ProductAddToCart/ProductAddToCart';
 import { getProductBySlug, getProductCategoryPath } from '@/lib/productsApi';
+import { getComments } from '@/lib/commentsApi';
+import CommentsSection from '@/modules/comments/CommentsSection';
 import styles from './page.module.scss';
 
 export async function generateMetadata({ params }) {
@@ -57,24 +59,38 @@ export default async function ProductPage({ params }) {
     { label: product.title, active: true },
   ];
 
-  return (
-    <main className={styles.productPage}>
-      <div className="container">
-        <Breadcrumb items={breadcrumbItems} />
-        <div className={styles.layoutGrid}>
-          <div className={styles.gallery}>
-            <ProductGallery images={product.images} />
-          </div>
+  // Fetch comments for this product
+  const initialComments = await getComments('product', product.documentId);
 
-          <div className={styles.details}>
-            <h1 className={styles.detailsTitle}>{product.title}</h1>
-            <div className={styles.detailsPrice}>{product.price.toman.toLocaleString()} تومان</div>
-            <p className={styles.detailsDescription}>{product.shortDescription}</p>
-            <ProductAddToCart product={product} />
+  return (
+    <>
+      <main className={styles.productPage}>
+        <div className="container">
+          <Breadcrumb items={breadcrumbItems} />
+          <div className={styles.layoutGrid}>
+            <div className={styles.gallery}>
+              <ProductGallery images={product.images} />
+            </div>
+
+            <div className={styles.details}>
+              <h1 className={styles.detailsTitle}>{product.title}</h1>
+              <div className={styles.detailsPrice}>{product.price.toman.toLocaleString()} تومان</div>
+              <p className={styles.detailsDescription}>{product.shortDescription}</p>
+              <ProductAddToCart product={product} />
+            </div>
           </div>
         </div>
+      </main>
+
+      {/* Comments Section */}
+      <div className="container">
+        <CommentsSection
+          entityType="product"
+          entityId={product.documentId}
+          initialComments={initialComments}
+        />
       </div>
-    </main>
+    </>
   );
 }
 

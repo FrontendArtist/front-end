@@ -74,7 +74,7 @@
 }
 
 .sectionTitle {
-    font-size: var(--font-xl);
+    font-size: var(--font-lg-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
 
@@ -354,7 +354,7 @@
 }
 
 .summaryTitle {
-    font-size: var(--font-xl);
+    font-size: var(--font-lg-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
     margin: 0 0 20px;
@@ -482,10 +482,11 @@
 }
 
 .emptyTitle {
-    font-size: var(--font-2xl);
+    font-size: var(--font-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
     margin: 0;
+
 
     @include respond(md) {
         font-size: var(--font-xl);
@@ -506,7 +507,7 @@
 .emptyButton {
     display: inline-block;
     padding: 14px 32px;
-    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
+    background: var( --color-primary-op-40);
     color: var(--card-text);
     text-decoration: none;
     border-radius: var(--border-radius);
@@ -519,6 +520,7 @@
     &:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 16px var(--color-black-op-30);
+        background: var(--color-primary-op-60);
     }
 
     &:active {
