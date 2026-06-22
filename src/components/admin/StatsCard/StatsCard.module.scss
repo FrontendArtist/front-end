@@ -1,0 +1,153 @@
+/**
+ * @file src/components/admin/StatsCard/StatsCard.module.scss
+ * @description استایل مدولار کارت‌های آماری داشبورد ادمین
+ *
+ * ساختار BEM:
+ *   .card              → wrapper اصلی
+ *   .card__icon        → ناحیه آیکون/ایموجی
+ *   .card__body        → محتوای متنی
+ *   .card__title       → عنوان کارت
+ *   .card__value       → عدد اصلی
+ *   .card__subtitle    → زیرنویس کمکی
+ *   .card__error       → حالت خطا / empty state
+ *   .card--error       → modifier برای وضعیت خطا (تغییر حاشیه)
+ *
+ * ترفند CSS Variable برای رنگ پویا:
+ *   هر کارت یک CSS variable به نام --card-accent می‌گیرد (از JSX).
+ *   این variable در border-right و جاهای دیگر استفاده می‌شود.
+ *   این روش باعث می‌شود بدون نیاز به prop drilling یا کلاس‌های جداگانه،
+ *   هر کارت رنگ منحصربه‌فرد خودش را داشته باشد.
+ */
+
+/* ─── Local Variables ──────────────────────────────────────────────────────── */
+$card-bg: #0d2626;
+$card-border: rgba(246, 217, 130, 0.1);
+$card-radius: 16px;
+$card-padding: 28px 24px;
+$text-muted: rgba(255, 250, 234, 0.5);
+$text-main: var(--color-card-text); // #FFFAEA
+$transition: 0.25s ease;
+
+/* ─── Card Shell ───────────────────────────────────────────────────────────── */
+
+.card {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: $card-padding;
+    background-color: $card-bg;
+    border: 1px solid $card-border;
+    /*
+   * حاشیه راست رنگی: نشانگر بصری هر دسته از آمار.
+   * رنگ از --card-accent CSS variable که در JSX تنظیم می‌شود می‌آید.
+   */
+    border-right: 4px solid var(--card-accent, var(--color-text-primary));
+    border-radius: $card-radius;
+    transition: transform $transition, box-shadow $transition;
+
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    /* ── Modifier: حالت خطا ── */
+    &--error {
+        // حاشیه خاکستری برای وضعیت empty/error
+        border-right-color: rgba(255, 250, 234, 0.2);
+        opacity: 0.7;
+
+        &:hover {
+            transform: none; // در حالت خطا hover effect غیرفعال
+        }
+    }
+}
+
+/* ─── Icon ─────────────────────────────────────────────────────────────────── */
+
+.card__icon {
+    /*
+   * آیکون درون یک دایره رنگی قرار می‌گیرد.
+   * background کمی از --card-accent می‌گیرد (با opacity پایین).
+   */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    border-radius: 14px;
+    background-color: rgba(from var(--card-accent, #F6D982) r g b / 0.12);
+    font-size: 24px;
+    // Fallback برای مرورگرهایی که relative color syntax را پشتیبانی نمی‌کنند:
+    background-color: rgba(246, 217, 130, 0.12);
+}
+
+/* ─── Body ──────────────────────────────────────────────────────────────────── */
+
+.card__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0; // prevent overflow
+}
+
+.card__title {
+    font-size: var(--font-sm); // 14px
+    font-weight: var(--font-weight-medium);
+    color: $text-muted;
+    margin: 0;
+    // Reset heading default margin/padding
+    line-height: 1.3;
+}
+
+.card__value {
+    /*
+   * --card-accent برای رنگ عدد اصلی استفاده می‌شود.
+   * اما چون SCSS نمی‌تواند var() را در color مستقیماً ست کند،
+   * این رنگ را از JSX به عنوان style prop می‌گیریم (style={{ color: accentColor }}).
+   */
+    font-size: 36px;
+    font-weight: var(--font-weight-bold);
+    line-height: 1;
+    margin: 0;
+    // از overflow برای اعداد بلند جلوگیری می‌کند
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card__subtitle {
+    font-size: 12px;
+    color: $text-muted;
+    margin-top: 2px;
+}
+
+/* ─── Error State ───────────────────────────────────────────────────────────── */
+
+.card__error {
+    font-size: var(--font-sm);
+    color: $text-muted;
+    font-style: italic;
+    margin: 0;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+    .card {
+        padding: 20px 16px;
+        gap: 14px;
+    }
+
+    .card__icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        font-size: 20px;
+    }
+
+    .card__value {
+        font-size: 28px;
+    }
+}

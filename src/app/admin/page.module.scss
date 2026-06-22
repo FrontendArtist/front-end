@@ -1,58 +1,83 @@
 /**
  * @file src/app/admin/page.module.scss
- * @description Styles for the Admin Dashboard default page.
+ * @description استایل صفحه اصلی داشبورد ادمین
+ *
+ * BEM:
+ *   .page              → wrapper کل صفحه
+ *   .page__header      → بخش سرصفحه و خوشامدگویی
+ *   .page__title       → تیتر h1
+ *   .page__title_name  → span نام کاربر (رنگ طلایی)
+ *   .page__subtitle    → زیرنویس تیتر
+ *   .section__title    → عنوان بخش آمار
+ *   .stats_grid        → گرید کارت‌های آماری
  */
 
+/* ─── Page Wrapper ─────────────────────────────────────────────────────────── */
+
 .page {
-    max-width: 1000px;
-
-    &__title {
-        font-size: var(--font-xl); // 32px
-        font-weight: var(--font-weight-bold);
-        color: var(--color-text-primary); // gold
-        margin-bottom: 12px;
-    }
-
-    &__subtitle {
-        font-size: var(--font-md);
-        color: rgba(255, 250, 234, 0.6);
-        margin-bottom: 48px;
-        line-height: var(--line-height-md);
-    }
-}
-
-/* ─── Stats Grid ─────────────────────────────────────────────────────────── */
-
-.stats_grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 24px;
-}
-
-.stat_card {
+    max-width: 1100px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 28px 24px;
-    background-color: #0d2626;
-    border: 1px solid rgba(246, 217, 130, 0.12);
-    border-radius: 16px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    gap: 48px; // --space-gap-desktop از styles.md
+}
 
-    &:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+/* ─── Header ───────────────────────────────────────────────────────────────── */
+
+.page__header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.page__title {
+    font-size: var(--font-xl); // 32px
+    font-weight: var(--font-weight-bold); // 700
+    color: var(--color-card-text); // #FFFAEA
+    margin: 0;
+    line-height: 1.3;
+
+    &_name {
+        // اسم کاربر با رنگ طلایی برجسته می‌شود
+        color: var(--color-text-primary); // #F6D982
     }
+}
 
-    &__value {
-        font-size: 36px;
-        font-weight: var(--font-weight-bold);
-        line-height: 1;
-    }
+.page__subtitle {
+    font-size: var(--font-md); // 16px
+    color: rgba(255, 250, 234, 0.55);
+    line-height: var(--line-height-md); // 1.6
+    margin: 0;
+}
 
-    &__label {
-        font-size: var(--font-sm);
-        color: rgba(255, 250, 234, 0.55);
+/* ─── Section ──────────────────────────────────────────────────────────────── */
+
+.section__title {
+    font-size: var(--font-lg); // 20px
+    font-weight: var(--font-weight-medium);
+    color: rgba(255, 250, 234, 0.7);
+    margin: 0 0 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(246, 217, 130, 0.1);
+}
+
+/* ─── Stats Grid ───────────────────────────────────────────────────────────── */
+
+.stats_grid {
+    /*
+   * گرید واکنش‌گرا:
+   *   ≥ 960px → 4 ستون (auto-fill با حداقل 200px)
+   *   480–960px → 2 ستون
+   *   < 480px → 1 ستون
+   *
+   * از auto-fill + minmax استفاده می‌کنیم تا گرید خودش تعداد ستون‌ها را
+   * تنظیم کند – بدون نیاز به media query جداگانه برای تعداد ستون‌ها.
+   */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+
+    @media (max-width: 480px) {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
 }
