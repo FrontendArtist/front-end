@@ -110,3 +110,80 @@ export async function getOrdersStats(jwt) {
 
     return { totalOrders, totalRevenue };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 📋 واکشی لیست سفارش‌ها برای صفحه مدیریت سفارش‌ها
+// شامل اطلاعات کاربر (user) و تصویر رسید (receiptImage) می‌شود.
+// از pagination استفاده می‌کنیم تا صفحات سنگین نشوند.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getOrders(jwt, { page = 1, pageSize = 20 } = {}) {
+    const endpoint =
+        `/api/orders?populate[user][fields][0]=username&populate[user][fields][1]=email&populate[user][fields][2]=phoneNumber&populate[receiptImage]=true&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+
+    const data = await adminFetch(endpoint, jwt);
+    if (!data) return { orders: [], meta: null, error: true };
+
+    // نرمال‌سازی: سازگاری با Strapi v4 (attributes) و v5 (flat)
+    const orders = (data.data || []).map((item) => {
+        const attrs = item.attributes || item;
+        const user = attrs.user?.data?.attributes || attrs.user || null;
+        const receiptImage = attrs.receiptImage?.data?.attributes || attrs.receiptImage || null;
+        return {
+            id: item.id,
+            /*
+             * ⚠️ Strapi v5: برای عملیات PUT/PATCH باید از documentId استفاده شود.
+             * numeric id فقط برای نمایش است. Strapi v5 روتهای REST را با documentId می‌شناسد.
+             * اگر Strapi v4 باشد، documentId وجود ندارد و از id استفاده می‌شود.
+             */
+            documentId: item.documentId || String(item.id),
+            orderNumber: attrs.orderNumber || `#${item.id}`,
+            paymentMethod: attrs.paymentMethod || 'unknown',
+            paymentStatus: attrs.paymentStatus || 'pending_payment',
+            orderStatus: attrs.orderStatus || 'pending',
+            totalPrice: attrs.totalPrice ?? attrs.totalAmount ?? 0,
+            trackingNumber: attrs.trackingNumber || null,
+            cardHolderName: attrs.cardHolderName || null,
+            createdAt: attrs.createdAt,
+            user: user ? {
+                username: user.username || user.name || '—',
+                email: user.email || '—',
+                phoneNumber: user.phoneNumber || '—',
+            } : null,
+            receiptImageUrl: receiptImage?.url
+                ? `${process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337'}${receiptImage.url}`
+                : null,
+        };
+    });
+
+    return { orders, meta: data.meta || null, error: false };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ✏️ آپدیت سفارش (paymentStatus, orderStatus, trackingCode)
+// این تابع از Client Components صدا زده می‌شود از طریق API Route
+// تا JWT در مرورگر expose نشود.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function updateOrder(orderId, payload, jwt) {
+    const STRAPI_API_URL =
+        process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+    try {
+        const res = await fetch(`${STRAPI_API_URL}/api/orders/${orderId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${jwt}`,
+            },
+            cache: 'no-store',
+            body: JSON.stringify({ data: payload }),
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            return { success: false, error: err?.error?.message || `خطای ${res.status}` };
+        }
+
+        return { success: true, data: await res.json() };
+    } catch (error) {
+        return { success: false, error: error.message || 'خطای شبکه' };
+    }
+}

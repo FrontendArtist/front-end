@@ -40,7 +40,7 @@ const PaymentStatusBadge = ({ status }) => {
     const map = {
         pending_payment: { label: 'در انتظار پرداخت', cls: styles.badgeWarning },
         pending_verification: { label: 'در انتظار تأیید', cls: styles.badgePending },
-        paid: { label: 'پرداخت تأیید شد', cls: styles.badgeSuccess },
+        paid: { label: 'پرداخت شده', cls: styles.badgeSuccess },
         failed: { label: 'پرداخت ناموفق', cls: styles.badgeDanger },
     };
     const entry = map[status] ?? { label: status || 'نامشخص', cls: styles.badgeDefault };
@@ -51,12 +51,11 @@ const PaymentStatusBadge = ({ status }) => {
 const OrderStatusBadge = ({ status }) => {
     const normalized = status?.trim();
     const map = {
-        'paid ': { label: 'پرداخت شده', cls: styles.badgeSuccess },
         paid: { label: 'پرداخت شده', cls: styles.badgeSuccess },
         pending: { label: 'در انتظار', cls: styles.badgeWarning },
-        'shipped ': { label: 'ارسال شده', cls: styles.badgeInfo },
-        'delivered ': { label: 'تحویل داده شد', cls: styles.badgeSuccess },
-        'canceled ': { label: 'لغو شده', cls: styles.badgeDanger },
+        shipped: { label: 'ارسال شده', cls: styles.badgeInfo },
+        delivered: { label: 'تحویل داده شد', cls: styles.badgeSuccess },
+        canceled: { label: 'لغو شده', cls: styles.badgeDanger },
     };
     const entry = map[normalized] ?? { label: status || 'نامشخص', cls: styles.badgeDefault };
     return <span className={`${styles.badge} ${entry.cls}`}>{entry.label}</span>;
@@ -155,10 +154,6 @@ export default function OrderDetailPage() {
                     <h1 className={styles.orderTitle}>
                         جزئیات سفارش
                     </h1>
-                    <div className={styles.orderBadges}>
-                        <OrderStatusBadge status={order.orderStatus} />
-                        {isCardToCard && <PaymentStatusBadge status={order.paymentStatus} />}
-                    </div>
                 </div>
                 <div className={styles.orderMeta}>
                     <span className={styles.metaItem}>
@@ -181,6 +176,21 @@ export default function OrderDetailPage() {
                             {formatPrice(order.totalPrice)} تومان
                         </span>
                     </span>
+                    <span className={styles.metaItem}>
+                        <span className={styles.metaLabel}>وضعیت سفارش:</span>
+                        <span className={styles.metaValue} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <OrderStatusBadge status={order.orderStatus} />
+                            {isCardToCard && <PaymentStatusBadge status={order.paymentStatus} />}
+                        </span>
+                    </span>
+                    {(order.orderStatus?.trim() === 'shipped' || order.trackingNumber) && (
+                        <span className={styles.metaItem}>
+                            <span className={styles.metaLabel}>کد پیگیری:</span>
+                            <span className={styles.metaValue} dir="ltr" style={{ fontWeight: 'bold' }}>
+                                {order.trackingNumber || 'در حال ارسال...'}
+                            </span>
+                        </span>
+                    )}
                 </div>
             </div>
 

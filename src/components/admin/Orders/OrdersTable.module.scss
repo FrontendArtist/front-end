@@ -1,0 +1,566 @@
+/**
+ * @file src/components/admin/Orders/OrdersTable.module.scss
+ * @description استایل جدول سفارش‌ها، مودال‌ها و المان‌های مشترک
+ *
+ * این فایل SCSS برای سه کامپوننت مشترک است:
+ *   - OrdersTable.jsx
+ *   - ReceiptModal.jsx
+ *   - StatusUpdateModal.jsx
+ *
+ * BEM:
+ *   .container        → wrapper کل جدول + toolbar
+ *   .toolbar          → نوار جستجو
+ *   .table_wrapper    → اسکرول افقی برای موبایل
+ *   .table            → جدول اصلی
+ *   .table__row       → هر ردیف
+ *   .badge            → برچسب وضعیت (رنگ‌پذیر با CSS vars)
+ *   .actions          → ناحیه دکمه‌های عملیات
+ *   .modal_backdrop   → پس‌زمینه تاریک مودال
+ *   .modal            → کارت مودال
+ *   .btn              → دکمه‌های عمومی
+ */
+
+/* ─── Local Variables ──────────────────────────────────────────────────────── */
+$bg: #0d2626;
+$border: rgba(246, 217, 130, 0.1);
+$text: var(--color-card-text); // #FFFAEA
+$muted: rgba(255, 250, 234, 0.45);
+$radius-md: 12px;
+$radius-sm: 8px;
+$transition: 0.2s ease;
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* CONTAINER & TOOLBAR                                                        */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+
+    &__count {
+        font-size: var(--font-sm);
+        color: $muted;
+        white-space: nowrap;
+    }
+}
+
+.search {
+    flex: 1;
+    min-width: 220px;
+    padding: 10px 16px;
+    background: $bg;
+    border: 1px solid $border;
+    border-radius: $radius-sm;
+    color: $text;
+    font-size: var(--font-sm);
+    transition: border-color $transition;
+    outline: none;
+    font-family: inherit;
+
+    &::placeholder {
+        color: $muted;
+    }
+
+    &:focus {
+        border-color: rgba(246, 217, 130, 0.4);
+        box-shadow: 0 0 0 3px rgba(246, 217, 130, 0.06);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* TABLE                                                                      */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.table_wrapper {
+    /*
+   * اسکرول افقی روی موبایل تا جدول از پنجره بیرون نزند.
+   * overflow-x: auto روی wrapper خارجی کافی است.
+   */
+    overflow-x: auto;
+    border: 1px solid $border;
+    border-radius: $radius-md;
+    background: $bg;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-sm);
+    color: $text;
+    direction: rtl;
+    text-align: right;
+
+    th {
+        padding: 14px 16px;
+        font-weight: var(--font-weight-medium);
+        color: $muted;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid $border;
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(246, 217, 130, 0.06);
+        vertical-align: middle;
+    }
+
+    &__row {
+        transition: background-color $transition;
+
+        &:hover {
+            background: rgba(246, 217, 130, 0.03);
+        }
+
+        &:last-child td {
+            border-bottom: none;
+        }
+    }
+
+    &__id {
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary);
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__amount {
+        font-weight: var(--font-weight-medium);
+        color: #82f6a3;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    &__date {
+        color: $muted;
+        white-space: nowrap;
+    }
+}
+
+/* ─── کاربر ─────────────────────────────────────────────────────────────── */
+
+.user_cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    &__name {
+        font-weight: var(--font-weight-medium);
+        color: $text;
+    }
+
+    &__phone {
+        font-size: 12px;
+        color: $muted;
+        direction: ltr; // شماره موبایل LTR بماند
+        text-align: right;
+    }
+
+    // نام صاحب کارت – فقط برای پرداخت‌های کارت‌به‌کارت نمایش داده می‌شود
+    &__card {
+        font-size: 12px;
+        color: #f6a832;
+    }
+}
+
+/* ─── روش پرداخت ──────────────────────────────────────────────────────────  */
+
+.method_label {
+    font-size: 12px;
+    color: $muted;
+}
+
+/* ─── وضعیت + کد رهگیری ────────────────────────────────────────────────── */
+
+.status_cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tracking_code {
+    font-size: 12px;
+    color: #82d9f6;
+    direction: ltr;
+    text-align: right;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* BADGE                                                                      */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: var(--font-weight-medium);
+    border: 1px solid transparent;
+    white-space: nowrap;
+    /*
+   * color, backgroundColor و borderColor از JSX به صورت inline style می‌آیند.
+   * این کار باعث می‌شود یک کامپوننت Badge واحد برای همه وضعیت‌ها کار کند.
+   */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* ACTIONS                                                                    */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.action_btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: $radius-sm;
+    font-size: 12px;
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all $transition;
+    white-space: nowrap;
+    font-family: inherit;
+
+    &--receipt {
+        background: rgba(246, 168, 50, 0.1);
+        color: #f6a832;
+        border-color: rgba(246, 168, 50, 0.25);
+
+        &:hover {
+            background: rgba(246, 168, 50, 0.2);
+        }
+    }
+
+    &--status {
+        background: rgba(130, 217, 246, 0.1);
+        color: #82d9f6;
+        border-color: rgba(130, 217, 246, 0.25);
+
+        &:hover {
+            background: rgba(130, 217, 246, 0.2);
+        }
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* EMPTY STATE                                                                */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 64px 24px;
+    text-align: center;
+    color: $muted;
+
+    span {
+        font-size: 48px;
+    }
+
+    p {
+        font-size: var(--font-md);
+        margin: 0;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* MODAL                                                                      */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.modal_backdrop {
+    /*
+   * تمام صفحه را می‌پوشاند. کلیک روی backdrop مودال را می‌بندد.
+   * z-index بالا تا روی sidebar هم نمایش داده شود.
+   */
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal {
+    background: #0d2626;
+    border: 1px solid rgba(246, 217, 130, 0.15);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 28px;
+    animation: slideUp 0.25s ease;
+
+    @media (max-width: 480px) {
+        padding: 20px;
+        border-radius: 14px;
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &__title {
+        font-size: var(--font-lg);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-primary);
+        margin: 0;
+    }
+
+    &__close {
+        background: none;
+        border: none;
+        color: $muted;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: all $transition;
+
+        &:hover {
+            color: $text;
+            background: rgba(255, 255, 255, 0.05);
+        }
+    }
+
+    &__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 14px 16px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: $radius-sm;
+        font-size: var(--font-sm);
+        color: $muted;
+
+        strong {
+            color: $text;
+        }
+    }
+
+    /* ── ناحیه تصویر رسید ────────────────────────────────────────── */
+    &__receipt {
+        min-height: 160px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px dashed rgba(246, 217, 130, 0.2);
+        border-radius: $radius-md;
+        overflow: hidden;
+
+        a {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        &_img {
+            width: 100%;
+            max-height: 320px;
+            object-fit: contain;
+            border-radius: $radius-sm;
+            cursor: zoom-in;
+            transition: opacity $transition;
+
+            &:hover {
+                opacity: 0.9;
+            }
+        }
+
+        &_hint {
+            font-size: 12px;
+            color: $muted;
+        }
+
+        &_empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: $muted;
+            padding: 32px;
+
+            span {
+                font-size: 36px;
+            }
+
+            p {
+                margin: 0;
+                font-size: var(--font-sm);
+            }
+        }
+    }
+
+    /* ── فیلدهای فرم ────────────────────────────────────────────── */
+    &__field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    &__label {
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-medium);
+        color: rgba(255, 250, 234, 0.7);
+    }
+
+    &__required {
+        color: #f68282;
+        margin-right: 2px;
+    }
+
+    &__select,
+    &__input {
+        padding: 10px 14px;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid $border;
+        border-radius: $radius-sm;
+        color: $text;
+        font-size: var(--font-sm);
+        font-family: inherit;
+        outline: none;
+        transition: border-color $transition;
+        width: 100%;
+
+        &:focus {
+            border-color: rgba(246, 217, 130, 0.4);
+            box-shadow: 0 0 0 3px rgba(246, 217, 130, 0.06);
+        }
+    }
+
+    &__select option {
+        background: #0d2626;
+        color: $text;
+    }
+
+    &__hint {
+        font-size: 12px;
+        color: $muted;
+    }
+
+    &__error {
+        font-size: var(--font-sm);
+        color: #f68282;
+        margin: 0;
+        padding: 10px 14px;
+        background: rgba(246, 130, 130, 0.08);
+        border-radius: $radius-sm;
+        border: 1px solid rgba(246, 130, 130, 0.2);
+    }
+
+    &__actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* BUTTONS                                                                    */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.btn {
+    padding: 10px 20px;
+    border-radius: $radius-sm;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all $transition;
+    font-family: inherit;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    &--primary {
+        background: var(--color-text-primary);
+        color: #061818;
+        border-color: var(--color-text-primary);
+
+        &:hover:not(:disabled) {
+            background: var(--color-title-hover);
+        }
+    }
+
+    &--success {
+        background: rgba(130, 246, 163, 0.15);
+        color: #82f6a3;
+        border-color: rgba(130, 246, 163, 0.3);
+
+        &:hover:not(:disabled) {
+            background: rgba(130, 246, 163, 0.25);
+        }
+    }
+
+    &--danger {
+        background: rgba(246, 130, 130, 0.12);
+        color: #f68282;
+        border-color: rgba(246, 130, 130, 0.25);
+
+        &:hover:not(:disabled) {
+            background: rgba(246, 130, 130, 0.22);
+        }
+    }
+
+    &--ghost {
+        background: transparent;
+        color: $muted;
+        border-color: $border;
+
+        &:hover:not(:disabled) {
+            color: $text;
+            background: rgba(255, 255, 255, 0.04);
+        }
+    }
+}

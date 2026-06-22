@@ -1,0 +1,55 @@
+/**
+ * @file src/app/admin/orders/orders.module.scss
+ * @description استایل صفحه مدیریت سفارش‌ها
+ */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    max-width: 1200px;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    &__title {
+        font-size: var(--font-xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-primary);
+        margin: 0;
+    }
+
+    &__count {
+        font-size: var(--font-sm);
+        color: rgba(255, 250, 234, 0.5);
+        background: rgba(246, 217, 130, 0.08);
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(246, 217, 130, 0.15);
+    }
+
+    &__error {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 24px;
+        background: rgba(255, 80, 80, 0.08);
+        border: 1px solid rgba(255, 80, 80, 0.2);
+        border-radius: 12px;
+        color: #ff9999;
+        font-size: var(--font-sm);
+
+        span {
+            font-size: 20px;
+        }
+
+        p {
+            margin: 0;
+        }
+    }
+}
