@@ -1,0 +1,44 @@
+/**
+ * @file src/app/admin/admin.module.scss
+ * @description Layout styles for the Admin Dashboard wrapper.
+ *
+ * Design tokens are imported from the global CSS Custom Properties defined
+ * in styles.md and applied via `var(--token)`. This keeps the admin panel
+ * consistent with the rest of the design system while having its own
+ * dark-neutral aesthetic suited for a data-heavy dashboard.
+ */
+
+/* ─── Dashboard Shell ──────────────────────────────────────────────────────── */
+
+.dashboard {
+    display: flex;
+    min-height: 100vh;
+
+    /*
+   * Dark background for the entire admin area. We use a slightly lighter
+   * shade than --color-bg-primary (#061818) to differentiate the admin
+   * environment from the public-facing site.
+   */
+    background-color: #0a1f1f;
+    color: var(--color-card-text);
+    font-family: inherit;
+
+    /* ─── Main Content Area ──────────────────────────────────────────────── */
+    &__main {
+        /*
+     * Takes up all remaining space next to the 250px sidebar.
+     * flex: 1 ensures it stretches to fill the viewport width.
+     */
+        flex: 1;
+        padding: 40px;
+        overflow-y: auto;
+
+        /*
+     * Responsive: on tablet/mobile the sidebar collapses, so we reduce
+     * padding to avoid cramped layouts.
+     */
+        @media (max-width: 768px) {
+            padding: 20px 16px;
+        }
+    }
+}

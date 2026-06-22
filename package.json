@@ -12,6 +12,7 @@
     "axios": "^1.13.2",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.22",
+    "lucide-react": "^1.21.0",
     "marked": "^16.4.0",
     "next": "^16.1.6",
     "next-auth": "^4.24.13",

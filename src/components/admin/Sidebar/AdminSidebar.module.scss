@@ -1,0 +1,257 @@
+/**
+ * @file src/components/admin/Sidebar/AdminSidebar.module.scss
+ * @description Modular SCSS for the Admin Sidebar component.
+ *
+ * Design philosophy:
+ *   - Dark/neutral theme – distinct from the public-facing gold-on-dark palette.
+ *   - Uses project CSS Custom Properties (var(--token)) for typography & color
+ *     consistency, but introduces sidebar-specific local variables for clarity.
+ *   - BEM naming convention as required by styles.md.
+ *   - Responsive: icon-only mode on screens ≤ 768px.
+ *
+ * Local variables (sidebar-specific, not in global :root):
+ *   $sidebar-width:       250px – full expanded width on desktop
+ *   $sidebar-width-sm:   64px  – icon-only collapsed width on mobile
+ *   $sidebar-bg:         #0d2626 – slightly lighter than page bg for depth
+ *   $sidebar-accent:     var(--color-text-primary) – gold from the design system
+ *   $sidebar-hover-bg:   rgba(246, 217, 130, 0.08) – subtle gold tint on hover
+ *   $sidebar-active-bg:  rgba(246, 217, 130, 0.15) – stronger tint for active link
+ */
+
+/* ─── Local Variables ──────────────────────────────────────────────────────── */
+$sidebar-width: 250px;
+$sidebar-width-sm: 64px;
+$sidebar-bg: #0d2626;
+$sidebar-border: rgba(246, 217, 130, 0.12);
+$sidebar-accent: var(--color-text-primary); // #F6D982 from styles.md
+$sidebar-text: var(--color-card-text); // #FFFAEA from styles.md
+$sidebar-muted: rgba(255, 250, 234, 0.5);
+$sidebar-hover-bg: rgba(246, 217, 130, 0.08);
+$sidebar-active-bg: rgba(246, 217, 130, 0.15);
+$sidebar-active-bar: 3px solid var(--color-text-primary);
+$transition-speed: 0.2s;
+
+/* ─── Sidebar Shell ────────────────────────────────────────────────────────── */
+
+.sidebar {
+    /*
+   * Fixed width sidebar that stays sticky to the viewport height.
+   * `position: sticky` + `height: 100vh` pins it alongside scrollable content
+   * without taking it completely out of document flow (unlike position: fixed),
+   * which ensures the main content area calculates its width correctly.
+   */
+    width: $sidebar-width;
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+    flex-shrink: 0; // prevent flex from squeezing the sidebar
+
+    background-color: $sidebar-bg;
+    border-left: 1px solid $sidebar-border; // RTL: border on left side
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+    transition: width $transition-speed ease;
+
+    /* ─── Responsive: Collapse to icon-only on mobile ────────────────────── */
+    @media (max-width: 768px) {
+        width: $sidebar-width-sm;
+
+        // Hide text labels – only icons remain visible
+        .sidebar__brand_title,
+        .sidebar__profile_info,
+        .sidebar__nav_label {
+            display: none;
+        }
+
+        .sidebar__brand {
+            justify-content: center;
+            padding: 24px 0;
+        }
+
+        .sidebar__profile {
+            justify-content: center;
+            padding: 16px 0;
+        }
+
+        .sidebar__nav_link {
+            justify-content: center;
+            padding: 14px;
+        }
+
+        .sidebar__signout {
+            justify-content: center;
+            padding: 12px;
+
+            span {
+                display: none;
+            }
+        }
+    }
+}
+
+/* ─── Brand / Logo ─────────────────────────────────────────────────────────── */
+
+.sidebar__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid $sidebar-border;
+
+    &_icon {
+        font-size: 22px;
+        color: $sidebar-accent;
+        flex-shrink: 0;
+    }
+
+    &_title {
+        font-size: var(--font-md); // 16px
+        font-weight: var(--font-weight-bold); // 700
+        color: $sidebar-accent;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+    }
+}
+
+/* ─── User Profile Mini-Card ───────────────────────────────────────────────── */
+
+.sidebar__profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px;
+    border-bottom: 1px solid $sidebar-border;
+
+    &_info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        overflow: hidden; // prevent long names from breaking layout
+    }
+
+    &_name {
+        font-size: var(--font-sm); // 14px
+        font-weight: var(--font-weight-medium);
+        color: $sidebar-text;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &_role {
+        font-size: 11px;
+        color: $sidebar-accent;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+}
+
+.sidebar__avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid $sidebar-accent;
+    flex-shrink: 0;
+}
+
+.sidebar__avatar_icon {
+    color: $sidebar-accent;
+    flex-shrink: 0;
+}
+
+/* ─── Navigation ───────────────────────────────────────────────────────────── */
+
+.sidebar__nav {
+    flex: 1; // push footer to bottom
+    padding: 16px 0;
+
+    &_list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    &_item {
+        padding: 0 12px;
+    }
+
+    &_link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        text-decoration: none;
+        color: $sidebar-muted;
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-medium);
+        transition:
+            background-color $transition-speed ease,
+            color $transition-speed ease,
+            border-right-color $transition-speed ease;
+        border-right: 3px solid transparent; // RTL active indicator placeholder
+
+        &:hover {
+            background-color: $sidebar-hover-bg;
+            color: $sidebar-text;
+        }
+
+        /* ── Active State ── */
+        &--active {
+            background-color: $sidebar-active-bg;
+            color: $sidebar-accent;
+            border-right: $sidebar-active-bar;
+
+            .sidebar__nav_icon {
+                color: $sidebar-accent;
+            }
+        }
+    }
+
+    &_icon {
+        flex-shrink: 0;
+        color: inherit;
+        transition: color $transition-speed ease;
+    }
+
+    &_label {
+        white-space: nowrap;
+    }
+}
+
+/* ─── Footer / Sign Out ────────────────────────────────────────────────────── */
+
+.sidebar__footer {
+    padding: 16px 20px;
+    border-top: 1px solid $sidebar-border;
+}
+
+.sidebar__signout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid $sidebar-border;
+    border-radius: 8px;
+    background: transparent;
+    color: $sidebar-muted;
+    font-size: var(--font-sm);
+    cursor: pointer;
+    transition:
+        background-color $transition-speed ease,
+        color $transition-speed ease,
+        border-color $transition-speed ease;
+
+    &:hover {
+        background-color: rgba(255, 80, 80, 0.1); // subtle red tint for destructive action
+        color: #ff8080;
+        border-color: rgba(255, 80, 80, 0.3);
+    }
+}
