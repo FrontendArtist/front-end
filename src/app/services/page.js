@@ -32,7 +32,9 @@
 import ListGuard from '@/components/layout/ListGuard';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ServiceGrid from '@/modules/services/ServiceGrid/ServiceGrid';
+import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock';
 import { getServicesPaginated } from '@/lib/servicesApi';
+import { unstable_noStore as noStore } from 'next/cache';
 import styles from './services.module.scss';
 
 /**
@@ -118,6 +120,19 @@ export default async function ServicesPage({ searchParams: spPromise }) {
       : searchParams || {};
   const hasFilters = Object.keys(normalizedSearchParams).length > 0;
   const result = await getServicesPaginated(1, 3, 'createdAt:desc');
+
+  if (result.error === 'BACKEND_UNAVAILABLE') {
+    noStore();
+    return (
+      <main className={styles.main}>
+        <div className="container">
+          <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'خدمات' }]} />
+          <ServerErrorBlock message="ارتباط با سرور خدمات برقرار نشد" />
+        </div>
+      </main>
+    );
+  }
+
   const services = result.data;
 
   // Breadcrumb items

@@ -75,7 +75,11 @@ export async function getAllCourses() {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی دوره‌ها:', error.message);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 
@@ -140,7 +144,11 @@ export async function getCourses({ limit = 4 } = {}) {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی دوره‌ها:', error.message);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 
@@ -185,11 +193,14 @@ export async function getCoursesPaginated(page = 1, pageSize = 6, sort = 'create
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی دوره‌های صفحه‌بندی‌شده:', error.message);
     }
-    // برگرداندن ساختار خالی اما معتبر
-    return {
+    const fallback = {
       data: [],
       meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } }
     };
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 

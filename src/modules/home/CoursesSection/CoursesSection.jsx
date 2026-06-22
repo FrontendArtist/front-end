@@ -17,7 +17,7 @@ import styles from './CoursesSection.module.scss';
  * @param {Array} props.data - آرایه دوره‌های دریافتی از Strapi
  * @returns {React.ReactElement} بخش نمایش دوره‌ها
  */
-const CoursesSection = ({ data = [] }) => {
+const CoursesSection = ({ data = [], serverError = false }) => {
   /**
    * Function to render a single course card for the slider.
    * @param {object} course - The course data object.
@@ -27,7 +27,23 @@ const CoursesSection = ({ data = [] }) => {
     return <CourseCard course={course} />;
   };
 
-  // Fallback در صورت خالی بودن داده‌ها
+  // Fallback در صورت خطای سرور
+  if (serverError) {
+    return (
+      <section id="courses-section" className={`${styles.coursesSection} section`}>
+        <div className="container">
+          <header className={styles.header}>
+            <h2 className={styles.title}>آخرین دوره‌ها</h2>
+            <Link href="/courses" className={styles.viewAllLink}>
+              مشاهده همه
+            </Link>
+          </header>
+          <p className={styles.emptyState} style={{ color: 'var(--color-error)' }}>ارتباط با سرور برقرار نشد.</p>
+        </div>
+      </section>
+    );
+  }
+
   if (!data || data.length === 0) {
     return (
       <section id="courses-section" className={`${styles.coursesSection} section`}>

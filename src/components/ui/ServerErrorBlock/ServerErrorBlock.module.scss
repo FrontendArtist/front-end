@@ -1,0 +1,109 @@
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 40px 20px;
+    min-height: 250px;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+    background: rgba(6, 24, 24, 0.4);
+    border: 1px solid rgba(255, 107, 107, 0.15);
+    border-radius: 20px;
+    padding: 32px 24px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+
+    &:hover {
+        border-color: rgba(255, 107, 107, 0.3);
+        box-shadow: 0 15px 35px rgba(255, 107, 107, 0.05);
+    }
+}
+
+.iconWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 107, 107, 0.1);
+    margin-bottom: 20px;
+}
+
+.icon {
+    width: 32px;
+    height: 32px;
+    color: var(--color-error, #ff6b6b);
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.title {
+    font-size: var(--font-md-lg, 18px);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--color-card-text, #fffaea);
+    margin-bottom: 12px;
+    line-height: var(--line-height-sm, 1.4);
+}
+
+.description {
+    font-size: var(--font-sm, 14px);
+    font-weight: var(--font-weight-regular, 400);
+    color: var(--color-cream-op-40, rgba(255, 250, 234, 0.5));
+    margin-bottom: 24px;
+    line-height: var(--line-height-md, 1.6);
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--color-text-primary, #f6d982);
+    border: 1px solid var(--color-text-primary, #f6d982);
+    border-radius: 12px;
+    padding: 10px 24px;
+    font-size: var(--font-sm, 14px);
+    font-weight: var(--font-weight-medium, 500);
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background: var(--color-text-primary, #f6d982);
+        color: var(--color-bg-primary, #061818);
+        box-shadow: 0 0 15px var(--color-primary-op-40, rgba(246, 217, 130, 0.4));
+
+        .buttonIcon {
+            transform: rotate(180deg);
+        }
+    }
+}
+
+.buttonIcon {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.5s ease;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.8;
+    }
+}

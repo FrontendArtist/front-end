@@ -35,7 +35,11 @@ export async function getMainCategories() {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('❌ خطا در واکشی دسته‌های اصلی:', error);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 
@@ -81,6 +85,10 @@ export async function getCategoryTree() {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('❌ خطا در واکشی ساختار درختی دسته‌ها:', error);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }

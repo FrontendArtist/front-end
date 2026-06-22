@@ -40,7 +40,11 @@ export async function getArticleCategories() {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی دسته‌بندی‌های مقالات:', error.message);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 
@@ -55,7 +59,11 @@ export async function getAllArticles() {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی مقالات:', error.message);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 
@@ -99,7 +107,11 @@ export async function getArticles({
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی مقالات:', error.message);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 
@@ -136,9 +148,13 @@ export async function getArticlesPaginated(
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی مقالات صفحه‌بندی‌شده:', error.message);
     }
-    return {
+    const fallback = {
       data: [],
       meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } }
     };
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }

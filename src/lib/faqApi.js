@@ -56,7 +56,11 @@ export async function getAllFaqs() {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی سوالات متداول:', error.message);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 

@@ -1,7 +1,7 @@
 import Accordion from '@/components/ui/Accordion/Accordion';
 import styles from './FaqSection.module.scss';
 
-const FaqSection = ({ data = [] }) => {
+const FaqSection = ({ data = [], serverError = false }) => {
   const faqs = data;
 
   return (
@@ -10,7 +10,9 @@ const FaqSection = ({ data = [] }) => {
         <header className={styles.header}>
           <h2 className={styles.title}>سوالات متداول</h2>
         </header>
-        {faqs.length > 0 ? (
+        {serverError ? (
+          <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-error)' }}>ارتباط با سرور برقرار نشد.</p>
+        ) : faqs && faqs.length > 0 ? (
           <div className={styles.accordionWrapper}>
             <Accordion items={faqs} />
           </div>

@@ -75,7 +75,11 @@ export async function getAllServices() {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی خدمات:', error.message);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 
@@ -142,7 +146,11 @@ export async function getServices({ limit = 3, sort = 'createdAt:desc' } = {}) {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی خدمات:', error.message);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 
@@ -187,11 +195,14 @@ export async function getServicesPaginated(page = 1, pageSize = 6, sort = 'creat
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی خدمات صفحه‌بندی‌شده:', error.message);
     }
-    // برگرداندن ساختار خالی اما معتبر
-    return {
+    const fallback = {
       data: [],
       meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } }
     };
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 

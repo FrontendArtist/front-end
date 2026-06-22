@@ -10,6 +10,8 @@ import ServicesSection from "@/modules/home/ServicesSection/ServicesSection";
 import ArticlesSection from "@/modules/home/ArticlesSection/ArticlesSection";
 import FaqSection from "@/modules/home/FaqSection/FaqSection";
 import TestimonialsSection from "@/modules/home/TestimonialsSection/TestimonialsSection";
+import ServerErrorBlock from "@/components/ui/ServerErrorBlock/ServerErrorBlock";
+import { unstable_noStore as noStore } from "next/cache";
 
 import { getMainCategories } from '@/lib/categoriesApi';
 import { getAllFaqs } from '@/lib/faqApi';
@@ -22,42 +24,48 @@ import { getCourses } from '@/lib/coursesApi';
 export const revalidate = 60;
 
 export default async function HomePage() {
-  let categories = [];
-  let faqs = [];
-  let testimonials = [];
-  let products = [];
-  let articles = [];
-  let services = [];
-  let courses = [];
+  // هر درخواست به صورت مستقل انجام می‌شود تا در صورت قطعی سرور،
+  // خطای یک بخش باعث از دست رفتن داده‌های بقیه نشود.
+  const [
+    categoriesResult,
+    faqsResult,
+    testimonialsResult,
+    productsResult,
+    articlesResult,
+    servicesResult,
+    coursesResult,
+  ] = await Promise.allSettled([
+    getMainCategories(),
+    getAllFaqs(),
+    getAllTestimonials(),
+    getProducts({ limit: 20 }),
+    getArticles({ limit: 20 }),
+    getServices({ limit: 20 }),
+    getCourses({ limit: 20 }),
+  ]);
 
-  try {
-    const [
-      fetchedCategories,
-      fetchedFaqs,
-      fetchedTestimonials,
-      fetchedProducts,
-      fetchedArticles,
-      fetchedServices,
-      fetchedCourses
-    ] = await Promise.all([
-      getMainCategories(),
-      getAllFaqs(),
-      getAllTestimonials(),
-      getProducts({ limit: 20 }),
-      getArticles({ limit: 20 }),
-      getServices({ limit: 20 }),
-      getCourses({ limit: 20 }),
-    ]);
+  const resolveData = (result) => {
+    if (result.status === 'fulfilled') return result.value ?? [];
+    // اگر Promise کاملاً reject شد (خطای غیرمنتظره)، آرایه خالی برمی‌گردانیم
+    const fallback = [];
+    fallback.error = 'BACKEND_UNAVAILABLE';
+    return fallback;
+  };
 
-    categories = fetchedCategories || [];
-    faqs = fetchedFaqs || [];
-    testimonials = fetchedTestimonials || [];
-    products = fetchedProducts || [];
-    articles = fetchedArticles || [];
-    services = fetchedServices || [];
-    courses = fetchedCourses || [];
-  } catch (err) {
-    console.warn("⚠️ Failed to fetch home data (Strapi may be offline):", err.message);
+  const categories = resolveData(categoriesResult);
+  const faqs = resolveData(faqsResult);
+  const testimonials = resolveData(testimonialsResult);
+  const products = resolveData(productsResult);
+  const articles = resolveData(articlesResult);
+  const services = resolveData(servicesResult);
+  const courses = resolveData(coursesResult);
+
+  const hasBackendError = [
+    categories, faqs, testimonials, products, articles, services, courses
+  ].some(arr => arr && arr.error === 'BACKEND_UNAVAILABLE');
+
+  if (hasBackendError) {
+    noStore();
   }
 
   return (
@@ -65,14 +73,14 @@ export default async function HomePage() {
       <HeroSection />
       <IntroTextSection />
       <AboutMentorSection />
-      <CoursesSection data={courses} />
+      <CoursesSection data={courses} serverError={courses?.error === 'BACKEND_UNAVAILABLE'} />
       <HakimElahiSection />
-      <ProductCategoriesSection data={categories} />
-      <ProductsSection data={products} />
-      <ServicesSection data={services} />
-      <ArticlesSection data={articles} />
-      <FaqSection data={faqs} />
-      <TestimonialsSection data={testimonials} />
+      <ProductCategoriesSection data={categories} serverError={categories?.error === 'BACKEND_UNAVAILABLE'} />
+      <ProductsSection data={products} serverError={products?.error === 'BACKEND_UNAVAILABLE'} />
+      <ServicesSection data={services} serverError={services?.error === 'BACKEND_UNAVAILABLE'} />
+      <ArticlesSection data={articles} serverError={articles?.error === 'BACKEND_UNAVAILABLE'} />
+      <FaqSection data={faqs} serverError={faqs?.error === 'BACKEND_UNAVAILABLE'} />
+      <TestimonialsSection data={testimonials} serverError={testimonials?.error === 'BACKEND_UNAVAILABLE'} />
     </div>
   );
 }

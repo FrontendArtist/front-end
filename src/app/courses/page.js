@@ -13,7 +13,9 @@
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ListGuard from '@/components/layout/ListGuard';
 import CourseGrid from '@/modules/courses/CourseGrid/CourseGrid';
+import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock';
 import { getCoursesPaginated } from '@/lib/coursesApi';
+import { unstable_noStore as noStore } from 'next/cache';
 import styles from '../articles/articles.module.scss'; // Reusing styles
 
 export const metadata = {
@@ -40,6 +42,19 @@ export default async function CoursesPage({ searchParams: spPromise }) {
       : searchParams || {};
   const hasFilters = Object.keys(normalizedSearchParams).length > 0;
   const result = await getCoursesPaginated(1, 6, 'createdAt:desc');
+
+  if (result.error === 'BACKEND_UNAVAILABLE') {
+    noStore();
+    return (
+      <main className={styles.main}>
+        <div className="container">
+          <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'دوره‌ها' }]} />
+          <ServerErrorBlock message="ارتباط با سرور دوره‌ها برقرار نشد" />
+        </div>
+      </main>
+    );
+  }
+
   const initialCourses = result.data;
 
   return (

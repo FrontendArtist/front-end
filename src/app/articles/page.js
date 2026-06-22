@@ -15,6 +15,8 @@ import ArticleGrid from '@/modules/articles/ArticleGrid/ArticleGrid';
 import { getArticlesPaginated, getArticleCategories } from '@/lib/articlesApi';
 import { ARTICLES_PAGE_SIZE } from '@/lib/constants';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
+import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock';
+import { unstable_noStore as noStore } from 'next/cache';
 import styles from './articles.module.scss';
 
 export const metadata = {
@@ -51,6 +53,18 @@ export default async function ArticlesPage({ searchParams: spPromise }) {
     getArticlesPaginated(1, ARTICLES_PAGE_SIZE, sort, activeCategory || null),
     getArticleCategories()
   ]);
+
+  if (result.error === 'BACKEND_UNAVAILABLE' || categories.error === 'BACKEND_UNAVAILABLE') {
+    noStore();
+    return (
+      <main className={styles.main}>
+        <div className="container">
+          <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'مقالات' }]} />
+          <ServerErrorBlock message="ارتباط با سرور مقالات برقرار نشد" />
+        </div>
+      </main>
+    );
+  }
 
   const initialArticles = result.data;
   const initialMeta = result.meta;

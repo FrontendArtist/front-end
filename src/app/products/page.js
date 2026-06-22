@@ -16,6 +16,8 @@ import { getProductsPaginated } from '@/lib/productsApi';
 import { getCategoryTree } from '@/lib/categoriesApi';
 import { getProductBreadcrumbs } from '@/lib/breadcrumbs';
 import ProductsPageClient from '@/modules/products/ProductsPageClient/ProductsPageClient';
+import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock';
+import { unstable_noStore as noStore } from 'next/cache';
 import styles from './products.module.scss';
 
 // SEO Metadata for the page
@@ -57,7 +59,7 @@ export default async function ProductsPage({ searchParams: spPromise }) {
   let subSlugs = [];
 
   // Find current category objects if slugs exist
-  if (categorySlug) {
+  if (categories && !categories.error && categorySlug) {
     currentCategory = categories.find(c => c.slug === categorySlug);
 
     if (currentCategory) {
@@ -70,11 +72,26 @@ export default async function ProductsPage({ searchParams: spPromise }) {
     }
   }
 
-  const { data, meta } = await getProductsPaginated(page, 6, sort, {
+  const productsResult = await getProductsPaginated(page, 6, sort, {
     categorySlug: categorySlug || undefined,
     subCategorySlug: subCategorySlug || undefined,
     subSlugs
   });
+
+  if ((categories && categories.error === 'BACKEND_UNAVAILABLE') || productsResult.error === 'BACKEND_UNAVAILABLE') {
+    noStore();
+    return (
+      <main className={styles.main}>
+        <div className="container">
+          <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'محصولات' }]} />
+          <ServerErrorBlock message="ارتباط با سرور محصولات برقرار نشد" />
+        </div>
+      </main>
+    );
+  }
+
+  const data = productsResult.data;
+  const meta = productsResult.meta;
 
   const breadcrumbItems = getProductBreadcrumbs({
     category: currentCategory,

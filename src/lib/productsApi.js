@@ -19,7 +19,11 @@ export async function getAllProducts() {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی محصولات:', error.message);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 
@@ -107,7 +111,11 @@ export async function getProducts({ limit = 4, sort = 'createdAt:desc' } = {}) {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی محصولات:', error.message);
     }
-    return [];
+    const fallback = [];
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }
 
@@ -172,10 +180,13 @@ export async function getProductsPaginated(
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
       console.error('خطا در واکشی محصولات صفحه‌بندی‌شده:', error.message);
     }
-    // در صورت خطای 400 هم آرایه خالی برمی‌گردانیم تا صفحه کرش نکند
-    return {
+    const fallback = {
       data: [],
       meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } },
     };
+    if (error.message === 'BACKEND_UNAVAILABLE') {
+      fallback.error = 'BACKEND_UNAVAILABLE';
+    }
+    return fallback;
   }
 }

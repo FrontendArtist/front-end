@@ -4,10 +4,26 @@ import ServiceCard from '@/components/cards/ServiceCard/ServiceCard';
 import BaseSlider from '@/components/layout/BaseSlider/BaseSlider';
 import styles from './ServicesSection.module.scss';
 
-const ServicesSection = ({ data = [] }) => {
+const ServicesSection = ({ data = [], serverError = false }) => {
   const renderServiceCard = (service) => <ServiceCard service={service} />;
 
-  // Show fallback message if no services available
+  // Show fallback message if server error
+  if (serverError) {
+    return (
+      <section className={`${styles.servicesSection} section`}>
+        <div className="container">
+          <header className={styles.header}>
+            <h2 className={styles.title}>خدمات</h2>
+            <Link href="/services" className={styles.viewAllLink}>
+              مشاهده همه خدمات ...
+            </Link>
+          </header>
+          <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-error)' }}>ارتباط با سرور برقرار نشد.</p>
+        </div>
+      </section>
+    );
+  }
+
   if (!data || data.length === 0) {
     return (
       <section className={`${styles.servicesSection} section`}>

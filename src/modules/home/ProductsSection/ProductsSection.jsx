@@ -4,7 +4,7 @@ import ProductCard from '@/components/cards/ProductCard/ProductCard';
 import BaseSlider from '@/components/layout/BaseSlider/BaseSlider';
 import styles from './ProductsSection.module.scss';
 
-const ProductsSection = ({ data = [] }) => {
+const ProductsSection = ({ data = [], serverError = false }) => {
   const products = data;
 
   /**
@@ -16,7 +16,23 @@ const ProductsSection = ({ data = [] }) => {
     return <ProductCard product={product} />;
   };
 
-  // Show fallback message if no products available
+  // Show fallback message if server error
+  if (serverError) {
+    return (
+      <section id="products-section" className={`${styles.productsSection} section`}>
+        <div className="container">
+          <header className={styles.header}>
+            <h2 className={styles.title}>جدیدترین محصولات</h2>
+            <Link href="/products" className={styles.viewAllLink}>
+              مشاهده همه
+            </Link>
+          </header>
+          <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-error)' }}>ارتباط با سرور برقرار نشد.</p>
+        </div>
+      </section>
+    );
+  }
+
   if (!products || products.length === 0) {
     return (
       <section id="products-section" className={`${styles.productsSection} section`}>
@@ -34,7 +50,7 @@ const ProductsSection = ({ data = [] }) => {
   }
 
   return (
-    <section  id="products-section" className={`${styles.productsSection} section`}>
+    <section id="products-section" className={`${styles.productsSection} section`}>
       <div className="container">
         <header className={styles.header}>
           <h2 className={styles.title}>جدیدترین محصولات</h2>

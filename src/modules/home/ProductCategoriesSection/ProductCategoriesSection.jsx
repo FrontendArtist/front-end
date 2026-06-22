@@ -13,11 +13,14 @@ import CategoryCard from '@/components/cards/CategoryCard/CategoryCard';
 import BaseSlider from '@/components/layout/BaseSlider/BaseSlider';
 import styles from './ProductCategoriesSection.module.scss';
 
-const ProductCategoriesSection = ({ data = [] }) => {
+const ProductCategoriesSection = ({ data = [], serverError = false }) => {
   const categories = data;
   const renderCategoryCard = (category) => {
     return <CategoryCard category={category} />;
   };
+
+  const hasError = serverError;
+  const isEmpty = !categories || categories.length === 0;
 
   return (
     <section className={`${styles.categoriesSection} section`}>
@@ -28,14 +31,20 @@ const ProductCategoriesSection = ({ data = [] }) => {
             مشاهده همه دسته بندی ها ...
           </Link>
         </header>
-        <div className={styles.sliderWrapper}>
-          <BaseSlider
-            items={categories}
-            renderItem={renderCategoryCard}
-            slidesPerView={6}
-            loop={true}
-          />
-        </div>
+        {hasError ? (
+          <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-error)' }}>ارتباط با سرور برقرار نشد.</p>
+        ) : isEmpty ? (
+          <p style={{ textAlign: 'center', padding: '2rem' }}>در حال حاضر دسته‌بندی وجود ندارد.</p>
+        ) : (
+          <div className={styles.sliderWrapper}>
+            <BaseSlider
+              items={categories}
+              renderItem={renderCategoryCard}
+              slidesPerView={6}
+              loop={true}
+            />
+          </div>
+        )}
       </div>
     </section>
   );
