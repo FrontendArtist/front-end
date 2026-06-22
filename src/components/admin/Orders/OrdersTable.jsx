@@ -25,19 +25,19 @@ import styles from './OrdersTable.module.scss';
 
 /** برچسب‌های فارسی وضعیت پرداخت */
 const PAYMENT_STATUS_CONFIG = {
-    pending_payment: { label: 'در انتظار پرداخت', color: '#F6D982', bg: 'rgba(246,217,130,0.12)' },
-    pending_verification: { label: 'انتظار تأیید رسید', color: '#f6a832', bg: 'rgba(246,168,50,0.12)' },
-    paid: { label: 'پرداخت شده', color: '#82f6a3', bg: 'rgba(130,246,163,0.12)' },
-    failed: { label: 'ناموفق / رد شده', color: '#f68282', bg: 'rgba(246,130,130,0.12)' },
+    pending_payment: { label: 'در انتظار پرداخت', color: 'var(--color-warning)', bg: 'var(--color-warning-op-15)' },
+    pending_verification: { label: 'انتظار تأیید رسید', color: 'var(--color-warning-amber)', bg: 'var(--color-warning-op-15)' },
+    paid: { label: 'پرداخت شده', color: 'var(--color-success)', bg: 'var(--color-success-op-12)' },
+    failed: { label: 'ناموفق / رد شده', color: 'var(--color-error)', bg: 'var(--color-error-op-12)' },
 };
 
 /** برچسب‌های فارسی وضعیت ارسال (دقیقاً با فاصله‌های Schema) */
 const ORDER_STATUS_CONFIG = {
-    'pending': { label: 'در پردازش', color: '#F6D982', bg: 'rgba(246,217,130,0.12)' },
-    'paid ': { label: 'پرداخت شده', color: '#82d9f6', bg: 'rgba(130,217,246,0.12)' },
-    'shipped ': { label: 'ارسال شده', color: '#82d9f6', bg: 'rgba(130,217,246,0.12)' },
-    'delivered ': { label: 'تحویل شده', color: '#82f6a3', bg: 'rgba(130,246,163,0.12)' },
-    'canceled ': { label: 'لغو شده', color: '#aaaaaa', bg: 'rgba(170,170,170,0.12)' },
+    'pending': { label: 'در پردازش', color: 'var(--color-warning)', bg: 'var(--color-warning-op-15)' },
+    'paid ': { label: 'پرداخت شده', color: 'var(--color-blue-light)', bg: 'var(--color-blue-op-15)' },
+    'shipped ': { label: 'ارسال شده', color: 'var(--color-blue-light)', bg: 'var(--color-blue-op-15)' },
+    'delivered ': { label: 'تحویل شده', color: 'var(--color-success)', bg: 'var(--color-success-op-12)' },
+    'canceled ': { label: 'لغو شده', color: 'var(--color-gray-cc)', bg: 'var(--color-black-op-20)' },
 };
 
 /** برچسب‌های روش پرداخت */
@@ -54,7 +54,7 @@ function Badge({ label, color, bg }) {
     return (
         <span
             className={styles.badge}
-            style={{ color, backgroundColor: bg, borderColor: `${color}40` }}
+            style={{ color, backgroundColor: bg, borderColor: 'transparent' }}
         >
             {label}
         </span>

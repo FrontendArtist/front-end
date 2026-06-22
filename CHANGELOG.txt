@@ -1,3 +1,41 @@
+ 
+[2026-06-22] - Admin Dashboard & Orders Subsystem (100% Complete)
+- Implemented `/admin/layout.jsx` and secured it using NextAuth to guard routes solely for `administrator` roles. Redirects unauthorized users seamlessly.
+- Built responsive `AdminSidebar` with active link detection, using centralized modular SCSS.
+- Created `/admin/page.jsx` (Dashboard) fetching stats (Users, Orders, Revenue) securely on the server via `adminApi.js`. Implemented `Graceful Degradation` using `Promise.allSettled`.
+- Created reusable `StatsCard` component with dynamic accent colors and modular SCSS.
+- Implemented `/admin/orders/page.jsx` fetching order history concurrently with Next.js 15 route parameters.
+- Designed `OrdersTable`, `ReceiptModal`, and `StatusUpdateModal` client components for interactive order management.
+- Implemented `/api/admin/orders/[id]` proxy route acting as a secure gateway, utilizing server-side JWT to securely update records and preventing client-side token exposure.
+- Solved Strapi v5 `documentId` compatibility issue by forwarding `documentId` correctly across client modals and API routes, avoiding numeric ID 404 errors.
+- Handled Strapi UI validation edge cases by correctly mapping unique legacy status enumerations with trailing spaces (e.g. `paid `, `shipped `).
+
+[2026-06-x] - Product Comments Display Fix (100% Complete)
+- Fixed an issue where comments were not displayed for products without categories or products only belonging to a top-level category (without subcategories).
+- Imported `getComments` and `CommentsSection` to both `src/app/product/[slug]/page.js` and `src/app/products/[category]/[subcategory]/page.js`.
+- Rendered the `CommentsSection` component dynamically by utilizing the `product.documentId` to query and showcase the corresponding initial comments correctly on these specific product routes.
+
+[2026-06-x] - UI Refinements & Breadcrumb Optimization (100% Complete)
+- Added missing `Breadcrumb` component to the Articles listing page (`/articles`).
+- Removed redundant page titles (`<h1>`) that duplicated Breadcrumb labels across all main domain pages:
+  - Products, Courses, Articles, Services, Contact, and About pages.
+- Added `Breadcrumb` navigation to the Cart page (`/cart`) for both empty and populated states.
+- Integrated `Breadcrumb` into the Profile layout (`/profile`), providing consistent global navigation above the sidebar.
+
+[2026-06-x] - Font Size Variable Centralization (100% Complete)
+- Refactored `src/styles/variables.css` to comprehensively centralize all font sizes.
+- Mapped all hardcoded `px` and `rem` typography values into a complete spacing scale variable system (from `--font-2xs: 10px` to `--font-4xl: 64px`).
+- Retained legacy alias variables (e.g. `--font-size-md`, `--font-size-xl`) to gracefully maintain backward compatibility.
+
+[2026-06-07] - Backend Error Handling Resilience (100% Complete)
+- Implemented global resilience pattern to gracefully handle Strapi backend outages without caching empty states.
+- Enhanced API layer (`productsApi`, `articlesApi`, `coursesApi`, `servicesApi`, `categoriesApi`, `faqApi`, `testimonialsApi`) to catch 'BACKEND_UNAVAILABLE' and return a fallback array with an `error` property.
+- Refactored `HomePage` (`app/page.js`) to use `Promise.allSettled` instead of `Promise.all`, isolating failures so one endpoint outage doesn't clear the entire page's data.
+- Created `ServerErrorBlock` component (`src/components/ui/ServerErrorBlock`) featuring a user-friendly outage message and a retry/refresh action.
+- Updated main page routes (`/articles`, `/products`, `/courses`, `/services`) to render the `ServerErrorBlock` and invoke `unstable_noStore()` when the backend flag is detected, preventing Next.js from caching empty states.
+- Updated `Navbar` to also utilize `unstable_noStore()` on backend failure to prevent header cache poisoning.
+- Refactored Home sections (`ProductsSection`, `ServicesSection`, `FaqSection`, etc.) to accept a `serverError` boolean prop (avoiding JSON serialization loss of the array `.error` property) and conditionally render a matching inline outage message.
+
 [2026-05-23] - Dark/Light Theme Switcher Feature (100% Complete)
  
 ─── FRONTEND SYSTEM ───────────────────────────────────────────────────────────

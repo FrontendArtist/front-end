@@ -184,6 +184,117 @@ export async function updateOrder(orderId, payload, jwt) {
 
         return { success: true, data: await res.json() };
     } catch (error) {
-        return { success: false, error: error.message || 'خطای شبکه' };
+        return { success: false, error: 'Server error' };
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 👥 واکشی لیست کاربران (ساده)
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getUsers(jwt, { page = 1, pageSize = 50 } = {}) {
+    const endpoint = `/api/users?populate=role&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+
+    // The users-permissions plugin natively returns an array or object in v5 depending on configuration, 
+    // but typically it returns an array for /api/users
+    try {
+        const res = await adminFetch(endpoint, jwt);
+        if (!res) return { users: [], error: true };
+
+        // Handle both possible structures from Strapi v5
+        const isArray = Array.isArray(res);
+        const usersList = isArray ? res : (res.data || []);
+
+        const users = usersList.map((u) => {
+            const attrs = u.attributes || u; // fallback for v4/v5 consistency
+            return {
+                id: u.id,
+                documentId: u.documentId || String(u.id),
+                username: attrs.username || attrs.name || '—',
+                firstName: attrs.firstName || '',
+                lastName: attrs.lastName || '',
+                email: attrs.email || '—',
+                phoneNumber: attrs.phoneNumber || '—',
+                role: attrs.role?.name || attrs.role?.type || 'نامشخص',
+                createdAt: attrs.createdAt
+            };
+        });
+
+        return { users, meta: isArray ? null : res.meta, error: false };
+    } catch (e) {
+        console.error('[getUsers] error:', e);
+        return { users: [], error: true };
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 👤 واکشی جزئیات کامل کاربر (همراه با سفارشات، دوره‌ها و کامنت‌ها)
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getUserDetails(userId, jwt) {
+    // Simplify population to avoid 500 errors from Strapi due to deep dynamic zone mapping
+    const populateQuery =
+        `populate[orders][populate]=*` +
+        `&populate[courses]=*` +
+        `&populate[comments][populate]=*`;
+
+    const endpoint = `/api/users/${userId}?${populateQuery}`;
+
+    try {
+        const res = await adminFetch(endpoint, jwt);
+        if (!res) return { user: null, error: true };
+
+        // Strapi v5 returns the object directly or nested in data
+        const attrs = res.data ? (res.data.attributes || res.data) : (res.attributes || res);
+        const dataWrap = res.data || res;
+
+        const user = {
+            id: dataWrap.id,
+            documentId: dataWrap.documentId || String(dataWrap.id),
+            username: attrs.username || '—',
+            email: attrs.email || '—',
+            phoneNumber: attrs.phoneNumber || '—',
+            createdAt: attrs.createdAt,
+            // Maps nested arrays properly
+            orders: (attrs.orders?.data || attrs.orders || []).map(o => ({
+                id: o.id,
+                documentId: o.documentId,
+                totalPrice: o.totalPrice ?? o.attributes?.totalPrice ?? 0,
+                orderStatus: o.orderStatus || o.attributes?.orderStatus || 'pending',
+                paymentStatus: o.paymentStatus || o.attributes?.paymentStatus || 'pending_payment',
+                createdAt: o.createdAt || o.attributes?.createdAt,
+                items: o.items || o.attributes?.items || []
+            })),
+            courses: (attrs.courses?.data || attrs.courses || []).map(c => ({
+                id: c.id,
+                documentId: c.documentId,
+                title: c.title || c.attributes?.title || '—',
+                price: c.price || c.attributes?.price || 0,
+            })),
+            comments: (attrs.comments?.data || attrs.comments || []).map(c => {
+                const cAttrs = c.attributes || c;
+                // Extract related entity if exists
+                const relatedArticle = cAttrs.article?.data?.attributes || cAttrs.article;
+                const relatedCourse = cAttrs.course?.data?.attributes || cAttrs.course;
+                const relatedProduct = cAttrs.product?.data?.attributes || cAttrs.product;
+
+                let relatedTo = null;
+                if (relatedArticle) relatedTo = { type: 'مقاله', title: relatedArticle.title };
+                if (relatedCourse) relatedTo = { type: 'دوره', title: relatedCourse.title };
+                if (relatedProduct) relatedTo = { type: 'محصول', title: relatedProduct.title };
+
+                return {
+                    id: c.id,
+                    documentId: c.documentId || String(c.id),
+                    content: cAttrs.content,
+                    isApproved: cAttrs.isApproved || false,
+                    createdAt: cAttrs.createdAt,
+                    relatedTo
+                };
+            })
+        };
+
+        return { user, error: false };
+    } catch (e) {
+        console.error('[getUserDetails] error:', e);
+        return { user: null, error: true };
     }
 }

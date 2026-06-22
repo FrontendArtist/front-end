@@ -6,26 +6,14 @@
  *   - OrdersTable.jsx
  *   - ReceiptModal.jsx
  *   - StatusUpdateModal.jsx
- *
- * BEM:
- *   .container        → wrapper کل جدول + toolbar
- *   .toolbar          → نوار جستجو
- *   .table_wrapper    → اسکرول افقی برای موبایل
- *   .table            → جدول اصلی
- *   .table__row       → هر ردیف
- *   .badge            → برچسب وضعیت (رنگ‌پذیر با CSS vars)
- *   .actions          → ناحیه دکمه‌های عملیات
- *   .modal_backdrop   → پس‌زمینه تاریک مودال
- *   .modal            → کارت مودال
- *   .btn              → دکمه‌های عمومی
  */
 
 /* ─── Local Variables ──────────────────────────────────────────────────────── */
-$bg: #0d2626;
-$border: rgba(246, 217, 130, 0.1);
-$text: var(--color-card-text); // #FFFAEA
-$muted: rgba(255, 250, 234, 0.45);
-$radius-md: 12px;
+$bg: var(--color-bg-primary);
+$border: var(--color-primary-op-10);
+$text: var(--color-card-text);
+$muted: var(--color-card-text);
+$radius-md: var(--border-radius);
 $radius-sm: 8px;
 $transition: 0.2s ease;
 
@@ -56,7 +44,7 @@ $transition: 0.2s ease;
     flex: 1;
     min-width: 220px;
     padding: 10px 16px;
-    background: $bg;
+    background: var(--color-black-op-10);
     border: 1px solid $border;
     border-radius: $radius-sm;
     color: $text;
@@ -70,8 +58,8 @@ $transition: 0.2s ease;
     }
 
     &:focus {
-        border-color: rgba(246, 217, 130, 0.4);
-        box-shadow: 0 0 0 3px rgba(246, 217, 130, 0.06);
+        border-color: var(--color-primary-op-40);
+        box-shadow: 0 0 0 3px var(--color-primary-op-05);
     }
 }
 
@@ -80,10 +68,6 @@ $transition: 0.2s ease;
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
 .table_wrapper {
-    /*
-   * اسکرول افقی روی موبایل تا جدول از پنجره بیرون نزند.
-   * overflow-x: auto روی wrapper خارجی کافی است.
-   */
     overflow-x: auto;
     border: 1px solid $border;
     border-radius: $radius-md;
@@ -102,14 +86,14 @@ $transition: 0.2s ease;
         padding: 14px 16px;
         font-weight: var(--font-weight-medium);
         color: $muted;
-        background: rgba(0, 0, 0, 0.2);
+        background: var(--color-black-op-20);
         border-bottom: 1px solid $border;
         white-space: nowrap;
     }
 
     td {
         padding: 14px 16px;
-        border-bottom: 1px solid rgba(246, 217, 130, 0.06);
+        border-bottom: 1px solid var(--color-primary-op-05);
         vertical-align: middle;
     }
 
@@ -117,7 +101,7 @@ $transition: 0.2s ease;
         transition: background-color $transition;
 
         &:hover {
-            background: rgba(246, 217, 130, 0.03);
+            background: var(--color-primary-op-05);
         }
 
         &:last-child td {
@@ -133,7 +117,7 @@ $transition: 0.2s ease;
 
     &__amount {
         font-weight: var(--font-weight-medium);
-        color: #82f6a3;
+        color: var(--color-success);
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
     }
@@ -157,23 +141,22 @@ $transition: 0.2s ease;
     }
 
     &__phone {
-        font-size: 12px;
+        font-size: var(--font-ssm);
         color: $muted;
         direction: ltr; // شماره موبایل LTR بماند
         text-align: right;
     }
 
-    // نام صاحب کارت – فقط برای پرداخت‌های کارت‌به‌کارت نمایش داده می‌شود
     &__card {
-        font-size: 12px;
-        color: #f6a832;
+        font-size: var(--font-ssm);
+        color: var(--color-warning-amber);
     }
 }
 
 /* ─── روش پرداخت ──────────────────────────────────────────────────────────  */
 
 .method_label {
-    font-size: 12px;
+    font-size: var(--font-ssm);
     color: $muted;
 }
 
@@ -186,8 +169,8 @@ $transition: 0.2s ease;
 }
 
 .tracking_code {
-    font-size: 12px;
-    color: #82d9f6;
+    font-size: var(--font-ssm);
+    color: var(--color-blue-light);
     direction: ltr;
     text-align: right;
 }
@@ -200,14 +183,10 @@ $transition: 0.2s ease;
     display: inline-block;
     padding: 4px 10px;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: var(--font-ssm);
     font-weight: var(--font-weight-medium);
     border: 1px solid transparent;
     white-space: nowrap;
-    /*
-   * color, backgroundColor و borderColor از JSX به صورت inline style می‌آیند.
-   * این کار باعث می‌شود یک کامپوننت Badge واحد برای همه وضعیت‌ها کار کند.
-   */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
@@ -226,7 +205,7 @@ $transition: 0.2s ease;
     gap: 4px;
     padding: 6px 12px;
     border-radius: $radius-sm;
-    font-size: 12px;
+    font-size: var(--font-ssm);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
     border: 1px solid transparent;
@@ -235,22 +214,22 @@ $transition: 0.2s ease;
     font-family: inherit;
 
     &--receipt {
-        background: rgba(246, 168, 50, 0.1);
-        color: #f6a832;
-        border-color: rgba(246, 168, 50, 0.25);
+        background: var(--color-warning-op-15);
+        color: var(--color-warning-amber);
+        border-color: var(--color-warning-op-30);
 
         &:hover {
-            background: rgba(246, 168, 50, 0.2);
+            background: var(--color-warning-op-30);
         }
     }
 
     &--status {
-        background: rgba(130, 217, 246, 0.1);
-        color: #82d9f6;
-        border-color: rgba(130, 217, 246, 0.25);
+        background: var(--color-blue-op-15);
+        color: var(--color-blue-light);
+        border-color: var(--color-blue-op-35);
 
         &:hover {
-            background: rgba(130, 217, 246, 0.2);
+            background: var(--color-blue-op-20);
         }
     }
 }
@@ -283,13 +262,9 @@ $transition: 0.2s ease;
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
 .modal_backdrop {
-    /*
-   * تمام صفحه را می‌پوشاند. کلیک روی backdrop مودال را می‌بندد.
-   * z-index بالا تا روی sidebar هم نمایش داده شود.
-   */
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--color-black-op-70);
     backdrop-filter: blur(4px);
     z-index: 1000;
     display: flex;
@@ -310,8 +285,8 @@ $transition: 0.2s ease;
 }
 
 .modal {
-    background: #0d2626;
-    border: 1px solid rgba(246, 217, 130, 0.15);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-primary-op-15);
     border-radius: 20px;
     width: 100%;
     max-width: 500px;
@@ -353,7 +328,7 @@ $transition: 0.2s ease;
 
         &:hover {
             color: $text;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--color-white-op-05);
         }
     }
 
@@ -362,7 +337,7 @@ $transition: 0.2s ease;
         flex-wrap: wrap;
         gap: 12px;
         padding: 14px 16px;
-        background: rgba(0, 0, 0, 0.2);
+        background: var(--color-black-op-20);
         border-radius: $radius-sm;
         font-size: var(--font-sm);
         color: $muted;
@@ -378,7 +353,7 @@ $transition: 0.2s ease;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 1px dashed rgba(246, 217, 130, 0.2);
+        border: 1px dashed var(--color-primary-op-20);
         border-radius: $radius-md;
         overflow: hidden;
 
@@ -404,8 +379,8 @@ $transition: 0.2s ease;
         }
 
         &_hint {
-            font-size: 12px;
-            color: $muted;
+            font-size: var(--font-ssm);
+            color: var(--color-card-text);
         }
 
         &_empty {
@@ -437,18 +412,18 @@ $transition: 0.2s ease;
     &__label {
         font-size: var(--font-sm);
         font-weight: var(--font-weight-medium);
-        color: rgba(255, 250, 234, 0.7);
+        color: var(--color-cream-op-40);
     }
 
     &__required {
-        color: #f68282;
+        color: var(--color-error);
         margin-right: 2px;
     }
 
     &__select,
     &__input {
         padding: 10px 14px;
-        background: rgba(0, 0, 0, 0.25);
+        background: var(--color-black-op-20);
         border: 1px solid $border;
         border-radius: $radius-sm;
         color: $text;
@@ -459,29 +434,29 @@ $transition: 0.2s ease;
         width: 100%;
 
         &:focus {
-            border-color: rgba(246, 217, 130, 0.4);
-            box-shadow: 0 0 0 3px rgba(246, 217, 130, 0.06);
+            border-color: var(--color-primary-op-40);
+            box-shadow: 0 0 0 3px var(--color-primary-op-05);
         }
     }
 
     &__select option {
-        background: #0d2626;
+        background: var(--color-bg-primary);
         color: $text;
     }
 
     &__hint {
-        font-size: 12px;
+        font-size: var(--font-ssm);
         color: $muted;
     }
 
     &__error {
         font-size: var(--font-sm);
-        color: #f68282;
+        color: var(--color-error);
         margin: 0;
         padding: 10px 14px;
-        background: rgba(246, 130, 130, 0.08);
+        background: var(--color-error-op-08);
         border-radius: $radius-sm;
-        border: 1px solid rgba(246, 130, 130, 0.2);
+        border: 1px solid var(--color-error-border);
     }
 
     &__actions {
@@ -525,7 +500,7 @@ $transition: 0.2s ease;
 
     &--primary {
         background: var(--color-text-primary);
-        color: #061818;
+        color: var(--color-bg-primary);
         border-color: var(--color-text-primary);
 
         &:hover:not(:disabled) {
@@ -534,22 +509,22 @@ $transition: 0.2s ease;
     }
 
     &--success {
-        background: rgba(130, 246, 163, 0.15);
-        color: #82f6a3;
-        border-color: rgba(130, 246, 163, 0.3);
+        background: var(--color-success-op-15);
+        color: var(--color-success);
+        border-color: var(--color-success-op-30);
 
         &:hover:not(:disabled) {
-            background: rgba(130, 246, 163, 0.25);
+            background: var(--color-success-op-25);
         }
     }
 
     &--danger {
-        background: rgba(246, 130, 130, 0.12);
-        color: #f68282;
-        border-color: rgba(246, 130, 130, 0.25);
+        background: var(--color-error-op-12);
+        color: var(--color-error);
+        border-color: var(--color-error-op-20);
 
         &:hover:not(:disabled) {
-            background: rgba(246, 130, 130, 0.22);
+            background: var(--color-error-op-20);
         }
     }
 
@@ -560,7 +535,7 @@ $transition: 0.2s ease;
 
         &:hover:not(:disabled) {
             color: $text;
-            background: rgba(255, 255, 255, 0.04);
+            background: var(--color-white-op-05);
         }
     }
 }

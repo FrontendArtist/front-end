@@ -15,11 +15,10 @@
     min-height: 100vh;
 
     /*
-   * Dark background for the entire admin area. We use a slightly lighter
-   * shade than --color-bg-primary (#061818) to differentiate the admin
+   * shade than --color-bg-primary to differentiate the admin
    * environment from the public-facing site.
    */
-    background-color: #0a1f1f;
+    background-color: var(--color-bg-primary);
     color: var(--color-card-text);
     font-family: inherit;
 

@@ -102,7 +102,7 @@ export default async function AdminDashboardPage() {
             title: 'کل سفارش‌ها',
             value: formatCount(totalOrders),
             icon: '🛒',
-            accentColor: '#F6D982', // gold – رنگ اصلی پروژه
+            accentColor: 'var(--color-text-primary)', // gold – رنگ اصلی پروژه
             subtitle: 'از ابتدای سیستم',
             isError: totalOrders === null,
         },
@@ -111,7 +111,7 @@ export default async function AdminDashboardPage() {
             title: 'درآمد کل',
             value: formatCurrency(totalRevenue),
             icon: '💰',
-            accentColor: '#82f6a3', // سبز برای درآمد
+            accentColor: 'var(--color-success)', // سبز برای درآمد
             subtitle: 'مجموع سفارش‌های ثبت‌شده',
             isError: totalRevenue === null,
         },
@@ -120,7 +120,7 @@ export default async function AdminDashboardPage() {
             title: 'کاربران ثبت‌نام‌شده',
             value: formatCount(totalUsers),
             icon: '👥',
-            accentColor: '#82d9f6', // آبی برای کاربران
+            accentColor: 'var(--color-blue-light)', // آبی برای کاربران
             subtitle: 'کل حساب‌های فعال',
             isError: totalUsers === null,
         },
@@ -129,7 +129,7 @@ export default async function AdminDashboardPage() {
             title: 'محصولات',
             value: formatCount(totalProducts),
             icon: '📦',
-            accentColor: '#f682d6', // بنفش برای محصولات
+            accentColor: 'var(--color-error)', // بنفش برای محصولات (تغییر به ارور/قرمز برای تم)
             subtitle: 'موجود در فروشگاه',
             isError: totalProducts === null,
         },
