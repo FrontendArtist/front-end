@@ -52,6 +52,11 @@ export async function getComments(entityType, entityId) {
             'populate[comment_replies][populate][comment_replies][populate][user][fields][0]': 'username',
             'populate[comment_replies][populate][comment_replies][populate][user][fields][1]': 'documentId',
 
+            // 👇👇👇 فیکس اصلی برای سطح سوم پاسخ‌ها (Level 3 Replies)
+            'populate[comment_replies][populate][comment_replies][populate][comment_replies][filters][isApproved][$eq]': 'true', // ✅ فیلتر برای Level 3
+            'populate[comment_replies][populate][comment_replies][populate][comment_replies][populate][user][fields][0]': 'username',
+            'populate[comment_replies][populate][comment_replies][populate][comment_replies][populate][user][fields][1]': 'documentId',
+
             'sort': 'createdAt:desc'
         });
 

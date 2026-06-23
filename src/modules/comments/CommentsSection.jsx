@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import CommentItem from './CommentItem';
 import { submitComment, getComments } from '@/lib/commentsApi';
@@ -31,6 +31,15 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
     const [replyingTo, setReplyingTo] = useState(null);
     const [submitStatus, setSubmitStatus] = useState('idle'); // 'idle' | 'success' | 'error'
     const [errorMessage, setErrorMessage] = useState('');
+
+    // محاسبه تعداد کل کامنت‌ها به صورت بازگشتی (شامل کامنت‌های اصلی و پاسخ‌ها)
+    const totalCommentsCount = useMemo(() => {
+        const getCount = (items) => {
+            if (!Array.isArray(items)) return 0;
+            return items.reduce((acc, item) => acc + 1 + getCount(item.replies), 0);
+        };
+        return getCount(comments);
+    }, [comments]);
 
     // Form data
     const [name, setName] = useState('');
@@ -304,7 +313,7 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
                 {comments.length > 0 && (
                     <div className={styles.commentsCount}>
                         <span>نظرات</span>
-                        <span className={styles.countBadge}>{comments.length}</span>
+                        <span className={styles.countBadge}>{totalCommentsCount}</span>
                     </div>
                 )}
 

@@ -230,21 +230,66 @@ export async function getUsers(jwt, { page = 1, pageSize = 50 } = {}) {
 // 👤 واکشی جزئیات کامل کاربر (همراه با سفارشات، دوره‌ها و کامنت‌ها)
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getUserDetails(userId, jwt) {
-    // Simplify population to avoid 500 errors from Strapi due to deep dynamic zone mapping
-    const populateQuery =
-        `populate[orders][populate]=*` +
-        `&populate[courses]=*` +
-        `&populate[comments][populate]=*`;
+    // ── کوئری ۱: اطلاعات پایه + سفارشات + دوره‌ها (بدون کامنت‌ها) ──────────────
+    // دلیل جدا کردن کامنت‌ها: وقتی Strapi چند رابطه Deep را در یک JOIN واکشی می‌کند
+    // ضرب دکارتی (Cartesian Product) ایجاد می‌شود و رکوردها تکرار می‌گردند.
+    const userEndpoint = `/api/users/${userId}?populate[orders][fields][0]=id&populate[orders][fields][1]=totalPrice&populate[orders][fields][2]=orderStatus&populate[orders][fields][3]=paymentStatus&populate[orders][fields][4]=createdAt&populate[courses][fields][0]=id&populate[courses][fields][1]=title&populate[courses][fields][2]=price`;
 
-    const endpoint = `/api/users/${userId}?${populateQuery}`;
+    // ── کوئری ۲: کامنت‌های کاربر — جداگانه با populate کامل روابط ───────────────
+    const commentsEndpoint = `/api/comments?filters[user][id][$eq]=${userId}&populate[article][fields][0]=title&populate[article][fields][1]=slug&populate[course][fields][0]=title&populate[course][fields][1]=slug&populate[product][fields][0]=title&populate[product][fields][1]=slug&populate[user][fields][0]=username&sort=createdAt:desc&pagination[limit]=100`;
 
     try {
-        const res = await adminFetch(endpoint, jwt);
-        if (!res) return { user: null, error: true };
+        const [userRes, commentsRes] = await Promise.all([
+            adminFetch(userEndpoint, jwt),
+            adminFetch(commentsEndpoint, jwt),
+        ]);
 
-        // Strapi v5 returns the object directly or nested in data
-        const attrs = res.data ? (res.data.attributes || res.data) : (res.attributes || res);
-        const dataWrap = res.data || res;
+        if (!userRes) return { user: null, error: true };
+
+        const attrs = userRes.data ? (userRes.data.attributes || userRes.data) : (userRes.attributes || userRes);
+        const dataWrap = userRes.data || userRes;
+
+        // ── نرمال‌سازی کامنت‌ها ────────────────────────────────────────────────
+        const rawComments = commentsRes?.data || [];
+
+        const comments = rawComments.map(c => {
+            const cAttrs = c.attributes || c;
+
+            const rawArticle = cAttrs.article?.data || cAttrs.article;
+            const articleAttrs = rawArticle?.attributes || rawArticle;
+            const article = rawArticle
+                ? { id: rawArticle.id, documentId: rawArticle.documentId, slug: articleAttrs?.slug, title: articleAttrs?.title }
+                : null;
+
+            const rawCourse = cAttrs.course?.data || cAttrs.course;
+            const courseAttrs = rawCourse?.attributes || rawCourse;
+            const course = rawCourse
+                ? { id: rawCourse.id, documentId: rawCourse.documentId, slug: courseAttrs?.slug, title: courseAttrs?.title }
+                : null;
+
+            const rawProduct = cAttrs.product?.data || cAttrs.product;
+            const productAttrs = rawProduct?.attributes || rawProduct;
+            const product = rawProduct
+                ? { id: rawProduct.id, documentId: rawProduct.documentId, slug: productAttrs?.slug, title: productAttrs?.title }
+                : null;
+
+            let relatedTo = null;
+            if (article) relatedTo = { type: 'مقاله', title: article.title };
+            if (course) relatedTo = { type: 'دوره', title: course.title };
+            if (product) relatedTo = { type: 'محصول', title: product.title };
+
+            return {
+                id: c.id,
+                documentId: c.documentId || String(c.id),
+                content: cAttrs.content,
+                isApproved: cAttrs.isApproved || false,
+                createdAt: cAttrs.createdAt,
+                relatedTo,
+                article,
+                course,
+                product
+            };
+        });
 
         const user = {
             id: dataWrap.id,
@@ -253,7 +298,6 @@ export async function getUserDetails(userId, jwt) {
             email: attrs.email || '—',
             phoneNumber: attrs.phoneNumber || '—',
             createdAt: attrs.createdAt,
-            // Maps nested arrays properly
             orders: (attrs.orders?.data || attrs.orders || []).map(o => ({
                 id: o.id,
                 documentId: o.documentId,
@@ -269,27 +313,7 @@ export async function getUserDetails(userId, jwt) {
                 title: c.title || c.attributes?.title || '—',
                 price: c.price || c.attributes?.price || 0,
             })),
-            comments: (attrs.comments?.data || attrs.comments || []).map(c => {
-                const cAttrs = c.attributes || c;
-                // Extract related entity if exists
-                const relatedArticle = cAttrs.article?.data?.attributes || cAttrs.article;
-                const relatedCourse = cAttrs.course?.data?.attributes || cAttrs.course;
-                const relatedProduct = cAttrs.product?.data?.attributes || cAttrs.product;
-
-                let relatedTo = null;
-                if (relatedArticle) relatedTo = { type: 'مقاله', title: relatedArticle.title };
-                if (relatedCourse) relatedTo = { type: 'دوره', title: relatedCourse.title };
-                if (relatedProduct) relatedTo = { type: 'محصول', title: relatedProduct.title };
-
-                return {
-                    id: c.id,
-                    documentId: c.documentId || String(c.id),
-                    content: cAttrs.content,
-                    isApproved: cAttrs.isApproved || false,
-                    createdAt: cAttrs.createdAt,
-                    relatedTo
-                };
-            })
+            comments,
         };
 
         return { user, error: false };
@@ -298,3 +322,4 @@ export async function getUserDetails(userId, jwt) {
         return { user: null, error: true };
     }
 }
+

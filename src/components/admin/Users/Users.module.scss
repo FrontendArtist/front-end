@@ -317,8 +317,13 @@
         display: flex;
         gap: 0.5rem;
         align-items: center;
+        flex-wrap: wrap;
 
-        button {
+        button,
+        a {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
             padding: 0.4rem 0.8rem;
             font-size: 0.75rem;
             border-radius: 4px;
@@ -326,6 +331,7 @@
             cursor: pointer;
             font-family: inherit;
             transition: opacity 0.2s;
+            text-decoration: none;
 
             &:hover {
                 opacity: 0.8;
@@ -351,6 +357,68 @@
                 border: 1px solid var(--color-error);
                 color: var(--color-error);
             }
+
+            &.btnReply {
+                background-color: var(--color-blue-op-20);
+                border: 1px solid var(--color-blue-op-40);
+                color: var(--color-blue-light);
+            }
+
+            &.btnLive {
+                background-color: var(--color-bg-primary-op-50);
+                border: 1px solid var(--color-primary-op-20);
+                color: var(--color-text-primary);
+            }
         }
+    }
+
+    /* ─── باکس پاسخ inline ──────────────────────────────────────────────────── */
+    .replyBox {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+        animation: expandDown 0.2s ease-out;
+
+        @keyframes expandDown {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    }
+
+    .replyTextarea {
+        width: 100%;
+        padding: 0.6rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid var(--color-primary-op-20);
+        background: var(--color-bg-primary-op-60);
+        color: var(--color-card-text);
+        font-family: inherit;
+        font-size: var(--font-sm);
+        line-height: var(--line-height-md);
+        resize: vertical;
+        transition: border-color 0.2s;
+
+        &:focus {
+            outline: none;
+            border-color: var(--color-primary-op-50);
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    }
+
+    .replyBoxActions {
+        display: flex;
+        gap: 0.5rem;
     }
 }
