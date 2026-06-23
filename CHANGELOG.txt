@@ -1,5 +1,61 @@
  
+[2026-06-23] - Admin Comment Moderation Panel (100% Complete)
+
+── UserCommentItem.jsx (جدید/بازنویسی کامل) ─────────────────────────────────
+- بازنویسی کامل کامپوننت `src/components/admin/Users/UserCommentItem.jsx`
+- قابلیت تأیید / رد (Toggle Approve): PUT /api/admin/comments/:id — تغییر وضعیت `isApproved` و به‌روزرسانی فوری Badge در UI
+- قابلیت پاسخ Inline: با کلیک «پاسخ»، یک Textarea با انیمیشن expandDown باز می‌شود
+  - پاسخ با `isApproved: true` و ارتباط صحیح به `product` / `article` / `course` ارسال می‌شود (از documentId استفاده می‌کند)
+- قابلیت لینک «مشاهده در سایت»: لینک پویا بر اساس وجود `product.slug`، `article.slug` یا `course.slug` ساخته می‌شود
+- استفاده از آیکون‌های Lucide React: `Check`, `X`, `MessageSquare`, `ExternalLink`, `Send`, `Loader2`
+- حالت Loading: تمام دکمه‌ها در حین ارسال غیرفعال می‌شوند + آیکون اسپینر
+
+── API Route جدید ────────────────────────────────────────────────────────────
+- ساخت `src/app/api/admin/comments/route.js` (POST handler)
+- پراکسی امن برای ارسال پاسخ ادمین به Strapi — JWT در سمت سرور نگه داشته می‌شود
+
+── Users.module.scss ──────────────────────────────────────────────────────────
+- اضافه شدن کلاس‌های `btnReply` (آبی)، `btnLive` (خنثی) برای دکمه‌های جدید
+- اضافه شدن کلاس‌های `replyBox`, `replyTextarea`, `replyBoxActions` برای باکس پاسخ Inline
+- تمام استایل‌ها از متغیرهای `variables.css` استفاده می‌کنند
+
+── adminApi.js — رفع باگ تکرار کامنت‌ها ────────────────────────────────────
+- ریشه مشکل: کوئری Strapi با چند رابطه Deep (orders + courses + comments) در یک JOIN، ضرب دکارتی (Cartesian Product) ایجاد می‌کرد → کامنت‌ها ۲× نمایش داده می‌شدند
+- راه‌حل: تقسیم `getUserDetails` به دو API Call موازی (`Promise.all`):
+  1. `GET /api/users/:id` — اطلاعات پایه + سفارشات + دوره‌ها (بدون کامنت)
+  2. `GET /api/comments?filters[user][id][$eq]=:userId` — کامنت‌ها جداگانه
+- مپ کردن کامل روابط کامنت (`product`, `article`, `course`) با `slug` و `documentId` برای فعال‌سازی دکمه «مشاهده در سایت»
+
+── فایل‌های تغییر یافته ──────────────────────────────────────────────────────
+- src/components/admin/Users/UserCommentItem.jsx (بازنویسی کامل)
+- src/components/admin/Users/Users.module.scss
+- src/app/api/admin/comments/route.js (جدید)
+- src/lib/adminApi.js
+
+[2026-06-22] - Order Management UX Improvements (100% Complete)
+
+── ناوبری سفارشات ────────────────────────────────────────────────────────────
+- حذف Modal و هدایت همه دکمه‌های «مشاهده جزئیات» در `OrdersList.jsx` به صفحه اختصاصی `/profile/orders/[documentId]`
+- اضافه شدن بخش «وضعیت سفارش» با Badge در صفحه جزئیات سفارش (`[id]/page.jsx`)
+- اضافه شدن نمایش شرطی «کد پیگیری» در صورت ارسال شده بودن سفارش
+
+── اولویت‌بندی وضعیت‌ها ────────────────────────────────────────────────────
+- پیاده‌سازی `CombinedStatusBadge` در `OrdersList.jsx`:
+  - اگر وضعیت سفارش `shipped`، `delivered` یا `canceled` باشد → این وضعیت اولویت دارد
+  - در غیر این صورت برای کارت‌به‌کارت `PaymentStatusBadge` و برای آنلاین `StatusBadge` نمایش داده می‌شود
+- ترجمه‌های اصلاح شده: «تأیید شد» → «پرداخت شده»، «shipped» → «ارسال شده»
+
+── استایل‌های Badge ──────────────────────────────────────────────────────────
+- `badgeDefault` در `OrdersList.module.scss` همسو با تم آبی `badgeInfo` به‌روزرسانی شد
+
+── فایل‌های تغییر یافته ──────────────────────────────────────────────────────
+- src/components/profile/OrdersList.jsx
+- src/app/profile/orders/[id]/page.jsx
+- src/components/profile/OrdersList.module.scss
+- src/lib/adminApi.js
+
 [2026-06-22] - Admin Dashboard & Orders Subsystem (100% Complete)
+
 - Implemented `/admin/layout.jsx` and secured it using NextAuth to guard routes solely for `administrator` roles. Redirects unauthorized users seamlessly.
 - Built responsive `AdminSidebar` with active link detection, using centralized modular SCSS.
 - Created `/admin/page.jsx` (Dashboard) fetching stats (Users, Orders, Revenue) securely on the server via `adminApi.js`. Implemented `Graceful Degradation` using `Promise.allSettled`.
