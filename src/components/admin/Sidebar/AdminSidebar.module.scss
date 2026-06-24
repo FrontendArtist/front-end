@@ -41,9 +41,9 @@ $transition-speed: 0.2s;
    * which ensures the main content area calculates its width correctly.
    */
     width: $sidebar-width;
-    min-height: 100vh;
+    min-height: calc(100vh - 100px);
     position: sticky;
-    top: 0;
+    top: 100px;
     flex-shrink: 0; // prevent flex from squeezing the sidebar
 
     background-color: $sidebar-bg;

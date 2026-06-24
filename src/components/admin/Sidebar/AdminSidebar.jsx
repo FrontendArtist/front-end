@@ -26,6 +26,7 @@ import {
     FileText,         // Articles icon
     LogOut,           // Sign out icon
     UserCircle,       // Profile avatar fallback icon
+    Mail,             // Contact messages icon
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
@@ -44,6 +45,7 @@ const NAV_LINKS = [
     { href: '/admin/users', label: 'کاربران', icon: Users },
     { href: '/admin/products', label: 'محصولات', icon: Package },
     { href: '/admin/articles', label: 'مقالات', icon: FileText },
+    { href: '/admin/contact-messages', label: 'پیام ها', icon: Mail },
 ];
 
 /**
