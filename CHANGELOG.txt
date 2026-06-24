@@ -1,58 +1,96 @@
- 
+```text
+[2026-06-24] - Admin Product & Blog & Contact Messages Subsystems (100% Complete)
+
+── Product Management ───────────────────────────────────────────────────
+- Created admin product management pages: `/admin/products` (list), `/admin/products/new` (create), and `/admin/products/[id]` (edit).
+- Refactored and fixed the `description` field (Rich Text / Blocks):
+  - Resolved issue where text failed to save by converting plain strings to Strapi's Blocks structure (paragraph type) during submission.
+  - Extracted all paragraph texts from the Blocks array and joined them with newlines (`\n`) when loading into the edit form.
+- Fixed the availability toggle (`isAvailable`) double-toggle issue:
+  - Removed the `onClick` event handler from the parent `div` and converted it to a standard checkbox with `label htmlFor` to prevent event bubbling.
+- Resolved Next.js product list caching issue:
+  - Added `router.refresh()` call immediately before redirecting to the product management page to invalidate the Router Cache and display the latest values.
+- Implemented server-side API proxy routes:
+  - Secured JWT by keeping it server-side, routing requests through `/api/admin/products` and `/api/admin/products/[id]`.
+  - Resolved Strapi v5 publication status (`publishedAt`) unpublishing/publishing bug by overriding the Strapi update controller method to call the Document Service and forwarding `publishedAt` in standard PUT request metadata.
+
+── Articles & Blog ──────────────────────────────────────────────────────
+- Created admin blog system based on `@CONTEXT_AdminArticles.md` including `/admin/articles` and article management form.
+- Designed smart `ArticleForm.jsx` component:
+  - Integrated `@tinymce/tinymce-react` editor styled to match the admin panel for saving standard `content` fields.
+  - Implemented article cover image uploads via connection to the centralized upload proxy.
+  - Added a reusable `MultiSelect` component to assign categories and tags from allowed options.
+- Implemented corresponding API Routes:
+  - Created `/api/admin/articles` and `/api/admin/articles/[id]` supporting standard PUT requests with `publishedAt` payload.
+  - Added an interactive publish status toggle switch in `ArticlesTable.jsx` with optimistic updates, local state reloads, and detailed server-side error propagation in toast notifications.
+
+── Contact Messages ─────────────────────────────────────────────────────
+- Implemented message management panel based on `@CONTEXT_AdminMessages.md` at `/admin/contact-messages`.
+- Created `MessagesTable` component and table, highlighting unread messages with bold text and visual indicators.
+- Designed `MessageReadModal` with auto-read capability:
+  - Opening a message automatically sends a `PUT` request to the proxy, marking the message as `isRead: true` in the database.
+- Created corresponding API Routes and service methods in `adminApi.js`.
+
+── Sidebar Navigation & Layout Fixes ────────────────────────────────────
+- Updated `AdminSidebar.jsx` to add easy access to messages and articles using standard Lucide React icons (`FileText` and `Mail`).
+- Resolved admin dashboard overlapping issue under the 100px fixed header:
+  - Added `margin-top: 100px` and `min-height: calc(100vh - 100px)` style rules to `.dashboard` in `admin.module.scss`.
+  - Shifted sticky `.sidebar` position by updating `top` to `100px` and adjusting its height to `min-height: calc(100vh - 100px)` in `AdminSidebar.module.scss`.
+
 [2026-06-23] - Admin Comment Moderation Panel (100% Complete)
 
-── UserCommentItem.jsx (جدید/بازنویسی کامل) ─────────────────────────────────
-- بازنویسی کامل کامپوننت `src/components/admin/Users/UserCommentItem.jsx`
-- قابلیت تأیید / رد (Toggle Approve): PUT /api/admin/comments/:id — تغییر وضعیت `isApproved` و به‌روزرسانی فوری Badge در UI
-- قابلیت پاسخ Inline: با کلیک «پاسخ»، یک Textarea با انیمیشن expandDown باز می‌شود
-  - پاسخ با `isApproved: true` و ارتباط صحیح به `product` / `article` / `course` ارسال می‌شود (از documentId استفاده می‌کند)
-- قابلیت لینک «مشاهده در سایت»: لینک پویا بر اساس وجود `product.slug`، `article.slug` یا `course.slug` ساخته می‌شود
-- استفاده از آیکون‌های Lucide React: `Check`, `X`, `MessageSquare`, `ExternalLink`, `Send`, `Loader2`
-- حالت Loading: تمام دکمه‌ها در حین ارسال غیرفعال می‌شوند + آیکون اسپینر
+── UserCommentItem.jsx (New/Complete Rewrite) ───────────────────────────
+- Completely rewrote `src/components/admin/Users/UserCommentItem.jsx`.
+- Approve/Reject toggle: PUT `/api/admin/comments/:id` updates `isApproved` and immediately updates UI badge.
+- Inline reply capability: clicking "Reply" opens an animated expanding textarea.
+  - Replies are submitted with `isApproved: true` and correctly linked to `product` / `article` / `course` using `documentId`.
+- "View on Site" dynamic link based on `product.slug`, `article.slug`, or `course.slug`.
+- Used Lucide React icons: `Check`, `X`, `MessageSquare`, `ExternalLink`, `Send`, `Loader2`.
+- Loading state: disables all buttons during submission and shows a spinner.
 
-── API Route جدید ────────────────────────────────────────────────────────────
-- ساخت `src/app/api/admin/comments/route.js` (POST handler)
-- پراکسی امن برای ارسال پاسخ ادمین به Strapi — JWT در سمت سرور نگه داشته می‌شود
+── New API Route ────────────────────────────────────────────────────────
+- Created `src/app/api/admin/comments/route.js` (POST handler) as a secure proxy for admin replies to Strapi (JWT kept server-side).
 
-── Users.module.scss ──────────────────────────────────────────────────────────
-- اضافه شدن کلاس‌های `btnReply` (آبی)، `btnLive` (خنثی) برای دکمه‌های جدید
-- اضافه شدن کلاس‌های `replyBox`, `replyTextarea`, `replyBoxActions` برای باکس پاسخ Inline
-- تمام استایل‌ها از متغیرهای `variables.css` استفاده می‌کنند
+── Users.module.scss ────────────────────────────────────────────────────
+- Added `btnReply` (blue) and `btnLive` (neutral) classes for new buttons.
+- Added `replyBox`, `replyTextarea`, and `replyBoxActions` classes for inline reply box.
+- All styles utilize variables from `variables.css`.
 
-── adminApi.js — رفع باگ تکرار کامنت‌ها ────────────────────────────────────
-- ریشه مشکل: کوئری Strapi با چند رابطه Deep (orders + courses + comments) در یک JOIN، ضرب دکارتی (Cartesian Product) ایجاد می‌کرد → کامنت‌ها ۲× نمایش داده می‌شدند
-- راه‌حل: تقسیم `getUserDetails` به دو API Call موازی (`Promise.all`):
-  1. `GET /api/users/:id` — اطلاعات پایه + سفارشات + دوره‌ها (بدون کامنت)
-  2. `GET /api/comments?filters[user][id][$eq]=:userId` — کامنت‌ها جداگانه
-- مپ کردن کامل روابط کامنت (`product`, `article`, `course`) با `slug` و `documentId` برای فعال‌سازی دکمه «مشاهده در سایت»
+── adminApi.js — Fixed Duplicate Comments Bug ───────────────────────────
+- Root cause: Strapi query with multiple deep relations (orders + courses + comments) in a single JOIN caused a Cartesian product, duplicating comments.
+- Solution: Split `getUserDetails` into two parallel API calls (`Promise.all`):
+  1. `GET /api/users/:id` - basic info + orders + courses (no comments).
+  2. `GET /api/comments?filters[user][id][$eq]=:userId` - comments separately.
+- Fully mapped comment relations (`product`, `article`, `course`) with `slug` and `documentId` to enable the "View on Site" button.
 
-── فایل‌های تغییر یافته ──────────────────────────────────────────────────────
-- src/components/admin/Users/UserCommentItem.jsx (بازنویسی کامل)
+── Modified Files ───────────────────────────────────────────────────────
+- src/components/admin/Users/UserCommentItem.jsx (Complete rewrite)
 - src/components/admin/Users/Users.module.scss
-- src/app/api/admin/comments/route.js (جدید)
+- src/app/api/admin/comments/route.js (New)
 - src/lib/adminApi.js
 
 [2026-06-22] - Order Management UX Improvements (100% Complete)
 
-── ناوبری سفارشات ────────────────────────────────────────────────────────────
-- حذف Modal و هدایت همه دکمه‌های «مشاهده جزئیات» در `OrdersList.jsx` به صفحه اختصاصی `/profile/orders/[documentId]`
-- اضافه شدن بخش «وضعیت سفارش» با Badge در صفحه جزئیات سفارش (`[id]/page.jsx`)
-- اضافه شدن نمایش شرطی «کد پیگیری» در صورت ارسال شده بودن سفارش
+── Order Navigation ─────────────────────────────────────────────────────
+- Removed Modal and redirected all "View Details" buttons in `OrdersList.jsx` to the dedicated `/profile/orders/[documentId]` page.
+- Added "Order Status" section with Badge in the order details page (`[id]/page.jsx`).
+- Added conditional display of "Tracking Code" if the order is shipped.
 
-── اولویت‌بندی وضعیت‌ها ────────────────────────────────────────────────────
-- پیاده‌سازی `CombinedStatusBadge` در `OrdersList.jsx`:
-  - اگر وضعیت سفارش `shipped`، `delivered` یا `canceled` باشد → این وضعیت اولویت دارد
-  - در غیر این صورت برای کارت‌به‌کارت `PaymentStatusBadge` و برای آنلاین `StatusBadge` نمایش داده می‌شود
-- ترجمه‌های اصلاح شده: «تأیید شد» → «پرداخت شده»، «shipped» → «ارسال شده»
+── Status Prioritization ────────────────────────────────────────────────
+- Implemented `CombinedStatusBadge` in `OrdersList.jsx`:
+  - If order status is `shipped`, `delivered`, or `canceled` -> this status takes priority.
+  - Otherwise, displays `PaymentStatusBadge` for card-to-card and `StatusBadge` for online payments.
+- Corrected translations: "Approved" -> "Paid", "shipped" -> "Shipped".
 
-── استایل‌های Badge ──────────────────────────────────────────────────────────
-- `badgeDefault` در `OrdersList.module.scss` همسو با تم آبی `badgeInfo` به‌روزرسانی شد
+── Badge Styles ─────────────────────────────────────────────────────────
+- Updated `badgeDefault` in `OrdersList.module.scss` to align with the blue `badgeInfo` theme.
 
-── فایل‌های تغییر یافته ──────────────────────────────────────────────────────
+── Modified Files ───────────────────────────────────────────────────────
 - src/components/profile/OrdersList.jsx
 - src/app/profile/orders/[id]/page.jsx
 - src/components/profile/OrdersList.module.scss
 - src/lib/adminApi.js
+```
 
 [2026-06-22] - Admin Dashboard & Orders Subsystem (100% Complete)
 
