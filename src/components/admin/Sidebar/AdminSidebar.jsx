@@ -23,6 +23,7 @@ import {
     ShoppingCart,     // Orders icon
     Users,            // Users management icon
     Package,          // Products icon
+    FileText,         // Articles icon
     LogOut,           // Sign out icon
     UserCircle,       // Profile avatar fallback icon
 } from 'lucide-react';
@@ -42,6 +43,7 @@ const NAV_LINKS = [
     { href: '/admin/orders', label: 'سفارش‌ها', icon: ShoppingCart },
     { href: '/admin/users', label: 'کاربران', icon: Users },
     { href: '/admin/products', label: 'محصولات', icon: Package },
+    { href: '/admin/articles', label: 'مقالات', icon: FileText },
 ];
 
 /**

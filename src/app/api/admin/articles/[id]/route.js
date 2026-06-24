@@ -1,9 +1,9 @@
 /**
- * @file src/app/api/admin/products/[id]/route.js
- * @description API Route for updating (PUT) and deleting (DELETE) a product
+ * @file src/app/api/admin/articles/[id]/route.js
+ * @description API Route for updating (PUT), deleting (DELETE), and fetching (GET) a single article
  *
  * 🔐 Security: JWT is read server-side from session, never exposed to browser.
- * ⚠️  Strapi v5: uses documentId (UUID string) for REST operations, not numeric id.
+ * ⚠️  Strapi v5: uses documentId for REST operations.
  */
 
 import { getServerSession } from 'next-auth/next';
@@ -21,13 +21,13 @@ async function checkAdmin() {
     return { authorized: true, jwt: session.user.jwt };
 }
 
-// ── PUT: update product ────────────────────────────────────────────────────────
+// ── PUT: update article ────────────────────────────────────────────────────────
 export async function PUT(request, { params }) {
     const { authorized, jwt } = await checkAdmin();
     if (!authorized) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { id } = await params;
-    if (!id) return NextResponse.json({ error: 'Product ID required' }, { status: 400 });
+    if (!id) return NextResponse.json({ error: 'Article ID required' }, { status: 400 });
 
     let body;
     try {
@@ -36,7 +36,6 @@ export async function PUT(request, { params }) {
         return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    // ── گام ۱: دریافت داده‌های محتوایی ─────────────────────────────────────────
     const { documentId, ...contentPayload } = body;
     const strapiId = documentId || id;
 
@@ -46,12 +45,11 @@ export async function PUT(request, { params }) {
     };
 
     try {
-        // ── گام ۲: آپدیت داده‌های محتوایی ───────────────────────────────────────
         if (process.env.NODE_ENV === 'development') {
-            console.log(`[AdminProductsAPI] PUT ${strapiId} → contentPayload:`, JSON.stringify(contentPayload));
+            console.log(`[AdminArticlesAPI] PUT ${strapiId} → contentPayload:`, JSON.stringify(contentPayload));
         }
 
-        const updateRes = await fetch(`${STRAPI_URL}/api/products/${strapiId}`, {
+        const updateRes = await fetch(`${STRAPI_URL}/api/articles/${strapiId}`, {
             method: 'PUT',
             headers: strapiHeaders,
             cache: 'no-store',
@@ -59,10 +57,6 @@ export async function PUT(request, { params }) {
         });
 
         const updateData = await updateRes.json();
-
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`[AdminProductsAPI] PUT ${strapiId} ← status:${updateRes.status}`, JSON.stringify(updateData).slice(0, 500));
-        }
 
         if (!updateRes.ok) {
             return NextResponse.json(
@@ -73,22 +67,20 @@ export async function PUT(request, { params }) {
 
         return NextResponse.json(updateData, { status: 200 });
     } catch (err) {
-        if (process.env.NODE_ENV === 'development') console.error('[AdminProductsAPI] Server error:', err.message);
         return NextResponse.json({ error: 'Server error' }, { status: 500 });
     }
 }
 
-
-// ── DELETE: remove product ─────────────────────────────────────────────────────
+// ── DELETE: remove article ─────────────────────────────────────────────────────
 export async function DELETE(request, { params }) {
     const { authorized, jwt } = await checkAdmin();
     if (!authorized) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { id } = await params;
-    if (!id) return NextResponse.json({ error: 'Product ID required' }, { status: 400 });
+    if (!id) return NextResponse.json({ error: 'Article ID required' }, { status: 400 });
 
     try {
-        const res = await fetch(`${STRAPI_URL}/api/products/${id}`, {
+        const res = await fetch(`${STRAPI_URL}/api/articles/${id}`, {
             method: 'DELETE',
             headers: {
                 Authorization: `Bearer ${jwt}`,
@@ -110,17 +102,17 @@ export async function DELETE(request, { params }) {
     }
 }
 
-// ── GET: single product by documentId ─────────────────────────────────────────
+// ── GET: single article by documentId ─────────────────────────────────────────
 export async function GET(request, { params }) {
     const { authorized, jwt } = await checkAdmin();
     if (!authorized) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { id } = await params;
-    if (!id) return NextResponse.json({ error: 'Product ID required' }, { status: 400 });
+    if (!id) return NextResponse.json({ error: 'Article ID required' }, { status: 400 });
 
     try {
         const res = await fetch(
-            `${STRAPI_URL}/api/products/${id}?populate[images]=true&populate[categories]=true&populate[tags]=true&publicationState=preview`,
+            `${STRAPI_URL}/api/articles/${id}?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&publicationState=preview`,
             {
                 headers: {
                     Authorization: `Bearer ${jwt}`,

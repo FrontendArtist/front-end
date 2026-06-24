@@ -51,8 +51,8 @@ export default async function ArticlePage({ params }) {
   // 3. ساخت URL نهایی برای نمایش (فقط اگر تصویر واقعی باشد استفاده می‌شود)
   let finalCoverUrl = rawCoverUrl;
   if (!isLocalFallback && !rawCoverUrl.startsWith('http')) {
-      // اگر عکس واقعی Strapi است و آدرس نسبی دارد، آدرس پایه را اضافه کن
-      finalCoverUrl = `${API_BASE_URL}${rawCoverUrl}`;
+    // اگر عکس واقعی Strapi است و آدرس نسبی دارد، آدرس پایه را اضافه کن
+    finalCoverUrl = `${API_BASE_URL}${rawCoverUrl}`;
   }
 
   // 4. تصمیم‌گیری برای نمایش: فقط اگر فال‌بک نباشد، عکس را نشان می‌دهیم
@@ -62,11 +62,10 @@ export default async function ArticlePage({ params }) {
     id: rawArticle.id,
     documentId: rawArticle.documentId,
     title: rawArticle.title,
-    date: new Date(rawArticle.date).toLocaleDateString('fa-IR'),
-    content: rawArticle.excerpt, 
+    date: new Date(rawArticle.date || rawArticle.createdAt || new Date()).toLocaleDateString('fa-IR'),
+    excerpt: rawArticle.excerpt || '',
+    content: rawArticle.content || '',
   };
-
-  const htmlContent = marked(article.content || '');
 
   return (
     <main className={styles.articlePage}>
@@ -90,10 +89,20 @@ export default async function ArticlePage({ params }) {
           </div>
         )}
 
-        <article
-          className={styles.content}
-          dangerouslySetInnerHTML={{ __html: htmlContent }}
-        />
+        {/* خلاصه مقاله */}
+        {article.excerpt && (
+          <div className={styles.excerpt}>
+            {article.excerpt}
+          </div>
+        )}
+
+        {/* محتوای اصلی مقاله */}
+        {article.content && (
+          <article
+            className={styles.content}
+            dangerouslySetInnerHTML={{ __html: article.content }}
+          />
+        )}
 
         <CommentsSection
           entityType="article"

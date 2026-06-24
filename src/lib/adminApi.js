@@ -467,3 +467,121 @@ export async function getAdminTags(jwt) {
     });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 📄 واکشی لیست مقالات
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getAdminArticles(jwt, { page = 1, pageSize = 100 } = {}) {
+    // Using simple populate to prevent 400 errors from strict field matching
+    const endpoint =
+        `/api/articles?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&publicationState=preview`;
+
+    const data = await adminFetch(endpoint, jwt);
+    if (!data) return { articles: [], meta: null, error: true };
+
+    const articles = (data.data || []).map((item) => {
+        const attrs = item.attributes || item;
+
+        const coverData = attrs.cover?.data || attrs.cover;
+        const cover = coverData ? {
+            id: coverData.id,
+            documentId: coverData.documentId || String(coverData.id),
+            url: coverData.attributes?.url || coverData.url,
+            name: coverData.attributes?.name || coverData.name,
+        } : null;
+
+        const rawCats = attrs.articles_categories?.data || attrs.articles_categories || [];
+        const categories = rawCats.map((c) => {
+            const cAttrs = c.attributes || c;
+            return {
+                id: c.id,
+                documentId: c.documentId || String(c.id),
+                name: cAttrs.name || cAttrs.title,
+            };
+        });
+
+        const rawTags = attrs.tags?.data || attrs.tags || [];
+        const tags = rawTags.map((t) => {
+            const tAttrs = t.attributes || t;
+            return {
+                id: t.id,
+                documentId: t.documentId || String(t.id),
+                name: tAttrs.name || tAttrs.title,
+            };
+        });
+
+        return {
+            id: item.id,
+            documentId: item.documentId || String(item.id),
+            title: attrs.title,
+            slug: attrs.slug,
+            excerpt: attrs.excerpt || '',
+            publishedAt: attrs.publishedAt || null,
+            cover,
+            categories,
+            tags,
+        };
+    });
+
+    return { articles, meta: data.meta || null, error: false };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 📄 واکشی یک مقاله با documentId
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getAdminArticleById(documentId, jwt) {
+    const endpoint =
+        `/api/articles/${documentId}?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&publicationState=preview`;
+
+    const data = await adminFetch(endpoint, jwt);
+    if (!data) return { article: null, error: true };
+
+    const item = data.data || data;
+    const attrs = item.attributes || item;
+
+    const coverData = attrs.cover?.data || attrs.cover;
+    const cover = coverData ? {
+        id: coverData.id,
+        documentId: coverData.documentId || String(coverData.id),
+        url: coverData.attributes?.url || coverData.url,
+        name: coverData.attributes?.name || coverData.name,
+    } : null;
+
+    const rawCats = attrs.articles_categories?.data || attrs.articles_categories || [];
+    const categories = rawCats.map((c) => {
+        const cAttrs = c.attributes || c;
+        return { id: c.id, documentId: c.documentId || String(c.id), title: cAttrs.title || cAttrs.name || '' };
+    });
+
+    const rawTags = attrs.tags?.data || attrs.tags || [];
+    const tags = rawTags.map((t) => {
+        const tAttrs = t.attributes || t;
+        return { id: t.id, documentId: t.documentId || String(t.id), name: tAttrs.name || tAttrs.title || '' };
+    });
+
+    const article = {
+        id: item.id,
+        documentId: item.documentId || String(item.id),
+        title: attrs.title,
+        slug: attrs.slug,
+        excerpt: attrs.excerpt || '',
+        content: attrs.content || '',
+        publishedAt: attrs.publishedAt || null,
+        cover,
+        articles_categories: categories, // Expected array of category objects by form component
+        tags,
+    };
+
+    return { article, error: false };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 🏷️ واکشی دسته‌بندی مقالات
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getAdminArticlesCategories(jwt) {
+    const data = await adminFetch('/api/articles-categories?pagination[limit]=200', jwt);
+    if (!data) return [];
+    return (data.data || []).map((c) => {
+        const attrs = c.attributes || c;
+        return { id: c.id, documentId: c.documentId || String(c.id), title: attrs.title || attrs.name };
+    });
+}

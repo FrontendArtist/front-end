@@ -14,7 +14,7 @@
 /* Provides vertical spacing consistent with other pages in the site */
 .articlePage {
   padding: var(--space-section-top-desktop) 0;
-  
+
   /* The container class (from global styles) provides:
      - Max width constraint
      - Horizontal padding
@@ -62,7 +62,7 @@
   max-width: 800px; // Limit width for better readability
   margin: 0 auto var(--space-title-content-desktop); // Center and add bottom space
   aspect-ratio: 16 / 9; // Maintain cinematic aspect ratio
-  
+
   /* The nested .coverImage class styles the Next.js Image component */
   .coverImage {
     border-radius: 16px; // Rounded corners for modern look
@@ -77,11 +77,30 @@
 
 /* Main content area where the article text is rendered */
 /* This styles the HTML that's generated from the markdown/rich text */
+/* Excerpt styling (preserving former gold / translucent background styles) */
+.excerpt {
+  max-width: 800px;
+  margin: 0 auto 2.5rem;
+  line-height: var(--line-height-lg);
+  background-color: var(--color-white-op-10);
+  color: var(--color-text-primary);
+  padding: 1.5rem 2rem;
+  border-radius: var(--radius-card, 24px);
+  border: 1px solid var(--color-primary-op-10);
+  font-size: var(--font-md-lg);
+  font-weight: var(--font-weight-medium);
+}
+
 .content {
   max-width: 800px; // Same as image for visual consistency and readability
-  margin: 0 auto; // Center the content
+  margin: 1.5rem auto 0; // Center the content
   line-height: var(--line-height-lg); // 1.8 for comfortable reading
-  
+  color: var(--color-white); // Pure white color from variables
+  background-color: var(--color-white-op-10); // Same background as excerpt
+  padding: 2rem 2.5rem; // Padding inside content box
+  border-radius: var(--radius-card, 24px); // Same border radius
+  border: 1px solid var(--color-primary-op-10); // Same border
+
   // ---------------------------------------------------------------------------
   // HTML Element Styles
   // ---------------------------------------------------------------------------
@@ -90,7 +109,8 @@
 
   /* Heading styles (H2, H3) within the article */
   /* These are subheadings that break up the content into sections */
-  h2, h3 {
+  h2,
+  h3 {
     margin-top: 2.5rem; // Generous top spacing to separate sections
     margin-bottom: 1rem; // Space before the paragraph text
     color: var(--color-title-hover); // Gold accent for visual hierarchy
@@ -107,7 +127,7 @@
   a {
     color: var(--color-text-primary); // Primary gold color
     text-decoration: underline; // Always underline links for clarity
-    
+
     /* Hover state provides visual feedback */
     &:hover {
       color: var(--color-title-hover); // Brighter gold on hover
@@ -116,7 +136,8 @@
 
   /* List styles (ordered and unordered) */
   /* Proper indentation and spacing for RTL layout */
-  ul, ol {
+  ul,
+  ol {
     margin-bottom: 1.5rem; // Space below lists
     padding-right: 2rem; // RTL: Indent from the right side
     /* Note: In RTL layout, list bullets/numbers appear on the right */
@@ -142,4 +163,3 @@
 // - Tablet: Adjust spacing and font sizes
 // - Mobile: Stack elements, reduce margins, smaller typography
 // This will be implemented in Phase 1 responsive optimization.
-

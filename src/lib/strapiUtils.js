@@ -113,6 +113,7 @@ export function formatStrapiArticles(apiResponse) {
       slug: item.slug,
       title: item.title,
       excerpt: item.excerpt,
+      content: item.content, // HTML/RichText content
       date: item.publishedAt,
       // Articles have a single 'cover' object.
       cover: formatSingleImage(item.cover),
