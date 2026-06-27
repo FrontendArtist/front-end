@@ -1,5 +1,4 @@
 .footer {
-  background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   padding: 4rem 0 2rem;
   direction: rtl;
@@ -7,9 +6,11 @@
 
 .footerContainer {
   margin: 0 auto;
-  padding-left: var(--space-container-x-desktop);
-  padding-right: var(--space-container-x-desktop);
   max-width: 1280px;
+}
+
+.footerContent {
+  padding: 20px;
 
   @media (max-width: 960px) {
     padding-left: 60px;
@@ -136,4 +137,10 @@
     color: var(--color-card-text);
     font-size: var(--font-sm);
   }
-} 
+}
+
+.shamoparvane {
+position: absolute;
+right: 0;
+bottom: 0;
+}

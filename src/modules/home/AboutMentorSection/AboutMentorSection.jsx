@@ -20,6 +20,10 @@ const AboutMentorSection = () => {
               <img src="/images/master.png" alt="masterImage" />
             </div>
           </div>
+          <div className={styles.aboutImages}>
+          <Image className={styles.fanusimg} src="/images/fanus.svg" alt="masterImage" width={200} height={200} />
+          <Image className={styles.laklak} src="/images/laklak.png" alt="masterImage" width={300} height={300} />
+          </div>
         </GradientBorderCard>
       </div>
     </section>

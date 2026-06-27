@@ -1,11 +1,23 @@
 import Link from 'next/link';
 import styles from './Footer.module.scss';
+import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
+import Image from 'next/image';
 
 const Footer = () => {
   return (
     <footer className={styles.footer}>
-      <div className={`${styles.footerContainer} container`}>
+      <GradientBorderCard
+        gradient="horizontal-rtl"
+        enableHover={false}
+        className={`${styles.footerContainer} container`}
+        contentClassName={styles.footerContent}
+      >
         <div className={styles.footerGrid}>
+
+          <div>
+            <Image src="/images/shamoparvane 1.png" alt="logo" width={250} height={550} className={styles.shamoparvane} />
+          </div>
+
           {/* Column 1: About/Brand */}
           <div className={styles.footerColumn}>
             <h3 className={styles.columnTitle}>درباره ما</h3>
@@ -39,23 +51,15 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Column 4: Newsletter */}
-          <div className={styles.footerColumn}>
-            <h3 className={styles.columnTitle}>خبرنامه</h3>
-            <p>از آخرین تخفیف‌ها و جدیدترین محصولات باخبر شوید.</p>
-            <form className={styles.newsletterForm}>
-              <input type="email" placeholder="ایمیل شما" />
-              <button type="submit">عضویت</button>
-            </form>
-          </div>
+
         </div>
 
         <div className={styles.footerBottom}>
           <p>تمامی حقوق برای این وب‌سایت محفوظ است. © 2025</p>
         </div>
-      </div>
+      </GradientBorderCard>
     </footer>
   );
 };
 
-export default Footer; 
+export default Footer;  
