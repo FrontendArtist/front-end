@@ -57,7 +57,7 @@
 
     &:hover {
         border-color: var(--color-text-primary);
-        background: var(--color-bg-primary-op-80);
+        background: var(--color-bg-primary-op-60);
         transform: translateY(-2px);
         box-shadow: 0 4px 12px var(--color-primary-op-20);
     }
@@ -149,7 +149,7 @@
     padding: 14px 16px;
     border-radius: var(--border-radius);
     border: 2px solid var(--color-primary-op-30);
-    background: var(--color-bg-primary-op-60);
+    background: var(--color-bg-primary-op-50);
     color: var(--color-card-text);
     font-size: var(--font-md);
     transition: all 0.3s ease;
@@ -162,7 +162,7 @@
     &:focus {
         outline: none;
         border-color: var(--color-text-primary);
-        background: var(--color-bg-primary-op-80);
+        background: var(--color-bg-primary-op-60);
         box-shadow: 0 0 0 4px var(--color-primary-op-10);
     }
 
@@ -321,7 +321,7 @@
 
     &:hover:not(:disabled) {
         border-color: var(--color-text-primary);
-        background: var(--color-bg-primary-op-80);
+        background: var(--color-bg-primary-op-60);
         transform: translateY(-2px);
         box-shadow: 0 4px 12px var(--color-primary-op-20);
     }
