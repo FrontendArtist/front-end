@@ -2,6 +2,8 @@
   color: var(--color-text-primary);
   padding: 4rem 0 2rem;
   direction: rtl;
+  position: relative;
+  overflow: hidden;
 }
 
 .footerContainer {
@@ -34,12 +36,16 @@
   gap: var(--space-gap-desktop);
   margin-bottom: 3rem;
 
-  @media (max-width: 960px) {
-    grid-template-columns: repeat(2, 1fr);
+  /* تبلت (عرض 769px تا 960px): ۳ ستون متقارن */
+  @media (max-width: 960px) and (min-width: 769px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
   }
 
+  /* موبایل (عرض کمتر از 768px): ۱ ستون */
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
 }
 
@@ -139,8 +145,26 @@
   }
 }
 
+/* ============================================
+   مدیریت عکس شمع و پروانه
+   ============================================ */
 .shamoparvane {
-position: absolute;
-right: 0;
-bottom: 0;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 250px;
+  height: auto;
+  z-index: 1;
+
+  /* فقط در دسکتاپ (بزرگتر از 960px) نمایش داده شود */
+  @media (max-width: 960px) {
+    display: none !important;
+  }
+}
+
+/* ستون عکس - فقط در دسکتاپ (بزرگتر از 960px) نمایش داده شود */
+.footerColumnImage {
+  @media (max-width: 960px) {
+    display: none !important;
+  }
 }

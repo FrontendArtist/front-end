@@ -13,12 +13,19 @@ const Footer = () => {
         contentClassName={styles.footerContent}
       >
         <div className={styles.footerGrid}>
-
-          <div>
-            <Image src="/images/shamoparvane 1.png" alt="logo" width={250} height={550} className={styles.shamoparvane} />
+          {/* Column 1: Image (فقط در دسکتاپ و تبلت نمایش داده می‌شود) */}
+          <div className={`${styles.footerColumn} ${styles.footerColumnImage}`}>
+            <Image 
+              src="/images/shamoparvane 1.png" 
+              alt="logo" 
+              width={250} 
+              height={550} 
+              className={styles.shamoparvane}
+              
+            />
           </div>
 
-          {/* Column 1: About/Brand */}
+          {/* Column 2: About/Brand */}
           <div className={styles.footerColumn}>
             <h3 className={styles.columnTitle}>درباره ما</h3>
             <p>
@@ -45,13 +52,10 @@ const Footer = () => {
               <li>تلفن: ۰۲۱-۱۲۳۴۵۶۷۸</li>
               <li>ایمیل: info@example.com</li>
             </ul>
-            {/* Social Icons Placeholder */}
             <div className={styles.socialIcons}>
               <span>Icon1</span> <span>Icon2</span> <span>Icon3</span>
             </div>
           </div>
-
-
         </div>
 
         <div className={styles.footerBottom}>
@@ -62,4 +66,4 @@ const Footer = () => {
   );
 };
 
-export default Footer;  
+export default Footer;
