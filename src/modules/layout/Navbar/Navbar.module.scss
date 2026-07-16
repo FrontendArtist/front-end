@@ -443,7 +443,7 @@
     flex: 1;
     display: flex;
     align-items: center;
-    background: var(--color-white-op-12);
+    background: var(--color-white-op-50);
     border-radius: 8px;
     padding: 0 0.5rem;
     margin-right: 15px;
@@ -454,19 +454,14 @@
     padding: 0.6rem 0.5rem;
     border: none;
     background: transparent;
-    color: var(--color-white);
     font-size: 0.95rem;
     outline: none;
 
-    &::placeholder {
-      color: var(--color-white-op-60);
-    }
   }
 
   .mobileSearchButton {
     background: none;
     border: none;
-    color: var(--color-white-op-60);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -506,7 +501,7 @@
   padding: 0.8rem 0;
   font-size: 1rem;
   font-weight: 500;
-  color: var(--color-white-op-60);
+  color: var(--color-bg-primary-op-50);
   background: none;
   border: none;
   cursor: pointer;
@@ -531,9 +526,9 @@
     margin-bottom: 1rem;
 
     a {
-      color: var(--color-white);
+      color: var(--color-text-secondary);
       text-decoration: none;
-      font-size: 1rem;
+      font-size: var(--font-ssm);
 
       &:hover {
         color: var(--color-accent, var(--color-success-dark));
@@ -679,13 +674,12 @@
 }
 
 .mobileCategoryTitle {
-  display: block;
-  color: var(--color-text-primary);
-  font-size: var(--font-md);
+ 
   font-weight: var(--font-weight-bold);
-  text-decoration: none;
-  padding: 8px 0;
   margin-bottom: 8px;
+  padding: 8px 0;
+  transition: all .3s ease-in-out;
+  display: block;
   @include hover-transition;
 
   &:hover {
