@@ -320,7 +320,7 @@ export default function ArticleForm({
                                 }}
                             />
                         ) : (
-                            <div style={{ height: 500, backgroundColor: 'var(--color-primary-op-05)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-primary)' }}>
+                            <div style={{ height: 500, backgroundColor: 'color-mix(in srgb, var(--color-primary) var(--op-05), transparent)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-primary)' }}>
                                 در حال بارگذاری ویرایشگر...
                             </div>
                         )}

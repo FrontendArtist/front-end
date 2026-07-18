@@ -22,7 +22,7 @@ export default async function AdminContactMessagesPage() {
             </div>
 
             {error ? (
-                <div style={{ padding: '2rem', backgroundColor: 'var(--color-error-op-12)', color: 'var(--color-error)', borderRadius: '8px', border: '1px solid var(--color-error-border)' }}>
+                <div style={{ padding: '2rem', backgroundColor: 'color-mix(in srgb, var(--color-error) var(--op-12), transparent)', color: 'var(--color-error)', borderRadius: '8px', border: '1px solid var(--color-error-border)' }}>
                     خطا در دریافت لیست پیام‌های تماس. لطفاً ارتباط با سرور را بررسی کرده و صفحه را مجدداً بارگذاری کنید.
                 </div>
             ) : (

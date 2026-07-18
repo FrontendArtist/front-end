@@ -15,14 +15,14 @@
   
     .item {
       padding: 0.5rem 1rem;
-      background: var(--color-primary-op-10);
+      background: fade(var(--color-primary), 10%);
       border-radius: 4px;
       color: var(--color-cream-light);
       text-decoration: none;
       transition: all 0.2s ease;
   
       &:hover {
-        background: var(--color-primary-op-20);
+        background: fade(var(--color-primary), 20%);
         color: var(--color-title-hover);
       }
     }

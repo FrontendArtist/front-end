@@ -25,19 +25,19 @@ import styles from './OrdersTable.module.scss';
 
 /** برچسب‌های فارسی وضعیت پرداخت */
 const PAYMENT_STATUS_CONFIG = {
-    pending_payment: { label: 'در انتظار پرداخت', color: 'var(--color-warning)', bg: 'var(--color-warning-op-15)' },
-    pending_verification: { label: 'انتظار تأیید رسید', color: 'var(--color-warning-amber)', bg: 'var(--color-warning-op-15)' },
-    paid: { label: 'پرداخت شده', color: 'var(--color-success)', bg: 'var(--color-success-op-12)' },
-    failed: { label: 'ناموفق / رد شده', color: 'var(--color-error)', bg: 'var(--color-error-op-12)' },
+    pending_payment: { label: 'در انتظار پرداخت', color: 'var(--color-warning)', bg: 'color-mix(in srgb, var(--color-warning) var(--op-15), transparent)' },
+    pending_verification: { label: 'انتظار تأیید رسید', color: 'var(--color-warning-amber)', bg: 'color-mix(in srgb, var(--color-warning) var(--op-15), transparent)' },
+    paid: { label: 'پرداخت شده', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success) var(--op-12), transparent)' },
+    failed: { label: 'ناموفق / رد شده', color: 'var(--color-error)', bg: 'color-mix(in srgb, var(--color-error) var(--op-12), transparent)' },
 };
 
 /** برچسب‌های فارسی وضعیت ارسال (دقیقاً با فاصله‌های Schema) */
 const ORDER_STATUS_CONFIG = {
-    'pending': { label: 'در پردازش', color: 'var(--color-warning)', bg: 'var(--color-warning-op-15)' },
-    'paid ': { label: 'پرداخت شده', color: 'var(--color-blue-light)', bg: 'var(--color-blue-op-15)' },
-    'shipped ': { label: 'ارسال شده', color: 'var(--color-blue-light)', bg: 'var(--color-blue-op-15)' },
-    'delivered ': { label: 'تحویل شده', color: 'var(--color-success)', bg: 'var(--color-success-op-12)' },
-    'canceled ': { label: 'لغو شده', color: 'var(--color-gray-cc)', bg: 'var(--color-black-op-20)' },
+    'pending': { label: 'در پردازش', color: 'var(--color-warning)', bg: 'color-mix(in srgb, var(--color-warning) var(--op-15), transparent)' },
+    'paid ': { label: 'پرداخت شده', color: 'var(--color-blue-light)', bg: 'color-mix(in srgb, var(--color-blue) var(--op-15), transparent)' },
+    'shipped ': { label: 'ارسال شده', color: 'var(--color-blue-light)', bg: 'color-mix(in srgb, var(--color-blue) var(--op-15), transparent)' },
+    'delivered ': { label: 'تحویل شده', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success) var(--op-12), transparent)' },
+    'canceled ': { label: 'لغو شده', color: 'var(--color-gray-cc)', bg: 'color-mix(in srgb, var(--color-black) var(--op-20), transparent)' },
 };
 
 /** برچسب‌های روش پرداخت */

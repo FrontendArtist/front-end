@@ -32,7 +32,7 @@
   svg{
     width: 35px;
     height: 35px;
-    background-color: var(--color-white-op-40);
+    background-color: fade(var(--color-white), 40%);
     border-radius: 50px ;
     padding: 2px;
   }

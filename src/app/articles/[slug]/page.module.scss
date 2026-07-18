@@ -82,11 +82,11 @@
   max-width: 800px;
   margin: 0 auto 2.5rem;
   line-height: var(--line-height-lg);
-  background-color: var(--color-white-op-10);
+  background-color: fade(var(--color-white), 10%);
   color: var(--color-text-primary);
   padding: 1.5rem 2rem;
   border-radius: var(--radius-card, 24px);
-  border: 1px solid var(--color-primary-op-10);
+  border: 1px solid fade(var(--color-primary), 10%);
   font-size: var(--font-md-lg);
   font-weight: var(--font-weight-medium);
 }
@@ -96,10 +96,10 @@
   margin: 1.5rem auto 0; // Center the content
   line-height: var(--line-height-lg); // 1.8 for comfortable reading
   color: var(--color-white); // Pure white color from variables
-  background-color: var(--color-white-op-10); // Same background as excerpt
+  background-color: fade(var(--color-white), 10%); // Same background as excerpt
   padding: 2rem 2.5rem; // Padding inside content box
   border-radius: var(--radius-card, 24px); // Same border radius
-  border: 1px solid var(--color-primary-op-10); // Same border
+  border: 1px solid fade(var(--color-primary), 10%); // Same border
 
   // ---------------------------------------------------------------------------
   // HTML Element Styles

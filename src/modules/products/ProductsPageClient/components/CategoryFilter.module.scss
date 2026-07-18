@@ -24,10 +24,10 @@
   height: 222px;
   padding: 32px 24px;
   border-radius: var(--border-radius);
-  background: var(--color-bg-primary-op-60);
+  background: fade(var(--color-bg-primary-overlay), 60%);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--color-primary-op-10);
+  border: 1px solid fade(var(--color-primary), 10%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -43,7 +43,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, var(--color-primary-op-0) 0%, var(--color-primary-op-05) 100%);
+    background: linear-gradient(180deg, fade(var(--color-primary), 0%) 0%, fade(var(--color-primary), 5%) 100%);
     opacity: 0;
     transition: opacity 0.4s ease;
   }
@@ -51,10 +51,10 @@
   &:hover,
   &:focus-visible {
     transform: translateY(-4px);
-    border-color: var(--color-primary-op-40);
-    background: var(--color-bg-primary-op-80);
-    box-shadow: 0 16px 32px var(--color-black-op-40),
-      0 0 0 1px var(--color-primary-op-10) inset;
+    border-color: fade(var(--color-primary), 40%);
+    background: fade(var(--color-bg-primary-overlay), 80%);
+    box-shadow: 0 16px 32px fade(var(--color-black), 40%),
+      0 0 0 1px fade(var(--color-primary), 10%) inset;
 
     &::before {
       opacity: 1;
@@ -75,8 +75,8 @@
   width: 88px;
   height: 88px;
   border-radius: var(--border-radius);
-  background: var(--color-primary-op-05);
-  border: 1px solid var(--color-primary-op-10);
+  background: fade(var(--color-primary), 5%);
+  border: 1px solid fade(var(--color-primary), 10%);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
 
@@ -86,10 +86,10 @@
 
   .categoryCard:hover &,
   .categoryCard:focus-visible & {
-    background: var(--color-primary-op-15);
-    border-color: var(--color-primary-op-30);
+    background: fade(var(--color-primary), 15%);
+    border-color: fade(var(--color-primary), 30%);
     transform: scale(1.1) rotate(3deg);
-    box-shadow: 0 0 20px var(--color-primary-op-15);
+    box-shadow: 0 0 20px fade(var(--color-primary), 15%);
 
     img {
       transform: scale(1.1);
@@ -110,7 +110,7 @@
   .categoryCard:hover &,
   .categoryCard:focus-visible & {
     color: var(--color-title-hover);
-    text-shadow: 0 0 12px var(--color-primary-op-30);
+    text-shadow: 0 0 12px fade(var(--color-primary), 30%);
   }
 }
 
@@ -147,10 +147,10 @@
   width: 100%;
   padding: 32px;
   border-radius: 32px;
-  border: 1px solid var(--color-primary-op-20);
-  background: linear-gradient(145deg, var(--color-bg-primary-op-90) 0%, var(--color-bg-dark-green-op-95) 100%);
+  border: 1px solid fade(var(--color-primary), 20%);
+  background: linear-gradient(145deg, fade(var(--color-bg-primary-overlay), 90%) 0%, fade(var(--color-bg-dark-green), 95%) 100%);
   backdrop-filter: blur(20px);
-  box-shadow: 0 24px 48px -12px var(--color-black-op-50);
+  box-shadow: 0 24px 48px -12px fade(var(--color-black), 50%);
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -164,7 +164,7 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--color-primary-op-50), transparent);
+    background: linear-gradient(90deg, transparent, fade(var(--color-primary), 50%), transparent);
   }
 }
 
@@ -174,7 +174,7 @@
   justify-content: space-between;
   gap: 16px;
   padding-bottom: 20px;
-  border-bottom: 1px solid var(--color-primary-op-10);
+  border-bottom: 1px solid fade(var(--color-primary), 10%);
 }
 
 .selectedLabel {
@@ -186,9 +186,9 @@
 }
 
 .backButton {
-  background: var(--color-primary-op-10);
+  background: fade(var(--color-primary), 10%);
   color: var(--color-text-primary);
-  border: 1px solid var(--color-primary-op-20);
+  border: 1px solid fade(var(--color-primary), 20%);
   border-radius: var(--border-radius);
   padding: 8px 20px;
   font-size: var(--font-sm);
@@ -220,8 +220,8 @@
   .iconWrapper {
     width: 120px;
     height: 120px;
-    background: var(--color-primary-op-08);
-    border-color: var(--color-primary-op-30);
+    background: fade(var(--color-primary), 8%);
+    border-color: fade(var(--color-primary), 30%);
     margin-bottom: 16px;
   }
 
@@ -236,10 +236,10 @@
 }
 
 .subCategoriesColumn {
-  border: 1px solid var(--color-primary-op-15);
+  border: 1px solid fade(var(--color-primary), 15%);
   border-radius: 32px;
   padding: 32px;
-  background: var(--color-bg-primary-op-40);
+  background: fade(var(--color-bg-primary-overlay), 40%);
   backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
@@ -252,7 +252,7 @@
   align-items: center;
   justify-content: space-between;
   padding-bottom: 20px;
-  border-bottom: 1px solid var(--color-primary-op-10);
+  border-bottom: 1px solid fade(var(--color-primary), 10%);
 }
 
 .subTitle {
@@ -294,11 +294,11 @@
   }
 
   &::-webkit-scrollbar-track {
-    background: var(--color-primary-op-05);
+    background: fade(var(--color-primary), 5%);
   }
 
   &::-webkit-scrollbar-thumb {
-    background: var(--color-primary-op-20);
+    background: fade(var(--color-primary), 20%);
     border-radius: 4px;
   }
 }
@@ -309,7 +309,7 @@
   padding: 16px 20px;
   border-radius: 16px;
   border: 1px solid transparent;
-  background: var(--color-white-op-02);
+  background: fade(var(--color-white), 2%);
   color: var(--color-card-text);
   font-size: var(--font-md);
   cursor: pointer;
@@ -329,8 +329,8 @@
 
   &:hover,
   &:focus-visible {
-    background: var(--color-primary-op-08);
-    border-color: var(--color-primary-op-20);
+    background: fade(var(--color-primary), 8%);
+    border-color: fade(var(--color-primary), 20%);
     color: var(--color-title-hover);
     padding-right: 28px;
 
@@ -342,11 +342,11 @@
 }
 
 .subItemActive {
-  background: linear-gradient(90deg, var(--color-primary-op-15) 0%, var(--color-primary-op-05) 100%);
-  border-color: var(--color-primary-op-40);
+  background: linear-gradient(90deg, fade(var(--color-primary), 15%) 0%, fade(var(--color-primary), 5%) 100%);
+  border-color: fade(var(--color-primary), 40%);
   color: var(--color-title-hover);
   font-weight: var(--font-weight-medium);
-  box-shadow: 0 4px 12px var(--color-black-op-20);
+  box-shadow: 0 4px 12px fade(var(--color-black), 20%);
 
   &::after {
     opacity: 1;
@@ -361,6 +361,6 @@
   font-size: var(--font-md);
   color: var(--color-card-text);
   opacity: 0.6;
-  border: 1px dashed var(--color-primary-op-20);
+  border: 1px dashed fade(var(--color-primary), 20%);
   border-radius: 16px;
 }

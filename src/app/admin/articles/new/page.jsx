@@ -37,7 +37,7 @@ export default async function NewArticlePage() {
                     style={{
                         padding: '0.5rem 1rem',
                         borderRadius: '8px',
-                        border: '1px solid var(--color-black-op-20)',
+                        border: '1px solid color-mix(in srgb, var(--color-black) var(--op-20), transparent)',
                         color: 'var(--color-text-primary)',
                         textDecoration: 'none',
                         fontSize: 'var(--font-sm)',

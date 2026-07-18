@@ -37,7 +37,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    background: var(--color-primary-op-10);
+    background: fade(var(--color-primary), 10%);
     border: 2px solid var(--color-text-primary);
     border-radius: 8px;
     overflow: hidden;

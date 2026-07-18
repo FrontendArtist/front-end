@@ -13,7 +13,7 @@
 
 
   &.scrolled {
-    box-shadow: 0 2px 10px var(--color-black-op-10);
+    box-shadow: 0 2px 10px fade(var(--color-black), 10%);
   }
 }
 
@@ -149,7 +149,7 @@
   transition: opacity 0.25s ease, transform 0.25s ease;
   will-change: opacity, transform;
   backdrop-filter: blur(8px);
-  box-shadow: 0 8px 32px var(--color-black-op-40);
+  box-shadow: 0 8px 32px fade(var(--color-black), 40%);
   z-index: 1001;
   position: fixed;
 
@@ -436,14 +436,14 @@
   display: flex;
   align-items: center;
   padding: 1rem 1.2rem;
-  border-bottom: 1px solid var(--color-white-op-10);
+  border-bottom: 1px solid fade(var(--color-white), 10%);
   height: 100px;
 
   .mobileSearchForm {
     flex: 1;
     display: flex;
     align-items: center;
-    background: var(--color-white-op-12);
+    background: fade(var(--color-white), 12%);
     border-radius: 8px;
     padding: 0 0.5rem;
     margin-right: 15px;
@@ -459,14 +459,14 @@
     outline: none;
 
     &::placeholder {
-      color: var(--color-white-op-60);
+      color: fade(var(--color-white), 60%);
     }
   }
 
   .mobileSearchButton {
     background: none;
     border: none;
-    color: var(--color-white-op-60);
+    color: fade(var(--color-white), 60%);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -498,7 +498,7 @@
   display: flex;
   justify-content: space-around;
   margin-top: 0.5rem;
-  border-bottom: 1px solid var(--color-white-op-10);
+  border-bottom: 1px solid fade(var(--color-white), 10%);
 }
 
 .tabBtn {
@@ -506,7 +506,7 @@
   padding: 0.8rem 0;
   font-size: 1rem;
   font-weight: 500;
-  color: var(--color-white-op-60);
+  color: fade(var(--color-white), 60%);
   background: none;
   border: none;
   cursor: pointer;
@@ -548,7 +548,7 @@
   margin-top: 0.5rem;
 
   li a {
-    color: var(--color-white-op-70);
+    color: fade(var(--color-white), 70%);
     font-size: 0.9rem;
   }
 }
@@ -575,7 +575,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--color-black-op-60);
+  background: fade(var(--color-black), 60%);
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.35s ease, visibility 0.35s ease;
@@ -718,7 +718,7 @@
   justify-content: center;
   height: 100%;
   min-height: 120px;
-  background: var(--color-white-op-05);
+  background: fade(var(--color-white), 5%);
   border-radius: 8px;
   color: var(--color-text-primary);
   text-decoration: none;
@@ -726,7 +726,7 @@
   transition: all 0.3s ease;
 
   &:hover {
-    background: var(--color-white-op-10);
+    background: fade(var(--color-white), 10%);
     color: var(--color-title-hover);
   }
 }

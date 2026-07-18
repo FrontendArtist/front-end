@@ -81,7 +81,7 @@
   // Hide any content that overflows the rounded corners
   overflow: hidden;
   // Subtle border using our primary text color with low opacity
-  border: 1px solid var(--color-primary-op-20);
+  border: 1px solid fade(var(--color-primary), 20%);
   // Background color while image is loading
   background: var(--color-overlay);
 
@@ -247,7 +247,7 @@
 
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid var(--color-primary-op-20);
+  border: 1px solid fade(var(--color-primary), 20%);
 
   @include respond(md) {
     margin-top: 80px;
@@ -265,8 +265,8 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  background: var(--color-black-op-20);
-  border: 1px dashed var(--color-primary-op-40);
+  background: fade(var(--color-black), 20%);
+  border: 1px dashed fade(var(--color-primary), 40%);
   border-radius: var(--border-radius);
   margin: 20px;
   text-align: center;
@@ -322,17 +322,17 @@
     // Override Plyr CSS Variables to match site theme
     --plyr-color-main: var(--color-primary, var(--color-text-primary));
     --plyr-audio-controls-background: var(--color-card-bg, var(--color-dark-1a));
-    --plyr-audio-control-color: var(--color-white-op-70);
+    --plyr-audio-control-color: fade(var(--color-white), 70%);
     --plyr-audio-control-color-hover: var(--color-black);
     --plyr-audio-control-background-hover: var(--color-primary, var(--color-text-primary));
     --plyr-control-radius: 12px;
     --plyr-range-thumb-background: var(--color-primary, var(--color-text-primary));
-    --plyr-range-track-background: var(--color-white-op-10);
+    --plyr-range-track-background: fade(var(--color-white), 10%);
 
     // Apply border-radius and border directly to controls
     :global(.plyr__controls) {
       border-radius: 16px !important;
-      border: 1px solid var(--color-primary-op-15) !important;
+      border: 1px solid fade(var(--color-primary), 15%) !important;
       padding: 12px 16px !important;
       background: var(--color-overlay, var(--color-overlay)) !important;
     }
@@ -351,23 +351,23 @@
   display: flex;
   gap: 8px;
   padding: 12px 16px;
-  background: var(--color-black-op-40);
-  border-bottom: 1px solid var(--color-white-op-08);
+  background: fade(var(--color-black), 40%);
+  border-bottom: 1px solid fade(var(--color-white), 8%);
 
   .toggleBtn {
     flex: 1;
     padding: 8px 16px;
-    border: 1px solid var(--color-white-op-20);
+    border: 1px solid fade(var(--color-white), 20%);
     border-radius: 8px;
     background: transparent;
-    color: var(--color-white-op-60);
+    color: fade(var(--color-white), 60%);
     cursor: pointer;
     font-size: var(--font-sm);
     transition: all 0.2s ease;
     font-family: inherit;
 
     &:hover {
-      background: var(--color-white-op-10);
+      background: fade(var(--color-white), 10%);
       color: var(--color-white);
     }
 
@@ -384,9 +384,9 @@
   font-size: 10px;
   padding: 2px 7px;
   border-radius: 10px;
-  background: var(--color-blue-op-20);
+  background: fade(var(--color-blue-alt), 20%);
   color: var(--color-blue-light);
-  border: 1px solid var(--color-blue-op-40);
+  border: 1px solid fade(var(--color-blue-alt), 40%);
   white-space: nowrap;
 }
 
@@ -409,16 +409,16 @@
   }
 
   &::-webkit-scrollbar-track {
-    background: var(--color-white-op-05);
+    background: fade(var(--color-white), 5%);
     border-radius: 10px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: var(--color-primary-op-30);
+    background: fade(var(--color-primary), 30%);
     border-radius: 10px;
 
     &:hover {
-      background: var(--color-primary-op-60);
+      background: fade(var(--color-primary), 60%);
     }
   }
 }
@@ -429,25 +429,25 @@
   align-items: center;
   padding: 16px 24px;
   background: var(--color-card-bg);
-  border: 1px solid var(--color-primary-op-10);
+  border: 1px solid fade(var(--color-primary), 10%);
   border-radius: var(--border-radius);
   cursor: pointer;
   @include hover-transition;
 
   &:hover:not(.locked) {
-    background: var(--color-primary-op-05);
-    border-color: var(--color-primary-op-30);
+    background: fade(var(--color-primary), 5%);
+    border-color: fade(var(--color-primary), 30%);
   }
 
   &.locked {
     opacity: 0.6;
     cursor: not-allowed;
-    background: var(--color-white-op-02);
+    background: fade(var(--color-white), 2%);
   }
 
   &.active {
     border-color: var(--color-text-primary);
-    background: var(--color-primary-op-10);
+    background: fade(var(--color-primary), 10%);
   }
 }
 

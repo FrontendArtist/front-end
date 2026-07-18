@@ -6,7 +6,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: var(--color-black-op-40); // Standard backdrop
+    background-color: fade(var(--color-black), 40%); // Standard backdrop
     backdrop-filter: blur(8px);
     z-index: 9999;
     display: flex;
@@ -61,7 +61,7 @@
     width: 100%;
     background: transparent;
     border: none;
-    border-bottom: 2px solid var(--color-white-op-50);
+    border-bottom: 2px solid fade(var(--color-white), 50%);
     font-family: var(--font-iransans); // Ensure font consistency
     font-size: 2rem;
     color: var(--color-white);
@@ -71,7 +71,7 @@
     transition: border-color 0.3s;
 
     &::placeholder {
-        color: var(--color-white-op-50);
+        color: fade(var(--color-white), 50%);
     }
 
     &:focus {

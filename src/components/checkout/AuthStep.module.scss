@@ -60,8 +60,8 @@
 
 .input {
     padding: 14px 16px;
-    background: var(--color-primary-op-05);
-    border: 2px solid var(--color-primary-op-30);
+    background: fade(var(--color-primary), 5%);
+    border: 2px solid fade(var(--color-primary), 30%);
     border-radius: var(--border-radius);
     color: var(--color-text-primary);
     font-size: var(--font-lg);
@@ -73,7 +73,7 @@
     &:focus {
         outline: none;
         border-color: var(--color-accent);
-        background: var(--color-primary-op-10);
+        background: fade(var(--color-primary), 10%);
     }
 
     &:disabled {
@@ -88,8 +88,8 @@
 
 .phoneDisplay {
     padding: 16px;
-    background: var(--color-primary-op-10);
-    border: 1px solid var(--color-primary-op-30);
+    background: fade(var(--color-primary), 10%);
+    border: 1px solid fade(var(--color-primary), 30%);
     border-radius: var(--border-radius);
     font-size: var(--font-sm);
     color: var(--color-card-text);
@@ -106,8 +106,8 @@
 
 .error {
     padding: 12px 16px;
-    background: var(--color-error-op-10);
-    border: 2px solid var(--color-error-op-30);
+    background: fade(var(--color-error), 10%);
+    border: 2px solid fade(var(--color-error), 30%);
     border-radius: 8px;
     color: var(--color-error);
     font-size: var(--font-sm);
@@ -124,11 +124,11 @@
     font-weight: var(--font-weight-bold);
     cursor: pointer;
     @include hover-transition;
-    box-shadow: 0 4px 12px var(--color-black-op-20);
+    box-shadow: 0 4px 12px fade(var(--color-black), 20%);
 
     &:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px var(--color-black-op-30);
+        box-shadow: 0 6px 16px fade(var(--color-black), 30%);
     }
 
     &:active:not(:disabled) {
@@ -145,7 +145,7 @@
     padding: 12px 24px;
     background: transparent;
     color: var(--color-card-text);
-    border: 2px solid var(--color-primary-op-30);
+    border: 2px solid fade(var(--color-primary), 30%);
     border-radius: var(--border-radius);
     font-size: var(--font-md);
     font-weight: var(--font-weight-medium);
@@ -153,8 +153,8 @@
     @include hover-transition;
 
     &:hover:not(:disabled) {
-        background: var(--color-primary-op-10);
-        border-color: var(--color-primary-op-50);
+        background: fade(var(--color-primary), 10%);
+        border-color: fade(var(--color-primary), 50%);
     }
 
     &:disabled {
@@ -182,7 +182,7 @@
 .spinner {
     width: 48px;
     height: 48px;
-    border: 4px solid var(--color-primary-op-20);
+    border: 4px solid fade(var(--color-primary), 20%);
     border-top-color: var(--color-accent);
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -209,8 +209,8 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: var(--color-success-op-15);
-    border: 3px solid var(--color-success-op-40);
+    background: fade(var(--color-success), 15%);
+    border: 3px solid fade(var(--color-success), 40%);
     display: flex;
     align-items: center;
     justify-content: center;

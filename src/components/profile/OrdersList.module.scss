@@ -11,7 +11,7 @@
         margin: 0 0 32px 0;
         position: relative;
         padding-bottom: 12px;
-        border-bottom: 1px solid var(--color-primary-op-15);
+        border-bottom: 1px solid fade(var(--color-primary), 15%);
 
         @include respond(md) {
             font-size: var(--font-lg-xl);
@@ -46,7 +46,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid var(--color-primary-op-15);
+        border-bottom: 1px solid fade(var(--color-primary), 15%);
         padding-bottom: 16px;
 
         @include respond(md) {
@@ -89,7 +89,7 @@
             width: 4px;
             height: 4px;
             border-radius: 50%;
-            background: var(--color-primary-op-40);
+            background: fade(var(--color-primary), 40%);
 
             @include respond(md) {
                 display: none;
@@ -104,32 +104,32 @@
         font-weight: var(--font-weight-medium);
 
         &Success {
-            background: var(--color-success-op-15);
-            border: 1px solid var(--color-success-op-40);
+            background: fade(var(--color-success), 15%);
+            border: 1px solid fade(var(--color-success), 40%);
             color: var(--color-success);
         }
 
         &Warning {
-            background: var(--color-warning-op-15);
-            border: 1px solid var(--color-warning-op-40);
+            background: fade(var(--color-warning), 15%);
+            border: 1px solid fade(var(--color-warning), 40%);
             color: var(--color-warning);
         }
 
         &Danger {
-            background: var(--color-error-op-15);
-            border: 1px solid var(--color-error-op-40);
+            background: fade(var(--color-error), 15%);
+            border: 1px solid fade(var(--color-error), 40%);
             color: var(--color-error);
         }
 
         &Pending {
-            background: var(--color-indigo-op-15);
-            border: 1px solid var(--color-indigo-op-40);
+            background: fade(var(--color-indigo), 15%);
+            border: 1px solid fade(var(--color-indigo), 40%);
             color: var(--color-accent-indigo);
         }
 
         &Default {
-            background: var(--color-blue-op-15);
-            border: 1px solid var(--color-blue-op-35);
+            background: fade(var(--color-blue), 15%);
+            border: 1px solid fade(var(--color-blue), 35%);
             color: var(--color-blue-light-93);
         }
     }
@@ -169,8 +169,8 @@
     &__viewBtn {
         padding: 10px 24px;
         border-radius: 10px;
-        border: 2px solid var(--color-primary-op-30);
-        background: var(--color-bg-primary-op-60);
+        border: 2px solid fade(var(--color-primary), 30%);
+        background: fade(var(--color-bg-primary-overlay), 60%);
         color: var(--color-text-primary);
         font-size: var(--font-sm);
         font-weight: var(--font-weight-bold);
@@ -180,9 +180,9 @@
 
         &:hover {
             border-color: var(--color-text-primary);
-            background: var(--color-bg-primary-op-80);
+            background: fade(var(--color-bg-primary-overlay), 80%);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px var(--color-primary-op-20);
+            box-shadow: 0 4px 12px fade(var(--color-primary), 20%);
         }
 
         &:active {
@@ -213,7 +213,7 @@
     &__spinner {
         width: 44px;
         height: 44px;
-        border: 3px solid var(--color-primary-op-15);
+        border: 3px solid fade(var(--color-primary), 15%);
         border-radius: 50%;
         border-top-color: var(--color-text-primary);
         animation: spin 1s ease-in-out infinite;
@@ -221,11 +221,11 @@
 
     &__error {
         color: var(--color-error);
-        background: var(--color-error-op-15);
+        background: fade(var(--color-error), 15%);
         padding: 20px;
         border-radius: var(--border-radius);
         text-align: center;
-        border: 1px solid var(--color-error-op-40);
+        border: 1px solid fade(var(--color-error), 40%);
         font-size: var(--font-md);
         line-height: 1.6;
     }
@@ -241,7 +241,7 @@
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border-radius: var(--radius-card);
-        border: 1px dashed var(--color-primary-op-30);
+        border: 1px dashed fade(var(--color-primary), 30%);
 
         @include respond(md) {
             padding: 60px 20px;
@@ -252,12 +252,12 @@
         width: 80px;
         height: 80px;
         border-radius: 50%;
-        background: var(--color-primary-op-10);
+        background: fade(var(--color-primary), 10%);
         display: flex;
         align-items: center;
         justify-content: center;
         margin-bottom: 24px;
-        color: var(--color-primary-op-60);
+        color: fade(var(--color-primary), 60%);
 
         svg {
             width: 40px;
@@ -293,7 +293,7 @@
 
         &:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px var(--color-primary-op-30);
+            box-shadow: 0 8px 16px fade(var(--color-primary), 30%);
         }
 
         &:active {

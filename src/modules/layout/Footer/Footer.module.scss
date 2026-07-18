@@ -131,7 +131,7 @@
 .footerBottom {
   text-align: center;
   padding-top: var(--space-gap-desktop);
-  border-top: 1px solid var(--color-primary-op-20);
+  border-top: 1px solid fade(var(--color-primary), 20%);
 
   p {
     color: var(--color-card-text);

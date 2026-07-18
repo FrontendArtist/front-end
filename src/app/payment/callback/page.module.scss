@@ -101,8 +101,8 @@
 // حالت موفقیت (سبز)
 .success {
     .icon {
-        background: var(--color-success-op-15);
-        border: 3px solid var(--color-success-op-40);
+        background: fade(var(--color-success), 15%);
+        border: 3px solid fade(var(--color-success), 40%);
 
         svg {
             color: var(--color-success);
@@ -126,8 +126,8 @@
 // حالت خطا (قرمز)
 .failure {
     .icon {
-        background: var(--color-error-op-15);
-        border: 3px solid var(--color-error-op-40);
+        background: fade(var(--color-error), 15%);
+        border: 3px solid fade(var(--color-error), 40%);
 
         svg {
             color: var(--color-error);
@@ -151,8 +151,8 @@
 // حالت در انتظار پرداخت (کارت‌به‌کارت) — طلایی/کهربا
 .pending {
     .icon {
-        background: var(--color-warning-op-15);
-        border: 3px solid var(--color-warning-op-40);
+        background: fade(var(--color-warning), 15%);
+        border: 3px solid fade(var(--color-warning), 40%);
         animation: scaleIn 0.5s ease-out, tickPulse 2s ease-in-out infinite 0.5s;
 
         svg {
@@ -167,7 +167,7 @@
 
     .primaryButton {
         background: linear-gradient(135deg, var(--color-warning-amber), #d97706);
-        box-shadow: 0 4px 14px var(--color-warning-op-35);
+        box-shadow: 0 4px 14px fade(var(--color-warning), 35%);
 
         &:hover {
             background: linear-gradient(135deg, #d97706, #b45309);
@@ -179,11 +179,11 @@
 
     0%,
     100% {
-        box-shadow: 0 0 0 0 var(--color-warning-op-30);
+        box-shadow: 0 0 0 0 fade(var(--color-warning), 30%);
     }
 
     50% {
-        box-shadow: 0 0 0 10px var(--color-warning-op-00);
+        box-shadow: 0 0 0 10px fade(var(--color-warning), 0%);
     }
 }
 
@@ -215,8 +215,8 @@
 .orderInfo {
     width: 100%;
     padding: 20px;
-    background: var(--color-primary-op-10);
-    border: 2px solid var(--color-primary-op-30);
+    background: fade(var(--color-primary), 10%);
+    border: 2px solid fade(var(--color-primary), 30%);
     border-radius: var(--border-radius);
     display: flex;
     flex-direction: column;
@@ -244,7 +244,7 @@
 .value {
     color: var(--color-card-text);
     font-family: monospace;
-    background: var(--color-black-op-10);
+    background: fade(var(--color-black), 10%);
     padding: 4px 12px;
     border-radius: 6px;
 }
@@ -253,8 +253,8 @@
 .infoBox {
     width: 100%;
     padding: 20px;
-    background: var(--color-primary-op-05);
-    border: 1px solid var(--color-primary-op-20);
+    background: fade(var(--color-primary), 5%);
+    border: 1px solid fade(var(--color-primary), 20%);
     border-radius: var(--border-radius);
     display: flex;
     gap: 16px;
@@ -308,14 +308,14 @@
     font-size: var(--font-md);
     font-weight: var(--font-weight-bold);
     @include hover-transition;
-    box-shadow: 0 4px 12px var(--color-black-op-20);
+    box-shadow: 0 4px 12px fade(var(--color-black), 20%);
     display: flex;
     align-items: center;
     justify-content: center;
 
     &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px var(--color-black-op-30);
+        box-shadow: 0 6px 16px fade(var(--color-black), 30%);
     }
 
     &:active {
@@ -331,8 +331,8 @@
 .secondaryButton {
     flex: 1;
     padding: 14px 32px;
-    background: var(--color-primary-op-10);
-    border: 2px solid var(--color-primary-op-30);
+    background: fade(var(--color-primary), 10%);
+    border: 2px solid fade(var(--color-primary), 30%);
     color: var(--color-text-primary);
     text-decoration: none;
     border-radius: var(--border-radius);
@@ -344,8 +344,8 @@
     justify-content: center;
 
     &:hover {
-        background: var(--color-primary-op-20);
-        border-color: var(--color-primary-op-50);
+        background: fade(var(--color-primary), 20%);
+        border-color: fade(var(--color-primary), 50%);
         transform: translateY(-2px);
     }
 

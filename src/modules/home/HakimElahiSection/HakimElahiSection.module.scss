@@ -113,7 +113,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px var(--color-primary-op-30);
+    box-shadow: 0 8px 16px fade(var(--color-primary), 30%);
   }
 
   @include respond(md) {

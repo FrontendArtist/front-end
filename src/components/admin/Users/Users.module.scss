@@ -4,7 +4,7 @@
     background-color: var(--color-bg-primary);
     border-radius: var(--border-radius);
     padding: 1.5rem;
-    box-shadow: 0 4px 6px var(--color-black-op-05);
+    box-shadow: 0 4px 6px fade(var(--color-black), 5%);
     overflow-x: auto;
 }
 
@@ -12,12 +12,12 @@
     width: 100%;
     max-width: 400px;
     padding: 0.75rem 1rem;
-    border: 1px solid var(--color-black-op-10);
+    border: 1px solid fade(var(--color-black), 10%);
     border-radius: 8px;
     margin-bottom: 1.5rem;
     font-family: inherit;
     font-size: var(--font-sm);
-    background-color: var(--color-white-op-60);
+    background-color: fade(var(--color-white), 60%);
     color: var(--color-text-primary);
     transition: all 0.2s ease;
 
@@ -37,7 +37,7 @@
     td {
         padding: 1rem;
         text-align: right;
-        border-bottom: 1px solid var(--color-black-op-05);
+        border-bottom: 1px solid fade(var(--color-black), 5%);
     }
 
     th {
@@ -53,7 +53,7 @@
     }
 
     tbody tr:hover {
-        background-color: var(--color-black-op-05);
+        background-color: fade(var(--color-black), 5%);
     }
 }
 
@@ -66,35 +66,35 @@
     white-space: nowrap;
 
     &--admin {
-        background-color: var(--color-error-op-12);
+        background-color: fade(var(--color-error), 12%);
         color: var(--color-error);
     }
 
     &--user {
-        background-color: var(--color-success-op-12);
+        background-color: fade(var(--color-success), 12%);
         color: var(--color-success);
     }
 
     &--green {
-        background-color: var(--color-success-op-12);
+        background-color: fade(var(--color-success), 12%);
         color: var(--color-success);
     }
 
     &--yellow {
-        background-color: var(--color-warning-op-15);
+        background-color: fade(var(--color-warning), 15%);
         color: var(--color-warning-amber);
     }
 
     &--red {
-        background-color: var(--color-error-op-12);
+        background-color: fade(var(--color-error), 12%);
         color: var(--color-error);
     }
 }
 
 .btnAction {
-    background-color: var(--color-bg-primary-op-60);
+    background-color: fade(var(--color-bg-primary-overlay), 60%);
     color: var(--color-text-primary);
-    border: 1px solid var(--color-primary-op-20);
+    border: 1px solid fade(var(--color-primary), 20%);
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-family: inherit;
@@ -117,7 +117,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: var(--color-black-op-50);
+    background-color: fade(var(--color-black), 50%);
     z-index: 1000;
     display: flex;
     justify-content: flex-end;
@@ -129,7 +129,7 @@
     max-width: 500px;
     height: 100vh;
     background-color: var(--color-bg-primary);
-    box-shadow: -4px 0 15px var(--color-black-op-10);
+    box-shadow: -4px 0 15px fade(var(--color-black), 10%);
     direction: rtl;
     display: flex;
     flex-direction: column;
@@ -148,7 +148,7 @@
 
 .drawerHeader {
     padding: 1.5rem;
-    border-bottom: 1px solid var(--color-black-op-10);
+    border-bottom: 1px solid fade(var(--color-black), 10%);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -170,8 +170,8 @@
 
 .tabs {
     display: flex;
-    border-bottom: 1px solid var(--color-black-op-10);
-    background-color: var(--color-black-op-05);
+    border-bottom: 1px solid fade(var(--color-black), 10%);
+    background-color: fade(var(--color-black), 5%);
 }
 
 .tabBtn {
@@ -190,7 +190,7 @@
         color: var(--color-title-hover);
         border-bottom-color: var(--color-title-hover);
         font-weight: var(--font-weight-bold);
-        background-color: var(--color-white-op-05);
+        background-color: fade(var(--color-white), 5%);
     }
 }
 
@@ -217,7 +217,7 @@
         display: flex;
         justify-content: space-between;
         padding-bottom: 0.5rem;
-        border-bottom: 1px dashed var(--color-black-op-10);
+        border-bottom: 1px dashed fade(var(--color-black), 10%);
 
         span:first-child {
             color: var(--color-card-text);
@@ -238,13 +238,13 @@
         font-size: var(--font-md);
         margin-bottom: 1rem;
         color: var(--color-card-text);
-        border-bottom: 1px solid var(--color-black-op-10);
+        border-bottom: 1px solid fade(var(--color-black), 10%);
         padding-bottom: 0.5rem;
     }
 
     .card {
-        background-color: var(--color-bg-primary-op-30);
-        border: 1px solid var(--color-black-op-05);
+        background-color: fade(var(--color-bg-primary-overlay), 30%);
+        border: 1px solid fade(var(--color-black), 5%);
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 0.75rem;
@@ -269,15 +269,15 @@
         color: var(--color-text-primary);
         text-align: center;
         padding: 1rem;
-        background: var(--color-black-op-05);
+        background: fade(var(--color-black), 5%);
         border-radius: 4px;
     }
 }
 
 /* COMMENTS TAB */
 .commentItem {
-    background-color: var(--color-bg-primary-op-30);
-    border: 1px solid var(--color-black-op-05);
+    background-color: fade(var(--color-bg-primary-overlay), 30%);
+    border: 1px solid fade(var(--color-black), 5%);
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 1rem;
@@ -298,7 +298,7 @@
 
     .commentRelated {
         font-size: 0.75rem;
-        background-color: var(--color-black-op-05);
+        background-color: fade(var(--color-black), 5%);
         padding: 0.25rem 0.5rem;
         border-radius: 4px;
         color: var(--color-card-text);
@@ -308,7 +308,7 @@
         font-size: var(--font-sm);
         color: var(--color-text-primary);
         line-height: var(--line-height-md);
-        background: var(--color-black-op-05);
+        background: fade(var(--color-black), 5%);
         padding: 0.75rem;
         border-radius: 6px;
     }
@@ -359,14 +359,14 @@
             }
 
             &.btnReply {
-                background-color: var(--color-blue-op-20);
-                border: 1px solid var(--color-blue-op-40);
+                background-color: fade(var(--color-blue-alt), 20%);
+                border: 1px solid fade(var(--color-blue-alt), 40%);
                 color: var(--color-blue-light);
             }
 
             &.btnLive {
-                background-color: var(--color-bg-primary-op-50);
-                border: 1px solid var(--color-primary-op-20);
+                background-color: fade(var(--color-bg-primary-overlay), 50%);
+                border: 1px solid fade(var(--color-primary), 20%);
                 color: var(--color-text-primary);
             }
         }
@@ -397,8 +397,8 @@
         width: 100%;
         padding: 0.6rem 0.75rem;
         border-radius: 6px;
-        border: 1px solid var(--color-primary-op-20);
-        background: var(--color-bg-primary-op-60);
+        border: 1px solid fade(var(--color-primary), 20%);
+        background: fade(var(--color-bg-primary-overlay), 60%);
         color: var(--color-card-text);
         font-family: inherit;
         font-size: var(--font-sm);
@@ -408,7 +408,7 @@
 
         &:focus {
             outline: none;
-            border-color: var(--color-primary-op-50);
+            border-color: fade(var(--color-primary), 50%);
         }
 
         &:disabled {

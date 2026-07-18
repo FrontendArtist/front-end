@@ -24,8 +24,8 @@
     &__count {
         font-size: var(--font-sm);
         color: var(--color-text-primary);
-        background-color: var(--color-primary-op-08);
-        border: 1px solid var(--color-primary-op-20);
+        background-color: fade(var(--color-primary), 8%);
+        border: 1px solid fade(var(--color-primary), 20%);
         padding: 0.3rem 0.75rem;
         border-radius: 20px;
     }
@@ -35,8 +35,8 @@
         align-items: center;
         gap: 0.75rem;
         padding: 1.25rem 1.5rem;
-        background-color: var(--color-error-op-12);
-        border: 1px solid var(--color-error-op-30);
+        background-color: fade(var(--color-error), 12%);
+        border: 1px solid fade(var(--color-error), 30%);
         border-radius: var(--border-radius);
         color: var(--color-error);
         margin-bottom: 1.5rem;
@@ -65,7 +65,7 @@
     background-color: var(--color-bg-primary);
     border-radius: var(--border-radius);
     padding: 1.5rem;
-    box-shadow: 0 4px 6px var(--color-black-op-05);
+    box-shadow: 0 4px 6px fade(var(--color-black), 5%);
     overflow-x: auto;
 }
 
@@ -89,11 +89,11 @@
     width: 100%;
     max-width: 400px;
     padding: 0.75rem 1rem;
-    border: 1px solid var(--color-black-op-10);
+    border: 1px solid fade(var(--color-black), 10%);
     border-radius: 8px;
     font-family: inherit;
     font-size: var(--font-sm);
-    background-color: var(--color-white-op-60);
+    background-color: fade(var(--color-white), 60%);
     color: var(--color-text-primary);
     transition: all 0.2s ease;
 
@@ -119,7 +119,7 @@
     td {
         padding: 0.9rem 1rem;
         text-align: right;
-        border-bottom: 1px solid var(--color-black-op-05);
+        border-bottom: 1px solid fade(var(--color-black), 5%);
     }
 
     th {
@@ -127,7 +127,7 @@
         color: var(--color-card-text);
         font-size: var(--font-sm);
         white-space: nowrap;
-        background-color: var(--color-primary-op-04);
+        background-color: fade(var(--color-primary), 4%);
     }
 
     td {
@@ -139,7 +139,7 @@
         transition: background-color 0.15s;
 
         &:hover {
-            background-color: var(--color-black-op-05);
+            background-color: fade(var(--color-black), 5%);
         }
     }
 }
@@ -150,20 +150,20 @@
     height: 52px;
     border-radius: 8px;
     object-fit: cover;
-    border: 1px solid var(--color-primary-op-20);
-    background-color: var(--color-primary-op-05);
+    border: 1px solid fade(var(--color-primary), 20%);
+    background-color: fade(var(--color-primary), 5%);
 }
 
 .thumbnailPlaceholder {
     width: 52px;
     height: 52px;
     border-radius: 8px;
-    background-color: var(--color-primary-op-08);
+    background-color: fade(var(--color-primary), 8%);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.25rem;
-    border: 1px dashed var(--color-primary-op-20);
+    border: 1px dashed fade(var(--color-primary), 20%);
 }
 
 /* ── Price / Stock cells ─────────────────────────────────────────────────────── */
@@ -190,22 +190,22 @@
     white-space: nowrap;
 
     &--available {
-        background-color: var(--color-success-op-12);
+        background-color: fade(var(--color-success), 12%);
         color: var(--color-success);
     }
 
     &--unavailable {
-        background-color: var(--color-error-op-12);
+        background-color: fade(var(--color-error), 12%);
         color: var(--color-error);
     }
 
     &--published {
-        background-color: var(--color-success-op-12);
+        background-color: fade(var(--color-success), 12%);
         color: var(--color-success);
     }
 
     &--draft {
-        background-color: var(--color-warning-op-15);
+        background-color: fade(var(--color-warning), 15%);
         color: var(--color-warning-amber);
     }
 }
@@ -231,9 +231,9 @@
     width: 44px;
     height: 24px;
     border-radius: 12px;
-    background-color: var(--color-black-op-20);
+    background-color: fade(var(--color-black), 20%);
     transition: background-color 0.25s ease;
-    border: 1px solid var(--color-black-op-10);
+    border: 1px solid fade(var(--color-black), 10%);
 
     &::after {
         content: '';
@@ -243,7 +243,7 @@
         width: 16px;
         height: 16px;
         border-radius: 50%;
-        background-color: var(--color-white-op-60);
+        background-color: fade(var(--color-white), 60%);
         transition: transform 0.25s ease, background-color 0.25s ease;
     }
 }
@@ -293,18 +293,18 @@
     }
 
     &--edit {
-        background-color: var(--color-blue-op-20);
-        border: 1px solid var(--color-blue-op-40);
+        background-color: fade(var(--color-blue-alt), 20%);
+        border: 1px solid fade(var(--color-blue-alt), 40%);
         color: var(--color-blue-light);
     }
 
     &--delete {
         background-color: transparent;
-        border: 1px solid var(--color-error-op-35);
+        border: 1px solid fade(var(--color-error), 35%);
         color: var(--color-error);
 
         &:hover {
-            background-color: var(--color-error-op-12);
+            background-color: fade(var(--color-error), 12%);
         }
     }
 }
@@ -321,8 +321,8 @@
     &__btn {
         padding: 0.45rem 0.9rem;
         border-radius: 6px;
-        border: 1px solid var(--color-black-op-10);
-        background-color: var(--color-bg-primary-op-60);
+        border: 1px solid fade(var(--color-black), 10%);
+        background-color: fade(var(--color-bg-primary-overlay), 60%);
         color: var(--color-text-primary);
         font-family: inherit;
         font-size: var(--font-sm);
@@ -330,8 +330,8 @@
         transition: all 0.2s;
 
         &:hover:not(:disabled) {
-            background-color: var(--color-primary-op-12);
-            border-color: var(--color-primary-op-30);
+            background-color: fade(var(--color-primary), 12%);
+            border-color: fade(var(--color-primary), 30%);
             color: var(--color-card-text);
         }
 
@@ -341,8 +341,8 @@
         }
 
         &--active {
-            background-color: var(--color-primary-op-20);
-            border-color: var(--color-primary-op-40);
+            background-color: fade(var(--color-primary), 20%);
+            border-color: fade(var(--color-primary), 40%);
             color: var(--color-card-text);
             font-weight: var(--font-weight-bold);
         }
@@ -359,7 +359,7 @@
 .confirmOverlay {
     position: fixed;
     inset: 0;
-    background-color: var(--color-black-op-60);
+    background-color: fade(var(--color-black), 60%);
     z-index: 2000;
     display: flex;
     align-items: center;
@@ -380,7 +380,7 @@
 
 .confirmBox {
     background-color: var(--color-bg-primary);
-    border: 1px solid var(--color-primary-op-20);
+    border: 1px solid fade(var(--color-primary), 20%);
     border-radius: var(--border-radius);
     padding: 2rem;
     max-width: 420px;
@@ -444,7 +444,7 @@
     &__cancel {
         padding: 0.6rem 1.5rem;
         border-radius: 8px;
-        border: 1px solid var(--color-black-op-20);
+        border: 1px solid fade(var(--color-black), 20%);
         background-color: transparent;
         color: var(--color-text-primary);
         font-family: inherit;
@@ -453,8 +453,8 @@
         transition: all 0.2s;
 
         &:hover {
-            background-color: var(--color-primary-op-08);
-            border-color: var(--color-primary-op-30);
+            background-color: fade(var(--color-primary), 8%);
+            border-color: fade(var(--color-primary), 30%);
         }
     }
 }
@@ -483,7 +483,7 @@
     border-radius: 10px;
     font-size: var(--font-sm);
     font-weight: var(--font-weight-medium);
-    box-shadow: 0 8px 24px var(--color-black-op-40);
+    box-shadow: 0 8px 24px fade(var(--color-black), 40%);
     animation: toastIn 0.3s ease forwards;
     pointer-events: auto;
     max-width: 420px;
@@ -504,19 +504,19 @@
     &--success {
         background-color: var(--color-success);
         color: var(--color-white);
-        border: 1px solid var(--color-success-op-50);
+        border: 1px solid fade(var(--color-success), 50%);
     }
 
     &--error {
         background-color: var(--color-error);
         color: var(--color-white);
-        border: 1px solid var(--color-error-op-50);
+        border: 1px solid fade(var(--color-error), 50%);
     }
 
     &--info {
-        background-color: var(--color-blue-op-20);
+        background-color: fade(var(--color-blue-alt), 20%);
         color: var(--color-blue-light);
-        border: 1px solid var(--color-blue-op-40);
+        border: 1px solid fade(var(--color-blue-alt), 40%);
     }
 
     .toastIcon {
@@ -532,7 +532,7 @@
     background-color: var(--color-bg-primary);
     border-radius: var(--border-radius);
     padding: 2rem;
-    box-shadow: 0 4px 6px var(--color-black-op-05);
+    box-shadow: 0 4px 6px fade(var(--color-black), 5%);
 }
 
 /* ── Form Grid ──────────────────────────────────────────────────────────────── */
@@ -577,11 +577,11 @@
 .select {
     width: 100%;
     padding: 0.75rem 1rem;
-    border: 1px solid var(--color-black-op-10);
+    border: 1px solid fade(var(--color-black), 10%);
     border-radius: 8px;
     font-family: inherit;
     font-size: var(--font-sm);
-    background-color: var(--color-white-op-60);
+    background-color: fade(var(--color-white), 60%);
     color: var(--color-card-text);
     transition: all 0.2s ease;
 
@@ -594,7 +594,7 @@
         outline: none;
         border-color: var(--color-title-hover);
         background-color: var(--color-bg-primary);
-        box-shadow: 0 0 0 3px var(--color-primary-op-10);
+        box-shadow: 0 0 0 3px fade(var(--color-primary), 10%);
     }
 
     &:disabled {
@@ -632,25 +632,25 @@
     font-weight: var(--font-weight-bold);
     color: var(--color-card-text);
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid var(--color-primary-op-15);
+    border-bottom: 1px solid fade(var(--color-primary), 15%);
     margin: 1.5rem 0 1rem;
     grid-column: 1 / -1;
 }
 
 /* ── Image Upload ────────────────────────────────────────────────────────────── */
 .imageUploadZone {
-    border: 2px dashed var(--color-primary-op-25);
+    border: 2px dashed fade(var(--color-primary), 25%);
     border-radius: var(--border-radius);
     padding: 2rem 1rem;
     text-align: center;
-    background-color: var(--color-primary-op-04);
+    background-color: fade(var(--color-primary), 4%);
     cursor: pointer;
     transition: all 0.2s ease;
 
     &:hover,
     &--drag {
         border-color: var(--color-title-hover);
-        background-color: var(--color-primary-op-08);
+        background-color: fade(var(--color-primary), 8%);
     }
 
     input {
@@ -682,7 +682,7 @@
     height: 90px;
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid var(--color-primary-op-20);
+    border: 1px solid fade(var(--color-primary), 20%);
 
     img {
         width: 100%;
@@ -722,9 +722,9 @@
         gap: 0.5rem;
         padding: 0.75rem;
         min-height: 60px;
-        border: 1px solid var(--color-black-op-10);
+        border: 1px solid fade(var(--color-black), 10%);
         border-radius: 8px;
-        background-color: var(--color-white-op-60);
+        background-color: fade(var(--color-white), 60%);
         cursor: text;
     }
 
@@ -732,8 +732,8 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        background-color: var(--color-primary-op-15);
-        border: 1px solid var(--color-primary-op-30);
+        background-color: fade(var(--color-primary), 15%);
+        border: 1px solid fade(var(--color-primary), 30%);
         color: var(--color-card-text);
         padding: 0.25rem 0.6rem;
         border-radius: 20px;
@@ -760,9 +760,9 @@
         flex-wrap: wrap;
         gap: 0.5rem;
         padding: 0.75rem;
-        border: 1px solid var(--color-black-op-10);
+        border: 1px solid fade(var(--color-black), 10%);
         border-radius: 8px;
-        background-color: var(--color-bg-primary-op-60);
+        background-color: fade(var(--color-bg-primary-overlay), 60%);
         margin-top: 0.5rem;
         max-height: 180px;
         overflow-y: auto;
@@ -774,20 +774,20 @@
         font-size: 0.75rem;
         cursor: pointer;
         transition: all 0.15s;
-        border: 1px solid var(--color-black-op-10);
+        border: 1px solid fade(var(--color-black), 10%);
         color: var(--color-text-primary);
         background-color: transparent;
         font-family: inherit;
 
         &:hover {
-            background-color: var(--color-primary-op-12);
-            border-color: var(--color-primary-op-30);
+            background-color: fade(var(--color-primary), 12%);
+            border-color: fade(var(--color-primary), 30%);
             color: var(--color-card-text);
         }
 
         &--selected {
-            background-color: var(--color-primary-op-20);
-            border-color: var(--color-primary-op-40);
+            background-color: fade(var(--color-primary), 20%);
+            border-color: fade(var(--color-primary), 40%);
             color: var(--color-card-text);
         }
     }
@@ -799,8 +799,8 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
-    background-color: var(--color-primary-op-05);
-    border: 1px solid var(--color-primary-op-15);
+    background-color: fade(var(--color-primary), 5%);
+    border: 1px solid fade(var(--color-primary), 15%);
     border-radius: 8px;
 
     span {
@@ -818,7 +818,7 @@
     flex-wrap: wrap;
     margin-top: 2rem;
     padding-top: 1.5rem;
-    border-top: 1px solid var(--color-primary-op-15);
+    border-top: 1px solid fade(var(--color-primary), 15%);
 }
 
 .btnPrimary {
@@ -846,24 +846,24 @@
 
     &--draft {
         background-color: transparent;
-        border: 1px solid var(--color-primary-op-40);
+        border: 1px solid fade(var(--color-primary), 40%);
         color: var(--color-text-primary);
 
         &:hover {
-            background-color: var(--color-primary-op-12);
-            border-color: var(--color-primary-op-60);
+            background-color: fade(var(--color-primary), 12%);
+            border-color: fade(var(--color-primary), 60%);
             color: var(--color-card-text);
         }
     }
 
     &--danger {
         background-color: transparent;
-        border: 1px solid var(--color-error-op-35);
+        border: 1px solid fade(var(--color-error), 35%);
         color: var(--color-error);
         margin-right: auto;
 
         &:hover {
-            background-color: var(--color-error-op-12);
+            background-color: fade(var(--color-error), 12%);
         }
     }
 

@@ -6,7 +6,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--color-black-op-70);
+    background-color: fade(var(--color-black), 70%);
     backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
@@ -25,7 +25,7 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: var(--radius-card);
-    border: 1px solid var(--color-primary-op-20);
+    border: 1px solid fade(var(--color-primary), 20%);
     box-shadow: var(--shadow-card-strong);
     width: 100%;
     max-width: 600px;
@@ -41,8 +41,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 24px;
-    border-bottom: 1px solid var(--color-primary-op-15);
-    background: var(--color-bg-primary-op-40);
+    border-bottom: 1px solid fade(var(--color-primary), 15%);
+    background: fade(var(--color-bg-primary-overlay), 40%);
 
     @include respond(md) {
         padding: 20px;
@@ -74,7 +74,7 @@
 
     &:hover {
         color: var(--color-error);
-        background-color: var(--color-error-op-15);
+        background-color: fade(var(--color-error), 15%);
     }
 }
 
@@ -87,11 +87,11 @@
     }
 
     &::-webkit-scrollbar-track {
-        background: var(--color-bg-primary-op-40);
+        background: fade(var(--color-bg-primary-overlay), 40%);
     }
 
     &::-webkit-scrollbar-thumb {
-        background: var(--color-primary-op-30);
+        background: fade(var(--color-primary), 30%);
         border-radius: 4px;
     }
 

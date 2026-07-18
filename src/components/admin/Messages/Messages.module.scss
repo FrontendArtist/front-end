@@ -24,8 +24,8 @@
     background-color: var(--color-bg-primary);
     border-radius: var(--border-radius);
     padding: 1.5rem;
-    box-shadow: 0 4px 15px var(--color-black-op-05);
-    border: 1px solid var(--color-primary-op-10);
+    box-shadow: 0 4px 15px fade(var(--color-black), 5%);
+    border: 1px solid fade(var(--color-primary), 10%);
     overflow-x: auto;
 }
 
@@ -42,11 +42,11 @@
     width: 100%;
     max-width: 400px;
     padding: 0.75rem 1rem;
-    border: 1px solid var(--color-primary-op-25);
+    border: 1px solid fade(var(--color-primary), 25%);
     border-radius: 8px;
     font-family: inherit;
     font-size: var(--font-sm);
-    background-color: var(--color-white-op-60);
+    background-color: fade(var(--color-white), 60%);
     color: var(--color-text-primary);
     transition: all 0.25s ease;
 
@@ -54,7 +54,7 @@
         outline: none;
         border-color: var(--color-title-hover);
         background-color: var(--color-bg-primary);
-        box-shadow: 0 0 10px var(--color-primary-op-15);
+        box-shadow: 0 0 10px fade(var(--color-primary), 15%);
     }
 }
 
@@ -65,7 +65,7 @@
 
 .filterBtn {
     background: none;
-    border: 1px solid var(--color-primary-op-20);
+    border: 1px solid fade(var(--color-primary), 20%);
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-family: inherit;
@@ -75,7 +75,7 @@
     transition: all 0.2s;
 
     &:hover {
-        background-color: var(--color-primary-op-10);
+        background-color: fade(var(--color-primary), 10%);
     }
 
     &--active {
@@ -95,7 +95,7 @@
     td {
         padding: 1.25rem 1rem;
         text-align: right;
-        border-bottom: 1px solid var(--color-primary-op-10);
+        border-bottom: 1px solid fade(var(--color-primary), 10%);
     }
 
     th {
@@ -103,7 +103,7 @@
         color: var(--color-title-primary);
         font-size: var(--font-sm-md);
         white-space: nowrap;
-        background-color: var(--color-primary-op-05);
+        background-color: fade(var(--color-primary), 5%);
     }
 
     td {
@@ -118,11 +118,11 @@
     transition: background-color 0.2s;
 
     &:hover {
-        background-color: var(--color-primary-op-05);
+        background-color: fade(var(--color-primary), 5%);
     }
 
     &--unread {
-        background-color: var(--color-gold-op-05);
+        background-color: fade(var(--color-gold), 5%);
         font-weight: var(--font-weight-bold);
 
         td {
@@ -130,7 +130,7 @@
         }
 
         &:hover {
-            background-color: var(--color-gold-op-10);
+            background-color: fade(var(--color-gold), 10%);
         }
     }
 }
@@ -145,13 +145,13 @@
     white-space: nowrap;
 
     &--unread {
-        background-color: var(--color-error-op-15);
+        background-color: fade(var(--color-error), 15%);
         color: var(--color-error);
         border: 1px solid var(--color-error-border);
     }
 
     &--read {
-        background-color: var(--color-success-op-15);
+        background-color: fade(var(--color-success), 15%);
         color: var(--color-success);
         border: 1px solid var(--color-success-border);
     }
@@ -171,7 +171,7 @@
 
 .btnAction {
     background-color: transparent;
-    border: 1px solid var(--color-primary-op-30);
+    border: 1px solid fade(var(--color-primary), 30%);
     color: var(--color-text-primary);
     padding: 0.4rem 0.8rem;
     border-radius: 6px;
@@ -218,10 +218,10 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
-    background-color: var(--color-primary-op-04);
+    background-color: fade(var(--color-primary), 4%);
     padding: 1rem;
     border-radius: 12px;
-    border: 1px solid var(--color-primary-op-10);
+    border: 1px solid fade(var(--color-primary), 10%);
 
     @include respond(md) {
         grid-template-columns: 1fr;
@@ -267,10 +267,10 @@
         font-size: var(--font-sm-md);
         color: var(--color-card-text);
         line-height: var(--line-height-lg);
-        background-color: var(--color-primary-op-05);
+        background-color: fade(var(--color-primary), 5%);
         padding: 1.25rem;
         border-radius: var(--border-radius);
-        border: 1px solid var(--color-primary-op-15);
+        border: 1px solid fade(var(--color-primary), 15%);
         white-space: pre-wrap;
         word-break: break-word;
         max-height: 250px;
@@ -283,7 +283,7 @@
     justify-content: flex-end;
     gap: 0.75rem;
     margin-top: 1rem;
-    border-top: 1px solid var(--color-primary-op-10);
+    border-top: 1px solid fade(var(--color-primary), 10%);
     padding-top: 1.25rem;
 }
 
@@ -351,7 +351,7 @@
     background-color: var(--color-overlay);
     color: var(--color-text-primary);
     box-shadow: var(--shadow-md);
-    border: 1px solid var(--color-primary-op-20);
+    border: 1px solid fade(var(--color-primary), 20%);
     font-size: var(--font-sm);
     animation: toastFadeIn 0.3s ease-out;
     direction: rtl;
@@ -386,7 +386,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: var(--color-black-op-60);
+    background-color: fade(var(--color-black), 60%);
     backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
@@ -398,7 +398,7 @@
     background: var(--gradient-card-vertical);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--color-primary-op-20);
+    border: 1px solid fade(var(--color-primary), 20%);
     border-radius: var(--radius-card);
     padding: 2rem;
     width: 100%;
@@ -431,7 +431,7 @@
 
 .confirmBox__cancel {
     background: none;
-    border: 1px solid var(--color-primary-op-35);
+    border: 1px solid fade(var(--color-primary), 35%);
     color: var(--color-text-primary);
     padding: 0.6rem 1.2rem;
     border-radius: 8px;
@@ -441,7 +441,7 @@
     transition: all 0.25s;
 
     &:hover {
-        background-color: var(--color-primary-op-08);
+        background-color: fade(var(--color-primary), 8%);
     }
 }
 

@@ -61,137 +61,75 @@
     --border-radius: 12px;
 
 
-    /* === Theme Tokens (Consolidated v2) === */
-    /* طیف طلایی پس‌زمینه با شفافیت‌های متفاوت */
-    --color-primary-op-0: rgba(246, 217, 130, 0);
-    --color-primary-op-04: rgba(246, 217, 130, 0.04);
-    --color-primary-op-05: rgba(246, 217, 130, 0.05);
-    --color-primary-op-07: rgba(246, 217, 130, 0.07);
-    --color-primary-op-08: rgba(246, 217, 130, 0.08);
-    --color-primary-op-10: rgba(246, 217, 130, 0.1);
-    --color-primary-op-12: rgba(246, 217, 130, 0.12);
-    --color-primary-op-15: rgba(246, 217, 130, 0.15);
-    --color-primary-op-20: rgba(246, 217, 130, 0.2);
-    --color-primary-op-25: rgba(246, 217, 130, 0.25);
-    --color-primary-op-30: rgba(246, 217, 130, 0.3);
-    --color-primary-op-35: rgba(246, 217, 130, 0.35);
-    --color-primary-op-40: rgba(246, 217, 130, 0.4);
-    --color-primary-op-50: rgba(246, 217, 130, 0.5);
-    --color-primary-op-60: rgba(246, 217, 130, 0.6);
-    --color-primary-op-65: rgba(246, 217, 130, 0.65);
+    /* =========================
+       THEME ACCENTS AND BASES
+       ========================= */
+    --color-primary: var(--color-text-primary);
+    --color-gold: #F6D982;
+    --color-bg-primary-overlay: var(--color-bg-primary);
+    --color-bg-dark-green: #002b20;
+    --color-indigo: #6366f1;
+    --color-blue: #3b82f6;
+    --color-blue-alt: #64b4ff;
 
-    /* پس‌زمینه یشمی تیره با شفافیت‌های متفاوت */
-    --color-bg-primary-op-30: rgba(6, 24, 24, 0.3);
-    --color-bg-primary-op-35: rgba(6, 24, 24, 0.35);
-    --color-bg-primary-op-40: rgba(6, 24, 24, 0.4);
-    --color-bg-primary-op-45: rgba(6, 24, 24, 0.45);
-    --color-bg-primary-op-50: rgba(6, 24, 24, 0.5);
-    --color-bg-primary-op-60: rgba(6, 24, 24, 0.6);
-    --color-bg-primary-op-70: rgba(6, 24, 24, 0.7);
-    --color-bg-primary-op-80: rgba(6, 24, 24, 0.8);
-    --color-bg-primary-op-85: rgba(6, 24, 24, 0.85);
-    --color-bg-primary-op-90: rgba(6, 24, 24, 0.9);
+    /* =========================
+       OPACITY SCALE (Shared)
+       ========================= */
+    --op-00: 0%;
+    --op-02: 2%;
+    --op-04: 4%;
+    --op-05: 5%;
+    --op-07: 7%;
+    --op-08: 8%;
+    --op-10: 10%;
+    --op-12: 12%;
+    --op-15: 15%;
+    --op-20: 20%;
+    --op-25: 25%;
+    --op-30: 30%;
+    --op-35: 35%;
+    --op-40: 40%;
+    --op-45: 45%;
+    --op-50: 50%;
+    --op-60: 60%;
+    --op-70: 70%;
+    --op-72: 72%;
+    --op-80: 80%;
+    --op-85: 85%;
+    --op-90: 90%;
+    --op-95: 95%;
 
-    /* رنگ‌های ادغام شده وضعیت موفقیت (سبز) */
+    /* =========================
+       SYSTEM COLORS & STATUSES
+       ========================= */
     --color-success: #10b981;
     --color-success-dark: #047857;
-    --color-success-border: rgba(16, 185, 129, 0.2);
-    --color-success-op-05: rgba(16, 185, 129, 0.05);
-    --color-success-op-08: rgba(16, 185, 129, 0.08);
-    --color-success-op-10: rgba(16, 185, 129, 0.1);
-    --color-success-op-12: rgba(16, 185, 129, 0.12);
-    --color-success-op-15: rgba(16, 185, 129, 0.15);
-    --color-success-op-25: rgba(16, 185, 129, 0.25);
-    --color-success-op-30: rgba(16, 185, 129, 0.3);
-    --color-success-op-35: rgba(16, 185, 129, 0.35);
-    --color-success-op-40: rgba(16, 185, 129, 0.4);
-    --color-success-op-50: rgba(16, 185, 129, 0.5);
+    --color-success-border: color-mix(in srgb, var(--color-success) var(--op-20), transparent);
     --color-success-green-badge: rgba(26, 153, 91, 0.9);
     --color-success-green-text: #1a995b;
     --color-success-light: #86efac;
 
-    /* رنگ‌های ادغام شده وضعیت خطا/آلارم (قرمز) */
     --color-error: #ff6b6b;
     --color-error-darker: #a93226;
-    --color-error-border: rgba(220, 38, 38, 0.2);
-    --color-error-op-08: rgba(220, 38, 38, 0.08);
-    --color-error-op-10: rgba(231, 76, 60, 0.1);
-    --color-error-op-12: rgba(220, 38, 38, 0.12);
-    --color-error-op-15: rgba(220, 38, 38, 0.15);
-    --color-error-op-20: rgba(220, 38, 38, 0.2);
-    --color-error-op-30: rgba(231, 76, 60, 0.3);
-    --color-error-op-35: rgba(220, 38, 38, 0.35);
-    --color-error-op-40: rgba(220, 38, 38, 0.4);
-    --color-error-op-50: rgba(220, 38, 38, 0.5);
+    --color-error-border: color-mix(in srgb, var(--color-error) var(--op-20), transparent);
 
-    /* رنگ‌های هشدار (نارنجی و زرد) */
     --color-warning: #fcd34d;
     --color-warning-amber: #f59e0b;
     --color-warning-amber-dark: #d97706;
     --color-warning-amber-darker: #b45309;
-    --color-warning-op-00: rgba(245, 158, 11, 0);
-    --color-warning-op-15: rgba(245, 158, 11, 0.15);
-    --color-warning-op-30: rgba(245, 158, 11, 0.3);
-    --color-warning-op-35: rgba(245, 158, 11, 0.35);
-    --color-warning-op-40: rgba(245, 158, 11, 0.4);
 
-    /* رنگ‌های عمومی کرم و سفید */
     --color-white: #fff;
-    --color-white-op-02: rgba(255, 255, 255, 0.02);
-    --color-white-op-05: rgba(255, 255, 255, 0.05);
-    --color-white-op-08: rgba(255, 255, 255, 0.08);
-    --color-white-op-10: rgba(255, 255, 255, 0.1);
-    --color-white-op-12: rgba(255, 255, 255, 0.12);
-    --color-white-op-20: rgba(255, 255, 255, 0.2);
-    --color-white-op-30: rgba(255, 255, 255, 0.3);
-    --color-white-op-40: rgba(255, 255, 255, 0.4);
-    --color-white-op-50: rgba(255, 255, 255, 0.5);
-    --color-white-op-60: rgba(255, 255, 255, 0.6);
-    --color-white-op-70: rgba(255, 255, 255, 0.7);
-
-    /* رنگ‌های سیاه با پس‌زمینه و سایه‌ها */
     --color-black: #000;
-    --color-black-op-05: rgba(0, 0, 0, 0.05);
-    --color-black-op-10: rgba(0, 0, 0, 0.1);
-    --color-black-op-20: rgba(0, 0, 0, 0.2);
-    --color-black-op-30: rgba(0, 0, 0, 0.3);
-    --color-black-op-35: rgba(0, 0, 0, 0.35);
-    --color-black-op-40: rgba(0, 0, 0, 0.4);
-    --color-black-op-50: rgba(0, 0, 0, 0.5);
-    --color-black-op-60: rgba(0, 0, 0, 0.6);
-    --color-black-op-70: rgba(0, 0, 0, 0.7);
-    --color-black-op-72: rgba(0, 0, 0, 0.72);
 
-    /* خنثی‌های تیره و خاکستری‌های فرعی مپ شده */
     --color-dark-1a: #1a1a1a;
     --color-dark-17: #171717;
     --color-dark-0a: #0a0a0a;
     --color-light-ed: #ededed;
     --color-gray-38: #383838;
     --color-gray-cc: #ccc;
-    --color-cream-op-40: rgba(255, 250, 234, 0.4);
     --color-cream-light: #fffaea;
 
-    /* رنگ‌های پس‌زمینه سبز تیره نئونی */
-    --color-bg-dark-green-op-25: rgba(0, 43, 32, 0.25);
-    --color-bg-dark-green-op-95: rgba(0, 43, 32, 0.95);
-
-    /* رنگ‌های آبی و نیلی */
-    --color-indigo-op-08: rgba(99, 102, 241, 0.08);
-    --color-indigo-op-15: rgba(99, 102, 241, 0.15);
-    --color-indigo-op-20: rgba(99, 102, 241, 0.2);
-    --color-indigo-op-35: rgba(99, 102, 241, 0.35);
-    --color-indigo-op-40: rgba(99, 102, 241, 0.4);
     --color-blue-light: #6ab4ff;
     --color-blue-light-93: #93c5fd;
-    --color-blue-op-15: rgba(59, 130, 246, 0.15);
-    --color-blue-op-20: rgba(100, 180, 255, 0.2);
-    --color-blue-op-35: rgba(59, 130, 246, 0.35);
-    --color-blue-op-40: rgba(100, 180, 255, 0.4);
-
-    /* سایر لهجه‌های تکرار شده */
     --color-accent-indigo: #a5b4fc;
-
-
-
 }

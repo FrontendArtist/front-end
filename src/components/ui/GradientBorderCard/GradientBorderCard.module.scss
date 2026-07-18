@@ -97,7 +97,7 @@
  * افکت‌های hover برای محتوا
  */
 .enableHover:hover .cardContent {
-    box-shadow: 0 8px 24px var(--color-black-op-30);
+    box-shadow: 0 8px 24px fade(var(--color-black), 30%);
 }
 
 //aboutmentor

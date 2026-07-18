@@ -13,7 +13,7 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: var(--radius-card);
-    border: 1px solid var(--color-primary-op-20);
+    border: 1px solid fade(var(--color-primary), 20%);
     box-shadow: var(--shadow-card-strong);
     padding: var(--space-card-padding-desktop);
     display: flex;
@@ -41,7 +41,7 @@
     color: var(--color-text-primary);
     margin: 0;
     padding-bottom: 14px;
-    border-bottom: 1px solid var(--color-primary-op-15);
+    border-bottom: 1px solid fade(var(--color-primary), 15%);
 
     svg {
         color: var(--color-title-hover);
@@ -58,8 +58,8 @@
 // ─── باکس اطلاعات بانکی ───────────────────────────────────────────────────────
 // قاب نمایش شماره کارت، بانک و نام صاحب حساب
 .bankInfoBox {
-    background: var(--color-bg-primary-op-45);
-    border: 1px solid var(--color-primary-op-20);
+    background: fade(var(--color-bg-primary-overlay), 45%);
+    border: 1px solid fade(var(--color-primary), 20%);
     border-radius: 14px;
     padding: 22px 24px;
     display: flex;
@@ -124,8 +124,8 @@
     gap: 6px;
     padding: 8px 16px;
     border-radius: 8px;
-    border: 1px solid var(--color-primary-op-30);
-    background: var(--color-bg-primary-op-60);
+    border: 1px solid fade(var(--color-primary), 30%);
+    background: fade(var(--color-bg-primary-overlay), 60%);
     color: var(--color-text-primary);
     font-size: var(--font-sm);
     font-weight: var(--font-weight-medium);
@@ -140,9 +140,9 @@
 
     &:hover {
         border-color: var(--color-text-primary);
-        background: var(--color-bg-primary-op-85);
+        background: fade(var(--color-bg-primary-overlay), 85%);
         transform: translateY(-1px);
-        box-shadow: 0 4px 10px var(--color-primary-op-15);
+        box-shadow: 0 4px 10px fade(var(--color-primary), 15%);
     }
 
     &:active {
@@ -151,8 +151,8 @@
 
     // حالت Copied — رنگ سبز تأیید
     &.copied {
-        border-color: var(--color-success-op-50);
-        background: var(--color-success-op-10);
+        border-color: fade(var(--color-success), 50%);
+        background: fade(var(--color-success), 10%);
         color: var(--color-success);
     }
 }
@@ -204,22 +204,22 @@
 .input {
     padding: 14px 16px;
     border-radius: var(--border-radius);
-    border: 2px solid var(--color-primary-op-30);
-    background: var(--color-bg-primary-op-60);
+    border: 2px solid fade(var(--color-primary), 30%);
+    background: fade(var(--color-bg-primary-overlay), 60%);
     color: var(--color-card-text);
     font-size: var(--font-md);
     transition: all 0.3s ease;
     font-family: inherit;
 
     &::placeholder {
-        color: var(--color-cream-op-40);
+        color: fade(var(--color-cream-light), 40%);
     }
 
     &:focus {
         outline: none;
         border-color: var(--color-text-primary);
-        background: var(--color-bg-primary-op-80);
-        box-shadow: 0 0 0 4px var(--color-primary-op-10);
+        background: fade(var(--color-bg-primary-overlay), 80%);
+        box-shadow: 0 0 0 4px fade(var(--color-primary), 10%);
     }
 
     &:disabled {
@@ -237,9 +237,9 @@
 // ظاهر خطی-دَش با پس‌زمینه شفاف، مطابق CONTEXT_CardToCardPayment.md
 .dropzone {
     position: relative;
-    border: 2px dashed var(--color-primary-op-30);
+    border: 2px dashed fade(var(--color-primary), 30%);
     border-radius: 14px;
-    background: var(--color-bg-primary-op-35);
+    background: fade(var(--color-bg-primary-overlay), 35%);
     padding: 36px 24px;
     display: flex;
     flex-direction: column;
@@ -264,9 +264,9 @@
     // حالت hover
     &:hover,
     &.dragOver {
-        border-color: var(--color-primary-op-65);
-        background: var(--color-primary-op-05);
-        box-shadow: 0 0 0 4px var(--color-primary-op-07);
+        border-color: fade(var(--color-primary), 65%);
+        background: fade(var(--color-primary), 5%);
+        box-shadow: 0 0 0 4px fade(var(--color-primary), 7%);
 
         .dropzoneIcon {
             color: var(--color-title-hover);
@@ -276,8 +276,8 @@
 
     // زمانی که فایل انتخاب شده
     &.hasFile {
-        border-color: var(--color-success-op-50);
-        background: var(--color-success-op-05);
+        border-color: fade(var(--color-success), 50%);
+        background: fade(var(--color-success), 5%);
     }
 
     @include respond(md) {
@@ -287,7 +287,7 @@
 
 // آیکون بالای dropzone
 .dropzoneIcon {
-    color: var(--color-primary-op-50);
+    color: fade(var(--color-primary), 50%);
     transition: all 0.3s ease;
     pointer-events: none;
 }
@@ -320,8 +320,8 @@
     gap: 8px;
     padding: 10px 16px;
     border-radius: 8px;
-    background: var(--color-success-op-12);
-    border: 1px solid var(--color-success-op-30);
+    background: fade(var(--color-success), 12%);
+    border: 1px solid fade(var(--color-success), 30%);
     color: var(--color-success);
     font-size: var(--font-sm);
     margin-top: 4px;
@@ -356,14 +356,14 @@
 }
 
 .error {
-    background: var(--color-error-op-15);
-    border: 1px solid var(--color-error-op-40);
+    background: fade(var(--color-error), 15%);
+    border: 1px solid fade(var(--color-error), 40%);
     color: var(--color-error);
 }
 
 .success {
-    background: var(--color-success-op-15);
-    border: 1px solid var(--color-success-op-40);
+    background: fade(var(--color-success), 15%);
+    border: 1px solid fade(var(--color-success), 40%);
     color: var(--color-success);
 }
 
@@ -387,7 +387,7 @@
 
     &:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 8px 16px var(--color-primary-op-30);
+        box-shadow: 0 8px 16px fade(var(--color-primary), 30%);
     }
 
     &:active:not(:disabled) {
@@ -418,7 +418,7 @@
 .spinner {
     width: 18px;
     height: 18px;
-    border: 2px solid var(--color-bg-primary-op-30);
+    border: 2px solid fade(var(--color-bg-primary-overlay), 30%);
     border-top-color: var(--color-bg-primary);
     border-radius: 50%;
     animation: spin 0.75s linear infinite;

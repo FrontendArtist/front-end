@@ -38,14 +38,6 @@
     --color-gold-light: #E4BE63;
     --color-gold-dark: #8F6914;
 
-    --color-gold-op-05: rgba(199, 154, 43, 0.05);
-    --color-gold-op-08: rgba(199, 154, 43, 0.08);
-    --color-gold-op-10: rgba(199, 154, 43, 0.1);
-    --color-gold-op-15: rgba(199, 154, 43, 0.15);
-    --color-gold-op-20: rgba(199, 154, 43, 0.2);
-    --color-gold-op-30: rgba(199, 154, 43, 0.3);
-    --color-gold-op-40: rgba(199, 154, 43, 0.4);
-
     /* =========================
        SAGE / GREEN SYSTEM
     ========================= */
@@ -54,30 +46,11 @@
     --color-green-dark: #33473A;
     --color-green-light: #A8C0AE;
 
-    --color-green-op-05: rgba(78, 107, 87, 0.05);
-    --color-green-op-08: rgba(78, 107, 87, 0.08);
-    --color-green-op-10: rgba(78, 107, 87, 0.1);
-    --color-green-op-15: rgba(78, 107, 87, 0.15);
-    --color-green-op-20: rgba(78, 107, 87, 0.2);
-    --color-green-op-25: rgba(78, 107, 87, 0.25);
-    --color-green-op-30: rgba(78, 107, 87, 0.3);
-    --color-green-op-40: rgba(78, 107, 87, 0.4);
-    --color-green-op-50: rgba(78, 107, 87, 0.5);
-
     /* =========================
-       PRIMARY UI LAYERS
+       BASE MAPPINGS
     ========================= */
-
-    --color-bg-primary-op-05: rgba(78, 107, 87, 0.05);
-    --color-bg-primary-op-10: rgba(78, 107, 87, 0.1);
-    --color-bg-primary-op-15: rgba(78, 107, 87, 0.15);
-    --color-bg-primary-op-20: rgba(78, 107, 87, 0.2);
-    --color-bg-primary-op-25: rgba(78, 107, 87, 0.25);
-    --color-bg-primary-op-30: rgba(78, 107, 87, 0.3);
-    --color-bg-primary-op-35: rgba(78, 107, 87, 0.35);
-    --color-bg-primary-op-40: rgba(78, 107, 87, 0.4);
-    --color-bg-primary-op-50: rgba(78, 107, 87, 0.5);
-    --color-bg-primary-op-60: rgba(78, 107, 87, 0.6);
+    --color-primary: var(--color-green-primary);
+    --color-bg-primary-overlay: var(--color-green-primary);
 
     /* =========================
        SUCCESS
@@ -87,14 +60,7 @@
     --color-success-dark: #0A6B47;
     --color-success-light: #DDF6EC;
 
-    --color-success-border: rgba(15, 157, 105, 0.2);
-
-    --color-success-op-05: rgba(15, 157, 105, 0.05);
-    --color-success-op-10: rgba(15, 157, 105, 0.1);
-    --color-success-op-15: rgba(15, 157, 105, 0.15);
-    --color-success-op-20: rgba(15, 157, 105, 0.2);
-    --color-success-op-30: rgba(15, 157, 105, 0.3);
-    --color-success-op-40: rgba(15, 157, 105, 0.4);
+    --color-success-border: color-mix(in srgb, var(--color-success) var(--op-20), transparent);
 
     /* =========================
        ERROR
@@ -104,14 +70,7 @@
     --color-error-dark: #8A2525;
     --color-error-light: #FDECEC;
 
-    --color-error-border: rgba(214, 69, 69, 0.2);
-
-    --color-error-op-05: rgba(214, 69, 69, 0.05);
-    --color-error-op-10: rgba(214, 69, 69, 0.1);
-    --color-error-op-15: rgba(214, 69, 69, 0.15);
-    --color-error-op-20: rgba(214, 69, 69, 0.2);
-    --color-error-op-30: rgba(214, 69, 69, 0.3);
-    --color-error-op-40: rgba(214, 69, 69, 0.4);
+    --color-error-border: color-mix(in srgb, var(--color-error) var(--op-20), transparent);
 
     /* =========================
        WARNING
@@ -121,38 +80,12 @@
     --color-warning-dark: #9E6B0D;
     --color-warning-light: #FFF4D9;
 
-    --color-warning-op-05: rgba(216, 155, 29, 0.05);
-    --color-warning-op-10: rgba(216, 155, 29, 0.1);
-    --color-warning-op-15: rgba(216, 155, 29, 0.15);
-    --color-warning-op-20: rgba(216, 155, 29, 0.2);
-    --color-warning-op-30: rgba(216, 155, 29, 0.3);
-
     /* =========================
        BLACK / WHITE SYSTEM
     ========================= */
 
     --color-white: #FFFFFF;
-
-    --color-white-op-02: rgba(255, 255, 255, 0.02);
-    --color-white-op-05: rgba(255, 255, 255, 0.05);
-    --color-white-op-08: rgba(255, 255, 255, 0.08);
-    --color-white-op-10: rgba(255, 255, 255, 0.1);
-    --color-white-op-15: rgba(255, 255, 255, 0.15);
-    --color-white-op-20: rgba(255, 255, 255, 0.2);
-    --color-white-op-30: rgba(255, 255, 255, 0.3);
-    --color-white-op-40: rgba(255, 255, 255, 0.4);
-    --color-white-op-50: rgba(255, 255, 255, 0.5);
-
     --color-black: #18211B;
-
-    --color-black-op-05: rgba(24, 33, 27, 0.05);
-    --color-black-op-10: rgba(24, 33, 27, 0.1);
-    --color-black-op-15: rgba(24, 33, 27, 0.15);
-    --color-black-op-20: rgba(24, 33, 27, 0.2);
-    --color-black-op-30: rgba(24, 33, 27, 0.3);
-    --color-black-op-40: rgba(24, 33, 27, 0.4);
-    --color-black-op-50: rgba(24, 33, 27, 0.5);
-    --color-black-op-60: rgba(24, 33, 27, 0.6);
 
     /* =========================
        BORDERS
@@ -235,96 +168,74 @@
     --color-selection-text:
         #233127;
 
-        /* =========================
+    /* =========================
    PREMIUM CARD GRADIENTS
    Green + Gold Theme
 ========================= */
 
-/* کارت شیشه‌ای عمودی */
---gradient-card-vertical:
-linear-gradient(
-    to bottom,
-    rgba(168, 192, 174, 0.18),
-    rgba(207, 238, 232, 0.3)
-);
+    /* کارت شیشه‌ای عمودی */
+    --gradient-card-vertical:
+        linear-gradient(to bottom,
+            rgba(168, 192, 174, 0.18),
+            rgba(207, 238, 232, 0.3));
 
-/* کارت افقی LTR */
---gradient-card-horizontal-ltr:
-linear-gradient(
-    to right,
-    rgba(78, 107, 87, 0.16),
-    rgba(207, 238, 232, 0.3)
-);
+    /* کارت افقی LTR */
+    --gradient-card-horizontal-ltr:
+        linear-gradient(to right,
+            rgba(78, 107, 87, 0.16),
+            rgba(207, 238, 232, 0.3));
 
-/* کارت افقی RTL */
---gradient-card-horizontal-rtl:
-linear-gradient(
-    to left,
-    rgba(78, 107, 87, 0.16),
-    rgba(207, 238, 232, 0.3)
-);
+    /* کارت افقی RTL */
+    --gradient-card-horizontal-rtl:
+        linear-gradient(to left,
+            rgba(78, 107, 87, 0.16),
+            rgba(207, 238, 232, 0.3));
 
-/* =========================
+    /* =========================
    GOLD HIGHLIGHT VARIANTS
 ========================= */
 
-/* گرادینت طلایی لوکس */
---gradient-gold-soft:
-linear-gradient(
-    135deg,
-    rgba(199, 154, 43, 0.08),
-    rgba(228, 190, 99, 0.18)
-);
+    /* گرادینت طلایی لوکس */
+    --gradient-gold-soft:
+        linear-gradient(135deg,
+            rgba(199, 154, 43, 0.08),
+            rgba(228, 190, 99, 0.18));
 
-/* گرادینت سبز لوکس */
---gradient-green-soft:
-linear-gradient(
-    135deg,
-    rgba(78, 107, 87, 0.08),
-    rgba(168, 192, 174, 0.22)
-);
+    /* گرادینت سبز لوکس */
+    --gradient-green-soft:
+        linear-gradient(135deg,
+            rgba(78, 107, 87, 0.08),
+            rgba(168, 192, 174, 0.22));
 
-/* گرادینت برای دکمه پرمیوم */
---gradient-button-gold:
-linear-gradient(
-    135deg,
-    #C79A2B,
-    #E4BE63
-);
+    /* گرادینت برای دکمه پرمیوم */
+    --gradient-button-gold:
+        linear-gradient(135deg,
+            #C79A2B,
+            #E4BE63);
 
-/* گرادینت هاور دکمه */
---gradient-button-gold-hover:
-linear-gradient(
-    135deg,
-    #A67A1B,
-    #F0CB73
-);
+    /* گرادینت هاور دکمه */
+    --gradient-button-gold-hover:
+        linear-gradient(135deg,
+            #A67A1B,
+            #F0CB73);
 
-/* بکگراند لوکس هیرو */
---gradient-hero:
-radial-gradient(
-    circle at top right,
-    rgba(78, 107, 87, 0.12),
-    transparent 35%
-),
-radial-gradient(
-    circle at bottom left,
-    rgba(228, 190, 99, 0.14),
-    transparent 40%
-),
-linear-gradient(
-    180deg,
-    #EEF3EC,
-    #F8FAF6
-);
+    /* بکگراند لوکس هیرو */
+    --gradient-hero:
+        radial-gradient(circle at top right,
+            rgba(78, 107, 87, 0.12),
+            transparent 35%),
+        radial-gradient(circle at bottom left,
+            rgba(228, 190, 99, 0.14),
+            transparent 40%),
+        linear-gradient(180deg,
+            #EEF3EC,
+            #F8FAF6);
 
-/* گرادینت بردر گلس */
---gradient-border-glass:
-linear-gradient(
-    135deg,
-    rgba(78,107,87,0.12),
-    rgba(199,154,43,0.18),
-    rgba(255,255,255,0.7)
-);
+    /* گرادینت بردر گلس */
+    --gradient-border-glass:
+        linear-gradient(135deg,
+            rgba(78, 107, 87, 0.12),
+            rgba(199, 154, 43, 0.18),
+            rgba(255, 255, 255, 0.7));
 
 }

@@ -71,8 +71,8 @@
 // حالت Pending (خاکستری)
 .step.pending {
     .stepCircle {
-        background: var(--color-primary-op-05);
-        border-color: var(--color-primary-op-30);
+        background: fade(var(--color-primary), 5%);
+        border-color: fade(var(--color-primary), 30%);
         color: var(--color-card-text);
     }
 
@@ -92,7 +92,7 @@
         background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
         border-color: var(--color-accent);
         color: var(--card-text);
-        box-shadow: 0 4px 12px var(--color-primary-op-40);
+        box-shadow: 0 4px 12px fade(var(--color-primary), 40%);
         animation: pulse-glow 2s ease-in-out infinite;
     }
 
@@ -110,11 +110,11 @@
 
         0%,
         100% {
-            box-shadow: 0 4px 12px var(--color-primary-op-40);
+            box-shadow: 0 4px 12px fade(var(--color-primary), 40%);
         }
 
         50% {
-            box-shadow: 0 6px 20px var(--color-primary-op-60);
+            box-shadow: 0 6px 20px fade(var(--color-primary), 60%);
         }
     }
 }
@@ -125,7 +125,7 @@
         background: linear-gradient(135deg, var(--color-success), var(--color-success));
         border-color: var(--color-success);
         color: var(--card-text);
-        box-shadow: 0 4px 12px var(--color-success-op-30);
+        box-shadow: 0 4px 12px fade(var(--color-success), 30%);
     }
 
     .stepNumber {
@@ -138,7 +138,7 @@
 
     &.clickable:hover .stepCircle {
         transform: scale(1.05);
-        box-shadow: 0 6px 16px var(--color-success-op-40);
+        box-shadow: 0 6px 16px fade(var(--color-success), 40%);
     }
 }
 
@@ -172,7 +172,7 @@
 .connector {
     flex: 1;
     height: 3px;
-    background: var(--color-primary-op-20);
+    background: fade(var(--color-primary), 20%);
     margin: 0 -20px;
     position: relative;
     top: -32px;

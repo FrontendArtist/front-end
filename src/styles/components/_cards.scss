@@ -21,7 +21,7 @@
   }
 
   &:hover {
-    box-shadow: 0 8px 24px var(--color-black-op-20);
+    box-shadow: 0 8px 24px fade(var(--color-black), 20%);
   }
 }
 

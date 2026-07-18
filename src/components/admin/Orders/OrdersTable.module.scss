@@ -10,7 +10,7 @@
 
 /* ─── Local Variables ──────────────────────────────────────────────────────── */
 $bg: var(--color-bg-primary);
-$border: var(--color-primary-op-10);
+$border: fade(var(--color-primary), 10%);
 $text: var(--color-card-text);
 $muted: var(--color-card-text);
 $radius-md: var(--border-radius);
@@ -44,7 +44,7 @@ $transition: 0.2s ease;
     flex: 1;
     min-width: 220px;
     padding: 10px 16px;
-    background: var(--color-black-op-10);
+    background: fade(var(--color-black), 10%);
     border: 1px solid $border;
     border-radius: $radius-sm;
     color: $text;
@@ -58,8 +58,8 @@ $transition: 0.2s ease;
     }
 
     &:focus {
-        border-color: var(--color-primary-op-40);
-        box-shadow: 0 0 0 3px var(--color-primary-op-05);
+        border-color: fade(var(--color-primary), 40%);
+        box-shadow: 0 0 0 3px fade(var(--color-primary), 5%);
     }
 }
 
@@ -86,14 +86,14 @@ $transition: 0.2s ease;
         padding: 14px 16px;
         font-weight: var(--font-weight-medium);
         color: $muted;
-        background: var(--color-black-op-20);
+        background: fade(var(--color-black), 20%);
         border-bottom: 1px solid $border;
         white-space: nowrap;
     }
 
     td {
         padding: 14px 16px;
-        border-bottom: 1px solid var(--color-primary-op-05);
+        border-bottom: 1px solid fade(var(--color-primary), 5%);
         vertical-align: middle;
     }
 
@@ -101,7 +101,7 @@ $transition: 0.2s ease;
         transition: background-color $transition;
 
         &:hover {
-            background: var(--color-primary-op-05);
+            background: fade(var(--color-primary), 5%);
         }
 
         &:last-child td {
@@ -214,22 +214,22 @@ $transition: 0.2s ease;
     font-family: inherit;
 
     &--receipt {
-        background: var(--color-warning-op-15);
+        background: fade(var(--color-warning), 15%);
         color: var(--color-warning-amber);
-        border-color: var(--color-warning-op-30);
+        border-color: fade(var(--color-warning), 30%);
 
         &:hover {
-            background: var(--color-warning-op-30);
+            background: fade(var(--color-warning), 30%);
         }
     }
 
     &--status {
-        background: var(--color-blue-op-15);
+        background: fade(var(--color-blue), 15%);
         color: var(--color-blue-light);
-        border-color: var(--color-blue-op-35);
+        border-color: fade(var(--color-blue), 35%);
 
         &:hover {
-            background: var(--color-blue-op-20);
+            background: fade(var(--color-blue-alt), 20%);
         }
     }
 }
@@ -264,7 +264,7 @@ $transition: 0.2s ease;
 .modal_backdrop {
     position: fixed;
     inset: 0;
-    background: var(--color-black-op-70);
+    background: fade(var(--color-black), 70%);
     backdrop-filter: blur(4px);
     z-index: 1000;
     display: flex;
@@ -286,7 +286,7 @@ $transition: 0.2s ease;
 
 .modal {
     background: var(--color-bg-primary);
-    border: 1px solid var(--color-primary-op-15);
+    border: 1px solid fade(var(--color-primary), 15%);
     border-radius: 20px;
     width: 100%;
     max-width: 500px;
@@ -328,7 +328,7 @@ $transition: 0.2s ease;
 
         &:hover {
             color: $text;
-            background: var(--color-white-op-05);
+            background: fade(var(--color-white), 5%);
         }
     }
 
@@ -337,7 +337,7 @@ $transition: 0.2s ease;
         flex-wrap: wrap;
         gap: 12px;
         padding: 14px 16px;
-        background: var(--color-black-op-20);
+        background: fade(var(--color-black), 20%);
         border-radius: $radius-sm;
         font-size: var(--font-sm);
         color: $muted;
@@ -353,7 +353,7 @@ $transition: 0.2s ease;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 1px dashed var(--color-primary-op-20);
+        border: 1px dashed fade(var(--color-primary), 20%);
         border-radius: $radius-md;
         overflow: hidden;
 
@@ -412,7 +412,7 @@ $transition: 0.2s ease;
     &__label {
         font-size: var(--font-sm);
         font-weight: var(--font-weight-medium);
-        color: var(--color-cream-op-40);
+        color: fade(var(--color-cream-light), 40%);
     }
 
     &__required {
@@ -423,7 +423,7 @@ $transition: 0.2s ease;
     &__select,
     &__input {
         padding: 10px 14px;
-        background: var(--color-black-op-20);
+        background: fade(var(--color-black), 20%);
         border: 1px solid $border;
         border-radius: $radius-sm;
         color: $text;
@@ -434,8 +434,8 @@ $transition: 0.2s ease;
         width: 100%;
 
         &:focus {
-            border-color: var(--color-primary-op-40);
-            box-shadow: 0 0 0 3px var(--color-primary-op-05);
+            border-color: fade(var(--color-primary), 40%);
+            box-shadow: 0 0 0 3px fade(var(--color-primary), 5%);
         }
     }
 
@@ -454,7 +454,7 @@ $transition: 0.2s ease;
         color: var(--color-error);
         margin: 0;
         padding: 10px 14px;
-        background: var(--color-error-op-08);
+        background: fade(var(--color-error), 8%);
         border-radius: $radius-sm;
         border: 1px solid var(--color-error-border);
     }
@@ -509,22 +509,22 @@ $transition: 0.2s ease;
     }
 
     &--success {
-        background: var(--color-success-op-15);
+        background: fade(var(--color-success), 15%);
         color: var(--color-success);
-        border-color: var(--color-success-op-30);
+        border-color: fade(var(--color-success), 30%);
 
         &:hover:not(:disabled) {
-            background: var(--color-success-op-25);
+            background: fade(var(--color-success), 25%);
         }
     }
 
     &--danger {
-        background: var(--color-error-op-12);
+        background: fade(var(--color-error), 12%);
         color: var(--color-error);
-        border-color: var(--color-error-op-20);
+        border-color: fade(var(--color-error), 20%);
 
         &:hover:not(:disabled) {
-            background: var(--color-error-op-20);
+            background: fade(var(--color-error), 20%);
         }
     }
 
@@ -535,7 +535,7 @@ $transition: 0.2s ease;
 
         &:hover:not(:disabled) {
             color: $text;
-            background: var(--color-white-op-05);
+            background: fade(var(--color-white), 5%);
         }
     }
 }

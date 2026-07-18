@@ -27,9 +27,9 @@
 
 .typeSelect {
     padding: 0.875rem 2.5rem 0.875rem 1.25rem;
-    border: 1px solid var(--color-primary-op-20);
+    border: 1px solid fade(var(--color-primary), 20%);
     border-radius: 50px;
-    background: var(--color-primary-op-08);
+    background: fade(var(--color-primary), 8%);
     color: var(--color-card-text);
     font-family: var(--font-iransans);
     font-size: var(--font-md);
@@ -47,15 +47,15 @@
 
     &:hover {
         border-color: var(--color-text-primary);
-        background: var(--color-primary-op-12);
+        background: fade(var(--color-primary), 12%);
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px var(--color-primary-op-15);
+        box-shadow: 0 4px 12px fade(var(--color-primary), 15%);
     }
 
     &:focus {
         border-color: var(--color-text-primary);
-        background: var(--color-primary-op-15);
-        box-shadow: 0 0 0 3px var(--color-primary-op-10);
+        background: fade(var(--color-primary), 15%);
+        box-shadow: 0 0 0 3px fade(var(--color-primary), 10%);
     }
 
     // Style the options
@@ -76,33 +76,33 @@
     flex: 1;
     width: 100%;
     padding: 0.875rem 3.5rem 0.875rem 1.5rem;
-    border: 1px solid var(--color-primary-op-20);
+    border: 1px solid fade(var(--color-primary), 20%);
     border-radius: 50px;
-    background: var(--color-primary-op-05);
+    background: fade(var(--color-primary), 5%);
     color: var(--color-card-text);
     font-family: var(--font-iransans);
     font-size: var(--font-md);
     font-weight: var(--font-weight-regular);
     transition: all 0.3s ease;
-    box-shadow: inset 0 2px 4px var(--color-black-op-05);
+    box-shadow: inset 0 2px 4px fade(var(--color-black), 5%);
     backdrop-filter: blur(5px);
 
     &::placeholder {
-        color: var(--color-cream-op-40);
+        color: fade(var(--color-cream-light), 40%);
         font-style: italic;
     }
 
     &:hover {
         border-color: var(--color-text-primary);
-        background: var(--color-primary-op-08);
+        background: fade(var(--color-primary), 8%);
     }
 
     &:focus {
         border-color: var(--color-text-primary);
-        background: var(--color-primary-op-12);
+        background: fade(var(--color-primary), 12%);
         box-shadow:
-            inset 0 2px 4px var(--color-black-op-05),
-            0 0 0 3px var(--color-primary-op-10);
+            inset 0 2px 4px fade(var(--color-black), 5%),
+            0 0 0 3px fade(var(--color-primary), 10%);
         outline: none;
     }
 
@@ -117,8 +117,8 @@
     left: 1rem;
     top: 50%;
     transform: translateY(-50%);
-    background: linear-gradient(135deg, var(--color-primary-op-15), var(--color-primary-op-10));
-    border: 1px solid var(--color-primary-op-30);
+    background: linear-gradient(135deg, fade(var(--color-primary), 15%), fade(var(--color-primary), 10%));
+    border: 1px solid fade(var(--color-primary), 30%);
     border-radius: 50%;
     width: 36px;
     height: 36px;
@@ -135,7 +135,7 @@
         color: var(--color-bg-primary);
         border-color: var(--color-text-primary);
         transform: translateY(-50%) scale(1.1);
-        box-shadow: 0 4px 12px var(--color-primary-op-30);
+        box-shadow: 0 4px 12px fade(var(--color-primary), 30%);
     }
 
     &:active {

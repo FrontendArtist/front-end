@@ -14,20 +14,20 @@
  *   $sidebar-width-sm:   64px  – icon-only collapsed width on mobile
  *   $sidebar-bg:         var(--color-bg-primary) – same as page or slightly adjusted
  *   $sidebar-accent:     var(--color-text-primary) – gold from the design system
- *   $sidebar-hover-bg:   var(--color-primary-op-08) – subtle gold tint on hover
- *   $sidebar-active-bg:  var(--color-primary-op-15) – stronger tint for active link
+ *   $sidebar-hover-bg:   fade(var(--color-primary), 8%) – subtle gold tint on hover
+ *   $sidebar-active-bg:  fade(var(--color-primary), 15%) – stronger tint for active link
  */
 
 /* ─── Local Variables ──────────────────────────────────────────────────────── */
 $sidebar-width: 250px;
 $sidebar-width-sm: 64px;
 $sidebar-bg: var(--color-bg-primary);
-$sidebar-border: var(--color-primary-op-12);
+$sidebar-border: fade(var(--color-primary), 12%);
 $sidebar-accent: var(--color-text-primary); // #F6D982 from styles.md
 $sidebar-text: var(--color-card-text); // #FFFAEA from styles.md
 $sidebar-muted: var(--color-card-text);
-$sidebar-hover-bg: var(--color-primary-op-08);
-$sidebar-active-bg: var(--color-primary-op-15);
+$sidebar-hover-bg: fade(var(--color-primary), 8%);
+$sidebar-active-bg: fade(var(--color-primary), 15%);
 $sidebar-active-bar: 3px solid var(--color-text-primary);
 $transition-speed: 0.2s;
 
@@ -250,8 +250,8 @@ $transition-speed: 0.2s;
         border-color $transition-speed ease;
 
     &:hover {
-        background-color: var(--color-error-op-12); // subtle red tint for destructive action
+        background-color: fade(var(--color-error), 12%); // subtle red tint for destructive action
         color: var(--color-error);
-        border-color: var(--color-error-op-20);
+        border-color: fade(var(--color-error), 20%);
     }
 }
