@@ -443,7 +443,7 @@
     flex: 1;
     display: flex;
     align-items: center;
-    background: fade(var(--color-white), 12%);
+    background: fade(var(--color-card-text), 12%);
     border-radius: 8px;
     padding: 0 0.5rem;
     margin-right: 15px;
@@ -454,19 +454,19 @@
     padding: 0.6rem 0.5rem;
     border: none;
     background: transparent;
-    color: var(--color-white);
+    color: var(--color-card-text);
     font-size: 0.95rem;
     outline: none;
 
     &::placeholder {
-      color: fade(var(--color-white), 60%);
+      color: fade(var(--color-card-text), 60%);
     }
   }
 
   .mobileSearchButton {
     background: none;
     border: none;
-    color: fade(var(--color-white), 60%);
+    color: fade(var(--color-card-text), 60%);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -475,7 +475,7 @@
     transition: color 0.2s;
 
     &:hover {
-      color: var(--color-white);
+      color: var(--color-card-text);
     }
 
     svg {
@@ -487,18 +487,18 @@
   .closeBtn {
     background: transparent;
     border: none;
-    color: var(--color-white);
+    color: var(--color-card-text);
     font-size: 1.8rem;
     margin-left: 0.5rem;
     cursor: pointer;
   }
 }
 
-.mobileTabs {
+.mobileTabs {   
   display: flex;
   justify-content: space-around;
   margin-top: 0.5rem;
-  border-bottom: 1px solid fade(var(--color-white), 10%);
+  border-bottom: 1px solid fade(var(--color-card-text), 10%);
 }
 
 .tabBtn {
@@ -506,7 +506,7 @@
   padding: 0.8rem 0;
   font-size: 1rem;
   font-weight: 500;
-  color: fade(var(--color-white), 60%);
+  color: var(--color-card-text);
   background: none;
   border: none;
   cursor: pointer;
@@ -531,9 +531,7 @@
     margin-bottom: 1rem;
 
     a {
-      color: var(--color-white);
       text-decoration: none;
-      font-size: 1rem;
 
       &:hover {
         color: var(--color-accent, var(--color-success-dark));
@@ -548,7 +546,6 @@
   margin-top: 0.5rem;
 
   li a {
-    color: fade(var(--color-white), 70%);
     font-size: 0.9rem;
   }
 }
