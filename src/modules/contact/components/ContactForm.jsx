@@ -18,10 +18,13 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useSession } from 'next-auth/react';
 import { submitContactMessage } from '@/lib/contactApi';
 import styles from './ContactForm.module.scss';
 
 export default function ContactForm() {
+    const { data: session } = useSession();
+
     // مدیریت state فرم با react-hook-form
     const {
         register,
@@ -46,8 +49,8 @@ export default function ContactForm() {
             // پاک کردن وضعیت قبلی
             setSubmitStatus({ type: null, message: '' });
 
-            // ارسال داده به API
-            await submitContactMessage(data);
+            // ارسال داده به API همراه با توکن کاربر (در صورت وجود)
+            await submitContactMessage(data, session?.user?.jwt);
 
             // نمایش پیام موفقیت
             setSubmitStatus({

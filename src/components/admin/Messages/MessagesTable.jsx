@@ -342,6 +342,17 @@ export default function MessagesTable({ initialMessages }) {
                     isOpen={!!selectedMessage}
                     onClose={() => setSelectedMessage(null)}
                     message={selectedMessage}
+                    onUpdateMessage={(updatedFields) => {
+                        setMessages((prev) =>
+                            prev.map((m) =>
+                                m.documentId === selectedMessage.documentId ? { ...m, ...updatedFields } : m
+                            )
+                        );
+                        setSelectedMessage((prev) =>
+                            prev ? { ...prev, ...updatedFields } : null
+                        );
+                        addToast('پیام و وضعیت آن با موفقیت بروزرسانی شد', 'success');
+                    }}
                     onDelete={(id) => {
                         // Close info modal and open confirm delete modal
                         setDeleteTarget(selectedMessage);

@@ -1,4 +1,24 @@
 ```text
+[2026-07-20] - Admin & Profile Messaging (Ticketing) Subsystems (100% Complete)
+
+── Backend (Strapi v5) ─────────────────────────────────────────────────────
+- Fully refactored `contact-message` controller overridden helpers (`find`, `findOne`, `create`, `update`):
+  - Ensured secure record filtering where normal users can only list and modify their own messages, while administrative users (`admin` / `administrator`) can manage all messages.
+  - Replaced legacy `entityService` queries with Strapi v5 Document Service queries (`strapi.documents().findOne`) to parse string collection document IDs (`documentId`) in PostgreSQL, resolving database casting exceptions (`invalid input syntax for type integer: "[hash]"`).
+  - Enforced strict payload security in `update` to filter allowed fields (`replies` and `status`) for normal users, preventing email/name spoofing.
+
+── Profile (User Messaging) ────────────────────────────────────────────────
+- Implemented bidirectional chat threads in user profile `MessageDetailModal.jsx`:
+  - Added user replying section allowing users to send replies directly under their active tickets.
+  - Configured tick status to automatically transition back to `'open'` and `'isRead: false'` upon user reply, alerting administrative support.
+  - Linked page state dynamically to update local threads instantly.
+
+── Admin Messaging ─────────────────────────────────────────────────────────
+- Expanded `MessageReadModal.jsx` to feature complete interactive chat-style history log (initial message + replies).
+- Integrated reply text box and status updating dropdown (`open` / `pending` / `closed`) with PUT request forwarding.
+- Fixed mapping in `getContactMessages()` (`adminApi.js`) which previously stripped out `replies` and `status` keys, causing empty conversation threads in the dashboard.
+- Modified messages state management in `MessagesTable.jsx` to update message and status fields after submitting a reply, showing success toasts immediately.
+
 [2026-06-24] - Admin Product & Blog & Contact Messages Subsystems (100% Complete)
 
 ── Product Management ───────────────────────────────────────────────────

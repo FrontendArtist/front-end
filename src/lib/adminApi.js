@@ -605,6 +605,8 @@ export async function getContactMessages(jwt, { page = 1, pageSize = 50 } = {}) 
                 subject: attrs.subject || 'بدون موضوع',
                 body: attrs.body || '',
                 isRead: attrs.isRead ?? false,
+                status: attrs.status || 'open',
+                replies: attrs.replies || [],
                 createdAt: attrs.createdAt
             };
         });

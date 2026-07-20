@@ -1,0 +1,207 @@
+@use '@/styles/base/mixins' as *;
+
+.messageDetail {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    direction: rtl;
+
+    &__meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid fade(var(--color-primary), 12%);
+    }
+
+    &__badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-size: var(--font-ssm);
+        font-weight: var(--font-weight-bold);
+
+        &--open {
+            background: fade(var(--color-warning-amber), 15%);
+            color: var(--color-warning-amber-dark);
+            border: 1px solid fade(var(--color-warning-amber), 30%);
+        }
+
+        &--closed {
+            background: fade(var(--color-success), 12%);
+            color: var(--color-success-dark);
+            border: 1px solid fade(var(--color-success), 25%);
+        }
+
+        &--pending {
+            background: fade(var(--color-primary), 10%);
+            color: var(--color-text-primary);
+            border: 1px solid fade(var(--color-primary), 20%);
+        }
+    }
+
+    &__time {
+        font-size: var(--font-ssm);
+        color: var(--color-card-text);
+        margin-right: auto;
+    }
+
+    &__thread {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-height: 420px;
+        overflow-y: auto;
+        padding-right: 0.25rem;
+
+        &::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: fade(var(--color-primary), 20%);
+            border-radius: 4px;
+        }
+    }
+
+    &__bubble {
+        max-width: 85%;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+
+        &--user {
+            align-self: flex-end;
+            background: fade(var(--color-primary), 12%);
+            border: 1px solid fade(var(--color-primary), 20%);
+        }
+
+        &--admin {
+            align-self: flex-start;
+            background: fade(var(--color-success), 8%);
+            border: 1px solid fade(var(--color-success), 15%);
+        }
+    }
+
+    &__bubbleHeader {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.4rem;
+    }
+
+    &__author {
+        font-size: var(--font-ssm);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-primary);
+    }
+
+    &__bubbleTime {
+        font-size: 11px;
+        color: var(--color-card-text);
+        margin-right: auto;
+    }
+
+    &__text {
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+        line-height: var(--line-height-md);
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    &__noReply {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+        background: fade(var(--color-primary), 5%);
+        border: 1px dashed fade(var(--color-primary), 20%);
+        border-radius: 8px;
+        padding: 1rem;
+        justify-content: center;
+
+        svg {
+            flex-shrink: 0;
+            opacity: 0.5;
+        }
+    }
+
+    &__replyForm {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        border-top: 1px solid fade(var(--color-primary), 12%);
+        padding-top: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    &__replyTextarea {
+        width: 100%;
+        min-height: 80px;
+        font-family: inherit;
+        font-size: var(--font-sm);
+        padding: 0.75rem;
+        border: 1px solid fade(var(--color-primary), 20%);
+        border-radius: 8px;
+        background-color: var(--color-bg-primary);
+        color: var(--color-text-primary);
+        resize: vertical;
+
+        &:focus {
+            outline: none;
+            border-color: var(--color-title-hover);
+            box-shadow: 0 0 8px fade(var(--color-primary), 15%);
+        }
+    }
+
+    &__replySubmitWrapper {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    &__replySubmit {
+        background-color: var(--color-title-hover);
+        color: var(--color-black);
+        border: none;
+        padding: 0.5rem 1.25rem;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-bold);
+        cursor: pointer;
+        transition: all 0.25s;
+
+        &:hover:not(:disabled) {
+            background-color: var(--color-button-primary);
+            color: var(--color-white);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+
+    &__replyError {
+        font-size: var(--font-ssm);
+        color: var(--color-error);
+        margin-top: 0.25rem;
+    }
+
+    &__closedAlert {
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+        background: fade(var(--color-success), 8%);
+        border: 1px dashed fade(var(--color-success), 25%);
+        border-radius: 8px;
+        padding: 0.85rem;
+        text-align: center;
+        margin-top: 0.75rem;
+    }
+}

@@ -41,7 +41,7 @@ import { apiClient } from './apiClient';
  *   console.error('خطا در ارسال پیام:', error.message);
  * }
  */
-export async function submitContactMessage(formData) {
+export async function submitContactMessage(formData, token = null) {
     try {
         // اعتبارسنجی پایه در سمت کلاینت
         if (!formData.name || !formData.contactInfo || !formData.body) {
@@ -53,7 +53,6 @@ export async function submitContactMessage(formData) {
         }
 
         // تبدیل داده به فرمت Strapi
-        // Strapi انتظار دارد: { data: { field1: value1, ... } }
         const payload = {
             data: {
                 name: formData.name.trim(),
@@ -63,15 +62,19 @@ export async function submitContactMessage(formData) {
             }
         };
 
+        const headers = {};
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+
         // ارسال درخواست POST به endpoint پیام‌های تماس
-        // نام صحیح endpoint: /api/contact-messages (جمع contact-message)
         const response = await apiClient('/api/contact-messages', {
             method: 'POST',
+            headers,
             body: JSON.stringify(payload),
         });
 
         // برگرداندن پاسخ موفق
-        // Strapi داده ایجاد شده را در { data: {...}, meta: {...} } برمی‌گرداند
         return response;
 
     } catch (error) {
