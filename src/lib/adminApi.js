@@ -118,7 +118,7 @@ export async function getOrdersStats(jwt) {
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getOrders(jwt, { page = 1, pageSize = 20 } = {}) {
     const endpoint =
-        `/api/orders?populate[user][fields][0]=username&populate[user][fields][1]=email&populate[user][fields][2]=phoneNumber&populate[receiptImage]=true&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+        `/api/orders?populate[user][fields][0]=username&populate[user][fields][1]=email&populate[user][fields][2]=phoneNumber&populate[receiptImage]=true&populate[items]=true&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
 
     const data = await adminFetch(endpoint, jwt);
     if (!data) return { orders: [], meta: null, error: true };
@@ -128,13 +128,35 @@ export async function getOrders(jwt, { page = 1, pageSize = 20 } = {}) {
         const attrs = item.attributes || item;
         const user = attrs.user?.data?.attributes || attrs.user || null;
         const receiptImage = attrs.receiptImage?.data?.attributes || attrs.receiptImage || null;
+
+        // نرمال‌سازی اقلام (Dynamic Zone)
+        const rawItems = attrs.items || [];
+        const items = rawItems.map(i => {
+            const comp = i.__component || '';
+            if (comp === 'order.course-order-item') {
+                return {
+                    __component: 'order.course-order-item',
+                    title: i.title || '—',
+                    price: i.price ?? 0,
+                    courseId: i.courseId,
+                    chapterId: i.chapterId || null,
+                    slug: i.slug || '',
+                };
+            } else if (comp === 'order.product-order-item') {
+                return {
+                    __component: 'order.product-order-item',
+                    title: i.title || '—',
+                    price: i.price ?? 0,
+                    quantity: i.quantity || 1,
+                    productId: i.productId,
+                    slug: i.slug || '',
+                };
+            }
+            return { __component: comp, title: i.title || '—', price: i.price ?? 0 };
+        });
+
         return {
             id: item.id,
-            /*
-             * ⚠️ Strapi v5: برای عملیات PUT/PATCH باید از documentId استفاده شود.
-             * numeric id فقط برای نمایش است. Strapi v5 روتهای REST را با documentId می‌شناسد.
-             * اگر Strapi v4 باشد، documentId وجود ندارد و از id استفاده می‌شود.
-             */
             documentId: item.documentId || String(item.id),
             orderNumber: attrs.orderNumber || `#${item.id}`,
             paymentMethod: attrs.paymentMethod || 'unknown',
@@ -143,7 +165,14 @@ export async function getOrders(jwt, { page = 1, pageSize = 20 } = {}) {
             totalPrice: attrs.totalPrice ?? attrs.totalAmount ?? 0,
             trackingNumber: attrs.trackingNumber || null,
             cardHolderName: attrs.cardHolderName || null,
+            fullName: attrs.fullName || null,
+            address: attrs.address || null,
+            postalCode: attrs.postalCode || null,
+            phone: attrs.phone || null,
+            email: attrs.email || null,
+            notes: attrs.notes || null,
             createdAt: attrs.createdAt,
+            items,
             user: user ? {
                 username: user.username || user.name || '—',
                 email: user.email || '—',
@@ -157,6 +186,7 @@ export async function getOrders(jwt, { page = 1, pageSize = 20 } = {}) {
 
     return { orders, meta: data.meta || null, error: false };
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ✏️ آپدیت سفارش (paymentStatus, orderStatus, trackingCode)

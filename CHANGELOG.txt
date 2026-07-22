@@ -1,5 +1,18 @@
 ```text
-[2026-07-22] - Strapi v5 Order Lifecycles, Many-to-Many Ownership & Admin Panel Fixes (100% Complete)
+[2026-07-22] - Expandable Admin Order Details, Strapi v5 Order Lifecycles & Admin Panel Fixes (100% Complete)
+
+── Admin Orders Expandable Details Panel ──────────────────────────────────────────
+- Added an Expandable Details Row (Accordion) for each order in the Admin Dashboard (`OrdersTable.jsx`):
+  - Clicking anywhere on an order row (`<tr>`) smoothly opens/closes the detailed view panel, with `cursor: pointer` indicator and event propagation guards for action buttons.
+  - Buyer Information section: displays real full name, phone number, email address, registration/order date, payment method, and tracking number.
+  - Shipping Address section: displays complete postal address and postal code.
+  - Purchased Items section: lists all courses, chapters, and physical products with icons, badges, quantities, individual prices, and order total summary.
+  - Order Notes section: displays auto-generated item summaries and custom buyer notes.
+- Updated `src/lib/adminApi.js`:
+  - Enhanced `getOrders` query to include `populate[items]=true`.
+  - Normalized `fullName`, `address`, `postalCode`, `phone`, `email`, `notes`, and Dynamic Zone `items` array (`order.course-order-item` & `order.product-order-item`).
+- Redesigned `OrdersTable.module.scss`:
+  - Added smooth CSS animations (`expandDown`), responsive grid layout, product item cards, and styled notes/address sections.
 
 ── Strapi v5 Order Lifecycle & Purchase Automation ─────────────────────────────
 - Created backend Order lifecycle hook (`backend/src/api/order/content-types/order/lifecycles.js`):
@@ -18,6 +31,8 @@
   - Updated `initialPaymentStatus` so online payment sets `paymentStatus: 'paid'` instead of defaulting to `'pending_payment'`.
 - Updated Next.js API Proxy (`src/app/api/orders/route.js`):
   - Resolved `paymentStatus` and `orderStatus` alignment: online purchases now set both `orderStatus` and `paymentStatus` to `'paid'`, while card-to-card sets both to `'pending'` / `'pending_payment'`.
+  - Smart Buyer Name Resolution (`fullName`): prioritized real user names (`firstName` + `lastName`) and fallback to formatted phone numbers (e.g. `کاربر (09219872433)`), preventing dummy address strings like `"1"`.
+  - Item Summary Notes (`notes`): auto-generated clear, numbered item lists (courses, chapters, and physical products with quantities) in the `notes` field for quick admin reference.
 - Fixed Admin Dashboard Order Status Modals (`StatusUpdateModal.jsx` and `OrdersTable.jsx`):
   - Removed legacy trailing spaces from `ORDER_STATUSES` and `ORDER_STATUS_CONFIG` keys (`'paid'`, `'shipped'`, `'delivered'`, `'canceled'`).
   - Added `.trim()` normalization to prevent Strapi enum validation errors (`orderStatus must be one of...`) when saving order statuses in the custom admin panel.
@@ -31,6 +46,9 @@
 - src/app/api/orders/route.js
 - src/components/admin/Orders/StatusUpdateModal.jsx
 - src/components/admin/Orders/OrdersTable.jsx
+- src/components/admin/Orders/OrdersTable.module.scss
+- src/lib/adminApi.js
+
 
 [2026-07-22] - Dual-Mode Curriculum Architecture, Chapter Purchasing & Resume Playback (100% Complete)
 

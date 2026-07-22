@@ -149,11 +149,39 @@ export async function POST(request) {
             ? 'pending_payment'
             : (paymentStatus && paymentStatus !== 'pending_payment' ? paymentStatus : 'paid');
 
-        // استخراج نام کاربر/گیرنده
-        const dbFullName = (userData.firstName || userData.lastName)
+        // ── 1. هوشمندسازی نام خریدار (fullName) ───────────────────────────────────
+        // اولویت 1: نام و نام‌خانوادگی در پروفایل کاربر
+        // اولویت 2: نام گیرنده در آدرس (در صورتی که معتبر باشد و تک‌رقمی مانند '1' نباشد)
+        // اولویت 3: نام کاربری یا شماره موبایل به صورت کاربر (09123456789)
+        const userFullName = (userData.firstName || userData.lastName)
             ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
             : "";
-        const resolvedFullName = userData.address?.recipientName || dbFullName || session.user.name || "کاربر";
+        const recipientName = userData.address?.recipientName?.trim();
+        const isValidRecipient = recipientName && recipientName.length > 1 && !/^\d+$/.test(recipientName);
+
+        const resolvedFullName = userFullName
+            || (isValidRecipient ? recipientName : null)
+            || (userData.username && !/^\d+$/.test(userData.username) ? userData.username : null)
+            || (userData.phoneNumber ? `کاربر (${userData.phoneNumber})` : null)
+            || (session.user.phoneNumber ? `کاربر (${session.user.phoneNumber})` : null)
+            || session.user.name
+            || "کاربر فروشگاه";
+
+        // ── 2. ساخت خلاصه کامل اقلام خریداری شده در فیلد notes ───────────────────
+        const itemSummaryList = cartItems.map((item, idx) => {
+            const num = idx + 1;
+            if (item.type === 'course') {
+                return `${num}. [دوره آموزشی] ${item.title}`;
+            } else if (item.type === 'chapter') {
+                return `${num}. [فصل آموزشی] ${item.title}`;
+            } else {
+                const qty = (item.quantity && Number(item.quantity) > 1) ? ` (${item.quantity} عدد)` : '';
+                return `${num}. [محصول فیزیکی] ${item.title}${qty}`;
+            }
+        });
+
+        const generatedNotes = `📋 اقلام این سفارش:\n${itemSummaryList.join('\n')}`;
+        const resolvedNotes = body.notes ? `${body.notes.trim()}\n\n${generatedNotes}` : generatedNotes;
 
         // استخراج آدرس کامل
         let resolvedAddress = "آدرس وارد نشده است";
@@ -183,6 +211,7 @@ export async function POST(request) {
                 items: itemsPayload,
                 paymentMethod: resolvedPaymentMethod,
                 paymentStatus: resolvedPaymentStatus,
+                notes: resolvedNotes,
             }
         };
 

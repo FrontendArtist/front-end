@@ -19,27 +19,30 @@ export async function GET(request) {
         return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
     }
 
-    // مسیر Strapi: دریافت یوزر به همراه آدرس (cartData خودکار می‌آید چون در یوزر است)
+    // مسیر Strapi: دریافت یوزر به همراه آدرس
     const url = `${STRAPI_URL}/api/users/${session.user.id}?populate=address`;
 
     try {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                // 🚨 Proxy Pattern: استفاده از توکن ادمین برای دور زدن محدودیت‌های کلاینت
                 'Authorization': `Bearer ${STRAPI_ADMIN_TOKEN}`,
                 'Content-Type': 'application/json',
             },
             cache: 'no-store'
         });
 
+        const rawText = await response.text();
+
         if (!response.ok) {
-            console.error("Strapi fetch failed with status:", response.status);
-            return NextResponse.json({ message: "Strapi Error" }, { status: response.status });
+            console.error("Strapi fetch user failed with status:", response.status, rawText);
+            return NextResponse.json(
+                { message: response.status === 404 ? "User not found in Strapi. Please log in again." : "Strapi Error" },
+                { status: response.status }
+            );
         }
 
-        const userData = await response.json();
-        // console.log('📊 User Data:', JSON.stringify(userData, null, 2)); 
+        const userData = rawText ? JSON.parse(rawText) : {};
         return NextResponse.json(userData);
 
     } catch (error) {
@@ -63,14 +66,13 @@ export async function PUT(request) {
         const body = await request.json();
 
         // 2. استخراج داده‌های مجاز (Security Layer)
-        // به جای ارسال کل body، فقط چیزهایی که اجازه داریم را جدا می‌کنیم
         const { firstName, lastName, cartData } = body;
 
         // 3. ساخت پی‌لود نهایی
         const payload = {};
         if (firstName !== undefined) payload.firstName = firstName;
         if (lastName !== undefined) payload.lastName = lastName;
-        if (cartData !== undefined) payload.cartData = cartData; // ✅ اضافه شدن پشتیبانی از سبد خرید
+        if (cartData !== undefined) payload.cartData = cartData;
 
         // اگر هیچ دیتایی برای آپدیت نبود
         if (Object.keys(payload).length === 0) {
@@ -83,24 +85,30 @@ export async function PUT(request) {
         const response = await fetch(url, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${STRAPI_ADMIN_TOKEN}`, // دسترسی کامل ادمین
+                'Authorization': `Bearer ${STRAPI_ADMIN_TOKEN}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),
             cache: 'no-store'
         });
 
+        const rawText = await response.text();
+        let parsedData = {};
+        try {
+            parsedData = rawText ? JSON.parse(rawText) : {};
+        } catch (e) {
+            console.error("Failed to parse Strapi PUT response:", rawText);
+        }
+
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Strapi update failed:", errorData);
+            console.error("Strapi update failed:", parsedData);
             return NextResponse.json(
-                { message: errorData?.error?.message || "Strapi Update Error" },
+                { message: parsedData?.error?.message || (response.status === 404 ? "User not found in Strapi. Please log in again." : "Strapi Update Error") },
                 { status: response.status }
             );
         }
 
-        const updatedData = await response.json();
-        return NextResponse.json(updatedData);
+        return NextResponse.json(parsedData);
 
     } catch (error) {
         console.error("Proxy PUT Error:", error);
