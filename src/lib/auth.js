@@ -75,6 +75,29 @@ export const authOptions = {
                 session.user.jwt = token.jwt;
                 session.user.phoneNumber = token.phoneNumber;
                 session.user.role = token.role; // انتقال role به سشن برای دسترسی در فرانت‌اند
+
+                // واکشی آخرین وضعیت دوره‌ها و فصل‌های فعال کاربر از استراپی
+                if (token.id) {
+                    try {
+                        const tokenToUse = token.jwt || process.env.STRAPI_API_TOKEN;
+                        const userRes = await fetch(`${STRAPI_API_URL}/api/users/${token.id}?populate[0]=courses`, {
+                            headers: { Authorization: `Bearer ${tokenToUse}` },
+                            cache: 'no-store'
+                        });
+                        if (userRes.ok) {
+                            const userData = await userRes.json();
+                            const courses = userData.courses || [];
+                            session.user.courses = courses;
+                            session.user.enrolledCourses = courses.map(c => c.id);
+                            session.user.enrolledSlugs = courses.map(c => c.slug).filter(Boolean);
+                            session.user.enrolledChapters = Array.isArray(userData.enrolledChapters)
+                                ? userData.enrolledChapters.map(Number)
+                                : [];
+                        }
+                    } catch (e) {
+                        // در صورت بروز خطا، سشن بدون افت عملکرد بازمی‌گردد
+                    }
+                }
             }
             return session;
         },

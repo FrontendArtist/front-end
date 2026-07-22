@@ -1,4 +1,85 @@
 ```text
+[2026-07-22] - Strapi v5 Order Lifecycles, Many-to-Many Ownership & Admin Panel Fixes (100% Complete)
+
+── Strapi v5 Order Lifecycle & Purchase Automation ─────────────────────────────
+- Created backend Order lifecycle hook (`backend/src/api/order/content-types/order/lifecycles.js`):
+  - Handled `afterCreate` and `afterUpdate` events to connect purchased courses & chapters automatically upon order payment completion.
+  - Implemented relation updates from the **Course (Owner) side** (`api::course.course` -> `users_permissions_users`) to ensure rows write to PostgreSQL join tables and render properly in the Strapi Admin Panel UI.
+  - Added dual support for numeric IDs and string `documentId` identifiers to eliminate PostgreSQL type errors and prevent database transaction aborts.
+  - Deduplicated draft/published course entries during sync to prevent duplicate course assignments for users.
+
+── Backend Schema Clean-up ───────────────────────────────────────────────────
+- Removed trailing whitespace from `orderStatus` enum in `backend/src/api/order/content-types/order/schema.json` (`paid`, `shipped`, `delivered`, `canceled`, `pending`).
+- Removed legacy/broken fields `enrolledCourses` and `enrolled_courses` from `User` schema (`backend/src/extensions/users-permissions/content-types/user/schema.json`).
+- Removed broken `users` relation from `Article` schema (`backend/src/api/article/content-types/article/schema.json`).
+
+── Checkout & Payment Status Alignment ──────────────────────────────────────────
+- Fixed `PaymentStep.jsx`:
+  - Updated `initialPaymentStatus` so online payment sets `paymentStatus: 'paid'` instead of defaulting to `'pending_payment'`.
+- Updated Next.js API Proxy (`src/app/api/orders/route.js`):
+  - Resolved `paymentStatus` and `orderStatus` alignment: online purchases now set both `orderStatus` and `paymentStatus` to `'paid'`, while card-to-card sets both to `'pending'` / `'pending_payment'`.
+- Fixed Admin Dashboard Order Status Modals (`StatusUpdateModal.jsx` and `OrdersTable.jsx`):
+  - Removed legacy trailing spaces from `ORDER_STATUSES` and `ORDER_STATUS_CONFIG` keys (`'paid'`, `'shipped'`, `'delivered'`, `'canceled'`).
+  - Added `.trim()` normalization to prevent Strapi enum validation errors (`orderStatus must be one of...`) when saving order statuses in the custom admin panel.
+
+── Modified Files ─────────────────────────────────────────────────────────────
+- backend/src/api/order/content-types/order/lifecycles.js
+- backend/src/api/order/content-types/order/schema.json
+- backend/src/extensions/users-permissions/content-types/user/schema.json
+- backend/src/api/article/content-types/article/schema.json
+- src/components/checkout/PaymentStep.jsx
+- src/app/api/orders/route.js
+- src/components/admin/Orders/StatusUpdateModal.jsx
+- src/components/admin/Orders/OrdersTable.jsx
+
+[2026-07-22] - Dual-Mode Curriculum Architecture, Chapter Purchasing & Resume Playback (100% Complete)
+
+── Dual-Mode Curriculum Architecture ──────────────────────────────────────────
+- Implemented dual-mode curriculum manager in `CourseContentManager.jsx` following `@CONTEXT_CourseCurriculum.md`:
+  - Branch A (Non-Chaptered / Flat List): Renders linear lesson list with locks on paid lessons for non-owners.
+  - Branch B (Chaptered / Accordion): Renders chapter accordions with per-chapter ownership checks and standalone chapter purchase options.
+- Added strict authentication wrapper around `curriculumSection`:
+  - When the user is not authenticated (`!isAuthenticated`), the curriculum section and lesson list are completely hidden, showing only the authentication login CTA placeholder.
+
+── Strapi v5 Backend & Order Integration for Chapters ─────────────────────────
+- Updated Strapi v5 deep populate query in `coursesApi.js` (`getCourseBySlug`) for `chapters.lessons`, `curriculum`, and `media`.
+- Created component schema `chapter.json` (`course-parts/chapter`) and extended `Course` (`isChaptered`, `chapters`) and `User` (`enrolledCourses`, `enrolledChapters`) content-types in backend.
+- Updated `CourseOrderItem` component schema in backend (`components/order/course-order-item.json`) to include `chapterId` integer attribute.
+- Fixed `POST /api/orders` route handler (`src/app/api/orders/route.js`):
+  - Added support for cart items of `type === 'chapter'`.
+  - Mapped chapter items to `order.course-order-item` with clean course URLs.
+  - Updated user record mutation (`PUT /api/users/:id`) to persist purchased `chapterId`s into `user.enrolledChapters`.
+
+── Cart & Purchases Navigation Fixes ──────────────────────────────────────────
+- Fixed `/cart` page (`src/app/cart/page.jsx`):
+  - Updated item filtering to include `type === 'chapter'` alongside full courses under "دوره‌ها و فصل‌های آموزشی".
+- Fixed `CartIcon.jsx` navbar dropdown to format URLs and labels (`فصل آموزشی`) for chapter items.
+- Fixed `/profile/purchases` (`PurchasesList.jsx`):
+  - Extracted base course slug (`slug.split('-chapter-')[0]`) so clicking "مشاهده" on a purchased chapter navigates cleanly to `/courses/[courseSlug]`.
+
+── Media Resume Playback (VideoJS & Plyr Audio) ───────────────────────────────
+- Fixed video player seeking freeze bug in `VideoJSPlayer.jsx`:
+  - Resolved issue where `player.currentTime(savedTime)` was overwritten prior to `loadedmetadata`.
+  - Added source URL comparison (`currentSrcRef`) to prevent re-initializing `player.src()` on component re-renders mid-playback.
+- Fixed audio player seeking bug in `PlyrAudioPlayer.jsx`:
+  - Replaced `player.on('canplay')` with `player.once('canplay')` and `hasRestored` flag to prevent seek events from resetting audio time back to initial saved time.
+  - Added `seeked` listener to instantly persist new position when skipping forward or backward.
+  - Unified local storage key (`media_progress_c${courseId}_l${cleanLessonId}`) across both audio and video players.
+
+── Modified Files ─────────────────────────────────────────────────────────────
+- src/modules/courses/CourseContentManager.jsx
+- src/modules/courses/VideoJSPlayer.jsx
+- src/modules/courses/PlyrAudioPlayer.jsx
+- src/app/cart/page.jsx
+- src/components/layout/Navbar/CartIcon.jsx
+- src/components/profile/PurchasesList.jsx
+- src/components/checkout/CartReviewStep.jsx
+- src/app/api/orders/route.js
+- backend/src/components/order/course-order-item.json
+- backend/src/components/course-parts/chapter.json
+- backend/src/api/course/content-types/course/schema.json
+- backend/src/extensions/users-permissions/content-types/user/schema.json
+
 [2026-07-20] - Admin & Profile Messaging (Ticketing) Subsystems (100% Complete)
 
 ── Backend (Strapi v5) ─────────────────────────────────────────────────────

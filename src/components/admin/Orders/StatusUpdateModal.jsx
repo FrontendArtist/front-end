@@ -18,23 +18,23 @@
 import { useState } from 'react';
 import styles from './OrdersTable.module.scss';
 
-// وضعیت‌های ممکن برای سفارش (دقیقاً مطابق Schema با فاصله‌های احتمالی)
+// وضعیت‌های ممکن برای سفارش (دقیقاً مطابق Schema)
 const ORDER_STATUSES = [
     { value: 'pending', label: 'در حال پردازش' },
-    { value: 'paid ', label: 'پرداخت شده' },
-    { value: 'shipped ', label: 'ارسال شده' },
-    { value: 'delivered ', label: 'تحویل داده شده' },
-    { value: 'canceled ', label: 'لغو شده' },
+    { value: 'paid', label: 'پرداخت شده' },
+    { value: 'shipped', label: 'ارسال شده' },
+    { value: 'delivered', label: 'تحویل داده شده' },
+    { value: 'canceled', label: 'لغو شده' },
 ];
 
 export default function StatusUpdateModal({ order, onClose, onUpdate }) {
-    const [selectedStatus, setSelectedStatus] = useState(order.orderStatus || 'pending');
+    const [selectedStatus, setSelectedStatus] = useState(order.orderStatus?.trim() || 'pending');
     const [trackingNumber, setTrackingNumber] = useState(order.trackingNumber || '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     // آیا وضعیت انتخاب‌شده نیاز به کد رهگیری دارد؟
-    const needsTracking = selectedStatus === 'shipped ';
+    const needsTracking = selectedStatus.trim() === 'shipped';
 
     async function handleSave() {
         // اعتبارسنجی: اگر 'shipped' انتخاب شده، کد رهگیری اجباری است

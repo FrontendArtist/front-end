@@ -31,13 +31,13 @@ const PAYMENT_STATUS_CONFIG = {
     failed: { label: 'ناموفق / رد شده', color: 'var(--color-error)', bg: 'color-mix(in srgb, var(--color-error) var(--op-12), transparent)' },
 };
 
-/** برچسب‌های فارسی وضعیت ارسال (دقیقاً با فاصله‌های Schema) */
+/** برچسب‌های فارسی وضعیت ارسال */
 const ORDER_STATUS_CONFIG = {
     'pending': { label: 'در پردازش', color: 'var(--color-warning)', bg: 'color-mix(in srgb, var(--color-warning) var(--op-15), transparent)' },
-    'paid ': { label: 'پرداخت شده', color: 'var(--color-blue-light)', bg: 'color-mix(in srgb, var(--color-blue) var(--op-15), transparent)' },
-    'shipped ': { label: 'ارسال شده', color: 'var(--color-blue-light)', bg: 'color-mix(in srgb, var(--color-blue) var(--op-15), transparent)' },
-    'delivered ': { label: 'تحویل شده', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success) var(--op-12), transparent)' },
-    'canceled ': { label: 'لغو شده', color: 'var(--color-gray-cc)', bg: 'color-mix(in srgb, var(--color-black) var(--op-20), transparent)' },
+    'paid': { label: 'پرداخت شده', color: 'var(--color-blue-light)', bg: 'color-mix(in srgb, var(--color-blue) var(--op-15), transparent)' },
+    'shipped': { label: 'ارسال شده', color: 'var(--color-blue-light)', bg: 'color-mix(in srgb, var(--color-blue) var(--op-15), transparent)' },
+    'delivered': { label: 'تحویل شده', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success) var(--op-12), transparent)' },
+    'canceled': { label: 'لغو شده', color: 'var(--color-gray-cc)', bg: 'color-mix(in srgb, var(--color-black) var(--op-20), transparent)' },
 };
 
 /** برچسب‌های روش پرداخت */
@@ -141,7 +141,7 @@ export default function OrdersTable({ initialOrders }) {
                     <tbody>
                         {filteredOrders.map((order) => {
                             const payConf = PAYMENT_STATUS_CONFIG[order.paymentStatus] || PAYMENT_STATUS_CONFIG.pending_payment;
-                            const ordConf = ORDER_STATUS_CONFIG[order.orderStatus] || ORDER_STATUS_CONFIG.pending;
+                            const ordConf = ORDER_STATUS_CONFIG[order.orderStatus?.trim()] || ORDER_STATUS_CONFIG[order.orderStatus] || ORDER_STATUS_CONFIG.pending;
                             const isCardToCard = order.paymentMethod === 'card_to_card';
                             const needsReceiptApproval =
                                 isCardToCard && order.paymentStatus === 'pending_verification';

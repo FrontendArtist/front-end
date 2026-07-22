@@ -141,28 +141,25 @@ export default function CartIcon() {
      * @returns {string} - مسیر URL برای آیتم
      */
     const constructItemUrl = (item) => {
-        // برای دوره‌ها، مسیر ساده است
-        if (item.type === 'course') {
-            return `/courses/${item.slug}`;
+        // برای دوره‌ها و فصل‌ها، مسیر به صفحه دوره اشاره دارد
+        if (item.type === 'course' || item.type === 'chapter') {
+            const coursePageSlug = item.slug ? item.slug.split('-chapter-')[0] : '';
+            return `/courses/${coursePageSlug || item.slug}`;
         }
 
         // برای محصولات، بررسی می‌کنیم که آیا اطلاعات دسته‌بندی دارند یا خیر
         if (item.type === 'product') {
-            // اگر اطلاعات دسته‌بندی موجود نیست، از مسیر قدیمی استفاده می‌کنیم
             if (!item.categorySlug) {
                 return `/product/${item.slug}`;
             }
 
-            // اگر زیردسته هم موجود باشد
             if (item.subcategorySlug) {
                 return `/products/${item.categorySlug}/${item.subcategorySlug}/${item.slug}`;
             }
 
-            // فقط دسته اصلی موجود است
             return `/products/${item.categorySlug}/${item.slug}`;
         }
 
-        // Fallback (نباید به اینجا برسد)
         return `/${item.type}/${item.slug}`;
     };
 
@@ -256,10 +253,12 @@ export default function CartIcon() {
                                                 {item.quantity} عدد
                                             </span>
                                         )}
-                                        {/* نمایش نوع برای دوره‌ها */}
-                                        {item.type === 'course' && (
+                                        {/* نمایش نوع برای دوره‌ها و فصل‌ها */}
+                                        {item.type === 'chapter' ? (
+                                            <span className={styles.itemType}>فصل آموزشی</span>
+                                        ) : item.type === 'course' ? (
                                             <span className={styles.itemType}>دوره آموزشی</span>
-                                        )}
+                                        ) : null}
                                     </div>
                                 </div>
 

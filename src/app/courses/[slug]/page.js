@@ -49,6 +49,7 @@ export default async function CoursePage({ params }) {
   const session = await getServerSession(authOptions);
 
   let hasPurchasedServer = false;
+  let purchasedChapterIdsServer = [];
   const isFreeCourse = rawCourse.price?.toman === 0 || rawCourse.price === 0;
 
   if (session?.user?.id) {
@@ -65,13 +66,26 @@ export default async function CoursePage({ params }) {
         const ordersData = await ordersRes.json();
         const ordersList = ordersData.data || [];
 
-        hasPurchasedServer = ordersList.some(order => {
+        ordersList.forEach(order => {
           const items = order.attributes?.items || order.items || [];
-          return items.some(item =>
-            item.slug === rawCourse.slug ||
-            String(item.courseId) === String(rawCourse.id) ||
-            String(item.id) === String(rawCourse.id)
-          );
+          items.forEach(item => {
+            // بررسی خرید کل دوره
+            if (
+              item.slug === rawCourse.slug ||
+              String(item.courseId) === String(rawCourse.id) ||
+              String(item.id) === String(rawCourse.id)
+            ) {
+              hasPurchasedServer = true;
+            }
+            // بررسی خرید فصل‌های مجزا
+            if (item.type === 'chapter' || item.chapterId) {
+              if (item.chapterId) purchasedChapterIdsServer.push(String(item.chapterId));
+              if (item.id) {
+                const cleanId = String(item.id).replace('chapter-', '');
+                purchasedChapterIdsServer.push(cleanId);
+              }
+            }
+          });
         });
       }
     } catch (e) {
@@ -90,16 +104,38 @@ export default async function CoursePage({ params }) {
     title: rawCourse.title,
     description: rawCourse.shortDescription,
     price: rawCourse.price,
+    isChaptered: rawCourse.isChaptered || false,
     media: {
       url: rawCourse.image.url.startsWith('http') || rawCourse.image.url.startsWith('/images/')
         ? rawCourse.image.url
         : `${API_BASE_URL}${rawCourse.image.url}`,
       alt: rawCourse.image.alt,
     },
-    curriculum: rawCourse.curriculum?.map((lesson) => {
-      // برای تمام دوره‌ها، اگر کاربر لاگین نیست یا اگر دوره پولی است و آن را نخریده، لینک‌های مدیا را برای امنیت حذف می‌کنیم
+    chapters: (rawCourse.chapters || []).map((chapter) => {
+      const isChapterPurchased =
+        hasPurchasedServer ||
+        purchasedChapterIdsServer.includes(String(chapter.id)) ||
+        (session?.user?.enrolledChapters || []).map(String).includes(String(chapter.id));
+
+      return {
+        ...chapter,
+        lessons: (chapter.lessons || []).map((lesson) => {
+          // برای امنیت، اگر کاربر لاگین نیست یا مالک کل دوره/فصل نیست و درس رایگان نیست، لینک مدیا پاک می‌شود
+          const shouldStrip = !session || (!isFreeCourse && !isChapterPurchased);
+          if (shouldStrip && !lesson.isFree) {
+            return {
+              ...lesson,
+              videoUrl: null,
+              audioUrl: null,
+            };
+          }
+          return lesson;
+        }),
+      };
+    }),
+    curriculum: (rawCourse.curriculum || []).map((lesson) => {
       const shouldStrip = !session || (!isFreeCourse && !hasPurchasedServer);
-      if (shouldStrip) {
+      if (shouldStrip && !lesson.isFree) {
         return {
           ...lesson,
           videoUrl: null,
@@ -107,7 +143,7 @@ export default async function CoursePage({ params }) {
         };
       }
       return lesson;
-    }) || [],
+    }),
   };
 
   return (
@@ -134,7 +170,11 @@ export default async function CoursePage({ params }) {
             <h1 className={styles.title}>{course.title}</h1>
             <p className={styles.description}>{course.description}</p>
             <div className={styles.price}>
-              {course.price.toman === 0 ? 'رایگان' : `${course.price.toman.toLocaleString()} تومان`}
+              {course.isChaptered
+                ? 'خرید به صورت فصلی (از سرفصل‌های زیر انتخاب کنید)'
+                : course.price?.toman === 0
+                ? 'رایگان'
+                : `${course.price?.toman.toLocaleString()} تومان`}
             </div>
             {hasPurchasedServer && (
               <div style={{ color: '#1a995b', fontWeight: 'bold', fontSize: '18px', marginTop: '10px' }}>

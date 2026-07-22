@@ -48,15 +48,9 @@ import { API_BASE_URL } from './api';
  * });
  */
 export async function apiClient(endpoint, options = {}) {
-  // === HACK: Forcefully replace the bugged cached string if Next.js is still sending it ===
-  let finalEndpoint = endpoint;
-  if (finalEndpoint.includes('populate[curriculum]=*&populate[media]=*')) {
-    finalEndpoint = finalEndpoint.replace('populate[curriculum]=*&populate[media]=*', 'populate=*');
-  }
-  
   // ساخت URL کامل با ترکیب Base URL و endpoint
   // endpoint باید با "/" شروع شود (مثلاً "/api/services")
-  const url = `${API_BASE_URL}${finalEndpoint}`;
+  const url = `${API_BASE_URL}${endpoint}`;
 
   try {
     // ارسال درخواست fetch با ادغام تنظیمات

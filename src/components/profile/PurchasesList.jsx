@@ -66,7 +66,13 @@ export default function PurchasesList() {
     };
 
     const renderItem = (item, isCourse) => {
-        const itemUrl = item.itemUrl || (item.slug ? (isCourse ? `/courses/${item.slug}` : `/product/${item.slug}`) : '#');
+        // استخراج slug اصلی دوره (مثلاً mohajerat-chapter-7 -> mohajerat)
+        const courseSlug = item.slug ? item.slug.split('-chapter-')[0] : '';
+        const isChapter = item.type === 'chapter' || item.chapterId || item.slug?.includes('-chapter-');
+
+        const itemUrl = isCourse
+            ? `/courses/${courseSlug}`
+            : (item.itemUrl || (item.slug ? `/product/${item.slug}` : '#'));
         
         return (
             <div key={item.id || item.slug} className={cartStyles.cartItem}>
@@ -103,7 +109,7 @@ export default function PurchasesList() {
                         {formatPrice(item.price)} تومان
                     </p>
                     <span className={cartStyles.courseLabel}>
-                        {isCourse ? 'دوره آموزشی' : 'محصول فیزیکی'}
+                        {isChapter ? 'فصل آموزشی' : isCourse ? 'دوره آموزشی' : 'محصول فیزیکی'}
                     </span>
                 </Link>
 

@@ -126,43 +126,76 @@ export function formatStrapiArticles(apiResponse) {
 export function formatStrapiCourses(apiResponse) {
   if (!apiResponse || !apiResponse.data) return [];
 
-  return apiResponse.data
+  const rawList = Array.isArray(apiResponse.data)
+    ? apiResponse.data
+    : [apiResponse.data];
+
+  return rawList
     .filter(item => item && item.title)
-    .map(item => ({
-      id: item.id,
-      documentId: item.documentId, // ← اضافه شده برای سیستم کامنت‌ها
-      slug: item.slug,
-      title: item.title,
-      price: { toman: item.price || 0 },
-      shortDescription: (item.description && item.description[0]?.children[0]?.text) || '',
-      // Courses have a 'media' array, we take the first one.
-      image: formatSingleImage(item.media ? item.media[0] : null),
-      curriculum: (item.curriculum || []).map(session => {
-        // تبدیل audioUrl استراپی به مسیر پروکسی Next.js
-        // این کار مشکل CORS/CSP مرورگر هنگام پخش صوت را برطرف می‌کند
+    .map(item => {
+      /**
+       * تابع کمکی برای فرمت استاندارد جلسات (Lessons / Sessions)
+       */
+      const formatLesson = (session) => {
+        if (!session) return null;
         let audioUrl = session.audioUrl || null;
         if (audioUrl) {
           try {
             const url = new URL(audioUrl);
-            // اگر URL از /uploads/ استراپی است، آن را از طریق پروکسی سرو کن
             if (url.pathname.startsWith('/uploads/')) {
               audioUrl = `/api/media${url.pathname}`;
             }
           } catch {
-            // اگر URL نسبی بود، همانطور نگه دار
+            // در صورت نسبی بودن URL، تغییر ایجاد نمی‌شود
           }
         }
-
         return {
           id: session.id,
-          title: session.title,
+          title: session.title || '',
           videoUrl: session.videoUrl || null,
           audioUrl,
-          isFree: session.isFree || false,
+          isFree: Boolean(session.isFree),
           duration: session.duration || '00:00',
         };
-      }),
-    }));
+      };
+
+      /**
+       * فرمت عمیق فصل‌ها و دروس داخلی آن‌ها (Strapi v5 deep nested structure)
+       * تضمین برگشت آرایه خالی [] در صورت null یا undefined بودن جهت جلوگیری از کرش UI
+       */
+      const chapters = Array.isArray(item.chapters)
+        ? item.chapters.map(ch => ({
+            id: ch.id,
+            title: ch.title || '',
+            price: { toman: ch.price || 0 },
+            duration: ch.duration || null,
+            lessons: Array.isArray(ch.lessons)
+              ? ch.lessons.map(formatLesson).filter(Boolean)
+              : [],
+          }))
+        : [];
+
+      /**
+       * فرمت سرفصل‌های دوره غیرفصلی (Flat Curriculum)
+       */
+      const curriculum = Array.isArray(item.curriculum)
+        ? item.curriculum.map(formatLesson).filter(Boolean)
+        : [];
+
+      return {
+        id: item.id,
+        documentId: item.documentId,
+        slug: item.slug,
+        title: item.title,
+        price: { toman: item.price || 0 },
+        shortDescription:
+          (item.description && item.description[0]?.children[0]?.text) || item.shortDescription || '',
+        image: formatSingleImage(item.media ? item.media[0] : item.image || null),
+        isChaptered: Boolean(item.isChaptered),
+        chapters,
+        curriculum,
+      };
+    });
 }
 
 /**

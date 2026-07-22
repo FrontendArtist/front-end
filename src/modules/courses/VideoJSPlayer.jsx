@@ -6,7 +6,7 @@ import 'video.js/dist/video-js.css';
 
 /**
  * کامپوننت پلیر اختصاصی Video.js برای پخش ویدیو و صوت
- * این کامپوننت وظیفه رندر پلیر، مدیریت پخش و ذخیره/بازیابی پیشرفت کاربر (Resume Playback) را بر عهده دارد.
+ * این کامپوننت وظیفه رندر پلیر، مدیریت پخش و ذخیره‌سازی/بازیابی خودکار پیشرفت کاربر (Resume Playback) را بر عهده دارد.
  *
  * @param {Object} props.options - تنظیمات استاندارد Video.js
  * @param {string} props.courseId - شناسه دوره (برای یکتا کردن کلید ذخیره‌سازی)
@@ -17,6 +17,7 @@ import 'video.js/dist/video-js.css';
 export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, onReady }) {
   const videoRef = useRef(null);
   const playerRef = useRef(null);
+  const currentSrcRef = useRef(options?.sources?.[0]?.src);
 
   useEffect(() => {
     // 1. مقداردهی اولیه پلیر (تنها در صورتی که پلیر قبلاً ساخته نشده باشد)
@@ -28,51 +29,73 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, on
       videoRef.current.appendChild(videoElement);
 
       // اینیشیالایز پلیر Video.js روی عنصر ساخته شده
-      const player = playerRef.current = videojs(videoElement, options, () => {
+      const player = (playerRef.current = videojs(videoElement, options, () => {
         videojs.log('Player is ready');
         if (onReady) {
           onReady(player);
         }
 
-        // --- سیستم بازیابی پیشرفت پخش (Local Playback Persistence) ---
-        // کلید یکتا برای ذخیره‌سازی زمان هر جلسه از هر دوره
-        const storageKey = `vjs_progress_c${courseId}_l${lessonId}`;
-        const savedTime = localStorage.getItem(storageKey);
+        // --- کلید یکتا برای ذخیره‌سازی زمان هر جلسه از هر دوره ---
+        const cleanLessonId = String(lessonId).replace('-video', '').replace('-audio', '');
+        const storageKey = `media_progress_c${courseId}_l${cleanLessonId}`;
 
-        // اگر زمان قبلی در سیستم کاربر موجود بود، پلیر را به آن زمان می‌بریم
-        if (savedTime && !isNaN(savedTime)) {
-          player.currentTime(parseFloat(savedTime));
+        // --- سیستم بازیابی پیشرفت پخش (Resume Playback) ---
+        const restoreProgress = () => {
+          const savedTime = localStorage.getItem(storageKey);
+          if (savedTime && !isNaN(savedTime)) {
+            const time = parseFloat(savedTime);
+            if (time > 0 && (!player.duration() || time < player.duration())) {
+              player.currentTime(time);
+            }
+          }
+        };
+
+        player.one('loadedmetadata', restoreProgress);
+        if (player.readyState() >= 1) {
+          restoreProgress();
         }
 
-        // شنونده رویداد timeupdate برای ذخیره‌سازی زمان فعلی کاربر
-        // ذخیره‌سازی هر 5 ثانیه (0, 5, 10, 15, ...)
+        // --- سیستم ذخیره‌سازی زمان فعلی کاربر ---
         let lastSavedSecond = -1;
         player.on('timeupdate', () => {
-          const currentSecond = Math.floor(player.currentTime());
-          // فقط زمانی ذخیره کن که به مضرب 5 جدیدی رسیده باشیم
-          if (currentSecond % 5 === 0 && currentSecond !== lastSavedSecond) {
-            localStorage.setItem(storageKey, player.currentTime().toString());
+          const currentTime = player.currentTime();
+          const currentSecond = Math.floor(currentTime);
+
+          if (currentSecond > 0 && currentSecond % 5 === 0 && currentSecond !== lastSavedSecond) {
+            localStorage.setItem(storageKey, currentTime.toString());
             lastSavedSecond = currentSecond;
           }
         });
 
-        // ذخیره‌سازی فوری هنگام توقف (pause/stop) — زمان دقیق توقف ذخیره می‌شود
+        // ذخیره‌سازی فوری هنگام توقف (pause/stop)
         player.on('pause', () => {
-          localStorage.setItem(storageKey, player.currentTime().toString());
+          const currentTime = player.currentTime();
+          if (currentTime > 0) {
+            localStorage.setItem(storageKey, currentTime.toString());
+          }
         });
-      });
+
+        // پاکسازی لوکال استوریج پس از پایان کامل ویدیو
+        player.on('ended', () => {
+          localStorage.removeItem(storageKey);
+        });
+      }));
     } else {
-      // 2. بروزرسانی تنظیمات پلیر موجود در صورت تغییر محتوا (مثلا کلیک روی یک جلسه دیگر)
+      // 2. فقط در صورت تغییر واقعی آدرس منبع ویدیو (src)، آدرس ویدیوی پلیر تغییر پیدا کند
+      // جلوگیری از ریست شدن منبع ویدیو در هنگام جلو/عقب زدن ویدیو یا رندر مجدد کامپوننت
       const player = playerRef.current;
-      player.autoplay(options.autoplay);
-      player.src(options.sources);
-      if (options.poster) {
-        player.poster(options.poster);
+      const newSrc = options?.sources?.[0]?.src;
+      if (newSrc && newSrc !== currentSrcRef.current) {
+        currentSrcRef.current = newSrc;
+        player.src(options.sources);
+        if (options.poster) {
+          player.poster(options.poster);
+        }
       }
     }
   }, [options, videoRef, courseId, lessonId, isAudio, onReady]);
 
-  // 3. مکانیزم Disposal: از بین بردن شیء پلیر در هنگام Unmount شدن کامپوننت برای جلوگیری از مموری لیک
+  // 3. مکانیزم Disposal: از بین بردن شیء پلیر در هنگام Unmount برای جلوگیری از مموری لیک
   useEffect(() => {
     const player = playerRef.current;
     return () => {

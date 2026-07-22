@@ -39,7 +39,7 @@ export default function CartReviewStep({ onNext }) {
                         <div className={styles.itemInfo}>
                             <h4 className={styles.itemTitle}>{item.title}</h4>
                             <p className={styles.itemMeta}>
-                                {item.type === 'product' ? 'محصول' : 'دوره آموزشی'}
+                                {item.type === 'product' ? 'محصول' : item.type === 'chapter' ? 'فصل آموزشی' : 'دوره آموزشی'}
                                 {item.quantity > 1 && ` × ${item.quantity}`}
                             </p>
                         </div>

@@ -42,7 +42,7 @@ export default function PaymentStep({ onPrevious }) {
 
         // تعیین وضعیت اولیه پرداخت بر اساس روش انتخاب‌شده
         const isCardToCard = paymentMethod === 'card_to_card';
-        const initialPaymentStatus = isCardToCard ? 'pending_payment' : 'pending_payment';
+        const initialPaymentStatus = isCardToCard ? 'pending_payment' : 'paid';
 
         try {
             const response = await fetch('/api/orders', {

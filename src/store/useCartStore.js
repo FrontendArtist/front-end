@@ -33,9 +33,9 @@ export const useCartStore = create(
 
                 // اگر آیتم قبلاً در سبد خرید موجود است
                 if (existingItemIndex !== -1) {
-                    // اگر نوع آیتم 'course' باشد، هیچ کاری انجام نمی‌دهیم
-                    // چون دوره‌ها فقط یکبار قابل اضافه شدن هستند
-                    if (item.type === 'course') {
+                    // اگر نوع آیتم 'course' یا 'chapter' باشد، هیچ کاری انجام نمی‌دهیم
+                    // چون دوره‌ها و فصل‌ها فقط یکبار قابل اضافه شدن هستند
+                    if (item.type === 'course' || item.type === 'chapter') {
                         return;
                     }
 
@@ -92,9 +92,9 @@ export const useCartStore = create(
 
                 const item = currentItems[itemIndex];
 
-                // اگر نوع آیتم 'course' باشد، اجازه تغییر تعداد نمی‌دهیم
-                // چون دوره‌ها فقط با quantity=1 مجاز هستند
-                if (item.type === 'course') {
+                // اگر نوع آیتم 'course' یا 'chapter' باشد، اجازه تغییر تعداد نمی‌دهیم
+                // چون دوره‌ها و فصل‌ها فقط با quantity=1 مجاز هستند
+                if (item.type === 'course' || item.type === 'chapter') {
                     return;
                 }
 

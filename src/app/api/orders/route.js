@@ -74,8 +74,14 @@ export async function POST(request) {
             return NextResponse.json({ message: "Invalid cartItems" }, { status: 400 });
         }
 
-        // استخراج آیدی دوره‌ها از سبد خرید برای اتصال به ریلیشن courses در مدل User
-        const courseIds = cartItems.filter(item => item.type === 'course').map(item => Number(item.id));
+        // استخراج آیدی دوره‌ها و فصل‌ها از سبد خرید برای پرکردن پروفایل کاربر
+        const courseIds = cartItems
+          .filter(item => item.type === 'course')
+          .map(item => Number(item.id));
+
+        const chapterIds = cartItems
+          .filter(item => item.type === 'chapter')
+          .map(item => Number(item.chapterId || (typeof item.id === 'string' ? item.id.replace('chapter-', '') : item.id)));
 
         // دریافت اطلاعات کامل کاربر از استراپی همراه با آدرس و دوره‌ها
         const userRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}?populate[0]=address&populate[1]=courses`, {
@@ -100,6 +106,18 @@ export async function POST(request) {
                     slug: item.slug || "",
                     itemUrl: item.slug ? `/courses/${item.slug}` : "#"
                 };
+            } else if (item.type === 'chapter') {
+                const cleanChapterId = item.chapterId || (typeof item.id === 'string' ? item.id.replace('chapter-', '') : item.id);
+                const courseSlug = item.slug ? item.slug.split('-chapter-')[0] : '';
+                return {
+                    __component: "order.course-order-item",
+                    title: item.title,
+                    price: Number(item.price) || 0,
+                    courseId: Number(item.courseId) || 0,
+                    chapterId: Number(cleanChapterId) || 0,
+                    slug: item.slug || "",
+                    itemUrl: `/courses/${courseSlug || item.slug}`
+                };
             } else {
                 let productUrl = `/product/${item.slug || ''}`;
                 if (item.subcategorySlug && item.categorySlug) {
@@ -121,12 +139,15 @@ export async function POST(request) {
         });
 
         // ── BUG FIX ─────────────────────────────────────────────────────────────
-        // قبلاً orderStatus همیشه 'paid ' بود — حتی برای کارت‌به‌کارت!
-        // حالا: کارت‌به‌کارت → 'pending'  |  آنلاین → 'paid '
+        // کارت‌به‌کارت → orderStatus: 'pending', paymentStatus: 'pending_payment'
+        // آنلاین → orderStatus: 'paid', paymentStatus: 'paid'
         const resolvedPaymentMethod = paymentMethod || 'online';
         const resolvedOrderStatus = resolvedPaymentMethod === 'card_to_card'
             ? 'pending'
-            : 'paid ';
+            : 'paid';
+        const resolvedPaymentStatus = resolvedPaymentMethod === 'card_to_card'
+            ? 'pending_payment'
+            : (paymentStatus && paymentStatus !== 'pending_payment' ? paymentStatus : 'paid');
 
         // استخراج نام کاربر/گیرنده
         const dbFullName = (userData.firstName || userData.lastName)
@@ -161,7 +182,7 @@ export async function POST(request) {
                 user: session.user.id,
                 items: itemsPayload,
                 paymentMethod: resolvedPaymentMethod,
-                paymentStatus: paymentStatus || 'pending_payment',
+                paymentStatus: resolvedPaymentStatus,
             }
         };
 
@@ -184,17 +205,20 @@ export async function POST(request) {
         const newOrder = await orderRes.json();
 
         // آپدیت cartData کاربر به null برای خالی شدن سبد خرید در دیتابیس
-        // و اضافه کردن دوره‌های جدید به کاربر
+        // و اضافه کردن دوره‌ها و فصل‌های جدید به کاربر
         let userUpdatePayload = { cartData: null };
 
         if (courseIds.length > 0) {
-            // استفاده از دوره‌های لود شده قبلی
             const existingCourses = userData.courses ? userData.courses.map(c => c.id) : [];
-            // ادغام دوره‌های قبلی با دوره‌های جدید (حذف تکراری‌ها)
             const mergedCourses = [...new Set([...existingCourses, ...courseIds])];
-
-            // پلاگین users-permissions معمولا آرایه آی‌دی‌ها را مستقیما دریافت می‌کند
             userUpdatePayload.courses = mergedCourses;
+        }
+
+        if (chapterIds.length > 0) {
+            const existingChapters = Array.isArray(userData.enrolledChapters)
+                ? userData.enrolledChapters.map(Number)
+                : [];
+            userUpdatePayload.enrolledChapters = [...new Set([...existingChapters, ...chapterIds])];
         }
 
         const userUpdateRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}`, {

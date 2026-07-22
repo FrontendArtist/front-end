@@ -107,8 +107,14 @@ export default function CartPage() {
      * تفکیک آیتم‌ها به محصولات و دوره‌ها
      * این کار باعث می‌شود که بتوانیم هر دسته را جداگانه نمایش دهیم
      */
-    const products = items.filter(item => item.type === 'product');
-    const courses = items.filter(item => item.type === 'course');
+    /**
+     * تفکیک آیتم‌ها به محصولات و دوره‌ها/فصل‌ها
+     * این کار باعث می‌شود که بتوانیم هر دسته را جداگانه نمایش دهیم
+     */
+    const products = items.filter((item) => item.type === 'product');
+    const coursesAndChapters = items.filter(
+        (item) => item.type === 'course' || item.type === 'chapter'
+    );
 
     const breadcrumbItems = [
         { label: 'خانه', href: '/' },
@@ -222,54 +228,63 @@ export default function CartPage() {
                         </div>
                     )}
 
-                    {/* بخش دوره‌ها */}
-                    {courses.length > 0 && (
+                    {/* بخش دوره‌ها و فصل‌های آموزشی */}
+                    {coursesAndChapters.length > 0 && (
                         <div className={styles.section}>
-                            <h2 className={styles.sectionTitle}>دوره‌های آموزشی ({courses.length})</h2>
+                            <h2 className={styles.sectionTitle}>
+                                دوره‌ها و فصل‌های آموزشی ({coursesAndChapters.length})
+                            </h2>
                             <div className={styles.itemsList}>
-                                {courses.map((item) => (
-                                    <div key={item.id} className={styles.cartItem}>
-                                        {/* تصویر دوره - لینک به صفحه جزئیات */}
-                                        <Link href={`/courses/${item.slug}`} className={styles.itemImage}>
-                                            <Image
-                                                src={item.image}
-                                                alt={item.title}
-                                                fill
-                                                sizes="(max-width: 768px) 100px, 120px"
-                                                className={styles.image}
-                                            />
-                                        </Link>
+                                {coursesAndChapters.map((item) => {
+                                    const coursePageSlug = item.slug ? item.slug.split('-chapter-')[0] : '';
+                                    const itemHref = item.type === 'chapter' ? `/courses/${coursePageSlug}` : `/courses/${item.slug}`;
 
-                                        {/* اطلاعات دوره - لینک به صفحه جزئیات */}
-                                        <Link href={`/courses/${item.slug}`} className={styles.itemInfo}>
-                                            <h3 className={styles.itemTitle}>{item.title}</h3>
-                                            <p className={styles.itemPrice}>
+                                    return (
+                                        <div key={item.id} className={styles.cartItem}>
+                                            {/* تصویر دوره/فصل - لینک به صفحه جزئیات */}
+                                            <Link href={itemHref} className={styles.itemImage}>
+                                                <Image
+                                                    src={item.image || '/images/forempties2.png'}
+                                                    alt={item.title}
+                                                    fill
+                                                    sizes="(max-width: 768px) 100px, 120px"
+                                                    className={styles.image}
+                                                />
+                                            </Link>
+
+                                            {/* اطلاعات دوره/فصل - لینک به صفحه جزئیات */}
+                                            <Link href={itemHref} className={styles.itemInfo}>
+                                                <h3 className={styles.itemTitle}>{item.title}</h3>
+                                                <p className={styles.itemPrice}>
+                                                    {formatPrice(item.price)} تومان
+                                                </p>
+                                                <span className={styles.courseLabel}>
+                                                    {item.type === 'chapter' ? 'فصل آموزشی' : 'دوره آموزشی'}
+                                                </span>
+                                            </Link>
+
+                                            {/* فضای خالی به جای کنترلر تعداد */}
+                                            <div className={styles.spacer}></div>
+
+                                            {/* قیمت */}
+                                            <div className={styles.itemTotal}>
                                                 {formatPrice(item.price)} تومان
-                                            </p>
-                                            <span className={styles.courseLabel}>دوره آموزشی</span>
-                                        </Link>
+                                            </div>
 
-                                        {/* فضای خالی به جای کنترلر تعداد */}
-                                        <div className={styles.spacer}></div>
-
-                                        {/* قیمت (دوره‌ها quantity همیشه 1 است) */}
-                                        <div className={styles.itemTotal}>
-                                            {formatPrice(item.price)} تومان
+                                            {/* دکمه حذف */}
+                                            <button
+                                                onClick={() => handleRemove(item.id)}
+                                                className={styles.removeButton}
+                                                aria-label="حذف از سبد"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2 2v2"></path>
+                                                </svg>
+                                            </button>
                                         </div>
-
-                                        {/* دکمه حذف */}
-                                        <button
-                                            onClick={() => handleRemove(item.id)}
-                                            className={styles.removeButton}
-                                            aria-label="حذف از سبد"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
