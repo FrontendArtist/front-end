@@ -1,0 +1,33 @@
+/**
+ * @file src/app/mentor/mentor.module.scss
+ * @description Master SCSS Layout for the Mentor Dashboard.
+ * 100% strict adherence to global CSS variables from variables.css.
+ */
+
+.mentorDashboard {
+    width: 100%;
+    min-height: calc(100vh - 100px);
+    margin-top: 100px;
+    background-color: var(--color-bg-primary);
+    background-image: 
+        radial-gradient(
+            circle at 15% 20%, 
+            color-mix(in srgb, var(--color-overlay) 60%, transparent) 0%, 
+            transparent 45%
+        ),
+        radial-gradient(
+            circle at 85% 80%, 
+            color-mix(in srgb, var(--color-text-primary) 5%, transparent) 0%, 
+            transparent 40%
+        );
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    box-sizing: border-box;
+
+    @media (max-width: 768px) {
+        padding: 12px 8px;
+        margin-top: 80px;
+        min-height: calc(100vh - 80px);
+    }
+}

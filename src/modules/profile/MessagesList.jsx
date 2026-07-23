@@ -5,9 +5,10 @@ import MessageDetailModal from './MessageDetailModal';
 import styles from './MessagesList.module.scss';
 
 const statusMap = {
-    open: { label: 'باز', className: 'open' },
-    closed: { label: 'بسته', className: 'closed' },
+    open: { label: 'در انتظار پاسخ', className: 'open' },
+    closed: { label: 'بسته شده', className: 'closed' },
     pending: { label: 'در انتظار', className: 'pending' },
+    answered: { label: 'پاسخ داده شد', className: 'closed' },
 };
 
 export default function MessagesList({ messages = [], onUpdateMessage }) {

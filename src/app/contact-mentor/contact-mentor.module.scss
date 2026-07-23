@@ -1,0 +1,135 @@
+/**
+ * @file src/app/contact-mentor/contact-mentor.module.scss
+ * @description Styles for the Contact Mentor page (user-facing).
+ * 100% strict adherence to CSS Custom Properties (variables.css).
+ * All opacities use color-mix(in srgb, var(--color-name) percentage%, transparent).
+ */
+
+.page {
+    min-height: calc(100vh - 100px);
+    margin-top: 100px;
+    background-color: var(--color-bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loadingState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: color-mix(in srgb, var(--color-card-text) 50%, transparent);
+    font-size: var(--font-sm);
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid color-mix(in srgb, var(--color-text-primary) 15%, transparent);
+    border-top-color: var(--color-text-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.successCard {
+    width: 100%;
+    max-width: 480px;
+    margin: 24px;
+    padding: 48px 40px;
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--color-overlay) 60%, transparent) 0%,
+        color-mix(in srgb, var(--color-bg-primary) 75%, transparent) 100%
+    );
+    backdrop-filter: blur(16px);
+    border: 1px solid color-mix(in srgb, var(--color-success) 20%, transparent);
+    border-radius: var(--radius-card);
+    text-align: center;
+    animation: fadeSlideUp 0.4s ease-out both;
+
+    @media (max-width: 480px) {
+        padding: 32px 24px;
+        border-radius: var(--border-radius);
+    }
+}
+
+.successCard__icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+    background: color-mix(in srgb, var(--color-success) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-success);
+}
+
+.successCard__title {
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-title-hover);
+    margin: 0 0 12px;
+}
+
+.successCard__desc {
+    font-size: var(--font-sm-md);
+    color: color-mix(in srgb, var(--color-card-text) 65%, transparent);
+    line-height: var(--line-height-md);
+    margin: 0 0 28px;
+    direction: rtl;
+}
+
+.successCard__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.successCard__btn {
+    width: 100%;
+    padding: 12px 24px;
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    border: none;
+    border-radius: 10px;
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+
+    &:hover {
+        background: var(--color-title-hover);
+        transform: translateY(-1px);
+    }
+}
+
+.successCard__btnSecondary {
+    width: 100%;
+    padding: 11px 24px;
+    background: transparent;
+    color: color-mix(in srgb, var(--color-card-text) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-card-text) 12%, transparent);
+    border-radius: 10px;
+    font-size: var(--font-sm-md);
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+
+    &:hover {
+        border-color: color-mix(in srgb, var(--color-text-primary) 25%, transparent);
+        color: var(--color-card-text);
+    }
+}
+
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

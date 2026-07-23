@@ -1,4 +1,75 @@
 ```text
+[2026-07-23] - Instructor Chat System, Mentor Dashboard, SPA Profile Chat & Backend Strapi Integration (100% Complete)
+
+── Server-Side Auth Guard & Mentor Dashboard ──────────────────────────────────────
+- Implemented `/mentor` route layout (`src/app/mentor/layout.jsx`):
+  - Server Component Auth Guard retrieving NextAuth session server-side (`getServerSession(authOptions)`).
+  - Enforces `session.user.role.type === 'administrator'` gate; issues server-side 307 HTTP redirect (`redirect('/')`) before any HTML or client bundle is shipped to unauthorized users.
+- Created `/mentor` page (`src/app/mentor/page.jsx`):
+  - Server Component pre-fetching instructor messages server-side (`getInstructorMessages`) for waterfall-free initial render while keeping JWT tokens off client bundles.
+
+── Instructor Chat Panel & Complete UI Redesign ───────────────────────────────────
+- Built `InstructorChatPanel.jsx` & `InstructorChatPanel.module.scss`:
+  - Modern two-column CSS grid layout (340px sidebar + flex chat window) with responsive mobile drawer view.
+  - Complete UI overhaul with glassmorphism backdrop blur (`backdrop-filter: blur(20px)`), ambient radial background gradients, and micro-animations.
+  - Sidebar: search bar with gold focus ring, conversation item cards with active gold indicator bar, status pills ('پاسخ داده شد' / 'در انتظار'), and conversation counter badge.
+  - Chat Window: conversation header, Salik metadata panel (age, marital status, job, spiritual background), message stream with distinct Salik vs Instructor bubbles and author badges, and floating bottom reply input bar.
+  - 100% strict adherence to global design system in `variables.css` using `var(--color-...)` and `color-mix(in srgb, ...)` for opacities (zero raw hex or hardcoded inline RGB values).
+
+── Salik PreChatForm & Contact Mentor Route ───────────────────────────────────────
+- Created `PreChatForm.jsx` & `PreChatForm.module.scss`:
+  - Interactive client form using `react-hook-form` for collecting Salik info (age, marital status, job, spiritual background, and inquiry).
+  - Serializes form inputs into JSON `metaData` and posts to `/api/messages` with `messageType: 'instructor'`.
+- Created `/contact-mentor` page (`src/app/contact-mentor/page.jsx` & `contact-mentor.module.scss`):
+  - User-facing page wrapping `PreChatForm` with auth redirect and success confirmation screen.
+
+── Full SPA User Profile Chat Overlay ─────────────────────────────────────────────
+- Redesigned `MessageDetailModal.jsx` & `MessageDetailModal.module.scss`:
+  - Replaced the small popup modal dialog with an expanded full-screen/SPA glassmorphism chat overlay (`position: fixed; inset: 0; z-index: 1000`).
+  - Top header with message subject, status badge, date timestamp, and close (X) button / Escape key handler.
+  - Message stream with Salik vs Instructor/Support bubble distinction and author labels ('استاد', 'پشتیبانی', 'شما').
+  - Smart reply routing: automatically detects thread type and calls `updateInstructorMessage` for instructor threads or `updateMyMessage` for contact threads.
+- Updated `getMyMessages` in `src/lib/messagesApi.js`:
+  - Uses `Promise.allSettled` to fetch both `/api/contact-messages` and `/api/messages` simultaneously, merging and sorting them chronologically for `/profile/messages`.
+
+── About Mentor Section CTA Button ───────────────────────────────────────────────
+- Updated `AboutMentorSection.jsx` & `AboutMentorSection.module.scss`:
+  - Added 'ارتباط با استاد' CTA button linking to `/contact-mentor` inside `contentWrapper`.
+  - Styled with gold gradient background, hover scale, box-shadow, and responsive full-width layout on mobile.
+
+── Strapi v5 Backend Integration ──────────────────────────────────────────────────
+- Updated Message Content-Type Schema (`backend/src/api/message/content-types/message/schema.json`):
+  - Added `messageType` enumeration (`instructor`, `contact`, `support`), `metaData` (json), `status` enumeration (`open`, `answered`, `closed`), `replies` (json), and `user` relation.
+  - Changed `body` from `blocks` to `text` to accept string input directly.
+- Updated Message Controller (`backend/src/api/message/controllers/message.js`):
+  - Overrode `create`, `find`, `findOne`, and `update` to automatically link logged-in users, restrict non-admin queries to own messages, enforce ownership checks, and manage thread replies.
+
+── Frontend Auth & API Client Safeguards ──────────────────────────────────────────
+- Updated `src/lib/auth.js`:
+  - Added content-type checks (`response.headers.get('content-type')`) before parsing JSON in `authorize` and `session` callbacks to prevent raw HTML `<!DOCTYPE...` syntax error crashes when backend services return HTML pages or non-JSON responses.
+  - Added fallback secret in `authOptions` (`process.env.NEXTAUTH_SECRET || 'dev-secret-key-change-this'`).
+
+── Modified & Created Files ───────────────────────────────────────────────────────
+- backend/src/api/message/content-types/message/schema.json
+- backend/src/api/message/controllers/message.js
+- src/lib/messagesApi.js
+- src/lib/auth.js
+- src/app/mentor/layout.jsx [NEW]
+- src/app/mentor/mentor.module.scss [NEW]
+- src/app/mentor/page.jsx [NEW]
+- src/app/contact-mentor/page.jsx [NEW]
+- src/app/contact-mentor/contact-mentor.module.scss [NEW]
+- src/components/chat/PreChatForm.jsx [NEW]
+- src/components/chat/PreChatForm.module.scss [NEW]
+- src/components/chat/InstructorChatPanel.jsx [NEW]
+- src/components/chat/InstructorChatPanel.module.scss [NEW]
+- src/modules/profile/MessagesList.jsx
+- src/modules/profile/MessageDetailModal.jsx
+- src/modules/profile/MessageDetailModal.module.scss
+- src/modules/home/AboutMentorSection/AboutMentorSection.jsx
+- src/modules/home/AboutMentorSection/AboutMentorSection.module.scss
+
+
 [2026-07-22] - Expandable Admin Order Details, Strapi v5 Order Lifecycles & Admin Panel Fixes (100% Complete)
 
 ── Admin Orders Expandable Details Panel ──────────────────────────────────────────

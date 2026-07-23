@@ -120,24 +120,26 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 32px;
+  padding: 14px 28px;
   background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-title-hover) 100%);
   color: var(--color-bg-primary);
   font-size: var(--font-md);
-  font-weight: var(--font-weight-bold, 700);
-  border-radius: 8px;
+  font-weight: var(--font-weight-bold);
+  border-radius: 10px;
   text-decoration: none;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.25s ease;
   align-self: flex-start;
+  box-shadow: 0 4px 15px color-mix(in srgb, var(--color-text-primary) 25%, transparent);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px fade(var(--color-primary), 30%);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--color-text-primary) 35%, transparent);
+    color: var(--color-bg-primary);
   }
 
   @include respond(md) {
     width: 100%;
-    padding: 14px 24px;
+    padding: 12px 20px;
   }
 }
 

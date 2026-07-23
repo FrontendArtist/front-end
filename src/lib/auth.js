@@ -28,26 +28,31 @@ export const authOptions = {
                         cache: 'no-store'
                     });
 
+                    // خواندن پاسخ صریح متنی قبل از پارس JSON برای جلوگیری از کرش <!DOCTYPE
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        throw new Error('کد تایید اشتباه است یا خطایی در سرور رخ داده است');
+                    }
+
                     const data = await response.json();
 
                     if (!response.ok) {
-                        throw new Error(data.error?.message || 'خطا در تایید کد');
+                        throw new Error(data.error?.message || data.message || 'کد تایید اشتباه است یا منقضی شده است');
                     }
 
                     const { jwt, user } = data;
 
-                    // در اینجا فرض می‌کنیم کاربر ادمین، فیلد role دارد (مثلاً 'admin')
                     if (user && jwt) {
                         return { 
                             ...user, 
                             id: user.id, 
                             jwt: jwt,
-                            role: user.role || 'user' // اگر Strapi فیلد role را داد، استفاده کن، وگرنه user فرض کن
+                            role: user.role || 'user'
                         };
                     }
                     return null;
                 } catch (error) {
-                    throw new Error(error.message || 'خطای سرور');
+                    throw new Error(error.message || 'خطای ورود به سیستم');
                 }
             },
         }),
@@ -84,7 +89,8 @@ export const authOptions = {
                             headers: { Authorization: `Bearer ${tokenToUse}` },
                             cache: 'no-store'
                         });
-                        if (userRes.ok) {
+                        const contentType = userRes.headers.get('content-type') || '';
+                        if (userRes.ok && contentType.includes('application/json')) {
                             const userData = await userRes.json();
                             const courses = userData.courses || [];
                             session.user.courses = courses;
@@ -102,7 +108,7 @@ export const authOptions = {
             return session;
         },
     },
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET || 'dev-secret-key-change-this',
     pages: { error: '/auth/error' },
 };
 

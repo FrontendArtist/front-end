@@ -1,0 +1,244 @@
+/**
+ * @file src/components/chat/PreChatForm.module.scss
+ * @description Styles for the PreChatForm component.
+ * 100% strict adherence to CSS Custom Properties (variables.css).
+ * All opacities use color-mix(in srgb, var(--color-name) percentage%, transparent).
+ */
+
+.preChatForm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100%;
+    padding: 40px 24px;
+    direction: rtl;
+}
+
+.preChatForm__card {
+    width: 100%;
+    max-width: 560px;
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--color-overlay) 60%, transparent) 0%,
+        color-mix(in srgb, var(--color-bg-primary) 80%, transparent) 100%
+    );
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 15%, transparent);
+    border-radius: var(--radius-card);
+    padding: 40px;
+    box-shadow: var(--shadow-card-strong);
+    animation: fadeSlideUp 0.4s ease-out both;
+
+    @media (max-width: 768px) {
+        padding: 24px;
+        border-radius: var(--border-radius);
+    }
+}
+
+.preChatForm__header {
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.preChatForm__icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    background: color-mix(in srgb, var(--color-text-primary) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 25%, transparent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-primary);
+    font-size: 24px;
+}
+
+.preChatForm__title {
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-title-hover);
+    margin: 0 0 8px;
+    line-height: var(--line-height-sm);
+}
+
+.preChatForm__subtitle {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    opacity: 0.7;
+    margin: 0;
+    line-height: var(--line-height-md);
+}
+
+.preChatForm__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.preChatForm__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+
+    @media (max-width: 480px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.preChatForm__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.preChatForm__label {
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    padding-right: 2px;
+}
+
+.preChatForm__label--required::after {
+    content: ' *';
+    color: var(--color-error);
+}
+
+.preChatForm__input,
+.preChatForm__select,
+.preChatForm__textarea {
+    width: 100%;
+    padding: 10px 14px;
+    background: color-mix(in srgb, var(--color-white) 4%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
+    border-radius: 10px;
+    color: var(--color-card-text);
+    font-size: var(--font-sm-md);
+    font-family: inherit;
+    line-height: var(--line-height-md);
+    transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+
+    &::placeholder {
+        color: color-mix(in srgb, var(--color-card-text) 35%, transparent);
+    }
+
+    &:focus {
+        border-color: color-mix(in srgb, var(--color-text-primary) 60%, transparent);
+        background: color-mix(in srgb, var(--color-white) 7%, transparent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+    }
+
+    &.preChatForm__input--error,
+    &.preChatForm__select--error,
+    &.preChatForm__textarea--error {
+        border-color: color-mix(in srgb, var(--color-error) 50%, transparent);
+        &:focus { 
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 10%, transparent); 
+        }
+    }
+}
+
+.preChatForm__select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23F6D982' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 14px center;
+    padding-left: 36px;
+    cursor: pointer;
+
+    option {
+        background: var(--color-overlay);
+        color: var(--color-card-text);
+    }
+}
+
+.preChatForm__textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.preChatForm__error {
+    font-size: var(--font-ssm);
+    color: var(--color-error);
+    margin-top: 2px;
+    padding-right: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.preChatForm__submit {
+    margin-top: 8px;
+    width: 100%;
+    padding: 13px 24px;
+    background: var(--color-text-primary);
+    color: var(--color-bg-primary);
+    border: none;
+    border-radius: 10px;
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    &:hover:not(:disabled) {
+        background: var(--color-title-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px color-mix(in srgb, var(--color-text-primary) 25%, transparent);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+}
+
+.preChatForm__serverError {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: color-mix(in srgb, var(--color-error) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-error) 25%, transparent);
+    border-radius: 10px;
+    color: var(--color-error);
+    font-size: var(--font-sm);
+    margin-top: -4px;
+}
+
+.preChatForm__spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid color-mix(in srgb, var(--color-bg-primary) 30%, transparent);
+    border-top-color: var(--color-bg-primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
