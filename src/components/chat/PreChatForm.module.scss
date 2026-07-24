@@ -242,3 +242,45 @@
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+.preChatForm__skeletonBlock {
+    width: 100%;
+    height: 42px;
+    background: color-mix(in srgb, var(--color-white) 6%, transparent);
+    border-radius: 10px;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+.preChatForm__skeletonLabel {
+    width: 80px;
+    height: 16px;
+    background: color-mix(in srgb, var(--color-white) 8%, transparent);
+    border-radius: 4px;
+    margin-bottom: 6px;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+.preChatForm__retryButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: color-mix(in srgb, var(--color-text-primary) 15%, transparent);
+    color: var(--color-text-primary);
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 30%, transparent);
+    border-radius: 8px;
+    font-size: var(--font-sm);
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+        background: color-mix(in srgb, var(--color-text-primary) 25%, transparent);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+}
+

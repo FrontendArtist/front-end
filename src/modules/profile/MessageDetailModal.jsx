@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { updateMyMessage, updateInstructorMessage } from '@/lib/messagesApi';
+import { updateMyMessage, updateInstructorMessage, getMyMessages } from '@/lib/messagesApi';
 import styles from './MessageDetailModal.module.scss';
 
 const statusMap = {
@@ -71,6 +71,33 @@ export default function MessageDetailModal({ message, isOpen, onClose, onUpdateM
         }
     }, [isOpen, message?.replies?.length]);
 
+    // Polling 5 ثانیه‌ای فقط در زمان باز بودن چت
+    useEffect(() => {
+        if (!isOpen || !message || !session?.user?.jwt) return;
+
+        const token = session.user.jwt;
+        const msgId = message.documentId || String(message.id);
+
+        const fetchLatest = async () => {
+            if (document.visibilityState !== 'visible') return;
+            try {
+                const res = await getMyMessages(token);
+                const list = res?.data || [];
+                const updated = list.find(
+                    (m) => m.documentId === msgId || String(m.id) === msgId
+                );
+                if (updated && onUpdateMessage) {
+                    onUpdateMessage(updated);
+                }
+            } catch {
+                // silent fail on poll
+            }
+        };
+
+        const intervalId = setInterval(fetchLatest, 5000);
+        return () => clearInterval(intervalId);
+    }, [isOpen, message, session?.user?.jwt, onUpdateMessage]);
+
     if (!isOpen || !message) return null;
 
     const status = statusMap[message.status] || statusMap.open;
@@ -97,7 +124,6 @@ export default function MessageDetailModal({ message, isOpen, onClose, onUpdateM
             const payload = {
                 replies: updatedReplies,
                 status: 'open',
-                isRead: false
             };
 
             const isInstructorThread = message.messageType === 'instructor' || message.type === 'instructor';

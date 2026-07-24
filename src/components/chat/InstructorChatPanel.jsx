@@ -5,9 +5,10 @@
  * @description داشبورد چت استاد — Client Component (UI جدید و مدرن)
  */
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { updateInstructorMessage } from '@/lib/messagesApi';
+import { updateInstructorMessage, getInstructorMessages } from '@/lib/messagesApi';
+import MentorFormEditor from './MentorFormEditor';
 import styles from './InstructorChatPanel.module.scss';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -67,8 +68,9 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
     const [searchQuery, setSearchQuery] = useState('');
     const [reply, setReply] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [isFormEditorOpen, setIsFormEditorOpen] = useState(false);
 
-    const messagesEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
 
     const { data: session } = useSession();
     const token = session?.user?.jwt || currentUser?.jwt;
@@ -91,9 +93,25 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
         });
     }, [messages, searchQuery]);
 
+    // ─── Polling 5 ثانیه‌ای فقط در زمان باز بودن صفحه و اکتیو بودن زبانه ───
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [selectedId, selectedMessage?.replies?.length]);
+        if (!token) return;
+
+        const fetchLatest = async () => {
+            if (document.visibilityState !== 'visible') return;
+            try {
+                const res = await getInstructorMessages(token);
+                if (res?.data) {
+                    setMessages(res.data);
+                }
+            } catch {
+                // silent fail on background poll
+            }
+        };
+
+        const intervalId = setInterval(fetchLatest, 5000);
+        return () => clearInterval(intervalId);
+    }, [token]);
 
     function handleSelectThread(id) {
         setSelectedId(id);
@@ -136,6 +154,11 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                         : m
                 )
             );
+            setTimeout(() => {
+                if (messagesContainerRef.current) {
+                    messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+                }
+            }, 50);
         } catch {
             setReply(replyText);
         } finally {
@@ -153,6 +176,7 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
     const meta = parseMetaData(selectedMessage?.metaData);
 
     return (
+        <>
         <div className={styles.panel}>
 
             {/* ════════════════════════════════════════════════════════════════
@@ -191,6 +215,23 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                             aria-label="جستجو در مکالمات"
                         />
                     </div>
+                </div>
+
+                {/* ── دکمه ویرایش فرم ── */}
+                <div className={styles.sidebar__editFormBtn}>
+                    <button
+                        type="button"
+                        id="mentor-edit-form-btn"
+                        className={styles.editFormButton}
+                        onClick={() => setIsFormEditorOpen(true)}
+                        title="ویرایش سوالات فرم پیش‌نیاز سالک"
+                    >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        ویرایش فرم سالکان
+                    </button>
                 </div>
 
                 <div className={styles.sidebar__list} role="list">
@@ -333,7 +374,7 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                         )}
 
                         {/* ── لیست پیام‌ها و replies ── */}
-                        <div className={styles.messages} aria-live="polite">
+                        <div ref={messagesContainerRef} className={styles.messages} aria-live="polite">
 
                             {/* پیام اصلی سالک */}
                             <div className={`${styles.bubble} ${styles['bubble--user']}`}>
@@ -358,7 +399,7 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                                             className={`${styles.bubble} ${isInstructor ? styles['bubble--instructor'] : styles['bubble--user']}`}
                                         >
                                             <div className={styles.bubble__header}>
-                                                <span>{isInstructor ? 'استاد' : 'سالک'}</span>
+                                                <span>{isInstructor ? 'استاد (شما)' : 'سالک'}</span>
                                             </div>
                                             <div className={styles.bubble__text}>{rep.body}</div>
                                             <time className={styles.bubble__time}>
@@ -368,7 +409,6 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                                     );
                                 })}
 
-                            <div ref={messagesEndRef} aria-hidden="true" />
                         </div>
 
                         {/* ── ناحیه ارسال پاسخ ── */}
@@ -413,5 +453,13 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                 )}
             </main>
         </div>
+
+        {/* ── مودال ویرایش فرم ── */}
+        <MentorFormEditor
+            token={token}
+            isOpen={isFormEditorOpen}
+            onClose={() => setIsFormEditorOpen(false)}
+        />
+    </>
     );
 }

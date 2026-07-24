@@ -86,6 +86,38 @@ export async function updateMyMessage(id, token, payload) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * دریافت تنظیمات فرم پیش‌نیاز استاد
+ * @param {string|null} [token] - JWT token اختیاری کاربر
+ * @returns {Promise<object>} - { data: { title, description, questions: [...] } }
+ */
+export async function getMentorFormSetting(token = null) {
+    const headers = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    return apiClient('/api/mentor-form-setting?populate=questions', {
+        headers,
+        cache: 'no-store',
+        suppressErrorLog: true,
+    });
+}
+
+/**
+ * ذخیره / بروزرسانی تنظیمات فرم پیش‌نیاز استاد
+ * @param {{ title?: string, description?: string, questions: object[] }} payload
+ * @param {string} token - JWT token ادمین
+ */
+export async function updateMentorFormSetting(payload, token) {
+    return apiClient('/api/mentor-form-setting', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ data: payload }),
+    });
+}
+
+/**
  * دریافت تمام پیام‌های از نوع 'instructor' برای داشبورد استاد
  * این تابع فقط توسط کامپوننت‌های مسیر /mentor فراخوانی می‌شود.
  * @param {string} token - JWT token ادمین (از session.user.jwt)
@@ -105,19 +137,20 @@ export async function getInstructorMessages(token) {
 
 /**
  * ارسال پیام جدید با نوع 'instructor' از طرف کاربر
- * دیتای فرم پیش‌نیاز (سن، تاهل، شغل، سابقه معنوی) در فیلد metaData به صورت JSON ذخیره می‌شود.
- * @param {{ subject: string, body: string, age: string, maritalStatus: string, job: string, spiritualBackground: string }} formData
+ * دیتای فرم پیش‌نیاز در فیلد metaData به صورت JSON ذخیره می‌شود.
+ * @param {{ subject?: string, body: string, metaData?: object|string }} formData
  * @param {string} token - JWT token کاربر لاگین‌شده
  * @returns {Promise<object>} - پیام ایجادشده
  */
 export async function submitInstructorMessage(formData, token) {
-    // متادیتای فرم پیش‌نیاز را به صورت JSON stringify می‌کنیم
-    const metaData = JSON.stringify({
-        age: formData.age,
-        maritalStatus: formData.maritalStatus,
-        job: formData.job,
-        spiritualBackground: formData.spiritualBackground,
-    });
+    const metaData = typeof formData.metaData === 'object'
+        ? JSON.stringify(formData.metaData)
+        : (formData.metaData ?? JSON.stringify({
+            age: formData.age,
+            maritalStatus: formData.maritalStatus,
+            job: formData.job,
+            spiritualBackground: formData.spiritualBackground,
+        }));
 
     return apiClient('/api/messages', {
         method: 'POST',
@@ -131,7 +164,6 @@ export async function submitInstructorMessage(formData, token) {
                 body: formData.body?.trim(),
                 // ⚠️ `messageType` به جای `type` — چون `type` در JSON:API رزرو است و
                 // Strapi آن را با خطای 400 "Invalid key type" رد می‌کند.
-                // در schema Strapi فیلد Enumeration با نام `messageType` تعریف شده باشد.
                 messageType: 'instructor',
                 metaData, // اطلاعات فرم پیش‌نیاز به صورت JSON string
             },

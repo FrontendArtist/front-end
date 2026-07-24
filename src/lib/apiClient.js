@@ -48,6 +48,7 @@ import { API_BASE_URL } from './api';
  * });
  */
 export async function apiClient(endpoint, options = {}) {
+  const { suppressErrorLog, ...fetchOptions } = options;
   // ساخت URL کامل با ترکیب Base URL و endpoint
   // endpoint باید با "/" شروع شود (مثلاً "/api/services")
   const url = `${API_BASE_URL}${endpoint}`;
@@ -57,25 +58,27 @@ export async function apiClient(endpoint, options = {}) {
     const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers, // امکان افزودن header های سفارشی
+        ...fetchOptions.headers, // امکان افزودن header های سفارشی
       },
       // پیش‌فرض: بدون کش برای داده‌های تازه در SSR
       // می‌تواند برای هر درخواست override شود (مثلاً { next: { revalidate: 3600 } })
       cache: 'no-store',
-      ...options, // سایر تنظیمات (method, body و...)
+      ...fetchOptions, // سایر تنظیمات (method, body و...)
     });
 
     // بررسی موفقیت پاسخ (status code بین 200-299)
     if (!response.ok) {
       // تلاش برای خواندن پاسخ خطا از Strapi
-      let errorDetails = '';
-      try {
-        const errorBody = await response.json();
-        errorDetails = JSON.stringify(errorBody, null, 2);
-        console.error(`⚠️ API Error ${response.status}: ${endpoint}`);
-        console.error(`🔴 STRAPI ERROR DETAILS:`, errorDetails);
-      } catch (e) {
-        console.error(`⚠️ API Error ${response.status}: ${endpoint}`);
+      if (!suppressErrorLog) {
+        let errorDetails = '';
+        try {
+          const errorBody = await response.json();
+          errorDetails = JSON.stringify(errorBody, null, 2);
+          console.error(`⚠️ API Error ${response.status}: ${endpoint}`);
+          console.error(`🔴 STRAPI ERROR DETAILS:`, errorDetails);
+        } catch (e) {
+          console.error(`⚠️ API Error ${response.status}: ${endpoint}`);
+        }
       }
       throw new Error(`API_ERROR_${response.status}`);
     }
@@ -92,7 +95,7 @@ export async function apiClient(endpoint, options = {}) {
 
     if (isNetworkError) {
       // پیام ساده‌تر برای خطای شبکه
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === 'development' && !suppressErrorLog) {
         console.warn(`⚠️ Backend unavailable: ${endpoint}`);
         console.info('💡 Make sure your Strapi server is running on', API_BASE_URL);
       }
@@ -100,7 +103,7 @@ export async function apiClient(endpoint, options = {}) {
     }
 
     // سایر خطاها
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' && !suppressErrorLog) {
       console.error('❌ API Client Error:', error.message);
     }
 

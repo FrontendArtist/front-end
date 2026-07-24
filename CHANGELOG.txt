@@ -1,4 +1,97 @@
 ```text
+[2026-07-24] - Mentor Pre-Chat Form Settings Inline Editor
+
+── Mentor Pre-Chat Form Settings Inline Editor ──────────────────────────────────────
+- Added Inline Form Editor to Mentor Panel (`src/components/chat/InstructorChatPanel.jsx` & `InstructorChatPanel.module.scss`):
+  - Added a "ویرایش فرم سالکان" button in the sidebar footer area of the Mentor Dashboard.
+  - Wired up `MentorFormEditor` modal to allow the instructor to configure form titles, descriptions, and dynamic questions inline.
+- Created `MentorFormEditor.jsx` & `MentorFormEditor.module.scss` (`src/components/chat/`):
+  - Allows full CRUD operations (add, remove, update keys/labels/placeholders/options, reorder questions) directly from the UI.
+  - Supports automatic comma-separated parsing and JSON parsing for drop-down Select questions.
+- Updated Messages API (`src/lib/messagesApi.js`):
+  - Created `updateMentorFormSetting(payload, token)` function using `PUT /api/mentor-form-setting` to save updated schemas back to Strapi.
+
+── Created & Modified Files ──────────────────────────────────────────────────────────
+- src/components/chat/MentorFormEditor.jsx [NEW]
+- src/components/chat/MentorFormEditor.module.scss [NEW]
+- src/components/chat/InstructorChatPanel.jsx
+- src/components/chat/InstructorChatPanel.module.scss
+- src/lib/messagesApi.js
+
+[2026-07-24] - Chat Bubble Alignment, Auto-Scroll Optimization & Smart Real-Time Polling
+
+── Chat Bubble Alignment & RTL Layout Fixes ──────────────────────────────────
+- Updated `InstructorChatPanel` (`src/components/chat/InstructorChatPanel.jsx` & `InstructorChatPanel.module.scss`):
+  - Fixed bubble alignment in RTL layout: Mentor/Instructor's own messages (`bubble--instructor`) now align to the RIGHT side (`align-self: flex-start` in RTL) with label 'استاد (شما)'.
+  - Salik/User messages (`bubble--user`) now align to the LEFT side (`align-self: flex-end` in RTL).
+- Updated `MessageDetailModal` (`src/modules/profile/MessageDetailModal.jsx` & `MessageDetailModal.module.scss`):
+  - Explicitly set `direction: rtl` on `.chatWindow` and `.messagesStream`.
+  - User's own messages (`bubble--user`) align to the RIGHT side (`align-self: flex-start` in RTL) with label 'شما'.
+  - Staff/Instructor messages (`bubble--staff`) align to the LEFT side (`align-self: flex-end` in RTL).
+
+── Auto-Scroll & Smooth UX Improvements ─────────────────────────────────────
+- Removed window/page `scrollIntoView()` on thread selection in `InstructorChatPanel.jsx`:
+  - Prevents unwanted page jump/scroll when selecting a chat item in the sidebar or opening a thread.
+  - Attached `messagesContainerRef` to internal `.messages` stream to handle inner container scrolling (`scrollTop`) when new replies are sent.
+
+── Smart Real-Time Polling (5s Interval) ────────────────────────────────────
+- Implemented 5-second smart polling in `InstructorChatPanel.jsx` and `MessageDetailModal.jsx`:
+  - Automatically fetches updated messages via `getInstructorMessages` / `getMyMessages` every 5 seconds without full page refresh.
+  - Automatically pauses polling when chat view/modal is unmounted or when browser tab is inactive (`document.visibilityState !== 'visible'`).
+
+── Strapi API Payload Fix ───────────────────────────────────────────────────
+- Updated `handleSubmitReply` in `MessageDetailModal.jsx`:
+  - Removed invalid `isRead` attribute from PUT request payload to fix HTTP 400 `ValidationError: Invalid key isRead` error from Strapi backend.
+
+── Modified Files ───────────────────────────────────────────────────────────
+- src/components/chat/InstructorChatPanel.jsx
+- src/components/chat/InstructorChatPanel.module.scss
+- src/modules/profile/MessageDetailModal.jsx
+- src/modules/profile/MessageDetailModal.module.scss
+
+[2026-07-24] - Dynamic PreChatForm, Strapi MentorFormSetting Schema & MessagesList Unique Key Fix
+
+── Strapi v5 Backend Schema & API ──────────────────────────────────────────────────
+- Created `form.question` Repeatable Component (`backend/src/components/form/question.json`):
+  - Attributes: `key` (string, required), `label` (string, required), `fieldType` (enum: 'text', 'number', 'textarea', 'select'), `isRequired` (boolean), `options` (json), `placeholder` (string).
+- Created Single Type `MentorFormSetting` (`backend/src/api/mentor-form-setting/content-types/mentor-form-setting/schema.json`):
+  - Attributes: `title` (string), `description` (text), `questions` (component: 'form.question', repeatable: true).
+- Created Strapi Core Router, Controller, and Service (`backend/src/api/mentor-form-setting/`):
+  - Router (`routes/mentor-form-setting.js`): Configured `config: { find: { auth: false } }` to allow public fetching of pre-chat form settings.
+  - Controller (`controllers/mentor-form-setting.js`) and Service (`services/mentor-form-setting.js`).
+
+── Dynamic PreChatForm Component Refactoring ─────────────────────────────────────────
+- Updated `PreChatForm.jsx` (`src/components/chat/PreChatForm.jsx`):
+  - Added dynamic schema fetching from `/api/mentor-form-setting?populate=questions`.
+  - Implemented dynamic field rendering (`text`, `number`, `textarea`, `select`) and dynamic validation rules with `react-hook-form`.
+  - Serializes all dynamic inputs into a single JSON object inside `metaData` parameter sent to `/api/messages`.
+  - Added skeleton loader state during schema fetch and silent fallback to default questions (`DEFAULT_QUESTIONS`) when backend settings are uninitialized or missing.
+- Updated `PreChatForm.module.scss` (`src/components/chat/PreChatForm.module.scss`):
+  - Added pulse skeleton animation and retry button styles.
+
+── API Client & Messages API Updates ────────────────────────────────────────────────
+- Updated `apiClient.js` (`src/lib/apiClient.js`):
+  - Added `suppressErrorLog` option to allow suppress error logging on non-200 responses when fallback mechanisms are active.
+- Updated `messagesApi.js` (`src/lib/messagesApi.js`):
+  - Added `getMentorFormSetting(token)` function with `suppressErrorLog: true`.
+  - Updated `submitInstructorMessage` to accept dynamic `metaData` JSON objects.
+
+── MessagesList Duplicate React Key Fix ─────────────────────────────────────────────
+- Fixed `MessagesList.jsx` (`src/modules/profile/MessagesList.jsx`):
+  - Changed React key from `msg.id` to `msg.documentId || `${msg.id}-${msg.messageType || 'contact'}-${index}`` to resolve duplicate key warning when merging `/api/contact-messages` and `/api/messages`.
+
+── Modified & Created Files ──────────────────────────────────────────────────────────
+- backend/src/components/form/question.json [NEW]
+- backend/src/api/mentor-form-setting/content-types/mentor-form-setting/schema.json [NEW]
+- backend/src/api/mentor-form-setting/routes/mentor-form-setting.js [NEW]
+- backend/src/api/mentor-form-setting/controllers/mentor-form-setting.js [NEW]
+- backend/src/api/mentor-form-setting/services/mentor-form-setting.js [NEW]
+- src/lib/apiClient.js
+- src/lib/messagesApi.js
+- src/components/chat/PreChatForm.jsx
+- src/components/chat/PreChatForm.module.scss
+- src/modules/profile/MessagesList.jsx
+
 [2026-07-23] - Instructor Chat System, Mentor Dashboard, SPA Profile Chat & Backend Strapi Integration (100% Complete)
 
 ── Server-Side Auth Guard & Mentor Dashboard ──────────────────────────────────────

@@ -40,13 +40,14 @@ export default function MessagesList({ messages = [], onUpdateMessage }) {
     return (
         <>
             <div className={styles.messagesList} dir="rtl">
-                {messages.map((msg) => {
+                {messages.map((msg, index) => {
                     const status = statusMap[msg.status] || statusMap.open;
                     const hasReplies = Array.isArray(msg.replies) && msg.replies.length > 0;
+                    const itemKey = msg.documentId || `${msg.id}-${msg.messageType || 'contact'}-${index}`;
 
                     return (
                         <button
-                            key={msg.id}
+                            key={itemKey}
                             className={styles.messagesList__item}
                             onClick={() => handleOpen(msg)}
                             type="button"
