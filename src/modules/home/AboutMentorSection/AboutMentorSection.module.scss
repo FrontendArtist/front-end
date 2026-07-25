@@ -83,7 +83,7 @@
   flex-direction: column;
   display: flex;
   gap: 20px;
-  padding: 32px 50px 50px 50px;
+  padding: 30px 50px 30px 50px;
   width: 65%;
 
   @include respond(md) {
@@ -106,7 +106,7 @@
 }
 
 .text {
-  font-size: var(--font-md);
+  font-size: var(--font-sm);
   line-height: 1.8;
   color: var(--color-card-text);
   margin: 0;
@@ -152,11 +152,12 @@
 }
 
 .aboutImages {
+
   position: absolute;
   left: 0px;
   z-index: 2;
   pointer-events: none;
-  display: flex;
+  display: none;
   align-items: center;
   bottom: -200px;
   justify-content: space-between;

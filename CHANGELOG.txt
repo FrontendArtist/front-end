@@ -1,9 +1,28 @@
 ```text
-[2026-07-25] - ChatItem User Display Name Resolution
+[2026-07-25] - Custom 404 Not Found Page Implementation
+
+── Custom 404 Not Found Page ──────────────────────────────────────────────────
+- Created custom 404 page (`src/app/not-found.jsx` & `src/app/not-found.module.scss`):
+  - Displays `/images/error404.webp` image with rounded corners (`border-radius: 28px`), backdrop blur, subtle gold glow, and hover transitions.
+  - Added two action buttons:
+    1) "بازگشت به صفحه قبل" (Back to previous page) using `router.back()`.
+    2) "صفحه اصلی" (Home page) linking to `/`.
+  - Fully responsive, RTL layout styled to match the dark/gold theme of the application.
+
+── Created Files ───────────────────────────────────────────────────────────────
+- src/app/not-found.jsx [NEW]
+- src/app/not-found.module.scss [NEW]
+
+[2026-07-25] - Profile Overview Recent Orders Removal & ChatItem User Display Name Resolution
+
+── Profile Overview Clean-up ──────────────────────────────────────────────────
+- Updated `ProfilePage` (`src/app/profile/page.js`):
+  - Removed `<OrdersList limit={2} />` section completely from the main account information / overview page (`/profile`).
 
 ── User Display Name Resolution ──────────────────────────────────────────────
 - Updated `InstructorChatPanel.jsx` (`src/components/chat/InstructorChatPanel.jsx`):
-  - Created `getUserDisplayName(msg)` helper function to intelligently resolve user names instead of displaying raw phone numbers in sidebar chat items (`chatItem__name`), avatars (`chatItem__avatar`), search filter, and chat headers (`chatHeader__name`).
+  - Replaced single-letter text initials in `chatItem__avatar` and `chatHeader__avatar` with a modern SVG user person icon.
+  - Created `getUserDisplayName(msg)` helper function to intelligently resolve user names instead of displaying raw phone numbers in sidebar chat items (`chatItem__name`), search filter, and chat headers (`chatHeader__name`).
   - Priorities: 1) Complete profile name (requires BOTH `firstName` AND `lastName`, or `fullName`), 2) Form filled name in `metaData` / `msg.name` if profile name is incomplete/missing, 3) Fallback to `کاربر ناشناس`.
 
 [2026-07-24] - Mentor Pre-Chat Form Settings Inline Editor

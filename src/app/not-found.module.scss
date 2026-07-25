@@ -1,0 +1,122 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 200px);
+  padding: 60px 20px;
+  background-color: var(--color-bg-primary, #061818);
+  direction: rtl;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 680px;
+  width: 100%;
+}
+
+.imageCard {
+  width: 100%;
+  border-radius: var(--radius-card-xl, 28px);
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(246, 217, 130, 0.15);
+  background-color: rgba(6, 24, 24, 0.6);
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(246, 217, 130, 0.3);
+  }
+}
+
+.image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  border-radius: var(--radius-card-xl, 28px);
+}
+
+.buttonGroup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 36px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.backButton,
+.homeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  border-radius: 14px;
+  font-size: var(--font-md, 16px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.backButton {
+  background: rgba(246, 217, 130, 0.08);
+  color: var(--color-text-primary, #f6d982);
+  border: 1.5px solid rgba(246, 217, 130, 0.3);
+
+  &:hover {
+    background: rgba(246, 217, 130, 0.18);
+    border-color: var(--color-text-primary, #f6d982);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(246, 217, 130, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.homeButton {
+  background: linear-gradient(135deg, #f6d982 0%, #f5c452 100%);
+  color: #061818;
+  border: 1.5px solid transparent;
+  box-shadow: 0 4px 15px rgba(246, 217, 130, 0.25);
+
+  &:hover {
+    background: linear-gradient(135deg, #f5c452 0%, #e5b340 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(246, 217, 130, 0.4);
+    color: #061818;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 40px 16px;
+    min-height: calc(100vh - 160px);
+  }
+
+  .buttonGroup {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .backButton,
+  .homeButton {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: var(--font-sm-md, 15px);
+  }
+}

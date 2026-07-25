@@ -284,7 +284,10 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                                     aria-current={isActive ? 'true' : undefined}
                                 >
                                     <div className={styles.chatItem__avatar} aria-hidden="true">
-                                        {getInitial(msg)}
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                            <circle cx="12" cy="7" r="4" />
+                                        </svg>
                                     </div>
 
                                     <div className={styles.chatItem__content}>
@@ -334,8 +337,11 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                                 </svg>
                             </button>
 
-                            <div className={styles.chatHeader__avatar}>
-                                {getInitial(selectedMessage)}
+                            <div className={styles.chatHeader__avatar} aria-hidden="true">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
                             </div>
 
                             <div className={styles.chatHeader__info}>
