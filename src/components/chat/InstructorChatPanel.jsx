@@ -46,9 +46,35 @@ function parseMetaData(metaData) {
     }
 }
 
-function getInitial(user) {
-    if (!user) return '؟';
-    const name = user.username || user.email || user.phoneNumber || '';
+function getUserDisplayName(msg) {
+    if (!msg) return 'کاربر ناشناس';
+
+    const user = msg.user || {};
+    const meta = parseMetaData(msg.metaData);
+
+    const hasFirstName = Boolean(user.firstName && user.firstName.trim());
+    const hasLastName = Boolean(user.lastName && user.lastName.trim());
+    const hasFullName = Boolean(user.fullName && user.fullName.trim());
+
+    // 1. فقط در صورتی از نام پروفایل استفاده کن که هم نام و هم نام خانوادگی کامل باشند
+    if (hasFullName) {
+        return user.fullName.trim();
+    }
+    if (hasFirstName && hasLastName) {
+        return `${user.firstName.trim()} ${user.lastName.trim()}`;
+    }
+
+    // 2. اگر حتی یکی از (نام یا نام خانوادگی) در پروفایل خالی بود، نام واردشده در فیلد فرم را جایگزین کن
+    const formName = meta.fullName || meta.name || meta.user_name || meta['نام'] || meta['نام و نام خانوادگی'] || meta.fullNameFa || msg.name;
+    if (formName && typeof formName === 'string' && formName.trim()) return formName.trim();
+
+    // 3. در غیر این صورت -> 'کاربر ناشناس'
+    return 'کاربر ناشناس';
+}
+
+function getInitial(msg) {
+    const name = getUserDisplayName(msg);
+    if (!name || name === 'کاربر ناشناس') return '؟';
     return name.charAt(0).toUpperCase() || '؟';
 }
 
@@ -86,8 +112,7 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
         if (!searchQuery.trim()) return messages;
         const q = searchQuery.toLowerCase();
         return messages.filter((m) => {
-            const user = m.user || {};
-            const name = (user.username || user.email || user.phoneNumber || '').toLowerCase();
+            const name = getUserDisplayName(m).toLowerCase();
             const subject = (m.subject || '').toLowerCase();
             return name.includes(q) || subject.includes(q);
         });
@@ -259,12 +284,12 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                                     aria-current={isActive ? 'true' : undefined}
                                 >
                                     <div className={styles.chatItem__avatar} aria-hidden="true">
-                                        {getInitial(user)}
+                                        {getInitial(msg)}
                                     </div>
 
                                     <div className={styles.chatItem__content}>
                                         <p className={styles.chatItem__name}>
-                                            {user.username || user.email || user.phoneNumber || 'کاربر ناشناس'}
+                                            {getUserDisplayName(msg)}
                                         </p>
                                         <p className={styles.chatItem__preview}>
                                             {msg.subject || msg.body?.slice(0, 40) || '—'}
@@ -310,15 +335,12 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                             </button>
 
                             <div className={styles.chatHeader__avatar}>
-                                {getInitial(selectedMessage.user)}
+                                {getInitial(selectedMessage)}
                             </div>
 
                             <div className={styles.chatHeader__info}>
                                 <h3 className={styles.chatHeader__name}>
-                                    {selectedMessage.user?.username ||
-                                        selectedMessage.user?.email ||
-                                        selectedMessage.user?.phoneNumber ||
-                                        'کاربر ناشناس'}
+                                    {getUserDisplayName(selectedMessage)}
                                 </h3>
                                 <p className={styles.chatHeader__subject}>
                                     {selectedMessage.subject || 'درخواست مشاوره'}

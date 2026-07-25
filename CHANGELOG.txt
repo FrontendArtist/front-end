@@ -1,4 +1,11 @@
 ```text
+[2026-07-25] - ChatItem User Display Name Resolution
+
+── User Display Name Resolution ──────────────────────────────────────────────
+- Updated `InstructorChatPanel.jsx` (`src/components/chat/InstructorChatPanel.jsx`):
+  - Created `getUserDisplayName(msg)` helper function to intelligently resolve user names instead of displaying raw phone numbers in sidebar chat items (`chatItem__name`), avatars (`chatItem__avatar`), search filter, and chat headers (`chatHeader__name`).
+  - Priorities: 1) Complete profile name (requires BOTH `firstName` AND `lastName`, or `fullName`), 2) Form filled name in `metaData` / `msg.name` if profile name is incomplete/missing, 3) Fallback to `کاربر ناشناس`.
+
 [2026-07-24] - Mentor Pre-Chat Form Settings Inline Editor
 
 ── Mentor Pre-Chat Form Settings Inline Editor ──────────────────────────────────────
