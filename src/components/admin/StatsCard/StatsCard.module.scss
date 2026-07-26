@@ -103,19 +103,12 @@ $transition: 0.25s ease;
 }
 
 .card__value {
-    /*
-   * --card-accent برای رنگ عدد اصلی استفاده می‌شود.
-   * اما چون SCSS نمی‌تواند var() را در color مستقیماً ست کند،
-   * این رنگ را از JSX به عنوان style prop می‌گیریم (style={{ color: accentColor }}).
-   */
-    font-size: 36px;
+    font-size: clamp(20px, 2.2vw, 28px);
     font-weight: var(--font-weight-bold);
-    line-height: 1;
+    line-height: 1.2;
     margin: 0;
-    // از overflow برای اعداد بلند جلوگیری می‌کند
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    word-break: break-word;
+    white-space: normal;
 }
 
 .card__subtitle {

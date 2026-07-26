@@ -57,3 +57,39 @@ export async function PUT(request, { params }) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 });
     }
 }
+
+export async function DELETE(request, { params }) {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.jwt || session.user.role?.type !== 'administrator') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    if (!id) {
+        return NextResponse.json({ error: 'Comment ID is required' }, { status: 400 });
+    }
+
+    try {
+        const strapiRes = await fetch(`${STRAPI_API_URL}/api/comments/${id}`, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${session.user.jwt}`,
+            },
+            cache: 'no-store',
+        });
+
+        if (!strapiRes.ok) {
+            const data = await strapiRes.json().catch(() => ({}));
+            return NextResponse.json(
+                { error: data?.error?.message || 'Strapi delete failed' },
+                { status: strapiRes.status }
+            );
+        }
+
+        return NextResponse.json({ success: true }, { status: 200 });
+    } catch (error) {
+        return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    }
+}
+

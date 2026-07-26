@@ -1,0 +1,125 @@
+@use '../../../styles/base/mixins' as *;
+
+/**
+ * @file RecentUpdates.module.scss
+ * @description استایل ۴ ستونه بخش «آخرین تغییرات» — داشبورد ادمین
+ */
+
+/* ─── Section Wrapper ────────────────────────────────────────────────────── */
+
+.section {
+    display: flex;
+    flex-direction: column;
+    direction: rtl;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 24px;
+}
+
+.title {
+    font-size: var(--font-lg);          /* 20px */
+    font-weight: var(--font-weight-medium);
+    color: rgba(255, 250, 234, 0.7);
+    margin: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(246, 217, 130, 0.1);
+}
+
+.subtitle {
+    font-size: var(--font-sm);          /* 14px */
+    color: rgba(255, 250, 234, 0.4);
+    line-height: var(--line-height-md);
+    margin: 0;
+}
+
+/* ─── 4 Columns Grid Layout ───────────────────────────────────────────────── */
+
+.columnsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+
+    @media (max-width: 1200px) {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    @media (max-width: 640px) {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+/* ─── Column Card ────────────────────────────────────────────────────────── */
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: fade(var(--color-black), 10%);
+    border: 1px solid fade(var(--color-primary), 8%);
+    border-radius: 16px;
+    padding: 18px 16px;
+}
+
+.columnHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(246, 217, 130, 0.1);
+}
+
+.columnTitle {
+    font-size: var(--font-sm-md, 15px);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-title-hover);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.columnIcon {
+    font-size: 16px;
+}
+
+.columnBadge {
+    font-size: 12px;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-bg-primary);
+    background-color: var(--color-text-primary);
+    padding: 2px 8px;
+    border-radius: 100px;
+    line-height: 1;
+}
+
+.columnList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.columnEmpty {
+    font-size: 13px;
+    color: rgba(255, 250, 234, 0.35);
+    text-align: center;
+    padding: 16px 0;
+    margin: 0;
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
+
+.empty {
+    font-size: var(--font-md);
+    color: rgba(255, 250, 234, 0.35);
+    text-align: center;
+    padding: 2rem 0;
+    margin: 0;
+}

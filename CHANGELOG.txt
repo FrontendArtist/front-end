@@ -1,4 +1,45 @@
 ```text
+[2026-07-26] - Recent Updates Dashboard Feed & Admin Comments Management System
+
+── Admin Dashboard Recent Updates Section ─────────────────────────────────────
+- Implemented `RecentUpdates` Server Component and API (`src/lib/recentUpdatesApi.js`, `src/components/home/RecentUpdates/`, `src/components/cards/UpdateCard/`):
+  - Fetches latest products, articles, services, and comments in parallel using `Promise.all`.
+  - Displayed in a responsive 4-column layout on the Admin Dashboard (`/admin`).
+  - Styled as horizontal list tiles with type badges, titles, and Persian relative timestamps (`getRelativeDate`).
+
+── Admin Comments Management System ─────────────────────────────────────────
+- Created Admin Comments Page (`src/app/admin/comments/page.jsx`):
+  - Added "نظرات" link with `MessageSquare` icon to `AdminSidebar.jsx` (`/admin/comments`).
+  - Created `CommentsManager` Client Component & SCSS (`src/components/admin/Comments/`):
+    - Table view with tabs: "همه نظرات", "در انتظار تأیید", "تأیید شده", plus real-time search.
+    - Approval Toggle: Toggle comments between approved/pending states (`PUT /api/admin/comments/[id]`).
+    - Comment Deletion: Delete comments with confirmation modal (`DELETE /api/admin/comments/[id]`).
+    - Comment Reply: Send admin replies linked to parent comment and original product/article/course relation (`POST /api/admin/comments`).
+    - Nested Tree View: Displays child replies nested directly under their parent comments with visual indentations and reply icons.
+    - Clickable Target Badges: Clicking on product/article/course target badges opens the corresponding page in a new tab (`/product/[slug]`, `/articles/[slug]`, `/courses/[slug]`).
+- Added admin comments endpoints to `src/lib/adminApi.js` (`getAdminComments`, `updateCommentApproval`, `deleteCommentAdmin`, `replyCommentAdmin`).
+- Extended `/api/admin/comments/route.js` and `/api/admin/comments/[id]/route.js` to handle `POST`, `PUT`, and `DELETE` requests securely with admin session JWT.
+
+── Admin Dashboard Layout & Stats Card Adjustments ─────────────────────────────
+- Fixed revenue overflow in `StatsCard.module.scss` (`font-size: clamp(20px, 2.2vw, 28px)`, `word-break: break-word`).
+- Removed `RecentUpdates` from the public home page and integrated it cleanly into the Admin Dashboard (`src/app/admin/page.jsx`).
+
+── Created & Modified Files ──────────────────────────────────────────────────
+- src/app/admin/comments/page.jsx [NEW]
+- src/components/admin/Comments/CommentsManager.jsx [NEW]
+- src/components/admin/Comments/CommentsManager.module.scss [NEW]
+- src/components/home/RecentUpdates/RecentUpdates.jsx [NEW]
+- src/components/home/RecentUpdates/RecentUpdates.module.scss [NEW]
+- src/components/cards/UpdateCard/UpdateCard.jsx [NEW]
+- src/components/cards/UpdateCard/UpdateCard.module.scss [NEW]
+- src/lib/recentUpdatesApi.js [NEW]
+- src/app/admin/page.jsx
+- src/app/admin/page.module.scss
+- src/components/admin/Sidebar/AdminSidebar.jsx
+- src/components/admin/StatsCard/StatsCard.module.scss
+- src/lib/adminApi.js
+- src/app/api/admin/comments/route.js
+- src/app/api/admin/comments/[id]/route.js
 [2026-07-25] - Custom 404 Not Found Page Implementation
 
 ── Custom 404 Not Found Page ──────────────────────────────────────────────────

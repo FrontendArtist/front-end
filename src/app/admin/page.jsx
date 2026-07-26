@@ -26,6 +26,7 @@ import {
     getOrdersStats,
 } from '@/lib/adminApi';
 import StatsCard from '@/components/admin/StatsCard/StatsCard';
+import RecentUpdates from '@/components/home/RecentUpdates/RecentUpdates';
 import styles from './page.module.scss';
 
 export const metadata = {
@@ -42,7 +43,7 @@ export const metadata = {
  */
 function formatCurrency(amount) {
     if (amount === null || amount === undefined) return '—';
-    return new Intl.NumberFormat('fa-IR').format(amount) + ' تومان';
+    return new Intl.NumberFormat('fa-IR').format(amount) ;
 }
 
 /**
@@ -176,6 +177,8 @@ export default async function AdminDashboardPage() {
                     ))}
                 </div>
             </section>
+
+            <RecentUpdates />
 
         </div>
     );

@@ -24,6 +24,11 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
+    const dataPayload = body.data || body;
+    if (session?.user?.id && !dataPayload.user) {
+        dataPayload.user = session.user.id;
+    }
+
     try {
         const strapiRes = await fetch(`${STRAPI_API_URL}/api/comments`, {
             method: 'POST',
@@ -32,20 +37,26 @@ export async function POST(request) {
                 Authorization: `Bearer ${session.user.jwt}`,
             },
             cache: 'no-store',
-            body: JSON.stringify({ data: body }),
+            body: JSON.stringify({ data: dataPayload }),
         });
 
         const data = await strapiRes.json();
 
         if (!strapiRes.ok) {
+            console.error('❌ Strapi POST /api/comments Error:', strapiRes.status, JSON.stringify(data));
+            const errorMessage =
+                data?.error?.message ||
+                data?.error?.details?.errors?.[0]?.message ||
+                'Strapi create failed';
             return NextResponse.json(
-                { error: data?.error?.message || 'Strapi create failed' },
+                { error: errorMessage, details: data },
                 { status: strapiRes.status }
             );
         }
 
         return NextResponse.json(data, { status: 201 });
     } catch (error) {
+        console.error('❌ Proxy POST /api/admin/comments Exception:', error);
         return NextResponse.json({ error: 'Server error' }, { status: 500 });
     }
 }

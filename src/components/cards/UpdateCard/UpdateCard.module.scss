@@ -1,0 +1,93 @@
+@use '../../../styles/base/mixins' as *;
+
+/**
+ * @file UpdateCard.module.scss
+ * @description استایل لیستی (Tile) فید «آخرین تغییرات» درون ستون‌های داشبورد
+ */
+
+$tile-bg     : fade(var(--color-black), 15%);
+$tile-border : fade(var(--color-primary), 8%);
+$tile-radius : 10px;
+$text-muted  : var(--color-card-text);
+$transition  : 0.2s ease;
+
+.tile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    background-color: $tile-bg;
+    border: 1px solid $tile-border;
+    border-right: 3px solid rgba(246, 217, 130, 0.4);
+    border-radius: $tile-radius;
+    transition: transform $transition, box-shadow $transition, border-color $transition, background-color $transition;
+    direction: rtl;
+
+    &--clickable {
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            transform: translateX(-4px);
+            background-color: fade(var(--color-black), 30%);
+            border-color: fade(var(--color-primary), 20%);
+            border-right-color: var(--color-title-hover);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+            .title {
+                color: var(--color-title-hover);
+            }
+
+            .arrow {
+                transform: translateX(-3px);
+                opacity: 1;
+            }
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--color-title-hover);
+            outline-offset: 2px;
+        }
+    }
+
+    &__main {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        flex: 1;
+    }
+
+    &__meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+}
+
+.title {
+    font-size: 13px;
+    font-weight: var(--font-weight-medium);
+    color: $text-muted;
+    margin: 0;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color $transition;
+}
+
+.date {
+    font-size: 11px;
+    color: rgba(255, 250, 234, 0.4);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.arrow {
+    font-size: 12px;
+    color: var(--color-title-hover);
+    opacity: 0.4;
+    transition: transform $transition, opacity $transition;
+}
