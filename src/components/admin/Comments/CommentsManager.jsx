@@ -14,6 +14,10 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import styles from './CommentsManager.module.scss';
+import AdminSearch from '../Shared/AdminSearch';
+import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
+import AdminBadge from '../Shared/AdminBadge';
+import AdminButton from '../Shared/AdminButton';
 
 /**
  * فرمت‌کننده تاریخ شمسی نسبی / فشرده
@@ -240,6 +244,8 @@ export default function CommentsManager({ initialComments = [] }) {
     }
   };
 
+  const headers = ['نویسنده', 'متن نظر', 'مربوط به', 'تاریخ', 'وضعیت', 'عملیات'];
+
   return (
     <div className={styles.wrapper}>
       {/* Toast Notification */}
@@ -254,153 +260,131 @@ export default function CommentsManager({ initialComments = [] }) {
         </div>
       )}
 
-      {/* Control Bar: Filter Tabs & Search */}
-      <div className={styles.controlBar}>
-        <div className={styles.tabs}>
-          <button
-            className={`${styles.tab} ${filter === 'all' ? styles['tab--active'] : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            همه نظرات ({comments.length})
-          </button>
-          <button
-            className={`${styles.tab} ${filter === 'pending' ? styles['tab--active'] : ''}`}
-            onClick={() => setFilter('pending')}
-          >
-            در انتظار تأیید ({pendingCount})
-          </button>
-          <button
-            className={`${styles.tab} ${filter === 'approved' ? styles['tab--active'] : ''}`}
-            onClick={() => setFilter('approved')}
-          >
-            تأیید شده ({approvedCount})
-          </button>
-        </div>
+      <AdminTableContainer>
+        {/* Control Bar: Filter Tabs & Search */}
+        <AdminToolbar>
+          <div className={styles.tabs} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <AdminButton
+              variant={filter === 'all' ? 'edit' : 'default'}
+              onClick={() => setFilter('all')}
+            >
+              همه نظرات ({comments.length})
+            </AdminButton>
+            <AdminButton
+              variant={filter === 'pending' ? 'edit' : 'default'}
+              onClick={() => setFilter('pending')}
+            >
+              در انتظار تأیید ({pendingCount})
+            </AdminButton>
+            <AdminButton
+              variant={filter === 'approved' ? 'edit' : 'default'}
+              onClick={() => setFilter('approved')}
+            >
+              تأیید شده ({approvedCount})
+            </AdminButton>
+          </div>
 
-        <div className={styles.searchBox}>
-          <Search size={16} className={styles.searchIcon} />
-          <input
-            type="text"
+          <AdminSearch
             placeholder="جستجو در نویسنده، متن یا نام بخش..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={styles.searchInput}
           />
-        </div>
-      </div>
+        </AdminToolbar>
 
-      {/* Comments Table */}
-      {orderedComments.length === 0 ? (
-        <div className={styles.emptyState}>
-          <MessageSquare size={40} className={styles.emptyIcon} />
-          <p>هیچ نظری مطابق با فیلترهای انتخابی یافت نشد.</p>
-        </div>
-      ) : (
-        <div className={styles.tableContainer}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>نویسنده</th>
-                <th>متن نظر</th>
-                <th>مربوط به</th>
-                <th>تاریخ</th>
-                <th>وضعیت</th>
-                <th>عملیات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orderedComments.map((c) => {
-                const isReply = c.depth > 0;
+        {/* Comments Table */}
+        {orderedComments.length === 0 ? (
+          <div className={styles.emptyState}>
+            <MessageSquare size={40} className={styles.emptyIcon} />
+            <p>هیچ نظری مطابق با فیلترهای انتخابی یافت نشد.</p>
+          </div>
+        ) : (
+          <AdminTable headers={headers}>
+                {orderedComments.map((c) => {
+                  const isReply = c.depth > 0;
 
-                return (
-                  <tr
-                    key={c.documentId || c.id}
-                    className={`${styles.row} ${isReply ? styles['row--reply'] : ''}`}
-                  >
-                    <td
-                      className={styles.authorCell}
-                      style={isReply ? { paddingRight: `${16 + c.depth * 28}px` } : undefined}
+                  return (
+                    <tr
+                      key={c.documentId || c.id}
+                      className={`${styles.row} ${isReply ? styles['row--reply'] : ''}`}
                     >
-                      <div className={styles.authorWrapper}>
-                        {isReply && <CornerDownRight size={15} className={styles.replyIcon} />}
-                        <span className={styles.authorName}>{c.name}</span>
-                        {isReply && <span className={styles.replyBadge}>پاسخ</span>}
-                      </div>
-                    </td>
-                    <td className={styles.contentCell}>
-                      <p className={styles.contentParagraph}>{c.content}</p>
-                    </td>
-                    <td>
-                      {c.relatedUrl ? (
-                        <Link
-                          href={c.relatedUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.targetBadgeLink}
-                          title="مشاهده صفحه در تب جدید"
+                      <td
+                        className={styles.authorCell}
+                        style={isReply ? { paddingRight: `${16 + c.depth * 28}px` } : undefined}
+                      >
+                        <div className={styles.authorWrapper}>
+                          {isReply && <CornerDownRight size={15} className={styles.replyIcon} />}
+                          <span className={styles.authorName}>{c.name}</span>
+                          {isReply && <AdminBadge status="info" text="پاسخ" variant="info" />}
+                        </div>
+                      </td>
+                      <td className={styles.contentCell}>
+                        <p className={styles.contentParagraph}>{c.content}</p>
+                      </td>
+                      <td>
+                        {c.relatedUrl ? (
+                          <Link
+                            href={c.relatedUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.targetBadgeLink}
+                            title="مشاهده صفحه در تب جدید"
+                          >
+                            <span>{c.relatedType}: {c.relatedTitle}</span>
+                            <ExternalLink size={13} className={styles.externalIcon} />
+                          </Link>
+                        ) : (
+                          <span className={styles.targetBadge}>
+                            {c.relatedType}: {c.relatedTitle}
+                          </span>
+                        )}
+                      </td>
+                      <td className={styles.dateCell}>{formatDate(c.createdAt)}</td>
+                      <td>
+                        <AdminBadge
+                          status={c.isApproved ? 'تأیید شده' : 'در انتظار'}
+                          variant={c.isApproved ? 'success' : 'warning'}
+                        />
+                      </td>
+                      <td className={styles.actionsCell}>
+                        {/* Toggle Approval */}
+                        <AdminButton
+                          variant={c.isApproved ? 'reject' : 'approve'}
+                          onClick={() => handleToggleApprove(c)}
+                          disabled={actionLoading === c.documentId}
+                          title={c.isApproved ? 'لغو تأیید' : 'تأیید نظر'}
                         >
-                          <span>{c.relatedType}: {c.relatedTitle}</span>
-                          <ExternalLink size={13} className={styles.externalIcon} />
-                        </Link>
-                      ) : (
-                        <span className={styles.targetBadge}>
-                          {c.relatedType}: {c.relatedTitle}
-                        </span>
-                      )}
-                    </td>
-                    <td className={styles.dateCell}>{formatDate(c.createdAt)}</td>
-                    <td>
-                      <span
-                        className={`${styles.statusBadge} ${
-                          c.isApproved ? styles['statusBadge--approved'] : styles['statusBadge--pending']
-                        }`}
-                      >
-                        {c.isApproved ? 'تأیید شده' : 'در انتظار'}
-                      </span>
-                    </td>
-                    <td className={styles.actionsCell}>
-                      {/* Toggle Approval */}
-                      <button
-                        className={`${styles.actionBtn} ${
-                          c.isApproved ? styles['actionBtn--reject'] : styles['actionBtn--approve']
-                        }`}
-                        onClick={() => handleToggleApprove(c)}
-                        disabled={actionLoading === c.documentId}
-                        title={c.isApproved ? 'لغو تأیید' : 'تأیید نظر'}
-                      >
-                        {c.isApproved ? <XCircle size={16} /> : <CheckCircle size={16} />}
-                      </button>
+                          {c.isApproved ? <XCircle size={16} /> : <CheckCircle size={16} />}
+                        </AdminButton>
 
-                      {/* Reply Button */}
-                      <button
-                        className={`${styles.actionBtn} ${styles['actionBtn--reply']}`}
-                        onClick={() => {
-                          setReplyingComment(c);
-                          setReplyText('');
-                        }}
-                        disabled={actionLoading === c.documentId}
-                        title="پاسخ دادن"
-                      >
-                        <Reply size={16} />
-                      </button>
+                        {/* Reply Button */}
+                        <AdminButton
+                          variant="reply"
+                          onClick={() => {
+                            setReplyingComment(c);
+                            setReplyText('');
+                          }}
+                          disabled={actionLoading === c.documentId}
+                          title="پاسخ دادن"
+                        >
+                          <Reply size={16} />
+                        </AdminButton>
 
-                      {/* Delete Button */}
-                      <button
-                        className={`${styles.actionBtn} ${styles['actionBtn--delete']}`}
-                        onClick={() => setDeletingComment(c)}
-                        disabled={actionLoading === c.documentId}
-                        title="حذف نظر"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                        {/* Delete Button */}
+                        <AdminButton
+                          variant="delete"
+                          onClick={() => setDeletingComment(c)}
+                          disabled={actionLoading === c.documentId}
+                          title="حذف نظر"
+                        >
+                          <Trash2 size={16} />
+                        </AdminButton>
+                      </td>
+                    </tr>
+                  );
+                })}
+          </AdminTable>
+        )}
+      </AdminTableContainer>
 
       {/* ── Reply Modal ────────────────────────────────────────────────────── */}
       {replyingComment && (
@@ -424,16 +408,15 @@ export default function CommentsManager({ initialComments = [] }) {
               />
 
               <div className={styles.modalActions}>
-                <button
-                  type="button"
-                  className={styles.cancelBtn}
+                <AdminButton
+                  variant="default"
                   onClick={() => setReplyingComment(null)}
                 >
                   انصراف
-                </button>
-                <button type="submit" className={styles.submitBtn} disabled={!replyText.trim()}>
+                </AdminButton>
+                <AdminButton type="submit" variant="approve" disabled={!replyText.trim()}>
                   ارسال پاسخ
-                </button>
+                </AdminButton>
               </div>
             </form>
           </div>
@@ -449,20 +432,18 @@ export default function CommentsManager({ initialComments = [] }) {
               آیا از حذف نظر <strong>«{deletingComment.name}»</strong> اطمینان دارید؟ این عملیات قابل بازگشت نیست.
             </p>
             <div className={styles.modalActions}>
-              <button
-                type="button"
-                className={styles.cancelBtn}
+              <AdminButton
+                variant="default"
                 onClick={() => setDeletingComment(null)}
               >
                 انصراف
-              </button>
-              <button
-                type="button"
-                className={styles.deleteConfirmBtn}
+              </AdminButton>
+              <AdminButton
+                variant="delete"
                 onClick={handleDeleteConfirm}
               >
                 حذف قطعی
-              </button>
+              </AdminButton>
             </div>
           </div>
         </div>

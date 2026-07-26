@@ -1,0 +1,325 @@
+@use '../../../styles/base/mixins' as *;
+
+.pageHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.pageTitle {
+    font-size: var(--font-lg-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-card-text);
+    margin: 0;
+}
+
+.pageCount {
+    font-size: var(--font-sm);
+    color: var(--color-text-primary);
+    background-color: fade(var(--color-primary), 8%);
+    border: 1px solid fade(var(--color-primary), 20%);
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+}
+
+.pageActions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.tableContainer {
+    width: 100%;
+    background-color: transparent; // Let rows show their own background
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+    margin: -0.5rem;
+    overflow-x: auto;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.searchWrapper {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.searchBar {
+    width: 100%;
+    flex: 1;
+    padding: 0.8rem 1rem; // Normal padding, no icon inside
+    border: 1px solid fade(var(--color-primary), 12%);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: var(--font-sm);
+    background-color: fade(var(--color-black), 15%);
+    color: var(--color-card-text);
+    transition: all 0.3s ease;
+    box-shadow: inset 0 2px 4px fade(var(--color-black), 20%);
+
+    &::placeholder {
+        color: var(--color-text-primary);
+        opacity: 0.5;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-title-hover);
+        background-color: fade(var(--color-black), 25%);
+        box-shadow: 0 0 0 3px fade(var(--color-title-hover), 15%);
+    }
+}
+
+.searchButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+    border-radius: 10px;
+    border: 1px solid fade(var(--color-primary), 12%);
+    background-color: fade(var(--color-black), 25%);
+    color: var(--color-title-hover);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background-color: fade(var(--color-title-hover), 15%);
+        border-color: var(--color-title-hover);
+        color: var(--color-title-hover);
+        box-shadow: 0 2px 8px fade(var(--color-title-hover), 20%);
+    }
+}
+
+.table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 12px; // Gap between rows
+    min-width: 820px;
+
+    th {
+        padding: 0 1rem 0.75rem;
+        text-align: right;
+        font-weight: var(--font-weight-bold);
+        color: var(--color-card-text);
+        font-size: var(--font-sm);
+        white-space: nowrap;
+        background-color: transparent;
+        border: none;
+    }
+
+    td {
+        padding: 0.85rem 1rem; // Reduced padding
+        text-align: right;
+        font-size: var(--font-sm);
+        color: var(--color-text-primary);
+        vertical-align: middle;
+        border-top: 1px solid fade(var(--color-primary), 8%);
+        border-bottom: 1px solid fade(var(--color-primary), 8%);
+    }
+
+    tbody tr {
+        background-color: fade(var(--color-black), 15%);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        
+        &:hover {
+            transform: translateY(-2px);
+            background-color: fade(var(--color-black), 25%);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+            
+            td:first-child {
+                border-right-color: var(--color-title-hover);
+            }
+        }
+    }
+
+    // Card look for each row
+    td:first-child {
+        border-right: 3px solid rgba(246, 217, 130, 0.4);
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+        border-left: none;
+    }
+
+    td:last-child {
+        border-left: 1px solid fade(var(--color-primary), 8%);
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+        border-right: none;
+    }
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-bold);
+    white-space: nowrap;
+
+    &--success, &--published, &--available, &--user, &--green {
+        background-color: fade(var(--color-success), 12%);
+        color: var(--color-success);
+    }
+
+    &--error, &--unavailable, &--admin, &--red {
+        background-color: fade(var(--color-error), 12%);
+        color: var(--color-error);
+    }
+
+    &--warning, &--draft, &--yellow {
+        background-color: fade(var(--color-warning), 15%);
+        color: var(--color-warning-amber);
+    }
+
+    &--info, &--blue {
+        background-color: fade(var(--color-blue-alt), 20%);
+        color: var(--color-blue-light);
+    }
+}
+
+.btnAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 0.4rem 0.8rem;
+    font-family: inherit;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    text-decoration: none;
+
+    &:hover {
+        opacity: 0.85;
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    &--edit, &--reply {
+        background-color: fade(var(--color-blue-alt), 20%);
+        border: 1px solid fade(var(--color-blue-alt), 40%);
+        color: var(--color-blue-light);
+    }
+
+    &--delete, &--reject {
+        background-color: transparent;
+        border: 1px solid fade(var(--color-error), 35%);
+        color: var(--color-error);
+
+        &:hover {
+            background-color: fade(var(--color-error), 12%);
+        }
+    }
+
+    &--approve {
+        background-color: var(--color-success);
+        color: var(--color-white);
+        border: 1px solid fade(var(--color-success), 50%);
+    }
+
+    &--live, &--default {
+        background-color: fade(var(--color-bg-primary-overlay), 60%);
+        color: var(--color-text-primary);
+        border: 1px solid fade(var(--color-primary), 20%);
+        &:hover {
+            background-color: var(--color-title-hover);
+            color: var(--color-black);
+        }
+    }
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+
+    &__btn {
+        padding: 0.45rem 0.9rem;
+        border-radius: 6px;
+        border: 1px solid fade(var(--color-black), 10%);
+        background-color: fade(var(--color-bg-primary-overlay), 60%);
+        color: var(--color-text-primary);
+        font-family: inherit;
+        font-size: var(--font-sm);
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover:not(:disabled) {
+            background-color: fade(var(--color-primary), 12%);
+            border-color: fade(var(--color-primary), 30%);
+            color: var(--color-card-text);
+        }
+
+        &:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        &--active {
+            background-color: fade(var(--color-primary), 20%);
+            border-color: fade(var(--color-primary), 40%);
+            color: var(--color-card-text);
+            font-weight: var(--font-weight-bold);
+        }
+    }
+
+    &__info {
+        font-size: var(--font-sm);
+        color: var(--color-text-primary);
+        opacity: 0.7;
+    }
+}
+
+.thumbnail {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid fade(var(--color-primary), 20%);
+    background-color: fade(var(--color-primary), 5%);
+}
+
+.thumbnailPlaceholder {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    background-color: fade(var(--color-primary), 8%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    border: 1px dashed fade(var(--color-primary), 20%);
+}
+
+.priceCell {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+    direction: ltr;
+    text-align: left;
+}
+
+.stockCell, .centerCell {
+    text-align: center;
+}

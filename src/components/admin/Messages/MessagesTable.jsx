@@ -4,6 +4,10 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Eye, Trash2, Mail, MailOpen, AlertCircle, Info, Search } from 'lucide-react';
 import styles from './Messages.module.scss';
 import MessageReadModal from './MessageReadModal';
+import AdminSearch from '../Shared/AdminSearch';
+import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
+import AdminBadge from '../Shared/AdminBadge';
+import AdminButton from '../Shared/AdminButton';
 
 const PAGE_SIZE = 15;
 const TOAST_ICONS = { success: '✅', error: '❌', info: 'ℹ️' };
@@ -142,46 +146,42 @@ export default function MessagesTable({ initialMessages }) {
         }
     };
 
+    const headers = ['#', 'فرستنده', 'موضوع', 'اطلاعات تماس', 'تاریخ ارسال', 'وضعیت', 'عملیات'];
+
     return (
         <>
-            <div className={styles.tableWrapper}>
+            <AdminTableContainer>
                 {/* ── Table Toolbar Actions ───────────────────────────────────── */}
-                <div className={styles.tableActions}>
-                    <input
-                        type="search"
-                        placeholder="جستجو در پیام‌ها (نام، ایمیل، موبایل، موضوع، متن)..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className={styles.searchBar}
-                        aria-label="جستجوی پیام‌ها"
-                    />
-
-                    <div className={styles.filterTabs}>
-                        <button
-                            type="button"
-                            className={`${styles.filterBtn} ${filterType === 'all' ? styles['filterBtn--active'] : ''}`}
+                <AdminToolbar>
+                    <div className={styles.filterTabs} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <AdminButton
+                            variant={filterType === 'all' ? 'edit' : 'default'}
                             onClick={() => setFilterType('all')}
                         >
                             همه پیام‌ها
-                        </button>
-                        <button
-                            type="button"
-                            className={`${styles.filterBtn} ${filterType === 'unread' ? styles['filterBtn--active'] : ''}`}
+                        </AdminButton>
+                        <AdminButton
+                            variant={filterType === 'unread' ? 'edit' : 'default'}
                             onClick={() => setFilterType('unread')}
                         >
                             خوانده نشده (
                             {messages.filter((m) => !m.isRead).length}
                             )
-                        </button>
-                        <button
-                            type="button"
-                            className={`${styles.filterBtn} ${filterType === 'read' ? styles['filterBtn--active'] : ''}`}
+                        </AdminButton>
+                        <AdminButton
+                            variant={filterType === 'read' ? 'edit' : 'default'}
                             onClick={() => setFilterType('read')}
                         >
                             خوانده شده
-                        </button>
+                        </AdminButton>
                     </div>
-                </div>
+
+                    <AdminSearch
+                        placeholder="جستجو در پیام‌ها (نام، ایمیل، موبایل، موضوع، متن)..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </AdminToolbar>
 
                 {/* ── Messages Table ────────────────────────────────────────── */}
                 {paginated.length === 0 ? (
@@ -190,19 +190,7 @@ export default function MessagesTable({ initialMessages }) {
                         <p>هیچ پیام تماسی یافت نشد.</p>
                     </div>
                 ) : (
-                    <table className={styles.table}>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>فرستنده</th>
-                                <th>موضوع</th>
-                                <th>اطلاعات تماس</th>
-                                <th>تاریخ ارسال</th>
-                                <th>وضعیت</th>
-                                <th>عملیات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <AdminTable headers={headers}>
                             {paginated.map((msg, index) => {
                                 const rowNumber = (currentPage - 1) * PAGE_SIZE + index + 1;
                                 return (
@@ -210,6 +198,7 @@ export default function MessagesTable({ initialMessages }) {
                                         key={msg.documentId}
                                         onClick={() => handleOpenMessage(msg)}
                                         className={`${styles.row} ${!msg.isRead ? styles['row--unread'] : ''}`}
+                                        style={{ cursor: 'pointer' }}
                                     >
                                         <td>{new Intl.NumberFormat('fa-IR').format(rowNumber)}</td>
                                         <td>{msg.name}</td>
@@ -221,75 +210,66 @@ export default function MessagesTable({ initialMessages }) {
                                         <td className={styles.contactInfoText}>{msg.contactInfo}</td>
                                         <td>{formatDate(msg.createdAt)}</td>
                                         <td>
-                                            <span
-                                                className={`${styles.badge} ${msg.isRead ? styles['badge--read'] : styles['badge--unread']}`}
-                                            >
-                                                {msg.isRead ? 'خوانده‌شده' : 'خوانده‌نشده'}
-                                            </span>
+                                            <AdminBadge
+                                                status={msg.isRead ? 'خوانده‌ شده' : 'خوانده‌ نشده'}
+                                                variant={msg.isRead ? 'info' : 'warning'}
+                                            />
                                         </td>
                                         <td onClick={(e) => e.stopPropagation()}>
                                             <div style={{ display: 'flex', gap: '4px' }}>
-                                                <button
-                                                    type="button"
-                                                    className={styles.btnAction}
+                                                <AdminButton
+                                                    variant="default"
                                                     onClick={() => handleOpenMessage(msg)}
                                                     title="مشاهده پیام"
                                                 >
-                                                    <Eye size={14} style={{ marginLeft: '4px', verticalAlign: 'middle', display: 'inline' }} />
+                                                    <Eye size={14} style={{ marginLeft: '4px' }} />
                                                     مشاهده
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className={styles.btnDelete}
+                                                </AdminButton>
+                                                <AdminButton
+                                                    variant="delete"
                                                     onClick={() => setDeleteTarget(msg)}
                                                     title="حذف پیام"
                                                 >
-                                                    <Trash2 size={14} style={{ marginLeft: '4px', verticalAlign: 'middle', display: 'inline' }} />
+                                                    <Trash2 size={14} style={{ marginLeft: '4px' }} />
                                                     حذف
-                                                </button>
+                                                </AdminButton>
                                             </div>
                                         </td>
                                     </tr>
                                 );
                             })}
-                        </tbody>
-                    </table>
+                    </AdminTable>
                 )}
 
                 {/* ── Table Pagination ───────────────────────────────────────── */}
                 {pageCount > 1 && (
-                    <div className={styles.pagination} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem', direction: 'rtl' }}>
-                        <button
-                            type="button"
-                            className={styles.filterBtn}
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem', direction: 'rtl' }}>
+                        <AdminButton
+                            variant="default"
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            style={{ opacity: currentPage === 1 ? 0.5 : 1, cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
                         >
                             « قبلی
-                        </button>
+                        </AdminButton>
                         {pages.map((p) => (
-                            <button
+                            <AdminButton
                                 key={p}
-                                type="button"
-                                className={`${styles.filterBtn} ${currentPage === p ? styles['filterBtn--active'] : ''}`}
+                                variant={currentPage === p ? 'edit' : 'default'}
                                 onClick={() => setCurrentPage(p)}
                             >
                                 {new Intl.NumberFormat('fa-IR').format(p)}
-                            </button>
+                            </AdminButton>
                         ))}
-                        <button
-                            type="button"
-                            className={styles.filterBtn}
+                        <AdminButton
+                            variant="default"
                             onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
                             disabled={currentPage === pageCount}
-                            style={{ opacity: currentPage === pageCount ? 0.5 : 1, cursor: currentPage === pageCount ? 'not-allowed' : 'pointer' }}
                         >
                             بعدی »
-                        </button>
+                        </AdminButton>
                     </div>
                 )}
-            </div>
+            </AdminTableContainer>
 
             {/* ─── Delete Confirmation Modal ────────────────────────────── */}
             {deleteTarget && (
@@ -301,22 +281,20 @@ export default function MessagesTable({ initialMessages }) {
                             این عمل غیرقابل بازگشت است.
                         </p>
                         <div className={styles.confirmBox__buttons}>
-                            <button
-                                type="button"
-                                className={styles.confirmBox__cancel}
+                            <AdminButton
+                                variant="default"
                                 onClick={() => setDeleteTarget(null)}
                                 disabled={isDeleting}
                             >
                                 انصراف
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.confirmBox__confirm}
+                            </AdminButton>
+                            <AdminButton
+                                variant="delete"
                                 onClick={() => handleDeleteMessage(deleteTarget.documentId)}
                                 disabled={isDeleting}
                             >
                                 {isDeleting ? 'در حال حذف...' : 'بله، حذف کن'}
-                            </button>
+                            </AdminButton>
                         </div>
                     </div>
                 </div>

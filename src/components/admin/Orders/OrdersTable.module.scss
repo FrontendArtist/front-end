@@ -111,7 +111,15 @@ $transition: 0.2s ease;
         }
 
         &--expanded {
-            background: fade(var(--color-primary), 7%);
+            background: fade(var(--color-black), 25%);
+            
+            // Remove bottom radius for the parent row so it attaches to expanded row
+            td:first-child {
+                border-bottom-right-radius: 0 !important;
+            }
+            td:last-child {
+                border-bottom-left-radius: 0 !important;
+            }
         }
     }
 
@@ -223,6 +231,16 @@ $transition: 0.2s ease;
     td {
         padding: 0 !important;
         border-bottom: 1px solid fade(var(--color-primary), 10%);
+        border-top: none !important;
+        transform: translateY(-12px); // Pull up to remove the gap created by border-spacing
+        background: fade(var(--color-black), 15%); // Match card bg
+    }
+    
+    td:first-child {
+        border-top-right-radius: 0 !important;
+    }
+    td:last-child {
+        border-top-left-radius: 0 !important;
     }
 }
 

@@ -9,6 +9,10 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import styles from './Articles.module.scss';
+import AdminSearch from '../Shared/AdminSearch';
+import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
+import AdminBadge from '../Shared/AdminBadge';
+import AdminButton from '../Shared/AdminButton';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
 const PAGE_SIZE = 12;
@@ -144,25 +148,23 @@ export default function ArticlesTable({ initialArticles }) {
     // ── Pagination pages array ────────────────────────────────────────────────
     const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
 
+    const headers = ['تصویر کاور', 'عنوان مقاله', 'خلاصه (Excerpt)', 'وضعیت انتشار', 'عملیات'];
+
     return (
         <>
             {/* ─── Articles Table Container ──────────────────────────────── */}
-            <div className={styles.tableContainer}>
-
+            <AdminTableContainer>
                 {/* ── Toolbar ───────────────────────────────────────────── */}
-                <div className={styles.toolbar}>
-                    <input
-                        type="search"
+                <AdminToolbar>
+                    <AdminSearch
                         placeholder="جستجو (عنوان، اسلاگ)..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className={styles.searchBar}
-                        aria-label="جستجوی مقاله"
                     />
                     <span className={styles.toolbar__count}>
                         {new Intl.NumberFormat('fa-IR').format(filtered.length)} مقاله
                     </span>
-                </div>
+                </AdminToolbar>
 
                 {/* ── Table ─────────────────────────────────────────────── */}
                 {paginated.length === 0 ? (
@@ -171,17 +173,7 @@ export default function ArticlesTable({ initialArticles }) {
                         <p>مقاله‌ای یافت نشد.</p>
                     </div>
                 ) : (
-                    <table className={styles.table}>
-                        <thead>
-                            <tr>
-                                <th>تصویر کاور</th>
-                                <th>عنوان مقاله</th>
-                                <th>خلاصه (Excerpt)</th>
-                                <th>وضعیت انتشار</th>
-                                <th>عملیات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <AdminTable headers={headers}>
                             {paginated.map((article) => {
                                 const imgUrl = article.cover?.url
                                     ? `${STRAPI_URL}${article.cover.url}`
@@ -223,11 +215,10 @@ export default function ArticlesTable({ initialArticles }) {
                                         {/* وضعیت انتشار */}
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                                                <span
-                                                    className={`${styles.badge} ${isPublished ? styles['badge--published'] : styles['badge--draft']}`}
-                                                >
-                                                    {isPublished ? 'منتشر شده' : 'پیش‌نویس'}
-                                                </span>
+                                                <AdminBadge
+                                                    status={isPublished ? 'منتشر شده' : 'پیش‌نویس'}
+                                                    variant={isPublished ? 'success' : 'default'}
+                                                />
                                                 <label className={styles.toggleLabel} title="تغییر وضعیت انتشار">
                                                     <input
                                                         type="checkbox"
@@ -245,65 +236,64 @@ export default function ArticlesTable({ initialArticles }) {
                                         {/* عملیات */}
                                         <td>
                                             <div className={styles.actions}>
-                                                <Link
+                                                <AdminButton
                                                     href={`/admin/articles/${article.documentId}`}
-                                                    className={`${styles.btnAction} ${styles['btnAction--edit']}`}
+                                                    variant="edit"
                                                     title="ویرایش مقاله"
                                                 >
                                                     ✏️ ویرایش
-                                                </Link>
-                                                <button
-                                                    className={`${styles.btnAction} ${styles['btnAction--delete']}`}
+                                                </AdminButton>
+                                                <AdminButton
+                                                    variant="delete"
                                                     onClick={() => setDeleteTarget(article)}
                                                     title="حذف مقاله"
                                                 >
                                                     🗑 حذف
-                                                </button>
+                                                </AdminButton>
                                             </div>
                                         </td>
                                     </tr>
                                 );
                             })}
-                        </tbody>
-                    </table>
+                    </AdminTable>
                 )}
 
                 {/* ── Pagination ─────────────────────────────────────────── */}
                 {pageCount > 1 && (
-                    <div className={styles.pagination}>
-                        <button
-                            className={styles.pagination__btn}
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem', direction: 'rtl' }}>
+                        <AdminButton
+                            variant="default"
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
                         >
                             ‹ قبلی
-                        </button>
+                        </AdminButton>
 
                         {pages.map((p) => (
-                            <button
+                            <AdminButton
                                 key={p}
-                                className={`${styles.pagination__btn} ${p === currentPage ? styles['pagination__btn--active'] : ''}`}
+                                variant={p === currentPage ? 'edit' : 'default'}
                                 onClick={() => setCurrentPage(p)}
                             >
                                 {new Intl.NumberFormat('fa-IR').format(p)}
-                            </button>
+                            </AdminButton>
                         ))}
 
-                        <button
-                            className={styles.pagination__btn}
+                        <AdminButton
+                            variant="default"
                             onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
                             disabled={currentPage === pageCount}
                         >
                             بعدی ›
-                        </button>
+                        </AdminButton>
 
-                        <span className={styles.pagination__info}>
+                        <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)', marginRight: '1rem' }}>
                             صفحه {new Intl.NumberFormat('fa-IR').format(currentPage)} از{' '}
                             {new Intl.NumberFormat('fa-IR').format(pageCount)}
                         </span>
                     </div>
                 )}
-            </div>
+            </AdminTableContainer>
 
             {/* ─── Delete Confirmation Dialog ────────────────────────────── */}
             {deleteTarget && (
@@ -315,20 +305,20 @@ export default function ArticlesTable({ initialArticles }) {
                             این عمل غیرقابل بازگشت است.
                         </p>
                         <div className={styles.confirmBox__buttons}>
-                            <button
-                                className={styles.confirmBox__cancel}
+                            <AdminButton
+                                variant="default"
                                 onClick={() => setDeleteTarget(null)}
                                 disabled={deleteLoading}
                             >
                                 انصراف
-                            </button>
-                            <button
-                                className={styles.confirmBox__confirm}
+                            </AdminButton>
+                            <AdminButton
+                                variant="delete"
                                 onClick={handleDelete}
                                 disabled={deleteLoading}
                             >
                                 {deleteLoading ? 'در حال حذف...' : 'بله، حذف کن'}
-                            </button>
+                            </AdminButton>
                         </div>
                     </div>
                 </div>

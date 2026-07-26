@@ -17,24 +17,28 @@ import { useState, useMemo, Fragment } from 'react';
 import ReceiptModal from './ReceiptModal';
 import StatusUpdateModal from './StatusUpdateModal';
 import styles from './OrdersTable.module.scss';
+import AdminSearch from '../Shared/AdminSearch';
+import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
+import AdminBadge from '../Shared/AdminBadge';
+import AdminButton from '../Shared/AdminButton';
 
 // ── ابزارهای نمایش ──────────────────────────────────────────────────────────
 
 /** برچسب‌های فارسی وضعیت پرداخت */
 const PAYMENT_STATUS_CONFIG = {
-    pending_payment: { label: 'در انتظار پرداخت', color: 'var(--color-warning)', bg: 'color-mix(in srgb, var(--color-warning) var(--op-15), transparent)' },
-    pending_verification: { label: 'انتظار تأیید رسید', color: 'var(--color-warning-amber)', bg: 'color-mix(in srgb, var(--color-warning) var(--op-15), transparent)' },
-    paid: { label: 'پرداخت شده', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success) var(--op-12), transparent)' },
-    failed: { label: 'ناموفق / رد شده', color: 'var(--color-error)', bg: 'color-mix(in srgb, var(--color-error) var(--op-12), transparent)' },
+    pending_payment: { label: 'در انتظار پرداخت', variant: 'warning' },
+    pending_verification: { label: 'انتظار تأیید رسید', variant: 'warning' },
+    paid: { label: 'پرداخت شده', variant: 'success' },
+    failed: { label: 'ناموفق / رد شده', variant: 'error' },
 };
 
 /** برچسب‌های فارسی وضعیت ارسال */
 const ORDER_STATUS_CONFIG = {
-    'pending': { label: 'در پردازش', color: 'var(--color-warning)', bg: 'color-mix(in srgb, var(--color-warning) var(--op-15), transparent)' },
-    'paid': { label: 'پرداخت شده', color: 'var(--color-blue-light)', bg: 'color-mix(in srgb, var(--color-blue) var(--op-15), transparent)' },
-    'shipped': { label: 'ارسال شده', color: 'var(--color-blue-light)', bg: 'color-mix(in srgb, var(--color-blue) var(--op-15), transparent)' },
-    'delivered': { label: 'تحویل شده', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success) var(--op-12), transparent)' },
-    'canceled': { label: 'لغو شده', color: 'var(--color-gray-cc)', bg: 'color-mix(in srgb, var(--color-black) var(--op-20), transparent)' },
+    'pending': { label: 'در پردازش', variant: 'warning' },
+    'paid': { label: 'پرداخت شده', variant: 'info' },
+    'shipped': { label: 'ارسال شده', variant: 'info' },
+    'delivered': { label: 'تحویل شده', variant: 'success' },
+    'canceled': { label: 'لغو شده', variant: 'default' },
 };
 
 /** برچسب‌های روش پرداخت */
@@ -49,20 +53,6 @@ const ITEM_TYPE_LABELS = {
     'order.course-order-item': { icon: '🎓', label: 'دوره / فصل آموزشی' },
     'order.product-order-item': { icon: '📦', label: 'محصول فیزیکی' },
 };
-
-/**
- * کامپوننت Badge – نمایش یکسان badge های رنگی
- */
-function Badge({ label, color, bg }) {
-    return (
-        <span
-            className={styles.badge}
-            style={{ color, backgroundColor: bg, borderColor: 'transparent' }}
-        >
-            {label}
-        </span>
-    );
-}
 
 /**
  * OrderExpandedRow – ردیف کشویی با تمام جزئیات سفارش
@@ -232,42 +222,29 @@ export default function OrdersTable({ initialOrders }) {
     }
 
     const COL_SPAN = 9; // تعداد ستون‌های جدول
+    const headers = [
+        <div style={{ width: 16 }}></div>,
+        'شناسه', 'کاربر', 'روش پرداخت', 'وضعیت پرداخت', 'وضعیت سفارش', 'مبلغ (تومان)', 'تاریخ', 'عملیات'
+    ];
 
     return (
-        <div className={styles.container}>
+        <AdminTableContainer>
 
             {/* ── نوار جستجو ──────────────────────────────────────────────── */}
-            <div className={styles.toolbar}>
-                <input
-                    type="search"
-                    className={styles.search}
+            <AdminToolbar>
+                <AdminSearch
                     placeholder="جستجو بر اساس شماره سفارش، کاربر یا موبایل..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    aria-label="جستجوی سفارش"
                 />
                 <span className={styles.toolbar__count}>
                     {new Intl.NumberFormat('fa-IR').format(filteredOrders.length)} سفارش
                 </span>
-            </div>
+            </AdminToolbar>
 
             {/* ── جدول ────────────────────────────────────────────────────── */}
-            <div className={styles.table_wrapper}>
-                <table className={styles.table}>
-                    <thead>
-                        <tr>
-                            <th style={{ width: 36 }}></th>{/* toggle arrow */}
-                            <th>شناسه</th>
-                            <th>کاربر</th>
-                            <th>روش پرداخت</th>
-                            <th>وضعیت پرداخت</th>
-                            <th>وضعیت سفارش</th>
-                            <th>مبلغ (تومان)</th>
-                            <th>تاریخ</th>
-                            <th>عملیات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <AdminTable headers={headers}>
+
                         {filteredOrders.map((order) => {
                             const payConf = PAYMENT_STATUS_CONFIG[order.paymentStatus] || PAYMENT_STATUS_CONFIG.pending_payment;
                             const ordConf = ORDER_STATUS_CONFIG[order.orderStatus?.trim()] || ORDER_STATUS_CONFIG[order.orderStatus] || ORDER_STATUS_CONFIG.pending;
@@ -324,20 +301,18 @@ export default function OrdersTable({ initialOrders }) {
 
                                         {/* وضعیت پرداخت */}
                                         <td>
-                                            <Badge
+                                            <AdminBadge
                                                 label={payConf.label}
-                                                color={payConf.color}
-                                                bg={payConf.bg}
+                                                variant={payConf.variant}
                                             />
                                         </td>
 
                                         {/* وضعیت سفارش */}
                                         <td>
                                             <div className={styles.status_cell}>
-                                                <Badge
+                                                <AdminBadge
                                                     label={ordConf.label}
-                                                    color={ordConf.color}
-                                                    bg={ordConf.bg}
+                                                    variant={ordConf.variant}
                                                 />
                                                 {order.trackingNumber && (
                                                     <span className={styles.tracking_code}>
@@ -367,8 +342,8 @@ export default function OrdersTable({ initialOrders }) {
                                         <td>
                                             <div className={styles.actions}>
                                                 {needsReceiptApproval && (
-                                                    <button
-                                                        className={`${styles.action_btn} ${styles['action_btn--receipt']}`}
+                                                    <AdminButton
+                                                        variant="edit"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             setReceiptModal(order);
@@ -376,11 +351,11 @@ export default function OrdersTable({ initialOrders }) {
                                                         title="مشاهده و تأیید رسید پرداخت"
                                                     >
                                                         🧾 رسید
-                                                    </button>
+                                                    </AdminButton>
                                                 )}
 
-                                                <button
-                                                    className={`${styles.action_btn} ${styles['action_btn--status']}`}
+                                                <AdminButton
+                                                    variant="default"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setStatusModal(order);
@@ -388,7 +363,7 @@ export default function OrdersTable({ initialOrders }) {
                                                     title="تغییر وضعیت سفارش"
                                                 >
                                                     ✏️ وضعیت
-                                                </button>
+                                                </AdminButton>
                                             </div>
                                         </td>
                                     </tr>
@@ -404,9 +379,7 @@ export default function OrdersTable({ initialOrders }) {
                                 </Fragment>
                             );
                         })}
-                    </tbody>
-                </table>
-            </div>
+            </AdminTable>
 
             {/* ── مودال رسید ──────────────────────────────────────────────── */}
             {receiptModalOrder && (
@@ -425,6 +398,6 @@ export default function OrdersTable({ initialOrders }) {
                     onUpdate={handleOrderUpdate}
                 />
             )}
-        </div>
+        </AdminTableContainer>
     );
 }

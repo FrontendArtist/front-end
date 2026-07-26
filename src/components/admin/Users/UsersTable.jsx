@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import styles from './Users.module.scss';
 import UserDetailsDrawer from './UserDetailsDrawer';
+import AdminSearch from '../Shared/AdminSearch';
+import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
+import AdminBadge from '../Shared/AdminBadge';
+import AdminButton from '../Shared/AdminButton';
 
 export default function UsersTable({ initialUsers }) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedUserId, setSelectedUserId] = useState(null); // numeric id for users-permissions
+    const [selectedUserId, setSelectedUserId] = useState(null);
 
     // Filter logic
     const filteredUsers = initialUsers.filter((u) => {
@@ -18,78 +21,65 @@ export default function UsersTable({ initialUsers }) {
         );
     });
 
-    return (
-        <div className={styles.tableContainer}>
-            <input
-                type="text"
-                placeholder="جستجو (نام، ایمیل، موبایل)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={styles.searchBar}
-            />
+    const headers = ['شماره', 'نام کاربری', 'ایمیل', 'شماره موبایل', 'نقش', 'تاریخ عضویت', 'عملیات'];
 
-            <table className={styles.table}>
-                <thead>
-                    <tr>
-                        <th>شماره</th>
-                        <th>نام کاربری</th>
-                        <th>ایمیل</th>
-                        <th>شماره موبایل</th>
-                        <th>نقش</th>
-                        <th>تاریخ عضویت</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredUsers.length > 0 ? (
-                        filteredUsers.map((user, index) => (
-                            <tr key={user.documentId}>
-                                <td>{index + 1}</td>
-                                <td>
+    return (
+        <AdminTableContainer>
+            <AdminToolbar>
+                <AdminSearch
+                    placeholder="جستجو (نام، ایمیل، موبایل)..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </AdminToolbar>
+
+            <AdminTable headers={headers}>
+                {filteredUsers.length > 0 ? (
+                    filteredUsers.map((user, index) => (
+                        <tr key={user.documentId}>
+                            <td>{index + 1}</td>
+                            <td>
+                                <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-card-text)' }}>
                                     {user.username}
-                                    {(user.firstName || user.lastName) && (
-                                        <div style={{ fontSize: 'var(--font-ssm)', opacity: 0.7 }}>
-                                            {user.firstName} {user.lastName}
-                                        </div>
-                                    )}
-                                </td>
-                                <td dir="ltr" style={{ textAlign: 'right' }}>{user.email}</td>
-                                <td>{user.phoneNumber}</td>
-                                <td>
-                                    <span className={`${styles.badge} ${user.role === 'Administrator' ? styles['badge--admin'] : styles['badge--user']}`}>
-                                        {user.role}
-                                    </span>
-                                </td>
-                                <td>{new Intl.DateTimeFormat('fa-IR').format(new Date(user.createdAt))}</td>
-                                <td>
-                                    <button
-                                        onClick={() => setSelectedUserId(user.id)}
-                                        className={styles.btnAction}
-                                    >
-                                        مشاهده پروفایل
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="7" style={{ textAlign: 'center', padding: 'var(--space-title-text-desktop)' }}>
-                                کاربری یافت نشد.
+                                </div>
+                                {(user.firstName || user.lastName) && (
+                                    <div style={{ fontSize: 'var(--font-ssm)', opacity: 0.7 }}>
+                                        {user.firstName} {user.lastName}
+                                    </div>
+                                )}
+                            </td>
+                            <td dir="ltr" style={{ textAlign: 'right' }}>{user.email}</td>
+                            <td>{user.phoneNumber}</td>
+                            <td>
+                                <AdminBadge status={user.role} />
+                            </td>
+                            <td>{new Intl.DateTimeFormat('fa-IR').format(new Date(user.createdAt))}</td>
+                            <td>
+                                <AdminButton
+                                    onClick={() => setSelectedUserId(user.id)}
+                                    variant="default"
+                                >
+                                    مشاهده پروفایل
+                                </AdminButton>
                             </td>
                         </tr>
-                    )}
-                </tbody>
-            </table>
+                    ))
+                ) : (
+                    <tr>
+                        <td colSpan="7" style={{ textAlign: 'center', padding: 'var(--space-title-text-desktop)' }}>
+                            کاربری یافت نشد.
+                        </td>
+                    </tr>
+                )}
+            </AdminTable>
 
             {/* Slider Drawer Component */}
-            {
-                selectedUserId && (
-                    <UserDetailsDrawer
-                        userId={selectedUserId}
-                        onClose={() => setSelectedUserId(null)}
-                    />
-                )
-            }
-        </div >
+            {selectedUserId && (
+                <UserDetailsDrawer
+                    userId={selectedUserId}
+                    onClose={() => setSelectedUserId(null)}
+                />
+            )}
+        </AdminTableContainer>
     );
 }
