@@ -1,4 +1,120 @@
 ```text
+[2026-07-29] - Article Reading Mode, Sticky Flex TOC & Performance Optimizations
+
+── Fixed Layout Sticky Flex TOC ──────────────────────────────────────────────
+- Replaced the absolute/fixed position calculation with a robust CSS Flex Row sticky layout:
+  - Container `.articleLayout` matches centered layout with `align-items: flex-start` to preserve vertical sticky boundary.
+  - TOC Sidebar `.tocSidebar` uses `position: sticky; top: 120px; align-self: flex-start` to remain fixed only when scrolled to, tracking along the article container correctly and stopping at the article end.
+  - Automatically sits on the right side in RTL layouts (as the first child of the flex container) without throwing off the main article box alignment.
+- Resolved layout issues by keeping the main article content `.content` and `.excerpt` perfectly centered on the page (`max-width: 800px; margin: 0 auto;`).
+
+── Scroll Spy Active Section Highlighting ───────────────────────────────────────
+- Implemented client-side scroll position detection in `ArticleReader.jsx` using a scroll event listener:
+  - Tracks user scroll position against heading tags (`h2` and `h3`) with dynamic offset calculations (`window.scrollY + 130`).
+  - Sets `data-active="true"` on the currently viewed heading link in the TOC sidebar.
+  - Styled `data-active` links in SCSS with subtle gold highlights, border-right indicator, and bold font weight.
+
+── Typography Scaling ──────────────────────────────────────────────────────────
+- Scaled down font sizes across the single article template for a cleaner, more compact, and balanced reading layout:
+  - Body text (`p`, `li`, `td`) decreased from `16px` to `14px`.
+  - Section headings (`h2`) scaled down from `24px` to `20px`.
+  - Sub-headings (`h3`) scaled down from `20px` to `17px`.
+  - Excerpt description text reduced from `18px` to `15px`.
+  - Blockquotes, Quranic texts, and poem quotations scaled down proportionally (`quran-text`: `24px`, `poem-quote`: `16px`).
+
+── Scroll Performance Optimization ─────────────────────────────────────────────
+- Removed processor-heavy `backdrop-filter: blur(...)` styles from long scrolling components (`.content`, `.tocCard`, excerpt box, theme toggle button) to eliminate paint/redraw lag and ensure 60fps smooth scrolling.
+- Applied clean solid backgrounds (`#061e1e` for dark content box, `#052222` / `#042222` for TOC) to reduce GPU rendering load.
+
+── Page-Specific Temporary Body Theme Toggle ───────────────────────────────────
+- Integrated dynamic `body` background switching when Day Reading Mode is active on the article:
+  - Listens to `isLight` state inside `ArticleReader.jsx` and appends `article-light-mode-active` class to the HTML `body` element.
+  - Turns page background into soft sage/light shade (`#F4F6F0`) exclusively while reading in day mode.
+  - Cleans up and removes the class from `body` on unmount/navigation to prevent side-effects on other pages.
+
+── Layout Sticky Context Safeguard ──────────────────────────────────────────────
+- Replaced `overflow-x: hidden` with `overflow-x: clip` on `html, body` inside `globals.css` to prevent breaking sticky positioning context, while safely clipping horizontal scroll overflows.
+
+── Created & Modified Files ──────────────────────────────────────────────────────
+- src/app/articles/[slug]/ArticleReader.jsx
+- src/app/articles/[slug]/page.module.scss
+- src/app/globals.css
+
+[2026-07-28] - Table of Contents (TOC) Refactoring, Sticky Sidebar & Auto Extraction System
+
+── Smart Auto TOC Extraction & SSR Hydration Safety ──────────────────────────────
+- Implemented smart automatic Table of Contents (TOC) extraction in `ArticleReader.jsx` using `useMemo`:
+  - Parses `<h2>` and `<h3>` tags safely via regex for SSR hydration safety (no DOM API dependency during initial render).
+  - Preserves existing heading `id`s if present; automatically generates dynamic unique IDs (`id="heading-1"`, `id="heading-2"`, ...) and injects them into title tags in `cleanContent`.
+  - Strips HTML tags and decodes common Persian HTML entities (`&zwnj;`, `&nbsp;`, etc.) to generate clean plain text titles for TOC list items.
+  - Generates structured TOC array: `Array<{ id: string, text: string, level: number }>` (`level: 2` for `h2`, `level: 3` for `h3`).
+  - Added smart `<nav class="table-of-contents">` unwrapping logic: detects if legacy `<nav>` tags wrap the article body content (e.g. Strapi TinyMCE exports) and unwraps opening/closing tags to prevent wiping article content.
+
+── Sticky TOC Sidebar & Scroll Spy Highlighting ──────────────────────────────────
+- Created Sticky TOC Sidebar (`<aside className={styles.tocSidebar}>`):
+  - Conditionally renders when at least 1 heading is extracted.
+  - Applies `styles.subHeading` class to level 3 (`h3`) items for RTL indentation (`padding-right: 0.75rem`).
+  - Integrated smooth scrolling on click with `window.scrollTo` and offset subtraction (`110px`) for sticky navbar header.
+  - Implemented real-time passive scroll listener (`handleScroll`) to dynamically track and highlight the currently read section (`activeId` state & `styles.active` class).
+  - Retained collapsible mobile drawer view (`isTocOpen` state) with Lucide `List`, `ChevronUp`, and `ChevronDown` icons.
+
+── Article Page Route Integration & Strapi Data Resilience ───────────────────────
+- Updated `ArticlePage` (`src/app/articles/[slug]/page.js`):
+  - Imported and rendered `<ArticleReader excerpt={article.excerpt} content={article.content} />`.
+  - Added safe Markdown parsing fallback via `marked` if article content from Strapi is in Markdown format.
+- Extended `src/lib/strapiUtils.js`:
+  - Added `strapiBlocksToHtml` helper function to convert Strapi v5 Blocks, RichText objects, and Markdown strings into clean HTML.
+- Updated `src/app/articles/[slug]/page.module.scss`:
+  - Added `.subHeading`, `.active`, and `[data-active="true"]` styles for both Dark Mode and Light Mode (`.lightTheme`).
+
+── Created & Modified Files ──────────────────────────────────────────────────────
+- src/app/articles/[slug]/ArticleReader.jsx [NEW]
+- src/app/articles/[slug]/page.js
+- src/app/articles/[slug]/page.module.scss
+- src/lib/strapiUtils.js
+
+[2026-07-28] - Admin Panel UI Harmonization & Shared Component Library
+
+── Unified Admin Styling & Shared Component Library ───────────────────────────────
+- Created a centralized, responsive shared component library for the Admin Panel (`src/components/admin/Shared/`):
+  - `AdminPage`: Page container.
+  - `AdminHeader`: Header wrapper supporting dynamic action buttons.
+  - `AdminTableContainer` & `AdminTable`: Wrappers providing standard card layout, scrolling, and table structures.
+  - `AdminSearch`: Redesigned standalone glassmorphic search input combined with a separate search button, eliminating placeholder overlap.
+  - `AdminButton`: Clean action buttons with presets (`default`, `primary`, `edit`, `delete`, `approve`).
+  - `AdminBadge`: Unified badges for statuses (`success`, `warning`, `error`, `info`, `default`).
+- Refactored all admin pages to use the new shared components, ensuring absolute consistency in layout, margins, paddings, and borders across:
+  - Products (`src/components/admin/Products/ProductsTable.jsx`)
+  - Articles (`src/components/admin/Articles/ArticlesTable.jsx`)
+  - Users (`src/components/admin/Users/UsersTable.jsx`)
+  - Orders (`src/components/admin/Orders/OrdersTable.jsx`)
+  - Comments (`src/components/admin/Comments/CommentsManager.jsx`)
+  - Messages (`src/components/admin/Messages/MessagesTable.jsx`)
+
+── Visual Enhancements & Grid Harmonization ───────────────────────────────────────
+- Implemented card-like table rows utilizing `border-collapse: separate` and `border-spacing: 0 12px` to distinctively space out items.
+- Styled rows with a solid golden right border, subtle box-shadows, and smooth translate-up hover micro-animations.
+- Compacted layout by reducing padding inside table items (`padding: 0.85rem 1rem`).
+- Fixed Orders page expanded accordion row to smoothly stick to its parent row using a negative translation offset, keeping the visual card outline continuous.
+- Removed arbitrary `max-width: 1200px` limitation from `/admin/orders/orders.module.scss` to make all admin tables full-width.
+
+── Created & Modified Files ──────────────────────────────────────────────────
+- src/components/admin/Shared/AdminBadge.jsx [NEW]
+- src/components/admin/Shared/AdminButton.jsx [NEW]
+- src/components/admin/Shared/AdminHeader.jsx [NEW]
+- src/components/admin/Shared/AdminPage.jsx [NEW]
+- src/components/admin/Shared/AdminSearch.jsx [NEW]
+- src/components/admin/Shared/AdminTable.jsx [NEW]
+- src/components/admin/Shared/AdminShared.module.scss [NEW]
+- src/components/admin/Products/ProductsTable.jsx
+- src/components/admin/Articles/ArticlesTable.jsx
+- src/components/admin/Users/UsersTable.jsx
+- src/components/admin/Orders/OrdersTable.jsx
+- src/components/admin/Orders/OrdersTable.module.scss
+- src/components/admin/Comments/CommentsManager.jsx
+- src/components/admin/Messages/MessagesTable.jsx
+- src/app/admin/orders/orders.module.scss
+
 [2026-07-26] - Recent Updates Dashboard Feed & Admin Comments Management System
 
 ── Admin Dashboard Recent Updates Section ─────────────────────────────────────

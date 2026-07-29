@@ -28,9 +28,6 @@ export default async function EditArticlePage({ params }) {
     ]);
 
     if (articleData.error || !articleData.article) {
-        if (process.env.NODE_ENV === 'development') {
-            console.error('[EditArticlePage] failed to fetch article:', id);
-        }
         return notFound();
     }
 

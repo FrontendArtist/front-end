@@ -1,3 +1,4 @@
+import ArticleReader from './ArticleReader';
 import { marked } from 'marked';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -7,20 +8,56 @@ import CommentsSection from '@/modules/comments/CommentsSection';
 import { API_BASE_URL } from '@/lib/api';
 import styles from './page.module.scss';
 
+// ثوابت برند و دامنه سایت
+const SITE_NAME = 'طرح الهی';
+const SITE_URL = 'https://tarhelahi.ir';
+
 /**
- * Generate Dynamic Metadata for SEO
+ * Generate Dynamic Metadata for SEO & OpenGraph
  */
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const rawArticle = await getArticleBySlug(slug);
 
   if (!rawArticle) {
-    return { title: 'مقاله یافت نشد' };
+    return { title: `مقاله یافت نشد | ${SITE_NAME}` };
+  }
+
+  // محاسبه آدرس تصویر برای OpenGraph
+  const rawCoverUrl = rawArticle.cover?.url || '';
+  const isLocalFallback = rawCoverUrl.startsWith('/images/') || rawCoverUrl.includes('forempties');
+  let ogImageUrl = `${SITE_URL}/logo.png`; // تصویر پیش‌فرض
+
+  if (rawCoverUrl) {
+    if (rawCoverUrl.startsWith('http')) {
+      ogImageUrl = rawCoverUrl;
+    } else if (!isLocalFallback) {
+      ogImageUrl = `${API_BASE_URL}${rawCoverUrl}`;
+    }
   }
 
   return {
-    title: `${rawArticle.title} | وب‌سایت ما`,
-    description: rawArticle.excerpt || '',
+    title: `${rawArticle.title} | ${SITE_NAME}`,
+    description: rawArticle.excerpt || rawArticle.title,
+    alternates: {
+      canonical: `${SITE_URL}/articles/${slug}`,
+    },
+    openGraph: {
+      title: `${rawArticle.title} | ${SITE_NAME}`,
+      description: rawArticle.excerpt || '',
+      url: `${SITE_URL}/articles/${slug}`,
+      siteName: SITE_NAME,
+      locale: 'fa_IR',
+      type: 'article',
+      publishedTime: rawArticle.createdAt || rawArticle.date,
+      modifiedTime: rawArticle.updatedAt,
+      images: [
+        {
+          url: ogImageUrl,
+          alt: rawArticle.cover?.alt || rawArticle.title,
+        },
+      ],
+    },
   };
 }
 
@@ -30,52 +67,93 @@ export async function generateMetadata({ params }) {
 export default async function ArticlePage({ params }) {
   const { slug } = await params;
 
-  // Data fetched via API Layer abstraction
+  // دریافت داده واقعی از Strapi API
   const rawArticle = await getArticleBySlug(slug);
 
   if (!rawArticle) {
     notFound();
   }
 
-  // Fetch comments
+  // دریافت کامنت‌ها از API
   const initialComments = await getComments('article', rawArticle.documentId);
 
   // 🛠️ منطق هوشمند تشخیص تصویر
-  // 1. دریافت URL خام از API
   const rawCoverUrl = rawArticle.cover?.url || '';
-
-  // 2. تشخیص اینکه آیا این تصویر، یک فال‌بک لوکال (از پوشه public) است؟
-  // معمولاً عکس‌های Strapi در /uploads هستند و عکس‌های لوکال در /images
   const isLocalFallback = rawCoverUrl.startsWith('/images/') || rawCoverUrl.includes('forempties');
 
-  // 3. ساخت URL نهایی برای نمایش (فقط اگر تصویر واقعی باشد استفاده می‌شود)
   let finalCoverUrl = rawCoverUrl;
-  if (!isLocalFallback && !rawCoverUrl.startsWith('http')) {
-    // اگر عکس واقعی Strapi است و آدرس نسبی دارد، آدرس پایه را اضافه کن
+  if (!isLocalFallback && rawCoverUrl && !rawCoverUrl.startsWith('http')) {
     finalCoverUrl = `${API_BASE_URL}${rawCoverUrl}`;
   }
 
-  // 4. تصمیم‌گیری برای نمایش: فقط اگر فال‌بک نباشد، عکس را نشان می‌دهیم
-  const showCoverImage = !isLocalFallback && rawCoverUrl;
+  const showCoverImage = !isLocalFallback && Boolean(rawCoverUrl);
+
+  let processedContent = rawArticle.content || '';
+  if (typeof processedContent === 'string' && processedContent.trim() && !processedContent.trim().startsWith('<')) {
+    try {
+      processedContent = marked.parse(processedContent);
+    } catch (e) {
+      console.error('Error parsing markdown:', e);
+    }
+  }
 
   const article = {
     id: rawArticle.id,
     documentId: rawArticle.documentId,
     title: rawArticle.title,
     date: new Date(rawArticle.date || rawArticle.createdAt || new Date()).toLocaleDateString('fa-IR'),
+    isoDate: rawArticle.createdAt || rawArticle.date || new Date().toISOString(),
+    updatedAt: rawArticle.updatedAt || rawArticle.createdAt || new Date().toISOString(),
     excerpt: rawArticle.excerpt || '',
-    content: rawArticle.content || '',
+    content: processedContent,
+  };
+
+  // 🚀 ساخت داده‌های ساختاریافته (JSON-LD) برای سئوی گوگل
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${SITE_URL}/articles/${slug}`,
+    },
+    headline: article.title,
+    description: article.excerpt || article.title,
+    image: showCoverImage ? [finalCoverUrl] : [`${SITE_URL}/logo.png`],
+    datePublished: article.isoDate,
+    dateModified: article.updatedAt,
+    author: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/logo.png`,
+      },
+    },
   };
 
   return (
     <main className={styles.articlePage}>
+      {/* 🔹 تزریق اسکیمای JSON-LD به هدر صفحه برای موتورهای جستجو */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <div className="container">
         <header className={styles.header}>
           <h1 className={styles.title}>{article.title}</h1>
-          <time className={styles.date}>{article.date}</time>
+          <time className={styles.date} dateTime={article.isoDate}>
+            {article.date}
+          </time>
         </header>
 
-        {/* ✅ رندر شرطی: اگر عکس واقعی داریم نشان بده، اگر نه (لوگو/فال‌بک) هیچی نشان نده */}
+        {/* ✅ رندر شرطی: اگر عکس واقعی داریم نشان بده */}
         {showCoverImage && (
           <div className={styles.coverImageWrapper}>
             <Image
@@ -89,20 +167,8 @@ export default async function ArticlePage({ params }) {
           </div>
         )}
 
-        {/* خلاصه مقاله */}
-        {article.excerpt && (
-          <div className={styles.excerpt}>
-            {article.excerpt}
-          </div>
-        )}
-
-        {/* محتوای اصلی مقاله */}
-        {article.content && (
-          <article
-            className={styles.content}
-            dangerouslySetInnerHTML={{ __html: article.content }}
-          />
-        )}
+        {/* مطالعه مقاله به همراه فهرست مطالب خودکار و قابلیت تغییر تم */}
+        <ArticleReader excerpt={article.excerpt} content={article.content} />
 
         <CommentsSection
           entityType="article"

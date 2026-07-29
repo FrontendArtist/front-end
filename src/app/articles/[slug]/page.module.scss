@@ -1,166 +1,692 @@
 @use '../../../styles/base/mixins' as *;
-// =============================================================================
-// Single Article Page Styles
-// =============================================================================
-// This stylesheet provides styling for the individual article page.
-// It follows the project's design system using CSS Custom Properties.
-// All values reference variables from src/styles/base/_variables.scss
-// which are globally available (no import needed).
 
-// =============================================================================
-// MAIN CONTAINER
-// =============================================================================
-
-/* Main wrapper for the entire article page */
-/* Provides vertical spacing consistent with other pages in the site */
-.articlePage {
-  padding: var(--space-section-top-desktop) 0;
-
-  /* The container class (from global styles) provides:
-     - Max width constraint
-     - Horizontal padding
-     - Center alignment */
+:global(html) {
+  scroll-behavior: smooth;
 }
 
 // =============================================================================
-// ARTICLE HEADER SECTION
+// Article Page
 // =============================================================================
 
-/* Header section containing the article title and publication date */
-/* Centered layout creates a focal point before the content */
+.articlePage {
+  padding: var(--space-section-top-desktop) 0;
+}
+
 .header {
   text-align: center;
-  /* Space below the header before the cover image appears */
   margin-bottom: var(--space-title-content-desktop);
 }
 
-/* Main article title (H1) */
-/* Uses the largest font size and hover color for prominence */
 .title {
-  font-size: var(--font-xl); // 32px - largest heading size
-  color: var(--color-title-hover); // Gold accent color (var(--color-title-hover))
-  margin-bottom: 1rem; // Space between title and date
-  /* Font weight is inherited from global typography settings */
+  font-size: var(--font-lg-xl, 24px);
+  color: var(--color-title-hover);
+  margin-bottom: 0.85rem;
 }
 
-/* Publication date display */
-/* Slightly muted to be less prominent than the title */
 .date {
-  color: var(--color-text-primary); // Primary gold text (var(--color-text-primary))
-  opacity: 0.8; // Reduce opacity for subtle effect
-  /* Using the <time> element ensures semantic HTML for SEO */
+  color: var(--color-text-primary);
+  font-size: 13px;
+  opacity: 0.8;
 }
 
-// =============================================================================
-// COVER IMAGE SECTION
-// =============================================================================
-
-/* Wrapper for the main cover image */
-/* This container constrains the image width and provides proper spacing */
 .coverImageWrapper {
-  position: relative; // Creates positioning context for the image
-  width: 100%; // Full width up to the max-width constraint
-  max-width: 800px; // Limit width for better readability
-  margin: 0 auto var(--space-title-content-desktop); // Center and add bottom space
-  aspect-ratio: 16 / 9; // Maintain cinematic aspect ratio
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto var(--space-title-content-desktop);
+  aspect-ratio: 16 / 9;
 
-  /* The nested .coverImage class styles the Next.js Image component */
   .coverImage {
-    border-radius: 16px; // Rounded corners for modern look
-    object-fit: cover; // Ensure image fills container while maintaining aspect ratio
-    /* Next.js Image component automatically handles responsive sizing */
+    border-radius: 16px;
+    object-fit: cover;
   }
 }
 
 // =============================================================================
-// ARTICLE CONTENT SECTION
+// Reader Wrapper (Theme container)
 // =============================================================================
 
-/* Main content area where the article text is rendered */
-/* This styles the HTML that's generated from the markdown/rich text */
-/* Excerpt styling (preserving former gold / translucent background styles) */
+.readerWrapper {
+  width: 100%;
+}
+
+.readerToolbar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.themeToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.9rem;
+  background: #002b20;
+  border: 1px solid rgba(246, 217, 130, 0.35);
+  border-radius: 20px;
+  color: var(--color-title-hover);
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #003a2b;
+    border-color: var(--color-title-hover);
+  }
+}
+
 .excerpt {
   max-width: 800px;
-  margin: 0 auto 2.5rem;
-  line-height: var(--line-height-lg);
-  background-color: fade(var(--color-white), 10%);
-  color: var(--color-text-primary);
-  padding: 1.5rem 2rem;
-  border-radius: var(--radius-card, 24px);
-  border: 1px solid fade(var(--color-primary), 10%);
-  font-size: var(--font-md-lg);
+  margin: 0 auto 2rem;
+  line-height: 1.8;
+  background: #062424;
+  color: #fff;
+  padding: 1.25rem 1.75rem;
+  border-radius: var(--radius-card, 20px);
+  border: 1px solid rgba(246, 217, 130, 0.2);
+  font-size: 15px;
   font-weight: var(--font-weight-medium);
 }
 
-.content {
-  max-width: 800px; // Same as image for visual consistency and readability
-  margin: 1.5rem auto 0; // Center the content
-  line-height: var(--line-height-lg); // 1.8 for comfortable reading
-  color: var(--color-white); // Pure white color from variables
-  background-color: fade(var(--color-white), 10%); // Same background as excerpt
-  padding: 2rem 2.5rem; // Padding inside content box
-  border-radius: var(--radius-card, 24px); // Same border radius
-  border: 1px solid fade(var(--color-primary), 10%); // Same border
+// =============================================================================
+// ARTICLE LAYOUT: Flex row — TOC (right, sticky) + Content (center/left)
+// =============================================================================
 
-  // ---------------------------------------------------------------------------
-  // HTML Element Styles
-  // ---------------------------------------------------------------------------
-  // These rules style the HTML elements that are generated from the rich text
-  // content. We target common markdown/HTML elements for consistent formatting.
+.articleLayout {
+  display: flex;
+  gap: 1.75rem;
+  align-items: flex-start;
+  max-width: 1120px;
+  margin: 0 auto;
 
-  /* Heading styles (H2, H3) within the article */
-  /* These are subheadings that break up the content into sections */
-  h2,
-  h3 {
-    margin-top: 2.5rem; // Generous top spacing to separate sections
-    margin-bottom: 1rem; // Space before the paragraph text
-    color: var(--color-title-hover); // Gold accent for visual hierarchy
+  @media (max-width: 1060px) {
+    flex-direction: column;
+    max-width: 800px;
+  }
+}
+
+// --------------------------------------------------
+// TOC Sidebar  (right column in RTL)
+// --------------------------------------------------
+
+.tocSidebar {
+  flex-shrink: 0;
+  width: 248px;
+  position: sticky;
+  top: 120px;
+  align-self: flex-start;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  background: #042222;
+  border: 1px solid rgba(246, 217, 130, 0.22);
+  border-radius: 16px;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(246, 217, 130, 0.3);
+    border-radius: 3px;
   }
 
-  /* Paragraph spacing */
-  /* Comfortable spacing between paragraphs improves readability */
-  p {
-    margin-bottom: 1.5rem;
+  @media (max-width: 1060px) {
+    position: static;
+    width: 100%;
+    max-height: none;
+    overflow-y: visible;
   }
+}
 
-  /* Link styles within article content */
-  /* Underlined to make them clearly identifiable as clickable */
-  a {
-    color: var(--color-text-primary); // Primary gold color
-    text-decoration: underline; // Always underline links for clarity
+.tocMobileToggle {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-title-hover, #F5C452);
+  cursor: pointer;
 
-    /* Hover state provides visual feedback */
-    &:hover {
-      color: var(--color-title-hover); // Brighter gold on hover
+  @media (max-width: 1060px) {
+    display: flex;
+  }
+}
+
+.tocContent {
+  display: block;
+
+  @media (max-width: 1060px) {
+    display: none;
+    margin-top: 0.5rem;
+
+    &.tocOpen {
+      display: block;
     }
   }
 
-  /* List styles (ordered and unordered) */
-  /* Proper indentation and spacing for RTL layout */
-  ul,
-  ol {
-    margin-bottom: 1.5rem; // Space below lists
-    padding-right: 2rem; // RTL: Indent from the right side
-    /* Note: In RTL layout, list bullets/numbers appear on the right */
+  h3 {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-title-hover, #F5C452);
+    margin: 0 0 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(246, 217, 130, 0.18);
   }
 
-  /* 
-    Additional elements that might be styled in the future:
-    - blockquote: For quoted text
-    - code: For inline code snippets
-    - pre: For code blocks
-    - img: For images within the content
-    - table: For data tables
-    
-    These can be added as needed based on content requirements.
-  */
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    li {
+      &::before { display: none; }
+
+      &.subHeading {
+        padding-right: 0.75rem;
+
+        a {
+          font-size: 11.5px;
+          opacity: 0.88;
+        }
+      }
+
+      a {
+        display: block;
+        color: rgba(255, 255, 255, 0.88);
+        text-decoration: none;
+        font-size: 12px;
+        line-height: 1.4;
+        padding: 0.28rem 0.45rem;
+        border-radius: 6px;
+        border-right: 2px solid transparent;
+        transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, padding 0.2s ease;
+
+        &:hover {
+          color: var(--color-title-hover, #F5C452);
+          background: rgba(246, 217, 130, 0.1);
+          border-right-color: var(--color-title-hover, #F5C452);
+        }
+
+        &.active,
+        &[data-active="true"] {
+           color: var(--color-title-hover, #F5C452);
+          background: rgba(246, 217, 130, 0.1);
+          border-right-color: var(--color-title-hover, #F5C452);
+        }
+      }
+    }
+  }
+}
+
+// --------------------------------------------------
+// Main Article Content  (left column in RTL)
+// --------------------------------------------------
+
+.content {
+  flex: 1;
+  min-width: 0;
+  max-width: 800px;
+  color: #fff;
+  background: #061e1e;
+  padding: 2rem 2.25rem;
+  border-radius: var(--radius-card, 24px);
+  border: 1px solid rgba(246, 217, 130, 0.18);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  line-height: var(--line-height-lg);
+
+  hr.divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(246, 217, 130, 0.3), transparent);
+    margin: 2.25rem 0;
+  }
+
+  // ---- Headings ----
+  h2 {
+    font-size: 20px;
+    color: var(--color-title-hover, #F5C452);
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.45rem;
+    position: relative;
+    font-weight: var(--font-weight-bold, 700);
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--color-title-hover), transparent);
+      border-radius: 3px;
+    }
+  }
+
+  h3 {
+    font-size: 17px;
+    color: var(--color-title-hover, #F5C452);
+    margin-top: 1.75rem;
+    margin-bottom: 0.85rem;
+    font-weight: var(--font-weight-bold, 700);
+  }
+
+  // ---- Paragraphs (Scaled down from 16px to 14px) ----
+  p {
+    margin-bottom: 1.25rem;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #fff;
+
+    strong {
+      color: inherit;
+      font-weight: var(--font-weight-bold, 700);
+    }
+  }
+
+  // ---- Links ----
+  a {
+    color: var(--color-text-primary, #F6D982);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s;
+
+    &:hover { color: var(--color-title-hover, #F5C452); }
+  }
+
+  // ---- Blockquotes ----
+  blockquote {
+    margin: 1.75rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #002b20;
+    border-right: 4px solid var(--color-title-hover, #F5C452);
+    border-radius: 0 12px 12px 0;
+
+    p {
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 0.5rem;
+      &:last-child { margin-bottom: 0; }
+
+      strong {
+        color: var(--color-title-hover, #F5C452);
+        font-weight: 700;
+      }
+    }
+
+    cite {
+      display: block;
+      font-style: normal;
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      margin-top: 0.65rem;
+    }
+
+    .quran-text {
+      font-size: 24px;
+      line-height: 2.1;
+      color: var(--color-title-hover, #F5C452);
+      text-align: center;
+      font-family: 'Amiri', 'Traditional Arabic', serif;
+      margin-bottom: 0.5rem;
+    }
+
+    &.poem-quote {
+      background: #051a1a;
+      border-right: 4px solid var(--color-gold, #F6D982);
+      border-left: 4px solid var(--color-gold, #F6D982);
+      border-radius: 16px;
+      text-align: center;
+      padding: 1.5rem 1.75rem;
+      line-height: 2.1;
+      font-size: 16px;
+
+      strong { color: var(--color-title-hover, #F5C452); display: block; margin-bottom: 0.5rem; }
+      &.quote-center { font-size: 17px; color: var(--color-title-hover, #F5C452); }
+    }
+  }
+
+  // ---- Table ----
+  .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin: 1.75rem 0;
+    border-radius: 12px;
+    border: 1px solid rgba(246, 217, 130, 0.2);
+    background: #041d1d;
+    -webkit-overflow-scrolling: touch;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: right;
+      font-size: 14px;
+      min-width: 550px;
+
+      thead tr {
+        background: #002b20;
+        border-bottom: 2px solid var(--color-title-hover, #F5C452);
+
+        th {
+          padding: 0.85rem 1.1rem;
+          color: var(--color-title-hover, #F5C452);
+          font-weight: 700;
+          font-size: 14px;
+          white-space: nowrap;
+        }
+      }
+
+      tbody tr {
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        transition: background 0.2s;
+
+        &:nth-child(even) { background: rgba(255,255,255,0.03); }
+        &:hover { background: rgba(246, 217, 130, 0.07); }
+
+        td {
+          padding: 0.85rem 1.1rem;
+          color: #fff;
+          font-size: 13px;
+          line-height: 1.6;
+          strong { color: inherit; font-weight: 700; }
+        }
+      }
+    }
+  }
+
+  // ---- Callouts ----
+  .callout {
+    padding: 1.1rem 1.35rem;
+    border-radius: 12px;
+    margin: 1.75rem 0;
+    line-height: 1.75;
+    font-size: 14px;
+
+    p { margin-bottom: 0; color: inherit; font-size: 14px; }
+
+    &.callout-warning {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-right: 4px solid #f59e0b;
+      color: #fef3c7;
+      strong { color: #fbbf24; }
+    }
+
+    &.callout-info {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-right: 4px solid #3b82f6;
+      color: #dbeafe;
+      strong { color: #93c5fd; }
+    }
+  }
+
+  // ---- Diagram box ----
+  .diagram-box {
+    background: #0a0a0a;
+    border: 1px solid rgba(246, 217, 130, 0.22);
+    border-radius: 12px;
+    padding: 1.1rem 1.35rem;
+    margin: 1.75rem 0;
+    overflow-x: auto;
+    direction: ltr;
+    text-align: center;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+
+    code {
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 13px;
+      color: var(--color-text-primary, #F6D982);
+      line-height: 1.75;
+      white-space: pre-wrap;
+    }
+  }
+
+  // ---- Lists ----
+  ul {
+    list-style: none;
+    padding-right: 0;
+    margin-bottom: 1.5rem;
+
+    li {
+      position: relative;
+      padding-right: 1.5rem;
+      margin-bottom: 0.7rem;
+      font-size: 14px;
+      line-height: 1.75;
+      color: #fff;
+
+      &::before {
+        content: '✦';
+        position: absolute;
+        right: 0;
+        top: 0;
+        font-size: 13px;
+        color: var(--color-title-hover, #F5C452);
+      }
+
+      strong { color: inherit; font-weight: 700; }
+    }
+  }
+
+  ol {
+    margin-bottom: 1.5rem;
+    padding-right: 1.35rem;
+
+    li {
+      margin-bottom: 0.7rem;
+      font-size: 14px;
+      line-height: 1.75;
+      color: #fff;
+      strong { color: inherit; font-weight: 700; }
+    }
+
+    &.steps-list {
+      list-style: none;
+      counter-reset: step-counter;
+      padding-right: 0;
+
+      li {
+        position: relative;
+        padding-right: 2.75rem;
+        margin-bottom: 1.35rem;
+        font-size: 14px;
+        line-height: 1.75;
+        counter-increment: step-counter;
+
+        &::before {
+          content: counter(step-counter);
+          position: absolute;
+          right: 0;
+          top: 2px;
+          width: 1.9rem;
+          height: 1.9rem;
+          background: linear-gradient(135deg, var(--color-title-hover), #d97706);
+          color: #061818;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 12px;
+        }
+
+        strong { color: var(--color-title-hover, #F5C452); }
+      }
+    }
+  }
+
+  // ---- Workshop cards ----
+  .workshop-card {
+    background: #042424;
+    border: 1px solid rgba(246, 217, 130, 0.28);
+    border-radius: 16px;
+    padding: 1.35rem 1.5rem;
+    margin: 1.5rem 0;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--color-title-hover, #F5C452);
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: var(--color-title-hover, #F5C452);
+    }
+
+    h3 { margin-top: 0; margin-bottom: 0.65rem; color: var(--color-title-hover, #F5C452); font-size: 16px; }
+    p { font-size: 14px; line-height: 1.75; margin-bottom: 0.5rem; &:last-child { margin-bottom: 0; } strong { color: inherit; font-weight: 700; } }
+  }
+
+  // ---- Figures ----
+  figure, figure.article-image {
+    margin: 2.25rem 0;
+    text-align: center;
+
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.3);
+    }
+
+    figcaption {
+      margin-top: 0.55rem;
+      font-size: 12px;
+      color: rgba(255,255,255,0.8);
+      font-style: italic;
+    }
+  }
 }
 
 // =============================================================================
-// RESPONSIVE DESIGN
+// GLOBAL BODY OVERRIDE WHEN ARTICLE LIGHT MODE IS ACTIVE
 // =============================================================================
-// TODO: Add media queries for mobile/tablet views
-// The desktop-first approach means we'll add smaller breakpoints later:
-// - Tablet: Adjust spacing and font sizes
-// - Mobile: Stack elements, reduce margins, smaller typography
-// This will be implemented in Phase 1 responsive optimization.
+
+:global(body.article-light-mode-active) {
+  background-color: #F4F6F0 !important;
+
+  .title {
+    color: #7B5A14;
+  }
+
+  .date {
+    color: #4E6155;
+  }
+}
+
+.lightTheme {
+  .themeToggleBtn { background: #EEF3EC; border-color: #C79A2B; color: #7B5A14; }
+
+  .tocSidebar {
+    background: #EEF3EC;
+    border-color: rgba(199, 154, 43, 0.3);
+  }
+
+  .tocMobileToggle { color: #7B5A14; }
+
+  .tocContent {
+    h3 { color: #7B5A14; border-bottom-color: rgba(199, 154, 43, 0.25); }
+    ul li {
+      &.subHeading a {
+        color: #3b4e42;
+      }
+      a {
+        color: #243229;
+        &:hover { color: #7B5A14; background: rgba(199, 154, 43, 0.15); border-right-color: #C79A2B; }
+        &.active,
+        &[data-active="true"] {
+          color: #7B5A14;
+          background: rgba(199, 154, 43, 0.18);
+          border-right-color: #C79A2B;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+
+  .excerpt { background: #EEF3EC; color: #243229; border-color: rgba(199, 154, 43, 0.3); }
+
+  .content {
+    background: #FFFDF7;
+    color: #18211B;
+    border-color: rgba(199, 154, 43, 0.28);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+
+    h2 { color: #7B5A14; &::after { background: linear-gradient(90deg, #C79A2B, transparent); } }
+    h3 { color: #7B5A14; }
+    p { color: #18211B; strong { color: inherit; } }
+    a { color: #08554b; &:hover { color: #C79A2B; } }
+
+    blockquote {
+      background: #EEF3EC; border-right-color: #C79A2B;
+      p { color: #18211B; strong { color: #7B5A14; } }
+      cite { color: #7B5A14; }
+      .quran-text { color: #7B5A14; }
+      &.poem-quote { background: #FAFCF8; border-right-color: #C79A2B; border-left-color: #C79A2B; strong { color: #7B5A14; } &.quote-center { color: #7B5A14; } }
+    }
+
+    .table-wrapper {
+      background: #FAFCF8; border-color: rgba(78, 107, 87, 0.2);
+      table {
+        thead tr { background: #4E6B57; th { color: #fff; } }
+        tbody tr { border-bottom-color: rgba(78, 107, 87, 0.12); &:nth-child(even) { background: #F6F8F3; } &:hover { background: rgba(199, 154, 43, 0.1); } td { color: #18211B; strong { color: inherit; } } }
+      }
+    }
+
+    .callout {
+      &.callout-warning { background: #FFF4D9; border-color: rgba(216,155,29,0.4); border-right-color: #D89B1D; color: #78350f; strong { color: #92400e; } }
+      &.callout-info { background: #E0F2FE; border-color: rgba(59,130,246,0.4); border-right-color: #3B82F6; color: #1e3a8a; strong { color: #1e40af; } }
+    }
+
+    .diagram-box { background: #1e293b; border-color: rgba(199, 154, 43, 0.3); code { color: #fef08a; } }
+
+    ul li { color: #18211B; &::before { color: #C79A2B; } strong { color: inherit; } }
+    ol { li { color: #18211B; strong { color: inherit; } } &.steps-list li { color: #18211B; &::before { background: linear-gradient(135deg, #C79A2B, #8F6914); color: #fff; } } }
+
+    .workshop-card {
+      background: #fff; border-color: rgba(78, 107, 87, 0.2);
+      &::before { background: #C79A2B; }
+      &:hover { border-color: #C79A2B; }
+      h3 { color: #7B5A14; }
+      p { color: #18211B; strong { color: inherit; } }
+    }
+
+    figure figcaption { color: #4E6155; }
+  }
+}
+
+// =============================================================================
+// RESPONSIVE
+// =============================================================================
+
+@media (max-width: 768px) {
+  .title { font-size: 20px; }
+  .excerpt { padding: 1.1rem; font-size: 14px; }
+
+  .content {
+    padding: 1.35rem 1.1rem;
+    border-radius: 16px;
+    h2 { font-size: 18px; margin-top: 1.85rem; }
+    h3 { font-size: 15px; margin-top: 1.35rem; }
+    blockquote { padding: 1.1rem 0.9rem; .quran-text { font-size: 20px; } &.poem-quote { font-size: 14px; } }
+    .workshop-card { padding: 1.1rem 0.9rem; }
+    .diagram-box code { font-size: 12px; }
+    ol.steps-list li { padding-right: 2.5rem; &::before { width: 1.7rem; height: 1.7rem; font-size: 11px; } }
+  }
+}

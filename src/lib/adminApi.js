@@ -358,14 +358,30 @@ export async function getUserDetails(userId, jwt) {
 // publicationState=preview تا پیش‌نویس‌ها هم دیده شوند
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getAdminProducts(jwt, { page = 1, pageSize = 100 } = {}) {
-    const endpoint =
-        `/api/products?populate[images][fields][0]=url&populate[images][fields][1]=name&populate[images][fields][2]=id&populate[images][fields][3]=documentId&populate[categories][fields][0]=name&populate[categories][fields][1]=documentId&populate[tags][fields][0]=name&populate[tags][fields][1]=documentId&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&publicationState=preview`;
+    const endpointDraft =
+        `/api/products?populate[images][fields][0]=url&populate[images][fields][1]=name&populate[images][fields][2]=id&populate[images][fields][3]=documentId&populate[categories][fields][0]=name&populate[categories][fields][1]=documentId&populate[tags][fields][0]=name&populate[tags][fields][1]=documentId&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
+    const endpointPub = `/api/products?fields[0]=documentId&fields[1]=publishedAt&pagination[limit]=500&status=published`;
 
-    const data = await adminFetch(endpoint, jwt);
+    const [data, pubData] = await Promise.all([
+        adminFetch(endpointDraft, jwt),
+        adminFetch(endpointPub, jwt),
+    ]);
+
     if (!data) return { products: [], meta: null, error: true };
+
+    const publishedMap = new Map();
+    if (pubData?.data && Array.isArray(pubData.data)) {
+        pubData.data.forEach((p) => {
+            const attrs = p.attributes || p;
+            const docId = p.documentId || String(p.id);
+            publishedMap.set(docId, attrs.publishedAt || attrs.createdAt || true);
+        });
+    }
 
     const products = (data.data || []).map((item) => {
         const attrs = item.attributes || item;
+        const docId = item.documentId || String(item.id);
+        const actualPublishedAt = publishedMap.get(docId) || null;
 
         // نرمال‌سازی تصاویر (Strapi v4 و v5)
         const rawImages = attrs.images?.data || attrs.images || [];
@@ -403,13 +419,13 @@ export async function getAdminProducts(jwt, { page = 1, pageSize = 100 } = {}) {
 
         return {
             id: item.id,
-            documentId: item.documentId || String(item.id),
+            documentId: docId,
             title: attrs.title,
             slug: attrs.slug,
             price: attrs.price ?? null,
             stock: attrs.stock ?? null,
             isAvailable: attrs.isAvailable ?? false,
-            publishedAt: attrs.publishedAt || null,
+            publishedAt: actualPublishedAt,
             images,
             categories,
             tags,
@@ -423,14 +439,23 @@ export async function getAdminProducts(jwt, { page = 1, pageSize = 100 } = {}) {
 // 📦 واکشی یک محصول با documentId (برای صفحه ویرایش)
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getAdminProductById(documentId, jwt) {
-    const endpoint =
-        `/api/products/${documentId}?populate[images]=true&populate[categories]=true&populate[tags]=true&publicationState=preview`;
+    const endpointDraft =
+        `/api/products/${documentId}?populate[images]=true&populate[categories]=true&populate[tags]=true&status=draft`;
+    const endpointPub = `/api/products/${documentId}?fields[0]=publishedAt&status=published`;
 
-    const data = await adminFetch(endpoint, jwt);
+    const [data, pubRes] = await Promise.all([
+        adminFetch(endpointDraft, jwt),
+        adminFetch(endpointPub, jwt),
+    ]);
+
     if (!data) return { product: null, error: true };
 
     const item = data.data || data;
     const attrs = item.attributes || item;
+
+    const pubItem = pubRes?.data || pubRes;
+    const pubAttrs = pubItem?.attributes || pubItem;
+    const actualPublishedAt = pubAttrs?.publishedAt || null;
 
     const rawImages = attrs.images?.data || attrs.images || [];
     const images = rawImages.map((img) => {
@@ -464,7 +489,7 @@ export async function getAdminProductById(documentId, jwt) {
         stock: attrs.stock ?? null,
         isAvailable: attrs.isAvailable ?? false,
         description: attrs.description,
-        publishedAt: attrs.publishedAt || null,
+        publishedAt: actualPublishedAt,
         images,
         categories,
         tags,
@@ -501,12 +526,26 @@ export async function getAdminTags(jwt) {
 // 📄 واکشی لیست مقالات
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getAdminArticles(jwt, { page = 1, pageSize = 100 } = {}) {
-    // Using simple populate to prevent 400 errors from strict field matching
-    const endpoint =
-        `/api/articles?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&publicationState=preview`;
+    const endpointDraft =
+        `/api/articles?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
+    const endpointPub =
+        `/api/articles?fields[0]=documentId&fields[1]=publishedAt&pagination[limit]=500&status=published`;
 
-    const data = await adminFetch(endpoint, jwt);
+    const [data, pubData] = await Promise.all([
+        adminFetch(endpointDraft, jwt),
+        adminFetch(endpointPub, jwt),
+    ]);
+
     if (!data) return { articles: [], meta: null, error: true };
+
+    const publishedMap = new Map();
+    if (pubData?.data && Array.isArray(pubData.data)) {
+        pubData.data.forEach((p) => {
+            const attrs = p.attributes || p;
+            const docId = p.documentId || String(p.id);
+            publishedMap.set(docId, attrs.publishedAt || attrs.createdAt || true);
+        });
+    }
 
     const articles = (data.data || []).map((item) => {
         const attrs = item.attributes || item;
@@ -539,13 +578,16 @@ export async function getAdminArticles(jwt, { page = 1, pageSize = 100 } = {}) {
             };
         });
 
+        const docId = item.documentId || String(item.id);
+        const actualPublishedAt = publishedMap.get(docId) || null;
+
         return {
             id: item.id,
-            documentId: item.documentId || String(item.id),
+            documentId: docId,
             title: attrs.title,
             slug: attrs.slug,
             excerpt: attrs.excerpt || '',
-            publishedAt: attrs.publishedAt || null,
+            publishedAt: actualPublishedAt,
             cover,
             categories,
             tags,
@@ -559,14 +601,24 @@ export async function getAdminArticles(jwt, { page = 1, pageSize = 100 } = {}) {
 // 📄 واکشی یک مقاله با documentId
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getAdminArticleById(documentId, jwt) {
-    const endpoint =
-        `/api/articles/${documentId}?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&publicationState=preview`;
+    const endpointDraft =
+        `/api/articles/${documentId}?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&status=draft`;
+    const endpointPub =
+        `/api/articles/${documentId}?fields[0]=publishedAt&status=published`;
 
-    const data = await adminFetch(endpoint, jwt);
+    const [data, pubRes] = await Promise.all([
+        adminFetch(endpointDraft, jwt),
+        adminFetch(endpointPub, jwt),
+    ]);
+
     if (!data) return { article: null, error: true };
 
     const item = data.data || data;
     const attrs = item.attributes || item;
+
+    const pubItem = pubRes?.data || pubRes;
+    const pubAttrs = pubItem?.attributes || pubItem;
+    const actualPublishedAt = pubAttrs?.publishedAt || null;
 
     const coverData = attrs.cover?.data || attrs.cover;
     const cover = coverData ? {
@@ -595,7 +647,7 @@ export async function getAdminArticleById(documentId, jwt) {
         slug: attrs.slug,
         excerpt: attrs.excerpt || '',
         content: attrs.content || '',
-        publishedAt: attrs.publishedAt || null,
+        publishedAt: actualPublishedAt,
         cover,
         articles_categories: categories, // Expected array of category objects by form component
         tags,
@@ -620,7 +672,7 @@ export async function getAdminArticlesCategories(jwt) {
 // 📬 واکشی لیست پیام‌های تماس برای پنل ادمین
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getContactMessages(jwt, { page = 1, pageSize = 50 } = {}) {
-    const endpoint = `/api/contact-messages?sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&publicationState=preview`;
+    const endpoint = `/api/contact-messages?sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
     try {
         const data = await adminFetch(endpoint, jwt);
         if (!data) return { messages: [], meta: null, error: true };

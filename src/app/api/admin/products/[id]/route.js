@@ -120,7 +120,7 @@ export async function GET(request, { params }) {
 
     try {
         const res = await fetch(
-            `${STRAPI_URL}/api/products/${id}?populate[images]=true&populate[categories]=true&populate[tags]=true&publicationState=preview`,
+            `${STRAPI_URL}/api/products/${id}?populate[images]=true&populate[categories]=true&populate[tags]=true&status=draft`,
             {
                 headers: {
                     Authorization: `Bearer ${jwt}`,

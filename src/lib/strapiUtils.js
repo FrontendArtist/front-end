@@ -100,6 +100,72 @@ export function formatStrapiProducts(apiResponse) {
     });
 }
 /**
+ * Helper to convert Strapi v5 Blocks / Rich Text format into an HTML string
+ */
+export function strapiBlocksToHtml(blocks) {
+  if (!blocks) return '';
+  if (typeof blocks === 'string') return blocks;
+  if (!Array.isArray(blocks)) {
+    if (typeof blocks === 'object') blocks = [blocks];
+    else return '';
+  }
+
+  return blocks
+    .map((block) => {
+      if (!block) return '';
+      if (typeof block === 'string') return block;
+
+      const renderChildren = (children) => {
+        if (!Array.isArray(children)) return '';
+        return children
+          .map((child) => {
+            if (typeof child === 'string') return child;
+            let text = child.text || '';
+            if (child.bold) text = `<strong>${text}</strong>`;
+            if (child.italic) text = `<em>${text}</em>`;
+            if (child.underline) text = `<u>${text}</u>`;
+            if (child.strikethrough) text = `<s>${text}</s>`;
+            if (child.code) text = `<code>${text}</code>`;
+            return text;
+          })
+          .join('');
+      };
+
+      const childrenHtml = renderChildren(block.children);
+
+      switch (block.type) {
+        case 'heading': {
+          const level = block.level || 2;
+          return `<h${level}>${childrenHtml}</h${level}>`;
+        }
+        case 'paragraph':
+          return `<p>${childrenHtml}</p>`;
+        case 'list': {
+          const tag = block.format === 'ordered' ? 'ol' : 'ul';
+          const items = Array.isArray(block.children)
+            ? block.children
+                .map((item) => `<li>${renderChildren(item.children || [item])}</li>`)
+                .join('')
+            : '';
+          return `<${tag}>${items}</${tag}>`;
+        }
+        case 'quote':
+          return `<blockquote><p>${childrenHtml}</p></blockquote>`;
+        case 'code':
+          return `<pre><code>${childrenHtml}</code></pre>`;
+        case 'image': {
+          const url = block.image?.url || '';
+          const alt = block.image?.alternativeText || '';
+          return url ? `<figure><img src="${url}" alt="${alt}" /></figure>` : '';
+        }
+        default:
+          return childrenHtml ? `<p>${childrenHtml}</p>` : '';
+      }
+    })
+    .join('');
+}
+
+/**
  * Formats your specific Strapi API response for ARTICLES.
  */
 export function formatStrapiArticles(apiResponse) {
@@ -107,17 +173,24 @@ export function formatStrapiArticles(apiResponse) {
 
   return apiResponse.data
     .filter(item => item && item.title)
-    .map(item => ({
-      id: item.id,
-      documentId: item.documentId, // ← اضافه شده برای سیستم کامنت‌ها
-      slug: item.slug,
-      title: item.title,
-      excerpt: item.excerpt,
-      content: item.content, // HTML/RichText content
-      date: item.publishedAt,
-      // Articles have a single 'cover' object.
-      cover: formatSingleImage(item.cover),
-    }));
+    .map(item => {
+      let rawContent = item.content;
+      if (Array.isArray(rawContent) || (rawContent && typeof rawContent === 'object')) {
+        rawContent = strapiBlocksToHtml(rawContent);
+      }
+
+      return {
+        id: item.id,
+        documentId: item.documentId, // ← اضافه شده برای سیستم کامنت‌ها
+        slug: item.slug,
+        title: item.title,
+        excerpt: item.excerpt,
+        content: rawContent || '', // HTML/RichText content
+        date: item.publishedAt,
+        // Articles have a single 'cover' object.
+        cover: formatSingleImage(item.cover),
+      };
+    });
 }
 
 /**
