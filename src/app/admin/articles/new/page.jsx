@@ -5,7 +5,7 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getAdminArticlesCategories, getAdminTags } from '@/lib/adminApi';
+import { getAdminArticlesCategories, getAdminTags, getAdminCourses, getAdminProductOptions } from '@/lib/adminApi';
 import ArticleForm from '@/components/admin/Articles/ArticleForm';
 import Link from 'next/link';
 import styles from '../../orders/orders.module.scss'; // using shared layout styles usually
@@ -18,9 +18,11 @@ export default async function NewArticlePage() {
     const session = await getServerSession(authOptions);
     const jwt = session?.user?.jwt;
 
-    const [categories, tags] = await Promise.all([
+    const [categories, tags, courses, products] = await Promise.all([
         getAdminArticlesCategories(jwt),
         getAdminTags(jwt),
+        getAdminCourses(jwt),
+        getAdminProductOptions(jwt),
     ]);
 
     return (
@@ -51,6 +53,8 @@ export default async function NewArticlePage() {
             <ArticleForm
                 availableCategories={categories}
                 availableTags={tags}
+                availableCourses={courses}
+                availableProducts={products}
             />
         </div>
     );

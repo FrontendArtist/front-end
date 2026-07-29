@@ -2,10 +2,15 @@ import ArticleReader from './ArticleReader';
 import { marked } from 'marked';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { getArticleBySlug } from '@/lib/articlesApi';
+import { getArticleBySlug, getAdjacentArticles, getRelatedArticles, getArticleCTA } from '@/lib/articlesApi';
+import ArticleTags from '@/modules/articles/ArticleTags';
+import ArticleNav from '@/modules/articles/ArticleNav';
+import RelatedArticles from '@/modules/articles/RelatedArticles';
+import RelatedProductCTA from '@/modules/articles/RelatedProductCTA';
 import { getComments } from '@/lib/commentsApi';
 import CommentsSection from '@/modules/comments/CommentsSection';
 import { API_BASE_URL } from '@/lib/api';
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import styles from './page.module.scss';
 
 // ثوابت برند و دامنه سایت
@@ -74,6 +79,18 @@ export default async function ArticlePage({ params }) {
     notFound();
   }
 
+  // دریافت مقاله قبلی و بعدی بر اساس تاریخ
+  const adjacent = await getAdjacentArticles(rawArticle.createdAt || rawArticle.publishedAt);
+
+  // دریافت مقالات مرتبط هم‌دسته‌بندی
+  const relatedArticles = await getRelatedArticles({
+    currentId: rawArticle.id,
+    categoryId: rawArticle.category?.id,
+  });
+
+  // دریافت جزییات کامل دوره‌ها و محصولات مرتبط متصل‌شده به مقاله
+  const ctaItems = await getArticleCTA(rawArticle);
+
   // دریافت کامنت‌ها از API
   const initialComments = await getComments('article', rawArticle.documentId);
 
@@ -137,6 +154,15 @@ export default async function ArticlePage({ params }) {
     },
   };
 
+  const primaryCategory = rawArticle.categories?.[0] || null;
+
+  const breadcrumbItems = [
+    { label: 'خانه', href: '/' },
+    { label: 'مقالات', href: '/articles' },
+    ...(primaryCategory ? [{ label: primaryCategory.name, href: `/articles?category=${primaryCategory.slug}` }] : []),
+    { label: article.title },
+  ];
+
   return (
     <main className={styles.articlePage}>
       {/* 🔹 تزریق اسکیمای JSON-LD به هدر صفحه برای موتورهای جستجو */}
@@ -146,6 +172,8 @@ export default async function ArticlePage({ params }) {
       />
 
       <div className="container">
+        <Breadcrumb items={breadcrumbItems} />
+
         <header className={styles.header}>
           <h1 className={styles.title}>{article.title}</h1>
           <time className={styles.date} dateTime={article.isoDate}>
@@ -170,6 +198,23 @@ export default async function ArticlePage({ params }) {
         {/* مطالعه مقاله به همراه فهرست مطالب خودکار و قابلیت تغییر تم */}
         <ArticleReader excerpt={article.excerpt} content={article.content} />
 
+        {/* 🎯 کارت‌های پیشنهاد ویژه مرتبط با مقاله (دوره آموزشی و/یا محصول متصل‌شده) */}
+        <RelatedProductCTA enableCta={rawArticle.enable_cta} items={ctaItems} />
+
+        {/* ۱) تگ‌های مقاله */}
+        <ArticleTags tags={rawArticle.tags} />
+
+        {/* ۲) ناوبری مقاله قبلی و بعدی */}
+        <ArticleNav prevArticle={adjacent.prev} nextArticle={adjacent.next} />
+
+        {/* ۳) مقالات مرتبط */}
+        <RelatedArticles
+          currentId={article.id}
+          categoryId={rawArticle.category?.id}
+          articles={relatedArticles}
+        />
+
+        {/* ۴) بخش کامنت‌ها */}
         <CommentsSection
           entityType="article"
           entityId={article.documentId}

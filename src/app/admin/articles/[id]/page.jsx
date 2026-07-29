@@ -5,7 +5,7 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getAdminArticleById, getAdminArticlesCategories, getAdminTags } from '@/lib/adminApi';
+import { getAdminArticleById, getAdminArticlesCategories, getAdminTags, getAdminCourses, getAdminProductOptions } from '@/lib/adminApi';
 import ArticleForm from '@/components/admin/Articles/ArticleForm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -21,10 +21,12 @@ export default async function EditArticlePage({ params }) {
     const jwt = session?.user?.jwt;
 
     // Fetch the article + all options concurrently
-    const [articleData, categories, tags] = await Promise.all([
+    const [articleData, categories, tags, courses, products] = await Promise.all([
         getAdminArticleById(id, jwt),
         getAdminArticlesCategories(jwt),
         getAdminTags(jwt),
+        getAdminCourses(jwt),
+        getAdminProductOptions(jwt),
     ]);
 
     if (articleData.error || !articleData.article) {
@@ -59,6 +61,8 @@ export default async function EditArticlePage({ params }) {
                 initialData={articleData.article}
                 availableCategories={categories}
                 availableTags={tags}
+                availableCourses={courses}
+                availableProducts={products}
             />
         </div>
     );

@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## [Latest] - 2026-07-29
+
+### Features: Article Tags, Navigation & Related Slider
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Implemented three dynamic modules at the end of the single article page: ArticleTags for capsule pills, ArticleNav for previous/next navigation cards, and RelatedArticles for a category-based slider, following the context specification.
+
+#### Changes Made:
+1. **ArticleTags Component**:
+   - Renders tags in capsule badges with tag icon.
+   - Links to search page at `/articles?tag={tag}`.
+2. **ArticleNav Component**:
+   - Displays previous and next article links as styled cards with truncation.
+   - Built backend API endpoint helper `getAdjacentArticles(createdAt)` to query adjacent posts.
+3. **RelatedArticles Component**:
+   - Integrates `BaseSlider` and `ArticleCard` client-side.
+   - Queries category posts via `getRelatedArticles({ categoryId, currentId })`.
+4. **Integration**:
+   - Formatted in `page.js` after `ArticleReader` and before `CommentsSection`.
+
 ## [Latest] - 2026-05-21
 
 ### Features & Security: Comments API Proxy & Name Field Support
@@ -2584,3 +2605,25 @@ User Submit → PUT /api/profile (User data)
 - Consistent visual language with products section.
 - SEO-friendly URL structure with query params.
 - Ready for integration with ArticleGrid and /articles page
+
+---
+
+## [Latest] - 2026-07-29
+
+### Feature: Single Article Page Breadcrumb with Dynamic Category Navigation
+**Status**: ✅ COMPLETED (100%)
+
+#### Changes Made:
+1. **Article Page (`src/app/articles/[slug]/page.js`)**:
+   - Integrated `Breadcrumb` component (`@/components/ui/BreadCrumb/Breadcrumb`).
+   - Added dynamic hierarchy: `خانه` -> `مقالات` -> `[نام دسته‌بندی]` -> `[عنوان مقاله]`.
+   - Category item links directly to `/articles?category=${category.slug}` for filtered navigation.
+   - Gracefully handles articles with or without an assigned category.
+
+2. **Strapi Articles Formatter (`src/lib/strapiUtils.js`)**:
+   - Updated `formatStrapiArticles` to extract and format article categories (`articles_categories` / `categories`).
+   - Returns structured `categories` array containing `id`, `documentId`, `name`, and `slug`.
+
+#### Impact:
+- Improved User Navigation (UX) across single article pages.
+- Enhanced SEO with structured `BreadcrumbList` schema JSON-LD injection on article detail routes.

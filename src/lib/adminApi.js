@@ -602,7 +602,7 @@ export async function getAdminArticles(jwt, { page = 1, pageSize = 100 } = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getAdminArticleById(documentId, jwt) {
     const endpointDraft =
-        `/api/articles/${documentId}?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&status=draft`;
+        `/api/articles/${documentId}?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&populate[featured_course]=true&populate[featured_product]=true&status=draft`;
     const endpointPub =
         `/api/articles/${documentId}?fields[0]=publishedAt&status=published`;
 
@@ -640,6 +640,24 @@ export async function getAdminArticleById(documentId, jwt) {
         return { id: t.id, documentId: t.documentId || String(t.id), name: tAttrs.name || tAttrs.title || '' };
     });
 
+    const featuredCourseData = attrs.featured_course?.data || attrs.featured_course;
+    const featured_course = featuredCourseData ? {
+        id: featuredCourseData.id,
+        documentId: featuredCourseData.documentId || String(featuredCourseData.id),
+        title: featuredCourseData.attributes?.title || featuredCourseData.title,
+        slug: featuredCourseData.attributes?.slug || featuredCourseData.slug,
+    } : null;
+
+    const featuredProductData = attrs.featured_product?.data || attrs.featured_product;
+    const featured_product = featuredProductData ? {
+        id: featuredProductData.id,
+        documentId: featuredProductData.documentId || String(featuredProductData.id),
+        title: featuredProductData.attributes?.title || featuredProductData.title,
+        slug: featuredProductData.attributes?.slug || featuredProductData.slug,
+    } : null;
+
+    const enable_cta = attrs.enable_cta !== undefined ? Boolean(attrs.enable_cta) : true;
+
     const article = {
         id: item.id,
         documentId: item.documentId || String(item.id),
@@ -651,9 +669,46 @@ export async function getAdminArticleById(documentId, jwt) {
         cover,
         articles_categories: categories, // Expected array of category objects by form component
         tags,
+        enable_cta,
+        featured_course,
+        featured_product,
     };
 
     return { article, error: false };
+}
+
+/**
+ * واکشی لیست دوره‌ها برای فرم مقاله در پنل ادمین
+ */
+export async function getAdminCourses(jwt) {
+    const raw = await adminFetch('/api/courses?fields[0]=title&fields[1]=slug&status=published&pagination[limit]=200', jwt);
+    if (!raw?.data) return [];
+    return raw.data.map((item) => {
+        const attrs = item.attributes || item;
+        return {
+            id: item.id,
+            documentId: item.documentId || String(item.id),
+            title: attrs.title || '',
+            slug: attrs.slug || '',
+        };
+    });
+}
+
+/**
+ * واکشی لیست محصولات برای فرم مقاله در پنل ادمین
+ */
+export async function getAdminProductOptions(jwt) {
+    const raw = await adminFetch('/api/products?fields[0]=title&fields[1]=slug&status=published&pagination[limit]=200', jwt);
+    if (!raw?.data) return [];
+    return raw.data.map((item) => {
+        const attrs = item.attributes || item;
+        return {
+            id: item.id,
+            documentId: item.documentId || String(item.id),
+            title: attrs.title || '',
+            slug: attrs.slug || '',
+        };
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

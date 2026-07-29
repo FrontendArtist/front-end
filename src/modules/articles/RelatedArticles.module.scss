@@ -1,0 +1,49 @@
+@use '../../styles/base/mixins' as *;
+
+.relatedSection {
+  max-width: 1120px;
+  margin: 3.5rem auto 2.5rem;
+  padding: 0 1rem;
+}
+
+.header {
+  margin-bottom: 1.75rem;
+  text-align: right;
+  position: relative;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-title-hover, #f5c452);
+  display: inline-block;
+  position: relative;
+  padding-bottom: 0.5rem;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-title-hover, #f5c452), transparent);
+    border-radius: 3px;
+  }
+}
+
+.sliderWrapper {
+  width: 100%;
+}
+
+// پشتیبانی از تم روشن
+:global(.lightTheme) .relatedSection,
+:global(body.article-light-mode-active) .relatedSection {
+  .sectionTitle {
+    color: #7b5a14;
+
+    &::after {
+      background: linear-gradient(90deg, #c79a2b, transparent);
+    }
+  }
+}

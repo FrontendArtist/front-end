@@ -1,4 +1,88 @@
 ```text
+[2026-07-29] - Fix Nested Array Prop Handling for RelatedProductCTA
+
+── Bug Fix & Array Flattening ────────────────────────────────────────────────
+- Resolved nested array bug (`[ [course, product] ]`) in `RelatedProductCTA.jsx` by implementing `rawList.flat(Infinity).filter(Boolean)`.
+- Updated `page.js` to pass `<RelatedProductCTA enableCta={rawArticle.enable_cta} items={ctaItems} />`.
+- Verified that selecting course "سایه‌ها" and product "گردنبند" renders both exact items on the article detail page.
+
+[2026-07-29] - Dual CTA Support for Simultaneous Course & Product Rendering
+
+── Frontend Multi-Item CTA Rendering ─────────────────────────────────────────
+- Refactored `getArticleCTA` in `articlesApi.js` to return an array of all connected CTA items (`featured_course` and `featured_product`).
+- Enhanced `RelatedProductCTA.jsx` to render all items seamlessly in `.ctaWrapper` layout.
+- When both a course and a product are connected to an article, both cards render with their respective badges, icons, prices, and CTA action buttons.
+
+── Admin Panel Simultaneous Selection ────────────────────────────────────────
+- Updated `ArticleForm.jsx` to allow simultaneous selection of both `featured_course` and `featured_product`.
+
+[2026-07-29] - Featured Product Support for RelatedProductCTA & Admin Panel
+
+── Frontend Featured Product CTA Support ─────────────────────────────────────
+- Enhanced `RelatedProductCTA.jsx` to seamlessly support both `featured_course` and `featured_product`.
+- Added product-specific UI details: `ShoppingBag` icon, "محصول مرتبط" tag label, "پیشنهاد ویژه محصول مرتبط" badge, and "مشاهده و خرید محصول" action button targeting `/products/[slug]`.
+- Exported `formatStrapiProducts` in `strapiUtils.js` and updated `getArticleCTA` in `articlesApi.js` to fetch full product details with images and prices.
+
+── Admin Panel Featured Product Management ──────────────────────────────────
+- Added `getAdminProducts(jwt)` in `adminApi.js` to retrieve available products list.
+- Updated `ArticleForm.jsx` to include "انتخاب محصول مرتبط" dropdown selector with auto-clearing logic between course and product.
+- Updated `getAdminArticleById` and POST/PUT API routes to send and read `featured_product`.
+
+[2026-07-29] - RelatedProductCTA Method A Refactoring (Manual Connection & Enable Switch)
+
+── Refactored RelatedProductCTA Component ─────────────────────────────────────
+- Updated `RelatedProductCTA` to accept `enableCta` (Boolean) and `course` (Object) props.
+- Implemented strict conditional rendering: returns `null` immediately if `enableCta === false` or `!course`.
+- Removed automatic tag querying and default fallback cards in accordance with Method A specifications.
+
+── Backend Schema & API Updates ──────────────────────────────────────────────
+- Added `enable_cta` boolean field (default: `true`) to Strapi Article schema (`backend/src/api/article/content-types/article/schema.json`).
+- Updated `getArticleCTA(article)` in `articlesApi.js` and `formatStrapiArticles` in `strapiUtils.js` to return `course` details or `null`.
+- Updated `app/articles/[slug]/page.js` to pass `<RelatedProductCTA enableCta={rawArticle.enable_cta} course={ctaCourse} />`.
+
+[2026-07-29] - RelatedProductCTA Banner & Backend Schema Enhancements
+
+── Created RelatedProductCTA Component ───────────────────────────────────────
+- Implemented `RelatedProductCTA` Server Component to display featured courses/products as banner cards.
+- Implemented 3-tier fallback algorithm in `getArticleCTA(article)`: 1) Direct Strapi relation, 2) Tag/Category matching query, 3) System default fallback CTA card.
+- Formatted prices in Iranian Tomans (`toLocaleString('fa-IR')`), badge highlights, and responsive 2-column layout.
+
+── Backend Schema Upgrade ────────────────────────────────────────────────────
+- Extended Article content-type schema in Strapi (`backend/src/api/article/content-types/article/schema.json`) to include `featured_course` and `featured_product` relations.
+
+[2026-07-29] - Single Article Modules (ArticleTags, ArticleNav, RelatedArticles) & Related Enhancements
+
+── Created ArticleTags Component ──────────────────────────────────────────────
+- Implemented `ArticleTags` component to render article tags as capsule pills with modern CSS animations.
+- Configured dynamic linking to `/articles?tag={tag.slug}`.
+- Added support for both string tags and Strapi Tag objects.
+
+── Created ArticleNav Component ───────────────────────────────────────────────
+- Implemented `ArticleNav` component featuring RTL-optimized previous and next article navigation cards.
+- Displays guide arrows (`ArrowRight` and `ArrowLeft`) and truncated article titles to maintain visual consistency.
+- Automatically handles layout alignment when only one of the adjacent articles is available.
+
+── Created RelatedArticles Component ──────────────────────────────────────────
+- Implemented `'use client';` `RelatedArticles` component using `BaseSlider` and `ArticleCard`.
+- Configured server-side pre-fetching in page route for SSR and passed results as props to bypass Next.js RSC client boundary function passing limitations.
+- Automatically filters out the current article from the slider suggestions.
+
+── API & Utils Enhancements ──────────────────────────────────────────────────
+- Added `getAdjacentArticles(createdAt)` to `articlesApi.js` to fetch previous (older) and next (newer) articles.
+- Added `getRelatedArticles({ categoryId, currentId })` to `articlesApi.js` to retrieve related posts.
+- Enhanced `formatStrapiArticles` in `strapiUtils.js` to map tags, category, and creation date parameters.
+
+── Created & Modified Files ──────────────────────────────────────────────────
+- src/modules/articles/ArticleTags.jsx [NEW]
+- src/modules/articles/ArticleTags.module.scss [NEW]
+- src/modules/articles/ArticleNav.jsx [NEW]
+- src/modules/articles/ArticleNav.module.scss [NEW]
+- src/modules/articles/RelatedArticles.jsx [NEW]
+- src/modules/articles/RelatedArticles.module.scss [NEW]
+- src/lib/articlesApi.js
+- src/lib/strapiUtils.js
+- src/app/articles/[slug]/page.js
+
 [2026-07-29] - Article Reading Mode, Sticky Flex TOC & Performance Optimizations
 
 ── Fixed Layout Sticky Flex TOC ──────────────────────────────────────────────

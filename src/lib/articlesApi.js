@@ -4,7 +4,7 @@
  */
 
 import { apiClient } from './apiClient';
-import { formatStrapiArticles } from './strapiUtils';
+import { formatStrapiArticles, formatStrapiCourses, formatStrapiProducts } from './strapiUtils';
 
 /**
  * واکشی دسته‌بندی‌های مقالات
@@ -158,3 +158,167 @@ export async function getArticlesPaginated(
     return fallback;
   }
 }
+
+/**
+ * واکشی مقالات مجاور (قبلی و بعدی بر اساس تاریخ انتشار)
+ * @param {string | Date} createdAt - تاریخ مقاله جاری
+ * @returns {Promise<{ prev: { slug: string, title: string } | null, next: { slug: string, title: string } | null }>}
+ */
+export async function getAdjacentArticles(createdAt) {
+  if (!createdAt) return { prev: null, next: null };
+
+  try {
+    const isoDate = new Date(createdAt).toISOString();
+
+    // مقاله قبلی (قدیمی‌تر از مقاله جاری)
+    const prevRes = await apiClient(
+      `/api/articles?filters[publishedAt][$lt]=${isoDate}&sort=publishedAt:desc&pagination[limit]=1`
+    ).catch(() => null);
+
+    // مقاله بعدی (جدیدتر از مقاله جاری)
+    const nextRes = await apiClient(
+      `/api/articles?filters[publishedAt][$gt]=${isoDate}&sort=publishedAt:asc&pagination[limit]=1`
+    ).catch(() => null);
+
+    const prevArticles = prevRes ? formatStrapiArticles(prevRes) : [];
+    const nextArticles = nextRes ? formatStrapiArticles(nextRes) : [];
+
+    return {
+      prev: prevArticles[0] ? { slug: prevArticles[0].slug, title: prevArticles[0].title } : null,
+      next: nextArticles[0] ? { slug: nextArticles[0].slug, title: nextArticles[0].title } : null,
+    };
+  } catch (error) {
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی مقالات مجاور:', error.message);
+    }
+    return { prev: null, next: null };
+  }
+}
+
+/**
+ * واکشی مقالات مرتبط (هم‌دسته‌بندی یا جدیدتر با استثنا کردن مقاله جاری)
+ * @param {{ categoryId?: string | number, categorySlug?: string, currentId?: string | number, limit?: number }} params
+ */
+export async function getRelatedArticles({ categoryId = null, categorySlug = null, currentId = null, limit = 6 } = {}) {
+  try {
+    let url = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort=publishedAt:desc`;
+
+    if (categoryId) {
+      url += `&filters[articles_categories][id][$eq]=${categoryId}`;
+    } else if (categorySlug) {
+      url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
+    }
+
+    if (currentId) {
+      url += `&filters[id][$ne]=${currentId}`;
+    }
+
+    const response = await apiClient(url);
+    let formattedArticles = formatStrapiArticles(response);
+
+    // استثنا کردن مقاله جاری به صورت قطعی
+    if (currentId) {
+      formattedArticles = formattedArticles.filter(
+        (art) => String(art.id) !== String(currentId) && String(art.documentId) !== String(currentId)
+      );
+    }
+
+    // اگر مقاله مرتبط با دسته‌بندی پیدا نشد یا کمتر بود، مقالات عمومی به عنوان فال‌بک واکشی می‌شوند
+    if (formattedArticles.length === 0 && (categoryId || categorySlug)) {
+      const fallbackUrl = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort=publishedAt:desc`;
+      const fallbackResponse = await apiClient(fallbackUrl);
+      formattedArticles = formatStrapiArticles(fallbackResponse).filter(
+        (art) => String(art.id) !== String(currentId) && String(art.documentId) !== String(currentId)
+      );
+    }
+
+    return formattedArticles.slice(0, limit);
+  } catch (error) {
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی مقالات مرتبط:', error.message);
+    }
+    return [];
+  }
+}
+
+/**
+ * واکشی تمام دوره‌ها و محصولات مرتبط متصل‌شده برای RelatedProductCTA
+ * @param {object} article - آبجکت مقاله خروجی از formatStrapiArticles
+ * @returns {Promise<Array>} آرایه‌ای از اشیاء CTA (دوره و/یا محصول) یا [] در صورت غیرفعال بودن enable_cta یا عدم وجود موارد مرتبط
+ */
+export async function getArticleCTA(article) {
+  if (!article) return [];
+
+  const enableCta = article.enable_cta !== undefined ? Boolean(article.enable_cta) : true;
+  if (!enableCta) {
+    return [];
+  }
+
+  const items = [];
+
+  // 1. بررسی دوره مرتبط متصل‌شده (featured_course)
+  if (article.featured_course) {
+    const courseSlug = article.featured_course.slug;
+    if (courseSlug) {
+      try {
+        const courseRes = await apiClient(
+          `/api/courses?filters[slug][$eq]=${encodeURIComponent(courseSlug)}&populate=*`
+        );
+        const courses = formatStrapiCourses(courseRes);
+        if (courses && courses.length > 0) {
+          items.push({
+            type: 'course',
+            ...courses[0],
+          });
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('خطا در واکشی جزییات دوره مرتبط با مقاله:', error.message);
+        }
+      }
+    }
+    if (items.length === 0) {
+      const rawFormatted = formatStrapiCourses({ data: [article.featured_course] })[0];
+      if (rawFormatted) {
+        items.push({
+          type: 'course',
+          ...rawFormatted,
+        });
+      }
+    }
+  }
+
+  // 2. بررسی محصول مرتبط متصل‌شده (featured_product)
+  if (article.featured_product) {
+    const productSlug = article.featured_product.slug;
+    if (productSlug) {
+      try {
+        const productRes = await apiClient(
+          `/api/products?filters[slug][$eq]=${encodeURIComponent(productSlug)}&populate=*`
+        );
+        const products = formatStrapiProducts(productRes);
+        if (products && products.length > 0) {
+          items.push({
+            type: 'product',
+            ...products[0],
+          });
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('خطا در واکشی جزییات محصول مرتبط با مقاله:', error.message);
+        }
+      }
+    }
+    if (!items.some(i => i.type === 'product')) {
+      const rawFormatted = formatStrapiProducts({ data: [article.featured_product] })[0];
+      if (rawFormatted) {
+        items.push({
+          type: 'product',
+          ...rawFormatted,
+        });
+      }
+    }
+  }
+
+  return items;
+}

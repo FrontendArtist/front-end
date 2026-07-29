@@ -43,24 +43,27 @@ export function formatSingleImage(imgData) {
 export function formatStrapiProducts(apiResponse) {
   if (!apiResponse || !apiResponse.data) return [];
 
-  return apiResponse.data
-    .filter(item => item && item.title)
+  const rawList = Array.isArray(apiResponse.data)
+    ? apiResponse.data
+    : [apiResponse.data];
+
+  return rawList
+    .filter(item => item && (item.title || item.attributes?.title))
     .map(item => {
-      const priceObject = { toman: item.price || 0 };
-      const shortDescription = (item.description && item.description[0]?.children[0]?.text) || '';
+      const attrs = item.attributes || item;
+      const priceVal = typeof attrs.price === 'object' ? attrs.price?.toman || 0 : (attrs.price || 0);
+      const priceObject = { toman: priceVal };
+      const shortDescription = (attrs.description && attrs.description[0]?.children?.[0]?.text) || attrs.shortDescription || attrs.excerpt || '';
 
-      // Create a clean array of all images for the product
-      const images = (item.images || []).map(img => formatSingleImage(img));
+      const rawImage = attrs.image || (attrs.images && (attrs.images[0] || attrs.images.data?.[0])) || attrs.cover || null;
+      const images = (attrs.images || []).map(img => formatSingleImage(img));
+      const mainImage = formatSingleImage(rawImage || (images.length > 0 ? images[0] : null));
 
-      // ✅ FIX: Robust category parent extraction
-      const categories = (item.categories || []).map(cat => {
-        // Handle both "attributes" wrapper and direct object
+      const categories = (attrs.categories || []).map(cat => {
         const categoryData = cat.data ? cat.data : cat;
         const categoryAttrs = categoryData.attributes || categoryData;
 
         let parentData = null;
-
-        // Case 1: Direct parent object (Your JSON structure)
         if (categoryAttrs.parent && categoryAttrs.parent.slug) {
           const pAttrs = categoryAttrs.parent.attributes || categoryAttrs.parent;
           parentData = {
@@ -68,7 +71,6 @@ export function formatStrapiProducts(apiResponse) {
             name: pAttrs.name
           };
         }
-        // Case 2: Nested "data" wrapper (Old Strapi/Populate structure)
         else if (categoryAttrs.parent?.data) {
           const parentContent = categoryAttrs.parent.data;
           const parentAttrs = parentContent.attributes || parentContent;
@@ -81,21 +83,21 @@ export function formatStrapiProducts(apiResponse) {
         return {
           slug: categoryAttrs.slug,
           name: categoryAttrs.name,
-          parent: parentData // Now correctly populated
+          parent: parentData
         };
       });
 
       return {
         id: item.id,
-        documentId: item.documentId, // ← اضافه شده برای سیستم کامنت‌ها
-        title: item.title,
-        slug: item.slug,
+        documentId: item.documentId || String(item.id || ''),
+        title: attrs.title || '',
+        slug: attrs.slug || '',
         price: priceObject,
+        discountPrice: attrs.discountPrice || attrs.discount_price || null,
         shortDescription: shortDescription,
-        // Return both the full array and a single thumbnail
         images: images,
-        image: images.length > 0 ? images[0] : formatSingleImage(null),
-        categories: categories, // Correctly structured for ProductCard
+        image: mainImage,
+        categories: categories,
       };
     });
 }
@@ -179,6 +181,44 @@ export function formatStrapiArticles(apiResponse) {
         rawContent = strapiBlocksToHtml(rawContent);
       }
 
+      const rawCats =
+        item.articles_categories?.data || item.articles_categories ||
+        item.attributes?.articles_categories?.data || item.attributes?.articles_categories ||
+        item.categories?.data || item.categories ||
+        item.attributes?.categories?.data || item.attributes?.categories ||
+        item.category?.data || item.category || [];
+
+      const catList = (Array.isArray(rawCats) ? rawCats : [rawCats]).filter(Boolean);
+      const categories = catList.map(c => {
+        const cAttrs = c.attributes || c;
+        return {
+          id: c.id,
+          documentId: c.documentId || String(c.id || ''),
+          name: cAttrs.name || cAttrs.title || '',
+          slug: cAttrs.slug || '',
+        };
+      }).filter(c => c.name || c.slug);
+
+      // استخراج تگ‌ها به صورت انعطاف‌پذیر (آرایه رشته‌ها، کاما جدا شده یا آبجکت‌های Strapi)
+      let rawTags =
+        item.tags?.data || item.tags ||
+        item.attributes?.tags?.data || item.attributes?.tags || [];
+      if (typeof rawTags === 'string') {
+        rawTags = rawTags.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      const tagList = (Array.isArray(rawTags) ? rawTags : [rawTags]).filter(Boolean);
+      const tags = tagList.map(t => {
+        if (typeof t === 'string') {
+          return { name: t, slug: t };
+        }
+        const tAttrs = t.attributes || t;
+        return {
+          id: t.id,
+          name: tAttrs.name || tAttrs.title || tAttrs.slug || '',
+          slug: tAttrs.slug || tAttrs.name || tAttrs.title || '',
+        };
+      }).filter(t => t.name || t.slug);
+
       return {
         id: item.id,
         documentId: item.documentId, // ← اضافه شده برای سیستم کامنت‌ها
@@ -186,7 +226,15 @@ export function formatStrapiArticles(apiResponse) {
         title: item.title,
         excerpt: item.excerpt,
         content: rawContent || '', // HTML/RichText content
-        date: item.publishedAt,
+        date: item.publishedAt || item.createdAt,
+        createdAt: item.createdAt || item.publishedAt,
+        publishedAt: item.publishedAt || item.createdAt,
+        category: categories[0] || null,
+        categories,
+        tags,
+        enable_cta: item.enable_cta !== undefined ? Boolean(item.enable_cta) : (item.attributes?.enable_cta !== undefined ? Boolean(item.attributes.enable_cta) : true),
+        featured_course: item.featured_course?.data ? (item.featured_course.data.attributes || item.featured_course.data) : (item.featured_course || null),
+        featured_product: item.featured_product?.data ? (item.featured_product.data.attributes || item.featured_product.data) : (item.featured_product || null),
         // Articles have a single 'cover' object.
         cover: formatSingleImage(item.cover),
       };
@@ -363,6 +411,8 @@ function formatStrapiProduct(product) {
     image: img.url,
   };
 }
+
+
 
 /**
  * ✅ Formatter برای داده‌های Strapi Categories

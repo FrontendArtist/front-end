@@ -26,7 +26,7 @@ export async function POST(request) {
     }
 
     const {
-        title, slug, excerpt, content, cover, tags, articles_categories, publishedAt,
+        title, slug, excerpt, content, cover, tags, articles_categories, publishedAt, enable_cta, featured_course,
     } = body;
 
     const strapiPayload = {
@@ -39,6 +39,8 @@ export async function POST(request) {
             tags,            // array of documentIds
             articles_categories, // array of documentIds
             publishedAt: publishedAt || null,
+            enable_cta: enable_cta !== undefined ? Boolean(enable_cta) : true,
+            featured_course: featured_course || null,
         },
     };
 

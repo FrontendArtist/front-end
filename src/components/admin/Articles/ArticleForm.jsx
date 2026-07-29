@@ -106,6 +106,8 @@ export default function ArticleForm({
     initialData = null,
     availableCategories = [],
     availableTags = [],
+    availableCourses = [],
+    availableProducts = [],
 }) {
     const router = useRouter();
     const { toasts, addToast } = useToast();
@@ -124,6 +126,17 @@ export default function ArticleForm({
     );
     const [selectedTags, setSelectedTags] = useState(
         initialData?.tags?.map((t) => t.documentId) || []
+    );
+
+    // CTA & Featured Course/Product state
+    const [enableCta, setEnableCta] = useState(
+        initialData?.enable_cta !== undefined ? Boolean(initialData.enable_cta) : true
+    );
+    const [selectedCourse, setSelectedCourse] = useState(
+        initialData?.featured_course?.documentId || initialData?.featured_course?.id || ''
+    );
+    const [selectedProduct, setSelectedProduct] = useState(
+        initialData?.featured_product?.documentId || initialData?.featured_product?.id || ''
     );
 
     // UI state
@@ -193,6 +206,9 @@ export default function ArticleForm({
             content: currentContent,
             articles_categories: selectedCategories,
             tags: selectedTags,
+            enable_cta: enableCta,
+            featured_course: selectedCourse || null,
+            featured_product: selectedProduct || null,
         };
 
         if (cover?.id) {
@@ -343,6 +359,66 @@ export default function ArticleForm({
                         selectedIds={selectedTags}
                         onChange={setSelectedTags}
                     />
+
+                    <h3 className={styles.sectionTitle}>پیشنهاد ویژه دوره مرتبط (CTA)</h3>
+
+                    {/* Enable CTA Switch */}
+                    <div className={`${styles.field} ${styles['field--full']}`}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 500 }}>
+                            <input
+                                type="checkbox"
+                                checked={enableCta}
+                                onChange={(e) => setEnableCta(e.target.checked)}
+                                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--color-primary)' }}
+                            />
+                            <span>نمایش بنر پیشنهاد ویژه دوره آموزشی در انتهای مقاله</span>
+                        </label>
+                    </div>
+
+                    {/* Featured Course & Product Select */}
+                    {enableCta && (
+                        <>
+                            <div className={styles.field}>
+                                <label htmlFor="featuredCourse">انتخاب دوره آموزشی مرتبط</label>
+                                <select
+                                    id="featuredCourse"
+                                    className={styles.input}
+                                    value={selectedCourse}
+                                    onChange={(e) => setSelectedCourse(e.target.value)}
+                                >
+                                    <option value="">بدون دوره مرتبط</option>
+                                    {availableCourses.map((c) => (
+                                        <option key={c.documentId || c.id} value={c.documentId || c.id}>
+                                            {c.title} {c.slug ? `(${c.slug})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                                <span className={styles.hint}>
+                                    در صورت انتخاب، کارت پیشنهاد ویژه این دوره در صفحه مقاله نمایش داده می‌شود.
+                                </span>
+                            </div>
+
+                            <div className={styles.field}>
+                                <label htmlFor="featuredProduct">انتخاب محصول مرتبط</label>
+                                <select
+                                    id="featuredProduct"
+                                    className={styles.input}
+                                    value={selectedProduct}
+                                    onChange={(e) => setSelectedProduct(e.target.value)}
+                                >
+                                    <option value="">بدون محصول مرتبط</option>
+                                    {availableProducts.map((p) => (
+                                        <option key={p.documentId || p.id} value={p.documentId || p.id}>
+                                            {p.title} {p.slug ? `(${p.slug})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                                <span className={styles.hint}>
+                                    در صورت انتخاب، کارت پیشنهاد ویژه این محصول نیز با همان استایل شکیل در مقاله رندر می‌شود.
+                                </span>
+                            </div>
+                        </>
+                    )}
 
                     <h3 className={styles.sectionTitle}>تصویر کاور</h3>
 
