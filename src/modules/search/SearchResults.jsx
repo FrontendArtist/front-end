@@ -8,19 +8,17 @@ import ArticleCard from '@/components/cards/ArticleCard/ArticleCard';
 import CourseCard from '@/components/cards/CourseCard/CourseCard';
 import SearchBox from '@/components/ui/SearchBox/SearchBox';
 
-// 1. **CRITICAL FIX:** Define Strapi Base URL for absolute image pathing
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
 
-export default function SearchResults({ data, query }) {
-    const { products = [], articles = [], courses = [] } = data;
+export default function SearchResults({ data, query, initialType = 'all' }) {
+    const { products = [], articles = [], courses = [] } = data || {};
 
-    // Determine available categories
     const hasProducts = products.length > 0;
     const hasArticles = articles.length > 0;
     const hasCourses = courses.length > 0;
+    const totalResults = products.length + articles.length + courses.length;
     const availableCategoriesCount = [hasProducts, hasArticles, hasCourses].filter(Boolean).length;
 
-    // Initialize activeTab strictly based on data availability
     const [activeTab, setActiveTab] = useState(() => {
         if (availableCategoriesCount === 1) {
             if (hasProducts) return 'product';
@@ -32,40 +30,29 @@ export default function SearchResults({ data, query }) {
 
     const hasResults = availableCategoriesCount > 0;
 
-    // Helper: Safely extract Image URL from various Strapi structures and ensures Absolute URL
     const extractImageUrl = (imageData) => {
         if (!imageData) return null;
-
         let relativeUrl = null;
 
-        // Case 1: Simple object (flattened)
         if (imageData.url) relativeUrl = imageData.url;
-        // Case 2: Strapi V5/V4 deep structure (attributes)
         if (imageData.attributes?.url) relativeUrl = imageData.attributes.url;
-        // Case 3: Formats (thumbnail/small) - Preferred for card performance
+
         const formats = imageData.formats || imageData.attributes?.formats;
         if (formats?.thumbnail?.url) relativeUrl = formats.thumbnail.url;
         if (formats?.small?.url) relativeUrl = formats.small.url;
 
         if (!relativeUrl) return null;
 
-        // **CRITICAL FIX (URL Absolute Path):** Prepend Base URL if path is relative
-        const absoluteUrl = relativeUrl.startsWith('http')
+        return relativeUrl.startsWith('http')
             ? relativeUrl
             : `${STRAPI_BASE_URL}${relativeUrl}`;
-
-        return absoluteUrl;
     };
 
-    // Helper: Normalize Product
     const normalizeProduct = (item) => {
-        // Handle 'item.attributes' wrapper if present
         const data = item.attributes || item;
         const id = item.id;
-
-        // Image extraction logic
         let imageObj = null;
-        const imagesRaw = data.images?.data || data.images; // Handle { data: [...] } or [...]
+        const imagesRaw = data.images?.data || data.images;
 
         if (Array.isArray(imagesRaw) && imagesRaw.length > 0) {
             const firstImage = imagesRaw[0];
@@ -74,28 +61,24 @@ export default function SearchResults({ data, query }) {
         }
 
         return {
-            id: id,
+            id,
             slug: data.slug,
             title: data.title,
             price: data.price,
             image: imageObj || { url: '/images/forempties2.png', alt: data.title },
-            // Add other props if ProductCard needs them
         };
     };
 
-    // Helper: Normalize Article
     const normalizeArticle = (item) => {
         const data = item.attributes || item;
         const id = item.id;
-
-        // Cover extraction logic
         let coverObj = null;
         const coverRaw = data.cover?.data || data.cover;
         const url = extractImageUrl(coverRaw);
         if (url) coverObj = { url, alt: data.title };
 
         return {
-            id: id,
+            id,
             slug: data.slug,
             title: data.title,
             date: data.date || data.publishedAt,
@@ -104,19 +87,16 @@ export default function SearchResults({ data, query }) {
         };
     };
 
-    // Helper: Normalize Course
     const normalizeCourse = (item) => {
         const data = item.attributes || item;
         const id = item.id;
-
-        // Image extraction logic
         let imageObj = null;
         const imageRaw = data.image?.data || data.image;
         const url = extractImageUrl(imageRaw);
         if (url) imageObj = { url, alt: data.title };
 
         return {
-            id: id,
+            id,
             slug: data.slug,
             title: data.title,
             price: data.price,
@@ -125,99 +105,95 @@ export default function SearchResults({ data, query }) {
         };
     };
 
-    // Render Logic
-    const renderProducts = () => {
-        if (products.length === 0) return null;
-        return (
-            <>
-                {products.map(product => (
-                    // **FIXED:** Pass the normalized object as the 'product' prop
-                    <ProductCard key={`prod-${product.id}`} product={normalizeProduct(product)} />
-                ))}
-            </>
-        );
-    };
+    const renderProducts = () => products.map(product => (
+        <ProductCard key={`prod-${product.id}`} product={normalizeProduct(product)} />
+    ));
 
-    const renderArticles = () => {
-        if (articles.length === 0) return null;
-        return (
-            <>
-                {articles.map(article => (
-                    // **FIXED:** Pass the normalized object as the 'article' prop
-                    <ArticleCard key={`art-${article.id}`} article={normalizeArticle(article)} />
-                ))}
-            </>
-        );
-    };
+    const renderArticles = () => articles.map(article => (
+        <ArticleCard key={`art-${article.id}`} article={normalizeArticle(article)} />
+    ));
 
-    const renderCourses = () => {
-        if (courses.length === 0) return null;
-        return (
-            <>
-                {courses.map(course => (
-                    // **FIXED:** Pass the normalized object as the 'course' prop
-                    <CourseCard key={`crs-${course.id}`} course={normalizeCourse(course)} />
-                ))}
-            </>
-        );
-    };
+    const renderCourses = () => courses.map(course => (
+        <CourseCard key={`crs-${course.id}`} course={normalizeCourse(course)} />
+    ));
 
     return (
         <div className={styles.resultsContainer}>
             <div className={styles.header}>
-                <h1 className={styles.title}>نتایج جستجو برای: <span>"{query}"</span></h1>
+                <div className={styles.titleBadge}>
+                    <span className={styles.badgeLabel}>نتایج جستجو</span>
+                    {hasResults && <span className={styles.countBadge}>{totalResults} مورد یافت شد</span>}
+                </div>
+                {query ? (
+                    <h1 className={styles.title}>
+                        جستجو برای عبارت: <span className={styles.queryHighlight}>"{query}"</span>
+                    </h1>
+                ) : (
+                    <h1 className={styles.title}>جستجوی پیشرفته در سایت</h1>
+                )}
             </div>
 
-            {/* Added SearchBox for re-searching from the results page */}
             <div className={styles.searchBoxWrapper}>
-                <SearchBox initialQuery={query} />
+                <SearchBox initialQuery={query} initialType={initialType} />
             </div>
 
-            {!hasResults && query && (
+            {!hasResults && (
                 <div className={styles.emptyState}>
-                    <p>نتیجه‌ای برای جستجوی "{query}" یافت نشد.</p>
+                    <div className={styles.emptyIconWrapper}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                        </svg>
+                    </div>
+                    <h3>نتیجه‌ای یافت نشد</h3>
+                    <p>متأسفانه هیچ نتیجه‌ای متناسب با عبارت {query ? `"${query}"` : 'جستجوی شما'} پیدا نشد.</p>
+                    <p className={styles.emptyTip}>پیشنهاد می‌کنیم از کلمات کلیدی دیگری استفاده کنید یا املای کلمات را بررسی نمایید.</p>
                 </div>
             )}
 
             {hasResults && (
                 <>
-                    <div className={styles.tabs}>
-                        {availableCategoriesCount > 1 && (
-                            <button
-                                className={clsx(styles.tab, { [styles.active]: activeTab === 'all' })}
-                                onClick={() => setActiveTab('all')}
-                            >
-                                همه ({products.length + articles.length + courses.length})
-                            </button>
-                        )}
-                        {products.length > 0 && (
-                            <button
-                                className={clsx(styles.tab, { [styles.active]: activeTab === 'product' })}
-                                onClick={() => setActiveTab('product')}
-                            >
-                                محصولات ({products.length})
-                            </button>
-                        )}
-                        {articles.length > 0 && (
-                            <button
-                                className={clsx(styles.tab, { [styles.active]: activeTab === 'article' })}
-                                onClick={() => setActiveTab('article')}
-                            >
-                                مقالات ({articles.length})
-                            </button>
-                        )}
-                        {courses.length > 0 && (
-                            <button
-                                className={clsx(styles.tab, { [styles.active]: activeTab === 'course' })}
-                                onClick={() => setActiveTab('course')}
-                            >
-                                دوره‌ها ({courses.length})
-                            </button>
-                        )}
+                    <div className={styles.tabsWrapper}>
+                        <div className={styles.tabs}>
+                            {availableCategoriesCount > 1 && (
+                                <button
+                                    className={clsx(styles.tab, { [styles.active]: activeTab === 'all' })}
+                                    onClick={() => setActiveTab('all')}
+                                >
+                                    <span>همه موارد</span>
+                                    <span className={styles.tabCount}>{totalResults}</span>
+                                </button>
+                            )}
+                            {hasProducts && (
+                                <button
+                                    className={clsx(styles.tab, { [styles.active]: activeTab === 'product' })}
+                                    onClick={() => setActiveTab('product')}
+                                >
+                                    <span>محصولات</span>
+                                    <span className={styles.tabCount}>{products.length}</span>
+                                </button>
+                            )}
+                            {hasArticles && (
+                                <button
+                                    className={clsx(styles.tab, { [styles.active]: activeTab === 'article' })}
+                                    onClick={() => setActiveTab('article')}
+                                >
+                                    <span>مقالات</span>
+                                    <span className={styles.tabCount}>{articles.length}</span>
+                                </button>
+                            )}
+                            {hasCourses && (
+                                <button
+                                    className={clsx(styles.tab, { [styles.active]: activeTab === 'course' })}
+                                    onClick={() => setActiveTab('course')}
+                                >
+                                    <span>دوره‌ها</span>
+                                    <span className={styles.tabCount}>{courses.length}</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     <div className={styles.grid}>
-                        {/* Only render the active tab content or all content */}
                         {(activeTab === 'all' || activeTab === 'product') && renderProducts()}
                         {(activeTab === 'all' || activeTab === 'article') && renderArticles()}
                         {(activeTab === 'all' || activeTab === 'course') && renderCourses()}
@@ -226,4 +202,4 @@ export default function SearchResults({ data, query }) {
             )}
         </div>
     );
-}
+}

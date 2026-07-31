@@ -23,7 +23,7 @@ export default async function SearchPage({ searchParams }) {
             <div style={{ marginTop: 'var(--space-section-top-desktop)' }}>
                 <Breadcrumb items={breadcrumbItems} />
             </div>
-            <SearchResults data={data} query={query} key={`${query}-${userType}`} />
+            <SearchResults data={data} query={query} initialType={userType} key={`${query}-${userType}`} />
         </main>
     );
 }

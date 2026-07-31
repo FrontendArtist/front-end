@@ -1,6 +1,39 @@
 # CHANGELOG
 
-## [Latest] - 2026-07-29
+## [Latest] - 2026-07-31
+
+### Feature & UI: Search Redesign & Category Filter System
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Fully modernized and redesigned the global search components (SearchBox, SearchOverlay, SearchResults) with glassmorphic aesthetics, CSS variables (`variables.css`), responsive layouts, and a dedicated category filtering system ("محصولات", "مقالات", "دوره‌ها").
+
+#### Changes Made:
+1. **SearchBox Component** (`SearchBox.jsx` & `SearchBox.module.scss`):
+   - Refactored UI to a glassmorphic pill search bar (`backdrop-filter: blur(16px)`).
+   - Styled custom `<select>` category dropdown with custom RTL arrow and focus rings.
+   - Added an inline clear button (`X`) to erase query text.
+   - Replaced invalid SCSS `fade()` calls with standard `color-mix(in srgb, ...)` CSS functions.
+   - Added `initialType` prop support to stay synchronized with search page URL parameters.
+
+2. **SearchOverlay Component** (`SearchOverlay.jsx` & `SearchOverlay.module.scss`):
+   - Transformed overlay backdrop to deep glass blur (`backdrop-filter: blur(20px)`).
+   - Upgraded search overlay to a floating card modal with animated entrance scale.
+   - Added interactive quick category chips ("همه دسته‌ها", "محصولات", "مقالات", "دوره‌ها").
+   - Added active category filter state (`selectedType`) to restrict search query execution strictly to the chosen category.
+   - Integrated keyboard shortcut hint badge (`ESC`) and 90-degree rotating close button.
+
+3. **SearchResults Module** (`SearchResults.jsx` & `SearchResults.module.scss`):
+   - Enhanced header title with query highlight underline and total result count badge.
+   - Upgraded category filter tabs with live item count badges and smooth active pill indicators.
+   - Redesigned empty state card with visual search icon and helpful search suggestions.
+
+4. **Page & Search API Integration** (`src/app/search/page.js`):
+   - Synchronized `userType` parameter between server-side search fetcher and client component tree.
+
+---
+
+## [2026-07-29]
 
 ### Features: Article Tags, Navigation & Related Slider
 **Status**: ✅ COMPLETED (100%)
