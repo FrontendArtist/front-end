@@ -1,13 +1,23 @@
 'use client';
 
 import { useState } from 'react';
+import {
+    Calendar,
+    Star,
+    Reply,
+    ChevronDown,
+    ChevronUp,
+    ShieldCheck,
+    MessageSquare,
+    CornerDownLeft
+} from 'lucide-react';
 import styles from './CommentItem.module.scss';
 
 /**
  * CommentItem - Recursive component for rendering individual comments
- * * فیکس: ارسال documentId به جای ID عددی برای ایجاد رابطه در Strapi v5
+ * Standardizes nested replies to eliminate box-in-box clutter.
  */
-const CommentItem = ({ comment, onReply, depth = 0 }) => {
+const CommentItem = ({ comment, onReply, depth = 0, parentAuthor = null }) => {
     const MAX_DEPTH = 3;
     const [showReplies, setShowReplies] = useState(true);
 
@@ -15,10 +25,8 @@ const CommentItem = ({ comment, onReply, depth = 0 }) => {
         return null;
     }
 
-    // Extract comment data
     const {
         id,
-        // ✅ فیکس: documentId را به صورت صریح استخراج می‌کنیم
         documentId,
         name,
         content = '',
@@ -28,10 +36,8 @@ const CommentItem = ({ comment, onReply, depth = 0 }) => {
         replies = []
     } = comment;
 
-    // Determine the name to display (priority: custom name > user.username > 'کاربر مهمان')
     const displayUsername = name || user.username || 'کاربر مهمان';
 
-    // Format timestamp to Persian date
     const formattedDate = createdAt
         ? new Date(createdAt).toLocaleDateString('fa-IR', {
             year: 'numeric',
@@ -40,96 +46,123 @@ const CommentItem = ({ comment, onReply, depth = 0 }) => {
         })
         : '';
 
-    // Get first letter of username for avatar
-    const avatarLetter = displayUsername ? displayUsername.charAt(0) : 'ک';
+    const avatarLetter = displayUsername ? displayUsername.charAt(0).toUpperCase() : 'ک';
 
-    // Render star rating (1-5 stars)
     const renderStars = () => {
         return Array.from({ length: 5 }, (_, index) => (
-            <span
+            <Star
                 key={index}
                 className={`${styles.star} ${index < rating ? styles.filled : ''}`}
-            >
-                ★
-            </span>
+                fill={index < rating ? 'currentColor' : 'none'}
+            />
         ));
     };
 
-    // Handle reply button click
     const handleReplyClick = () => {
-        if (onReply && documentId) {
-            // ✅✅✅ فیکس اصلی: ارسال documentId به جای ID عددی
-            // documentId همان شناسه رشته‌ای (مثل k1oy...) است که Strapi v5 برای ریلیشن نیاز دارد.
-            onReply(documentId);
+        if (onReply && (documentId || id)) {
+            onReply(documentId || id);
         }
     };
 
+    const isAdmin = displayUsername.includes('مدیر') || displayUsername.includes('طرح الهی') || user.role === 'admin';
+    const isReply = depth > 0;
+
     return (
-        <div className={styles.commentItem} data-depth={depth}>
-            {/* Comment Header: User info and timestamp */}
-            <div className={styles.commentHeader}>
-                <div className={styles.userInfo}>
-                    <div className={styles.avatar}>{avatarLetter}</div>
-                    <span className={styles.username}>{displayUsername}</span>
-                </div>
-                <time className={styles.timestamp}>{formattedDate}</time>
-            </div>
-
-            {/* Comment Body: Rating and content */}
-            <div className={styles.commentBody}>
-                {/* Star Rating Display */}
-                {rating > 0 && (
-                    <div className={styles.rating}>
-                        {renderStars()}
+        <div
+            className={`${styles.commentNode} ${isReply ? styles.isReply : styles.isMainComment}`}
+            data-depth={depth}
+        >
+            <div className={styles.commentContentWrapper}>
+                <div className={styles.commentHeader}>
+                    <div className={styles.userInfo}>
+                        <div className={`${styles.avatar} ${isAdmin ? styles.adminAvatar : ''}`}>
+                            {avatarLetter}
+                        </div>
+                        <div className={styles.userMeta}>
+                            <div className={styles.usernameRow}>
+                                <span className={styles.username}>{displayUsername}</span>
+                                {isAdmin && (
+                                    <span className={styles.adminBadge}>
+                                        <ShieldCheck className={styles.badgeIcon} />
+                                        مدیریت
+                                    </span>
+                                )}
+                                {isReply && parentAuthor && (
+                                    <span className={styles.replyToTag}>
+                                        <CornerDownLeft className={styles.replyToIcon} />
+                                        پاسخ به <strong>@{parentAuthor}</strong>
+                                    </span>
+                                )}
+                            </div>
+                            {formattedDate && (
+                                <time className={styles.timestamp}>
+                                    <Calendar className={styles.timeIcon} />
+                                    <span>{formattedDate}</span>
+                                </time>
+                            )}
+                        </div>
                     </div>
-                )}
 
-                {/* Comment Content */}
-                <p className={styles.content}>{content}</p>
+                    {rating > 0 && depth === 0 && (
+                        <div className={styles.ratingBadge}>
+                            <div className={styles.stars}>{renderStars()}</div>
+                            <span className={styles.ratingNum}>{rating}</span>
+                        </div>
+                    )}
+                </div>
+
+                <div className={styles.commentBody}>
+                    <p className={styles.content}>{content}</p>
+                </div>
+
+                <div className={styles.commentFooter}>
+                    {depth < MAX_DEPTH && (
+                        <button
+                            type="button"
+                            onClick={handleReplyClick}
+                            className={styles.replyBtn}
+                            aria-label={`پاسخ به ${displayUsername}`}
+                        >
+                            <Reply className={styles.replyIcon} />
+                            <span>پاسخ</span>
+                        </button>
+                    )}
+
+                    {replies.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setShowReplies(!showReplies)}
+                            className={styles.toggleRepliesBtn}
+                            aria-label={showReplies ? 'مخفی کردن پاسخ‌ها' : 'نمایش پاسخ‌ها'}
+                        >
+                            {showReplies ? (
+                                <ChevronUp className={styles.chevronIcon} />
+                            ) : (
+                                <ChevronDown className={styles.chevronIcon} />
+                            )}
+                            <span>{replies.length} پاسخ</span>
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* Comment Actions: Reply button */}
-            <div className={styles.commentActions}>
-                {depth < MAX_DEPTH && (
-                    <button
-                        type="button"
-                        onClick={handleReplyClick}
-                        className={styles.replyButton}
-                        aria-label={`پاسخ به نظر ${user.username}`}
-                    >
-                        <span>↩</span>
-                        <span>پاسخ</span>
-                    </button>
-                )}
-
-                {replies.length > 0 && (
-                    <button
-                        type="button"
-                        onClick={() => setShowReplies(!showReplies)}
-                        className={styles.replyButton}
-                        aria-label={showReplies ? 'مخفی کردن پاسخ‌ها' : 'نمایش پاسخ‌ها'}
-                    >
-                        <span>{showReplies ? '▼' : '◀'}</span>
-                        <span>{replies.length} پاسخ</span>
-                    </button>
-                )}
-            </div>
-
-            {/* Nested Replies */}
+            {/* Threaded Nested Replies */}
             {showReplies && replies.length > 0 && (
-                <div className={styles.replies}>
+                <div className={styles.repliesContainer}>
                     {depth < MAX_DEPTH ? (
                         replies.map((reply) => (
                             <CommentItem
-                                key={reply.id}
+                                key={reply.id || reply.documentId}
                                 comment={reply}
                                 onReply={onReply}
                                 depth={depth + 1}
+                                parentAuthor={displayUsername}
                             />
                         ))
                     ) : (
                         <div className={styles.maxDepthReached}>
-                            حداکثر عمق نمایش پاسخ‌ها ({MAX_DEPTH} سطح)
+                            <MessageSquare className={styles.maxDepthIcon} />
+                            <span>ادامه پاسخ‌ها به سقف مجاز رسید</span>
                         </div>
                     )}
                 </div>

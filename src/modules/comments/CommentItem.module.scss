@@ -1,21 +1,71 @@
 @use '@/styles/base/mixins' as *;
 
-.commentItem {
+.commentNode {
     position: relative;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// 1. Top Level Comment (Main Glass Card)
+.isMainComment {
+    background: fade(var(--color-bg-primary-overlay), 65%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid fade(var(--color-title-hover), 18%);
+    border-radius: 20px;
     padding: 24px;
-    border-radius: 16px;
-    background: fade(var(--color-bg-primary-overlay), 50%);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid fade(var(--color-primary), 10%);
-    margin-bottom: 16px;
-    transition: all 0.3s ease;
+    box-shadow: 0 8px 24px fade(var(--color-black), 20%),
+                0 0 0 1px fade(var(--color-primary), 8%) inset;
 
     &:hover {
-        background: fade(var(--color-bg-primary-overlay), 70%);
-        border-color: fade(var(--color-primary), 20%);
-        box-shadow: 0 8px 24px fade(var(--color-black), 30%);
+        border-color: fade(var(--color-title-hover), 35%);
+        box-shadow: 0 12px 32px fade(var(--color-black), 30%),
+                    0 0 0 1px fade(var(--color-title-hover), 20%) inset;
     }
+}
+
+// 2. Nested Reply (Unboxed Minimalist Style - No box inside box!)
+.isReply {
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: none;
+
+    &:hover {
+        background: fade(var(--color-title-hover), 5%);
+    }
+
+    .commentHeader {
+        border-bottom: none;
+        padding-bottom: 0;
+        margin-bottom: 10px;
+    }
+
+    .avatar {
+        width: 34px;
+        height: 34px;
+        font-size: var(--font-md);
+        border-width: 1px;
+    }
+
+    .username {
+        font-size: var(--font-sm-md);
+    }
+
+    .content {
+        font-size: var(--font-sm-md);
+        line-height: 1.7;
+        opacity: 0.9;
+    }
+
+    .commentBody {
+        margin-bottom: 12px;
+    }
+}
+
+.commentContentWrapper {
+    display: flex;
+    flex-direction: column;
 }
 
 .commentHeader {
@@ -25,6 +75,7 @@
     margin-bottom: 16px;
     padding-bottom: 12px;
     border-bottom: 1px solid fade(var(--color-primary), 10%);
+    gap: 12px;
 }
 
 .userInfo {
@@ -34,106 +85,202 @@
 }
 
 .avatar {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    background: linear-gradient(135deg, fade(var(--color-primary), 20%), fade(var(--color-primary), 5%));
-    border: 1px solid fade(var(--color-primary), 30%);
+    background: linear-gradient(135deg, fade(var(--color-title-hover), 25%), fade(var(--color-primary), 10%));
+    border: 1.5px solid fade(var(--color-title-hover), 40%);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: var(--font-lg);
     color: var(--color-title-hover);
     font-weight: var(--font-weight-bold);
+    box-shadow: 0 4px 12px fade(var(--color-black), 20%);
+    flex-shrink: 0;
+
+    &.adminAvatar {
+        background: linear-gradient(135deg, fade(var(--color-gold), 35%), fade(var(--color-success), 20%));
+        border-color: var(--color-gold);
+        color: var(--color-gold);
+    }
+}
+
+.userMeta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.usernameRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .username {
     font-size: var(--font-md);
     color: var(--color-text-primary);
+    font-weight: var(--font-weight-bold);
+}
+
+.adminBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: fade(var(--color-gold), 15%);
+    border: 1px solid fade(var(--color-gold), 30%);
+    color: var(--color-gold);
+    font-size: var(--font-ssm);
+    padding: 2px 8px;
+    border-radius: 12px;
     font-weight: var(--font-weight-medium);
 }
 
-.timestamp {
-    font-size: var(--font-sm);
-    color: var(--color-card-text);
-    opacity: 0.7;
-    direction: rtl;
+.badgeIcon {
+    width: 12px;
+    height: 12px;
 }
 
-.commentBody {
-    margin-bottom: 16px;
-}
-
-.rating {
-    display: flex;
+.replyToTag {
+    display: inline-flex;
     align-items: center;
     gap: 4px;
-    margin-bottom: 12px;
+    font-size: var(--font-ssm);
+    color: var(--color-card-text);
+    opacity: 0.75;
+    background: fade(var(--color-title-hover), 10%);
+    border: 1px solid fade(var(--color-title-hover), 20%);
+    padding: 2px 8px;
+    border-radius: 10px;
+
+    strong {
+        color: var(--color-title-hover);
+    }
+}
+
+.replyToIcon {
+    width: 12px;
+    height: 12px;
+    color: var(--color-title-hover);
+}
+
+.timestamp {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: var(--font-ssm);
+    color: var(--color-card-text);
+    opacity: 0.65;
+}
+
+.timeIcon {
+    width: 12px;
+    height: 12px;
+}
+
+.ratingBadge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: fade(var(--color-black), 25%);
+    border: 1px solid fade(var(--color-title-hover), 20%);
+    padding: 4px 10px;
+    border-radius: 12px;
     direction: ltr;
-    justify-content: flex-end;
+}
+
+.stars {
+    display: flex;
+    gap: 2px;
 }
 
 .star {
-    font-size: var(--font-md-lg);
-    color: fade(var(--color-primary), 30%);
-    transition: color 0.2s ease;
+    width: 13px;
+    height: 13px;
+    color: fade(var(--color-primary), 25%);
 
     &.filled {
-        color: var(--color-text-primary);
-        text-shadow: 0 0 8px fade(var(--color-primary), 50%);
+        color: var(--color-title-hover);
+        filter: drop-shadow(0 0 4px fade(var(--color-title-hover), 50%));
     }
+}
+
+.ratingNum {
+    font-size: var(--font-ssm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-title-hover);
+}
+
+.commentBody {
+    margin-bottom: 14px;
 }
 
 .content {
     font-size: var(--font-md);
-    color: var(--color-text-primary);
-    line-height: 1.7;
+    color: var(--color-card-text);
+    line-height: 1.8;
     white-space: pre-wrap;
     word-wrap: break-word;
     direction: rtl;
     text-align: right;
+    opacity: 0.95;
 }
 
-.commentActions {
+.commentFooter {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-.replyButton {
+.replyBtn,
+.toggleRepliesBtn {
     background: fade(var(--color-primary), 8%);
     color: var(--color-text-primary);
-    border: 1px solid fade(var(--color-primary), 20%);
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: var(--font-sm);
+    border: 1px solid fade(var(--color-primary), 18%);
+    border-radius: 10px;
+    padding: 5px 12px;
+    font-size: var(--font-ssm);
+    font-weight: var(--font-weight-medium);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 
-    &:hover,
-    &:focus-visible {
-        background: var(--color-title-hover);
-        color: var(--color-bg-primary);
-        border-color: var(--color-title-hover);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px fade(var(--color-primary), 30%);
+    .replyIcon,
+    .chevronIcon {
+        width: 14px;
+        height: 14px;
+        color: var(--color-title-hover);
+        transition: transform 0.2s ease;
     }
 
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
+    &:hover {
+        background: linear-gradient(135deg, var(--color-title-hover), var(--color-gold));
+        color: var(--color-bg-primary);
+        border-color: var(--color-title-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px fade(var(--color-title-hover), 30%);
+
+        .replyIcon,
+        .chevronIcon {
+            color: var(--color-bg-primary);
+        }
     }
 }
 
-.replies {
-    margin-top: 20px;
-    margin-right: 32px;
-    padding-right: 24px;
-    border-right: 2px solid fade(var(--color-primary), 20%);
+// Sleek Threaded Lines for Replies (Clean Vertical Line)
+.repliesContainer {
+    margin-top: 12px;
+    margin-right: 18px;
+    padding-right: 16px;
+    border-right: 2px solid fade(var(--color-title-hover), 25%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     position: relative;
 
     &::before {
@@ -141,76 +288,85 @@
         position: absolute;
         right: -2px;
         top: 0;
+        bottom: 0;
         width: 2px;
-        height: 100%;
         background: linear-gradient(180deg,
-                fade(var(--color-primary), 40%) 0%,
-                fade(var(--color-primary), 10%) 50%,
-                fade(var(--color-primary), 0%) 100%);
-    }
-
-    @include respond(sm) {
-        margin-right: 16px;
-        padding-right: 16px;
+                var(--color-title-hover) 0%,
+                fade(var(--color-title-hover), 15%) 80%,
+                transparent 100%);
     }
 }
 
 .maxDepthReached {
-    padding: 16px;
-    background: fade(var(--color-primary), 5%);
+    padding: 8px 14px;
+    background: fade(var(--color-primary), 6%);
     border: 1px dashed fade(var(--color-primary), 20%);
-    border-radius: 8px;
-    text-align: center;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     color: var(--color-card-text);
-    font-size: var(--font-sm);
-    opacity: 0.8;
+    font-size: var(--font-ssm);
+    opacity: 0.75;
+
+    .maxDepthIcon {
+        width: 14px;
+        height: 14px;
+        color: var(--color-title-hover);
+    }
 }
 
-// RTL Specific adjustments
-[dir="rtl"] {
-    .rating {
-        flex-direction: row-reverse;
-    }
+// Cap indentation for deep replies so mobile width is preserved
+.commentNode[data-depth="2"] .repliesContainer,
+.commentNode[data-depth="3"] .repliesContainer {
+    margin-right: 8px;
+    padding-right: 10px;
+}
 
-    .replies {
+[dir="ltr"] {
+    .repliesContainer {
         margin-right: 0;
-        margin-left: 32px;
+        margin-left: 18px;
         padding-right: 0;
-        padding-left: 24px;
+        padding-left: 16px;
         border-right: none;
-        border-left: 2px solid fade(var(--color-primary), 20%);
+        border-left: 2px solid fade(var(--color-title-hover), 25%);
 
         &::before {
             right: auto;
             left: -2px;
         }
+    }
 
-        @include respond(sm) {
-            margin-left: 16px;
-            padding-left: 16px;
-        }
+    .commentNode[data-depth="2"] .repliesContainer,
+    .commentNode[data-depth="3"] .repliesContainer {
+        margin-left: 8px;
+        padding-left: 10px;
     }
 }
 
-// Depth variations for visual hierarchy
-.commentItem[data-depth="0"] {
-    background: fade(var(--color-bg-primary-overlay), 60%);
-    border-width: 1px;
-}
+// Responsive design for mobile devices
+@include respond(sm) {
+    .isMainComment {
+        padding: 16px;
+        border-radius: 16px;
+    }
 
-.commentItem[data-depth="1"] {
-    background: fade(var(--color-bg-primary-overlay), 50%);
-    border-width: 1px;
-    padding: 20px;
-}
+    .isReply {
+        padding: 10px 8px;
+    }
 
-.commentItem[data-depth="2"] {
-    background: fade(var(--color-bg-primary-overlay), 40%);
-    border-width: 1px;
-    padding: 16px;
-}
+    .repliesContainer {
+        margin-right: 10px;
+        padding-right: 10px;
+    }
 
-.commentItem[data-depth="3"] {
-    background: fade(var(--color-bg-primary-overlay), 30%);
-    padding: 12px;
+    .commentHeader {
+        flex-direction: column;
+        align-items: flex-start;
+
+        .ratingBadge {
+            align-self: flex-end;
+        }
+    }
 }

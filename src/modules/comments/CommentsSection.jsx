@@ -2,23 +2,30 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
+import {
+    MessageSquare,
+    Send,
+    Star,
+    User,
+    Sparkles,
+    CheckCircle2,
+    AlertCircle,
+    X,
+    Loader2,
+    PenTool,
+    MessageCircle,
+    CornerDownLeft
+} from 'lucide-react';
 import CommentItem from './CommentItem';
 import { submitComment, getComments } from '@/lib/commentsApi';
 import styles from './CommentsSection.module.scss';
 
 /**
- * CommentsSection - Main component for displaying and submitting comments
- * 
- * Features:
- * - Display list of approved comments with threading
- * - Submit new comments with star rating
- * - Reply to existing comments
- * - Server-side initial data with client-side interactions
- * - Moderation workflow (pending approval message)
+ * CommentsSection - Modern & Premium component for displaying and submitting comments
  * 
  * @param {Object} props
  * @param {string} props.entityType - Type of entity: 'article' | 'product' | 'course' | 'user'
- * @param {number} props.entityId - ID of the entity
+ * @param {number|string} props.entityId - ID of the entity
  * @param {Array} props.initialComments - SSR-fetched comments (optional)
  */
 const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
@@ -28,11 +35,24 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
     const [comments, setComments] = useState(initialComments);
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [replyingTo, setReplyingTo] = useState(null);
+    const [replyingTo, setReplyingTo] = useState(null); // stores comment documentId/id
     const [submitStatus, setSubmitStatus] = useState('idle'); // 'idle' | 'success' | 'error'
     const [errorMessage, setErrorMessage] = useState('');
 
-    // محاسبه تعداد کل کامنت‌ها به صورت بازگشتی (شامل کامنت‌های اصلی و پاسخ‌ها)
+    // Form data
+    const [name, setName] = useState('');
+    const [content, setContent] = useState('');
+    const [rating, setRating] = useState(0);
+    const [hoveredRating, setHoveredRating] = useState(0);
+
+    // Auto-fill name if user is logged in
+    useEffect(() => {
+        if (session?.user?.name && !name) {
+            setName(session.user.name);
+        }
+    }, [session]);
+
+    // Calculate total comment count recursively
     const totalCommentsCount = useMemo(() => {
         const getCount = (items) => {
             if (!Array.isArray(items)) return 0;
@@ -41,13 +61,54 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
         return getCount(comments);
     }, [comments]);
 
-    // Form data
-    const [name, setName] = useState('');
-    const [content, setContent] = useState('');
-    const [rating, setRating] = useState(0);
-    const [hoveredRating, setHoveredRating] = useState(0);
+    // Calculate average rating
+    const ratingStats = useMemo(() => {
+        if (!Array.isArray(comments) || comments.length === 0) return { avg: 0, count: 0 };
 
-    // Character count for validation
+        let totalRating = 0;
+        let ratedCount = 0;
+
+        const processRatings = (items) => {
+            items.forEach((item) => {
+                if (item.rating && item.rating > 0) {
+                    totalRating += Number(item.rating);
+                    ratedCount += 1;
+                }
+                if (item.replies && item.replies.length > 0) {
+                    processRatings(item.replies);
+                }
+            });
+        };
+
+        processRatings(comments);
+
+        return {
+            avg: ratedCount > 0 ? (totalRating / ratedCount).toFixed(1) : 0,
+            count: ratedCount
+        };
+    }, [comments]);
+
+    // Find author name of the comment being replied to
+    const replyingAuthorName = useMemo(() => {
+        if (!replyingTo) return null;
+
+        const findComment = (items) => {
+            for (const item of items) {
+                if (item.documentId === replyingTo || item.id === replyingTo) {
+                    return item.name || item.user?.username || 'کاربر';
+                }
+                if (item.replies && item.replies.length > 0) {
+                    const found = findComment(item.replies);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+
+        return findComment(comments) || 'کاربر';
+    }, [replyingTo, comments]);
+
+    // Validation limits
     const MIN_CONTENT_LENGTH = 10;
     const MAX_CONTENT_LENGTH = 1000;
     const contentLength = content.trim().length;
@@ -55,29 +116,29 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
     const isNameValid = name.trim().length >= 2;
     const isFormValid = isContentValid && rating > 0 && isNameValid;
 
-    /**
-     * Handle star rating selection
-     */
+    const ratingLabels = {
+        1: 'خیلی ضعیف',
+        2: 'ضعیف',
+        3: 'متوسط',
+        4: 'خوب',
+        5: 'عالی'
+    };
+
     const handleRatingClick = (value) => {
         setRating(value);
     };
 
-    /**
-     * Handle form submission
-     */
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // بررسی اینکه آیا کاربر لاگین است یا خیر
         if (!session) {
             setErrorMessage('برای ثبت نظر ابتدا باید وارد حساب کاربری خود شوید');
             setSubmitStatus('error');
             return;
         }
 
-        // Validation
         if (!isFormValid) {
-            setErrorMessage('لطفاً تمام فیلدهای الزامی را پر کنید');
+            setErrorMessage('لطفاً تمام فیلدهای الزامی (امتیاز، نام و متن نظر) را پر کنید');
             setSubmitStatus('error');
             return;
         }
@@ -87,9 +148,6 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
         setErrorMessage('');
 
         try {
-            console.log('🔑 Submission initiated. Current Session User:', session.user);
-
-            // Prepare comment data
             const commentData = {
                 name: name.trim(),
                 content: content.trim(),
@@ -99,22 +157,16 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
                 parentId: replyingTo
             };
 
-            // Submit comment از طریق پروکسی داخلی
             await submitComment(commentData);
 
-            // Show success message
             setSubmitStatus('success');
-
-            // Reset form
-            setName('');
             setContent('');
             setRating(0);
             setReplyingTo(null);
 
-            // Auto-hide success message after 5 seconds
             setTimeout(() => {
                 setSubmitStatus('idle');
-            }, 5000);
+            }, 6000);
 
         } catch (error) {
             console.error('Error submitting comment:', error);
@@ -125,45 +177,23 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
         }
     };
 
-    /**
-     * Handle reply button click
-     */
     const handleReply = (commentId) => {
         setReplyingTo(commentId);
-        // Scroll to form
         const formElement = document.getElementById('comment-form');
         if (formElement) {
             formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     };
 
-    /**
-     * Cancel reply
-     */
     const handleCancelReply = () => {
         setReplyingTo(null);
     };
 
-    /**
-     * Refresh comments (after approval - for future use)
-     */
-    const refreshComments = async () => {
-        setIsLoading(true);
-        try {
-            const freshComments = await getComments(entityType, entityId);
-            setComments(freshComments);
-        } catch (error) {
-            console.error('Error refreshing comments:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Star rating display helper
     const renderStarRating = () => {
         return Array.from({ length: 5 }, (_, index) => {
             const starValue = index + 1;
-            const isActive = starValue <= (hoveredRating || rating);
+            const activeValue = hoveredRating || rating;
+            const isActive = starValue <= activeValue;
 
             return (
                 <button
@@ -175,7 +205,7 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
                     onMouseLeave={() => setHoveredRating(0)}
                     aria-label={`امتیاز ${starValue} ستاره`}
                 >
-                    ★
+                    <Star className={styles.starIcon} fill={isActive ? 'currentColor' : 'none'} />
                 </button>
             );
         });
@@ -183,108 +213,159 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
 
     return (
         <section className={styles.commentsSection} id="comments">
-            {/* Header */}
+            {/* Header Section */}
             <header className={styles.header}>
-                <h2 className={styles.title}>نظرات</h2>
-                <p className={styles.description}>
-                    نظرات خود را با ما به اشتراک بگذارید
-                </p>
+                <div className={styles.headerTitleGroup}>
+                    <div className={styles.iconBadge}>
+                        <MessageSquare className={styles.headerIcon} />
+                    </div>
+                    <div>
+                        <h2 className={styles.title}>دیدگاه‌ها و نظرات</h2>
+                        <p className={styles.description}>
+                            نظرات و تجربیات خود را با دیگران به اشتراک بگذارید
+                        </p>
+                    </div>
+                </div>
+
+                {ratingStats.count > 0 && (
+                    <div className={styles.overallRatingBadge}>
+                        <div className={styles.ratingScore}>{ratingStats.avg}</div>
+                        <div className={styles.ratingStars}>
+                            {Array.from({ length: 5 }, (_, i) => (
+                                <Star
+                                    key={i}
+                                    className={`${styles.smallStar} ${i < Math.round(ratingStats.avg) ? styles.filled : ''}`}
+                                    fill={i < Math.round(ratingStats.avg) ? 'currentColor' : 'none'}
+                                />
+                            ))}
+                        </div>
+                        <span className={styles.ratingCount}>({ratingStats.count} امتیاز ثبت‌شده)</span>
+                    </div>
+                )}
             </header>
 
-            {/* Submit Form */}
+            {/* Comment Form */}
             <form
                 id="comment-form"
                 className={styles.submitForm}
                 onSubmit={handleSubmit}
             >
-                <h3 className={styles.formTitle}>
-                    {replyingTo ? 'پاسخ به نظر' : 'ثبت نظر جدید'}
-                </h3>
-
-                {/* Success Message */}
-                {submitStatus === 'success' && (
-                    <div className={styles.successMessage}>
-                        نظر شما با موفقیت ثبت شد و پس از تأیید نمایش داده خواهد شد.
+                <div className={styles.formHeader}>
+                    <div className={styles.formTitle}>
+                        <PenTool className={styles.formTitleIcon} />
+                        <span>{replyingTo ? 'ارسال پاسخ به دیدگاه' : 'ثبت دیدگاه جدید'}</span>
                     </div>
-                )}
+                    {session?.user && (
+                        <div className={styles.userBadge}>
+                            <User className={styles.userBadgeIcon} />
+                            <span>وارد شده به عنوان: <strong>{session.user.name || session.user.email}</strong></span>
+                        </div>
+                    )}
+                </div>
 
-                {/* Error Message */}
-                {submitStatus === 'error' && (
-                    <div className={styles.errorMessage}>
-                        {errorMessage}
-                    </div>
-                )}
-
-                {/* Reply indicator */}
+                {/* Replying Banner */}
                 {replyingTo && (
-                    <div className={styles.replyingTo}>
-                        <span>در حال پاسخ به نظر شماره {replyingTo}</span>
+                    <div className={styles.replyingToBar}>
+                        <div className={styles.replyingToInfo}>
+                            <CornerDownLeft className={styles.replyIcon} />
+                            <span>در حال پاسخ به دیدگاه <strong>{replyingAuthorName}</strong></span>
+                        </div>
                         <button
                             type="button"
-                            className={styles.cancelReply}
+                            className={styles.cancelReplyBtn}
                             onClick={handleCancelReply}
+                            title="انصراف از پاسخ"
                         >
-                            لغو
+                            <X className={styles.cancelIcon} />
+                            <span>انصراف</span>
                         </button>
                     </div>
                 )}
 
-                {/* Star Rating Input */}
-                <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                        امتیاز شما
-                        <span className={styles.required}>*</span>
-                    </label>
-                    <div className={styles.starRating}>
-                        <div className={styles.starInput}>
-                            {renderStarRating()}
+                {/* Success Alert */}
+                {submitStatus === 'success' && (
+                    <div className={styles.successMessage}>
+                        <CheckCircle2 className={styles.alertIcon} />
+                        <div>
+                            <strong>دیدگاه شما با موفقیت ثبت شد!</strong>
+                            <p>نظر شما پس از بررسی و تأیید مدیریت در سایت قرار خواهد گرفت.</p>
                         </div>
-                        {rating > 0 && (
-                            <span className={styles.ratingLabel}>
-                                {rating} از 5
+                    </div>
+                )}
+
+                {/* Error Alert */}
+                {submitStatus === 'error' && (
+                    <div className={styles.errorMessage}>
+                        <AlertCircle className={styles.alertIcon} />
+                        <span>{errorMessage}</span>
+                    </div>
+                )}
+
+                <div className={styles.formGrid}>
+                    {/* Rating Input */}
+                    <div className={styles.formGroup}>
+                        <label className={styles.label}>
+                            امتیاز شما
+                            <span className={styles.required}>*</span>
+                        </label>
+                        <div className={styles.starRatingContainer}>
+                            <div className={styles.starInput}>
+                                {renderStarRating()}
+                            </div>
+                            <span className={styles.ratingTextLabel}>
+                                {(hoveredRating || rating) > 0
+                                    ? ratingLabels[hoveredRating || rating]
+                                    : ''}
                             </span>
-                        )}
+                        </div>
+                    </div>
+
+                    {/* Name Input */}
+                    <div className={styles.formGroup}>
+                        <label htmlFor="comment-name" className={styles.label}>
+                            نام شما
+                            <span className={styles.required}>*</span>
+                        </label>
+                        <div className={styles.inputWrapper}>
+                            <User className={styles.inputIcon} />
+                            <input
+                                id="comment-name"
+                                type="text"
+                                className={styles.inputStyle}
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="نام و نام خانوادگی..."
+                                disabled={isSubmitting}
+                                maxLength={50}
+                            />
+                        </div>
                     </div>
                 </div>
 
-                {/* Name Input */}
-                <div className={styles.formGroup}>
-                    <label htmlFor="comment-name" className={styles.label}>
-                        نام شما
-                        <span className={styles.required}>*</span>
-                    </label>
-                    <input
-                        id="comment-name"
-                        type="text"
-                        className={styles.inputStyle}
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="نام خود را وارد کنید..."
-                        disabled={isSubmitting}
-                        maxLength={50}
-                    />
-                </div>
-
-                {/* Comment Content */}
+                {/* Content Input */}
                 <div className={styles.formGroup}>
                     <label htmlFor="comment-content" className={styles.label}>
-                        نظر شما
+                        متن دیدگاه
                         <span className={styles.required}>*</span>
                     </label>
-                    <textarea
-                        id="comment-content"
-                        className={styles.textarea}
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        placeholder="نظر خود را اینجا بنویسید... (حداقل 10 کاراکتر)"
-                        disabled={isSubmitting}
-                        maxLength={MAX_CONTENT_LENGTH}
-                    />
-                    <div className={`${styles.charCount} ${!isContentValid && contentLength > 0 ? styles.error : ''}`}>
-                        {contentLength} / {MAX_CONTENT_LENGTH} کاراکتر
-                        {contentLength > 0 && contentLength < MIN_CONTENT_LENGTH && (
-                            <span> (حداقل {MIN_CONTENT_LENGTH} کاراکتر نیاز است)</span>
-                        )}
+                    <div className={styles.textareaWrapper}>
+                        <textarea
+                            id="comment-content"
+                            className={styles.textarea}
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                            placeholder="دیدگاه، پرسش یا پیشنهاد خود را وارد کنید... (حداقل ۱۰ کاراکتر)"
+                            disabled={isSubmitting}
+                            maxLength={MAX_CONTENT_LENGTH}
+                        />
+                    </div>
+                    <div className={styles.charCountRow}>
+                        <div className={`${styles.charCount} ${!isContentValid && contentLength > 0 ? styles.error : ''}`}>
+                            {contentLength} / {MAX_CONTENT_LENGTH} کاراکتر
+                            {contentLength > 0 && contentLength < MIN_CONTENT_LENGTH && (
+                                <span className={styles.minWarning}> (حداقل {MIN_CONTENT_LENGTH} کاراکتر نیاز است)</span>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -296,47 +377,52 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
                 >
                     {isSubmitting ? (
                         <>
-                            <span className={styles.buttonIcon}>⏳</span>
-                            در حال ارسال...
+                            <Loader2 className={styles.spinnerIcon} />
+                            <span>در حال ارسال...</span>
                         </>
                     ) : (
                         <>
-                            <span className={styles.buttonIcon}>✓</span>
-                            ارسال نظر
+                            <Send className={styles.sendIcon} />
+                            <span>ثبت دیدگاه</span>
                         </>
                     )}
                 </button>
             </form>
 
             {/* Comments List */}
-            <div className={styles.commentsList}>
-                {comments.length > 0 && (
-                    <div className={styles.commentsCount}>
-                        <span>نظرات</span>
-                        <span className={styles.countBadge}>{totalCommentsCount}</span>
+            <div className={styles.commentsListContainer}>
+                <div className={styles.commentsListHeader}>
+                    <div className={styles.commentsCountBadge}>
+                        <MessageCircle className={styles.countIcon} />
+                        <span>نظرات کاربران</span>
+                        <span className={styles.countPill}>{totalCommentsCount}</span>
                     </div>
-                )}
+                </div>
 
                 {isLoading ? (
                     <div className={styles.loading}>
-                        <div className={styles.loadingSpinner}></div>
+                        <Loader2 className={styles.spinnerIconLarge} />
                         <p>در حال بارگذاری نظرات...</p>
                     </div>
                 ) : comments.length === 0 ? (
                     <div className={styles.emptyState}>
-                        <div className={styles.emptyIcon}>💬</div>
-                        <p className={styles.emptyText}>هنوز نظری ثبت نشده است</p>
-                        <p className={styles.emptySubtext}>اولین نفری باشید که نظر می‌دهد!</p>
+                        <div className={styles.emptyIconWrapper}>
+                            <Sparkles className={styles.emptyIcon} />
+                        </div>
+                        <h3 className={styles.emptyTitle}>هنوز نظری ثبت نشده است</h3>
+                        <p className={styles.emptySubtext}>اولین نفری باشید که دیدگاه خود را به اشتراک می‌گذارد!</p>
                     </div>
                 ) : (
-                    comments.map((comment) => (
-                        <CommentItem
-                            key={comment.id}
-                            comment={comment}
-                            onReply={handleReply}
-                            depth={0}
-                        />
-                    ))
+                    <div className={styles.commentsTree}>
+                        {comments.map((comment) => (
+                            <CommentItem
+                                key={comment.id || comment.documentId}
+                                comment={comment}
+                                onReply={handleReply}
+                                depth={0}
+                            />
+                        ))}
+                    </div>
                 )}
             </div>
         </section>
