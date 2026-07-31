@@ -1,4 +1,40 @@
 ```text
+[2026-07-31] - Single Product Page Overhaul, SEO JSON-LD, Stock FOMO, Specs Table & Admin TinyMCE Integration
+
+── Single Product Page Architecture & SEO ────────────────────────────────────────
+- Overhauled `/products/[category]/[subcategory]/[slug]/page.js` with Google `Product` JSON-LD schema (offers, priceCurrency IRR, dynamic availability InStock/LimitedAvailability/OutOfStock).
+- Used native HTML `<script type="application/ld+json">` tag to eliminate React 19 / Next.js script warnings in Server Components.
+- Refactored page data loading using `Promise.all` for parallel fetching of product, comments, related products, category tree, and markdown parsing.
+- Integrated `ArticleReader` with `safeParseMarkdown` (`marked` parser with try/catch fallback) for rich text content rendering.
+
+── Hero Section & Stock FOMO Logic ───────────────────────────────────────────────
+- Implemented Stock FOMO badge in `ProductDetails.jsx` with 3 dynamic states:
+  - `stock > 10`: "موجود در انبار" (Green success badge)
+  - `0 < stock <= 10`: "تنها X عدد در انبار باقیست!" (Warning badge with pulsing CSS red dot animation)
+  - `stock === 0`: "ناموجود" (Gray disabled badge)
+- Displayed `shortDescription` in styled hero banner with gold accent border.
+- Formatted Persian currency numbers for main and discount prices.
+
+── Product Specifications Component ─────────────────────────────────────────────
+- Created `ProductSpecs.jsx` Server Component to render key-value array (`[{ key, value }]`) in a Zebra-Striped table.
+- Styled with CSS custom properties from `variables.css`, gold title underlines, and mobile-friendly horizontal scrolling.
+- Returns `null` when no specifications are provided to avoid empty section rendering.
+
+── Related Products Slider Component ─────────────────────────────────────────────
+- Created `RelatedProducts.jsx` Client Component using `BaseSlider` and `ProductCard`.
+- Implemented `getRelatedProducts` in `productsApi.js` with slug-based exclusion of the current product (resolving Strapi v5 draft/publish ID filter anomalies).
+- Added fallback algorithm to auto-fetch general catalog items when category siblings are fewer than requested limit.
+
+── Backend Schema & API Layer Extensions ─────────────────────────────────────────
+- Added `shortDescription` (text), `content` (text), and `specifications` (json) fields to Strapi Product schema (`backend/src/api/product/content-types/product/schema.json`).
+- Updated `formatStrapiProducts` in `strapiUtils.js` and `getProductBySlug` in `productsApi.js` to return all new attributes.
+
+── Admin Panel TinyMCE & Specs Management ──────────────────────────────────────
+- Integrated TinyMCE Visual Editor (`@tinymce/tinymce-react`) into `ProductForm.jsx` for `content` field, supporting Persian RTL, custom headings (H2/H3 for automatic TOC creation), lists, tables, and media formatting.
+- Added `shortDescription` textarea input for hero summary.
+- Built dynamic Key-Value Specifications Editor (`specsEditor`) with live row addition, key/value inputs, and deletion.
+- Updated `getAdminProductById` in `adminApi.js` and POST/PUT API routes in `/api/admin/products` to save and populate all new product fields.
+
 [2026-07-29] - Fix Nested Array Prop Handling for RelatedProductCTA
 
 ── Bug Fix & Array Flattening ────────────────────────────────────────────────

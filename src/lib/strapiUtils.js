@@ -53,7 +53,23 @@ export function formatStrapiProducts(apiResponse) {
       const attrs = item.attributes || item;
       const priceVal = typeof attrs.price === 'object' ? attrs.price?.toman || 0 : (attrs.price || 0);
       const priceObject = { toman: priceVal };
-      const shortDescription = (attrs.description && attrs.description[0]?.children?.[0]?.text) || attrs.shortDescription || attrs.excerpt || '';
+
+      // shortDescription: اولویت با فیلد مستقل shortDescription، سپس fallback به اولین پاراگراف description
+      const shortDescription =
+        attrs.shortDescription ||
+        (attrs.description && attrs.description[0]?.children?.[0]?.text) ||
+        attrs.excerpt ||
+        '';
+
+      // content: فیلد متنی مارک‌داون برای محتوای عمیق محصول
+      const content = attrs.content || null;
+
+      // specifications: آرایه‌ای از { key, value } برای جدول مشخصات فنی
+      const specifications = Array.isArray(attrs.specifications) ? attrs.specifications : [];
+
+      // stock و isAvailable برای لاجیک FOMO موجودی
+      const stock = typeof attrs.stock === 'number' ? attrs.stock : 0;
+      const isAvailable = attrs.isAvailable !== false; // پیش‌فرض: true
 
       const rawImage = attrs.image || (attrs.images && (attrs.images[0] || attrs.images.data?.[0])) || attrs.cover || null;
       const images = (attrs.images || []).map(img => formatSingleImage(img));
@@ -95,6 +111,10 @@ export function formatStrapiProducts(apiResponse) {
         price: priceObject,
         discountPrice: attrs.discountPrice || attrs.discount_price || null,
         shortDescription: shortDescription,
+        content: content,
+        specifications: specifications,
+        stock: stock,
+        isAvailable: isAvailable,
         images: images,
         image: mainImage,
         categories: categories,

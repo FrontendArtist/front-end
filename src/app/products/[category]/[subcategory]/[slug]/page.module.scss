@@ -1,79 +1,67 @@
 @use '../../../../../styles/base/mixins' as *;
 
-.productPage {
-  padding: var(--space-section-top-desktop) 0;
+// =============================================================================
+// Product Single Page — Layout Styles
+// استایل‌های کانتینر بخش‌های زیر Hero
+// =============================================================================
+
+// ── بخش محتوای عمیق (ArticleReader) ──────────────────────────────────────────
+.contentSection {
+  padding-top: 3rem;
+  padding-bottom: 1rem;
+
+  // خط جداکننده بالایی
+  &::before {
+    content: '';
+    display: block;
+    width: 100%;
+    max-width: 1120px;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(246, 217, 130, 0.2),
+      transparent
+    );
+    margin: 0 auto 2.5rem;
+  }
 
   @include respond(md) {
-    padding: 96px 0;
+    padding-top: 2rem;
+  }
+}
+
+// ── بخش محصولات مرتبط ────────────────────────────────────────────────────────
+.relatedSection {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+// ── بخش نظرات ────────────────────────────────────────────────────────────────
+.commentsSection {
+  padding-top: 2rem;
+  padding-bottom: var(--space-section-bottom-desktop);
+
+  // خط جداکننده بالایی
+  &::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(246, 217, 130, 0.15),
+      transparent
+    );
+    margin-bottom: 2.5rem;
+  }
+
+  @include respond(md) {
+    padding-bottom: 60px;
   }
 
   @include respond(sm) {
-    padding: 64px 0;
-  }
-}
-
-.layoutGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-gap-desktop);
-
-  @include respond(md) {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
-}
-
-.gallery {
-  width: 100%;
-}
-
-.mainImage {
-  width: 100%;
-  height: auto;
-  border-radius: 16px;
-  object-fit: cover;
-}
-
-.details {
-  display: flex;
-  flex-direction: column;
-
-  .title {
-    font-size: var(--font-xl);
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-bold);
-    margin-bottom: 1rem;
-
-    @include respond(md) {
-      font-size: var(--font-lg-xl);
-    }
-
-    @include respond(sm) {
-      font-size: var(--font-lg-xl);
-    }
-  }
-
-  .price {
-    font-size: var(--font-lg);
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
-    margin-bottom: 1.5rem;
-
-    @include respond(md) {
-      font-size: var(--font-md-lg);
-      margin-bottom: 1rem;
-    }
-  }
-
-  .description {
-    font-size: var(--font-md);
-    color: var(--color-card-text);
-    line-height: var(--line-height-lg);
-    margin-bottom: 2rem;
-
-    @include respond(md) {
-      font-size: var(--font-sm);
-      margin-bottom: 1.5rem;
-    }
+    padding-bottom: 40px;
   }
 }

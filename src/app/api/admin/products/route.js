@@ -27,7 +27,8 @@ export async function POST(request) {
 
     const {
         title, slug, price, stock, isAvailable,
-        description, images, categories, tags, publishedAt,
+        description, shortDescription, content, specifications,
+        images, categories, tags, publishedAt,
     } = body;
 
     const strapiPayload = {
@@ -38,6 +39,9 @@ export async function POST(request) {
             stock: stock != null ? Number(stock) : null,
             isAvailable: !!isAvailable,
             description,
+            shortDescription: shortDescription || null,
+            content: content || null,
+            specifications: Array.isArray(specifications) ? specifications : [],
             images,      // array of media ids
             categories,  // array of documentIds
             tags,        // array of documentIds

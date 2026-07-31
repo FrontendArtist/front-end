@@ -1,48 +1,225 @@
 @use '@/styles/base/mixins' as *;
 
+// =============================================================================
+// ProductDetails — Hero Section Styles
+// طراحی مدرن، تاریک، با لهجه‌های طلایی
+// =============================================================================
+
 .productPage {
-  padding: 2rem 0;
+  padding-top: var(--space-section-top-desktop);
+  padding-bottom: 2rem;
   min-height: 100vh;
-  margin-top: var(--space-section-top-desktop);
+
+  @include respond(md) {
+    padding-top: 96px;
+  }
+
+  @include respond(sm) {
+    padding-top: 72px;
+  }
 }
+
+// =============================================================================
+// Hero Grid — گالری + اطلاعات
+// =============================================================================
 
 .layoutGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  gap: var(--space-gap-desktop);
   margin-top: 2rem;
+  align-items: start;
 
-  @media (max-width: 768px) {
+  @include respond(md) {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 2.5rem;
   }
 }
 
-.gallery {
+// ── ستون گالری ────────────────────────────────────────────────────────────────
+.galleryCol {
   width: 100%;
+  position: sticky;
+  top: 90px;
+  align-self: flex-start;
+
+  @include respond(md) {
+    position: static;
+  }
 }
 
-.details {
+// ── ستون اطلاعات ──────────────────────────────────────────────────────────────
+.infoCol {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
+// =============================================================================
+// بج دسته‌بندی
+// =============================================================================
+
+.categoryBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.85rem;
+  background: rgba(246, 217, 130, 0.1);
+  border: 1px solid rgba(246, 217, 130, 0.3);
+  border-radius: 20px;
+  font-size: var(--font-ssm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-title-hover);
+  letter-spacing: 0.02em;
+  width: fit-content;
+}
+
+// =============================================================================
+// عنوان محصول
+// =============================================================================
+
 .title {
-  font-size: 2rem;
-  font-weight: bold;
-  color: var(--color-primary-text);
+  font-size: var(--font-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-card-text);
+  line-height: var(--line-height-sm);
   margin: 0;
+
+  @include respond(md) {
+    font-size: var(--font-lg-xl);
+  }
+
+  @include respond(sm) {
+    font-size: var(--font-lg);
+  }
+}
+
+// =============================================================================
+// توضیح کوتاه
+// =============================================================================
+
+.shortDescription {
+  font-size: var(--font-sm-md);
+  color: rgba(255, 255, 255, 0.75);
+  line-height: var(--line-height-lg);
+  margin: 0;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-right: 3px solid rgba(246, 217, 130, 0.4);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+
+  @include respond(sm) {
+    font-size: var(--font-sm);
+  }
+}
+
+// =============================================================================
+// بخش قیمت
+// =============================================================================
+
+.priceBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .price {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: var(--font-lg-xl);
+  font-weight: var(--font-weight-bold);
   color: var(--color-title-hover);
+  letter-spacing: 0.01em;
 }
 
-.description {
-  font-size: 1rem;
-  line-height: 1.8;
-  color: var(--color-card-text);
+.priceDiscount {
+  font-size: var(--font-lg-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-success-light);
+  letter-spacing: 0.01em;
+}
+
+.priceOriginal {
+  font-size: var(--font-sm);
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: line-through;
+  font-weight: var(--font-weight-regular);
+}
+
+// =============================================================================
+// Stock FOMO Badge — سه حالت: موجود، هشدار، ناموجود
+// =============================================================================
+
+.stockBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  width: fit-content;
+  border: 1px solid transparent;
+
+  // ── حالت موجود (سبز) ───────────────────────────────────────────────────────
+  &.stock--success {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: var(--color-success);
+
+    .stockDot {
+      background-color: var(--color-success);
+      box-shadow: 0 0 6px var(--color-success);
+    }
+  }
+
+  // ── حالت هشدار / FOMO (قرمز-نارنجی) ─────────────────────────────────────
+  &.stock--warning {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #f87171;
+
+    // نقطه چشمک‌زن برای ایجاد حس فوریت
+    .stockDot {
+      background-color: #ef4444;
+      box-shadow: 0 0 6px #ef4444;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+  }
+
+  // ── حالت ناموجود (خاکستری) ─────────────────────────────────────────────────
+  &.stock--danger {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.45);
+
+    .stockDot {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+// نقطه وضعیت
+.stockDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+// انیمیشن چشمک‌زن برای FOMO
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+// =============================================================================
+// دکمه سبد خرید
+// =============================================================================
+
+.cartAction {
+  margin-top: 0.5rem;
 }

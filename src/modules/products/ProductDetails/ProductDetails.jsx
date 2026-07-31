@@ -1,36 +1,123 @@
 /**
- * ProductDetails Component
- * Reusable component for rendering product details page UI
- * 
- * Used in:
- * - /products/[category]/[subcategory]/[slug] (Deep route)
- * - /product/[slug] (Hybrid route)
+ * ProductDetails — Server Component (Hero Section)
+ *
+ * بخش اصلی صفحه محصول شامل:
+ * - گالری تصاویر
+ * - عنوان، shortDescription، قیمت
+ * - لاجیک Stock FOMO (نشانگر موجودی هوشمند)
+ * - دکمه افزودن به سبد خرید
+ * - جدول مشخصات فنی (ProductSpecs)
+ *
+ * @param {{ product: object, breadcrumbItems: Array }} props
  */
 
+import Image from 'next/image';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ProductGallery from '@/components/products/ProductGallery/ProductGallery';
 import ProductAddToCart from '@/components/products/ProductAddToCart/ProductAddToCart';
+import ProductSpecs from '@/modules/products/ProductSpecs/ProductSpecs';
 import styles from './ProductDetails.module.scss';
 
+// ── تابع کمکی: محاسبه حالت FOMO موجودی ─────────────────────────────────────
+/**
+ * @param {number} stock
+ * @param {boolean} isAvailable
+ * @returns {{ label: string, variant: 'success' | 'warning' | 'danger' }}
+ */
+function getStockStatus(stock, isAvailable) {
+  if (!isAvailable || stock === 0) {
+    return { label: 'ناموجود', variant: 'danger' };
+  }
+  if (stock > 0 && stock <= 10) {
+    return { label: `تنها ${stock} عدد در انبار باقیست!`, variant: 'warning' };
+  }
+  return { label: 'موجود در انبار', variant: 'success' };
+}
+
+// ── تابع فرمت‌دهی قیمت به صورت فارسی ──────────────────────────────────────
+function formatPrice(price) {
+  const toman = typeof price === 'object' ? price?.toman : price;
+  if (!toman) return null;
+  return toman.toLocaleString('fa-IR');
+}
+
 export default function ProductDetails({ product, breadcrumbItems }) {
+  const { stock = 0, isAvailable = true, specifications = [] } = product;
+
+  // وضعیت موجودی
+  const stockStatus = getStockStatus(stock, isAvailable);
+
+  // قیمت‌ها
+  const mainPrice = formatPrice(product.price);
+  const discountPrice = product.discountPrice ? formatPrice(product.discountPrice) : null;
+
   return (
     <main className={styles.productPage}>
       <div className="container">
+        {/* Breadcrumb */}
         <Breadcrumb items={breadcrumbItems} />
+
+        {/* ── Hero Grid: گالری | اطلاعات اصلی ──────────────────────────────── */}
         <div className={styles.layoutGrid}>
-          <div className={styles.gallery}>
+
+          {/* ستون چپ: گالری تصاویر */}
+          <div className={styles.galleryCol}>
             <ProductGallery images={product.images} />
           </div>
 
-          <div className={styles.details}>
+          {/* ستون راست: اطلاعات محصول */}
+          <div className={styles.infoCol}>
+
+            {/* دسته‌بندی */}
+            {product.categories?.length > 0 && (
+              <div className={styles.categoryBadge}>
+                {product.categories[0].name}
+              </div>
+            )}
+
+            {/* عنوان */}
             <h1 className={styles.title}>{product.title}</h1>
-            <div className={styles.price}>{product.price.toman.toLocaleString()} تومان</div>
-            <p className={styles.description}>{product.shortDescription}</p>
-            <ProductAddToCart product={product} />
+
+            {/* توضیح کوتاه */}
+            {product.shortDescription && (
+              <p className={styles.shortDescription}>{product.shortDescription}</p>
+            )}
+
+            {/* ── بخش قیمت ────────────────────────────────────────────────── */}
+            <div className={styles.priceBox}>
+              {discountPrice ? (
+                <>
+                  <span className={styles.priceOriginal}>{mainPrice} تومان</span>
+                  <span className={styles.priceDiscount}>{discountPrice} تومان</span>
+                </>
+              ) : (
+                <span className={styles.price}>{mainPrice} تومان</span>
+              )}
+            </div>
+
+            {/* ── نشانگر موجودی FOMO ──────────────────────────────────────── */}
+            <div
+              className={`${styles.stockBadge} ${styles[`stock--${stockStatus.variant}`]}`}
+              role="status"
+              aria-live="polite"
+            >
+              {/* نقطه چشمک‌زن */}
+              <span className={styles.stockDot} aria-hidden="true" />
+              <span className={styles.stockLabel}>{stockStatus.label}</span>
+            </div>
+
+            {/* ── دکمه افزودن به سبد ──────────────────────────────────────── */}
+            <div className={styles.cartAction}>
+              <ProductAddToCart product={product} />
+            </div>
+
           </div>
         </div>
+
+        {/* ── جدول مشخصات فنی ─────────────────────────────────────────────── */}
+        <ProductSpecs specifications={specifications} />
+
       </div>
     </main>
   );
 }
-

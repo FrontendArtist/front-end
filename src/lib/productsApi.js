@@ -29,6 +29,7 @@ export async function getAllProducts() {
 
 /**
  * واکشی یک محصول خاص با استفاده از slug
+ * populate شامل تمام فیلدهای مورد نیاز صفحه تکی محصول
  */
 export async function getProductBySlug(slug) {
   try {
@@ -188,5 +189,52 @@ export async function getProductsPaginated(
       fallback.error = 'BACKEND_UNAVAILABLE';
     }
     return fallback;
+  }
+}
+
+/**
+ * واکشی محصولات مرتبط (هم‌دسته‌بندی، با استثنا کردن محصول جاری)
+ * @param {{
+ *   currentId?: string | number,
+ *   currentSlug?: string,
+ *   categorySlug?: string,
+ *   limit?: number
+ * }} params
+ */
+export async function getRelatedProducts({ currentId = null, currentSlug = null, categorySlug = null, limit = 6 } = {}) {
+  try {
+    // تابع کمکی: استثنا کردن محصول جاری — slug (قطعی) + id/documentId (پشتیبان)
+    const excludeCurrent = (list) =>
+      list.filter((p) => {
+        if (currentSlug && p.slug === currentSlug) return false;
+        if (currentId && String(p.id) === String(currentId)) return false;
+        if (currentId && String(p.documentId) === String(currentId)) return false;
+        return true;
+      });
+
+    // مرحله ۱: محصولات هم‌دسته
+    let result = [];
+    if (categorySlug) {
+      const url = `/api/products?populate[categories][populate]=parent&populate[images]=true&pagination[limit]=${limit + 4}&sort=createdAt:desc&filters[categories][slug][$eq]=${categorySlug}`;
+      const res = await apiClient(url);
+      result = excludeCurrent(formatStrapiProducts(res));
+    }
+
+    // مرحله ۲: فال‌بک — جدیدترین محصولات اگر نتیجه کافی نبود
+    if (result.length < limit) {
+      const fbUrl = `/api/products?populate[categories][populate]=parent&populate[images]=true&pagination[limit]=${limit + 4}&sort=createdAt:desc`;
+      const fbRes = await apiClient(fbUrl);
+      const extra = excludeCurrent(formatStrapiProducts(fbRes)).filter(
+        (p) => !result.some((r) => String(r.id) === String(p.id))
+      );
+      result = [...result, ...extra];
+    }
+
+    return result.slice(0, limit);
+  } catch (error) {
+    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
+      console.error('خطا در واکشی محصولات مرتبط:', error.message);
+    }
+    return [];
   }
 }

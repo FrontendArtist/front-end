@@ -14,6 +14,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { Editor } from '@tinymce/tinymce-react';
 import styles from './Products.module.scss';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
@@ -105,7 +106,13 @@ export default function ProductForm({ product = null, categories = [], tags = []
     const router = useRouter();
     const { toasts, addToast } = useToast();
     const fileInputRef = useRef(null);
+    const editorRef = useRef(null);
     const isEdit = !!product;
+
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     // ── Form fields state ────────────────────────────────────────────────────
     const [title, setTitle] = useState(product?.title || '');
@@ -113,6 +120,11 @@ export default function ProductForm({ product = null, categories = [], tags = []
     const [price, setPrice] = useState(product?.price ?? '');
     const [stock, setStock] = useState(product?.stock ?? '');
     const [isAvailable, setIsAvailable] = useState(product?.isAvailable ?? true);
+    const [shortDescription, setShortDescription] = useState(product?.shortDescription || '');
+    const [content, setContent] = useState(product?.content || '');
+    const [specifications, setSpecifications] = useState(() =>
+        Array.isArray(product?.specifications) ? product.specifications : []
+    );
     const [description, setDescription] = useState(() => {
         // Strapi Blocks field is an array of block objects.
         // Extract all text from all paragraphs so the textarea is fully pre-filled.
@@ -140,6 +152,21 @@ export default function ProductForm({ product = null, categories = [], tags = []
             name: t.name || t.title,
         }))
     );
+
+    // ── Specification Helpers ────────────────────────────────────────────────
+    const addSpec = () => {
+        setSpecifications((prev) => [...prev, { key: '', value: '' }]);
+    };
+
+    const updateSpec = (index, field, val) => {
+        setSpecifications((prev) =>
+            prev.map((item, i) => (i === index ? { ...item, [field]: val } : item))
+        );
+    };
+
+    const removeSpec = (index) => {
+        setSpecifications((prev) => prev.filter((_, i) => i !== index));
+    };
 
     // ── Images state ──────────────────────────────────────────────────────────
     // existingImages: already saved in Strapi (have a documentId / url)
@@ -259,12 +286,23 @@ export default function ProductForm({ product = null, categories = [], tags = []
                     }))
                 : [];
 
+            // Get content from TinyMCE editor if available
+            const currentContent = editorRef.current ? editorRef.current.getContent() : content;
+
+            // Filter out empty specifications
+            const cleanSpecs = specifications
+                .filter((s) => s.key?.trim() || s.value?.trim())
+                .map((s) => ({ key: (s.key || '').trim(), value: (s.value || '').trim() }));
+
             const payload = {
                 title: title.trim(),
                 slug: slug.trim(),
                 price: price !== '' ? Number(price) : null,
                 stock: stock !== '' ? Number(stock) : null,
                 isAvailable,
+                shortDescription: shortDescription.trim() || null,
+                content: currentContent.trim() || null,
+                specifications: cleanSpecs,
                 description: descriptionBlocks,
                 images: allImageIds,
                 categories: selectedCategories.map((c) => c.documentId),
@@ -406,17 +444,120 @@ export default function ProductForm({ product = null, categories = [], tags = []
                             />
                         </div>
 
-                        {/* ── توضیحات ──────────────────────────────────── */}
+                        {/* ── توضیح کوتاه ─────────────────────────────── */}
                         <div className={`${styles.field} ${styles['field--full']}`}>
-                            <label htmlFor="pf-description">توضیحات</label>
+                            <label htmlFor="pf-shortDesc">توضیح کوتاه (Hero Section)</label>
+                            <textarea
+                                id="pf-shortDesc"
+                                className={styles.textarea}
+                                value={shortDescription}
+                                onChange={(e) => setShortDescription(e.target.value)}
+                                placeholder="توضیح مختصر محصول برای نمایش زیر عنوان در هدر صفحه محصول..."
+                                disabled={saving}
+                                rows={2}
+                            />
+                            <span className={styles.hint}>
+                                خلاصه ۱ الی ۲ جمله‌ای که در بخش اصلی بالای صفحه محصول نمایش داده می‌شود.
+                            </span>
+                        </div>
+
+                        {/* ── محتوای عمیق (TinyMCE Rich Text Editor) ─────── */}
+                        <div className={`${styles.field} ${styles['field--full']}`}>
+                            <label>محتوای کامل و عمیق (ویرایشگر بصری TinyMCE)</label>
+                            {isMounted ? (
+                                <Editor
+                                    apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY || 'no-api-key'}
+                                    onInit={(_evt, editor) => (editorRef.current = editor)}
+                                    initialValue={product?.content || content || ''}
+                                    init={{
+                                        height: 480,
+                                        menubar: false,
+                                        language: 'fa',
+                                        directionality: 'rtl',
+                                        plugins: [
+                                            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                                            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                                            'insertdatetime', 'media', 'table', 'help', 'wordcount'
+                                        ],
+                                        toolbar: 'undo redo | blocks | ' +
+                                            'bold italic forecolor | alignright aligncenter alignleft alignjustify | ' +
+                                            'bullist numlist outdent indent | ' +
+                                            'table link image media | code preview fullscreen | removeformat',
+                                        content_style: 'body { font-family:tahoma,arial,sans-serif; font-size:14px; direction: rtl; text-align: right; }'
+                                    }}
+                                />
+                            ) : (
+                                <div style={{ height: 480, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-primary)' }}>
+                                    در حال بارگذاری ویرایشگر...
+                                </div>
+                            )}
+                            <span className={styles.hint}>
+                                می‌توانید از منوی تیترها (Blocks) عنوان‌های «Heading 2» یا «Heading 3» انتخاب کنید تا فهرست مطالب (TOC) در صفحه محصول به‌صورت خودکار ایجاد شود.
+                            </span>
+                        </div>
+
+                        {/* ── مشخصات فنی (Key-Value) ───────────────────── */}
+                        <div className={`${styles.field} ${styles['field--full']}`}>
+                            <label>مشخصات فنی (جدول ویژگی‌ها)</label>
+                            <div className={styles.specsEditor}>
+                                {specifications.length > 0 ? (
+                                    specifications.map((spec, index) => (
+                                        <div key={index} className={styles.specRow}>
+                                            <input
+                                                type="text"
+                                                className={styles.input}
+                                                placeholder="عنوان (مثلاً نویسنده)"
+                                                value={spec.key || ''}
+                                                onChange={(e) => updateSpec(index, 'key', e.target.value)}
+                                                disabled={saving}
+                                            />
+                                            <input
+                                                type="text"
+                                                className={styles.input}
+                                                placeholder="مقدار (مثلاً مولانا)"
+                                                value={spec.value || ''}
+                                                onChange={(e) => updateSpec(index, 'value', e.target.value)}
+                                                disabled={saving}
+                                            />
+                                            <button
+                                                type="button"
+                                                className={styles.btnRemoveSpec}
+                                                onClick={() => removeSpec(index)}
+                                                disabled={saving}
+                                                title="حذف مشخصه"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className={styles.hint} style={{ margin: 0 }}>
+                                        هنوز مشخصه‌ای ثبت نشده است. با دکمه زیر مشخصات فنی اضافه کنید.
+                                    </p>
+                                )}
+
+                                <button
+                                    type="button"
+                                    className={styles.btnAddSpec}
+                                    onClick={addSpec}
+                                    disabled={saving}
+                                >
+                                    + افزودن مشخصه جدید
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* ── توضیحات عمومی ───────────────────────────── */}
+                        <div className={`${styles.field} ${styles['field--full']}`}>
+                            <label htmlFor="pf-description">توضیحات پیش‌فرض (Blocks)</label>
                             <textarea
                                 id="pf-description"
                                 className={styles.textarea}
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                placeholder="توضیحات محصول را وارد کنید..."
+                                placeholder="توضیحات عمومی محصول را وارد کنید..."
                                 disabled={saving}
-                                rows={5}
+                                rows={4}
                             />
                         </div>
 
