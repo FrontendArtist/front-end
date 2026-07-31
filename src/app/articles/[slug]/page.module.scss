@@ -18,13 +18,14 @@
 }
 
 .title {
-  font-size: var(--font-xl);
+  font-size: var(--font-lg);
   color: var(--color-title-hover);
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem;
 }
 
 .date {
   color: var(--color-text-primary);
+  font-size: var(--font-ssm);
   opacity: 0.8;
 }
 
@@ -62,12 +63,12 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.4rem 1rem;
+  padding: 0.35rem 0.9rem;
   background: #002b20;
   border: 1px solid rgba(246, 217, 130, 0.35);
   border-radius: 20px;
   color: var(--color-title-hover);
-  font-size: var(--font-sm);
+  font-size: var(--font-ssm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -87,7 +88,7 @@
   padding: 1.5rem 2rem;
   border-radius: var(--radius-card, 24px);
   border: 1px solid rgba(246, 217, 130, 0.2);
-  font-size: var(--font-md-lg);
+  font-size: var(--font-sm-md);
   font-weight: var(--font-weight-medium);
 }
 
@@ -251,12 +252,12 @@
   }
 
   // ---- Headings ----
-  h2 {
-    font-size: var(--font-lg-xl, 24px);
+  h1 {
+    font-size: var(--font-lg);
     color: var(--color-title-hover, #F5C452);
-    margin-top: 3rem;
-    margin-bottom: 1.25rem;
-    padding-bottom: 0.55rem;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.45rem;
     position: relative;
     font-weight: var(--font-weight-bold, 700);
 
@@ -265,7 +266,28 @@
       position: absolute;
       bottom: 0;
       right: 0;
-      width: 70px;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--color-title-hover), transparent);
+      border-radius: 3px;
+    }
+  }
+
+  h2 {
+    font-size: var(--font-md-lg);
+    color: var(--color-title-hover, #F5C452);
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.45rem;
+    position: relative;
+    font-weight: var(--font-weight-bold, 700);
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 60px;
       height: 3px;
       background: linear-gradient(90deg, var(--color-title-hover), transparent);
       border-radius: 3px;
@@ -273,18 +295,18 @@
   }
 
   h3 {
-    font-size: var(--font-lg, 20px);
+    font-size: var(--font-sm);
     color: var(--color-title-hover, #F5C452);
-    margin-top: 2rem;
-    margin-bottom: 1rem;
+    margin-top: 1.75rem;
+    margin-bottom: 0.85rem;
     font-weight: var(--font-weight-bold, 700);
   }
 
   // ---- Paragraphs ----
   p {
-    margin-bottom: 1.5rem;
-    font-size: var(--font-md, 16px);
-    line-height: 1.85;
+    margin-bottom: 1.25rem;
+    font-size: var(--font-sm);
+    line-height: 1.8;
     color: #fff;
 
     strong {
@@ -305,14 +327,15 @@
 
   // ---- Blockquotes ----
   blockquote {
-    margin: 2rem 0;
-    padding: 1.5rem 1.75rem;
+    margin: 1.75rem 0;
+    padding: 1.25rem 1.5rem;
     background: #002b20;
     border-right: 4px solid var(--color-title-hover, #F5C452);
     border-radius: 0 12px 12px 0;
 
     p {
       color: #fff;
+      font-size: var(--font-sm);
       margin-bottom: 0.5rem;
       &:last-child { margin-bottom: 0; }
 
@@ -325,14 +348,14 @@
     cite {
       display: block;
       font-style: normal;
-      font-size: var(--font-sm, 14px);
+      font-size: var(--font-ssm);
       color: rgba(255,255,255,0.8);
-      margin-top: 0.75rem;
+      margin-top: 0.65rem;
     }
 
     .quran-text {
-      font-size: var(--font-xl, 28px);
-      line-height: 2.2;
+      font-size: var(--font-lg-xl);
+      line-height: 2.1;
       color: var(--color-title-hover, #F5C452);
       text-align: center;
       font-family: 'Amiri', 'Traditional Arabic', serif;
@@ -345,12 +368,12 @@
       border-left: 4px solid var(--color-gold, #F6D982);
       border-radius: 16px;
       text-align: center;
-      padding: 1.75rem 2rem;
-      line-height: 2.2;
-      font-size: var(--font-md-lg, 18px);
+      padding: 1.5rem 1.75rem;
+      line-height: 2.1;
+      font-size: var(--font-md);
 
       strong { color: var(--color-title-hover, #F5C452); display: block; margin-bottom: 0.5rem; }
-      &.quote-center { font-size: var(--font-lg, 20px); color: var(--color-title-hover, #F5C452); }
+      &.quote-center { font-size: var(--font-md); color: var(--color-title-hover, #F5C452); }
     }
   }
 
@@ -358,7 +381,7 @@
   .table-wrapper {
     width: 100%;
     overflow-x: auto;
-    margin: 2rem 0;
+    margin: 1.75rem 0;
     border-radius: 12px;
     border: 1px solid rgba(246, 217, 130, 0.2);
     background: #041d1d;
@@ -368,7 +391,7 @@
       width: 100%;
       border-collapse: collapse;
       text-align: right;
-      font-size: var(--font-sm-md, 15px);
+      font-size: var(--font-sm);
       min-width: 550px;
 
       thead tr {
@@ -376,9 +399,10 @@
         border-bottom: 2px solid var(--color-title-hover, #F5C452);
 
         th {
-          padding: 1rem 1.25rem;
+          padding: 0.85rem 1.1rem;
           color: var(--color-title-hover, #F5C452);
           font-weight: 700;
+          font-size: var(--font-sm);
           white-space: nowrap;
         }
       }
@@ -391,8 +415,9 @@
         &:hover { background: rgba(246, 217, 130, 0.07); }
 
         td {
-          padding: 1rem 1.25rem;
+          padding: 0.85rem 1.1rem;
           color: #fff;
+          font-size: var(--font-ssm);
           line-height: 1.6;
           strong { color: inherit; font-weight: 700; }
         }
@@ -402,11 +427,13 @@
 
   // ---- Callouts ----
   .callout {
-    padding: 1.25rem 1.5rem;
+    padding: 1.1rem 1.35rem;
     border-radius: 12px;
-    margin: 2rem 0;
-    line-height: 1.8;
-    p { margin-bottom: 0; color: inherit; }
+    margin: 1.75rem 0;
+    line-height: 1.75;
+    font-size: var(--font-sm);
+
+    p { margin-bottom: 0; color: inherit; font-size: var(--font-sm); }
 
     &.callout-warning {
       background: rgba(245, 158, 11, 0.1);
@@ -430,8 +457,8 @@
     background: #0a0a0a;
     border: 1px solid rgba(246, 217, 130, 0.22);
     border-radius: 12px;
-    padding: 1.25rem 1.5rem;
-    margin: 2rem 0;
+    padding: 1.1rem 1.35rem;
+    margin: 1.75rem 0;
     overflow-x: auto;
     direction: ltr;
     text-align: center;
@@ -439,9 +466,9 @@
 
     code {
       font-family: 'Fira Code', 'Courier New', monospace;
-      font-size: 14px;
+      font-size: var(--font-ssm);
       color: var(--color-text-primary, #F6D982);
-      line-height: 1.8;
+      line-height: 1.75;
       white-space: pre-wrap;
     }
   }
@@ -450,13 +477,14 @@
   ul {
     list-style: none;
     padding-right: 0;
-    margin-bottom: 1.75rem;
+    margin-bottom: 1.5rem;
 
     li {
       position: relative;
-      padding-right: 1.6rem;
-      margin-bottom: 0.8rem;
-      line-height: 1.8;
+      padding-right: 1.5rem;
+      margin-bottom: 0.7rem;
+      font-size: var(--font-sm);
+      line-height: 1.75;
       color: #fff;
 
       &::before {
@@ -464,6 +492,7 @@
         position: absolute;
         right: 0;
         top: 0;
+        font-size: var(--font-ssm);
         color: var(--color-title-hover, #F5C452);
       }
 
@@ -472,12 +501,13 @@
   }
 
   ol {
-    margin-bottom: 1.75rem;
-    padding-right: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-right: 1.35rem;
 
     li {
-      margin-bottom: 0.8rem;
-      line-height: 1.8;
+      margin-bottom: 0.7rem;
+      font-size: var(--font-sm);
+      line-height: 1.75;
       color: #fff;
       strong { color: inherit; font-weight: 700; }
     }
@@ -489,8 +519,10 @@
 
       li {
         position: relative;
-        padding-right: 3rem;
-        margin-bottom: 1.5rem;
+        padding-right: 2.75rem;
+        margin-bottom: 1.35rem;
+        font-size: var(--font-sm);
+        line-height: 1.75;
         counter-increment: step-counter;
 
         &::before {
@@ -498,8 +530,8 @@
           position: absolute;
           right: 0;
           top: 2px;
-          width: 2.1rem;
-          height: 2.1rem;
+          width: 1.9rem;
+          height: 1.9rem;
           background: linear-gradient(135deg, var(--color-title-hover), #d97706);
           color: #061818;
           border-radius: 50%;
@@ -507,7 +539,7 @@
           align-items: center;
           justify-content: center;
           font-weight: 700;
-          font-size: 13px;
+          font-size: var(--font-ssm);
         }
 
         strong { color: var(--color-title-hover, #F5C452); }
@@ -520,8 +552,8 @@
     background: #042424;
     border: 1px solid rgba(246, 217, 130, 0.28);
     border-radius: 16px;
-    padding: 1.5rem 1.75rem;
-    margin: 1.75rem 0;
+    padding: 1.35rem 1.5rem;
+    margin: 1.5rem 0;
     position: relative;
     overflow: hidden;
     transition: transform 0.2s, border-color 0.2s;
@@ -541,13 +573,13 @@
       border-color: var(--color-title-hover, #F5C452);
     }
 
-    h3 { margin-top: 0; margin-bottom: 0.75rem; color: var(--color-title-hover, #F5C452); font-size: var(--font-md-lg, 18px); }
-    p { font-size: 15px; line-height: 1.8; margin-bottom: 0.6rem; &:last-child { margin-bottom: 0; } strong { color: inherit; font-weight: 700; } }
+    h3 { margin-top: 0; margin-bottom: 0.65rem; color: var(--color-title-hover, #F5C452); font-size: var(--font-sm); }
+    p { font-size: var(--font-sm); line-height: 1.75; margin-bottom: 0.5rem; &:last-child { margin-bottom: 0; } strong { color: inherit; font-weight: 700; } }
   }
 
   // ---- Figures ----
   figure, figure.article-image {
-    margin: 2.5rem 0;
+    margin: 2.25rem 0;
     text-align: center;
 
     img {
@@ -559,8 +591,8 @@
     }
 
     figcaption {
-      margin-top: 0.6rem;
-      font-size: 13px;
+      margin-top: 0.55rem;
+      font-size: var(--font-ssm);
       color: rgba(255,255,255,0.8);
       font-style: italic;
     }
@@ -645,17 +677,18 @@
 // =============================================================================
 
 @media (max-width: 768px) {
-  .title { font-size: 22px; }
-  .excerpt { padding: 1.25rem; font-size: var(--font-md); }
+  .title { font-size: var(--font-md-lg); }
+  .excerpt { padding: 1.1rem; font-size: var(--font-sm); }
 
   .content {
-    padding: 1.5rem 1.25rem;
+    padding: 1.35rem 1.1rem;
     border-radius: 16px;
-    h2 { font-size: 20px; margin-top: 2rem; }
-    h3 { font-size: 17px; margin-top: 1.5rem; }
-    blockquote { padding: 1.25rem 1rem; .quran-text { font-size: 22px; } &.poem-quote { font-size: 15px; } }
-    .workshop-card { padding: 1.25rem 1rem; }
-    .diagram-box code { font-size: 12px; }
-    ol.steps-list li { padding-right: 2.7rem; &::before { width: 1.8rem; height: 1.8rem; font-size: 12px; } }
+    h1 { font-size: var(--font-lg); margin-top: 1.85rem; }
+    h2 { font-size: var(--font-md); margin-top: 1.85rem; }
+    h3 { font-size: var(--font-sm); margin-top: 1.35rem; }
+    blockquote { padding: 1.1rem 0.9rem; .quran-text { font-size: var(--font-lg); } &.poem-quote { font-size: var(--font-sm); } }
+    .workshop-card { padding: 1.1rem 0.9rem; }
+    .diagram-box code { font-size: var(--font-ssm); }
+    ol.steps-list li { padding-right: 2.5rem; &::before { width: 1.7rem; height: 1.7rem; font-size: 11px; } }
   }
 }
