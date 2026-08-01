@@ -32,7 +32,9 @@ export function middleware(req) {
 }
 
 export const config = {
-  matcher: ['/products', '/product/:path*'],
+  matcher: [
+    '/products',
+    '/products/:path*',
+    '/product/:path*',
+  ],
 };
-
-

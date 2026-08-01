@@ -109,6 +109,4 @@ export const authOptions = {
         },
     },
     secret: process.env.NEXTAUTH_SECRET || 'dev-secret-key-change-this',
-};
-
-export const handler = NextAuth(authOptions);
+};
