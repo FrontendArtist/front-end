@@ -90,15 +90,8 @@ export default function ProductAddToCart({ product }) {
 
     if (isOutOfStock) {
         return (
-            <div className={styles.wrapper}>
-                <button
-                    className={`${styles.addToCartButton} card-button`}
-                    disabled
-                    aria-label={`${title} ناموجود است`}
-                    style={{ opacity: 0.6, cursor: 'not-allowed', backgroundColor: '#e53e3e' }}
-                >
-                    ناموجود
-                </button>
+            <div >
+                
             </div>
         );
     }

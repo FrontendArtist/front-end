@@ -160,7 +160,7 @@ const ProductCard = ({ product }) => {
             <button
               className={`${styles.addToCartButton} card-button`}
               disabled
-              style={{ opacity: 0.6, cursor: 'not-allowed', backgroundColor: '#e53e3e' }}
+              style={{ color: '#ffffff73',background: '#ffffff0d',borderColor: '#ffffff1f' }}
             >
               ناموجود
             </button>
