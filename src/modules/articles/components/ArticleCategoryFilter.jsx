@@ -3,8 +3,17 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import styles from './ArticleCategoryFilter.module.scss';
+import BaseSlider from '@/components/layout/BaseSlider/BaseSlider';
 
 const FALLBACK_IMAGE = '/images/placeholder.png';
+
+const CATEGORY_SLIDER_BREAKPOINTS = {
+  0: { slidesPerView: 2, spaceBetween: 10 },
+  480: { slidesPerView: 3, spaceBetween: 12 },
+  640: { slidesPerView: 4, spaceBetween: 16 },
+  1024: { slidesPerView: 5, spaceBetween: 20 },
+  1280: { slidesPerView: 6, spaceBetween: 24 },
+};
 
 export default function ArticleCategoryFilter({ categories = [], activeSlug = '' }) {
   const router = useRouter();
@@ -27,7 +36,8 @@ export default function ArticleCategoryFilter({ categories = [], activeSlug = ''
   const handleSelectCategory = (slug) => {
     const params = new URLSearchParams(searchParams.toString());
     
-    if (slug) {
+    // Toggle active category (click active category to deselect/clear filter)
+    if (slug && slug !== activeSlug) {
       params.set('category', slug);
     } else {
       params.delete('category');
@@ -69,24 +79,13 @@ export default function ArticleCategoryFilter({ categories = [], activeSlug = ''
 
   return (
     <section className={styles.categoriesSection} aria-label="دسته‌بندی مقالات">
-      {/* <div className={styles.categoriesHeader}>
-        <h2 className={styles.sectionTitle}>دسته‌بندی‌ها</h2>
-        {activeSlug && (
-          <button
-            type="button"
-            className={styles.clearButton}
-            onClick={() => handleSelectCategory('')}
-            aria-label="نمایش همه مقالات"
-          >
-            نمایش همه
-          </button>
-        )}
-      </div> */}
-      
-      <div className={styles.categoriesGrid}>
-        {normalizedCategories.map(renderCategoryCard)}
-      </div>
+      <BaseSlider
+        items={normalizedCategories}
+        renderItem={renderCategoryCard}
+        slidesPerView={6}
+        breakpoints={CATEGORY_SLIDER_BREAKPOINTS}
+        loop={true}
+      />
     </section>
   );
 }
-

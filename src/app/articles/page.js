@@ -69,9 +69,18 @@ export default async function ArticlesPage({ searchParams: spPromise }) {
   const initialArticles = result.data;
   const initialMeta = result.meta;
 
+  const selectedCategoryObj = Array.isArray(categories)
+    ? categories.find(c => c.slug === activeCategory)
+    : null;
+
   const breadcrumbItems = [
     { label: 'خانه', href: '/' },
-    { label: 'مقالات' }
+    { label: 'مقالات', href: activeCategory ? '/articles' : undefined },
+    ...(selectedCategoryObj
+      ? [{ label: selectedCategoryObj.name || selectedCategoryObj.title || activeCategory }]
+      : activeCategory
+      ? [{ label: activeCategory }]
+      : [])
   ];
 
   return (

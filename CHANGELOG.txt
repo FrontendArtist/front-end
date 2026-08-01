@@ -1,4 +1,23 @@
 ```text
+[2026-08-01] - Category Filter Responsiveness, Unified Mobile Layout, Articles Swiper Slider & Dynamic Breadcrumbs
+
+── Products Category Filter Responsiveness & Unified Layout ────────────────────────
+- Refactored `CategoryFilter` (`src/modules/products/ProductsPageClient/components/CategoryFilter.jsx` & `.module.scss`):
+  - Passed dynamic responsive `breakpoints` to `BaseSlider` (scaling from 6 cards on desktop to 2-3 cards on mobile).
+  - Merged active category box and subcategory list into a single unified Glassmorphism card container (`selectedLayout`) on mobile/tablet to eliminate redundant visual borders and padding.
+  - Adapted active category header (`selectedCategoryCard`) to a compact horizontal layout (row flex) on mobile, preserving screen real estate.
+  - Unified desktop view into a single horizontal glassmorphic card with a subtle vertical divider line separating active category details from subcategories.
+  - Applied flat glassmorphic background overlay (`fade(var(--color-bg-primary-overlay), 60%)`) on mobile.
+
+── Articles Category Filter Alignment & Swiper Slider Integration ──────────────────
+- Aligned `ArticleCategoryFilter` (`src/modules/articles/components/ArticleCategoryFilter.jsx` & `.module.scss`) to mirror Product `CategoryFilter`:
+  - Replaced manual flex grid with `BaseSlider` (Swiper) for smooth sliding, touch gestures, mouse dragging (`cursor: grab`), and responsive breakpoints across all screen sizes.
+  - Applied identical card styling, image aspect ratios, hover animations, and active state highlights (`categoryCardActive`).
+
+── Dynamic Category Breadcrumbs ───────────────────────────────────────────────────
+- Updated `src/app/articles/page.js` to dynamically append the active category item to the breadcrumb trail when `?category=slug` filter is selected: `خانه` > `مقالات` > `[نام دسته]`.
+- Configured category item as active and `مقالات` item as clickable link back to main `/articles` route.
+
 [2026-08-01] - Automatic Stock Deduction & Out-of-Stock Status Handling (Frontend & Backend)
 
 ── Backend Inventory & Order Lifecycles ─────────────────────────────────────────

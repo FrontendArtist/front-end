@@ -4,73 +4,20 @@
   margin-bottom: 48px;
   position: relative;
   z-index: 10;
-}
 
-.categoriesHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid fade(var(--color-primary), 10%);
-}
-
-.sectionTitle {
-  font-size: var(--font-xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  &::before {
-    content: '';
-    width: 4px;
-    height: 28px;
-    background: var(--color-title-hover);
-    border-radius: 2px;
-  }
-}
-
-.clearButton {
-  background: fade(var(--color-primary), 10%);
-  color: var(--color-text-primary);
-  border: 1px solid fade(var(--color-primary), 20%);
-  border-radius: var(--border-radius);
-  padding: 10px 24px;
-  font-size: var(--font-sm);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover,
-  &:focus-visible {
-    background: var(--color-title-hover);
-    color: var(--color-bg-primary);
-    border-color: var(--color-title-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px fade(var(--color-primary), 30%);
+  @include respond(md) {
+    margin-bottom: 32px;
   }
 
-  &:focus-visible {
-    outline: 2px solid var(--color-title-hover);
-    outline-offset: 4px;
+  @include respond(sm) {
+    margin-bottom: 24px;
   }
-}
-
-.categoriesGrid {
-  direction: rtl;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 24px;
 }
 
 .categoryCard {
   position: relative;
   width: 100%;
+  height: 222px;
   padding: 32px 24px;
   border-radius: var(--border-radius);
   background: fade(var(--color-bg-primary-overlay), 60%);
@@ -80,13 +27,32 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 20px;
   color: var(--color-text-primary);
   text-decoration: none;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+
+  @include respond(lg) {
+    height: 190px;
+    padding: 24px 16px;
+    gap: 16px;
+  }
+
+  @include respond(md) {
+    height: 160px;
+    padding: 20px 12px;
+    gap: 12px;
+  }
+
+  @include respond(sm) {
+    height: 135px;
+    padding: 14px 8px;
+    gap: 8px;
+    border-radius: 16px;
+  }
 
   &::before {
     content: '';
@@ -117,31 +83,13 @@
 }
 
 .categoryCardActive {
-  background: linear-gradient(145deg, fade(var(--color-bg-primary-overlay), 90%) 0%, fade(var(--color-bg-dark-green), 95%) 100%);
-  border-color: fade(var(--color-primary), 50%);
-  box-shadow: 0 8px 24px fade(var(--color-black), 30%),
-    0 0 0 1px fade(var(--color-primary), 30%) inset;
+  border-color: fade(var(--color-primary), 60%);
+  background: fade(var(--color-bg-primary-overlay), 85%);
+  box-shadow: 0 0 20px fade(var(--color-primary), 25%),
+    0 0 0 1px fade(var(--color-primary), 40%) inset;
 
   &::before {
     opacity: 1;
-  }
-
-  &::after {
-    content: '✓';
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    width: 28px;
-    height: 28px;
-    background: var(--color-title-hover);
-    color: var(--color-bg-primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-md);
-    font-weight: var(--font-weight-bold);
-    box-shadow: 0 4px 12px fade(var(--color-primary), 40%);
   }
 }
 
@@ -157,8 +105,30 @@
   border: 1px solid fade(var(--color-primary), 10%);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
+  flex-shrink: 0;
+
+  @include respond(lg) {
+    width: 76px;
+    height: 76px;
+  }
+
+  @include respond(md) {
+    width: 64px;
+    height: 64px;
+  }
+
+  @include respond(sm) {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
 
   img {
+    max-width: 65%;
+    max-height: 65%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
     transition: transform 0.4s ease;
   }
 
@@ -190,6 +160,15 @@
   transition: all 0.3s ease;
   position: relative;
   z-index: 1;
+  line-height: 1.4;
+
+  @include respond(md) {
+    font-size: var(--font-sm);
+  }
+
+  @include respond(sm) {
+    font-size: 0.8rem;
+  }
 
   .categoryCard:hover &,
   .categoryCard:focus-visible & {
@@ -200,61 +179,5 @@
   .categoryCardActive & {
     color: var(--color-title-hover);
     font-weight: var(--font-weight-bold);
-  }
-}
-
-@media (max-width: 1024px) {
-  .categoriesGrid {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  }
-
-  .categoryCard {
-    padding: 24px 16px;
-  }
-}
-
-@media (max-width: 600px) {
-  .categoriesSection {
-    margin-bottom: 32px;
-  }
-
-  .categoriesHeader {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-  }
-
-  .sectionTitle {
-    font-size: var(--font-lg);
-
-    &::before {
-      height: 24px;
-    }
-  }
-
-  .categoriesGrid {
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 16px;
-  }
-
-  .categoryCard {
-    padding: 20px 16px;
-    gap: 16px;
-  }
-
-  .iconWrapper {
-    width: 64px;
-    height: 64px;
-    border-radius: 18px;
-
-
-  }
-
-  .categoryName {
-    font-size: var(--font-md);
-  }
-
-  .clearButton {
-    padding: 8px 16px;
-    font-size: var(--font-xs);
   }
 }

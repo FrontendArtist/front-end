@@ -4,6 +4,14 @@
   margin-bottom: 48px;
   position: relative;
   z-index: 10;
+
+  @include respond(md) {
+    margin-bottom: 32px;
+  }
+
+  @include respond(sm) {
+    margin-bottom: 24px;
+  }
 }
 
 .categoriesGrid {
@@ -13,8 +21,13 @@
   gap: 24px;
 
   @include respond(xl) {
-    grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+  }
 
+  @include respond(sm) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
 }
 
@@ -38,6 +51,25 @@
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+
+  @include respond(lg) {
+    height: 190px;
+    padding: 24px 16px;
+    gap: 16px;
+  }
+
+  @include respond(md) {
+    height: 160px;
+    padding: 20px 12px;
+    gap: 12px;
+  }
+
+  @include respond(sm) {
+    height: 135px;
+    padding: 14px 8px;
+    gap: 8px;
+    border-radius: 16px;
+  }
 
   &::before {
     content: '';
@@ -67,6 +99,12 @@
   }
 }
 
+.categoryCardActive {
+  border-color: fade(var(--color-primary), 50%);
+  background: fade(var(--color-bg-primary-overlay), 85%);
+  box-shadow: 0 0 20px fade(var(--color-primary), 20%);
+}
+
 .iconWrapper {
   position: relative;
   display: flex;
@@ -79,8 +117,30 @@
   border: 1px solid fade(var(--color-primary), 10%);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
+  flex-shrink: 0;
+
+  @include respond(lg) {
+    width: 76px;
+    height: 76px;
+  }
+
+  @include respond(md) {
+    width: 64px;
+    height: 64px;
+  }
+
+  @include respond(sm) {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
 
   img {
+    max-width: 65%;
+    max-height: 65%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
     transition: transform 0.4s ease;
   }
 
@@ -106,6 +166,15 @@
   transition: all 0.3s ease;
   position: relative;
   z-index: 1;
+  line-height: 1.4;
+
+  @include respond(md) {
+    font-size: var(--font-sm);
+  }
+
+  @include respond(sm) {
+    font-size: 0.8rem;
+  }
 
   .categoryCard:hover &,
   .categoryCard:focus-visible & {
@@ -117,6 +186,14 @@
 .selectedState {
   margin-bottom: 56px;
   animation: fadeIn 0.6s ease-out forwards;
+
+  @include respond(md) {
+    margin-bottom: 32px;
+  }
+
+  @include respond(sm) {
+    margin-bottom: 24px;
+  }
 }
 
 @keyframes fadeIn {
@@ -134,26 +211,16 @@
 .selectedLayout {
   direction: rtl;
   display: grid;
-  grid-template-columns: minmax(280px, 320px) 1fr;
+  grid-template-columns: minmax(260px, 300px) 1fr;
   gap: 32px;
   align-items: stretch;
-}
-
-.selectedColumn {
-  display: flex;
-}
-
-.selectedCard {
-  width: 100%;
-  padding: 32px;
-  border-radius: 32px;
-  border: 1px solid fade(var(--color-primary), 20%);
-  background: linear-gradient(145deg, fade(var(--color-bg-primary-overlay), 90%) 0%, fade(var(--color-bg-dark-green), 95%) 100%);
+  background: fade(var(--color-bg-primary-overlay), 60%);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid fade(var(--color-primary), 20%);
+  border-radius: 32px;
+  padding: 32px;
   box-shadow: 0 24px 48px -12px fade(var(--color-black), 50%);
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
   position: relative;
   overflow: hidden;
 
@@ -166,6 +233,61 @@
     height: 1px;
     background: linear-gradient(90deg, transparent, fade(var(--color-primary), 50%), transparent);
   }
+
+  @include respond(lg) {
+    grid-template-columns: minmax(220px, 260px) 1fr;
+    gap: 24px;
+    padding: 24px;
+    border-radius: 24px;
+  }
+
+  @include respond(md) {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  @include respond(sm) {
+    padding: 16px;
+    border-radius: 20px;
+  }
+}
+
+.selectedColumn {
+  display: flex;
+}
+
+.selectedCard {
+  width: 100%;
+  padding: 0 0 0 32px;
+  border-radius: 0;
+  border: none;
+  border-left: 1px solid fade(var(--color-primary), 12%);
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+
+  @include respond(lg) {
+    padding: 0 0 0 24px;
+    gap: 20px;
+  }
+
+  @include respond(md) {
+    border-left: none;
+    border-bottom: 1px solid fade(var(--color-primary), 12%);
+    padding: 0 0 16px 0;
+    gap: 14px;
+  }
+
+  @include respond(sm) {
+    padding-bottom: 14px;
+    gap: 12px;
+  }
 }
 
 .selectedMeta {
@@ -175,6 +297,11 @@
   gap: 16px;
   padding-bottom: 20px;
   border-bottom: 1px solid fade(var(--color-primary), 10%);
+
+  @include respond(md) {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
 }
 
 .selectedLabel {
@@ -183,6 +310,10 @@
   opacity: 0.8;
   text-transform: uppercase;
   letter-spacing: 1px;
+
+  @include respond(sm) {
+    font-size: 0.75rem;
+  }
 }
 
 .backButton {
@@ -197,6 +328,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
+
+  @include respond(sm) {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    border-radius: 10px;
+  }
 
   &:hover,
   &:focus-visible {
@@ -216,6 +353,7 @@
   padding: 0;
   box-shadow: none;
   backdrop-filter: none;
+  height: auto;
 
   .iconWrapper {
     width: 120px;
@@ -223,11 +361,50 @@
     background: fade(var(--color-primary), 8%);
     border-color: fade(var(--color-primary), 30%);
     margin-bottom: 16px;
+
+    @include respond(lg) {
+      width: 96px;
+      height: 96px;
+      margin-bottom: 12px;
+    }
+
+    @include respond(md) {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 0;
+      border-radius: 14px;
+    }
+
+    @include respond(sm) {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+    }
   }
 
   .categoryName {
     font-size: var(--font-xl);
     color: var(--color-title-hover);
+
+    @include respond(lg) {
+      font-size: var(--font-lg);
+    }
+
+    @include respond(md) {
+      font-size: var(--font-md-lg, 1.1rem);
+      text-align: right;
+    }
+
+    @include respond(sm) {
+      font-size: var(--font-md);
+    }
+  }
+
+  @include respond(md) {
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 16px;
   }
 
   &:hover {
@@ -236,15 +413,29 @@
 }
 
 .subCategoriesColumn {
-  border: 1px solid fade(var(--color-primary), 15%);
-  border-radius: 32px;
-  padding: 32px;
-  background: fade(var(--color-bg-primary-overlay), 40%);
-  backdrop-filter: blur(12px);
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
   display: flex;
   flex-direction: column;
   gap: 24px;
   height: 100%;
+
+  @include respond(lg) {
+    gap: 20px;
+  }
+
+  @include respond(md) {
+    padding: 16px 0 0 0;
+    gap: 14px;
+  }
+
+  @include respond(sm) {
+    padding-top: 14px;
+    gap: 12px;
+  }
 }
 
 .subHeader {
@@ -253,6 +444,14 @@
   justify-content: space-between;
   padding-bottom: 20px;
   border-bottom: 1px solid fade(var(--color-primary), 10%);
+
+  @include respond(md) {
+    padding-bottom: 14px;
+  }
+
+  @include respond(sm) {
+    padding-bottom: 12px;
+  }
 }
 
 .subTitle {
@@ -263,12 +462,22 @@
   align-items: center;
   gap: 12px;
 
+  @include respond(sm) {
+    font-size: var(--font-md);
+    gap: 8px;
+  }
+
   &::before {
     content: '';
     width: 4px;
     height: 24px;
     background: var(--color-title-hover);
     border-radius: 2px;
+
+    @include respond(sm) {
+      height: 18px;
+      width: 3px;
+    }
   }
 }
 
@@ -279,6 +488,11 @@
   padding: 4px 12px;
   border-radius: 20px;
   font-weight: var(--font-weight-bold);
+
+  @include respond(sm) {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+  }
 }
 
 .subList {
@@ -300,6 +514,20 @@
   &::-webkit-scrollbar-thumb {
     background: fade(var(--color-primary), 20%);
     border-radius: 4px;
+  }
+
+  @include respond(md) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    max-height: none;
+    overflow-y: visible;
+    padding-left: 0;
+  }
+
+  @include respond(sm) {
+    grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+    gap: 8px;
   }
 }
 
@@ -339,6 +567,28 @@
       transform: translateX(0);
     }
   }
+
+  @include respond(md) {
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: var(--font-sm);
+    justify-content: center;
+    text-align: center;
+
+    &::after {
+      display: none;
+    }
+
+    &:hover,
+    &:focus-visible {
+      padding-right: 14px;
+    }
+  }
+
+  @include respond(sm) {
+    padding: 10px 10px;
+    font-size: 0.825rem;
+  }
 }
 
 .subItemActive {
@@ -363,4 +613,10 @@
   opacity: 0.6;
   border: 1px dashed fade(var(--color-primary), 20%);
   border-radius: 16px;
+
+  @include respond(sm) {
+    padding: 20px 16px;
+    font-size: var(--font-sm);
+    margin: 12px 0;
+  }
 }

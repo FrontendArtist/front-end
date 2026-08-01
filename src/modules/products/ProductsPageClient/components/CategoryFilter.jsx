@@ -7,6 +7,14 @@ import BaseSlider from '@/components/layout/BaseSlider/BaseSlider';
 
 const FALLBACK_IMAGE = '/images/placeholder.png';
 
+const CATEGORY_SLIDER_BREAKPOINTS = {
+  0: { slidesPerView: 2, spaceBetween: 10 },
+  480: { slidesPerView: 3, spaceBetween: 12 },
+  640: { slidesPerView: 4, spaceBetween: 16 },
+  1024: { slidesPerView: 5, spaceBetween: 20 },
+  1280: { slidesPerView: 6, spaceBetween: 24 },
+};
+
 export default function CategoryFilter({
   categories = [],
   activeCategory = '',
@@ -77,6 +85,7 @@ export default function CategoryFilter({
           items={categories}
           renderItem={renderCategoryCard}
           slidesPerView={6}
+          breakpoints={CATEGORY_SLIDER_BREAKPOINTS}
           loop={true}
         />
       </section>
