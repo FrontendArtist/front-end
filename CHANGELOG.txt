@@ -1,4 +1,22 @@
 ```text
+[2026-08-01] - Automatic Stock Deduction & Out-of-Stock Status Handling (Frontend & Backend)
+
+── Backend Inventory & Order Lifecycles ─────────────────────────────────────────
+- Added `stockDeducted` boolean attribute (`default: false`) to Strapi Order schema (`backend/src/api/order/content-types/order/schema.json`) to prevent duplicate inventory deductions on order updates.
+- Added `processProductStock` lifecycle helper in `backend/src/api/order/content-types/order/lifecycles.js` executing on `afterCreate` and `afterUpdate`:
+  - Automatically calculates `newStock = Math.max(0, currentStock - quantity)` for all physical product items in order.
+  - Automatically toggles `isAvailable` status to `false` when `newStock` reaches 0 ("ناموجود").
+  - Marks order as `stockDeducted: true` upon successful deduction.
+
+── Frontend Cart & Stock Limit Enforcement ──────────────────────────────────────
+- Enforced available inventory cap (`maxStock`) inside `addItem` and `updateQuantity` in Zustand Cart Store (`src/store/useCartStore.js`), preventing users from adding or incrementing item quantities beyond actual product stock.
+- Updated `ProductAddToCart.jsx` and `ProductCard.jsx` components:
+  - Added out-of-stock check (`isAvailable === false || stock <= 0`).
+  - Rendered disabled **«ناموجود»** badge when product is unavailable or stock is 0.
+  - Disabled `+` quantity controller button when user reaches available stock limit.
+- Updated Cart page (`src/app/cart/page.jsx`) to disable `+` quantity button when cart quantity hits product stock limit.
+- Integrated `revalidatePath` in Next.js orders API route (`src/app/api/orders/route.js`) to flush Next.js server page cache for product routes after successful order creation.
+
 [2026-07-31] - Single Product Page Overhaul, SEO JSON-LD, Stock FOMO, Specs Table & Admin TinyMCE Integration
 
 ── Single Product Page Architecture & SEO ────────────────────────────────────────

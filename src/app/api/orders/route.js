@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -261,6 +262,13 @@ export async function POST(request) {
 
         if (!userUpdateRes.ok) {
             console.error("User update failed:", await userUpdateRes.text());
+        }
+
+        try {
+            revalidatePath('/products', 'layout');
+            revalidatePath('/product', 'layout');
+        } catch (revalErr) {
+            console.warn("Revalidation warning:", revalErr?.message);
         }
 
         return NextResponse.json(newOrder, { status: 201 });

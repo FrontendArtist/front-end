@@ -200,6 +200,8 @@ export default function CartPage() {
                                             <button
                                                 onClick={() => handleIncrement(item.id, item.quantity)}
                                                 className={styles.quantityButton}
+                                                disabled={typeof item.stock === 'number' && item.quantity >= item.stock}
+                                                style={typeof item.stock === 'number' && item.quantity >= item.stock ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                                                 aria-label="افزایش تعداد"
                                             >
                                                 +

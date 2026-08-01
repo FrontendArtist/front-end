@@ -26,37 +26,42 @@ export const useCartStore = create(
             addItem: (item) => {
                 const currentItems = get().items;
 
-                // بررسی اینکه آیا این آیتم قبلاً در سبد وجود دارد یا خیر
                 const existingItemIndex = currentItems.findIndex(
                     (cartItem) => cartItem.id === item.id
                 );
 
-                // اگر آیتم قبلاً در سبد خرید موجود است
                 if (existingItemIndex !== -1) {
-                    // اگر نوع آیتم 'course' یا 'chapter' باشد، هیچ کاری انجام نمی‌دهیم
-                    // چون دوره‌ها و فصل‌ها فقط یکبار قابل اضافه شدن هستند
                     if (item.type === 'course' || item.type === 'chapter') {
                         return;
                     }
 
-                    // اگر نوع آیتم 'product' باشد، تعداد آن را یکی افزایش می‌دهیم
                     const updatedItems = [...currentItems];
                     const existingItem = updatedItems[existingItemIndex];
+                    const maxStock = typeof existingItem.stock === 'number' ? existingItem.stock : (typeof item.stock === 'number' ? item.stock : null);
+
+                    if (maxStock !== null && existingItem.quantity >= maxStock) {
+                        return;
+                    }
+
                     updatedItems[existingItemIndex] = {
                         ...existingItem,
+                        stock: maxStock !== null ? maxStock : existingItem.stock,
                         quantity: existingItem.quantity + 1,
                     };
 
                     set({ items: updatedItems });
                 } else {
-                    // آیتم جدید است، پس آن را به سبد اضافه می‌کنیم
-                    // برای دوره‌ها quantity همیشه 1 است
-                    // برای محصولات هم quantity اولیه 1 است
+                    const maxStock = typeof item.stock === 'number' ? item.stock : null;
+                    if (maxStock !== null && maxStock <= 0) {
+                        return;
+                    }
+
                     set({
                         items: [
                             ...currentItems,
                             {
                                 ...item,
+                                stock: maxStock,
                                 quantity: 1,
                             },
                         ],
@@ -64,52 +69,41 @@ export const useCartStore = create(
                 }
             },
 
-            /**
-             * حذف کامل یک آیتم از سبد خرید بر اساس id
-             * @param {string} itemId - شناسه آیتم مورد نظر برای حذف
-             */
             removeItem: (itemId) => {
                 set({
                     items: get().items.filter((item) => item.id !== itemId),
                 });
             },
 
-            /**
-             * به‌روزرسانی تعداد یک آیتم در سبد خرید
-             * @param {string} itemId - شناسه آیتم
-             * @param {number} newQuantity - تعداد جدید
-             * محدودیت‌ها:
-             * - این تابع فقط برای محصولات (type='product') کار می‌کند
-             * - برای دوره‌ها (type='course') هیچ تغییری ایجاد نمی‌شود
-             * - اگر تعداد جدید کمتر از 1 باشد، آیتم حذف می‌شود
-             */
             updateQuantity: (itemId, newQuantity) => {
                 const currentItems = get().items;
                 const itemIndex = currentItems.findIndex((item) => item.id === itemId);
 
-                // اگر آیتم پیدا نشد، هیچ کاری انجام نمی‌دهیم
                 if (itemIndex === -1) return;
 
                 const item = currentItems[itemIndex];
 
-                // اگر نوع آیتم 'course' یا 'chapter' باشد، اجازه تغییر تعداد نمی‌دهیم
-                // چون دوره‌ها و فصل‌ها فقط با quantity=1 مجاز هستند
                 if (item.type === 'course' || item.type === 'chapter') {
                     return;
                 }
 
-                // اگر تعداد جدید کمتر از 1 باشد، آیتم را حذف می‌کنیم
                 if (newQuantity < 1) {
                     get().removeItem(itemId);
                     return;
                 }
 
-                // به‌روزرسانی تعداد آیتم
+                const maxStock = typeof item.stock === 'number' ? item.stock : null;
+                let targetQuantity = newQuantity;
+
+                if (maxStock !== null && targetQuantity > maxStock) {
+                    targetQuantity = maxStock;
+                }
+
                 const updatedItems = [...currentItems];
                 const itemToUpdate = updatedItems[itemIndex];
                 updatedItems[itemIndex] = {
                     ...itemToUpdate,
-                    quantity: newQuantity,
+                    quantity: targetQuantity,
                 };
 
                 set({ items: updatedItems });

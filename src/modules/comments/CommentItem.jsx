@@ -66,6 +66,7 @@ const CommentItem = ({ comment, onReply, depth = 0, parentAuthor = null }) => {
 
     const isAdmin = displayUsername.includes('مدیر') || displayUsername.includes('طرح الهی') || user.role === 'admin';
     const isReply = depth > 0;
+    const isAlreadyAdminText = displayUsername.trim() === 'مدیریت' || displayUsername.trim() === 'مدیر';
 
     return (
         <div
@@ -80,19 +81,23 @@ const CommentItem = ({ comment, onReply, depth = 0, parentAuthor = null }) => {
                         </div>
                         <div className={styles.userMeta}>
                             <div className={styles.usernameRow}>
-                                <span className={styles.username}>{displayUsername}</span>
-                                {isAdmin && (
+                                {isAlreadyAdminText ? (
                                     <span className={styles.adminBadge}>
                                         <ShieldCheck className={styles.badgeIcon} />
                                         مدیریت
                                     </span>
+                                ) : (
+                                    <>
+                                        <span className={styles.username}>{displayUsername}</span>
+                                        {isAdmin && (
+                                            <span className={styles.adminBadge}>
+                                                <ShieldCheck className={styles.badgeIcon} />
+                                                مدیریت
+                                            </span>
+                                        )}
+                                    </>
                                 )}
-                                {isReply && parentAuthor && (
-                                    <span className={styles.replyToTag}>
-                                        <CornerDownLeft className={styles.replyToIcon} />
-                                        پاسخ به <strong>@{parentAuthor}</strong>
-                                    </span>
-                                )}
+
                             </div>
                             {formattedDate && (
                                 <time className={styles.timestamp}>

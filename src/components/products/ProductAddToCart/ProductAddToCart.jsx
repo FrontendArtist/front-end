@@ -13,7 +13,7 @@ import styles from './ProductAddToCart.module.scss';
 export default function ProductAddToCart({ product }) {
     if (!product) return null;
 
-    const { id, slug, image, title, price, categories } = product;
+    const { id, slug, image, title, price, categories, stock, isAvailable } = product;
     const formattedPrice = (typeof price === 'object' ? price?.toman : price) || 0;
 
     const [isHydrated, setIsHydrated] = useState(false);
@@ -30,9 +30,14 @@ export default function ProductAddToCart({ product }) {
     const isInCart = isHydrated && !!cartItem;
     const currentQuantity = cartItem?.quantity || 0;
 
+    const isOutOfStock = isAvailable === false || (typeof stock === 'number' && stock <= 0);
+    const isMaxStockReached = typeof stock === 'number' && currentQuantity >= stock;
+
     const handleAddToCart = (e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (isOutOfStock) return;
 
         let categorySlug = null;
         let subcategorySlug = null;
@@ -59,6 +64,7 @@ export default function ProductAddToCart({ product }) {
             price: formattedPrice,
             image: imageUrl,
             type: 'product',
+            stock: typeof stock === 'number' ? stock : null,
             categorySlug,
             subcategorySlug,
         });
@@ -67,6 +73,8 @@ export default function ProductAddToCart({ product }) {
     const handleIncrement = (e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (isMaxStockReached) return;
         updateQuantity(id, currentQuantity + 1);
     };
 
@@ -79,6 +87,21 @@ export default function ProductAddToCart({ product }) {
             removeItem(id);
         }
     };
+
+    if (isOutOfStock) {
+        return (
+            <div className={styles.wrapper}>
+                <button
+                    className={`${styles.addToCartButton} card-button`}
+                    disabled
+                    aria-label={`${title} ناموجود است`}
+                    style={{ opacity: 0.6, cursor: 'not-allowed', backgroundColor: '#e53e3e' }}
+                >
+                    ناموجود
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.wrapper}>
@@ -103,7 +126,9 @@ export default function ProductAddToCart({ product }) {
                     <button
                         className={styles.quantityButton}
                         onClick={handleIncrement}
+                        disabled={isMaxStockReached}
                         aria-label="افزایش تعداد"
+                        style={isMaxStockReached ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                         +
                     </button>
