@@ -332,6 +332,8 @@ export function formatStrapiCourses(apiResponse) {
         shortDescription:
           (item.description && item.description[0]?.children[0]?.text) || item.shortDescription || '',
         image: formatSingleImage(item.media ? item.media[0] : item.image || null),
+        teaserUrl: item.teaserUrl || null,
+        content: item.content || null,
         isChaptered: Boolean(item.isChaptered),
         chapters,
         curriculum,

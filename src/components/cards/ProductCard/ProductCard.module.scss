@@ -52,25 +52,59 @@
 
 // دکمه افزودن به سبد خرید
 .addToCartButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 8px 16px;
-  background: fade(var(--color-primary), 10%);
-  border: 2px solid var(--color-text-primary);
   border-radius: 8px;
-  color: var(--color-text-primary);
+  background: linear-gradient(135deg, var(--color-primary, #d4af37) 0%, #ff9500 100%);
+  color: var(--color-bg-primary, #111);
   font-size: var(--font-sm);
-  font-weight: var(--font-weight-medium);
+  font-weight: 800;
+  border: none;
   cursor: pointer;
-  @include hover-transition;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  z-index: 1;
   white-space: nowrap;
 
+  svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+  }
+
   &:hover {
-    background: var(--color-text-primary);
-    color: var(--color-bg-primary);
-    transform: scale(1.05);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 16px rgba(255, 149, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    
+    svg {
+      transform: translateX(-2px) scale(1.1) rotate(-10deg);
+    }
   }
 
   &:active {
-    transform: scale(0.98);
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 8px rgba(255, 149, 0, 0.2);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+    transform: skewX(-25deg);
+    z-index: -1;
+  }
+
+  &:hover::before {
+    animation: buttonShineSmall 1s forwards;
   }
 
   @include respond(md) {
@@ -79,66 +113,94 @@
   }
 }
 
+@keyframes buttonShineSmall {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
 // کنترلر تعداد محصول در سبد
 .quantityController {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: fade(var(--color-primary), 10%);
-  border: 2px solid var(--color-text-primary);
+  justify-content: space-between;
+  background: var(--color-card-bg, #1a1a1a);
+  border: 1.5px solid fade(var(--color-primary, #d4af37), 40%);
   border-radius: 8px;
   overflow: hidden;
+  height: 38px;
+  width: 100px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: fade(var(--color-primary, #d4af37), 80%);
+    box-shadow: 0 4px 12px fade(var(--color-primary, #d4af37), 20%);
+  }
 
   @include respond(md) {
-    gap: 6px;
-
+    height: 34px;
+    width: 90px;
   }
 }
 
 // دکمه‌های + و - در کنترلر تعداد
 .quantityButton {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 100%;
   display: flex;
   align-items: center;
-  background-color: unset;
   justify-content: center;
+  background-color: transparent;
   color: var(--color-text-primary);
   border: none;
-  font-size: var(--font-md-lg);
-  font-weight: var(--font-weight-bold);
-  padding: 17px 0;
   cursor: pointer;
-  @include hover-transition;
-  line-height: 1;
+  transition: all 0.2s ease;
+  
+  svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+  }
 
   &:hover {
-    background: var(--color-text-primary);
-    color: var(--color-bg-primary);
-    transform: scale(1.1);
+    background: fade(var(--color-primary, #d4af37), 15%);
+    color: var(--color-primary);
+    
+    svg {
+      transform: scale(1.2);
+    }
   }
 
   &:active {
-    transform: scale(0.95);
+    background: fade(var(--color-primary, #d4af37), 25%);
+    svg {
+      transform: scale(0.9);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: transparent;
+    &:hover svg {
+      transform: none;
+    }
   }
 
   @include respond(md) {
-    width: 24px;
-    height: 24px;
-    font-size: var(--font-md);
+    width: 28px;
   }
 }
 
 // نمایش تعداد در کنترلر
 .quantityDisplay {
-
   text-align: center;
   color: var(--color-text-primary);
-  font-size: var(--font-md);
-  font-weight: var(--font-weight-bold);
+  font-size: var(--font-sm, 14px);
+  font-weight: 800;
+  min-width: 20px;
 
   @include respond(md) {
-    min-width: 20px;
-    font-size: var(--font-sm);
+    font-size: var(--font-ssm, 12px);
   }
 }

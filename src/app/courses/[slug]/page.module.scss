@@ -101,6 +101,35 @@
   @include hover-transition;
 }
 
+// Badge for teaser video
+.teaserBadge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: var(--font-sm, 14px);
+  font-weight: var(--font-weight-medium, 500);
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  pointer-events: none; // Prevent blocking video clicks
+
+  @include respond(md) {
+    top: 12px;
+    right: 12px;
+    font-size: 12px;
+  }
+
+  @include respond(sm) {
+    top: 8px;
+    right: 8px;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}
+
 // =============================================================================
 // DETAILS COLUMN - Course Information
 // =============================================================================
@@ -116,6 +145,44 @@
   justify-content: space-between;
 }
 
+// Wrapper for title and enrolled badge
+.titleWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: var(--space-image-title-desktop); // 32px
+  flex-wrap: wrap;
+
+  @include respond(md) {
+    margin-bottom: 24px;
+  }
+
+  @include respond(sm) {
+    margin-bottom: 16px;
+  }
+}
+
+// Enrolled Badge - Shows if user has purchased the course
+.enrolledBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(26, 153, 91, 0.1);
+  color: #1a995b;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: var(--font-sm, 14px);
+  font-weight: var(--font-weight-bold, 700);
+  border: 1px solid rgba(26, 153, 91, 0.2);
+  white-space: nowrap;
+
+  @include respond(sm) {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+}
+
 // Course Title - Main heading
 .title {
   // Use extra large font size from design system
@@ -124,22 +191,18 @@
   color: var(--color-text-primary);
   // Medium weight for proper hierarchy
   font-weight: var(--font-weight-medium);
-  // Spacing below title
-  margin-bottom: var(--space-image-title-desktop); // 32px
-  // Remove default top margin
-  margin-top: 0;
+  // Remove default margins since wrapper handles it
+  margin: 0;
   // Comfortable line height for readability
   line-height: var(--line-height-md);
 
   // Responsive typography
   @include respond(md) {
     font-size: var(--font-lg); // 20px on tablet
-    margin-bottom: 24px;
   }
 
   @include respond(sm) {
     font-size: var(--font-md); // 16px on mobile
-    margin-bottom: 16px;
   }
 }
 
@@ -167,17 +230,23 @@
     margin-bottom: 16px;
   }
 }
+.buyDetail{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
 
+}
 // Price Display
 .price {
   // Larger font size to emphasize the price
-  font-size: var(--font-lg); // 20px
+  font-size: var(--font-md); // 20px
   // Use primary gold color to draw attention
   color: var(--color-text-primary);
   // Bold weight for emphasis
   font-weight: var(--font-weight-bold);
   // Spacing before the CTA button
-  margin-bottom: var(--space-text-button-desktop); // 24px
 
   // Responsive adjustments
   @include respond(md) {
@@ -187,6 +256,23 @@
 
   @include respond(sm) {
     margin-bottom: 16px;
+  }
+}
+
+.actionWrapper {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-start;
+  
+  :global(.card-button) {
+    width: auto;
+    padding: 12px 32px;
+    font-size: var(--font-md);
+    
+    @include respond(sm) {
+      width: 100%;
+      padding: 10px 24px;
+    }
   }
 }
 
@@ -241,6 +327,43 @@
 // =============================================================================
 // PLAYER & CURRICULUM MANAGER
 // =============================================================================
+
+// =============================================================================
+// CONTENT SECTION - Rich Text
+// =============================================================================
+
+.contentSection {
+  margin: var(--space-section-top-desktop) auto var(--space-section-bottom-desktop);
+  padding: 32px;
+  background: var(--color-card-bg);
+  border: 1px solid fade(var(--color-primary), 10%);
+  border-radius: var(--border-radius);
+
+  @include respond(md) {
+    margin: 40px auto;
+    padding: 24px;
+  }
+
+  @include respond(sm) {
+    margin: 32px auto;
+    padding: 16px;
+  }
+}
+
+.contentSectionTitle {
+  font-size: var(--font-lg);
+  color: var(--color-text-primary);
+  margin-bottom: 24px;
+  font-weight: var(--font-weight-bold);
+  border-bottom: 1px solid fade(var(--color-primary), 20%);
+  padding-bottom: 16px;
+
+  @include respond(md) {
+    font-size: var(--font-md);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+}
 
 .contentManager {
   margin-top: var(--space-section-top-desktop);

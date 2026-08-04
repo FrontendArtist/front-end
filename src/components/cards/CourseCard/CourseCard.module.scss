@@ -92,11 +92,22 @@
 }
 
 .purchasedText {
-  color: var(--color-success-green-text);
-  /* سبز ملایم و هماهنگ */
-  font-size: var(--font-md);
-  font-weight: var(--font-weight-bold);
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(26, 153, 91, 0.1);
+  color: #1a995b;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: var(--font-sm, 14px);
+  font-weight: var(--font-weight-bold, 700);
+  border: 1px solid rgba(26, 153, 91, 0.2);
+  white-space: nowrap;
+
+  @include respond(sm) {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
 }
 
 // بخش دکمه‌ها

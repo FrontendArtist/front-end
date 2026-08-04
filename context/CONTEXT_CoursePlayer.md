@@ -1,55 +1,61 @@
-# CONTEXT_CoursePlayer.md (نسخه V2: سیستم پخش ویدیو و صوت با Video.js)
+# CONTEXT_CoursePage.md
 
 ## 🎯 Purpose
-مدیریت پخش دوره‌های صوتی و ویدیویی با استفاده از کتابخانه قدرتمند Video.js، کنترل سطح دسترسی کاربران بر اساس وضعیت خرید دوره (رابطه با کاربران در Strapi) و ذخیره‌سازی پیشرفت پخش هر جلسه در LocalStorage.
+طراحی و پیاده‌سازی کامل صفحه تکی دوره آموزشی (`app/courses/[slug]/page.js`) بر پایه SSR جهت ارتقای سئو (JSON-LD)، زیباسازی بصری سرفصل‌ها (Curriculum Accordion)، رندر محتوای غنی توضیحات (ArticleReader)، نمایش رسانه هدر (`teaserUrl` یا `cover`) و افزایش نرخ ثبت‌نام.
 
 ---
 
-## ⚙️ Component Type
-1. `page.js` (Server Component): دریافت داده‌های دوره از لایه API و مدیریت سئو.
-2. `CourseContentManager.jsx` (Client Component): مدیریت استیت جلسه فعال و اعمال منطق‌های خرید/دسترسی.
-3. `VideoJSPlayer.jsx` (Client Component): پیاده‌سازی و اینیشیالایز پلیر Video.js به همراه تنظیمات داینامیک برای Audio و Video و سیستم Resume Playback.
+### 📂 File Structure
+- `app/courses/[slug]/page.js` (صفحه اصلی Server Component)
+- `app/courses/[slug]/page.module.scss` (استایل‌های SCSS صفحه دوره)
+- `src/modules/courses/CourseConsultationCTA.jsx` (ماژول مشاوره قبل از خرید)
+- `src/modules/courses/CourseConsultationCTA.module.scss`
 
 ---
 
-## 🌐 Data Structure (Curriculum Item / Lesson)
-ساختار فیلدهای کامپوننت تکرارپذیر جلسات (مثلاً با نام `curriculum` یا `sessions`) در Strapi:
-- id: string / number
-- title: string (عنوان جلسه)
-- videoUrl: string (لینک مستقیم ویدیو در فضای ابری - اختیاری)
-- audioUrl: string (لینک مستقیم صوت در فضای ابری - اختیاری)
-- isFree: boolean (وضعیت رایگان بودن جلسه)
-- duration: string (مدت زمان جلسه مثل "22:15")
+### ⚙️ Component Type
+- `page.js`: Server Component (SSR)
+- `CourseConsultationCTA`: Server Component
+- `Curriculum Accordion`: Client Component (برای تعامل آکاردئون)
 
 ---
 
-## 🧠 State & Access Control Logic
-1. **قوانین دسترسی (Access Control Guards):**
-   - **جلسه رایگان (isFree: true):**
-     - کاربر لاگین نکرده باشد ➔ مسدود سازی پخش و نمایش آلرت/پیغام "برای مشاهده جلسات رایگان باید وارد حساب کاربری خود شوید".
-     - کاربر لاگین کرده باشد ➔ پخش آزاد است.
-   - **جلسه نقدی (isFree: false):**
-     - کاربر لاگین نکرده باشد یا دوره را خریداری نکرده باشد (`courseId` در آرایه `session.user.courses` موجود نباشد) ➔ نمایش آیکون قفل 🔒 در لیست و عدم امکان پخش همراه با پیغام "این جلسه مخصوص خریداران دوره است".
-     - کاربر خریدار باشد + لاگین ➔ پخش آزاد است.
-
-2. **ذخیره‌سازی پیشرفت (Local Playback Persistence):**
-   - کلید ذخیره‌سازی در LocalStorage فرمت کاملاً یکتا دارد: `vjs_progress_c[courseId]_l[lessonId]`
-   - با استفاده از رویداد `timeupdate` در Video.js، زمان فعلی (`currentTime()`) ذخیره می‌شود.
-   - هنگام لود شدن مجدد جلسه، در صورت وجود تایم قبلی، پلیر باید از همان ثانیه با متد `currentTime(savedTime)` بازیابی (Resume) شود.
+### 🌐 Data Source & APIs
+- **Course Data:** واکشی از متد `getCourseBySlug(slug)` در `src/lib/coursesApi.js` با پاپولیت کامل فیلدهای `cover`, `teaserUrl`, `curriculum`, `category`.
 
 ---
 
-## 🎨 UI/UX & Styling Rules
-- **چیدمان صفحه (Layout):**
-  - **بخش هدر (Hero):** سمت راست تصویر دوره، سمت چپ عنوان، توضیحات، قیمت و دکمه خرید دوره (نمایش دکمه خرید فقط در صورت عدم مالکیت دوره).
-  - **بخش میانی (Player):** باکس پلیر اختصاصی Video.js. اگر جلسه فقط صوتی بود، تگ `<audio className="video-js">` یا تگ ویدیو با یک Poster پیش‌فرض رندر می‌شود. اگر ویدیویی بود، پلیر ویدیویی عریض رندر می‌شود.
-  - **بخش پایینی (Playlist):** لیست جلسات به صورت خطی زیر پلیر. جلسات قفل شده دارای آیکون قفل هستند. جلسه‌ای که در حال پخش است کلاس `.active` به خود می‌گیرد.
-- **استایل‌دهی:** استفاده الزامی از SCSS Modules و ابزار `clsx`. تمامی فایل‌های `.module.scss` باید میکسین‌های پاسخ‌گرا (`@import '@/styles/base/mixins';`) را برای هندل کردن ریسپانسیو دسکتاپ و موبایل با `@include respond(md)` رعایت کنند.
+### 🧩 Dependencies
+- `marked` (تبدیل امن مارک‌داون به HTML در سرور)
+- `ArticleReader` (رندر توضیحات کامل دوره و فهرست مطالب داینامیک)
+- `CommentsSection` (بخش نظرات کاربران)
+- `Lucide Icons` (`Lock`, `PlayCircle`, `Clock`, `CheckCircle`, `Video`, `PhoneCall`)
 
 ---
 
-## 🧩 Dependencies (قوانین سخت‌گیرانه Import)
-- `video.js`: کتابخانه اصلی پلیر.
-- استایل رسمی: `import 'video.js/dist/video-js.css';`
-- `clsx`: برای اعمال استایل‌های داینامیک شرطی (مانند فعال بودن جلسه یا وضعیت قفل).
-- `next-auth/react`: هوک `useSession` جهت استخراج وضعیت خرید کاربر (`session.user.courses`).
+### 🧠 Logic & Rules
+
+۱. **Course JSON-LD (SEO):**
+   - اسکیمای `@type: "Course"`.
+   - فیلدهای `name`, `description`, `provider: { @type: "Organization", name: "طرح الهی" }`.
+   - بخش `offers` شامل قیمت اصلی، قیمت با تخفیف، واحد پول و وضعیت موجودی.
+
+۲. **Hero & Media Section (منطق هوشمند نمایش تیزر / عکس):**
+   - **بررسی فیلد `teaserUrl`:**
+     - اگر فیلد `course.teaserUrl` وجود داشت و خالی نبود (`Boolean(course.teaserUrl)`): آدرس `teaserUrl` را درون کامپوننت/تگ ویدیو پلیر پروژه (با امکانات play/pause/controls) رندر کن.
+     - اگر فیلد `course.teaserUrl` خالی، `null` یا `undefined` بود: تصویر کاور دوره (`course.cover`) را به عنوان بنر اصلی رندر کن.
+   - **متادیتای سریع:** نمایش مدت زمان کل دوره، تعداد جلسات، سطح دوره.
+   - **کارت خرید:** نمایش قیمت اصلی (خط‌خورده در صورت تخفیف)، قیمت نهایی و دکمنه‌ی برجسته‌ی «ثبت‌نام در دوره».
+
+۳. **Curriculum Accordion (سرفصل‌ها و دروس):**
+   - ساختار آکاردئونی برای فصل‌ها و لیست دروس زیرمجموعه.
+   - نمایش زمان هر جلسه و آیکون وضعیت: `Lock` برای جلسات اختصاصی و `Play` برای جلسات رایگان/پیش‌نمایش.
+
+۴. **محتوای اصلی (Rich Text & ArticleReader):**
+   - متن توضیحات کامل دوره باید با `marked.parse` پارس شده و به کامپوننت `<ArticleReader content={parsedContent} />` پاس داده شود.
+
+۵. **Consultation CTA (مشاوره قبل از خرید):**
+   - بنر شکیل با آیکون مشاوره، متن "نیاز به مشاوره قبل از خرید دوره دارید؟" و دکمه لینک به `/contact`.
+
+۶. **بخش نظرات (`CommentsSection`):**
+   - فراخوانی کامپوننت نظرات موجود پروژه در انتهای صفحه.

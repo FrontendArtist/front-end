@@ -8,87 +8,153 @@
 }
 
 .addToCartButton {
-    display: inline-block;
-    align-self: center;
-    background: transparent;
-    padding: 12px 32px;
-    color: var(--color-text-primary);
-    font-size: var(--font-md);
-    font-weight: var(--font-weight-medium);
-    text-decoration: none;
-    border: 2px solid var(--color-text-primary);
-    border-radius: 8px;
-    cursor: pointer;
-    @include hover-transition;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 32px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--color-primary, #d4af37) 0%, #ff9500 100%);
+  color: var(--color-bg-primary, #111); // Deep dark text for contrast
+  font-size: var(--font-md, 16px);
+  font-weight: 800; // Extra bold
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 8px 24px rgba(255, 149, 0, 0.3), inset 0 2px 2px rgba(255, 255, 255, 0.3);
+  z-index: 1;
 
-    &:hover {
-        background-color: var(--color-text-primary);
-        color: var(--color-bg-primary);
-        transform: scale(1.05);
-    }
+  svg {
+    width: 22px;
+    height: 22px;
+    transition: transform 0.4s ease;
+  }
 
-    @include respond(md) {
-        padding: 10px 24px;
-        font-size: var(--font-sm);
+  &:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 14px 32px rgba(255, 149, 0, 0.5), inset 0 2px 2px rgba(255, 255, 255, 0.4);
+    
+    svg {
+      transform: translateX(-4px) scale(1.1) rotate(-10deg);
     }
+  }
+
+  &:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 4px 12px rgba(255, 149, 0, 0.2);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+    transform: skewX(-25deg);
+    z-index: -1;
+  }
+
+  &:hover::before {
+    animation: buttonShine 1s forwards;
+  }
+
+  @include respond(md) {
+    padding: 12px 24px;
+    font-size: var(--font-sm, 14px);
+  }
+}
+
+@keyframes buttonShine {
+  0% { left: -100%; }
+  100% { left: 200%; }
 }
 
 .quantityController {
     display: flex;
     align-items: center;
-    gap: 12px;
-    background: fade(var(--color-primary), 10%);
-    border: 2px solid var(--color-text-primary);
-    border-radius: 8px;
-    overflow: hidden;
-    height: 48px;
-    width: 154px;
     justify-content: space-between;
+    background: var(--color-card-bg, #1a1a1a);
+    border: 2px solid fade(var(--color-primary, #d4af37), 30%);
+    border-radius: 12px;
+    overflow: hidden;
+    height: 52px;
+    width: 160px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+
+    &:hover {
+        border-color: fade(var(--color-primary, #d4af37), 80%);
+        box-shadow: 0 6px 16px fade(var(--color-primary, #d4af37), 15%);
+    }
 
     @include respond(md) {
-        height: 42px;
-        width: 130px;
-        gap: 8px;
+        height: 46px;
+        width: 140px;
     }
 }
 
 .quantityButton {
-    width: 40px;
+    width: 48px;
     height: 100%;
     display: flex;
     align-items: center;
-    background-color: unset;
     justify-content: center;
+    background-color: transparent;
     color: var(--color-text-primary);
     border: none;
-    font-size: var(--font-lg)px;
-    font-weight: var(--font-weight-bold);
+    font-size: 20px;
+    font-weight: bold;
     cursor: pointer;
-    @include hover-transition;
-    line-height: 1;
+    transition: all 0.2s ease;
+    
+    svg {
+        width: 20px;
+        height: 20px;
+        transition: transform 0.2s ease;
+    }
 
     &:hover {
-        background: var(--color-text-primary);
-        color: var(--color-bg-primary);
+        background: fade(var(--color-primary, #d4af37), 15%);
+        color: var(--color-primary);
+        
+        svg {
+            transform: scale(1.15);
+        }
     }
 
     &:active {
-        transform: scale(0.95);
+        background: fade(var(--color-primary, #d4af37), 25%);
+        svg {
+            transform: scale(0.95);
+        }
+    }
+
+    &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        background: transparent;
+        &:hover svg {
+            transform: none;
+        }
     }
 
     @include respond(md) {
-        width: 32px;
-        font-size: var(--font-md);
+        width: 40px;
     }
 }
 
 .quantityDisplay {
     text-align: center;
     color: var(--color-text-primary);
-    font-size: var(--font-lg);
-    font-weight: var(--font-weight-bold);
+    font-size: var(--font-lg, 18px);
+    font-weight: 800;
+    min-width: 32px;
 
     @include respond(md) {
-        font-size: var(--font-md);
+        font-size: var(--font-md, 16px);
     }
 }

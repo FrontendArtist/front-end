@@ -266,16 +266,10 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       {/* =========================================================================
           بخش ویدیو / صوت پلیر (Media Player Section)
           ========================================================================= */}
-      {!isAuthenticated ? (
-        <div className={styles.playerSection}>
-          <div className={styles.authPlaceholder}>
-            <h3>برای مشاهده دوره باید در سایت عضو باشید</h3>
-            <button onClick={openAuthModal} className={styles.loginBtn}>
-              ثبت نام / ورود
-            </button>
-          </div>
-        </div>
-      ) : activeLesson ? (
+      {/* =========================================================================
+          بخش ویدیو / صوت پلیر (Media Player Section)
+          ========================================================================= */}
+      {activeLesson && (
         <div className={styles.playerSection}>
           <div className={styles.playerWrapper}>
             {/* تاگل انتخاب بین ویدیو و صوت */}
@@ -327,230 +321,177 @@ export default function CourseContentManager({ course, styles: propStyles }) {
             )}
           </div>
         </div>
-      ) : !isChaptered && !hasFullCourseAccess ? (
-        <div className={styles.playerSection}>
-          <div className={styles.authPlaceholder}>
-            <h3>برای مشاهده دروس این دوره باید آن را خریداری کنید</h3>
-            <div style={{ marginTop: '16px' }}>
-              <AddToCartButton
-                course={{
-                  id: course.id || course.documentId,
-                  slug: course.slug,
-                  title: course.title,
-                  price: course.price?.toman ?? course.price ?? 0,
-                  image: course.media?.url,
-                  type: 'course',
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      ) : isChaptered && !activeLesson ? (
-        <div className={styles.playerSection}>
-          <div className={styles.authPlaceholder}>
-            <h3>برای مشاهده یا پخش، لطفاً یک جلسه را از سرفصل‌های زیر انتخاب کنید</h3>
-          </div>
-        </div>
-      ) : null}
+      )}
 
       {/* =========================================================================
           گام ۲ & ۳: انشعاب رندرینگ سرفصل‌ها (Render Branching: Branch A & Branch B)
-          نمایش سرفصل‌ها تنها در صورت لاگین بودن کاربر (isAuthenticated === true)
           ========================================================================= */}
-      {isAuthenticated && (
-        <div className={styles.curriculumSection}>
-          <h2 className={styles.sectionTitle}>سرفصل‌های دوره</h2>
+      <div className={styles.curriculumSection}>
+        <h2 className={styles.sectionTitle}>سرفصل‌های دوره</h2>
 
-          {/* 
-            -----------------------------------------------------------------------
-            شاخه B: رندر دوره‌های فصلی (Branch B: Chaptered Course - Accordion Layout)
-            منطق: تفکیک دسترسی بر اساس هر فصل؛ فصل‌های باز نمایش دروس و فصل‌های قفل
-            امکان افزودن به سبد خرید را فراهم می‌کنند.
-            -----------------------------------------------------------------------
-          */}
-          {isChaptered ? (
-            <div className={styles.accordion}>
-              {course.chapters.map((chapter, index) => {
-                const isUnlocked = checkChapterAccess(chapter);
-                const isOpen = openChapterId === chapter.id;
-                const chapterLessons = chapter.lessons || chapter.curriculum || [];
-                const chapterPrice = chapter.price?.toman ?? chapter.price ?? 0;
+        {isChaptered ? (
+          <div className={styles.accordion}>
+            {course.chapters.map((chapter, index) => {
+              const isUnlocked = checkChapterAccess(chapter);
+              const isOpen = openChapterId === chapter.id;
+              const chapterLessons = chapter.lessons || chapter.curriculum || [];
+              const chapterPrice = chapter.price?.toman ?? chapter.price ?? 0;
 
-                return (
+              return (
+                <div
+                  key={chapter.id || index}
+                  className={clsx(styles.chapterItem, {
+                    [styles.openChapter]: isOpen,
+                  })}
+                >
+                  {/* سربرگ آکوردئون فصل (Chapter Header) */}
                   <div
-                    key={chapter.id || index}
-                    className={clsx(styles.chapterItem, {
-                      [styles.openChapter]: isOpen,
-                      [styles.lockedChapter]: !isUnlocked, // استایل Dimmed (کمرنگ‌تر) برای فصل قفل شده
-                    })}
+                    className={styles.chapterHeader}
+                    onClick={() => {
+                      setOpenChapterId((prev) => (prev === chapter.id ? null : chapter.id));
+                    }}
                   >
-                    {/* سربرگ آکوردئون فصل (Chapter Header) */}
-                    <div
-                      className={styles.chapterHeader}
-                      onClick={(e) => handleToggleChapter(chapter, e)}
-                    >
-                      <div className={styles.chapterHeaderLeft}>
-                        <span className={styles.chapterBadge}>فصل {index + 1}</span>
-                        <div className={styles.chapterTitleGroup}>
-                          <h3 className={styles.chapterTitle}>{chapter.title}</h3>
-                          {!isUnlocked && (
-                            <span className={styles.lockIcon} title="فصل قفل شده است">
-                              🔒
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className={styles.chapterHeaderRight}>
-                        {/* اطلاعات متا و قیمت فصل */}
-                        <div className={styles.chapterMeta}>
-                          <span>{chapterLessons.length} جلسه</span>
-                          {chapter.duration && <span>• {chapter.duration}</span>}
-                        </div>
-
-                        {/* نمایش قیمت و دکمه خرید در صورت قفل بودن فصل */}
-                        {!isUnlocked ? (
-                          <div className={styles.chapterPriceGroup}>
-                            {chapterPrice > 0 ? (
-                              <button
-                                className={styles.addChapterCartBtn}
-                                onClick={(e) => handleAddChapterToCart(chapter, e)}
-                                title="افزودن فصل به سبد خرید"
-                              >
-                                <span>🛒 {chapterPrice.toLocaleString()} تومان</span>
-                              </button>
-                            ) : (
-                              <span className={styles.freeBadge}>رایگان</span>
-                            )}
-                          </div>
-                        ) : (
-                          /* آیکون چرخشی باز/بسته شدن برای فصل‌های باز */
-                          <svg
-                            className={clsx(styles.chevronIcon, {
-                              [styles.rotated]: isOpen,
-                            })}
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <path
-                              d="M19 9l-7 7-7-7"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        )}
-                      </div>
+                    <div className={styles.chapterHeaderRight}>
+                      <span className={styles.chapterBadge}>فصل {index + 1}</span>
+                      <h3 className={styles.chapterTitle}>{chapter.title}</h3>
                     </div>
 
-                    {/* محتوای باز شده فصل (Chapter Content & Lessons) */}
-                    {isOpen && isUnlocked && (
-                      <div className={styles.chapterContent}>
-                        <ul className={styles.chapterLessonList} ref={listRef}>
-                          {chapterLessons.map((lesson) => {
-                            const isLessonActive = activeLesson?.id === lesson.id;
-
-                            return (
-                              <li
-                                key={lesson.id}
-                                className={clsx(styles.lessonItem, {
-                                  [styles.active]: isLessonActive,
-                                })}
-                                onClick={(e) => handleLessonClick(lesson, true, e)}
-                              >
-                                <div className={styles.lessonInfo}>
-                                  <span className={styles.lessonIcon}>
-                                    {lesson.videoUrl && lesson.audioUrl
-                                      ? '🎬'
-                                      : lesson.videoUrl
-                                      ? '🎥'
-                                      : '🎵'}
-                                  </span>
-                                  <span className={styles.lessonTitle}>
-                                    {lesson.title}
-                                  </span>
-                                  {lesson.isFree && (
-                                    <span className={styles.freeBadge}>رایگان</span>
-                                  )}
-                                  {lesson.videoUrl && lesson.audioUrl && (
-                                    <span className={styles.dualBadge}>
-                                      ویدیو + صوت
-                                    </span>
-                                  )}
-                                </div>
-                                {lesson.duration && (
-                                  <span className={styles.lessonDuration}>
-                                    {lesson.duration}
-                                  </span>
-                                )}
-                              </li>
-                            );
-                          })}
-                        </ul>
+                    <div className={styles.chapterHeaderLeft}>
+                      <div className={styles.chapterMeta}>
+                        <span>{chapterLessons.length} جلسه</span>
+                        {chapter.duration && <span>• {chapter.duration}</span>}
                       </div>
-                    )}
+                      
+                      <div className={styles.chapterStatus}>
+                        {!isUnlocked ? (
+                          <svg className={styles.statusIconLock} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        ) : (
+                          <svg className={styles.statusIconUnlock} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                        )}
+                        <svg
+                          className={clsx(styles.chevronIcon, {
+                            [styles.rotated]: isOpen,
+                          })}
+                          width="18" height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* محتوای باز شده فصل (Chapter Content & Lessons) */}
+                  {isOpen && (
+                    <div className={styles.chapterContent}>
+                      {/* بنر قفل بودن فصل */}
+                      {!isUnlocked && (
+                        <div className={styles.lockedBanner}>
+                          <p>
+                            این فصل قفل است. برای دسترسی به محتوای این بخش می‌توانید آن را با مبلغ{' '}
+                            <strong>{chapterPrice > 0 ? `${chapterPrice.toLocaleString()} تومان` : 'رایگان'}</strong>{' '}
+                            تهیه کنید.
+                          </p>
+                          {chapterPrice > 0 && (
+                            <button
+                              className={styles.buyChapterBtn}
+                              onClick={(e) => handleAddChapterToCart(chapter, e)}
+                            >
+                              تهیه فصل
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      <ul
+                        className={clsx(styles.chapterLessonList, {
+                          [styles.disabledList]: !isUnlocked,
+                        })}
+                        ref={listRef}
+                      >
+                        {chapterLessons.map((lesson) => {
+                          const isLessonActive = activeLesson?.id === lesson.id;
+                          const isLessonLocked = !isUnlocked && !lesson.isFree;
+
+                          return (
+                            <li
+                              key={lesson.id}
+                              className={clsx(styles.lessonItem, {
+                                [styles.active]: isLessonActive,
+                                [styles.lockedLesson]: isLessonLocked,
+                              })}
+                              onClick={(e) => handleLessonClick(lesson, !isLessonLocked, e)}
+                            >
+                              <div className={styles.lessonInfo}>
+                                <span className={styles.lessonIcon}>
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                                </span>
+                                <span className={styles.lessonTitle}>
+                                  {lesson.title}
+                                </span>
+                                {lesson.isFree && (
+                                  <span className={styles.freeBadge}>رایگان</span>
+                                )}
+                              </div>
+                              {lesson.duration && (
+                                <span className={styles.lessonDuration}>
+                                  {lesson.duration}
+                                </span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          course.curriculum && (
+            <ul className={styles.lessonList} ref={listRef}>
+              {course.curriculum.map((lesson) => {
+                const isLessonLocked = !hasFullCourseAccess && !lesson.isFree;
+                const isLessonActive = activeLesson?.id === lesson.id;
+
+                return (
+                  <li
+                    key={lesson.id}
+                    className={clsx(styles.lessonItem, {
+                      [styles.active]: isLessonActive,
+                      [styles.lockedLesson]: isLessonLocked,
+                    })}
+                    onClick={(e) => handleLessonClick(lesson, !isLessonLocked, e)}
+                  >
+                    <div className={styles.lessonInfo}>
+                      <span className={styles.lessonIcon}>
+                        {isLessonLocked ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        ) : (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                        )}
+                      </span>
+                      <span className={styles.lessonTitle}>{lesson.title}</span>
+                      {lesson.isFree && (
+                        <span className={styles.freeBadge}>رایگان</span>
+                      )}
+                    </div>
+                    {lesson.duration && (
+                      <span className={styles.lessonDuration}>
+                        {lesson.duration}
+                      </span>
+                    )}
+                  </li>
                 );
               })}
-            </div>
-          ) : (
-            /* 
-              -----------------------------------------------------------------------
-              شاخه A: رندر دوره‌های غیرفصلی (Branch A: Non-Chaptered Course - Flat List)
-              منطق: رندر یک لیست خطی از تمام دروس با اعمال قفل روی دروس غیر رایگان
-              در صورت عدم مالکیت کامل دوره.
-              -----------------------------------------------------------------------
-            */
-            course.curriculum && (
-              <ul className={styles.lessonList} ref={listRef}>
-                {course.curriculum.map((lesson) => {
-                  // درس قفل است اگر کاربر مالک کل دوره نباشد و درس رایگان نباشد
-                  const isLessonLocked = !hasFullCourseAccess && !lesson.isFree;
-                  const isLessonActive = activeLesson?.id === lesson.id;
-
-                  return (
-                    <li
-                      key={lesson.id}
-                      className={clsx(styles.lessonItem, {
-                        [styles.active]: isLessonActive,
-                        [styles.locked]: isLessonLocked, // اعمال استایل قفل و غیرفعالسازی اشاره‌گر
-                      })}
-                      onClick={(e) =>
-                        handleLessonClick(lesson, !isLessonLocked, e)
-                      }
-                    >
-                      <div className={styles.lessonInfo}>
-                        <span className={styles.lessonIcon}>
-                          {isLessonLocked
-                            ? '🔒'
-                            : lesson.videoUrl && lesson.audioUrl
-                            ? '🎬'
-                            : lesson.videoUrl
-                            ? '🎥'
-                            : '🎵'}
-                        </span>
-                        <span className={styles.lessonTitle}>{lesson.title}</span>
-                        {lesson.isFree && (
-                          <span className={styles.freeBadge}>رایگان</span>
-                        )}
-                        {lesson.videoUrl && lesson.audioUrl && (
-                          <span className={styles.dualBadge}>ویدیو + صوت</span>
-                        )}
-                      </div>
-                      {lesson.duration && (
-                        <span className={styles.lessonDuration}>
-                          {lesson.duration}
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )
-          )}
-        </div>
-      )}
+            </ul>
+          )
+        )}
+      </div>
 
       {/* =========================================================================
           مودال سراسری تایید افزودن فصل به سبد خرید (Cart Confirmation Modal)

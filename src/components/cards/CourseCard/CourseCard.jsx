@@ -75,7 +75,7 @@ const CourseCard = ({ course }) => {
         {/* نمایش قیمت یا وضعیت رایگان */}
         <div className={styles.priceSection}>
           {isHydrated && isPurchased ? (
-            <span className={styles.purchasedText}>دانشجوی دوره هستید</span>
+            <span className={styles.purchasedText}>✓ دانشجوی دوره هستید</span>
           ) : (
             <span className={styles.price}>
               {formattedPrice > 0 ? `${formattedPrice.toLocaleString()} تومان` : 'رایگان'}

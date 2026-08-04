@@ -24,30 +24,15 @@
 
 /* Content Grid */
 .contentGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-gap-desktop);
 
-    @include respond(lg) {
-        grid-template-columns: 1fr;
-        gap: 48px;
-    }
 
-    @include respond(sm) {
-        gap: 32px;
-    }
 }
 
 .formSection {
-    /* فرم در ستون چپ (راست در RTL) */
+    max-width: 600px;
+    margin: 0 auto;
 }
 
-/* Info Section */
-.infoSection {
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-}
 
 .infoTitle {
     font-size: var(--font-lg-xl);

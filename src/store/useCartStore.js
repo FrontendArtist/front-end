@@ -17,13 +17,14 @@ export const useCartStore = create(
 
             /**
              * افزودن آیتم به سبد خرید
-             * @param {Object} item - آیتم مورد نظر برای افزودن
+             * @param {Object} rawItem - آیتم مورد نظر برای افزودن
              * منطق:
              * - اگر آیتم از نوع 'course' باشد، فقط یکبار اضافه می‌شود (quantity همیشه 1)
              * - اگر آیتم از نوع 'product' باشد و قبلاً موجود باشد، quantity آن +1 می‌شود
              * - اگر آیتم از نوع 'product' باشد و موجود نباشد، با quantity=1 اضافه می‌شود
              */
-            addItem: (item) => {
+            addItem: (rawItem) => {
+                const item = { ...rawItem, price: typeof rawItem.price === 'object' ? (rawItem.price?.toman || 0) : (rawItem.price || 0) };
                 const currentItems = get().items;
 
                 const existingItemIndex = currentItems.findIndex(
@@ -120,6 +121,20 @@ export const useCartStore = create(
         {
             // نام کلید ذخیره‌سازی در LocalStorage
             name: 'cart-storage',
+
+            // نسخه استور برای مایگریشن تغییرات استیت در کاربرانی که از قبل دیتا دارند
+            version: 1,
+            migrate: (persistedState, version) => {
+                if (version === 0) {
+                    if (persistedState.items) {
+                        persistedState.items = persistedState.items.map(item => ({
+                            ...item,
+                            price: typeof item.price === 'object' ? (item.price?.toman || 0) : (item.price || 0)
+                        }));
+                    }
+                }
+                return persistedState;
+            },
 
             /**
              * تنظیمات ذخیره‌سازی

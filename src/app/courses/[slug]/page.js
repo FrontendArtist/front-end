@@ -8,6 +8,9 @@ import CommentsSection from '@/modules/comments/CommentsSection';
 import { API_BASE_URL } from '@/lib/api';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { marked } from 'marked';
+import ArticleReader from '@/app/articles/[slug]/ArticleReader';
+import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import styles from './page.module.scss';
 
 /**
@@ -104,6 +107,8 @@ export default async function CoursePage({ params }) {
     title: rawCourse.title,
     description: rawCourse.shortDescription,
     price: rawCourse.price,
+    content: rawCourse.content,
+    teaserUrl: rawCourse.teaserUrl,
     isChaptered: rawCourse.isChaptered || false,
     media: {
       url: rawCourse.image.url.startsWith('http') || rawCourse.image.url.startsWith('/images/')
@@ -157,32 +162,60 @@ export default async function CoursePage({ params }) {
 
         <div className={styles.mainInfoGrid}>
           <div className={styles.mediaWrapper}>
-            <Image
-              src={course.media.url}
-              alt={course.media.alt}
-              fill
-              priority
-              sizes="(max-width: 768px) 100vw, 50vw"
-              style={{ objectFit: 'cover' }}
-            />
+            {course.teaserUrl ? (
+              <>
+                <div className={styles.teaserBadge}>🏆 تیزر معرفی دوره</div>
+                <video
+                  src={course.teaserUrl}
+                  controls
+                  poster={course.media.url}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </>
+            ) : (
+              <Image
+                src={course.media.url}
+                alt={course.media.alt}
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 50vw"
+                style={{ objectFit: 'cover' }}
+              />
+            )}
           </div>
           <div className={styles.details}>
-            <h1 className={styles.title}>{course.title}</h1>
+            <div className={styles.titleWrapper}>
+              <h1 className={styles.title}>{course.title}</h1>
+              {hasPurchasedServer && (
+                <div className={styles.enrolledBadge}>
+                  ✓ شما دانشجوی این دوره هستید
+                </div>
+              )}
+            </div >
             <p className={styles.description}>{course.description}</p>
-            <div className={styles.price}>
+            <div className={styles.buyDetail}>
+              {!course.isChaptered && !isFreeCourse && !hasPurchasedServer && (
+                <div className={styles.actionWrapper}>
+                  <AddToCartButton course={course} />
+                </div>
+              )}
               {course.isChaptered
                 ? 'خرید به صورت فصلی (از سرفصل‌های زیر انتخاب کنید)'
                 : course.price?.toman === 0
                 ? 'رایگان'
-                : `${course.price?.toman.toLocaleString()} تومان`}
+                : <span className={styles.price}>{`${course.price?.toman}`} تومان</span>}
+
             </div>
-            {hasPurchasedServer && (
-              <div style={{ color: '#1a995b', fontWeight: 'bold', fontSize: '18px', marginTop: '10px' }}>
-                ✓ شما دانشجوی این دوره هستید
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Course Description Content */}
+        {course.content && (
+          <div className={styles.contentSection}>
+            <h2 className={styles.contentSectionTitle}>توضیحات تکمیلی دوره</h2>
+            <ArticleReader content={marked.parse(course.content)} />
+          </div>
+        )}
 
         {/* Course Content Manager for Player and Playlist */}
         <CourseContentManager course={course} styles={styles} />
