@@ -1,7 +1,11 @@
 @use '../../../styles/base/mixins' as *;
 
 .heroButton {
-  position: relative;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin:  0 auto;
+  bottom: 80px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -22,7 +26,65 @@
   text-shadow:  0 4px 12px fade(var(--color-black), 35%);
   color: var(--color-overlay);
   direction: rtl;
-  @include hover-transition;
+  @include hover-transition;# CONTEXT_CoursePage.md
+
+## 🎯 Purpose
+طراحی و پیاده‌سازی صفحه تکی دوره آموزشی (`app/courses/[slug]/page.js`) بر پایه SSR جهت ارتقای سئو (JSON-LD)، زیباسازی بصری سرفصل‌ها (Curriculum Accordion)، رندر محتوای غنی توضیحات (ArticleReader)، نمایش رسانه هدر (Teaser/Banner) و افزایش نرخ ثبت‌نام.
+
+---
+
+### 📂 File Structure
+- `app/courses/[slug]/page.js` (صفحه اصلی Server Component)
+- `app/courses/[slug]/page.module.scss` (استایل‌های SCSS صفحه دوره)
+- `src/modules/courses/CourseConsultationCTA.jsx` (ماژول مشاوره قبل از خرید)
+- `src/modules/courses/CourseConsultationCTA.module.scss`
+
+---
+
+### ⚙️ Component Type
+- `page.js`: Server Component (SSR)
+- `CourseConsultationCTA`: Server Component
+- `Curriculum Accordion`: Client Component (برای تعامل باز و بسته‌شدن)
+
+---
+
+### 🌐 Data Source & APIs
+- **Course Data:** واکشی از متد `getCourseBySlug(slug)` در `src/lib/coursesApi.js` با populate کامل فیلدهای `cover`, `teaser_video` (یا `teaser_url`), `curriculum`, `category`.
+
+---
+
+### 🧩 Dependencies
+- `marked` (تبدیل امن مارک‌داون به HTML در سرور)
+- `ArticleReader` (رندر توضیحات کامل دوره و فهرست مطالب داینامیک)
+- `CommentsSection` (بخش نظرات کاربران)
+- `Lucide Icons` (`Lock`, `PlayCircle`, `Clock`, `CheckCircle`, `Video`, `PhoneCall`)
+
+---
+
+### 🧠 Logic & Rules
+
+۱. **Course JSON-LD (SEO):**
+   - اسکیمای `@type: "Course"`.
+   - فیلدهای `name`, `description`, `provider: { @type: "Organization", name: "طرح الهی" }`.
+   - بخش `offers` شامل قیمت اصلی، قیمت با تخفیف، واحد پول و وضعیت موجودی.
+
+۲. **Hero & Media Section (هدر و رسانه‌ی دوره):**
+   - **منطق رسانه:** اگر ویدیو یا لینک تیزر معرفی (`teaser_video` یا `teaser_url`) در دیتا موجود بود، پلیر ویدیو رندر شود؛ در غیر این صورت، تصویر کاور (بنر) رندر گردد.
+   - **نشان‌های متادیتا:** نمایش مدت زمان کل دوره، تعداد جلسات، سطح دوره.
+   - **کارت خرید:** نمایش قیمت اصلی (خط‌خورده در صورت تخفیف)، قیمت نهایی و دکمنه‌ی برجسته‌ی «ثبت‌نام در دوره».
+
+۳. **Curriculum Accordion (سرفصل‌ها و دروس):**
+   - ساختار آکاردئونی برای فصل‌ها و لیست دروس زیرمجموعه.
+   - نمایش زمان هر جلسه و آیکون وضعیت: `Lock` برای جلسات اختصاصی و `Play` برای جلسات رایگان/پیش‌نمایش.
+
+۴. **محتوای اصلی (Rich Text & ArticleReader):**
+   - متن توضیحات کامل دوره باید با `marked.parse` پارس شده و به کامپوننت `<ArticleReader content={parsedContent} />` پاس داده شود.
+
+۵. **Consultation CTA (مشاوره قبل از خرید):**
+   - بنر شکیل با آیکون مشاوره، متن "نیاز به مشاوره قبل از خرید دوره دارید؟" و دکمه لینک به `/contact`.
+
+۶. **بخش نظرات (`CommentsSection`):**
+   - فراخوانی کامپوننت نظرات موجود پروژه در انتهای صفحه.
 
   &:hover {
     transform: translateY(-2px);

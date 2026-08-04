@@ -31,13 +31,15 @@ export const authOptions = {
                     // خواندن پاسخ صریح متنی قبل از پارس JSON برای جلوگیری از کرش <!DOCTYPE
                     const contentType = response.headers.get('content-type') || '';
                     if (!contentType.includes('application/json')) {
-                        throw new Error('کد تایید اشتباه است یا خطایی در سرور رخ داده است');
+                        console.error('[NextAuth] Response is not JSON:', contentType);
+                        return null;
                     }
 
                     const data = await response.json();
 
                     if (!response.ok) {
-                        throw new Error(data.error?.message || data.message || 'کد تایید اشتباه است یا منقضی شده است');
+                        console.error('[NextAuth] Verification failed:', data);
+                        return null;
                     }
 
                     const { jwt, user } = data;
@@ -52,7 +54,8 @@ export const authOptions = {
                     }
                     return null;
                 } catch (error) {
-                    throw new Error(error.message || 'خطای ورود به سیستم');
+                    console.error('[NextAuth] authorize error:', error.message);
+                    return null;
                 }
             },
         }),
@@ -75,7 +78,7 @@ export const authOptions = {
             return token;
         },
         async session({ session, token }) {
-            if (session.user) {
+            if (session && session.user && token) {
                 session.user.id = token.id;
                 session.user.jwt = token.jwt;
                 session.user.phoneNumber = token.phoneNumber;
@@ -109,4 +112,5 @@ export const authOptions = {
         },
     },
     secret: process.env.NEXTAUTH_SECRET || 'dev-secret-key-change-this',
+    trustHost: true,
 };
