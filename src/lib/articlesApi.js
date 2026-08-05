@@ -53,7 +53,7 @@ export async function getArticleCategories() {
  */
 export async function getAllArticles() {
   try {
-    const response = await apiClient('/api/articles?populate=*&sort=publishedAt:desc');
+    const response = await apiClient('/api/articles?status=published&populate=*&sort=publishedAt:desc');
     return formatStrapiArticles(response);
   } catch (error) {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
@@ -73,7 +73,7 @@ export async function getAllArticles() {
 export async function getArticleBySlug(slug) {
   try {
     const response = await apiClient(
-      `/api/articles?filters[slug][$eq]=${slug}&populate=*`
+      `/api/articles?status=published&filters[slug][$eq]=${slug}&populate=*`
     );
     const formattedArticles = formatStrapiArticles(response);
     return formattedArticles[0] || null;
@@ -94,7 +94,7 @@ export async function getArticles({
   categorySlug = null
 } = {}) {
   try {
-    let url = `/api/articles?populate=*&pagination[limit]=${limit}&sort=${sort}`;
+    let url = `/api/articles?status=published&populate=*&pagination[limit]=${limit}&sort=${sort}`;
 
     if (categorySlug) {
       // استفاده از نام فیلد صحیح طبق دیتابیس (articles_categories)
@@ -128,7 +128,7 @@ export async function getArticlesPaginated(
   try {
     // تغییر مهم: populate=* بجای populate=cover
     // این اطمینان می‌دهد که اگر کارت مقاله نیاز به نمایش دسته یا نویسنده داشت، داده موجود باشد
-    let url = `/api/articles?populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`;
+    let url = `/api/articles?status=published&populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`;
 
     if (categorySlug) {
       // استفاده از نام فیلد صحیح طبق دیتابیس (articles_categories)

@@ -1,4 +1,33 @@
 
+[2026-08-05] - Strapi v5 Document Service Draft & Publish Fix for Courses, Articles & Products
+
+── Strapi v5 Backend Document Service Controllers ────────────────────────────────────
+- Updated Strapi v5 Course controller (`backend/src/api/course/controllers/course.js`):
+  - Overrode `update` method to support Strapi v5 Document Service `publish` and `unpublish` functions.
+  - When `publishedAt: null` is sent in `update` payload, triggers `strapi.documents('api::course.course').unpublish({ documentId })` to remove the published entry from the database.
+  - When `publishedAt` date string is sent, triggers `strapi.documents('api::course.course').publish({ documentId })`.
+- Verified identical Document Service publish/unpublish controller logic in `article.js` and `product.js`.
+
+── Public API Querying & Filtering ──────────────────────────────────────────────────
+- Added explicit `'status': 'published'` parameter to all public fetchers in `src/lib/coursesApi.js`, `src/lib/articlesApi.js`, and `src/lib/productsApi.js`:
+  - Enforces that draft/unpublished courses, articles, and products are strictly excluded from public site listings, sliders, and page routes (`/courses`, `/articles`, `/products`, `/`).
+
+##latest- 2026-08-05
+
+### Fix & Architecture: Strapi v5 Draft & Publish Document Service Unpublish Fix
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Fixed an issue where unpublishing courses in the admin panel did not unpublish the active course entry in Strapi v5. Added Strapi v5 Document Service controller overrides and enforced `status=published` query parameters across public API fetchers.
+
+#### Changes Made:
+1. **Backend Course Controller** (`backend/src/api/course/controllers/course.js`):
+   - Added Document Service `unpublish` and `publish` lifecycle hooks upon receiving `publishedAt` changes.
+2. **Frontend API Layers** (`src/lib/coursesApi.js`, `src/lib/articlesApi.js`, `src/lib/productsApi.js`):
+   - Configured `status: 'published'` on all public query endpoints to prevent draft items from displaying on public routes.
+
+---
+
 [2026-08-04] - Course Teaser Video Player, Title Enrolled Badge & Curriculum Accordion Redesign
 
 ── Course Teaser Video Player & Dynamic Media ───────────────────────────────────────

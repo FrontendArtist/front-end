@@ -25,6 +25,7 @@ export async function getAllCourses() {
   try {
     // ساخت کوئری Strapi v5 برای دریافت تمام فصل‌ها، درس‌های داخل فصل، سرفصل خطی و رسانه
     const searchParams = new URLSearchParams({
+      'status': 'published',
       'sort': 'createdAt:desc',
       'populate[chapters][populate][lessons]': '*',
       'populate[curriculum]': '*',
@@ -77,6 +78,7 @@ export async function getCourseBySlug(slug) {
   try {
     // ساخت پارامترهای دقیق Strapi v5 با انکودینگ استاندارد URL
     const searchParams = new URLSearchParams({
+      'status': 'published',
       'filters[slug][$eq]': slug,
       'populate[chapters][populate][lessons]': '*',
       'populate[curriculum]': '*',
@@ -117,6 +119,7 @@ export async function getCourseBySlug(slug) {
 export async function getCourses({ limit = 4 } = {}) {
   try {
     const searchParams = new URLSearchParams({
+      'status': 'published',
       'sort': 'createdAt:desc',
       'pagination[limit]': String(limit),
       'populate[chapters][populate][lessons]': '*',
@@ -149,6 +152,7 @@ export async function getCourses({ limit = 4 } = {}) {
 export async function getCoursesPaginated(page = 1, pageSize = 6, sort = 'createdAt:desc') {
   try {
     const searchParams = new URLSearchParams({
+      'status': 'published',
       'pagination[page]': String(page),
       'pagination[pageSize]': String(pageSize),
       'sort': sort,

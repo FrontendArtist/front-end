@@ -13,7 +13,7 @@ export async function getAllProducts() {
   try {
     // تغییر: استفاده از سینتکس امن‌تر برای populate
     // تصاویر را با true صدا می‌زنیم نه *
-    const response = await apiClient('/api/products?populate[categories][populate]=parent&populate[images]=true');
+    const response = await apiClient('/api/products?status=published&populate[categories][populate]=parent&populate[images]=true');
     return formatStrapiProducts(response);
   } catch (error) {
     if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
@@ -34,7 +34,7 @@ export async function getAllProducts() {
 export async function getProductBySlug(slug) {
   try {
     const response = await apiClient(
-      `/api/products?filters[slug][$eq]=${slug}&populate[categories][populate]=parent&populate[images]=true`
+      `/api/products?status=published&filters[slug][$eq]=${slug}&populate[categories][populate]=parent&populate[images]=true`
     );
     const formattedProducts = formatStrapiProducts(response);
     return formattedProducts[0] || null;
@@ -105,7 +105,7 @@ export async function getProductCategoryPath(slug) {
 export async function getProducts({ limit = 4, sort = 'createdAt:desc' } = {}) {
   try {
     const response = await apiClient(
-      `/api/products?populate[categories][populate]=parent&populate[images]=true&pagination[limit]=${limit}&sort=${sort}`
+      `/api/products?status=published&populate[categories][populate]=parent&populate[images]=true&pagination[limit]=${limit}&sort=${sort}`
     );
     return formatStrapiProducts(response);
   } catch (error) {
@@ -133,6 +133,7 @@ export async function getProductsPaginated(
     const params = new URLSearchParams();
 
     // ✅ Fix: استفاده از true به جای * برای تصاویر
+    params.set('status', 'published');
     params.set('populate[categories][populate]', 'parent');
     params.set('populate[images]', 'true');
 
