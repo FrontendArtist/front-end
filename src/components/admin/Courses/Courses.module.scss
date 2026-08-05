@@ -1,0 +1,683 @@
+@use '../../../styles/base/mixins' as *;
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * SHARED – PAGE SHELL (same as Products)
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.page {
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    &__title {
+        font-size: var(--font-lg-xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-card-text);
+        margin: 0;
+    }
+
+    &__count {
+        font-size: var(--font-sm);
+        color: var(--color-text-primary);
+        background-color: fade(var(--color-primary), 8%);
+        border: 1px solid fade(var(--color-primary), 20%);
+        padding: 0.3rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    &__error {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.25rem 1.5rem;
+        background-color: fade(var(--color-error), 12%);
+        border: 1px solid fade(var(--color-error), 30%);
+        border-radius: var(--border-radius);
+        color: var(--color-error);
+        margin-bottom: 1.5rem;
+
+        span { font-size: 1.25rem; }
+        p { margin: 0; font-size: var(--font-sm); }
+    }
+
+    &__actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * TABLE
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.tableContainer {
+    background-color: var(--color-bg-primary);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px fade(var(--color-black), 5%);
+    overflow-x: auto;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+
+    &__count {
+        font-size: var(--font-sm);
+        color: var(--color-text-primary);
+        white-space: nowrap;
+    }
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 820px;
+
+    th, td {
+        padding: 0.9rem 1rem;
+        text-align: right;
+        border-bottom: 1px solid fade(var(--color-black), 5%);
+    }
+
+    th {
+        font-weight: var(--font-weight-bold);
+        color: var(--color-card-text);
+        font-size: var(--font-sm);
+        white-space: nowrap;
+        background-color: fade(var(--color-primary), 4%);
+    }
+
+    td {
+        font-size: var(--font-sm);
+        color: var(--color-text-primary);
+    }
+
+    tbody tr {
+        transition: background-color 0.15s;
+        &:hover { background-color: fade(var(--color-black), 5%); }
+    }
+}
+
+.thumbnail {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid fade(var(--color-primary), 20%);
+    background-color: fade(var(--color-primary), 5%);
+}
+
+.thumbnailPlaceholder {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    background-color: fade(var(--color-primary), 8%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    border: 1px dashed fade(var(--color-primary), 20%);
+}
+
+.priceCell {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+    direction: ltr;
+    text-align: left;
+}
+
+/* Toggle switch */
+.toggleLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.toggleInput {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggleTrack {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    background-color: fade(var(--color-black), 20%);
+    transition: background-color 0.25s ease;
+    border: 1px solid fade(var(--color-black), 10%);
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: fade(var(--color-white), 30%);
+        transition: transform 0.25s ease, background-color 0.25s ease;
+    }
+}
+
+.toggleInput:checked + .toggleTrack {
+    background-color: var(--color-success);
+    border-color: var(--color-success);
+
+    &::after {
+        transform: translateX(-20px);
+        background-color: var(--color-white);
+    }
+}
+
+.toggleInput:disabled + .toggleTrack {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * CONFIRM DIALOG
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.confirmOverlay {
+    position: fixed;
+    inset: 0;
+    background-color: fade(var(--color-black), 60%);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease;
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+}
+
+.confirmBox {
+    background-color: var(--color-bg-primary);
+    border: 1px solid fade(var(--color-primary), 20%);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    animation: slideUp 0.25s ease;
+
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+
+    h3 { font-size: var(--font-lg); color: var(--color-card-text); margin: 0 0 0.75rem; }
+    p { font-size: var(--font-sm); color: var(--color-text-primary); margin: 0 0 1.5rem; line-height: var(--line-height-md); }
+
+    &__buttons { display: flex; gap: 0.75rem; justify-content: center; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * TOAST
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.toastContainer {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1.5rem;
+    border-radius: 10px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    box-shadow: 0 8px 24px fade(var(--color-black), 40%);
+    animation: toastIn 0.3s ease forwards;
+    pointer-events: auto;
+    max-width: 420px;
+    white-space: nowrap;
+
+    @keyframes toastIn {
+        from { opacity: 0; transform: translateY(16px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    &--success { background-color: var(--color-success); color: var(--color-white); }
+    &--error   { background-color: var(--color-error); color: var(--color-white); }
+    &--info    { background-color: fade(var(--color-blue-alt), 20%); color: var(--color-blue-light); }
+
+    .toastIcon { font-size: 1.1rem; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * FORM
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.formWrapper {
+    background-color: var(--color-bg-primary);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: 0 4px 6px fade(var(--color-black), 5%);
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+
+    @media (max-width: 768px) { grid-template-columns: 1fr; }
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    &--full { grid-column: 1 / -1; }
+
+    label {
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-card-text);
+    }
+
+    .required { color: var(--color-error); margin-right: 2px; }
+}
+
+.input,
+.textarea,
+.select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid fade(var(--color-black), 10%);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: var(--font-sm);
+    background-color: fade(var(--color-white), 30%);
+    color: var(--color-card-text);
+    transition: all 0.2s ease;
+
+    &::placeholder { color: var(--color-text-primary); opacity: 0.5; }
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-title-hover);
+        background-color: var(--color-bg-primary);
+        box-shadow: 0 0 0 3px fade(var(--color-primary), 10%);
+    }
+
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: var(--line-height-md);
+}
+
+.hint {
+    font-size: 0.75rem;
+    color: var(--color-text-primary);
+    opacity: 0.65;
+    margin-top: 0.25rem;
+}
+
+.sectionTitle {
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-card-text);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid fade(var(--color-primary), 15%);
+    margin: 1.5rem 0 1rem;
+    grid-column: 1 / -1;
+}
+
+/* ── Toggle Row (isFree, isChaptered) ─────────────────────────────────────── */
+.toggleRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background-color: fade(var(--color-primary), 5%);
+    border: 1px solid fade(var(--color-primary), 15%);
+    border-radius: 8px;
+
+    span {
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+        font-weight: var(--font-weight-medium);
+    }
+}
+
+/* ── Media Upload ────────────────────────────────────────────────────────── */
+.imageUploadZone {
+    border: 2px dashed fade(var(--color-primary), 25%);
+    border-radius: var(--border-radius);
+    padding: 2rem 1rem;
+    text-align: center;
+    background-color: fade(var(--color-primary), 4%);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover,
+    &--drag {
+        border-color: var(--color-title-hover);
+        background-color: fade(var(--color-primary), 8%);
+    }
+
+    input { display: none; }
+    p { font-size: var(--font-sm); color: var(--color-text-primary); margin: 0.5rem 0 0; }
+    .uploadIcon { font-size: 2.5rem; display: block; }
+}
+
+.imagePreviewGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.imagePreviewItem {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid fade(var(--color-primary), 20%);
+
+    img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    &__remove {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: var(--color-error);
+        color: var(--color-white);
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.15s;
+
+        &:hover { opacity: 0.85; }
+    }
+}
+
+/* ── Form Actions ─────────────────────────────────────────────────────────── */
+.formActions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid fade(var(--color-primary), 15%);
+}
+
+.btnPrimary {
+    padding: 0.75rem 1.75rem;
+    border-radius: 8px;
+    border: none;
+    font-family: inherit;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &--publish {
+        background-color: var(--color-title-hover);
+        color: var(--color-bg-primary);
+
+        &:hover { opacity: 0.9; transform: translateY(-1px); }
+    }
+
+    &--draft {
+        background-color: transparent;
+        border: 1px solid fade(var(--color-primary), 40%);
+        color: var(--color-text-primary);
+
+        &:hover { background-color: fade(var(--color-primary), 12%); border-color: fade(var(--color-primary), 60%); color: var(--color-card-text); }
+    }
+
+    &--danger {
+        background-color: transparent;
+        border: 1px solid fade(var(--color-error), 35%);
+        color: var(--color-error);
+        margin-right: auto;
+
+        &:hover { background-color: fade(var(--color-error), 12%); }
+    }
+
+    &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * CHAPTERS & CURRICULUM (Courses-specific)
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+/* Repeatable container */
+.repeatableList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    grid-column: 1 / -1;
+}
+
+/* Each chapter card */
+.chapterCard {
+    border: 1px solid fade(var(--color-primary), 20%);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    background-color: fade(var(--color-primary), 3%);
+}
+
+.chapterHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    background-color: fade(var(--color-primary), 8%);
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid fade(var(--color-primary), 15%);
+    transition: background-color 0.15s;
+
+    &:hover { background-color: fade(var(--color-primary), 14%); }
+
+    &__toggle {
+        font-size: 0.75rem;
+        color: var(--color-title-hover);
+        transition: transform 0.2s;
+
+        &--open { transform: rotate(90deg); }
+    }
+
+    &__title {
+        flex: 1;
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-card-text);
+    }
+
+    &__remove {
+        padding: 0.3rem 0.6rem;
+        border: 1px solid fade(var(--color-error), 35%);
+        background-color: fade(var(--color-error), 10%);
+        color: var(--color-error);
+        border-radius: 6px;
+        font-size: 0.72rem;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.15s;
+
+        &:hover { background-color: var(--color-error); color: var(--color-white); }
+    }
+}
+
+.chapterBody {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    animation: expand 0.2s ease;
+
+    @keyframes expand {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+}
+
+.chapterMeta {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+
+    @media (max-width: 576px) { grid-template-columns: 1fr; }
+}
+
+/* Each lesson row */
+.lessonsList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    background-color: fade(var(--color-black), 5%);
+    border: 1px dashed fade(var(--color-primary), 15%);
+    border-radius: 8px;
+}
+
+.lessonRow {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr 1fr 80px 80px;
+    gap: 0.6rem;
+    align-items: center;
+
+    @media (max-width: 900px) {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    @media (max-width: 480px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+.lessonToggleWrap {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+}
+
+.btnRemoveLesson {
+    padding: 0.4rem 0.5rem;
+    border: 1px solid fade(var(--color-error), 35%);
+    background-color: fade(var(--color-error), 10%);
+    color: var(--color-error);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    white-space: nowrap;
+
+    &:hover { background-color: var(--color-error); color: var(--color-white); }
+}
+
+.btnAddLesson,
+.btnAddChapter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1rem;
+    border: 1px dashed fade(var(--color-primary), 40%);
+    background-color: fade(var(--color-primary), 8%);
+    color: var(--color-title-hover);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    align-self: flex-start;
+
+    &:hover { background-color: fade(var(--color-primary), 18%); border-color: var(--color-title-hover); }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.lessonsTitle {
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-card-text);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    span { opacity: 0.6; font-weight: normal; font-size: 0.75rem; }
+}
+
+/* Empty state */
+.emptyState {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--color-text-primary);
+
+    .emptyIcon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+    p { font-size: var(--font-md); margin: 0; }
+}

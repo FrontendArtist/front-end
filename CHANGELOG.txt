@@ -1,3 +1,40 @@
+ط
+[2026-08-05] - Unified Shared Chat Modal Component & Admin Contact Messages Redesign
+
+── Unified Shared Chat Modal Architecture ──────────────────────────────────────────────────
+- Created reusable `ChatModal` component (`src/components/common/ChatModal/ChatModal.jsx` & `ChatModal.module.scss`):
+  - Built a glassmorphism SPA chat view overlay matching user profile chat design system.
+  - Supports both User and Admin modes (`isAdmin` prop).
+  - Features sender info header bar (Name, Email/Phone), Shamsi date tags, status badges, status selector dropdown, and delete button.
+  - Formats message stream with distinct user (right) and staff/admin (left) bubbles, auto-scroll, enter key submit, and loading states.
+
+── Admin Contact Messages Redesign ──────────────────────────────────────────────────────────
+- Refactored `MessageReadModal` (`src/components/admin/Messages/MessageReadModal.jsx`):
+  - Updated admin contact messages view to render `ChatModal` with `isAdmin={true}`.
+  - Fully integrated reply posting, status updates, and message deletion.
+
+── User Profile Chat Refactoring ────────────────────────────────────────────────────────────
+- Refactored `MessageDetailModal` (`src/modules/profile/MessageDetailModal.jsx`):
+  - Updated user profile chat to delegate UI rendering to `ChatModal`, retaining user API handlers and 5-second polling.
+
+##latest- 2026-08-05
+
+### Feature & UI: Unified Shared Chat Modal & Admin Contact Messages Redesign
+**Status**: ✅ COMPLETED (100%)
+
+#### Overview:
+Unified the chat modal interface across user profile messages (`profile/messages`) and admin contact messages (`admin/contact-messages`) into a single reusable `ChatModal` component with glassmorphism styling, responsive layouts, and full admin/user feature support.
+
+#### Changes Made:
+1. **Shared Chat Component** (`ChatModal.jsx` & `ChatModal.module.scss`):
+   - Created standalone reusable chat modal overlay under `@/components/common/ChatModal/`.
+   - Supports user and admin modes with status management, sender metadata, keyboard shortcuts, and auto-scroll.
+2. **Admin Contact Messages** (`MessageReadModal.jsx`):
+   - Redesigned admin read modal to use `ChatModal`.
+3. **User Profile Messages** (`MessageDetailModal.jsx`):
+   - Refactored user chat modal to use `ChatModal`.
+
+---
 
 [2026-08-05] - Strapi v5 Document Service Draft & Publish Fix for Courses, Articles & Products
 

@@ -1,0 +1,494 @@
+/**
+ * @file src/components/common/ChatModal/ChatModal.module.scss
+ * @description Unified Glassmorphism SPA Chat View Overlay for User & Admin Messages.
+ */
+
+@use '../../../styles/base/mixins' as *;
+
+/* ─── Full Screen Overlay ──────────────────────────────────────────────────── */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: color-mix(in srgb, var(--color-bg-primary) 85%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    animation: fadeIn 0.25s ease-out both;
+
+    @media (max-width: 768px) {
+        padding: 12px 8px;
+    }
+}
+
+/* ─── Chat Window Container ────────────────────────────────────────────────── */
+
+.chatWindow {
+    width: 100%;
+    max-width: 920px;
+    height: 85vh;
+    max-height: 800px;
+    background: color-mix(in srgb, var(--color-bg-primary) 92%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+    border-radius: var(--radius-card);
+    box-shadow: 0 25px 60px color-mix(in srgb, var(--color-black) 60%, transparent);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    direction: rtl;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+    @media (max-width: 768px) {
+        height: calc(100vh - 24px);
+        max-height: none;
+        border-radius: var(--border-radius);
+    }
+}
+
+/* ─── Header ───────────────────────────────────────────────────────────────── */
+
+.chatHeader {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-text-primary) 10%, transparent);
+    background: linear-gradient(
+        90deg, 
+        color-mix(in srgb, var(--color-overlay) 45%, transparent) 0%, 
+        color-mix(in srgb, var(--color-bg-primary) 75%, transparent) 100%
+    );
+    flex-shrink: 0;
+}
+
+.chatHeader__topBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    gap: 16px;
+
+    @media (max-width: 768px) {
+        padding: 14px 18px;
+    }
+}
+
+.chatHeader__info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.chatHeader__title {
+    font-size: var(--font-md-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-title-hover);
+    margin: 0;
+}
+
+.chatHeader__meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.chatHeader__date {
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-card-text) 50%, transparent);
+}
+
+.chatHeader__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Close Button (X) */
+.chatHeader__closeBtn {
+    width: 40px;
+    height: 40px;
+    background: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
+    border-radius: 12px;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+
+    &:hover {
+        background: color-mix(in srgb, var(--color-error) 20%, transparent);
+        border-color: color-mix(in srgb, var(--color-error) 40%, transparent);
+        color: var(--color-error);
+        transform: rotate(90deg) scale(1.05);
+    }
+}
+
+/* Delete Button */
+.chatHeader__deleteBtn {
+    height: 40px;
+    padding: 0 14px;
+    background: color-mix(in srgb, var(--color-error) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
+    border-radius: 12px;
+    color: var(--color-error);
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+
+    &:hover:not(:disabled) {
+        background: var(--color-error);
+        color: var(--color-white);
+        transform: translateY(-1px);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+/* Admin Sub Header Info Bar */
+.chatHeader__senderDetails {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 28px 14px;
+    background: color-mix(in srgb, var(--color-black) 25%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--color-text-primary) 5%, transparent);
+    font-size: var(--font-sm);
+    color: var(--color-text-primary);
+    flex-wrap: wrap;
+
+    @media (max-width: 768px) {
+        padding: 10px 18px 12px;
+        gap: 10px;
+    }
+}
+
+.senderTag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: var(--font-weight-medium);
+
+    span {
+        color: var(--color-card-text);
+    }
+}
+
+.contactLtr {
+    direction: ltr;
+    unicode-bidi: embed;
+}
+
+/* Badges */
+.badge {
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+}
+
+.badge--open {
+    background: color-mix(in srgb, var(--color-warning-amber) 15%, transparent);
+    color: var(--color-warning-amber);
+    border: 1px solid color-mix(in srgb, var(--color-warning-amber) 30%, transparent);
+}
+
+.badge--answered,
+.badge--closed {
+    background: color-mix(in srgb, var(--color-success) 15%, transparent);
+    color: var(--color-success);
+    border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+
+.badge--pending {
+    background: color-mix(in srgb, var(--color-text-primary) 10%, transparent);
+    color: var(--color-text-primary);
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
+}
+
+/* Status Selector in Header / Bottom */
+.statusSelect {
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: var(--font-ssm);
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
+    background: color-mix(in srgb, var(--color-bg-primary) 95%, transparent);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+
+    &:focus {
+        border-color: var(--color-title-hover);
+    }
+}
+
+/* ─── Messages Stream ──────────────────────────────────────────────────────── */
+
+.messagesStream {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    direction: rtl;
+    gap: 20px;
+    background: 
+        radial-gradient(
+            ellipse at top right, 
+            color-mix(in srgb, var(--color-overlay) 25%, transparent) 0%, 
+            transparent 70%
+        ),
+        radial-gradient(
+            ellipse at bottom left, 
+            color-mix(in srgb, var(--color-text-primary) 3%, transparent) 0%, 
+            transparent 70%
+        );
+
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: color-mix(in srgb, var(--color-text-primary) 15%, transparent);
+        border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+        padding: 16px;
+        gap: 14px;
+    }
+}
+
+/* Bubbles */
+.bubble {
+    max-width: 75%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    animation: fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+    @media (max-width: 768px) {
+        max-width: 88%;
+    }
+}
+
+/* User Message (Right Side) */
+.bubble--user {
+    align-self: flex-start;
+    align-items: flex-start;
+
+    .bubble__text {
+        background: linear-gradient(
+            135deg, 
+            color-mix(in srgb, var(--color-overlay) 85%, transparent) 0%, 
+            color-mix(in srgb, var(--color-bg-primary) 90%, transparent) 100%
+        );
+        border: 1px solid color-mix(in srgb, var(--color-text-primary) 15%, transparent);
+        border-top-right-radius: 4px;
+        color: var(--color-card-text);
+        box-shadow: 0 4px 15px color-mix(in srgb, var(--color-black) 20%, transparent);
+    }
+
+    .bubble__header {
+        color: var(--color-gold);
+    }
+}
+
+/* Staff / Instructor / Admin Message (Left Side) */
+.bubble--staff {
+    align-self: flex-end;
+    align-items: flex-end;
+
+    .bubble__text {
+        background: linear-gradient(
+            135deg, 
+            color-mix(in srgb, var(--color-text-primary) 15%, transparent) 0%, 
+            color-mix(in srgb, var(--color-overlay) 70%, transparent) 100%
+        );
+        border: 1px solid color-mix(in srgb, var(--color-text-primary) 30%, transparent);
+        border-top-left-radius: 4px;
+        color: var(--color-card-text);
+        box-shadow: 0 4px 15px color-mix(in srgb, var(--color-black) 25%, transparent);
+    }
+
+    .bubble__header {
+        color: var(--color-title-hover);
+    }
+}
+
+.bubble__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: var(--font-weight-medium);
+    padding: 0 4px;
+}
+
+.bubble__text {
+    padding: 14px 18px;
+    border-radius: 18px;
+    font-size: var(--font-sm-md);
+    line-height: var(--line-height-md);
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.bubble__time {
+    font-size: 11px;
+    color: color-mix(in srgb, var(--color-card-text) 35%, transparent);
+    margin-right: 6px;
+}
+
+/* ─── Reply Form Bar ───────────────────────────────────────────────────────── */
+
+.replyArea {
+    padding: 18px 28px;
+    border-top: 1px solid color-mix(in srgb, var(--color-text-primary) 10%, transparent);
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-shrink: 0;
+    background: color-mix(in srgb, var(--color-overlay) 30%, transparent);
+
+    @media (max-width: 768px) {
+        padding: 12px 16px;
+    }
+}
+
+.replyArea__input {
+    flex: 1;
+    padding: 12px 16px;
+    background: color-mix(in srgb, var(--color-white) 3%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 15%, transparent);
+    border-radius: 14px;
+    color: var(--color-card-text);
+    font-size: var(--font-sm-md);
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    min-height: 48px;
+    max-height: 140px;
+    line-height: var(--line-height-md);
+    transition: all 0.25s ease;
+
+    &::placeholder {
+        color: color-mix(in srgb, var(--color-card-text) 30%, transparent);
+    }
+
+    &:focus {
+        border-color: var(--color-title-hover);
+        background: color-mix(in srgb, var(--color-white) 6%, transparent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+    }
+}
+
+.replyArea__adminControls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+.replyArea__sendBtn {
+    height: 48px;
+    padding: 0 20px;
+    background: linear-gradient(
+        135deg, 
+        var(--color-text-primary) 0%, 
+        var(--color-title-hover) 100%
+    );
+    color: var(--color-bg-primary);
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: inherit;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px color-mix(in srgb, var(--color-text-primary) 25%, transparent);
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 6px 20px color-mix(in srgb, var(--color-text-primary) 35%, transparent);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0) scale(0.98);
+    }
+
+    &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+}
+
+.closedBanner {
+    padding: 16px 24px;
+    background: color-mix(in srgb, var(--color-success) 10%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--color-success) 20%, transparent);
+    color: var(--color-success);
+    font-size: var(--font-sm);
+    text-align: center;
+}
+
+.errorAlert {
+    padding: 10px 16px;
+    background: color-mix(in srgb, var(--color-error) 15%, transparent);
+    color: var(--color-error);
+    font-size: var(--font-ssm);
+    text-align: center;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid color-mix(in srgb, var(--color-bg-primary) 30%, transparent);
+    border-top-color: var(--color-bg-primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
