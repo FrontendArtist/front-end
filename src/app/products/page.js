@@ -10,7 +10,7 @@
  * بقیه آیتم‌ها با دکمه "بارگذاری بیشتر" از سمت کلاینت واکشی می‌شوند
  */
 
-import ListGuard from '@/components/layout/ListGuard';
+import ListGuard from '@/components/ui/ListGuard/ListGuard';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import { getProductsPaginated } from '@/lib/productsApi';
 import { getCategoryTree } from '@/lib/categoriesApi';
@@ -115,3 +115,4 @@ export default async function ProductsPage({ searchParams: spPromise }) {
     </main>
   );
 }
+

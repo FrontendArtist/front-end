@@ -2,12 +2,12 @@ import "@/styles/variables.css";
 import "@/styles/light-theme.css";
 import "@/styles/main.scss";
 import '@/app/globals.css';
-import Footer from "@/modules/layout/Footer/Footer";
-import Navbar from "@/modules/layout/Navbar/Navbar";
+import Footer from "@/components/layout/Footer/Footer";
+import Navbar from "@/components/layout/Navbar/Navbar";
 import AuthModal from "@/components/auth/AuthModal";
 import { Providers } from "./providers";
 import localFont from 'next/font/local';
-import CartSyncProvider from "@/components/layout/CartSyncProvider";
+import CartSyncProvider from "@/components/providers/CartSyncProvider";
 const iranSans = localFont({
   src: '../assets/fonts/iransans_regular/iransans-regular-webfont.ttf',
   variable: '--font-iransans',

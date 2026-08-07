@@ -10,7 +10,7 @@
  * بقیه آیتم‌ها با دکمه "بارگذاری بیشتر" از سمت کلاینت واکشی می‌شوند
  */
 
-import ListGuard from '@/components/layout/ListGuard';
+import ListGuard from '@/components/ui/ListGuard/ListGuard';
 import ArticleGrid from '@/modules/articles/ArticleGrid/ArticleGrid';
 import { getArticlesPaginated, getArticleCategories } from '@/lib/articlesApi';
 import { ARTICLES_PAGE_SIZE } from '@/lib/constants';
@@ -97,3 +97,4 @@ export default async function ArticlesPage({ searchParams: spPromise }) {
     </main>
   );
 }
+

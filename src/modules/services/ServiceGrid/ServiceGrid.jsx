@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import ServiceCard from '@/components/cards/ServiceCard/ServiceCard';
-import ListGuard from '@/components/layout/ListGuard';
+import ListGuard from '@/components/ui/ListGuard/ListGuard';
 import { SERVICES_PAGE_SIZE } from '@/lib/constants';
 import styles from './ServiceGrid.module.scss';
 
@@ -106,3 +106,4 @@ const ServiceGrid = ({ initialServices }) => {
 };
 
 export default ServiceGrid;
+

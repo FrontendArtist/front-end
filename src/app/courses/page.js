@@ -11,7 +11,7 @@
  */
 
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
-import ListGuard from '@/components/layout/ListGuard';
+import ListGuard from '@/components/ui/ListGuard/ListGuard';
 import CourseGrid from '@/modules/courses/CourseGrid/CourseGrid';
 import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock';
 import { getCoursesPaginated } from '@/lib/coursesApi';

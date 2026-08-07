@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import styles from './Navbar.module.scss';
-import SearchTrigger from '@/components/layout/SearchTrigger';
+import SearchTrigger from '@/components/ui/SearchTrigger/SearchTrigger';
 import SearchOverlay from '@/components/ui/SearchOverlay/SearchOverlay';
 import UserStatus from '@/components/layout/Navbar/UserStatus';
 import CartIcon from '@/components/layout/Navbar/CartIcon';

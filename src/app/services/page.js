@@ -29,7 +29,7 @@
  * @module app/services/page
  */
 
-import ListGuard from '@/components/layout/ListGuard';
+import ListGuard from '@/components/ui/ListGuard/ListGuard';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ServiceGrid from '@/modules/services/ServiceGrid/ServiceGrid';
 import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock';
@@ -245,4 +245,5 @@ export default async function ServicesPage({ searchParams: spPromise }) {
  *    - Images should use Next.js Image component (check ServiceCard)
  *    - Monitor bundle size if adding client-side features
  */
+
 

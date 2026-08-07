@@ -1,4 +1,11 @@
 
+[2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 5 Fixes
+
+── Shared Components & UI Organization (Group 5) ──────────────────────────
+- **Layout Unification**: Consolidated `Navbar` and `Footer` components from `src/modules/layout/` into `src/components/layout/` to maintain a strict separation of concerns, ensuring core layout elements sit within shared components rather than feature modules.
+- **Provider Extraction**: Relocated `CartSyncProvider` from `components/layout/` to `components/providers/` to decouple state injection contexts from presentational UI layouts.
+- **UI Component Organization**: Moved `SearchTrigger` and `ListGuard` out of `components/layout/` and into `components/ui/` since they are atomic user interface elements. Updated all related imports across modules and pages.
+
 [2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 4 Fixes
 
 ── App Router & Global Layout Architecture (Group 4) ──────────────────────
