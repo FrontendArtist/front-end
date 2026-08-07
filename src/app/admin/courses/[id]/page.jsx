@@ -5,7 +5,7 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getAdminCourseById } from '@/lib/adminApi';
+import { getAdminCourseById } from '@/lib/admin/adminCoursesApi';
 import CourseForm from '@/components/admin/Courses/CourseForm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

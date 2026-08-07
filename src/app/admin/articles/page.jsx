@@ -5,7 +5,7 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getAdminArticles } from '@/lib/adminApi';
+import { getAdminArticles } from '@/lib/admin/adminArticlesApi';
 import ArticlesTable from '@/components/admin/Articles/ArticlesTable';
 import Link from 'next/link';
 import styles from '../orders/orders.module.scss'; // using shared layout styles usually

@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from './apiClient';
+import { withErrorHandling } from './apiErrorHandler';
 
 /**
  * دریافت لیست پیام‌های کاربر لاگین‌شده
@@ -11,23 +12,27 @@ import { apiClient } from './apiClient';
  * @param {string} token - JWT token از session
  */
 export async function getMyMessages(token) {
-    const headers = { Authorization: `Bearer ${token}` };
-    
-    // دریافت همزمان پیام‌های تماس با ما (/api/contact-messages) و پیام‌های مشاوره استاد (/api/messages)
-    const [contactRes, mentorRes] = await Promise.allSettled([
-        apiClient('/api/contact-messages?populate=user&sort=createdAt:desc', { headers, cache: 'no-store' }),
-        apiClient('/api/messages?populate=user&sort=createdAt:desc', { headers, cache: 'no-store' }),
-    ]);
+    return withErrorHandling(
+        async () => {
+            const headers = { Authorization: `Bearer ${token}` };
+            
+            const [contactRes, mentorRes] = await Promise.allSettled([
+                apiClient('/api/contact-messages?populate=user&sort=createdAt:desc', { headers, cache: 'no-store' }),
+                apiClient('/api/messages?populate=user&sort=createdAt:desc', { headers, cache: 'no-store' }),
+            ]);
 
-    const contactMsgs = contactRes.status === 'fulfilled' ? (contactRes.value?.data || []) : [];
-    const mentorMsgs = mentorRes.status === 'fulfilled' ? (mentorRes.value?.data || []) : [];
+            const contactMsgs = contactRes.status === 'fulfilled' ? (contactRes.value?.data || []) : [];
+            const mentorMsgs = mentorRes.status === 'fulfilled' ? (mentorRes.value?.data || []) : [];
 
-    // ادغام هر دو نوع پیام و مرتب‌سازی بر اساس تاریخ (جدیدترین اول)
-    const combined = [...contactMsgs, ...mentorMsgs].sort((a, b) => 
-        new Date(b.createdAt) - new Date(a.createdAt)
+            const combined = [...contactMsgs, ...mentorMsgs].sort((a, b) => 
+                new Date(b.createdAt) - new Date(a.createdAt)
+            );
+
+            return { data: combined };
+        },
+        'دریافت لیست پیام‌های کاربر',
+        { data: [] }
     );
-
-    return { data: combined };
 }
 
 /**
@@ -36,10 +41,16 @@ export async function getMyMessages(token) {
  * @param {string} token
  */
 export async function getMyMessageById(id, token) {
-    return apiClient(`/api/contact-messages/${id}?populate=user`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: 'no-store',
-    });
+    return withErrorHandling(
+        async () => {
+            return apiClient(`/api/contact-messages/${id}?populate=user`, {
+                headers: { Authorization: `Bearer ${token}` },
+                cache: 'no-store',
+            });
+        },
+        `دریافت جزئیات پیام ${id}`,
+        null
+    );
 }
 
 /**
@@ -91,14 +102,20 @@ export async function updateMyMessage(id, token, payload) {
  * @returns {Promise<object>} - { data: { title, description, questions: [...] } }
  */
 export async function getMentorFormSetting(token = null) {
-    const headers = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
+    return withErrorHandling(
+        async () => {
+            const headers = {};
+            if (token) headers.Authorization = `Bearer ${token}`;
 
-    return apiClient('/api/mentor-form-setting?populate=questions', {
-        headers,
-        cache: 'no-store',
-        suppressErrorLog: true,
-    });
+            return apiClient('/api/mentor-form-setting?populate=questions', {
+                headers,
+                cache: 'no-store',
+                suppressErrorLog: true,
+            });
+        },
+        'دریافت تنظیمات فرم پیش‌نیاز استاد',
+        { data: { title: '', description: '', questions: [] } }
+    );
 }
 
 /**
@@ -124,14 +141,18 @@ export async function updateMentorFormSetting(payload, token) {
  * @returns {Promise<object>} - { data: Message[], meta: {...} }
  */
 export async function getInstructorMessages(token) {
-    // ⚠️ از `messageType` به جای `type` استفاده می‌کنیم چون `type` کلمه رزرو شده JSON:API است
-    // و Strapi آن را در body با خطای 400 "Invalid key type" رد می‌کند.
-    return apiClient(
-        '/api/messages?filters[messageType][$eq]=instructor&populate=*&sort=createdAt:desc',
-        {
-            headers: { Authorization: `Bearer ${token}` },
-            cache: 'no-store',
-        }
+    return withErrorHandling(
+        async () => {
+            return apiClient(
+                '/api/messages?filters[messageType][$eq]=instructor&populate=*&sort=createdAt:desc',
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: 'no-store',
+                }
+            );
+        },
+        'دریافت پیام‌های داشبورد استاد',
+        { data: [], meta: {} }
     );
 }
 

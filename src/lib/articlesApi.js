@@ -5,84 +5,72 @@
 
 import { apiClient } from './apiClient';
 import { formatStrapiArticles, formatStrapiCourses, formatStrapiProducts } from './strapiUtils';
+import { withErrorHandling } from './apiErrorHandler';
 
 /**
  * واکشی دسته‌بندی‌های مقالات
  * پشتیبانی از ساختار Flat و Nested
  */
 export async function getArticleCategories() {
-  try {
-    const response = await apiClient(
-      '/api/articles-categories?populate=image&sort=name:asc'
-    );
+  return withErrorHandling(
+    async () => {
+      const response = await apiClient(
+        '/api/articles-categories?populate=image&sort=name:asc'
+      );
 
-    const categoriesRaw = response?.data || [];
+      const categoriesRaw = response?.data || [];
 
-    const categories = categoriesRaw.map((item) => {
-      // هندل کردن ساختار Flat (v5) و Nested (v4)
-      const data = item.attributes || item;
+      const categories = categoriesRaw.map((item) => {
+        const data = item.attributes || item;
 
-      // استخراج تصویر با ایمنی بالا
-      const imageSource = data.image?.data?.attributes || data.image || null;
-      const imageUrl = imageSource?.url || null;
+        const imageSource = data.image?.data?.attributes || data.image || null;
+        const imageUrl = imageSource?.url || null;
 
-      return {
-        id: item.id,
-        name: data.name ?? '',
-        slug: data.slug ?? '',
-        description: data.description ?? '',
-        image: imageUrl
-      };
-    });
+        return {
+          id: item.id,
+          name: data.name ?? '',
+          slug: data.slug ?? '',
+          description: data.description ?? '',
+          image: imageUrl
+        };
+      });
 
-    return categories;
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی دسته‌بندی‌های مقالات:', error.message);
-    }
-    const fallback = [];
-    if (error.message === 'BACKEND_UNAVAILABLE') {
-      fallback.error = 'BACKEND_UNAVAILABLE';
-    }
-    return fallback;
-  }
+      return categories;
+    },
+    'واکشی دسته‌بندی‌های مقالات',
+    []
+  );
 }
 
 /**
  * واکشی تمام مقالات
  */
 export async function getAllArticles() {
-  try {
-    const response = await apiClient('/api/articles?status=published&populate=*&sort=publishedAt:desc');
-    return formatStrapiArticles(response);
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی مقالات:', error.message);
-    }
-    const fallback = [];
-    if (error.message === 'BACKEND_UNAVAILABLE') {
-      fallback.error = 'BACKEND_UNAVAILABLE';
-    }
-    return fallback;
-  }
+  return withErrorHandling(
+    async () => {
+      const response = await apiClient('/api/articles?status=published&populate=*&sort=publishedAt:desc');
+      return formatStrapiArticles(response);
+    },
+    'واکشی مقالات',
+    []
+  );
 }
 
 /**
  * واکشی یک مقاله با اسلاگ
  */
 export async function getArticleBySlug(slug) {
-  try {
-    const response = await apiClient(
-      `/api/articles?status=published&filters[slug][$eq]=${slug}&populate=*`
-    );
-    const formattedArticles = formatStrapiArticles(response);
-    return formattedArticles[0] || null;
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error(`خطا در واکشی مقاله با slug "${slug}":`, error.message);
-    }
-    return null;
-  }
+  return withErrorHandling(
+    async () => {
+      const response = await apiClient(
+        `/api/articles?status=published&filters[slug][$eq]=${slug}&populate=*`
+      );
+      const formattedArticles = formatStrapiArticles(response);
+      return formattedArticles[0] || null;
+    },
+    `واکشی مقاله با slug "${slug}"`,
+    null
+  );
 }
 
 /**
@@ -93,26 +81,20 @@ export async function getArticles({
   sort = 'publishedAt:desc',
   categorySlug = null
 } = {}) {
-  try {
-    let url = `/api/articles?status=published&populate=*&pagination[limit]=${limit}&sort=${sort}`;
+  return withErrorHandling(
+    async () => {
+      let url = `/api/articles?status=published&populate=*&pagination[limit]=${limit}&sort=${sort}`;
 
-    if (categorySlug) {
-      // استفاده از نام فیلد صحیح طبق دیتابیس (articles_categories)
-      url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
-    }
+      if (categorySlug) {
+        url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
+      }
 
-    const response = await apiClient(url);
-    return formatStrapiArticles(response);
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی مقالات:', error.message);
-    }
-    const fallback = [];
-    if (error.message === 'BACKEND_UNAVAILABLE') {
-      fallback.error = 'BACKEND_UNAVAILABLE';
-    }
-    return fallback;
-  }
+      const response = await apiClient(url);
+      return formatStrapiArticles(response);
+    },
+    'واکشی مقالات',
+    []
+  );
 }
 
 /**
@@ -125,38 +107,28 @@ export async function getArticlesPaginated(
   sort = 'publishedAt:desc',
   categorySlug = null
 ) {
-  try {
-    // تغییر مهم: populate=* بجای populate=cover
-    // این اطمینان می‌دهد که اگر کارت مقاله نیاز به نمایش دسته یا نویسنده داشت، داده موجود باشد
-    let url = `/api/articles?status=published&populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`;
+  return withErrorHandling(
+    async () => {
+      let url = `/api/articles?status=published&populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`;
 
-    if (categorySlug) {
-      // استفاده از نام فیلد صحیح طبق دیتابیس (articles_categories)
-      url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
-    }
+      if (categorySlug) {
+        url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
+      }
 
-    const response = await apiClient(url);
+      const response = await apiClient(url);
+      const formattedArticles = formatStrapiArticles(response);
 
-    const formattedArticles = formatStrapiArticles(response);
-
-    return {
-      data: formattedArticles,
-      meta: response.meta || {}
-    };
-
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی مقالات صفحه‌بندی‌شده:', error.message);
-    }
-    const fallback = {
+      return {
+        data: formattedArticles,
+        meta: response.meta || {}
+      };
+    },
+    'واکشی مقالات صفحه‌بندی‌شده',
+    {
       data: [],
       meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } }
-    };
-    if (error.message === 'BACKEND_UNAVAILABLE') {
-      fallback.error = 'BACKEND_UNAVAILABLE';
     }
-    return fallback;
-  }
+  );
 }
 
 /**
@@ -167,32 +139,29 @@ export async function getArticlesPaginated(
 export async function getAdjacentArticles(createdAt) {
   if (!createdAt) return { prev: null, next: null };
 
-  try {
-    const isoDate = new Date(createdAt).toISOString();
+  return withErrorHandling(
+    async () => {
+      const isoDate = new Date(createdAt).toISOString();
 
-    // مقاله قبلی (قدیمی‌تر از مقاله جاری)
-    const prevRes = await apiClient(
-      `/api/articles?filters[publishedAt][$lt]=${isoDate}&sort=publishedAt:desc&pagination[limit]=1`
-    ).catch(() => null);
+      const prevRes = await apiClient(
+        `/api/articles?filters[publishedAt][$lt]=${isoDate}&sort=publishedAt:desc&pagination[limit]=1`
+      ).catch(() => null);
 
-    // مقاله بعدی (جدیدتر از مقاله جاری)
-    const nextRes = await apiClient(
-      `/api/articles?filters[publishedAt][$gt]=${isoDate}&sort=publishedAt:asc&pagination[limit]=1`
-    ).catch(() => null);
+      const nextRes = await apiClient(
+        `/api/articles?filters[publishedAt][$gt]=${isoDate}&sort=publishedAt:asc&pagination[limit]=1`
+      ).catch(() => null);
 
-    const prevArticles = prevRes ? formatStrapiArticles(prevRes) : [];
-    const nextArticles = nextRes ? formatStrapiArticles(nextRes) : [];
+      const prevArticles = prevRes ? formatStrapiArticles(prevRes) : [];
+      const nextArticles = nextRes ? formatStrapiArticles(nextRes) : [];
 
-    return {
-      prev: prevArticles[0] ? { slug: prevArticles[0].slug, title: prevArticles[0].title } : null,
-      next: nextArticles[0] ? { slug: nextArticles[0].slug, title: nextArticles[0].title } : null,
-    };
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی مقالات مجاور:', error.message);
-    }
-    return { prev: null, next: null };
-  }
+      return {
+        prev: prevArticles[0] ? { slug: prevArticles[0].slug, title: prevArticles[0].title } : null,
+        next: nextArticles[0] ? { slug: nextArticles[0].slug, title: nextArticles[0].title } : null,
+      };
+    },
+    'واکشی مقالات مجاور',
+    { prev: null, next: null }
+  );
 }
 
 /**
@@ -200,45 +169,42 @@ export async function getAdjacentArticles(createdAt) {
  * @param {{ categoryId?: string | number, categorySlug?: string, currentId?: string | number, limit?: number }} params
  */
 export async function getRelatedArticles({ categoryId = null, categorySlug = null, currentId = null, limit = 6 } = {}) {
-  try {
-    let url = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort=publishedAt:desc`;
+  return withErrorHandling(
+    async () => {
+      let url = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort=publishedAt:desc`;
 
-    if (categoryId) {
-      url += `&filters[articles_categories][id][$eq]=${categoryId}`;
-    } else if (categorySlug) {
-      url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
-    }
+      if (categoryId) {
+        url += `&filters[articles_categories][id][$eq]=${categoryId}`;
+      } else if (categorySlug) {
+        url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
+      }
 
-    if (currentId) {
-      url += `&filters[id][$ne]=${currentId}`;
-    }
+      if (currentId) {
+        url += `&filters[id][$ne]=${currentId}`;
+      }
 
-    const response = await apiClient(url);
-    let formattedArticles = formatStrapiArticles(response);
+      const response = await apiClient(url);
+      let formattedArticles = formatStrapiArticles(response);
 
-    // استثنا کردن مقاله جاری به صورت قطعی
-    if (currentId) {
-      formattedArticles = formattedArticles.filter(
-        (art) => String(art.id) !== String(currentId) && String(art.documentId) !== String(currentId)
-      );
-    }
+      if (currentId) {
+        formattedArticles = formattedArticles.filter(
+          (art) => String(art.id) !== String(currentId) && String(art.documentId) !== String(currentId)
+        );
+      }
 
-    // اگر مقاله مرتبط با دسته‌بندی پیدا نشد یا کمتر بود، مقالات عمومی به عنوان فال‌بک واکشی می‌شوند
-    if (formattedArticles.length === 0 && (categoryId || categorySlug)) {
-      const fallbackUrl = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort=publishedAt:desc`;
-      const fallbackResponse = await apiClient(fallbackUrl);
-      formattedArticles = formatStrapiArticles(fallbackResponse).filter(
-        (art) => String(art.id) !== String(currentId) && String(art.documentId) !== String(currentId)
-      );
-    }
+      if (formattedArticles.length === 0 && (categoryId || categorySlug)) {
+        const fallbackUrl = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort=publishedAt:desc`;
+        const fallbackResponse = await apiClient(fallbackUrl);
+        formattedArticles = formatStrapiArticles(fallbackResponse).filter(
+          (art) => String(art.id) !== String(currentId) && String(art.documentId) !== String(currentId)
+        );
+      }
 
-    return formattedArticles.slice(0, limit);
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی مقالات مرتبط:', error.message);
-    }
-    return [];
-  }
+      return formattedArticles.slice(0, limit);
+    },
+    'واکشی مقالات مرتبط',
+    []
+  );
 }
 
 /**

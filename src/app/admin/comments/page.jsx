@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getAdminComments } from '@/lib/adminApi';
+import { getAdminComments } from '@/lib/admin/adminCommentsApi';
 import CommentsManager from '@/components/admin/Comments/CommentsManager';
 
 export const metadata = {

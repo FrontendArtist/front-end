@@ -1,4 +1,14 @@
 ط
+[2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 2 Fixes
+
+── Domain APIs & Admin API Refactoring (Group 2) ──────────────────────────
+- **Domain APIs**: Refactored `commentsApi.js` and `messagesApi.js` to utilize the `withErrorHandling` wrapper. This standardizes error responses and gracefully handles backend outages without crashing components.
+- **Admin API Monolith Split**: Dismantled the massive `adminApi.js` monolith into a scalable, domain-specific module architecture under `src/lib/admin/`.
+  - Created `adminFetch.js` as the base API caller with admin authorization handling.
+  - Created focused API modules: `adminProductsApi.js`, `adminUsersApi.js`, `adminOrdersApi.js`, `adminArticlesApi.js`, `adminCoursesApi.js`, `adminCommentsApi.js`, and `adminMessagesApi.js`.
+- **App Imports Update**: Successfully refactored all 14 pages and API routes in `src/app/admin/` and `src/app/api/admin/` to import from the new domain-specific admin modules.
+- **Cleanup**: Deleted the legacy `src/lib/adminApi.js` file. Verified the application stability via successful build.
+
 [2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 1 Fixes
 
 ── API Layer & Infrastructure Refactoring (Group 1) ──────────────────────────

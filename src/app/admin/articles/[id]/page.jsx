@@ -5,7 +5,9 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getAdminArticleById, getAdminArticlesCategories, getAdminTags, getAdminCourses, getAdminProductOptions } from '@/lib/adminApi';
+import { getAdminArticleById, getAdminArticlesCategories } from '@/lib/admin/adminArticlesApi';
+import { getAdminTags, getAdminProductOptions } from '@/lib/admin/adminProductsApi';
+import { getAdminCourses } from '@/lib/admin/adminCoursesApi';
 import ArticleForm from '@/components/admin/Articles/ArticleForm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

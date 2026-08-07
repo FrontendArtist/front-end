@@ -20,11 +20,9 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import {
-    getTotalProductsCount,
-    getTotalUsersCount,
-    getOrdersStats,
-} from '@/lib/adminApi';
+import { getTotalProductsCount } from '@/lib/admin/adminProductsApi';
+import { getTotalUsersCount } from '@/lib/admin/adminUsersApi';
+import { getOrdersStats } from '@/lib/admin/adminOrdersApi';
 import StatsCard from '@/components/admin/StatsCard/StatsCard';
 import RecentUpdates from '@/components/home/RecentUpdates/RecentUpdates';
 import styles from './page.module.scss';

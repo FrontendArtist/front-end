@@ -11,7 +11,7 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getOrders } from '@/lib/adminApi';
+import { getOrders } from '@/lib/admin/adminOrdersApi';
 import OrdersTable from '@/components/admin/Orders/OrdersTable';
 import styles from './orders.module.scss';
 

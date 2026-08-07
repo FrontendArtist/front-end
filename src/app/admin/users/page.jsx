@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getUsers } from '@/lib/adminApi';
+import { getUsers } from '@/lib/admin/adminUsersApi';
 import UsersTable from '@/components/admin/Users/UsersTable';
 
 export const metadata = {

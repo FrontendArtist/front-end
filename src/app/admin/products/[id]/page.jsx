@@ -7,7 +7,7 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getAdminProductById, getAdminCategories, getAdminTags } from '@/lib/adminApi';
+import { getAdminProductById, getAdminCategories, getAdminTags } from '@/lib/admin/adminProductsApi';
 import ProductForm from '@/components/admin/Products/ProductForm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

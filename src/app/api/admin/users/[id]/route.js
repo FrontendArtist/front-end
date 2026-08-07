@@ -5,7 +5,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { NextResponse } from 'next/server';
-import { getUserDetails } from '@/lib/adminApi';
+import { getUserDetails } from '@/lib/admin/adminUsersApi';
 
 export async function GET(request, { params }) {
     const session = await getServerSession(authOptions);

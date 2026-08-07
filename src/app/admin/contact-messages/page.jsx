@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getContactMessages } from '@/lib/adminApi';
+import { getContactMessages } from '@/lib/admin/adminMessagesApi';
 import MessagesTable from '@/components/admin/Messages/MessagesTable';
 
 export const metadata = {

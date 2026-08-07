@@ -54,6 +54,13 @@ export async function withErrorHandling(
         return await apiFunction();
     } catch (error) {
         logApiError(context, error, silentOnUnavailable);
+        
+        // اگر backend در دسترس نیست و مقدار پیش‌فرض آبجکت/آرایه است، پراپرتی error را به آن اضافه کن
+        // این کار باعث می‌شود کامپوننت‌های UI متوجه قطعی سرور شوند
+        if (isBackendUnavailable(error) && fallbackValue !== null && typeof fallbackValue === 'object') {
+            fallbackValue.error = 'BACKEND_UNAVAILABLE';
+        }
+        
         return fallbackValue;
     }
 }

@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from './apiClient';
+import { withErrorHandling } from './apiErrorHandler';
 
 // شناسه کاربر تستی (اگر سیستم Auth ندارید)
 const MOCK_USER_ID = 1;
@@ -12,63 +13,63 @@ const MOCK_USER_ID = 1;
  * واکشی نظرات تأیید شده برای یک موجودیت
  */
 export async function getComments(entityType, entityId) {
-    try {
-        if (!entityType || !entityId) {
-            throw new Error('entityType و entityId الزامی هستند');
-        }
+    return withErrorHandling(
+        async () => {
+            if (!entityType || !entityId) {
+                throw new Error('entityType و entityId الزامی هستند');
+            }
 
-        const entityFieldMap = {
-            article: 'article',
-            product: 'product',
-            course: 'course',
-            user: 'user'
-        };
+            const entityFieldMap = {
+                article: 'article',
+                product: 'product',
+                course: 'course',
+                user: 'user'
+            };
 
-        const entityField = entityFieldMap[entityType];
-        if (!entityField) {
-            throw new Error(`نوع موجودیت نامعتبر: ${entityType}`);
-        }
+            const entityField = entityFieldMap[entityType];
+            if (!entityField) {
+                throw new Error(`نوع موجودیت نامعتبر: ${entityType}`);
+            }
 
-        // ساخت Query String با نام‌های جدید فیلدها
-        const queryParams = new URLSearchParams({
-            // ✅ ۱. فیلتر برای کامنت‌های سطح اول
-            'filters[isApproved][$eq]': 'true',
-            [`filters[${entityField}][documentId][$eq]`]: entityId,
+            // ساخت Query String با نام‌های جدید فیلدها
+            const queryParams = new URLSearchParams({
+                // ✅ ۱. فیلتر برای کامنت‌های سطح اول
+                'filters[isApproved][$eq]': 'true',
+                [`filters[${entityField}][documentId][$eq]`]: entityId,
 
-            // فیلتر برای کامنت‌های والد (فقط root comments)
-            'filters[comment_parent][$null]': 'true',
+                // فیلتر برای کامنت‌های والد (فقط root comments)
+                'filters[comment_parent][$null]': 'true',
 
-            // فیلدهای کاربر در سطح اول
-            'populate[user][fields][0]': 'username',
-            'populate[user][fields][1]': 'documentId',
+                // فیلدهای کاربر در سطح اول
+                'populate[user][fields][0]': 'username',
+                'populate[user][fields][1]': 'documentId',
 
-            // 👇👇👇 فیکس اصلی برای سطح اول پاسخ‌ها (Level 1 Replies)
-            'populate[comment_replies][filters][isApproved][$eq]': 'true', // ✅ فیلتر برای Level 1
-            'populate[comment_replies][populate][user][fields][0]': 'username',
-            'populate[comment_replies][populate][user][fields][1]': 'documentId',
+                // 👇👇👇 فیکس اصلی برای سطح اول پاسخ‌ها (Level 1 Replies)
+                'populate[comment_replies][filters][isApproved][$eq]': 'true', // ✅ فیلتر برای Level 1
+                'populate[comment_replies][populate][user][fields][0]': 'username',
+                'populate[comment_replies][populate][user][fields][1]': 'documentId',
 
-            // 👇👇👇 فیکس اصلی برای سطح دوم پاسخ‌ها (Level 2 Replies)
-            'populate[comment_replies][populate][comment_replies][filters][isApproved][$eq]': 'true', // ✅ فیلتر برای Level 2
-            'populate[comment_replies][populate][comment_replies][populate][user][fields][0]': 'username',
-            'populate[comment_replies][populate][comment_replies][populate][user][fields][1]': 'documentId',
+                // 👇👇👇 فیکس اصلی برای سطح دوم پاسخ‌ها (Level 2 Replies)
+                'populate[comment_replies][populate][comment_replies][filters][isApproved][$eq]': 'true', // ✅ فیلتر برای Level 2
+                'populate[comment_replies][populate][comment_replies][populate][user][fields][0]': 'username',
+                'populate[comment_replies][populate][comment_replies][populate][user][fields][1]': 'documentId',
 
-            // 👇👇👇 فیکس اصلی برای سطح سوم پاسخ‌ها (Level 3 Replies)
-            'populate[comment_replies][populate][comment_replies][populate][comment_replies][filters][isApproved][$eq]': 'true', // ✅ فیلتر برای Level 3
-            'populate[comment_replies][populate][comment_replies][populate][comment_replies][populate][user][fields][0]': 'username',
-            'populate[comment_replies][populate][comment_replies][populate][comment_replies][populate][user][fields][1]': 'documentId',
+                // 👇👇👇 فیکس اصلی برای سطح سوم پاسخ‌ها (Level 3 Replies)
+                'populate[comment_replies][populate][comment_replies][populate][comment_replies][filters][isApproved][$eq]': 'true', // ✅ فیلتر برای Level 3
+                'populate[comment_replies][populate][comment_replies][populate][comment_replies][populate][user][fields][0]': 'username',
+                'populate[comment_replies][populate][comment_replies][populate][comment_replies][populate][user][fields][1]': 'documentId',
 
-            'sort': 'createdAt:desc'
-        });
+                'sort': 'createdAt:desc'
+            });
 
-        const endpoint = `/api/comments?${queryParams.toString()}`;
-        const response = await apiClient(endpoint);
+            const endpoint = `/api/comments?${queryParams.toString()}`;
+            const response = await apiClient(endpoint);
 
-        return formatComments(response.data || []);
-
-    } catch (error) {
-        console.error('خطا در واکشی نظرات:', error.message);
-        return [];
-    }
+            return formatComments(response.data || []);
+        },
+        'واکشی نظرات',
+        []
+    );
 }
 
 /**

@@ -21,6 +21,7 @@
 
 import { apiClient } from './apiClient';
 import { formatStrapiServices } from './strapiUtils';
+import { withErrorHandling } from './apiErrorHandler';
 
 /**
  * واکشی تمام خدمات از Strapi
@@ -60,27 +61,15 @@ import { formatStrapiServices } from './strapiUtils';
  * }
  */
 export async function getAllServices() {
-  try {
-    // واکشی خدمات با رابطه تصویر populate شده
-    // Strapi به پارامتر "populate" نیاز دارد تا داده‌های مرتبط را شامل شود
-    const response = await apiClient('/api/services?populate=image&sort=createdAt:desc');
-
-    // فرمت کردن پاسخ خام Strapi به داده‌های تمیز و قابل استفاده
-    // strapiUtils مدیریت URL های تصاویر، نگاشت فیلدها و بررسی null را انجام می‌دهد
-    const formattedServices = formatStrapiServices(response);
-
-    return formattedServices;
-
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی خدمات:', error.message);
-    }
-    const fallback = [];
-    if (error.message === 'BACKEND_UNAVAILABLE') {
-      fallback.error = 'BACKEND_UNAVAILABLE';
-    }
-    return fallback;
-  }
+  return withErrorHandling(
+    async () => {
+      const response = await apiClient('/api/services?populate=image&sort=createdAt:desc');
+      const formattedServices = formatStrapiServices(response);
+      return formattedServices;
+    },
+    'واکشی خدمات',
+    []
+  );
 }
 
 /**
@@ -98,24 +87,17 @@ export async function getAllServices() {
  * if (!service) notFound();
  */
 export async function getServiceBySlug(slug) {
-  try {
-    // کوئری Strapi با فیلتر slug
-    // از سینتکس Strapi v4/v5 برای فیلتر دقیق استفاده می‌کند
-    const response = await apiClient(
-      `/api/services?filters[slug][$eq]=${slug}&populate=image`
-    );
-
-    // فرمت کردن و برگرداندن اولین نتیجه
-    // اگر نتیجه‌ای یافت نشد، null برمی‌گرداند
-    const formattedServices = formatStrapiServices(response);
-    return formattedServices[0] || null;
-
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error(`خطا در واکشی خدمت با slug "${slug}":`, error.message);
-    }
-    return null;
-  }
+  return withErrorHandling(
+    async () => {
+      const response = await apiClient(
+        `/api/services?filters[slug][$eq]=${slug}&populate=image`
+      );
+      const formattedServices = formatStrapiServices(response);
+      return formattedServices[0] || null;
+    },
+    `واکشی خدمت با slug "${slug}"`,
+    null
+  );
 }
 
 /**
@@ -134,24 +116,17 @@ export async function getServiceBySlug(slug) {
  * const services = await getServices({ limit: 3 });
  */
 export async function getServices({ limit = 3, sort = 'createdAt:desc' } = {}) {
-  try {
-    const response = await apiClient(
-      `/api/services?populate=image&pagination[limit]=${limit}&sort=${sort}`
-    );
-
-    const formattedServices = formatStrapiServices(response);
-    return formattedServices;
-
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی خدمات:', error.message);
-    }
-    const fallback = [];
-    if (error.message === 'BACKEND_UNAVAILABLE') {
-      fallback.error = 'BACKEND_UNAVAILABLE';
-    }
-    return fallback;
-  }
+  return withErrorHandling(
+    async () => {
+      const response = await apiClient(
+        `/api/services?populate=image&pagination[limit]=${limit}&sort=${sort}`
+      );
+      const formattedServices = formatStrapiServices(response);
+      return formattedServices;
+    },
+    'واکشی خدمات',
+    []
+  );
 }
 
 /**
@@ -174,36 +149,23 @@ export async function getServices({ limit = 3, sort = 'createdAt:desc' } = {}) {
  * return Response.json(result);
  */
 export async function getServicesPaginated(page = 1, pageSize = 6, sort = 'createdAt:desc') {
-  try {
-    // ساخت query string با pagination و sort
-    // Strapi انتظار دارد: pagination[page]=X&pagination[pageSize]=Y&sort=field:order
-    const response = await apiClient(
-      `/api/services?populate=image&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`
-    );
-
-    // فرمت کردن داده‌های خدمات
-    const formattedServices = formatStrapiServices(response);
-
-    // برگرداندن داده‌ها به همراه metadata صفحه‌بندی
-    // metadata شامل: page, pageSize, pageCount, total
-    return {
-      data: formattedServices,
-      meta: response.meta || {}
-    };
-
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی خدمات صفحه‌بندی‌شده:', error.message);
-    }
-    const fallback = {
+  return withErrorHandling(
+    async () => {
+      const response = await apiClient(
+        `/api/services?populate=image&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`
+      );
+      const formattedServices = formatStrapiServices(response);
+      return {
+        data: formattedServices,
+        meta: response.meta || {}
+      };
+    },
+    'واکشی خدمات صفحه‌بندی‌شده',
+    {
       data: [],
       meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } }
-    };
-    if (error.message === 'BACKEND_UNAVAILABLE') {
-      fallback.error = 'BACKEND_UNAVAILABLE';
     }
-    return fallback;
-  }
+  );
 }
 
 /**

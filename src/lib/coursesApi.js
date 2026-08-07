@@ -15,6 +15,7 @@
 
 import { apiClient } from './apiClient';
 import { formatStrapiCourses } from './strapiUtils';
+import { withErrorHandling } from './apiErrorHandler';
 
 /**
  * واکشی تمام دوره‌ها از Strapi با ساختار Deep Populate در Strapi v5
@@ -22,28 +23,22 @@ import { formatStrapiCourses } from './strapiUtils';
  * @returns {Promise<Array>} آرایه‌ای از اشیاء دوره فرمت شده
  */
 export async function getAllCourses() {
-  try {
-    // ساخت کوئری Strapi v5 برای دریافت تمام فصل‌ها، درس‌های داخل فصل، سرفصل خطی و رسانه
-    const searchParams = new URLSearchParams({
-      'status': 'published',
-      'sort': 'createdAt:desc',
-      'populate[chapters][populate][lessons]': '*',
-      'populate[curriculum]': '*',
-      'populate[media]': 'true',
-    });
+  return withErrorHandling(
+    async () => {
+      const searchParams = new URLSearchParams({
+        'status': 'published',
+        'sort': 'createdAt:desc',
+        'populate[chapters][populate][lessons]': '*',
+        'populate[curriculum]': '*',
+        'populate[media]': 'true',
+      });
 
-    const response = await apiClient(`/api/courses?${searchParams.toString()}`);
-    return formatStrapiCourses(response);
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی دوره‌ها:', error.message);
-    }
-    const fallback = [];
-    if (error.message === 'BACKEND_UNAVAILABLE') {
-      fallback.error = 'BACKEND_UNAVAILABLE';
-    }
-    return fallback;
-  }
+      const response = await apiClient(`/api/courses?${searchParams.toString()}`);
+      return formatStrapiCourses(response);
+    },
+    'واکشی دوره‌ها',
+    []
+  );
 }
 
 /**
@@ -75,38 +70,34 @@ export async function getAllCourses() {
 export async function getCourseBySlug(slug) {
   if (!slug) return null;
 
-  try {
-    // ساخت پارامترهای دقیق Strapi v5 با انکودینگ استاندارد URL
-    const searchParams = new URLSearchParams({
-      'status': 'published',
-      'filters[slug][$eq]': slug,
-      'populate[chapters][populate][lessons]': '*',
-      'populate[curriculum]': '*',
-      'populate[media]': 'true',
-    });
+  return withErrorHandling(
+    async () => {
+      const searchParams = new URLSearchParams({
+        'status': 'published',
+        'filters[slug][$eq]': slug,
+        'populate[chapters][populate][lessons]': '*',
+        'populate[curriculum]': '*',
+        'populate[media]': 'true',
+      });
 
-    const endpoint = `/api/courses?${searchParams.toString()}`;
-    const response = await apiClient(endpoint);
+      const endpoint = `/api/courses?${searchParams.toString()}`;
+      const response = await apiClient(endpoint);
 
-    // فرمت کردن پاسخ استراپی به داده‌های تمیز
-    const formattedCourses = formatStrapiCourses(response);
-    const course = formattedCourses[0] || null;
+      const formattedCourses = formatStrapiCourses(response);
+      const course = formattedCourses[0] || null;
 
-    if (!course) return null;
+      if (!course) return null;
 
-    // اعمال افت خرامان (Graceful Degradation): تضمین ساختار امن داده‌ها برای UI
-    return {
-      ...course,
-      isChaptered: Boolean(course.isChaptered),
-      chapters: Array.isArray(course.chapters) ? course.chapters : [],
-      curriculum: Array.isArray(course.curriculum) ? course.curriculum : [],
-    };
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error(`خطا در واکشی دوره با slug "${slug}":`, error.message);
-    }
-    return null;
-  }
+      return {
+        ...course,
+        isChaptered: Boolean(course.isChaptered),
+        chapters: Array.isArray(course.chapters) ? course.chapters : [],
+        curriculum: Array.isArray(course.curriculum) ? course.curriculum : [],
+      };
+    },
+    `واکشی دوره با slug "${slug}"`,
+    null
+  );
 }
 
 /**
@@ -117,28 +108,23 @@ export async function getCourseBySlug(slug) {
  * @returns {Promise<Array>} آرایه‌ای از اشیاء دوره فرمت شده
  */
 export async function getCourses({ limit = 4 } = {}) {
-  try {
-    const searchParams = new URLSearchParams({
-      'status': 'published',
-      'sort': 'createdAt:desc',
-      'pagination[limit]': String(limit),
-      'populate[chapters][populate][lessons]': '*',
-      'populate[curriculum]': '*',
-      'populate[media]': 'true',
-    });
+  return withErrorHandling(
+    async () => {
+      const searchParams = new URLSearchParams({
+        'status': 'published',
+        'sort': 'createdAt:desc',
+        'pagination[limit]': String(limit),
+        'populate[chapters][populate][lessons]': '*',
+        'populate[curriculum]': '*',
+        'populate[media]': 'true',
+      });
 
-    const response = await apiClient(`/api/courses?${searchParams.toString()}`);
-    return formatStrapiCourses(response);
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی دوره‌ها:', error.message);
-    }
-    const fallback = [];
-    if (error.message === 'BACKEND_UNAVAILABLE') {
-      fallback.error = 'BACKEND_UNAVAILABLE';
-    }
-    return fallback;
-  }
+      const response = await apiClient(`/api/courses?${searchParams.toString()}`);
+      return formatStrapiCourses(response);
+    },
+    'واکشی دوره‌ها',
+    []
+  );
 }
 
 /**
@@ -150,35 +136,30 @@ export async function getCourses({ limit = 4 } = {}) {
  * @returns {Promise<{data: Array, meta: object}>} دوره‌های فرمت شده با metadata صفحه‌بندی
  */
 export async function getCoursesPaginated(page = 1, pageSize = 6, sort = 'createdAt:desc') {
-  try {
-    const searchParams = new URLSearchParams({
-      'status': 'published',
-      'pagination[page]': String(page),
-      'pagination[pageSize]': String(pageSize),
-      'sort': sort,
-      'populate[chapters][populate][lessons]': '*',
-      'populate[curriculum]': '*',
-      'populate[media]': 'true',
-    });
+  return withErrorHandling(
+    async () => {
+      const searchParams = new URLSearchParams({
+        'status': 'published',
+        'pagination[page]': String(page),
+        'pagination[pageSize]': String(pageSize),
+        'sort': sort,
+        'populate[chapters][populate][lessons]': '*',
+        'populate[curriculum]': '*',
+        'populate[media]': 'true',
+      });
 
-    const response = await apiClient(`/api/courses?${searchParams.toString()}`);
-    const formattedCourses = formatStrapiCourses(response);
+      const response = await apiClient(`/api/courses?${searchParams.toString()}`);
+      const formattedCourses = formatStrapiCourses(response);
 
-    return {
-      data: formattedCourses,
-      meta: response.meta || {},
-    };
-  } catch (error) {
-    if (error.message !== 'BACKEND_UNAVAILABLE' && process.env.NODE_ENV === 'development') {
-      console.error('خطا در واکشی دوره‌های صفحه‌بندی‌شده:', error.message);
-    }
-    const fallback = {
+      return {
+        data: formattedCourses,
+        meta: response.meta || {},
+      };
+    },
+    'واکشی دوره‌های صفحه‌بندی‌شده',
+    {
       data: [],
       meta: { pagination: { page: 1, pageSize, pageCount: 0, total: 0 } },
-    };
-    if (error.message === 'BACKEND_UNAVAILABLE') {
-      fallback.error = 'BACKEND_UNAVAILABLE';
     }
-    return fallback;
-  }
+  );
 }

@@ -5,7 +5,7 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getAdminProducts } from '@/lib/adminApi';
+import { getAdminProducts } from '@/lib/admin/adminProductsApi';
 import ProductsTable from '@/components/admin/Products/ProductsTable';
 import Link from 'next/link';
 import styles from '../orders/orders.module.scss';
