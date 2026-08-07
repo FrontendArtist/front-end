@@ -24,7 +24,20 @@ export const useCartStore = create(
              * - اگر آیتم از نوع 'product' باشد و موجود نباشد، با quantity=1 اضافه می‌شود
              */
             addItem: (rawItem) => {
-                const item = { ...rawItem, price: typeof rawItem.price === 'object' ? (rawItem.price?.toman || 0) : (rawItem.price || 0) };
+                let rawPrice = rawItem.price;
+                let finalPrice = 0;
+                
+                if (typeof rawPrice === 'object' && rawPrice !== null) {
+                    finalPrice = Number(rawPrice.toman) || 0;
+                } else {
+                    finalPrice = Number(rawPrice) || 0;
+                }
+                
+                if (finalPrice <= 0 && process.env.NODE_ENV === 'development') {
+                    console.warn(`⚠️ Warning: Item "${rawItem.title || rawItem.id}" was added to cart with an invalid or zero price.`, rawItem);
+                }
+
+                const item = { ...rawItem, price: finalPrice };
                 const currentItems = get().items;
 
                 const existingItemIndex = currentItems.findIndex(
@@ -127,10 +140,16 @@ export const useCartStore = create(
             migrate: (persistedState, version) => {
                 if (version === 0) {
                     if (persistedState.items) {
-                        persistedState.items = persistedState.items.map(item => ({
-                            ...item,
-                            price: typeof item.price === 'object' ? (item.price?.toman || 0) : (item.price || 0)
-                        }));
+                        persistedState.items = persistedState.items.map(item => {
+                            let rawPrice = item.price;
+                            let finalPrice = 0;
+                            if (typeof rawPrice === 'object' && rawPrice !== null) {
+                                finalPrice = Number(rawPrice.toman) || 0;
+                            } else {
+                                finalPrice = Number(rawPrice) || 0;
+                            }
+                            return { ...item, price: finalPrice };
+                        });
                     }
                 }
                 return persistedState;

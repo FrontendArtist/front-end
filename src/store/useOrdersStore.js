@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { fetchClientOrders } from '@/lib/client/ordersClientApi';
 
 export const useOrdersStore = create((set, get) => ({
     orders: [],
@@ -12,11 +13,7 @@ export const useOrdersStore = create((set, get) => ({
         
         set({ isLoading: true, error: null });
         try {
-            const response = await fetch('/api/orders');
-            if (!response.ok) {
-                throw new Error('خطا در دریافت لیست سفارشات');
-            }
-            const result = await response.json();
+            const result = await fetchClientOrders();
             const ordersData = result.data || result || [];
             
             set({ 

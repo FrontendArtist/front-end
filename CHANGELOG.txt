@@ -1,4 +1,14 @@
 ط
+[2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 3 Fixes
+
+── State Management & Custom Hooks Refactoring (Group 3) ──────────────────────
+- **Client API Layer Created**: Established a dedicated client-side API layer (`src/lib/client/`) to decouple data fetching from state managers and hooks. Created `ordersClientApi.js` and `profileClientApi.js`.
+- **Zustand Stores**:
+  - `useCartStore.js`: Improved data validation in `addItem` and `migrate` methods. Invalid prices are now explicitly warned in development instead of silently defaulting to `0`.
+  - `useOrdersStore.js`: Replaced raw `fetch` with `fetchClientOrders` from the new client API layer to centralize error handling.
+- **Custom Hooks**:
+  - `useCartSync.js`: Refactored to utilize `profileClientApi.js` for hydration and syncing operations, abstracting network logic out of the hook lifecycle.
+
 [2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 2 Fixes
 
 ── Domain APIs & Admin API Refactoring (Group 2) ──────────────────────────

@@ -3,15 +3,12 @@
 
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-// 👇 تغییر این خط: اضافه کردن آکولاد { }
 import { useCartStore } from "@/store/useCartStore";
-import apiClient from "@/lib/apiClient";
+import { fetchProfileCartData, updateProfileCartData } from "@/lib/client/profileClientApi";
 
 const useCartSync = () => {
   const { data: session, status } = useSession();
 
-  // 👇 اگر با ارور store function مواجه شدید، نحوه فراخوانی را هم چک کنید
-  // اما فعلا فقط خط ایمپورت مشکل دارد.
   const cartState = useCartStore((state) => state);
   const items = cartState.items;
 
@@ -25,15 +22,11 @@ const useCartSync = () => {
     const syncFromServer = async () => {
       if (status === "authenticated" && items.length === 0) {
         try {
-          const response = await fetch("/api/profile");
+          const userData = await fetchProfileCartData();
+          const serverCart = userData.cartData;
 
-          if (response.ok) {
-            const userData = await response.json();
-            const serverCart = userData.cartData;
-
-            if (serverCart && serverCart.state && serverCart.state.items?.length > 0) {
-              useCartStore.setState(serverCart.state);
-            }
+          if (serverCart && serverCart.state && serverCart.state.items?.length > 0) {
+            useCartStore.setState(serverCart.state);
           }
         } catch (error) {
           console.error("Failed to hydrate cart:", error);
@@ -67,11 +60,7 @@ const useCartSync = () => {
           updatedAt: new Date().toISOString(),
         };
 
-        await fetch("/api/profile", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cartData: cartDataPayload }),
-        });
+        await updateProfileCartData(cartDataPayload);
 
         console.log("💾 Cart synced to server successfully");
       } catch (error) {
