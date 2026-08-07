@@ -8,6 +8,7 @@ import AuthModal from "@/components/auth/AuthModal";
 import { Providers } from "./providers";
 import localFont from 'next/font/local';
 import CartSyncProvider from "@/components/providers/CartSyncProvider";
+import { SITE_NAME, SITE_URL } from "@/lib/constants";
 const iranSans = localFont({
   src: '../assets/fonts/iransans_regular/iransans-regular-webfont.ttf',
   variable: '--font-iransans',
@@ -27,17 +28,17 @@ const lalezar = localFont({
 });
 
 export const metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://tarhelahi.ir'),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "طرح الهی",
-    template: "%s | طرح الهی"
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`
   },
-  description: "مرجع آموزش و محصولات فرهنگی طرح الهی",
+  description: `مرجع آموزش و محصولات معنوی ${SITE_NAME}`,
   openGraph: {
-    title: 'طرح الهی',
-    description: 'مرجع آموزش و محصولات فرهنگی طرح الهی',
-    url: '/',
-    siteName: 'طرح الهی',
+    title: SITE_NAME,
+    description: `مرجع آموزش و محصولات معنوی ${SITE_NAME}`,
+    url: SITE_URL,
+    siteName: SITE_NAME,
     locale: 'fa_IR',
     type: 'website',
   },

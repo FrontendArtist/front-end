@@ -14,6 +14,8 @@ import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import styles from './page.module.scss';
 import { getUserCoursePurchases } from '@/lib/ordersApi';
 
+import { SITE_NAME, SITE_URL } from '@/lib/constants';
+
 /**
  * Generate Dynamic Metadata for SEO
  * Uses API Layer abstraction
@@ -26,13 +28,13 @@ export async function generateMetadata({ params }) {
     return { title: 'دوره یافت نشد' };
   }
 
-  const courseUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tarhelahi.ir'}/courses/${slug}`;
+  const courseUrl = `${SITE_URL}/courses/${slug}`;
 
   return {
-    title: `${rawCourse.title} | طرح الهی`,
+    title: `${rawCourse.title} | ${SITE_NAME}`,
     description: rawCourse.shortDescription,
     openGraph: {
-      title: `${rawCourse.title} | طرح الهی`,
+      title: `${rawCourse.title} | ${SITE_NAME}`,
       description: rawCourse.shortDescription,
       url: courseUrl,
       images: rawCourse.image?.url ? [
@@ -127,8 +129,24 @@ export default async function CoursePage({ params }) {
     }),
   };
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    "name": course.title,
+    "description": course.description,
+    "provider": {
+      "@type": "Organization",
+      "name": SITE_NAME,
+      "sameAs": SITE_URL
+    }
+  };
+
   return (
     <main className={styles.coursePage}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="container">
         <Breadcrumb items={[
           { label: 'خانه', href: '/' },

@@ -1,3 +1,14 @@
+[2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 10 Fixes
+
+── Technical SEO & Metadata Infrastructure (Group 10) ──────────────────────────
+- **Global Constants**: Centralized `SITE_NAME` and `SITE_URL` in `src/lib/constants.js` to eliminate hardcoded values and maintain a Single Source of Truth for SEO properties.
+- **Global Layout & Routing SEO**: Configured `metadataBase`, `robots` instructions, and generic `openGraph` properties in `src/app/layout.js`. Added `canonical` URLs and `WebSite` JSON-LD schema with `SearchAction` in the main `page.js`.
+- **Dynamic Content SEO**: Implemented `canonical` tags and detailed JSON-LD structured data across dynamic routes:
+  - Articles: Added `CollectionPage` for lists and `Article` schema for single pages.
+  - Courses: Added `Course` schemas.
+  - Products: Built robust `Product` schema with `Offer`, pricing, and dynamic inventory availability status (`InStock`, `LimitedAvailability`, `OutOfStock`).
+- **Web Crawlers Setup**: Developed dynamic Next.js generator scripts for `src/app/sitemap.js` and `src/app/robots.js` to automatically index all products, articles, courses, and protect private routes (`/admin`, `/profile`, `/checkout`).
+
 [2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 7 Fixes
 
 ── Feature Modules Refactoring (Group 7) ──────────────────────────

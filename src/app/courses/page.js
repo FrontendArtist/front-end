@@ -17,13 +17,18 @@ import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock'
 import { getCoursesPaginated } from '@/lib/coursesApi';
 import { unstable_noStore as noStore } from 'next/cache';
 import styles from './page.module.scss';
+import { SITE_NAME, SITE_URL } from '@/lib/constants';
 
 export const metadata = {
-  title: 'دوره‌ها | طرح الهی',
+  title: `دوره‌ها | ${SITE_NAME}`,
   description: 'لیست کامل دوره‌های آموزشی را مشاهده کنید.',
   openGraph: {
-    title: 'دوره‌ها | طرح الهی',
+    title: `دوره‌ها | ${SITE_NAME}`,
     description: 'لیست کامل دوره‌های آموزشی را مشاهده کنید.',
+    url: `${SITE_URL}/courses`,
+  },
+  alternates: {
+    canonical: '/courses',
   }
 };
 
@@ -61,8 +66,20 @@ export default async function CoursesPage({ searchParams: spPromise }) {
 
   const initialCourses = result.data;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": `دوره‌ها | ${SITE_NAME}`,
+    "description": "لیست کامل دوره‌های آموزشی را مشاهده کنید.",
+    "url": `${SITE_URL}/courses`,
+  };
+
   return (
     <main className={styles.main}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="container">
         <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'دوره‌ها' }]} />
 

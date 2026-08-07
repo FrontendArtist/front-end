@@ -13,15 +13,23 @@
 import ListGuard from '@/components/ui/ListGuard/ListGuard';
 import ArticleGrid from '@/modules/articles/ArticleGrid/ArticleGrid';
 import { getArticlesPaginated, getArticleCategories } from '@/lib/articlesApi';
-import { ARTICLES_PAGE_SIZE } from '@/lib/constants';
+import { ARTICLES_PAGE_SIZE, SITE_NAME, SITE_URL } from '@/lib/constants';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock';
 import { unstable_noStore as noStore } from 'next/cache';
 import styles from './articles.module.scss';
 
 export const metadata = {
-  title: 'مقالات | وب‌سایت ما',
+  title: `مقالات | ${SITE_NAME}`,
   description: 'آخرین مقالات و نوشته‌ها را مطالعه کنید.',
+  openGraph: {
+    title: `مقالات | ${SITE_NAME}`,
+    description: 'آخرین مقالات و نوشته‌ها را مطالعه کنید.',
+    url: `${SITE_URL}/articles`,
+  },
+  alternates: {
+    canonical: '/articles',
+  }
 };
 
 /**
@@ -83,8 +91,20 @@ export default async function ArticlesPage({ searchParams: spPromise }) {
       : [])
   ];
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": `مقالات | ${SITE_NAME}`,
+    "description": "آخرین مقالات و نوشته‌ها را مطالعه کنید.",
+    "url": `${SITE_URL}/articles`,
+  };
+
   return (
     <main className={styles.main}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="container">
         <Breadcrumb items={breadcrumbItems} />
         <ArticleGrid

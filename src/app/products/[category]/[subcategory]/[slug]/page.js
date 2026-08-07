@@ -85,27 +85,35 @@ function buildProductJsonLd(product, pageUrl) {
   };
 }
 
+import { SITE_NAME, SITE_URL } from '@/lib/constants';
+
 // =============================================================================
 // generateMetadata — متادیتای داینامیک SEO
 // =============================================================================
 
 export async function generateMetadata({ params }) {
-  const { slug } = await params;
+  const { slug, category, subcategory } = await params;
   const product = await getProductBySlug(slug);
 
   if (!product) {
     return { title: 'محصول یافت نشد' };
   }
 
+  const pageUrl = `${SITE_URL}/products/${category}/${subcategory}/${slug}`;
+
   return {
-    title: `${product.title} | فروشگاه آنلاین`,
+    title: `${product.title} | ${SITE_NAME}`,
     description: product.shortDescription || product.title,
     openGraph: {
       title: product.title,
       description: product.shortDescription || '',
       images: product.image?.url ? [{ url: product.image.url }] : [],
+      url: pageUrl,
       type: 'website',
     },
+    alternates: {
+      canonical: pageUrl,
+    }
   };
 }
 
@@ -154,7 +162,7 @@ export default async function ProductPage({ params }) {
   });
 
   // ── ساخت JSON-LD ─────────────────────────────────────────────────────────
-  const pageUrl = `${process.env.NEXT_PUBLIC_SITE_URL || ''}/products/${category}/${subcategory}/${slug}`;
+  const pageUrl = `${SITE_URL}/products/${category}/${subcategory}/${slug}`;
   const jsonLd = buildProductJsonLd(product, pageUrl);
 
   // ==========================================================================

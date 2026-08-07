@@ -21,14 +21,19 @@ import { getArticles } from '@/lib/articlesApi';
 import { getServices } from '@/lib/servicesApi';
 import { getCourses } from '@/lib/coursesApi';
 
+import { SITE_NAME, SITE_URL } from '@/lib/constants';
+
 export const revalidate = 60;
 
 export const metadata = {
-  title: "صفحه اصلی | طرح الهی",
-  description: "به وب‌سایت طرح الهی خوش آمدید. مرجع آموزش و دریافت محصولات فرهنگی.",
+  title: `صفحه اصلی | ${SITE_NAME}`,
+  description: `به وب‌سایت ${SITE_NAME} خوش آمدید. مرجع آموزش و دریافت محصولات معنوی.`,
   openGraph: {
-    title: "صفحه اصلی | طرح الهی",
-    description: "به وب‌سایت طرح الهی خوش آمدید. مرجع آموزش و دریافت محصولات فرهنگی.",
+    title: `صفحه اصلی | ${SITE_NAME}`,
+    description: `به وب‌سایت ${SITE_NAME} خوش آمدید. مرجع آموزش و دریافت محصولات معنوی.`,
+  },
+  alternates: {
+    canonical: '/',
   }
 };
 
@@ -77,8 +82,24 @@ export default async function HomePage() {
   const services = resolveData(servicesResult);
   const courses = resolveData(coursesResult);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": SITE_NAME,
+    "url": SITE_URL,
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": `${SITE_URL}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string"
+    }
+  };
+
   return (
     <div className={styles.container}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <HeroSection />
       <IntroTextSection />
       <AboutMentorSection />

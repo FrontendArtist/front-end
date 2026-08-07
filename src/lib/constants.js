@@ -6,6 +6,13 @@
  */
 
 // ========================================
+// Site Metadata Settings
+// ========================================
+
+export const SITE_NAME = 'طرح الهی';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://tarhelahi.ir';
+
+// ========================================
 // Pagination Settings
 // ========================================
 

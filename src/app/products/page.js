@@ -20,12 +20,19 @@ import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock'
 import { unstable_noStore as noStore } from 'next/cache';
 import styles from './products.module.scss';
 
+import { SITE_NAME, SITE_URL } from '@/lib/constants';
+
 // SEO Metadata for the page
 export const metadata = {
-  title: 'محصولات | فروشگاه آنلاین',
-  description: 'لیست کامل محصولات فروشگاه ما را مشاهده کنید.',
+  title: `محصولات | ${SITE_NAME}`,
+  description: `لیست کامل محصولات فروشگاه ${SITE_NAME} را مشاهده کنید.`,
+  openGraph: {
+    title: `محصولات | ${SITE_NAME}`,
+    description: `لیست کامل محصولات فروشگاه ${SITE_NAME} را مشاهده کنید.`,
+    url: `${SITE_URL}/products`,
+  },
   alternates: {
-    canonical: `${process.env.NEXT_PUBLIC_SITE_URL || ''}/products`
+    canonical: `${SITE_URL}/products`
   }
 };
 
@@ -98,8 +105,20 @@ export default async function ProductsPage({ searchParams: spPromise }) {
     subcategory: currentSubCategory
   });
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": `محصولات | ${SITE_NAME}`,
+    "description": `لیست کامل محصولات فروشگاه ${SITE_NAME} را مشاهده کنید.`,
+    "url": `${SITE_URL}/products`,
+  };
+
   return (
     <main className={styles.main}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="container">
         <Breadcrumb items={breadcrumbItems} />
 

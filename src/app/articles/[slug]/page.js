@@ -12,10 +12,7 @@ import CommentsSection from '@/modules/comments/CommentsSection';
 import { API_BASE_URL } from '@/lib/api';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import styles from './page.module.scss';
-
-// ثوابت برند و دامنه سایت
-const SITE_NAME = 'طرح الهی';
-const SITE_URL = 'https://tarhelahi.ir';
+import { SITE_NAME, SITE_URL } from '@/lib/constants';
 
 /**
  * Generate Dynamic Metadata for SEO & OpenGraph
