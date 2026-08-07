@@ -23,6 +23,15 @@ import { getCourses } from '@/lib/coursesApi';
 
 export const revalidate = 60;
 
+export const metadata = {
+  title: "صفحه اصلی | طرح الهی",
+  description: "به وب‌سایت طرح الهی خوش آمدید. مرجع آموزش و دریافت محصولات فرهنگی.",
+  openGraph: {
+    title: "صفحه اصلی | طرح الهی",
+    description: "به وب‌سایت طرح الهی خوش آمدید. مرجع آموزش و دریافت محصولات فرهنگی.",
+  }
+};
+
 export default async function HomePage() {
   // هر درخواست به صورت مستقل انجام می‌شود تا در صورت قطعی سرور،
   // خطای یک بخش باعث از دست رفتن داده‌های بقیه نشود.
@@ -44,12 +53,20 @@ export default async function HomePage() {
     getCourses({ limit: 20 }),
   ]);
 
+  const hasBackendError = [
+    categoriesResult, faqsResult, testimonialsResult, productsResult, articlesResult, servicesResult, coursesResult
+  ].some(r => r.status === 'rejected');
+
+  if (hasBackendError) {
+    noStore();
+  }
+
   const resolveData = (result) => {
     if (result.status === 'fulfilled') return result.value ?? [];
-    // اگر Promise کاملاً reject شد (خطای غیرمنتظره)، آرایه خالی برمی‌گردانیم
-    const fallback = [];
-    fallback.error = 'BACKEND_UNAVAILABLE';
-    return fallback;
+    if (process.env.NODE_ENV === 'development') {
+      console.error("Backend Error in resolveData for a section:", result.reason);
+    }
+    return [];
   };
 
   const categories = resolveData(categoriesResult);
@@ -60,27 +77,19 @@ export default async function HomePage() {
   const services = resolveData(servicesResult);
   const courses = resolveData(coursesResult);
 
-  const hasBackendError = [
-    categories, faqs, testimonials, products, articles, services, courses
-  ].some(arr => arr && arr.error === 'BACKEND_UNAVAILABLE');
-
-  if (hasBackendError) {
-    noStore();
-  }
-
   return (
     <div className={styles.container}>
       <HeroSection />
       <IntroTextSection />
       <AboutMentorSection />
-      <CoursesSection data={courses} serverError={courses?.error === 'BACKEND_UNAVAILABLE'} />
+      <CoursesSection data={courses} serverError={coursesResult.status === 'rejected'} />
       <HakimElahiSection />
-      <ProductCategoriesSection data={categories} serverError={categories?.error === 'BACKEND_UNAVAILABLE'} />
-      <ProductsSection data={products} serverError={products?.error === 'BACKEND_UNAVAILABLE'} />
-      <ServicesSection data={services} serverError={services?.error === 'BACKEND_UNAVAILABLE'} />
-      <ArticlesSection data={articles} serverError={articles?.error === 'BACKEND_UNAVAILABLE'} />
-      <FaqSection data={faqs} serverError={faqs?.error === 'BACKEND_UNAVAILABLE'} />
-      <TestimonialsSection data={testimonials} serverError={testimonials?.error === 'BACKEND_UNAVAILABLE'} />
+      <ProductCategoriesSection data={categories} serverError={categoriesResult.status === 'rejected'} />
+      <ProductsSection data={products} serverError={productsResult.status === 'rejected'} />
+      <ServicesSection data={services} serverError={servicesResult.status === 'rejected'} />
+      <ArticlesSection data={articles} serverError={articlesResult.status === 'rejected'} />
+      <FaqSection data={faqs} serverError={faqsResult.status === 'rejected'} />
+      <TestimonialsSection data={testimonials} serverError={testimonialsResult.status === 'rejected'} />
     </div>
   );
 }

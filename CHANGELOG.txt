@@ -1,4 +1,12 @@
-ط
+
+[2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 4 Fixes
+
+── App Router & Global Layout Architecture (Group 4) ──────────────────────
+- **SEO & Metadata**: Overhauled global metadata in `src/app/layout.js`, defining `metadataBase`, `robots`, and default `openGraph`. Upgraded `generateMetadata` in `src/app/courses/[slug]/page.js` with canonical URLs and dynamic OG images.
+- **Server API Layer (`ordersApi.js`)**: Extracted direct database fetches (`STRAPI_API_TOKEN`) out of the `CoursePage` component into a dedicated `getUserCoursePurchases` server utility, enforcing Separation of Concerns.
+- **Anti-Pattern Removed**: Refactored `resolveData` in `src/app/page.js` to eliminate the injection of string error properties into arrays (`fallback.error = 'BACKEND_UNAVAILABLE'`), adopting a pure Promise-status checking approach for robust array rendering.
+- **SCSS Decoupling**: Disconnected `courses/page.js` from `articles.module.scss` and initialized a standalone `page.module.scss` module.
+
 [2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 3 Fixes
 
 ── State Management & Custom Hooks Refactoring (Group 3) ──────────────────────

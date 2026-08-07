@@ -27,8 +27,24 @@ const lalezar = localFont({
 });
 
 export const metadata = {
-  title: "tarh-elahi",
-  description: "tarh-elahi",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://tarhelahi.ir'),
+  title: {
+    default: "طرح الهی",
+    template: "%s | طرح الهی"
+  },
+  description: "مرجع آموزش و محصولات فرهنگی طرح الهی",
+  openGraph: {
+    title: 'طرح الهی',
+    description: 'مرجع آموزش و محصولات فرهنگی طرح الهی',
+    url: '/',
+    siteName: 'طرح الهی',
+    locale: 'fa_IR',
+    type: 'website',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  }
 };
 
 export default function RootLayout({ children }) {

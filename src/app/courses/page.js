@@ -16,11 +16,15 @@ import CourseGrid from '@/modules/courses/CourseGrid/CourseGrid';
 import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock';
 import { getCoursesPaginated } from '@/lib/coursesApi';
 import { unstable_noStore as noStore } from 'next/cache';
-import styles from '../articles/articles.module.scss'; // Reusing styles
+import styles from './page.module.scss';
 
 export const metadata = {
-  title: 'دوره‌ها | وب‌سایت ما',
+  title: 'دوره‌ها | طرح الهی',
   description: 'لیست کامل دوره‌های آموزشی را مشاهده کنید.',
+  openGraph: {
+    title: 'دوره‌ها | طرح الهی',
+    description: 'لیست کامل دوره‌های آموزشی را مشاهده کنید.',
+  }
 };
 
 /**

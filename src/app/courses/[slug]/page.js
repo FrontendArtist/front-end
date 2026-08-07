@@ -12,6 +12,7 @@ import { marked } from 'marked';
 import ArticleReader from '@/app/articles/[slug]/ArticleReader';
 import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import styles from './page.module.scss';
+import { getUserCoursePurchases } from '@/lib/ordersApi';
 
 /**
  * Generate Dynamic Metadata for SEO
@@ -25,9 +26,22 @@ export async function generateMetadata({ params }) {
     return { title: 'دوره یافت نشد' };
   }
 
+  const courseUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://tarhelahi.ir'}/courses/${slug}`;
+
   return {
-    title: `${rawCourse.title} | وب‌سایت ما`,
+    title: `${rawCourse.title} | طرح الهی`,
     description: rawCourse.shortDescription,
+    openGraph: {
+      title: `${rawCourse.title} | طرح الهی`,
+      description: rawCourse.shortDescription,
+      url: courseUrl,
+      images: rawCourse.image?.url ? [
+        { url: rawCourse.image.url.startsWith('http') || rawCourse.image.url.startsWith('/images/') ? rawCourse.image.url : `${API_BASE_URL}${rawCourse.image.url}` }
+      ] : [],
+    },
+    alternates: {
+      canonical: courseUrl,
+    }
   };
 }
 
@@ -51,50 +65,12 @@ export default async function CoursePage({ params }) {
 
   const session = await getServerSession(authOptions);
 
-  let hasPurchasedServer = false;
-  let purchasedChapterIdsServer = [];
   const isFreeCourse = rawCourse.price?.toman === 0 || rawCourse.price === 0;
-
-  if (session?.user?.id) {
-    try {
-      const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-      const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
-
-      const ordersRes = await fetch(`${STRAPI_BASE_URL}/api/orders?filters[user][id][$eq]=${session.user.id}&populate=*`, {
-        headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
-        cache: 'no-store'
-      });
-
-      if (ordersRes.ok) {
-        const ordersData = await ordersRes.json();
-        const ordersList = ordersData.data || [];
-
-        ordersList.forEach(order => {
-          const items = order.attributes?.items || order.items || [];
-          items.forEach(item => {
-            // بررسی خرید کل دوره
-            if (
-              item.slug === rawCourse.slug ||
-              String(item.courseId) === String(rawCourse.id) ||
-              String(item.id) === String(rawCourse.id)
-            ) {
-              hasPurchasedServer = true;
-            }
-            // بررسی خرید فصل‌های مجزا
-            if (item.type === 'chapter' || item.chapterId) {
-              if (item.chapterId) purchasedChapterIdsServer.push(String(item.chapterId));
-              if (item.id) {
-                const cleanId = String(item.id).replace('chapter-', '');
-                purchasedChapterIdsServer.push(cleanId);
-              }
-            }
-          });
-        });
-      }
-    } catch (e) {
-      console.error("Error fetching purchases on server via orders:", e);
-    }
-  }
+  
+  const { 
+    hasPurchasedServer, 
+    purchasedChapterIdsServer 
+  } = await getUserCoursePurchases(session?.user?.id, rawCourse.id, rawCourse.slug);
 
   // Fetch comments for this course
   const initialComments = await getComments('course', rawCourse.documentId);
