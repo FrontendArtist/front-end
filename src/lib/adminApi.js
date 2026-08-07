@@ -12,8 +12,8 @@
  *   اینجا یک fetch جداگانه با هدر Authorization داریم تا کنترل کامل داشته باشیم.
  */
 
-const STRAPI_API_URL =
-    process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+import { STRAPI_API_URL } from './api';
+
 
 /**
  * واکشی ایمن از Strapi با Authorization هدر ادمین.
@@ -179,7 +179,7 @@ export async function getOrders(jwt, { page = 1, pageSize = 20 } = {}) {
                 phoneNumber: user.phoneNumber || '—',
             } : null,
             receiptImageUrl: receiptImage?.url
-                ? `${process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337'}${receiptImage.url}`
+                ? `${STRAPI_API_URL}${receiptImage.url}`
                 : null,
         };
     });
@@ -194,8 +194,6 @@ export async function getOrders(jwt, { page = 1, pageSize = 20 } = {}) {
 // تا JWT در مرورگر expose نشود.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function updateOrder(orderId, payload, jwt) {
-    const STRAPI_API_URL =
-        process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
     try {
         const res = await fetch(`${STRAPI_API_URL}/api/orders/${orderId}`, {
             method: 'PUT',

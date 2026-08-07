@@ -1,4 +1,13 @@
 ط
+[2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 1 Fixes
+
+── API Layer & Infrastructure Refactoring (Group 1) ──────────────────────────
+- **apiClient.js**: Added `AbortController` with a 15s default timeout to prevent hung requests. Added support to dynamically override `cache` configuration for Next.js SSR control.
+- **apiErrorHandler.js**: Changed `fallbackValue` default from `[]` to `null` to avoid breaking components expecting objects/strings instead of arrays on error.
+- **api.js**: Centralized `STRAPI_API_URL` definition. Removed hardcoded and duplicated env variables from `auth.js` and `adminApi.js` to strictly enforce DRY and Single Source of Truth.
+- **strapiUtils.js**: Refactored the monolithic 500-line formatter file to adhere to SRP. Extracted formatting logic into 5 dedicated modules (`htmlUtils.js`, `productUtils.js`, `articleUtils.js`, `courseUtils.js`, `categoryUtils.js`). Maintained backward compatibility via re-exports.
+- **auth.js**: Extracted complex session fetching logic into a dedicated `fetchUserSessionData` helper function (Separation of Concerns). Fixed empty catch block and added a development warning for unset `NEXTAUTH_SECRET`.
+
 [2026-08-05] - Unified Shared Chat Modal Component & Admin Contact Messages Redesign
 
 ── Unified Shared Chat Modal Architecture ──────────────────────────────────────────────────

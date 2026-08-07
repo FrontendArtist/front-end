@@ -47,7 +47,7 @@ export function logApiError(context, error, silent = false) {
 export async function withErrorHandling(
     apiFunction,
     context,
-    fallbackValue = [],
+    fallbackValue = null,
     silentOnUnavailable = true
 ) {
     try {

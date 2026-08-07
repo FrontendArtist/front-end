@@ -48,10 +48,14 @@ import { API_BASE_URL } from './api';
  * });
  */
 export async function apiClient(endpoint, options = {}) {
-  const { suppressErrorLog, ...fetchOptions } = options;
+  const { suppressErrorLog, timeoutMs = 15000, ...fetchOptions } = options;
   // ساخت URL کامل با ترکیب Base URL و endpoint
   // endpoint باید با "/" شروع شود (مثلاً "/api/services")
   const url = `${API_BASE_URL}${endpoint}`;
+
+  // تنظیم AbortController برای Timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     // ارسال درخواست fetch با ادغام تنظیمات
@@ -62,9 +66,12 @@ export async function apiClient(endpoint, options = {}) {
       },
       // پیش‌فرض: بدون کش برای داده‌های تازه در SSR
       // می‌تواند برای هر درخواست override شود (مثلاً { next: { revalidate: 3600 } })
-      cache: 'no-store',
+      cache: fetchOptions.cache || (fetchOptions.next ? undefined : 'no-store'),
+      signal: controller.signal,
       ...fetchOptions, // سایر تنظیمات (method, body و...)
     });
+    
+    clearTimeout(timeoutId);
 
     // بررسی موفقیت پاسخ (status code بین 200-299)
     if (!response.ok) {

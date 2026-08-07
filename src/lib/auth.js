@@ -1,8 +1,45 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import { STRAPI_API_URL } from './api';
 
-const STRAPI_API_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+// ⚠️ هشدار امنیتی: در production حتماً NEXTAUTH_SECRET را در .env تنظیم کنید
+if (process.env.NODE_ENV === 'production' && (!process.env.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET === 'dev-secret-key-change-this')) {
+  console.error('🔴 [AUTH] NEXTAUTH_SECRET is not set or using default value in production! This is a security vulnerability.');
+}
+
+/**
+ * واکشی اطلاعات تکمیلی کاربر (دوره‌ها و فصل‌های خریداری شده) برای قرارگیری در سشن
+ * @param {string} userId - آیدی کاربر در Strapi
+ * @param {string} jwt - توکن دسترسی
+ */
+async function fetchUserSessionData(userId, jwt) {
+    try {
+        const tokenToUse = jwt || process.env.STRAPI_API_TOKEN;
+        const userRes = await fetch(`${STRAPI_API_URL}/api/users/${userId}?populate[0]=courses`, {
+            headers: { Authorization: `Bearer ${tokenToUse}` },
+            cache: 'no-store'
+        });
+        const contentType = userRes.headers.get('content-type') || '';
+        if (userRes.ok && contentType.includes('application/json')) {
+            const userData = await userRes.json();
+            const courses = userData.courses || [];
+            return {
+                courses,
+                enrolledCourses: courses.map(c => c.id),
+                enrolledSlugs: courses.map(c => c.slug).filter(Boolean),
+                enrolledChapters: Array.isArray(userData.enrolledChapters)
+                    ? userData.enrolledChapters.map(Number)
+                    : [],
+            };
+        }
+    } catch (e) {
+        if (process.env.NODE_ENV === 'development') {
+            console.warn('[NextAuth] session callback - failed to fetch user data:', e.message);
+        }
+    }
+    return null;
+}
 
 export const authOptions = {
     providers: [
@@ -86,25 +123,12 @@ export const authOptions = {
 
                 // واکشی آخرین وضعیت دوره‌ها و فصل‌های فعال کاربر از استراپی
                 if (token.id) {
-                    try {
-                        const tokenToUse = token.jwt || process.env.STRAPI_API_TOKEN;
-                        const userRes = await fetch(`${STRAPI_API_URL}/api/users/${token.id}?populate[0]=courses`, {
-                            headers: { Authorization: `Bearer ${tokenToUse}` },
-                            cache: 'no-store'
-                        });
-                        const contentType = userRes.headers.get('content-type') || '';
-                        if (userRes.ok && contentType.includes('application/json')) {
-                            const userData = await userRes.json();
-                            const courses = userData.courses || [];
-                            session.user.courses = courses;
-                            session.user.enrolledCourses = courses.map(c => c.id);
-                            session.user.enrolledSlugs = courses.map(c => c.slug).filter(Boolean);
-                            session.user.enrolledChapters = Array.isArray(userData.enrolledChapters)
-                                ? userData.enrolledChapters.map(Number)
-                                : [];
-                        }
-                    } catch (e) {
-                        // در صورت بروز خطا، سشن بدون افت عملکرد بازمی‌گردد
+                    const extraData = await fetchUserSessionData(token.id, token.jwt);
+                    if (extraData) {
+                        session.user.courses = extraData.courses;
+                        session.user.enrolledCourses = extraData.enrolledCourses;
+                        session.user.enrolledSlugs = extraData.enrolledSlugs;
+                        session.user.enrolledChapters = extraData.enrolledChapters;
                     }
                 }
             }
@@ -113,4 +137,5 @@ export const authOptions = {
     },
     secret: process.env.NEXTAUTH_SECRET || 'dev-secret-key-change-this',
     trustHost: true,
-};
+};
+
