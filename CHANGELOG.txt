@@ -1,3 +1,10 @@
+[2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 7 Fixes
+
+── Feature Modules Refactoring (Group 7) ──────────────────────────
+- **Separation of Concerns (SoC)**: Extracted complex state management, recursive comment counting, and form submission logic from `CommentsSection.jsx` into a dedicated custom hook (`useCommentsManager.js`).
+- **UI Clean-up**: Transformed the massive `CommentsSection` component into a much cleaner, UI-focused functional component.
+- **Feature-based Architecture Verified**: Confirmed correct modular structure across `products`, `courses`, `articles`, `profile`, and `home` modules.
+
 [2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 6 Fixes
 
 ── Admin Panel Components Refactoring (Group 6) ──────────────────────────
