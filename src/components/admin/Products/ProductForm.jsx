@@ -14,6 +14,9 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import AdminButton from '../Shared/AdminButton';
+import { uploadMedia } from '@/lib/client/admin/mediaClient';
+import { createProduct, updateProduct, deleteProduct } from '@/lib/client/admin/productsClient';
 import { Editor } from '@tinymce/tinymce-react';
 import styles from './Products.module.scss';
 
@@ -234,13 +237,7 @@ export default function ProductForm({ product = null, categories = [], tags = []
         const formData = new FormData();
         files.forEach(({ file }) => formData.append('files', file));
 
-        const res = await fetch('/api/media', {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!res.ok) throw new Error('آپلود تصاویر ناموفق بود');
-        const data = await res.json();
+        const data = await uploadMedia(formData);
         // Return array of ids
         return Array.isArray(data) ? data.map((f) => f.id) : [];
     }
@@ -311,20 +308,10 @@ export default function ProductForm({ product = null, categories = [], tags = []
             };
 
             // 4. Send to API route
-            const method = isEdit ? 'PUT' : 'POST';
-            const endpoint = isEdit
-                ? `/api/admin/products/${product.documentId}`
-                : '/api/admin/products';
-
-            const res = await fetch(endpoint, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err?.error || 'ذخیره‌سازی ناموفق بود');
+            if (isEdit) {
+                await updateProduct(product.documentId, payload);
+            } else {
+                await createProduct(payload);
             }
 
             addToast(
@@ -352,10 +339,7 @@ export default function ProductForm({ product = null, categories = [], tags = []
     async function handleDelete() {
         setDeleting(true);
         try {
-            const res = await fetch(`/api/admin/products/${product.documentId}`, {
-                method: 'DELETE',
-            });
-            if (!res.ok) throw new Error('حذف ناموفق بود');
+            await deleteProduct(product.documentId);
             addToast('محصول حذف شد', 'success');
             setTimeout(() => router.push('/admin/products'), 1500);
         } catch (err) {

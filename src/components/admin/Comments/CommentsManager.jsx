@@ -18,6 +18,7 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
+import { updateCommentStatus, deleteComment, replyToComment } from '@/lib/client/admin/commentsClient';
 
 /**
  * فرمت‌کننده تاریخ شمسی نسبی / فشرده
@@ -117,13 +118,7 @@ export default function CommentsManager({ initialComments = [] }) {
     const newApprovedState = !comment.isApproved;
 
     try {
-      const res = await fetch(`/api/admin/comments/${comment.documentId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isApproved: newApprovedState }),
-      });
-
-      if (!res.ok) throw new Error('خطا در تغییر وضعیت');
+      await updateCommentStatus(comment.documentId, comment.documentId, newApprovedState);
 
       setComments((prev) =>
         prev.map((c) =>
@@ -150,11 +145,7 @@ export default function CommentsManager({ initialComments = [] }) {
     setActionLoading(deletingComment.documentId);
 
     try {
-      const res = await fetch(`/api/admin/comments/${deletingComment.documentId}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) throw new Error('خطا در حذف نظر');
+      await deleteComment(deletingComment.documentId);
 
       setComments((prev) =>
         prev.filter((c) => c.documentId !== deletingComment.documentId)
@@ -198,19 +189,7 @@ export default function CommentsManager({ initialComments = [] }) {
         payload.course = { connect: [replyingComment.courseDocId] };
       }
 
-      const res = await fetch('/api/admin/comments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const resData = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(resData?.error || 'خطا در ثبت پاسخ');
-      }
-
-      const created = resData.data || resData;
+      const created = await replyToComment(payload);
 
       // افزودن پاسخ به فید محلی
       setComments((prev) => [

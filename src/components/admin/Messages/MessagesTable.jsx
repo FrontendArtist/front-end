@@ -8,6 +8,7 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
+import { updateMessage, deleteMessage } from '@/lib/client/admin/messagesClient';
 
 const PAGE_SIZE = 15;
 const TOAST_ICONS = { success: '✅', error: '❌', info: 'ℹ️' };
@@ -46,18 +47,7 @@ export default function MessagesTable({ initialMessages }) {
         if (message.isRead) return;
 
         try {
-            // Call next.js API proxy route to update isRead: true for this message
-            const res = await fetch(`/api/admin/contact-messages/${message.documentId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ isRead: true }),
-            });
-
-            if (!res.ok) {
-                throw new Error('API failed');
-            }
+            await updateMessage(message.documentId, { isRead: true });
 
             // Immediately reflect marking as read locally
             setMessages((prev) =>
@@ -75,13 +65,7 @@ export default function MessagesTable({ initialMessages }) {
     const handleDeleteMessage = async (documentId) => {
         setIsDeleting(true);
         try {
-            const res = await fetch(`/api/admin/contact-messages/${documentId}`, {
-                method: 'DELETE',
-            });
-
-            if (!res.ok) {
-                throw new Error('Delete API failed');
-            }
+            await deleteMessage(documentId);
 
             // Successfully deleted
             setMessages((prev) => prev.filter((m) => m.documentId !== documentId));

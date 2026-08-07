@@ -17,6 +17,7 @@
 
 import { useState } from 'react';
 import styles from './OrdersTable.module.scss';
+import { updateOrderStatus } from '@/lib/client/admin/ordersClient';
 
 // وضعیت‌های ممکن برای سفارش (دقیقاً مطابق Schema)
 const ORDER_STATUSES = [
@@ -54,21 +55,10 @@ export default function StatusUpdateModal({ order, onClose, onUpdate }) {
         };
 
         try {
-            const res = await fetch(`/api/admin/orders/${order.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    // documentId برای Strapi v5 لازم است
-                    documentId: order.documentId,
-                    ...payload,
-                }),
+            await updateOrderStatus(order.id, {
+                documentId: order.documentId,
+                ...payload,
             });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || 'خطا در ذخیره وضعیت');
-            }
 
             // آپدیت state محلی در OrdersTable
             onUpdate(order.id, {

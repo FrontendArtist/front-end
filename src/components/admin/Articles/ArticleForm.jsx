@@ -8,6 +8,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Editor } from '@tinymce/tinymce-react';
+import AdminBadge from '../Shared/AdminBadge';
+import { uploadMedia } from '@/lib/client/admin/mediaClient';
+import { createArticle, updateArticle } from '@/lib/client/admin/articlesClient';
 import styles from './Articles.module.scss';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
@@ -168,13 +171,7 @@ export default function ArticleForm({
         formData.append('files', file);
 
         try {
-            const upRes = await fetch('/api/media', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!upRes.ok) throw new Error('Upload failed');
-            const uploaded = await upRes.json();
+            const uploaded = await uploadMedia(formData);
 
             if (uploaded && uploaded.length > 0) {
                 setCover(uploaded[0]);
@@ -226,21 +223,11 @@ export default function ArticleForm({
             payload.documentId = initialData.documentId;
         }
 
-        const url = isEdit
-            ? `/api/admin/articles/${initialData.documentId}`
-            : `/api/admin/articles`;
-        const method = isEdit ? 'PUT' : 'POST';
-
         try {
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data?.error || 'خطای شبکه');
+            if (isEdit) {
+                await updateArticle(initialData.documentId, payload);
+            } else {
+                await createArticle(payload);
             }
 
             addToast(

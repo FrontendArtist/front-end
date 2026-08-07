@@ -19,6 +19,7 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
+import { updateCourse, deleteCourse } from '@/lib/client/admin/coursesClient';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
 const PAGE_SIZE = 12;
@@ -79,16 +80,7 @@ export default function CoursesTable({ initialCourses }) {
         setLoadingToggle((prev) => ({ ...prev, [docId]: true }));
 
         try {
-            const res = await fetch(`/api/admin/courses/${docId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ publishedAt: nextPublishedAt }),
-            });
-
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data?.error || 'failed');
-            }
+            await updateCourse(docId, { publishedAt: nextPublishedAt });
 
             addToast(
                 nextPublishedAt
@@ -115,10 +107,7 @@ export default function CoursesTable({ initialCourses }) {
         if (!deleteTarget) return;
         setDeleteLoading(true);
         try {
-            const res = await fetch(`/api/admin/courses/${deleteTarget.documentId}`, {
-                method: 'DELETE',
-            });
-            if (!res.ok) throw new Error('delete failed');
+            await deleteCourse(deleteTarget.documentId);
             setCourses((prev) => prev.filter((c) => c.documentId !== deleteTarget.documentId));
             addToast(`دوره «${deleteTarget.title}» حذف شد`, 'success');
             setDeleteTarget(null);

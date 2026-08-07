@@ -16,6 +16,9 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import AdminButton from '../Shared/AdminButton';
+import { uploadMedia as uploadMediaApi } from '@/lib/client/admin/mediaClient';
+import { createCourse, updateCourse, deleteCourse } from '@/lib/client/admin/coursesClient';
 import { Editor } from '@tinymce/tinymce-react';
 import styles from './Courses.module.scss';
 
@@ -332,9 +335,7 @@ export default function CourseForm({ course = null }) {
         if (!files.length) return [];
         const formData = new FormData();
         files.forEach(({ file }) => formData.append('files', file));
-        const res = await fetch('/api/media', { method: 'POST', body: formData });
-        if (!res.ok) throw new Error('آپلود رسانه ناموفق بود');
-        const data = await res.json();
+        const data = await uploadMediaApi(formData);
         return Array.isArray(data) ? data.map((f) => f.id) : [];
     }
 
@@ -432,20 +433,10 @@ export default function CourseForm({ course = null }) {
 
             const payload = { ...buildPayload(publish), media: allMediaIds };
 
-            const method = isEdit ? 'PUT' : 'POST';
-            const endpoint = isEdit
-                ? `/api/admin/courses/${course.documentId}`
-                : '/api/admin/courses';
-
-            const res = await fetch(endpoint, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err?.error || 'ذخیره‌سازی ناموفق بود');
+            if (isEdit) {
+                await updateCourse(course.documentId, payload);
+            } else {
+                await createCourse(payload);
             }
 
             addToast(
@@ -471,8 +462,7 @@ export default function CourseForm({ course = null }) {
     async function handleDelete() {
         setDeleting(true);
         try {
-            const res = await fetch(`/api/admin/courses/${course.documentId}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error('حذف ناموفق بود');
+            await deleteCourse(course.documentId);
             addToast('دوره حذف شد', 'success');
             setTimeout(() => router.push('/admin/courses'), 1500);
         } catch (err) {

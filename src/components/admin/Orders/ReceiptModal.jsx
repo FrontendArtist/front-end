@@ -17,7 +17,9 @@
  */
 
 import { useState } from 'react';
+import Image from 'next/image';
 import styles from './OrdersTable.module.scss';
+import { updateOrderStatus } from '@/lib/client/admin/ordersClient';
 
 export default function ReceiptModal({ order, onClose, onUpdate }) {
     const [loading, setLoading] = useState(false);
@@ -32,21 +34,10 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
         setError(null);
 
         try {
-            const res = await fetch(`/api/admin/orders/${order.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    // documentId برای Strapi v5 لازم است
-                    documentId: order.documentId,
-                    paymentStatus: newStatus,
-                }),
+            await updateOrderStatus(order.id, {
+                documentId: order.documentId,
+                paymentStatus: newStatus,
             });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || 'خطا در آپدیت');
-            }
 
             // callback به OrdersTable برای آپدیت state محلی
             onUpdate(order.id, { paymentStatus: newStatus });

@@ -13,6 +13,7 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
+import { updateArticle, deleteArticle } from '@/lib/client/admin/articlesClient';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
 const PAGE_SIZE = 12;
@@ -70,16 +71,7 @@ export default function ArticlesTable({ initialArticles }) {
         setLoadingToggle((prev) => ({ ...prev, [docId]: true }));
 
         try {
-            const res = await fetch(`/api/admin/articles/${docId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ publishedAt: nextPublishedAt }),
-            });
-
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data?.error || 'failed');
-            }
+            await updateArticle(docId, { publishedAt: nextPublishedAt });
 
             addToast(
                 nextPublishedAt ? `«${article.title}» منتشر شد` : `«${article.title}» به پیش‌نویس منتقل شد`,
@@ -126,11 +118,7 @@ export default function ArticlesTable({ initialArticles }) {
         setDeleteLoading(true);
 
         try {
-            const res = await fetch(`/api/admin/articles/${deleteTarget.documentId}`, {
-                method: 'DELETE',
-            });
-
-            if (!res.ok) throw new Error('delete failed');
+            await deleteArticle(deleteTarget.documentId);
 
             setArticles((prev) =>
                 prev.filter((a) => a.documentId !== deleteTarget.documentId)

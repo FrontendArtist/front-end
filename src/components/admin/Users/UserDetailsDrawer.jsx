@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import styles from './Users.module.scss';
 import UserCommentItem from './UserCommentItem';
 
+import { fetchUserDetails } from '@/lib/client/admin/usersClient';
+
 export default function UserDetailsDrawer({ userId, onClose }) {
     const [activeTab, setActiveTab] = useState('info'); // 'info' | 'purchases' | 'comments'
     const [user, setUser] = useState(null);
@@ -15,11 +17,7 @@ export default function UserDetailsDrawer({ userId, onClose }) {
             setLoading(true);
             setError(null);
             try {
-                const res = await fetch(`/api/admin/users/${userId}`);
-                const data = await res.json();
-
-                if (!res.ok) throw new Error(data.error || 'خطا در دریافت اطلاعات');
-
+                const data = await fetchUserDetails(userId);
                 setUser(data);
             } catch (err) {
                 setError(err.message);

@@ -20,6 +20,7 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
+import { toggleProductStatus, deleteProduct } from '@/lib/client/admin/productsClient';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
 const PAGE_SIZE = 12;
@@ -97,15 +98,7 @@ export default function ProductsTable({ initialProducts }) {
         setLoadingToggle((prev) => ({ ...prev, [docId]: true }));
 
         try {
-            const res = await fetch(`/api/admin/products/${docId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isAvailable: nextVal }),
-            });
-
-            if (!res.ok) {
-                throw new Error('update failed');
-            }
+            await toggleProductStatus(docId, nextVal);
 
             addToast(
                 nextVal ? `«${product.title}» در دسترس شد` : `«${product.title}» غیر فعال شد`,
@@ -130,11 +123,7 @@ export default function ProductsTable({ initialProducts }) {
         setDeleteLoading(true);
 
         try {
-            const res = await fetch(`/api/admin/products/${deleteTarget.documentId}`, {
-                method: 'DELETE',
-            });
-
-            if (!res.ok) throw new Error('delete failed');
+            await deleteProduct(deleteTarget.documentId);
 
             setProducts((prev) =>
                 prev.filter((p) => p.documentId !== deleteTarget.documentId)

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import ChatModal from '@/components/common/ChatModal/ChatModal';
+import { updateMessage } from '@/lib/client/admin/messagesClient';
 
 /**
  * MessageReadModal Component
@@ -27,23 +28,11 @@ export default function MessageReadModal({ isOpen, onClose, message, onUpdateMes
         }
 
         try {
-            const res = await fetch(`/api/admin/contact-messages/${message.documentId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    replies: updatedReplies,
-                    status: status,
-                    isRead: true
-                }),
+            await updateMessage(message.documentId, {
+                replies: updatedReplies,
+                status: status,
+                isRead: true
             });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data?.error || 'خطا در ذخیره‌سازی اطلاعات');
-            }
 
             if (onUpdateMessage) {
                 onUpdateMessage({
@@ -61,22 +50,10 @@ export default function MessageReadModal({ isOpen, onClose, message, onUpdateMes
     const handleStatusChange = async (newStatus) => {
         setError(null);
         try {
-            const res = await fetch(`/api/admin/contact-messages/${message.documentId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    status: newStatus,
-                    isRead: true
-                }),
+            await updateMessage(message.documentId, {
+                status: newStatus,
+                isRead: true
             });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data?.error || 'خطا در تغییر وضعیت پیام');
-            }
 
             if (onUpdateMessage) {
                 onUpdateMessage({

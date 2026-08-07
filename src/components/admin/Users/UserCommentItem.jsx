@@ -14,6 +14,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Check, X, MessageSquare, ExternalLink, Send, Loader2 } from 'lucide-react';
 import styles from './Users.module.scss';
+import { updateCommentStatus, replyToComment } from '@/lib/client/admin/commentsClient';
 
 export default function UserCommentItem({ comment, onUpdate }) {
     const [approving, setApproving] = useState(false);
@@ -39,17 +40,7 @@ export default function UserCommentItem({ comment, onUpdate }) {
     const handleToggleApprove = async (newVal) => {
         setApproving(true);
         try {
-            const res = await fetch(`/api/admin/comments/${comment.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ documentId: comment.documentId, isApproved: newVal }),
-            });
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.error || 'خطا در عملیات');
-            }
-
+            await updateCommentStatus(comment.id, comment.documentId, newVal);
             setLocalApproved(newVal);
             onUpdate?.({ ...comment, isApproved: newVal });
         } catch (err) {
@@ -74,16 +65,7 @@ export default function UserCommentItem({ comment, onUpdate }) {
                 ...(comment.course?.documentId && { course: comment.course.documentId }),
             };
 
-            const res = await fetch('/api/admin/comments', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.error || 'خطا در ارسال پاسخ');
-            }
+            await replyToComment(payload);
 
             setReplyText('');
             setReplying(false);
