@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useOrdersStore } from '@/store/useOrdersStore';
+import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
 import styles from './PurchasesList.module.scss';
 import cartStyles from '@/app/cart/Cart.module.scss'; // Reuse cart styles
 
@@ -15,9 +16,13 @@ export default function PurchasesList() {
 
     if (isLoading) {
         return (
-            <div className={styles.purchases__loading}>
-                <div className={styles.purchases__spinner}></div>
-                <p>در حال دریافت خریدهای شما...</p>
+            <div className={styles.purchases}>
+                <h2 className={styles.purchases__title}>محصولات و دوره‌های من</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '24px' }}>
+                    <CardSkeletonHorizontal />
+                    <CardSkeletonHorizontal />
+                    <CardSkeletonHorizontal />
+                </div>
             </div>
         );
     }

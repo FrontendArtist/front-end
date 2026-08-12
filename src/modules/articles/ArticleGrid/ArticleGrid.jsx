@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ArticleCard from '@/components/cards/ArticleCard/ArticleCard';
+import CardSkeletonVertical from '@/components/ui/Skeleton/CardSkeletonVertical';
 import SortControls from '@/components/ui/SortControls/SortControls';
 import ArticleCategoryFilter from '@/modules/articles/components/ArticleCategoryFilter';
 import EmptyState from '@/components/ui/EmptyState/EmptyState';
@@ -63,6 +64,7 @@ const ArticleGrid = ({ initialArticles, categories = [], activeSlug = '', initia
 
     const sortArticles = async () => {
       setIsLoading(true);
+      setArticles([]); // Clear old articles to show skeletons
       try {
         // محاسبه تعداد آیتم‌های فعلی برای حفظ تعداد نمایش
         const itemsToFetch = Math.max(articles.length, ARTICLES_PAGE_SIZE);
@@ -151,9 +153,11 @@ const ArticleGrid = ({ initialArticles, categories = [], activeSlug = '', initia
             {articles.map((article) => (
               <ArticleCard key={article.id} article={article} />
             ))}
+            
+            {isLoading && Array.from({ length: ARTICLES_PAGE_SIZE || 6 }).map((_, index) => (
+              <CardSkeletonVertical key={`skeleton-${index}`} />
+            ))}
           </div>
-
-          {isLoading && <p>در حال بارگذاری...</p>}
 
           {hasMore && !isLoading && (
             <div className={styles.loadMoreContainer}>

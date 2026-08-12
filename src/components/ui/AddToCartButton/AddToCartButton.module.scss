@@ -8,7 +8,7 @@
   gap: 12px;
   padding: 14px 32px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--color-primary, #d4af37) 0%, #ff9500 100%);
+  background: linear-gradient(135deg, var(--color-primary, #d4af37) 0%, var(--color-warning)100%);
   color: var(--color-bg-primary, #111); // Deep dark text for contrast
   font-size: var(--font-md, 16px);
   font-weight: 800; // Extra bold
@@ -28,7 +28,7 @@
   &:hover {
     transform: translateY(-4px) scale(1.02);
     box-shadow: 0 14px 32px rgba(255, 149, 0, 0.5), inset 0 2px 2px rgba(255, 255, 255, 0.4);
-    
+
     svg {
       transform: translateX(-4px) scale(1.1) rotate(-10deg);
     }
@@ -46,7 +46,7 @@
     left: -100%;
     width: 50%;
     height: 100%;
-    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+    background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
     transform: skewX(-25deg);
     z-index: -1;
   }
@@ -66,6 +66,7 @@
   0% {
     left: -100%;
   }
+
   100% {
     left: 200%;
   }
@@ -76,11 +77,11 @@
   color: fade(var(--color-text, #fff), 60%);
   cursor: not-allowed;
   box-shadow: inset 0 0 0 1.5px fade(var(--color-primary, #d4af37), 30%);
-  
+
   &:hover {
     transform: none;
     box-shadow: inset 0 0 0 1.5px fade(var(--color-primary, #d4af37), 30%);
-    
+
     svg {
       transform: none;
     }

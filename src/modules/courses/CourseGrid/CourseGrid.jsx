@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import CourseCard from '@/components/cards/CourseCard/CourseCard';
+import CardSkeletonVertical from '@/components/ui/Skeleton/CardSkeletonVertical';
 import SortControls from '@/components/ui/SortControls/SortControls';
 import styles from '../../articles/ArticleGrid/ArticleGrid.module.scss'; // استفاده مجدد از استایل‌ها
 
@@ -46,6 +47,7 @@ const CourseGrid = ({ initialCourses }) => {
       }
       
       setIsLoading(true);
+      setCourses([]); // Clear old courses to show skeletons
       try {
         // محاسبه تعداد آیتم‌های فعلی برای حفظ تعداد نمایش
         const itemsToFetch = Math.max(courses.length, PAGE_SIZE);
@@ -110,8 +112,11 @@ const CourseGrid = ({ initialCourses }) => {
         {courses.map((course) => (
           <CourseCard key={course.id} course={course} />
         ))}
+        
+        {isLoading && Array.from({ length: PAGE_SIZE || 6 }).map((_, index) => (
+          <CardSkeletonVertical key={`skeleton-${index}`} />
+        ))}
       </div>
-      {isLoading && <p>در حال بارگذاری...</p>}
       {hasMore && !isLoading && (
         <div className={styles.loadMoreContainer}>
           <button onClick={handleLoadMore} className={styles.loadMoreButton}>بارگذاری بیشتر</button>

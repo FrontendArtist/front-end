@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import ServiceCard from '@/components/cards/ServiceCard/ServiceCard';
+import CardSkeletonVertical from '@/components/ui/Skeleton/CardSkeletonVertical';
 import ListGuard from '@/components/ui/ListGuard/ListGuard';
 import { SERVICES_PAGE_SIZE } from '@/lib/constants';
 import styles from './ServiceGrid.module.scss';
@@ -81,24 +82,21 @@ const ServiceGrid = ({ initialServices }) => {
               service={service}
             />
           ))}
+          {isLoading && Array.from({ length: SERVICES_PAGE_SIZE || 4 }).map((_, index) => (
+            <CardSkeletonVertical key={`skeleton-${index}`} />
+          ))}
         </div>
 
         {/* دکمه بارگذاری بیشتر - فقط هنگامی که صفحات بیشتری وجود دارد */}
-        {hasMore && (
+        {hasMore && !isLoading && (
           <div className={styles.loadMoreContainer}>
             <button
               onClick={handleLoadMore}
               className={styles.loadMoreButton}
-              disabled={isLoading}
             >
-              {isLoading ? 'در حال بارگذاری...' : 'بارگذاری بیشتر'}
+              بارگذاری بیشتر
             </button>
           </div>
-        )}
-
-        {/* نمایش Loading State */}
-        {isLoading && !hasMore && (
-          <p className={styles.loadingText}>در حال بارگذاری...</p>
         )}
       </div>
     </ListGuard>

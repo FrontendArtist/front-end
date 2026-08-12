@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import ProductCard from '@/components/cards/ProductCard/ProductCard';
+import CardSkeletonVertical from '@/components/ui/Skeleton/CardSkeletonVertical';
 import SortControls from '@/components/ui/SortControls/SortControls';
 import EmptyState from '@/components/ui/EmptyState/EmptyState';
 import styles from './ProductGrid.module.scss';
@@ -43,6 +44,7 @@ const ProductGrid = ({
   useEffect(() => {
     const refetch = async () => {
       setIsLoading(true);
+      setProducts([]); // Clear old products to show skeletons
       try {
         const params = new URLSearchParams(queryBase.toString());
         params.set('page', '1');
@@ -101,9 +103,12 @@ const ProductGrid = ({
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
+            
+            {/* Show skeletons when loading */}
+            {isLoading && Array.from({ length: PAGE_SIZE || 6 }).map((_, index) => (
+              <CardSkeletonVertical key={`skeleton-${index}`} />
+            ))}
           </div>
-
-          {isLoading && <p className={styles.loadingText}>در حال بارگذاری...</p>}
 
           {hasMore && !isLoading && (
             <div className={styles.loadMoreContainer}>

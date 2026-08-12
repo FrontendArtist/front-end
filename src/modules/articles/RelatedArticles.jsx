@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import BaseSlider from '@/components/layout/BaseSlider/BaseSlider';
 import ArticleCard from '@/components/cards/ArticleCard/ArticleCard';
+import CardSkeletonVertical from '@/components/ui/Skeleton/CardSkeletonVertical';
 import { getRelatedArticles } from '@/lib/articlesApi';
 import styles from './RelatedArticles.module.scss';
 
@@ -52,7 +53,21 @@ export default function RelatedArticles({ currentId, categoryId, articles: initi
   }, [currentId, categoryId, initialArticles]);
 
   if (loading) {
-    return null;
+    return (
+      <section className={styles.relatedSection} aria-label="مقالات مرتبط">
+        <header className={styles.header}>
+          <h2 className={styles.sectionTitle}>مقالات مرتبط</h2>
+        </header>
+
+        <div className={styles.sliderWrapper}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+            <CardSkeletonVertical />
+            <CardSkeletonVertical />
+            <CardSkeletonVertical />
+          </div>
+        </div>
+      </section>
+    );
   }
 
   if (!articles || articles.length === 0) {

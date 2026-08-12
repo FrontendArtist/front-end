@@ -1,0 +1,72 @@
+@import '@/styles/variables.css';
+
+.skeleton {
+  display: block;
+  background-color: var(--color-surface); // Fallback
+  background-color: rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--border-radius-sm);
+
+  // Shimmer effect
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.04) 20%,
+      rgba(255, 255, 255, 0.08) 60%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+.text {
+  border-radius: var(--border-radius-sm);
+  height: 1.2em; // default text height
+  margin-bottom: 0.5em;
+  
+  &:empty::before {
+    content: "\00a0";
+  }
+}
+
+.circular {
+  border-radius: 50%;
+}
+
+.rectangular {
+  border-radius: 0;
+}
+
+.rounded {
+  border-radius: var(--border-radius-md);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+// Adjust shimmer direction for RTL if needed, but since it's a gradient, it can look fine LTR or RTL.
+// For RTL specifically, translating from 100% to -100% might look better for Persian.
+html[dir="rtl"] {
+  .skeleton::after {
+    transform: translateX(100%);
+    animation: shimmer-rtl 1.5s infinite;
+  }
+}
+
+@keyframes shimmer-rtl {
+  100% {
+    transform: translateX(-100%);
+  }
+}

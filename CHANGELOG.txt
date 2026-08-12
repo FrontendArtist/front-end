@@ -1,3 +1,19 @@
+[2026-08-12] - Unified Skeleton Loader Architecture & UX Enhancements
+
+── Shared UI Component Unification ──────────────────────────────────────────────
+- Implemented `CardSkeletonVertical.jsx` to serve as a single, unified loading skeleton for all vertical cards (Products, Articles, Courses, Services), replacing 4 separate fragmented skeleton files.
+- Implemented `CardSkeletonHorizontal.jsx` for horizontal list items (Cart, Profile, Comments).
+
+── Loading UX Enhancements Across Modules ──────────────────────────────────────
+- Cart Page (`/cart`): Replaced basic spinners with `CardSkeletonHorizontal` and sidebar skeletons during initial load and hydration.
+- User Profile (`PurchasesList.jsx`): Replaced simple loading text with horizontal list skeletons for purchased courses and products.
+- Comments Section (`CommentsSection.jsx`): Integrated horizontal skeletons while fetching comments from the server.
+- Related Articles (`RelatedArticles.jsx`): Rendered vertical skeletons seamlessly inside the slider layout while fetching related content.
+- Grids (`ProductGrid`, `ArticleGrid`, `CourseGrid`, `ServiceGrid`): Refactored to use the new unified `CardSkeletonVertical` component.
+
+── Cleanup ──────────────────────────────────────────────────────────────────
+- Deleted redundant skeleton components (`ProductCardSkeleton`, `ArticleCardSkeleton`, `CourseCardSkeleton`, `ServiceCardSkeleton`) to enforce DRY principles.
+
 [2026-08-07] 🔴🔴🔴🔴🔴🔴 DEBUG - Code Quality Audit: Group 10 Fixes
 
 ── Technical SEO & Metadata Infrastructure (Group 10) ──────────────────────────

@@ -15,7 +15,7 @@
   gap: 12px;
   padding: 14px 32px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--color-primary, #d4af37) 0%, #ff9500 100%);
+  background: linear-gradient(135deg, var(--color-primary, #d4af37) 0%, var(--color-warning) 100%);
   color: var(--color-bg-primary, #111); // Deep dark text for contrast
   font-size: var(--font-md, 16px);
   font-weight: 800; // Extra bold

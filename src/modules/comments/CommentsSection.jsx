@@ -17,6 +17,7 @@ import {
     CornerDownLeft
 } from 'lucide-react';
 import CommentItem from './CommentItem';
+import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
 import { useCommentsManager } from './hooks/useCommentsManager';
 import styles from './CommentsSection.module.scss';
 
@@ -278,9 +279,10 @@ const CommentsSection = ({ entityType, entityId, initialComments = [] }) => {
                 </div>
 
                 {isLoading ? (
-                    <div className={styles.loading}>
-                        <Loader2 className={styles.spinnerIconLarge} />
-                        <p>در حال بارگذاری نظرات...</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '24px' }}>
+                        <CardSkeletonHorizontal />
+                        <CardSkeletonHorizontal />
+                        <CardSkeletonHorizontal />
                     </div>
                 ) : comments.length === 0 ? (
                     <div className={styles.emptyState}>

@@ -59,7 +59,7 @@
   gap: 8px;
   padding: 8px 16px;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--color-primary, #d4af37) 0%, #ff9500 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-warning) 100%);
   color: var(--color-bg-primary, #111);
   font-size: var(--font-sm);
   font-weight: 800;

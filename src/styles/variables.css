@@ -87,7 +87,7 @@
    --color-error-darker: #a93226;
    --color-error-border: color-mix(in srgb, var(--color-error) var(--op-20), transparent);
 
-   --color-warning: #fcd34d;
+   --color-warning: #fccd4d;
    --color-warning-amber: #f59e0b;
    --color-warning-amber-dark: #d97706;
    --color-warning-amber-darker: #b45309;

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
+import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
 import { useCartStore, selectTotalPrice, selectItemsCount } from '@/store/useCartStore';
 import styles from './Cart.module.scss';
 
@@ -97,8 +98,27 @@ export default function CartPage() {
     // تا زمان hydration، loading نمایش می‌دهیم
     if (!isHydrated) {
         return (
-            <div className={styles.loadingContainer}>
-                <div className={styles.loader}></div>
+            <div className={`${styles.cartPage} container`}>
+                <div style={{ marginBottom: '24px' }}>
+                    <div style={{ width: '150px', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}></div>
+                </div>
+                <div className={styles.cartGrid}>
+                    <div className={styles.itemsColumn}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <CardSkeletonHorizontal />
+                            <CardSkeletonHorizontal />
+                            <CardSkeletonHorizontal />
+                        </div>
+                    </div>
+                    <aside className={styles.sidebar}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '24px' }}>
+                            <div style={{ width: '100%', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}></div>
+                            <div style={{ width: '100%', height: '1px', backgroundColor: 'rgba(255,255,255,0.1)' }}></div>
+                            <div style={{ width: '70%', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}></div>
+                            <div style={{ width: '100%', height: '48px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginTop: '16px' }}></div>
+                        </div>
+                    </aside>
+                </div>
             </div>
         );
     }
