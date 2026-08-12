@@ -1,8 +1,8 @@
 @use '../../../styles/base/mixins' as *;
 
 .aboutSection {
-  padding: 80px 0;
   background-color: var(--color-bg-primary);
+  @include section-spacing;
 
 }
 

@@ -38,7 +38,7 @@
   font-family: var(--font-geist-mono);
   padding-left: 0;
   margin: 0;
-  font-size: 14px;
+  font-size: var(--font-sm);
   line-height: 24px;
   letter-spacing: -0.01em;
   list-style-position: inside;
@@ -75,7 +75,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: var(--font-md);
   line-height: 20px;
   font-weight: 500;
 }
@@ -144,7 +144,7 @@ a.secondary {
   }
 
   .ctas a {
-    font-size: 14px;
+    font-size: var(--font-sm);
     height: 40px;
     padding: 0 16px;
   }
@@ -165,6 +165,7 @@ a.secondary {
     filter: invert();
   }
 }
+
 .container {
   padding: 0;
 }

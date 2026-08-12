@@ -78,7 +78,7 @@ $transition: 0.25s ease;
     min-width: 52px;
     border-radius: 14px;
     background-color: fade(var(--color-primary), 12%);
-    font-size: 24px;
+    font-size: var(--font-xl);
     // Fallback برای مرورگرهایی که relative color syntax را پشتیبانی نمی‌کنند:
     background-color: fade(var(--color-primary), 12%);
 }
@@ -112,7 +112,7 @@ $transition: 0.25s ease;
 }
 
 .card__subtitle {
-    font-size: 12px;
+    font-size: var(--font-ssm);
     color: $text-muted;
     margin-top: 2px;
 }
@@ -138,10 +138,10 @@ $transition: 0.25s ease;
         width: 44px;
         height: 44px;
         min-width: 44px;
-        font-size: 20px;
+        font-size: var(--font-lg-xl);
     }
 
     .card__value {
-        font-size: 28px;
+        font-size: var(--font-xl2);
     }
 }

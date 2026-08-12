@@ -119,7 +119,7 @@
     width: 100%;
     border-collapse: collapse;
     text-align: right;
-    font-size: 14px;
+    font-size: var(--font-sm);
 
     thead {
         background: fade(var(--color-black), 25%);
@@ -209,7 +209,7 @@
 }
 
 .targetBadge {
-    font-size: 12px;
+    font-size: var(--font-ssm);
     color: rgba(255, 250, 234, 0.6);
     background: fade(var(--color-primary), 8%);
     padding: 4px 10px;
@@ -246,7 +246,7 @@
 }
 
 .dateCell {
-    font-size: 12px;
+    font-size: var(--font-ssm);
     color: rgba(255, 250, 234, 0.45);
     white-space: nowrap;
 }
@@ -296,6 +296,7 @@
 
     &--approve {
         color: var(--color-success);
+
         &:hover:not(:disabled) {
             background: fade(var(--color-success), 20%);
         }
@@ -303,6 +304,7 @@
 
     &--reject {
         color: #f59e0b;
+
         &:hover:not(:disabled) {
             background: fade(#f59e0b, 20%);
         }
@@ -310,6 +312,7 @@
 
     &--reply {
         color: var(--color-blue-light);
+
         &:hover:not(:disabled) {
             background: fade(var(--color-blue-light), 20%);
         }
@@ -317,6 +320,7 @@
 
     &--delete {
         color: var(--color-error);
+
         &:hover:not(:disabled) {
             background: fade(var(--color-error), 20%);
         }
@@ -404,7 +408,7 @@
     border-radius: 10px;
     padding: 12px;
     color: var(--color-card-text);
-    font-size: 14px;
+    font-size: var(--font-sm);
     resize: vertical;
     outline: none;
 
@@ -414,7 +418,7 @@
 }
 
 .deleteWarning {
-    font-size: 14px;
+    font-size: var(--font-sm);
     color: rgba(255, 250, 234, 0.85);
     line-height: 1.6;
     margin: 0;

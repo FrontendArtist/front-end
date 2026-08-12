@@ -41,8 +41,14 @@
         color: var(--color-error);
         margin-bottom: 1.5rem;
 
-        span { font-size: 1.25rem; }
-        p { margin: 0; font-size: var(--font-sm); }
+        span {
+            font-size: 1.25rem;
+        }
+
+        p {
+            margin: 0;
+            font-size: var(--font-sm);
+        }
     }
 
     &__actions {
@@ -83,7 +89,8 @@
     border-collapse: collapse;
     min-width: 820px;
 
-    th, td {
+    th,
+    td {
         padding: 0.9rem 1rem;
         text-align: right;
         border-bottom: 1px solid fade(var(--color-black), 5%);
@@ -104,7 +111,10 @@
 
     tbody tr {
         transition: background-color 0.15s;
-        &:hover { background-color: fade(var(--color-black), 5%); }
+
+        &:hover {
+            background-color: fade(var(--color-black), 5%);
+        }
     }
 }
 
@@ -176,7 +186,7 @@
     }
 }
 
-.toggleInput:checked + .toggleTrack {
+.toggleInput:checked+.toggleTrack {
     background-color: var(--color-success);
     border-color: var(--color-success);
 
@@ -186,7 +196,7 @@
     }
 }
 
-.toggleInput:disabled + .toggleTrack {
+.toggleInput:disabled+.toggleTrack {
     opacity: 0.5;
     cursor: not-allowed;
 }
@@ -213,8 +223,13 @@
     animation: fadeIn 0.2s ease;
 
     @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
     }
 }
 
@@ -229,14 +244,35 @@
     animation: slideUp 0.25s ease;
 
     @keyframes slideUp {
-        from { transform: translateY(20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
+        from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
     }
 
-    h3 { font-size: var(--font-lg); color: var(--color-card-text); margin: 0 0 0.75rem; }
-    p { font-size: var(--font-sm); color: var(--color-text-primary); margin: 0 0 1.5rem; line-height: var(--line-height-md); }
+    h3 {
+        font-size: var(--font-lg);
+        color: var(--color-card-text);
+        margin: 0 0 0.75rem;
+    }
 
-    &__buttons { display: flex; gap: 0.75rem; justify-content: center; }
+    p {
+        font-size: var(--font-sm);
+        color: var(--color-text-primary);
+        margin: 0 0 1.5rem;
+        line-height: var(--line-height-md);
+    }
+
+    &__buttons {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+    }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -271,15 +307,35 @@
     white-space: nowrap;
 
     @keyframes toastIn {
-        from { opacity: 0; transform: translateY(16px) scale(0.95); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
+        from {
+            opacity: 0;
+            transform: translateY(16px) scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
     }
 
-    &--success { background-color: var(--color-success); color: var(--color-white); }
-    &--error   { background-color: var(--color-error); color: var(--color-white); }
-    &--info    { background-color: fade(var(--color-blue-alt), 20%); color: var(--color-blue-light); }
+    &--success {
+        background-color: var(--color-success);
+        color: var(--color-white);
+    }
 
-    .toastIcon { font-size: 1.1rem; }
+    &--error {
+        background-color: var(--color-error);
+        color: var(--color-white);
+    }
+
+    &--info {
+        background-color: fade(var(--color-blue-alt), 20%);
+        color: var(--color-blue-light);
+    }
+
+    .toastIcon {
+        font-size: 1.1rem;
+    }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -298,7 +354,9 @@
     grid-template-columns: 1fr 1fr;
     gap: 1.25rem;
 
-    @media (max-width: 768px) { grid-template-columns: 1fr; }
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+    }
 }
 
 .field {
@@ -306,7 +364,9 @@
     flex-direction: column;
     gap: 0.4rem;
 
-    &--full { grid-column: 1 / -1; }
+    &--full {
+        grid-column: 1 / -1;
+    }
 
     label {
         font-size: var(--font-sm);
@@ -314,7 +374,10 @@
         color: var(--color-card-text);
     }
 
-    .required { color: var(--color-error); margin-right: 2px; }
+    .required {
+        color: var(--color-error);
+        margin-right: 2px;
+    }
 }
 
 .input,
@@ -330,7 +393,10 @@
     color: var(--color-card-text);
     transition: all 0.2s ease;
 
-    &::placeholder { color: var(--color-text-primary); opacity: 0.5; }
+    &::placeholder {
+        color: var(--color-text-primary);
+        opacity: 0.5;
+    }
 
     &:focus {
         outline: none;
@@ -339,7 +405,10 @@
         box-shadow: 0 0 0 3px fade(var(--color-primary), 10%);
     }
 
-    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 }
 
 .textarea {
@@ -398,9 +467,20 @@
         background-color: fade(var(--color-primary), 8%);
     }
 
-    input { display: none; }
-    p { font-size: var(--font-sm); color: var(--color-text-primary); margin: 0.5rem 0 0; }
-    .uploadIcon { font-size: 2.5rem; display: block; }
+    input {
+        display: none;
+    }
+
+    p {
+        font-size: var(--font-sm);
+        color: var(--color-text-primary);
+        margin: 0.5rem 0 0;
+    }
+
+    .uploadIcon {
+        font-size: 2.5rem;
+        display: block;
+    }
 }
 
 .imagePreviewGrid {
@@ -418,7 +498,12 @@
     overflow: hidden;
     border: 1px solid fade(var(--color-primary), 20%);
 
-    img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
 
     &__remove {
         position: absolute;
@@ -431,13 +516,15 @@
         color: var(--color-white);
         border: none;
         cursor: pointer;
-        font-size: 12px;
+        font-size: var(--font-ssm);
         display: flex;
         align-items: center;
         justify-content: center;
         transition: opacity 0.15s;
 
-        &:hover { opacity: 0.85; }
+        &:hover {
+            opacity: 0.85;
+        }
     }
 }
 
@@ -469,7 +556,10 @@
         background-color: var(--color-title-hover);
         color: var(--color-bg-primary);
 
-        &:hover { opacity: 0.9; transform: translateY(-1px); }
+        &:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
     }
 
     &--draft {
@@ -477,7 +567,11 @@
         border: 1px solid fade(var(--color-primary), 40%);
         color: var(--color-text-primary);
 
-        &:hover { background-color: fade(var(--color-primary), 12%); border-color: fade(var(--color-primary), 60%); color: var(--color-card-text); }
+        &:hover {
+            background-color: fade(var(--color-primary), 12%);
+            border-color: fade(var(--color-primary), 60%);
+            color: var(--color-card-text);
+        }
     }
 
     &--danger {
@@ -486,10 +580,16 @@
         color: var(--color-error);
         margin-right: auto;
 
-        &:hover { background-color: fade(var(--color-error), 12%); }
+        &:hover {
+            background-color: fade(var(--color-error), 12%);
+        }
     }
 
-    &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
 
     .spinner {
         width: 14px;
@@ -499,7 +599,11 @@
         border-radius: 50%;
         animation: spin 0.6s linear infinite;
 
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     }
 }
 
@@ -534,14 +638,18 @@
     border-bottom: 1px solid fade(var(--color-primary), 15%);
     transition: background-color 0.15s;
 
-    &:hover { background-color: fade(var(--color-primary), 14%); }
+    &:hover {
+        background-color: fade(var(--color-primary), 14%);
+    }
 
     &__toggle {
         font-size: 0.75rem;
         color: var(--color-title-hover);
         transition: transform 0.2s;
 
-        &--open { transform: rotate(90deg); }
+        &--open {
+            transform: rotate(90deg);
+        }
     }
 
     &__title {
@@ -562,7 +670,10 @@
         font-family: inherit;
         transition: all 0.15s;
 
-        &:hover { background-color: var(--color-error); color: var(--color-white); }
+        &:hover {
+            background-color: var(--color-error);
+            color: var(--color-white);
+        }
     }
 }
 
@@ -574,8 +685,15 @@
     animation: expand 0.2s ease;
 
     @keyframes expand {
-        from { opacity: 0; transform: translateY(-6px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 }
 
@@ -584,7 +702,9 @@
     grid-template-columns: 1fr 1fr 1fr;
     gap: 0.75rem;
 
-    @media (max-width: 576px) { grid-template-columns: 1fr; }
+    @media (max-width: 576px) {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Each lesson row */
@@ -635,7 +755,10 @@
     transition: all 0.15s;
     white-space: nowrap;
 
-    &:hover { background-color: var(--color-error); color: var(--color-white); }
+    &:hover {
+        background-color: var(--color-error);
+        color: var(--color-white);
+    }
 }
 
 .btnAddLesson,
@@ -656,8 +779,15 @@
     transition: all 0.2s ease;
     align-self: flex-start;
 
-    &:hover { background-color: fade(var(--color-primary), 18%); border-color: var(--color-title-hover); }
-    &:disabled { opacity: 0.4; cursor: not-allowed; }
+    &:hover {
+        background-color: fade(var(--color-primary), 18%);
+        border-color: var(--color-title-hover);
+    }
+
+    &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
 }
 
 .lessonsTitle {
@@ -669,7 +799,11 @@
     align-items: center;
     gap: 0.5rem;
 
-    span { opacity: 0.6; font-weight: normal; font-size: 0.75rem; }
+    span {
+        opacity: 0.6;
+        font-weight: normal;
+        font-size: 0.75rem;
+    }
 }
 
 /* Empty state */
@@ -678,6 +812,14 @@
     padding: 4rem 2rem;
     color: var(--color-text-primary);
 
-    .emptyIcon { font-size: 3rem; margin-bottom: 1rem; display: block; }
-    p { font-size: var(--font-md); margin: 0; }
+    .emptyIcon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    p {
+        font-size: var(--font-md);
+        margin: 0;
+    }
 }

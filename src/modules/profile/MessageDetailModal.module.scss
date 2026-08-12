@@ -57,11 +57,9 @@
     justify-content: space-between;
     padding: 18px 28px;
     border-bottom: 1px solid color-mix(in srgb, var(--color-text-primary) 10%, transparent);
-    background: linear-gradient(
-        90deg, 
-        color-mix(in srgb, var(--color-overlay) 45%, transparent) 0%, 
-        color-mix(in srgb, var(--color-bg-primary) 75%, transparent) 100%
-    );
+    background: linear-gradient(90deg,
+            color-mix(in srgb, var(--color-overlay) 45%, transparent) 0%,
+            color-mix(in srgb, var(--color-bg-primary) 75%, transparent) 100%);
     flex-shrink: 0;
 
     @media (max-width: 768px) {
@@ -89,7 +87,7 @@
 }
 
 .chatHeader__date {
-    font-size: 12px;
+    font-size: var(--font-ssm);
     color: color-mix(in srgb, var(--color-card-text) 40%, transparent);
 }
 
@@ -154,24 +152,22 @@
     flex-direction: column;
     direction: rtl;
     gap: 20px;
-    background: 
-        radial-gradient(
-            ellipse at top right, 
-            color-mix(in srgb, var(--color-overlay) 25%, transparent) 0%, 
-            transparent 70%
-        ),
-        radial-gradient(
-            ellipse at bottom left, 
-            color-mix(in srgb, var(--color-text-primary) 3%, transparent) 0%, 
-            transparent 70%
-        );
+    background:
+        radial-gradient(ellipse at top right,
+            color-mix(in srgb, var(--color-overlay) 25%, transparent) 0%,
+            transparent 70%),
+        radial-gradient(ellipse at bottom left,
+            color-mix(in srgb, var(--color-text-primary) 3%, transparent) 0%,
+            transparent 70%);
 
     &::-webkit-scrollbar {
         width: 4px;
     }
+
     &::-webkit-scrollbar-track {
         background: transparent;
     }
+
     &::-webkit-scrollbar-thumb {
         background: color-mix(in srgb, var(--color-text-primary) 15%, transparent);
         border-radius: 4px;
@@ -202,11 +198,9 @@
     align-items: flex-start;
 
     .bubble__text {
-        background: linear-gradient(
-            135deg, 
-            color-mix(in srgb, var(--color-overlay) 85%, transparent) 0%, 
-            color-mix(in srgb, var(--color-bg-primary) 90%, transparent) 100%
-        );
+        background: linear-gradient(135deg,
+                color-mix(in srgb, var(--color-overlay) 85%, transparent) 0%,
+                color-mix(in srgb, var(--color-bg-primary) 90%, transparent) 100%);
         border: 1px solid color-mix(in srgb, var(--color-text-primary) 15%, transparent);
         border-top-right-radius: 4px;
         color: var(--color-card-text);
@@ -224,11 +218,9 @@
     align-items: flex-end;
 
     .bubble__text {
-        background: linear-gradient(
-            135deg, 
-            color-mix(in srgb, var(--color-text-primary) 15%, transparent) 0%, 
-            color-mix(in srgb, var(--color-overlay) 70%, transparent) 100%
-        );
+        background: linear-gradient(135deg,
+                color-mix(in srgb, var(--color-text-primary) 15%, transparent) 0%,
+                color-mix(in srgb, var(--color-overlay) 70%, transparent) 100%);
         border: 1px solid color-mix(in srgb, var(--color-text-primary) 30%, transparent);
         border-top-left-radius: 4px;
         color: var(--color-card-text);
@@ -244,7 +236,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-size: var(--font-ssm);
     font-weight: var(--font-weight-medium);
     padding: 0 4px;
 }
@@ -310,11 +302,9 @@
 .replyArea__sendBtn {
     width: 48px;
     height: 48px;
-    background: linear-gradient(
-        135deg, 
-        var(--color-text-primary) 0%, 
-        var(--color-title-hover) 100%
-    );
+    background: linear-gradient(135deg,
+            var(--color-text-primary) 0%,
+            var(--color-title-hover) 100%);
     color: var(--color-bg-primary);
     border: none;
     border-radius: 14px;
@@ -369,20 +359,41 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px) scale(0.98); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 @keyframes fadeSlideUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }

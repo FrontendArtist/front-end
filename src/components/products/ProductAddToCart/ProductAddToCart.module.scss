@@ -1,10 +1,10 @@
 @use '@/styles/base/mixins' as *;
 
 .wrapper {
-    display: inline-flex;
-    align-items: center;
-    gap: 1rem;
-    margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .addToCartButton {
@@ -35,7 +35,7 @@
   &:hover {
     transform: translateY(-4px) scale(1.02);
     box-shadow: 0 14px 32px rgba(255, 149, 0, 0.5), inset 0 2px 2px rgba(255, 255, 255, 0.4);
-    
+
     svg {
       transform: translateX(-4px) scale(1.1) rotate(-10deg);
     }
@@ -53,7 +53,7 @@
     left: -100%;
     width: 50%;
     height: 100%;
-    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+    background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
     transform: skewX(-25deg);
     z-index: -1;
   }
@@ -69,92 +69,99 @@
 }
 
 @keyframes buttonShine {
-  0% { left: -100%; }
-  100% { left: 200%; }
+  0% {
+    left: -100%;
+  }
+
+  100% {
+    left: 200%;
+  }
 }
 
 .quantityController {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--color-card-bg, #1a1a1a);
-    border: 2px solid fade(var(--color-primary, #d4af37), 30%);
-    border-radius: 12px;
-    overflow: hidden;
-    height: 52px;
-    width: 160px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-card-bg, #1a1a1a);
+  border: 2px solid fade(var(--color-primary, #d4af37), 30%);
+  border-radius: 12px;
+  overflow: hidden;
+  height: 52px;
+  width: 160px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 
-    &:hover {
-        border-color: fade(var(--color-primary, #d4af37), 80%);
-        box-shadow: 0 6px 16px fade(var(--color-primary, #d4af37), 15%);
-    }
+  &:hover {
+    border-color: fade(var(--color-primary, #d4af37), 80%);
+    box-shadow: 0 6px 16px fade(var(--color-primary, #d4af37), 15%);
+  }
 
-    @include respond(md) {
-        height: 46px;
-        width: 140px;
-    }
+  @include respond(md) {
+    height: 46px;
+    width: 140px;
+  }
 }
 
 .quantityButton {
-    width: 48px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
-    color: var(--color-text-primary);
-    border: none;
-    font-size: 20px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    
+  width: 48px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border: none;
+  font-size: var(--font-lg-xl);
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover {
+    background: fade(var(--color-primary, #d4af37), 15%);
+    color: var(--color-primary);
+
     svg {
-        width: 20px;
-        height: 20px;
-        transition: transform 0.2s ease;
+      transform: scale(1.15);
     }
+  }
 
-    &:hover {
-        background: fade(var(--color-primary, #d4af37), 15%);
-        color: var(--color-primary);
-        
-        svg {
-            transform: scale(1.15);
-        }
-    }
+  &:active {
+    background: fade(var(--color-primary, #d4af37), 25%);
 
-    &:active {
-        background: fade(var(--color-primary, #d4af37), 25%);
-        svg {
-            transform: scale(0.95);
-        }
+    svg {
+      transform: scale(0.95);
     }
+  }
 
-    &:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-        background: transparent;
-        &:hover svg {
-            transform: none;
-        }
-    }
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: transparent;
 
-    @include respond(md) {
-        width: 40px;
+    &:hover svg {
+      transform: none;
     }
+  }
+
+  @include respond(md) {
+    width: 40px;
+  }
 }
 
 .quantityDisplay {
-    text-align: center;
-    color: var(--color-text-primary);
-    font-size: var(--font-lg, 18px);
-    font-weight: 800;
-    min-width: 32px;
+  text-align: center;
+  color: var(--color-text-primary);
+  font-size: var(--font-lg, 18px);
+  font-weight: 800;
+  min-width: 32px;
 
-    @include respond(md) {
-        font-size: var(--font-md, 16px);
-    }
+  @include respond(md) {
+    font-size: var(--font-md, 16px);
+  }
 }

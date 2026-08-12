@@ -5,11 +5,11 @@
  * @description استایل لیستی (Tile) فید «آخرین تغییرات» درون ستون‌های داشبورد
  */
 
-$tile-bg     : fade(var(--color-black), 15%);
+$tile-bg : fade(var(--color-black), 15%);
 $tile-border : fade(var(--color-primary), 8%);
 $tile-radius : 10px;
-$text-muted  : var(--color-card-text);
-$transition  : 0.2s ease;
+$text-muted : var(--color-card-text);
+$transition : 0.2s ease;
 
 .tile {
     display: flex;
@@ -86,7 +86,7 @@ $transition  : 0.2s ease;
 }
 
 .arrow {
-    font-size: 12px;
+    font-size: var(--font-ssm);
     color: var(--color-title-hover);
     opacity: 0.4;
     transition: transform $transition, opacity $transition;

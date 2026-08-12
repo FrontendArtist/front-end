@@ -1,5 +1,7 @@
+@use '../../../styles/base/mixins' as *;
+
 .testimonialsSection {
-  padding: 4rem 0;
+  @include section-spacing;
 }
 
 .container {

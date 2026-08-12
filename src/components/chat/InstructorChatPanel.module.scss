@@ -17,8 +17,8 @@
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid color-mix(in srgb, var(--color-text-primary) 15%, transparent);
     border-radius: var(--radius-card);
-    box-shadow: 0 20px 50px color-mix(in srgb, var(--color-black) 50%, transparent), 
-                inset 0 1px 0 color-mix(in srgb, var(--color-white) 5%, transparent);
+    box-shadow: 0 20px 50px color-mix(in srgb, var(--color-black) 50%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--color-white) 5%, transparent);
     overflow: hidden;
     direction: rtl;
 
@@ -36,11 +36,9 @@
 /* ─── Sidebar Area (Right Column) ─────────────────────────────────────────── */
 
 .sidebar {
-    background: linear-gradient(
-        180deg, 
-        color-mix(in srgb, var(--color-overlay) 50%, transparent) 0%, 
-        color-mix(in srgb, var(--color-bg-primary) 70%, transparent) 100%
-    );
+    background: linear-gradient(180deg,
+            color-mix(in srgb, var(--color-overlay) 50%, transparent) 0%,
+            color-mix(in srgb, var(--color-bg-primary) 70%, transparent) 100%);
     border-left: 1px solid color-mix(in srgb, var(--color-text-primary) 10%, transparent);
     display: flex;
     flex-direction: column;
@@ -191,9 +189,11 @@
     &::-webkit-scrollbar {
         width: 4px;
     }
+
     &::-webkit-scrollbar-track {
         background: transparent;
     }
+
     &::-webkit-scrollbar-thumb {
         background: color-mix(in srgb, var(--color-text-primary) 15%, transparent);
         border-radius: 4px;
@@ -222,11 +222,9 @@
 }
 
 .chatItem--active {
-    background: linear-gradient(
-        90deg, 
-        color-mix(in srgb, var(--color-text-primary) 12%, transparent) 0%, 
-        color-mix(in srgb, var(--color-overlay) 40%, transparent) 100%
-    );
+    background: linear-gradient(90deg,
+            color-mix(in srgb, var(--color-text-primary) 12%, transparent) 0%,
+            color-mix(in srgb, var(--color-overlay) 40%, transparent) 100%);
     border: 1px solid color-mix(in srgb, var(--color-text-primary) 25%, transparent);
     box-shadow: 0 4px 15px color-mix(in srgb, var(--color-black) 20%, transparent);
 
@@ -246,11 +244,9 @@
     width: 44px;
     height: 44px;
     border-radius: 12px;
-    background: linear-gradient(
-        135deg, 
-        var(--color-overlay) 0%, 
-        color-mix(in srgb, var(--color-text-primary) 25%, transparent) 100%
-    );
+    background: linear-gradient(135deg,
+            var(--color-overlay) 0%,
+            color-mix(in srgb, var(--color-text-primary) 25%, transparent) 100%);
     border: 1px solid color-mix(in srgb, var(--color-text-primary) 25%, transparent);
     display: flex;
     align-items: center;
@@ -362,11 +358,9 @@
     gap: 14px;
     padding: 16px 24px;
     border-bottom: 1px solid color-mix(in srgb, var(--color-text-primary) 10%, transparent);
-    background: linear-gradient(
-        90deg, 
-        color-mix(in srgb, var(--color-overlay) 40%, transparent) 0%, 
-        color-mix(in srgb, var(--color-bg-primary) 60%, transparent) 100%
-    );
+    background: linear-gradient(90deg,
+            color-mix(in srgb, var(--color-overlay) 40%, transparent) 0%,
+            color-mix(in srgb, var(--color-bg-primary) 60%, transparent) 100%);
     flex-shrink: 0;
 
     @media (max-width: 768px) {
@@ -401,11 +395,9 @@
     width: 42px;
     height: 42px;
     border-radius: 12px;
-    background: linear-gradient(
-        135deg, 
-        var(--color-overlay) 0%, 
-        color-mix(in srgb, var(--color-text-primary) 20%, transparent) 100%
-    );
+    background: linear-gradient(135deg,
+            var(--color-overlay) 0%,
+            color-mix(in srgb, var(--color-text-primary) 20%, transparent) 100%);
     border: 1px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
     display: flex;
     align-items: center;
@@ -483,24 +475,22 @@
     display: flex;
     flex-direction: column;
     gap: 18px;
-    background: 
-        radial-gradient(
-            ellipse at top right, 
-            color-mix(in srgb, var(--color-overlay) 20%, transparent) 0%, 
-            transparent 70%
-        ),
-        radial-gradient(
-            ellipse at bottom left, 
-            color-mix(in srgb, var(--color-text-primary) 3%, transparent) 0%, 
-            transparent 70%
-        );
+    background:
+        radial-gradient(ellipse at top right,
+            color-mix(in srgb, var(--color-overlay) 20%, transparent) 0%,
+            transparent 70%),
+        radial-gradient(ellipse at bottom left,
+            color-mix(in srgb, var(--color-text-primary) 3%, transparent) 0%,
+            transparent 70%);
 
     &::-webkit-scrollbar {
         width: 4px;
     }
+
     &::-webkit-scrollbar-track {
         background: transparent;
     }
+
     &::-webkit-scrollbar-thumb {
         background: color-mix(in srgb, var(--color-text-primary) 12%, transparent);
         border-radius: 4px;
@@ -531,11 +521,9 @@
     align-items: flex-start;
 
     .bubble__text {
-        background: linear-gradient(
-            135deg, 
-            color-mix(in srgb, var(--color-text-primary) 15%, transparent) 0%, 
-            color-mix(in srgb, var(--color-overlay) 70%, transparent) 100%
-        );
+        background: linear-gradient(135deg,
+                color-mix(in srgb, var(--color-text-primary) 15%, transparent) 0%,
+                color-mix(in srgb, var(--color-overlay) 70%, transparent) 100%);
         border: 1px solid color-mix(in srgb, var(--color-text-primary) 30%, transparent);
         border-top-right-radius: 4px;
         color: var(--color-card-text);
@@ -553,11 +541,9 @@
     align-items: flex-end;
 
     .bubble__text {
-        background: linear-gradient(
-            135deg, 
-            color-mix(in srgb, var(--color-overlay) 85%, transparent) 0%, 
-            color-mix(in srgb, var(--color-bg-primary) 90%, transparent) 100%
-        );
+        background: linear-gradient(135deg,
+                color-mix(in srgb, var(--color-overlay) 85%, transparent) 0%,
+                color-mix(in srgb, var(--color-bg-primary) 90%, transparent) 100%);
         border: 1px solid color-mix(in srgb, var(--color-text-primary) 15%, transparent);
         border-top-left-radius: 4px;
         color: var(--color-card-text);
@@ -573,7 +559,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-size: var(--font-ssm);
     font-weight: var(--font-weight-medium);
     padding: 0 4px;
 }
@@ -639,11 +625,9 @@
 .replyArea__send {
     width: 48px;
     height: 48px;
-    background: linear-gradient(
-        135deg, 
-        var(--color-text-primary) 0%, 
-        var(--color-title-hover) 100%
-    );
+    background: linear-gradient(135deg,
+            var(--color-text-primary) 0%,
+            var(--color-title-hover) 100%);
     color: var(--color-bg-primary);
     border: none;
     border-radius: 14px;
@@ -716,6 +700,7 @@
         opacity: 0;
         transform: translateY(12px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);

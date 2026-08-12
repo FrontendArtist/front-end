@@ -1,7 +1,7 @@
 @use '../../../styles/base/mixins' as *;
 
 .coursesSection {
-  padding: 2rem 0;
+  @include section-spacing;
 }
 
 .header {

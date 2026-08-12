@@ -105,7 +105,7 @@
   white-space: nowrap;
 
   @include respond(sm) {
-    font-size: 12px;
+    font-size: var(--font-ssm);
     padding: 6px 12px;
   }
 }

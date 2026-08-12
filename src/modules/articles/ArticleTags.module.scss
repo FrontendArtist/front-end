@@ -27,7 +27,7 @@
   gap: 0.5rem;
   color: var(--color-title-hover, #f5c452);
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--font-sm);
   white-space: nowrap;
   flex-shrink: 0;
 }

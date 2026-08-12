@@ -98,7 +98,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 12px;
+  font-size: var(--font-ssm);
   font-weight: 600;
   color: var(--color-title-hover, #f5c452);
   background: rgba(246, 217, 130, 0.08);
@@ -119,7 +119,7 @@
 
   @media (max-width: 640px) {
     white-space: normal;
-    font-size: 16px;
+    font-size: var(--font-md);
   }
 }
 
@@ -175,7 +175,7 @@
 }
 
 .amount {
-  font-size: 18px;
+  font-size: var(--font-md-lg);
   font-weight: 800;
 }
 
@@ -186,7 +186,7 @@
 }
 
 .freePrice {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
   color: #10b981;
 }
