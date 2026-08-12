@@ -106,7 +106,7 @@ const ProductGrid = ({
             
             {/* Show skeletons when loading */}
             {isLoading && Array.from({ length: PAGE_SIZE || 6 }).map((_, index) => (
-              <CardSkeletonVertical key={`skeleton-${index}`} />
+              <CardSkeletonVertical key={`skeleton-${index}`} showDescription={false} />
             ))}
           </div>
 

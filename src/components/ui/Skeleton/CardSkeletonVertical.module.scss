@@ -1,0 +1,22 @@
+@use '../../../styles/base/mixins' as *;
+
+.cardSkeleton {
+  @include base-card;
+  pointer-events: none;
+}
+
+.imageWrapper {
+  @include card-image-wrapper;
+}
+
+.cardContent {
+  @include card-content;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 12px;
+}

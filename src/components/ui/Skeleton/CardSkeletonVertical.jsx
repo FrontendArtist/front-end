@@ -1,24 +1,19 @@
 import Skeleton from '@/components/ui/Skeleton/Skeleton';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
+import styles from './CardSkeletonVertical.module.scss';
 
 /**
  * A generic unified vertical card skeleton loader for products, articles, courses, etc.
+ * Uses the exact same SCSS mixins as the real cards to ensure 100% height/width match without layout shifts.
  */
-const CardSkeletonVertical = () => {
+const CardSkeletonVertical = ({ showDescription = true }) => {
   return (
     <GradientBorderCard
       as="div"
       gradient="vertical"
-      contentClassName="card vertical-gradient"
-      style={{ 
-        pointerEvents: 'none', 
-        display: 'flex', 
-        flexDirection: 'column',
-        height: '100%',
-        padding: '0' // Removing padding so image goes edge to edge
-      }}
+      contentClassName={`${styles.cardSkeleton} card vertical-gradient`}
     >
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', flexShrink: 0 }}>
+      <div className={styles.imageWrapper}>
         <Skeleton 
           variant="rectangular" 
           width="100%" 
@@ -26,17 +21,20 @@ const CardSkeletonVertical = () => {
           style={{ position: 'absolute', top: 0, left: 0 }} 
         />
       </div>
-      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flexGrow: 1, gap: '16px' }}>
+      <div className={styles.cardContent}>
         <Skeleton variant="text" width="85%" height="24px" style={{ marginBottom: '8px' }} />
         
+        
         {/* Description lines */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-          <Skeleton variant="text" width="100%" height="14px" />
-          <Skeleton variant="text" width="90%" height="14px" />
-        </div>
+        {showDescription && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+            <Skeleton variant="text" width="100%" height="14px" />
+            <Skeleton variant="text" width="90%" height="14px" />
+          </div>
+        )}
 
         {/* Footer/Price/Button area */}
-        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: '12px' }}>
+        <div className={styles.footer}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
              <Skeleton variant="text" width="60px" height="14px" />
              <Skeleton variant="text" width="40px" height="14px" />
