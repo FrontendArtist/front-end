@@ -1,0 +1,314 @@
+@use '@/styles/base/mixins' as *;
+
+// صفحه نتیجه پرداخت نور
+.callbackPage {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-section-top-desktop) 0 var(--space-section-bottom-desktop);
+
+    @include respond(md) {
+        padding: 100px 20px 60px;
+    }
+}
+
+// Loading Container
+.loadingContainer {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loader {
+    font-size: var(--font-lg);
+    color: var(--color-text-primary);
+    animation: pulse 1.5s ease-in-out infinite;
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+}
+
+// کارت اصلی
+.card {
+    @include card-container;
+    background: var(--gradient-card-vertical);
+    padding: 60px 48px;
+    max-width: 600px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    text-align: center;
+    border-radius: var(--border-radius);
+
+    @include respond(md) {
+        padding: 40px 32px;
+        gap: 20px;
+    }
+}
+
+// آیکون وضعیت
+.icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: scaleIn 0.5s ease-out;
+
+    svg {
+        width: 56px;
+        height: 56px;
+    }
+
+    @keyframes scaleIn {
+        from { transform: scale(0); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    @include respond(md) {
+        width: 80px;
+        height: 80px;
+
+        svg {
+            width: 44px;
+            height: 44px;
+        }
+    }
+}
+
+// حالت موفقیت (سبز)
+.success {
+    .icon {
+        background: fade(var(--color-success), 15%);
+        border: 3px solid fade(var(--color-success), 40%);
+
+        svg {
+            color: var(--color-success);
+            stroke-width: 3;
+        }
+    }
+
+    .title { color: var(--color-success); }
+
+    .primaryButton {
+        background: linear-gradient(135deg, var(--color-success), var(--color-success));
+
+        &:hover {
+            background: linear-gradient(135deg, var(--color-success), var(--color-success-dark));
+        }
+    }
+}
+
+// حالت خطا (قرمز)
+.failure {
+    .icon {
+        background: fade(var(--color-error), 15%);
+        border: 3px solid fade(var(--color-error), 40%);
+
+        svg {
+            color: var(--color-error);
+            stroke-width: 3;
+        }
+    }
+
+    .title { color: var(--color-error); }
+
+    .primaryButton {
+        background: linear-gradient(135deg, var(--color-error), var(--color-error));
+
+        &:hover {
+            background: linear-gradient(135deg, var(--color-error), var(--color-error-darker));
+        }
+    }
+}
+
+// عنوان
+.title {
+    font-size: var(--font-2xl);
+    font-weight: var(--font-weight-bold);
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-xl);
+    }
+}
+
+// نمایش نور افزوده‌شده — باکس ویژه
+.lightAdded {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 32px;
+    background: fade(var(--color-text-primary), 10%);
+    border: 2px solid fade(var(--color-text-primary), 30%);
+    border-radius: var(--border-radius);
+    animation: scaleIn 0.5s ease-out 0.2s both;
+
+    svg {
+        width: 28px;
+        height: 28px;
+        color: var(--color-text-primary);
+        flex-shrink: 0;
+    }
+
+    span:first-of-type {
+        font-size: var(--font-xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-primary);
+    }
+}
+
+.lightAddedLabel {
+    font-size: var(--font-sm) !important;
+    color: var(--color-card-text) !important;
+    font-weight: var(--font-weight-regular) !important;
+}
+
+// پیام
+.message {
+    font-size: var(--font-lg);
+    color: var(--color-card-text);
+    margin: 0;
+    line-height: 1.6;
+
+    @include respond(md) {
+        font-size: var(--font-md);
+    }
+}
+
+// جعبه اطلاعات
+.infoBox {
+    width: 100%;
+    padding: 20px;
+    background: fade(var(--color-primary), 5%);
+    border: 1px solid fade(var(--color-primary), 20%);
+    border-radius: var(--border-radius);
+    display: flex;
+    gap: 16px;
+    text-align: right;
+
+    svg {
+        width: 24px;
+        height: 24px;
+        color: var(--color-text-primary);
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    p {
+        margin: 0;
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+        line-height: 1.7;
+    }
+
+    @include respond(md) {
+        padding: 16px;
+        gap: 12px;
+
+        svg { width: 20px; height: 20px; }
+    }
+}
+
+// جعبه هشدار (وقتی آپدیت Strapi ناموفق بود)
+.warnBox {
+    width: 100%;
+    padding: 16px;
+    background: fade(var(--color-warning), 10%);
+    border: 1px solid fade(var(--color-warning), 30%);
+    border-radius: var(--border-radius);
+    display: flex;
+    gap: 12px;
+    text-align: right;
+
+    svg {
+        width: 20px;
+        height: 20px;
+        color: var(--color-warning-amber);
+        flex-shrink: 0;
+    }
+
+    p {
+        margin: 0;
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+        line-height: 1.6;
+    }
+}
+
+// دکمه‌های عملیات
+.actions {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+    margin-top: 12px;
+
+    @include respond(md) {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+
+.primaryButton {
+    flex: 1;
+    padding: 14px 32px;
+    color: var(--color-bg-primary);
+    text-decoration: none;
+    border-radius: var(--border-radius);
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    @include hover-transition;
+    box-shadow: 0 4px 12px fade(var(--color-black), 20%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px fade(var(--color-black), 30%);
+    }
+
+    &:active { transform: translateY(0); }
+
+    @include respond(md) {
+        padding: 12px 24px;
+        font-size: var(--font-sm);
+    }
+}
+
+.secondaryButton {
+    flex: 1;
+    padding: 14px 32px;
+    background: fade(var(--color-primary), 10%);
+    border: 2px solid fade(var(--color-primary), 30%);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    border-radius: var(--border-radius);
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    @include hover-transition;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        background: fade(var(--color-primary), 20%);
+        border-color: fade(var(--color-primary), 50%);
+        transform: translateY(-2px);
+    }
+
+    &:active { transform: translateY(0); }
+
+    @include respond(md) {
+        padding: 12px 24px;
+        font-size: var(--font-sm);
+    }
+}

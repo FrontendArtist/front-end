@@ -32,6 +32,7 @@ export async function getUsers(jwt, { page = 1, pageSize = 50 } = {}) {
                 email: attrs.email || '—',
                 phoneNumber: attrs.phoneNumber || '—',
                 role: attrs.role?.name || attrs.role?.type || 'نامشخص',
+                light: attrs.light ?? 0,
                 createdAt: attrs.createdAt
             };
         });

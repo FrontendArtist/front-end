@@ -1,6 +1,8 @@
 @use '@/styles/base/mixins' as *;
 
-// Loading Skeleton
+// ═══════════════════════════════════════════════════════════════
+// LOADING SKELETON
+// ═══════════════════════════════════════════════════════════════
 .skeleton {
     display: flex;
     align-items: center;
@@ -12,22 +14,24 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(90deg, fade(var(--color-primary), 10%) 25%, fade(var(--color-primary), 20%) 50%, fade(var(--color-primary), 10%) 75%);
+    background: linear-gradient(
+        90deg,
+        fade(var(--color-primary), 10%) 25%,
+        fade(var(--color-primary), 20%) 50%,
+        fade(var(--color-primary), 10%) 75%
+    );
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 
     @keyframes shimmer {
-        0% {
-            background-position: 200% 0;
-        }
-
-        100% {
-            background-position: -200% 0;
-        }
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
     }
 }
 
-// Icon Button (Unauthenticated - matches Navbar style)
+// ═══════════════════════════════════════════════════════════════
+// ICON BUTTON (حالت لاگین‌نکرده)
+// ═══════════════════════════════════════════════════════════════
 .iconButton {
     display: flex;
     align-items: center;
@@ -48,18 +52,17 @@
 
     &:hover {
         background: fade(var(--color-primary), 10%);
-        border-color: var(--color-text-primary);
         transform: translateY(-1px);
     }
 
     &:active {
         transform: translateY(0);
     }
-
-
 }
 
-// Authenticated User Container
+// ═══════════════════════════════════════════════════════════════
+// USER CONTAINER (حالت لاگین‌کرده)
+// ═══════════════════════════════════════════════════════════════
 .userContainer {
     position: relative;
     display: flex;
@@ -67,7 +70,7 @@
     cursor: pointer;
 }
 
-// Avatar Wrapper
+// ── آواتار ────────────────────────────────────────────────────
 .avatarWrapper {
     position: relative;
     display: flex;
@@ -86,21 +89,20 @@
     }
 }
 
-// User Avatar Icon
 .avatar {
     width: 24px;
     height: 24px;
     color: var(--color-text-primary);
 }
 
-// Verification Badge
+// ── بج تأیید ─────────────────────────────────────────────────
 .badge {
     position: absolute;
     bottom: -2px;
     right: -2px;
     width: 16px;
     height: 16px;
-    background: linear-gradient(135deg, var(--color-success), var(--color-success));
+    background: var(--color-success);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -111,21 +113,22 @@
     svg {
         width: 10px;
         height: 10px;
-        color: var(--card-text);
+        color: #fff;
     }
 }
 
-// Dropdown Menu
+// ═══════════════════════════════════════════════════════════════
+// DROPDOWN
+// ═══════════════════════════════════════════════════════════════
 .dropdown {
     position: absolute;
     top: calc(100% + 12px);
     left: 0;
     background: var(--color-overlay-blured);
-    backdrop-filter: blur(8px);
     backdrop-filter: blur(20px);
     border-radius: var(--border-radius);
     border: 1px solid fade(var(--color-primary), 20%);
-    box-shadow: 0 8px 24px fade(var(--color-black), 30%);
+    box-shadow: 0 8px 32px fade(var(--color-black), 40%);
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
@@ -133,8 +136,9 @@
     z-index: 1000;
     overflow: hidden;
     width: max-content;
+    min-width: 220px;
 
-    // Arrow indicator
+    // فلش بالا
     &::before {
         content: '';
         position: absolute;
@@ -149,14 +153,84 @@
     }
 }
 
-// Dropdown Open State
 .dropdownOpen {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
 }
 
-// Dropdown Item
+// ═══════════════════════════════════════════════════════════════
+// USER CARD — کارت اطلاعات بالای dropdown
+// ═══════════════════════════════════════════════════════════════
+.userCard {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: fade(var(--color-text-primary), 5%);
+}
+
+.userCardAvatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: fade(var(--color-text-primary), 12%);
+    border: 1.5px solid fade(var(--color-text-primary), 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    svg {
+        width: 22px;
+        height: 22px;
+        color: var(--color-text-primary);
+    }
+}
+
+.userCardInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.userCardName {
+    font-size: var(--font-sm-md);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-card-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+}
+
+.userCardLight {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: var(--font-ssm);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+
+    svg {
+        width: 13px;
+        height: 13px;
+        color: var(--color-text-primary);
+        flex-shrink: 0;
+    }
+}
+
+// ── جداکننده ─────────────────────────────────────────────────
+.dropdownDivider {
+    height: 1px;
+    background: fade(var(--color-primary), 15%);
+    margin: 0;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DROPDOWN ITEMS
+// ═══════════════════════════════════════════════════════════════
 .dropdownItem {
     display: flex;
     align-items: center;
@@ -202,11 +276,30 @@
     }
 }
 
-// RTL Support
-[dir="rtl"] {
+// ── آیتم افزایش نور (رنگ طلایی ویژه) ─────────────────────────
+.dropdownItemLight {
+    color: var(--color-text-primary);
+
+    svg {
+        color: var(--color-text-primary);
+    }
+
+    &:hover {
+        background: fade(var(--color-text-primary), 10%);
+        color: var(--color-title-hover);
+
+        svg {
+            color: var(--color-title-hover);
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RTL SUPPORT
+// ═══════════════════════════════════════════════════════════════
+[dir='rtl'] {
     .dropdown {
         left: 0;
-
     }
 
     .dropdownItem {
@@ -219,15 +312,21 @@
     }
 }
 
-// Mobile Responsive
+// ═══════════════════════════════════════════════════════════════
+// MOBILE RESPONSIVE
+// ═══════════════════════════════════════════════════════════════
 @include respond(md) {
     .dropdown {
-        min-width: 180px;
+        min-width: 200px;
     }
 
     .dropdownItem {
         padding: 12px 16px;
         font-size: var(--font-sm);
+    }
+
+    .userCard {
+        padding: 14px 16px;
     }
 
     .avatarWrapper {

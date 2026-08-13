@@ -422,3 +422,150 @@
         gap: 0.5rem;
     }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * LIGHT CELL & POPOVER (UsersTable)
+ * ───────────────────────────────────────────────────────────────────────────── */
+.bulkHeaderContainer {
+    display: flex;
+    align-items: center;
+    width: 90px;
+    gap: 8px;
+    justify-content: space-between;
+
+}
+
+.lightCellContainer {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lightValue {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-sm);
+    white-space: nowrap;
+    width: 90px;
+    justify-content: space-between;
+
+
+}
+
+.lightAddBtn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1.5px solid fade(var(--color-text-primary), 45%);
+    background: fade(var(--color-text-primary), 6%);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+    padding: 0;
+
+    &:hover,
+    &.open {
+        background: fade(var(--color-text-primary), 15%);
+        border-color: var(--color-text-primary);
+    }
+}
+
+.popover {
+    position: absolute;
+    z-index: 99999;
+    background-color: var(--color-bg-primary);
+    border: 1px solid fade(var(--color-text-primary), 30%);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 170px;
+    box-shadow: 0 10px 32px fade(var(--color-black), 50%);
+}
+
+.popoverTitle {
+    font-size: var(--font-ssm);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-bold);
+}
+
+.popoverRow {
+    display: flex;
+    gap: 6px;
+}
+
+.popoverInput {
+    flex: 1;
+    padding: 6px 8px;
+    background: fade(var(--color-text-primary), 5%);
+    border: 1px solid fade(var(--color-text-primary), 20%);
+    border-radius: 6px;
+    color: var(--color-card-text);
+    font-size: var(--font-ssm);
+    outline: none;
+    min-width: 0;
+    font-family: inherit;
+
+    &:focus {
+        border-color: var(--color-text-primary);
+    }
+}
+
+.popoverSubmitBtn {
+    padding: 6px 10px;
+    background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
+    border: none;
+    border-radius: 6px;
+    color: var(--color-bg-primary);
+    font-size: var(--font-ssm);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: inherit;
+    transition: opacity 0.2s;
+
+    &:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+}
+
+.popoverError {
+    font-size: var(--font-ssm);
+    color: var(--color-error);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * TABLE USER CELL EXTRA STYLES
+ * ───────────────────────────────────────────────────────────────────────────── */
+.usernameText {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-card-text);
+}
+
+.userFullNameText {
+    font-size: var(--font-ssm);
+    opacity: 0.7;
+}
+
+.emailCell {
+    direction: ltr;
+    text-align: right;
+}
+
+.emptyTableCell {
+    text-align: center;
+    padding: var(--space-title-text-desktop);
+}

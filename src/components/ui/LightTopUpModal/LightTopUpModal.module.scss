@@ -1,0 +1,527 @@
+@use '@/styles/base/mixins' as *;
+
+// ═══════════════════════════════════════════════════════════════
+// OVERLAY — پوشش تاریک پشت مدال، دقیقاً وسط صفحه
+// ═══════════════════════════════════════════════════════════════
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(6, 24, 24, 0.85);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease-out;
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODAL — کارت اصلی
+// ═══════════════════════════════════════════════════════════════
+.modal {
+    background: var(--color-bg-primary);
+    border: 1px solid fade(var(--color-text-primary), 20%);
+    border-radius: var(--radius-card);
+    padding: 32px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.5),
+        0 0 0 1px fade(var(--color-text-primary), 8%);
+    animation: slideUp 0.25s ease-out;
+    position: relative;
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(24px) scale(0.97);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @include respond(md) {
+        padding: 24px;
+        gap: 16px;
+        border-radius: var(--border-radius);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════════════════════════════
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.headerTitle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.headerIcon {
+    width: 40px;
+    height: 40px;
+    background: fade(var(--color-text-primary), 12%);
+    border: 1px solid fade(var(--color-text-primary), 25%);
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    svg {
+        width: 20px;
+        height: 20px;
+        color: var(--color-text-primary);
+    }
+}
+
+.header h2 {
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.closeBtn {
+    width: 36px;
+    height: 36px;
+    background: fade(var(--color-text-primary), 8%);
+    border: 1px solid fade(var(--color-text-primary), 15%);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-card-text);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    &:hover {
+        background: fade(var(--color-error), 15%);
+        border-color: fade(var(--color-error), 30%);
+        color: var(--color-error);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BALANCE BOX — نمایش موجودی فعلی
+// ═══════════════════════════════════════════════════════════════
+.balanceBox {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: fade(var(--color-text-primary), 6%);
+    border: 1px solid fade(var(--color-text-primary), 18%);
+    border-radius: var(--border-radius);
+    gap: 12px;
+}
+
+.balanceLabel {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+}
+
+.balanceValue {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+
+    svg {
+        width: 16px;
+        height: 16px;
+        color: var(--color-text-primary);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INPUT GROUP — ورودی مقدار
+// ═══════════════════════════════════════════════════════════════
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.inputLabel {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    font-weight: var(--font-weight-medium);
+}
+
+.inputWrapper {
+    position: relative;
+}
+
+.amountInput {
+    width: 100%;
+    padding: 12px 48px 12px 16px;
+    background: fade(var(--color-text-primary), 5%);
+    border: 1.5px solid fade(var(--color-text-primary), 20%);
+    border-radius: var(--border-radius);
+    color: var(--color-card-text);
+    font-size: var(--font-md);
+    font-family: inherit;
+    direction: rtl;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &::placeholder {
+        color: fade(var(--color-card-text), 40%);
+    }
+
+    &:focus {
+        outline: none;
+        border-color: fade(var(--color-text-primary), 50%);
+        box-shadow: 0 0 0 3px fade(var(--color-text-primary), 8%);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.inputIcon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-text-primary);
+    pointer-events: none;
+
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+.tomanEquivalent {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-ssm);
+    color: var(--color-success);
+    padding: 0 4px;
+
+    svg {
+        width: 14px;
+        height: 14px;
+        color: var(--color-success);
+        flex-shrink: 0;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// QUICK SELECT — انتخاب سریع
+// ═══════════════════════════════════════════════════════════════
+.quickSection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.quickLabel {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    font-weight: var(--font-weight-medium);
+}
+
+.quickGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.quickBtn {
+    padding: 10px 8px;
+    background: fade(var(--color-text-primary), 5%);
+    border: 1.5px solid fade(var(--color-text-primary), 18%);
+    border-radius: 8px;
+    color: var(--color-card-text);
+    font-size: var(--font-ssm);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+
+    &:hover:not(:disabled) {
+        background: fade(var(--color-text-primary), 12%);
+        border-color: fade(var(--color-text-primary), 35%);
+        color: var(--color-text-primary);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.quickBtnActive {
+    background: fade(var(--color-text-primary), 15%);
+    border-color: fade(var(--color-text-primary), 60%);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-bold);
+    box-shadow: 0 0 0 2px fade(var(--color-text-primary), 15%);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INFO NOTE — اطلاعیه
+// ═══════════════════════════════════════════════════════════════
+.infoNote {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    background: fade(var(--color-blue), 8%);
+    border: 1px solid fade(var(--color-blue), 20%);
+    border-radius: var(--border-radius);
+
+    svg {
+        width: 16px;
+        height: 16px;
+        color: var(--color-blue-alt);
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    p {
+        margin: 0;
+        font-size: var(--font-ssm);
+        color: var(--color-card-text);
+        line-height: 1.7;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GATEWAY SECTION — درگاه پرداخت
+// ═══════════════════════════════════════════════════════════════
+.gatewaySection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.gatewayLabel {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    font-weight: var(--font-weight-medium);
+}
+
+.gatewayList {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.gatewayItem {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: fade(var(--color-text-primary), 5%);
+    border: 1.5px solid fade(var(--color-text-primary), 18%);
+    border-radius: var(--border-radius);
+    color: var(--color-card-text);
+    font-size: var(--font-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    input[type='radio'] {
+        display: none;
+    }
+
+    svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+    }
+
+    &:hover {
+        background: fade(var(--color-text-primary), 10%);
+        border-color: fade(var(--color-text-primary), 30%);
+        color: var(--color-text-primary);
+    }
+}
+
+.gatewayActive {
+    background: fade(var(--color-text-primary), 12%);
+    border-color: fade(var(--color-text-primary), 55%);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-bold);
+    box-shadow: 0 0 0 2px fade(var(--color-text-primary), 12%);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ERROR BOX
+// ═══════════════════════════════════════════════════════════════
+.errorBox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: fade(var(--color-error), 10%);
+    border: 1px solid fade(var(--color-error), 30%);
+    border-radius: var(--border-radius);
+    color: var(--color-error);
+    font-size: var(--font-sm);
+
+    svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ACTION BUTTONS
+// ═══════════════════════════════════════════════════════════════
+.actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+
+    @include respond(sm) {
+        flex-direction: column-reverse;
+    }
+}
+
+.cancelBtn {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 24px;
+    background: fade(var(--color-text-primary), 8%);
+    border: 1.5px solid fade(var(--color-text-primary), 20%);
+    border-radius: var(--border-radius);
+    color: var(--color-card-text);
+    font-size: var(--font-sm);
+    font-family: inherit;
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    &:hover:not(:disabled) {
+        background: fade(var(--color-error), 10%);
+        border-color: fade(var(--color-error), 30%);
+        color: var(--color-error);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    @include respond(sm) {
+        flex: 1;
+    }
+}
+
+.payBtn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 13px 24px;
+    background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
+    border: none;
+    border-radius: var(--border-radius);
+    color: var(--color-bg-primary);
+    font-size: var(--font-md);
+    font-family: inherit;
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 14px fade(var(--color-text-primary), 25%);
+
+    svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+    }
+
+    &:hover:not(:disabled) {
+        background: linear-gradient(135deg, var(--color-title-hover), var(--color-text-primary));
+        box-shadow: 0 6px 20px fade(var(--color-text-primary), 35%);
+        transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    &:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+    }
+}
+
+.payAmount {
+    font-size: var(--font-ssm);
+    opacity: 0.85;
+    background: fade(var(--color-bg-primary), 15%);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPINNER
+// ═══════════════════════════════════════════════════════════════
+.spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid fade(var(--color-bg-primary), 30%);
+    border-top-color: var(--color-bg-primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+}

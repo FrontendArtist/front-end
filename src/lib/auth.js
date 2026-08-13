@@ -31,6 +31,8 @@ async function fetchUserSessionData(userId, jwt) {
                 enrolledChapters: Array.isArray(userData.enrolledChapters)
                     ? userData.enrolledChapters.map(Number)
                     : [],
+                firstName: userData.firstName || '',
+                lastName: userData.lastName || '',
             };
         }
     } catch (e) {
@@ -129,6 +131,8 @@ export const authOptions = {
                         session.user.enrolledCourses = extraData.enrolledCourses;
                         session.user.enrolledSlugs = extraData.enrolledSlugs;
                         session.user.enrolledChapters = extraData.enrolledChapters;
+                        session.user.firstName = extraData.firstName;
+                        session.user.lastName = extraData.lastName;
                     }
                 }
             }
