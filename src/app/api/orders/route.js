@@ -119,6 +119,17 @@ export async function POST(request) {
                     slug: item.slug || "",
                     itemUrl: `/courses/${courseSlug || item.slug}`
                 };
+            } else if (item.type === 'light_topup') {
+                // آیتم شارژ نور — به‌عنوان محصول ثبت می‌شود با توضیح مشخص
+                return {
+                    __component: "order.product-order-item",
+                    title: item.title || `شارژ نور`,
+                    price: Number(item.price) || 0,
+                    quantity: 1,
+                    productId: 0,
+                    slug: "light-topup",
+                    itemUrl: "/profile"
+                };
             } else {
                 let productUrl = `/product/${item.slug || ''}`;
                 if (item.subcategorySlug && item.categorySlug) {
@@ -175,6 +186,10 @@ export async function POST(request) {
                 return `${num}. [دوره آموزشی] ${item.title}`;
             } else if (item.type === 'chapter') {
                 return `${num}. [فصل آموزشی] ${item.title}`;
+            } else if (item.type === 'light_topup') {
+                const lightAmt = Number(item.lightAmount) || 0;
+                // ⚠️ عدد را ASCII نگه می‌داریم تا در admin route قابل parse باشد
+                return `${num}. [شارژ نور] ${lightAmt} نور [LIGHT_AMOUNT:${lightAmt}]`;
             } else {
                 const qty = (item.quantity && Number(item.quantity) > 1) ? ` (${item.quantity} عدد)` : '';
                 return `${num}. [محصول فیزیکی] ${item.title}${qty}`;
@@ -262,6 +277,24 @@ export async function POST(request) {
 
         if (!userUpdateRes.ok) {
             console.error("User update failed:", await userUpdateRes.text());
+        }
+
+        // ── اضافه کردن فوری نور برای پرداخت آنلاین ─────────────────────────
+        const orderType = body.orderType;
+        const lightAmount = Number(body.lightAmount);
+        if (orderType === 'light_topup' && lightAmount > 0 && resolvedPaymentMethod === 'online') {
+            const currentLight = userData.light ?? 0;
+            const lightUpdateRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${STRAPI_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ light: currentLight + lightAmount })
+            });
+            if (!lightUpdateRes.ok) {
+                console.error("Light update failed:", await lightUpdateRes.text());
+            }
         }
 
         try {

@@ -16,6 +16,10 @@
  *   client باید documentId را در request body ارسال کند.
  *
  * 🛡️ Authorization: فقط administrator می‌تواند این route را صدا بزند.
+ *
+ * ✨ Light Topup:
+ *   اگر سفارش از نوع شارژ نور باشد و ادمین تأیید کند،
+ *   نور به‌صورت خودکار به موجودی کاربر اضافه می‌شود.
  */
 
 import { getServerSession } from 'next-auth/next';
@@ -89,6 +93,96 @@ export async function PUT(request, { params }) {
                 { error: data?.error?.message || 'Strapi update failed' },
                 { status: strapiRes.status }
             );
+        }
+
+        // ── اگر ادمین سفارش نور را تأیید کرد، نور به کاربر اضافه شود ────────
+        // شرط: هر زمان paymentStatus یا orderStatus به حالت تأیید شده تغییر کند
+        const confirmedStatuses = ['paid', 'confirmed', 'processing', 'shipped', 'delivered'];
+        const isBeingConfirmed = (
+            (payload.paymentStatus && confirmedStatuses.includes(payload.paymentStatus)) ||
+            (payload.orderStatus && confirmedStatuses.includes(payload.orderStatus))
+        );
+
+        console.log(`[AdminOrdersAPI] isBeingConfirmed=${isBeingConfirmed}, payload:`, JSON.stringify(payload));
+
+        if (isBeingConfirmed) {
+            try {
+                // دریافت اطلاعات کامل سفارش برای بررسی نوع و مقدار نور
+                const orderDetailsRes = await fetch(
+                    `${STRAPI_API_URL}/api/orders/${strapiId}?populate[0]=user&populate[1]=items`,
+                    {
+                        headers: { Authorization: `Bearer ${session.user.jwt}` },
+                        cache: 'no-store',
+                    }
+                );
+
+                if (orderDetailsRes.ok) {
+                    const orderDetails = await orderDetailsRes.json();
+                    const notes = orderDetails?.data?.notes || '';
+                    const userId = orderDetails?.data?.user?.id;
+
+                    console.log(`[AdminOrdersAPI] notes="${notes.substring(0, 150)}", userId=${userId}`);
+
+                    // استخراج مقدار نور با tag اختصاصی [LIGHT_AMOUNT:X]
+                    const tagMatch = notes.match(/\[LIGHT_AMOUNT:(\d+)\]/);
+                    const isLightTopup = tagMatch !== null || notes.includes('[شارژ نور]');
+
+                    if (isLightTopup && userId) {
+                        let lightAmount = 0;
+
+                        if (tagMatch) {
+                            // روش جدید: tag مستقیم
+                            lightAmount = parseInt(tagMatch[1], 10);
+                        } else {
+                            // fallback برای سفارش‌های قدیمی‌تر
+                            const oldMatch = notes.match(/\[شارژ نور\]\s*(\d+)\s*نور/);
+                            if (oldMatch) lightAmount = parseInt(oldMatch[1], 10);
+                        }
+
+                        console.log(`[AdminOrdersAPI] isLightTopup=true, lightAmount=${lightAmount}`);
+
+                        if (lightAmount > 0) {
+                            const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+                            const userRes = await fetch(
+                                `${STRAPI_API_URL}/api/users/${userId}`,
+                                { headers: { Authorization: `Bearer ${STRAPI_TOKEN || session.user.jwt}` } }
+                            );
+
+                            if (userRes.ok) {
+                                const userData = await userRes.json();
+                                const currentLight = userData.light ?? 0;
+
+                                const lightUpdateRes = await fetch(`${STRAPI_API_URL}/api/users/${userId}`, {
+                                    method: 'PUT',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        Authorization: `Bearer ${STRAPI_TOKEN || session.user.jwt}`,
+                                    },
+                                    body: JSON.stringify({ light: currentLight + lightAmount }),
+                                });
+
+                                if (lightUpdateRes.ok) {
+                                    console.log(`[AdminOrdersAPI] ✅ Light credited: +${lightAmount} to user ${userId} (${currentLight} → ${currentLight + lightAmount})`);
+                                } else {
+                                    const errText = await lightUpdateRes.text();
+                                    console.error(`[AdminOrdersAPI] ❌ Light update FAILED for user ${userId}:`, errText);
+                                }
+                            } else {
+                                console.error(`[AdminOrdersAPI] ❌ Cannot fetch user ${userId}`);
+                            }
+                        } else {
+                            console.warn(`[AdminOrdersAPI] ⚠️ lightAmount=0, skipping light credit`);
+                        }
+                    } else {
+                        console.log(`[AdminOrdersAPI] Not a light_topup order, skipping.`);
+                    }
+                } else {
+                    console.error(`[AdminOrdersAPI] ❌ Cannot fetch order ${strapiId}:`, orderDetailsRes.status);
+                }
+            } catch (lightErr) {
+                // خطا در اضافه کردن نور — لاگ می‌کنیم ولی response اصلی را بر نمی‌گردانیم
+                console.error('[AdminOrdersAPI] Light credit error:', lightErr?.message);
+            }
         }
 
         return NextResponse.json(data, { status: 200 });

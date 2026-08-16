@@ -1,0 +1,423 @@
+@use '@/styles/base/mixins' as *;
+
+// ── صفحه اصلی ──────────────────────────────────────────────────────────────
+.page {
+    padding: 40px 0 80px;
+    min-height: 100vh;
+
+    @include respond(md) {
+        padding: 24px 0 60px;
+    }
+}
+
+.pageTitle {
+    font-size: var(--font-xxl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 32px;
+    text-align: center;
+}
+
+// ── کارت پرداخت (همان PaymentStep) ──────────────────────────────────────────
+.paymentStep {
+    @include card-container;
+    background: var(--gradient-card-vertical);
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    border-radius: var(--border-radius);
+    max-width: 700px;
+    margin: 0 auto;
+
+    @include respond(md) {
+        padding: 24px;
+        gap: 24px;
+    }
+}
+
+.title {
+    font-size: var(--font-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.subtitle {
+    font-size: var(--font-md);
+    color: var(--color-card-text);
+    margin: 4px 0 0;
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+    }
+}
+
+// ── خلاصه سفارش ──────────────────────────────────────────────────────────────
+.orderSummary {
+    padding: 24px;
+    background: fade(var(--color-primary), 5%);
+    border: 2px solid fade(var(--color-primary), 20%);
+    border-radius: var(--border-radius);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.summaryTitle {
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-md);
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+    }
+}
+
+.itemName {
+    color: var(--color-card-text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lightIcon {
+    color: var(--color-text-primary);
+    display: inline-flex;
+    align-items: center;
+}
+
+.itemPrice {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-bold);
+    white-space: nowrap;
+}
+
+.divider {
+    height: 1px;
+    background: fade(var(--color-primary), 30%);
+    margin: 8px 0;
+}
+
+.summaryTotal {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    padding-top: 12px;
+    border-top: 2px solid fade(var(--color-primary), 30%);
+
+    strong {
+        font-weight: var(--font-weight-bold);
+    }
+
+    @include respond(md) {
+        font-size: var(--font-lg);
+    }
+}
+
+// ── روش‌های پرداخت (مشابه PaymentStep) ────────────────────────────────────
+.paymentMethods {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.methodsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.method {
+    cursor: pointer;
+    @include hover-transition;
+
+    input[type="radio"] {
+        display: none;
+    }
+}
+
+.methodContent {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: fade(var(--color-primary), 5%);
+    border: 2px solid fade(var(--color-primary), 20%);
+    border-radius: var(--border-radius);
+    @include hover-transition;
+
+    .method:not(.disabled) &:hover {
+        background: fade(var(--color-primary), 10%);
+        border-color: fade(var(--color-primary), 40%);
+    }
+
+    .method.selected & {
+        background: fade(var(--color-primary), 15%);
+        border-color: var(--color-accent);
+        box-shadow: 0 4px 12px fade(var(--color-primary), 20%);
+    }
+}
+
+.methodIcon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: fade(var(--color-primary), 10%);
+    border-radius: 10px;
+    flex-shrink: 0;
+
+    svg {
+        width: 24px;
+        height: 24px;
+        color: var(--color-accent);
+    }
+
+    .method.selected & {
+        background: var(--color-accent);
+
+        svg {
+            color: var(--card-text);
+        }
+    }
+}
+
+.methodInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.methodName {
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+}
+
+.methodDesc {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+}
+
+.checkmark {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    @include hover-transition;
+
+    svg {
+        color: var(--color-accent);
+    }
+
+    .method.selected & {
+        opacity: 1;
+    }
+}
+
+.methodBadge {
+    display: inline-block;
+    margin-right: 8px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: var(--font-weight-medium);
+    background: fade(var(--color-success), 15%);
+    border: 1px solid fade(var(--color-success), 35%);
+    color: var(--color-success);
+    vertical-align: middle;
+    letter-spacing: 0.2px;
+}
+
+// ── خطا ──────────────────────────────────────────────────────────────────────
+.errorBox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: var(--border-radius);
+    background: fade(var(--color-error), 15%);
+    border: 1px solid fade(var(--color-error), 40%);
+    color: var(--color-error);
+    font-size: var(--font-md);
+    animation: fadeIn 0.3s ease;
+
+    svg {
+        flex-shrink: 0;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+        padding: 12px 14px;
+    }
+}
+
+// ── دکمه‌ها ────────────────────────────────────────────────────────────────
+.actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid fade(var(--color-primary), 20%);
+
+    @include respond(md) {
+        flex-direction: column;
+    }
+}
+
+.previousButton,
+.paymentButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 32px;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    font-family: inherit;
+    @include hover-transition;
+
+    svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    @include respond(md) {
+        justify-content: center;
+        padding: 12px 24px;
+        font-size: var(--font-md);
+    }
+}
+
+.previousButton {
+    background: transparent;
+    color: var(--color-card-text);
+    border: 2px solid fade(var(--color-primary), 30%);
+
+    &:hover:not(:disabled) {
+        background: fade(var(--color-primary), 10%);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.paymentButton {
+    background: linear-gradient(135deg, var(--color-success), var(--color-success));
+    color: var(--card-text);
+    box-shadow: 0 4px 12px fade(var(--color-success), 30%);
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px fade(var(--color-success), 40%);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid fade(var(--color-white), 30%);
+    border-top-color: var(--card-text);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+}
+
+// ── حالات خطا / لودینگ ──────────────────────────────────────────────────────
+.errorState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 80px 24px;
+    text-align: center;
+
+    svg {
+        width: 64px;
+        height: 64px;
+        color: var(--color-error);
+    }
+
+    h2 {
+        font-size: var(--font-xl);
+        color: var(--color-text-primary);
+        margin: 0;
+    }
+
+    p {
+        color: var(--color-card-text);
+        margin: 0;
+    }
+}
+
+.backLink {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 24px;
+    background: fade(var(--color-primary), 10%);
+    border: 1px solid fade(var(--color-primary), 25%);
+    border-radius: var(--border-radius);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+    @include hover-transition;
+
+    &:hover {
+        background: fade(var(--color-primary), 20%);
+    }
+}
+
+.loadingState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    min-height: 100vh;
+
+    p {
+        color: var(--color-card-text);
+    }
+}

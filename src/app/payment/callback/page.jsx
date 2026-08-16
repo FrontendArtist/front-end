@@ -38,14 +38,18 @@ function PaymentCallbackContent() {
     // که پارامترها بعد از hydration درست هستند
     const sp = new URLSearchParams(window.location.search);
     const status = sp.get('status');
-    const source = sp.get('source');   // 'card_to_card' | null
+    const source = sp.get('source');    // 'card_to_card' | 'light_topup' | null
     const orderId = sp.get('orderId');  // Strapi documentId
+    const lightAmount = Number(sp.get('lightAmount') || '0');
 
     // ─── حالت موفقیت ──────────────────────────────────────────────────────────
     if (status === 'success') {
         const isCardToCard = source === 'card_to_card';
+        const isLightTopup = source === 'light_topup';
+        const isLightCardToCard = isCardToCard && sp.get('orderType') === 'light_topup';
         const primaryHref = isCardToCard && orderId
             ? `/profile/orders/${orderId}`
+            : isLightTopup ? '/profile'
             : '/profile/orders';
 
         return (
@@ -61,6 +65,12 @@ function PaymentCallbackContent() {
                                 strokeLinecap="round" strokeLinejoin="round">
                                 <circle cx="12" cy="12" r="10" />
                                 <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        ) : isLightTopup ? (
+                            /* ستاره — شارژ نور */
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                fill="currentColor" stroke="none">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                             </svg>
                         ) : (
                             /* تیک سبز — پرداخت آنلاین موفق */
@@ -92,6 +102,26 @@ function PaymentCallbackContent() {
                                 </p>
                             </div>
                         </>
+                    ) : isLightTopup ? (
+                        <>
+                            <h1 className={styles.title}>شارژ نور موفق! ✨</h1>
+                            {lightAmount > 0 && (
+                                <p className={styles.message}>
+                                    <strong>{new Intl.NumberFormat('fa-IR').format(lightAmount)} نور</strong> با موفقیت به کیف پول شما افزوده شد.
+                                </p>
+                            )}
+                            <div className={styles.infoBox}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="16" x2="12" y2="12" />
+                                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                                </svg>
+                                <p>
+                                    موجودی نور شما به‌روزرسانی شد. می‌توانید از نور در خریدهای بعدی استفاده کنید.
+                                </p>
+                            </div>
+                        </>
                     ) : (
                         <>
                             <h1 className={styles.title}>پرداخت موفق!</h1>
@@ -116,7 +146,9 @@ function PaymentCallbackContent() {
                     {/* ── دکمه‌های عملیات ─────────────────────────────────────── */}
                     <div className={styles.actions}>
                         <Link href={primaryHref} className={styles.primaryButton}>
-                            {isCardToCard ? 'رفتن به سفارش و آپلود فیش' : 'مشاهده سفارش‌ها'}
+                            {isCardToCard ? 'رفتن به سفارش و آپلود فیش'
+                                : isLightTopup ? 'مشاهده پروفایل'
+                                : 'مشاهده سفارش‌ها'}
                         </Link>
                         <Link href="/products" className={styles.secondaryButton}>
                             بازگشت به فروشگاه

@@ -1,4 +1,65 @@
+[2026-08-16] - Light (نور) Purchase Flow via Checkout — DRY Refactor
+
+── Architecture & Flow ──────────────────────────────────────────────────────
+- Replaced the standalone `LightTopUpModal` payment flow with a fully integrated
+  checkout-style purchase page (`/checkout/light`) that reuses the existing
+  PaymentStep UI patterns, design tokens, and order infrastructure — eliminating
+  all duplicated payment logic (DRY principle).
+- New flow: Modal (amount selection) → /checkout/light?amount=X → Order placed
+  via /api/orders → /payment/callback (with light-specific success UI).
+
+── New Files ────────────────────────────────────────────────────────────────
+- `src/app/checkout/light/page.jsx` [NEW]:
+  Dedicated payment page for Light bundles. Supports online & card-to-card
+  payment methods, session guard (redirects unauthenticated users to login),
+  invalid-amount guard, and posts the order to /api/orders as type 'light_topup'.
+- `src/app/checkout/light/page.module.scss` [NEW]:
+  SCSS module using the same design system (tokens, mixins) as PaymentStep.
+  Max-width centered layout, identical method card styles, payment button, etc.
+
+── Modified Files ───────────────────────────────────────────────────────────
+- `src/components/ui/LightTopUpModal/LightTopUpModal.jsx`:
+  Drastically simplified — removed all payment/method logic. Now only handles
+  amount selection (manual input + quick-select buttons) and redirects to
+  /checkout/light?amount=X on confirmation.
+
+- `src/app/api/orders/route.js`:
+  • Added `light_topup` as a recognized cart item type, mapped to
+    `order.product-order-item` Strapi component.
+  • Notes format updated to include `[LIGHT_AMOUNT:X]` ASCII tag for reliable
+    server-side parsing (avoids fa-IR Persian digit encoding issues).
+  • For online payment: automatically credits `lightAmount` to the user's
+    `light` field in Strapi immediately after order creation.
+  • Notes summary now formats light topup as `[شارژ نور] X نور [LIGHT_AMOUNT:X]`.
+
+- `src/app/api/admin/orders/[id]/route.js`:
+  • When admin confirms an order (paymentStatus/orderStatus → paid/confirmed/etc.),
+    route now auto-detects `[LIGHT_AMOUNT:X]` tag in order notes.
+  • If matched, fetches the user's current light balance and increments it.
+  • Card-to-card light orders: light is credited only after admin approval.
+  • Full console logging added for traceability in development.
+
+- `src/app/payment/callback/page.jsx`:
+  • Added `source=light_topup` detection alongside existing `card_to_card`.
+  • Light topup success: shows star (★) icon instead of checkmark, displays
+    credited amount (e.g. "۱٬۰۰۰ نور با موفقیت به کیف پول شما افزوده شد"),
+    and links to /profile instead of /profile/orders.
+
+── Bug Fixes ────────────────────────────────────────────────────────────────
+- Fixed: admin light-credit regex was using `\d` (ASCII only) while `fa-IR`
+  Intl.NumberFormat produced Persian digits — regex never matched. Solved by
+  storing raw ASCII numbers in a dedicated `[LIGHT_AMOUNT:X]` tag.
+- Fixed: corrupted file merge left duplicate dead code in admin orders route;
+  file was cleanly rewritten.
+- Fixed: admin confirmation check was only `paymentStatus === 'paid'`. Expanded
+  to cover all confirmed statuses: paid, confirmed, processing, shipped, delivered.
+
+── Light Credit Logic Summary ───────────────────────────────────────────────
+  Online payment   → نور credited immediately on order creation
+  Card-to-card     → نور credited automatically when admin approves the receipt
+
 [2026-08-12] - Unified Skeleton Loader Architecture & UX Enhancements
+
 
 ── Shared UI Component Unification ──────────────────────────────────────────────
 - Implemented `CardSkeletonVertical.jsx` to serve as a single, unified loading skeleton for all vertical cards (Products, Articles, Courses, Services), replacing 4 separate fragmented skeleton files.
