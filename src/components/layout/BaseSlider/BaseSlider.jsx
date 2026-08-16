@@ -11,7 +11,6 @@ import styles from './BaseSlider.module.scss';
 
 const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4, breakpoints }) => {
   const [isInitialized, setIsInitialized] = useState(false);
-  const [showNavigation, setShowNavigation] = useState(false);
 
   // refs for custom navigation buttons
   const prevRef = useRef(null);
@@ -33,10 +32,11 @@ const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4, breakp
 
   return (
     <div className={styles.sliderWrapper}>
-      {/* 🔹 custom buttons (outside swiper) - hidden via CSS when not needed */}
+      {/* 🔹 custom buttons (outside swiper) */}
       <button
         ref={nextRef}
-        className={`${styles.navBtn} ${styles.prev} ${!showNavigation ? styles.hidden : ''}`}
+        className={`${styles.navBtn} ${styles.prev}`}
+        aria-label="Next Slide"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"></path>
@@ -45,7 +45,8 @@ const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4, breakp
 
       <button
         ref={prevRef}
-        className={`${styles.navBtn} ${styles.next} ${!showNavigation ? styles.hidden : ''}`}
+        className={`${styles.navBtn} ${styles.next}`}
+        aria-label="Previous Slide"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"></path>
@@ -59,22 +60,15 @@ const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4, breakp
         <Swiper
           modules={[Navigation]}
           loop={loop}
+          watchOverflow={false}
           breakpoints={swiperBreakpoints}
           className={styles.swiper}
           onBeforeInit={(swiper) => {
             swiper.params.navigation.prevEl = prevRef.current;
             swiper.params.navigation.nextEl = nextRef.current;
           }}
-          onInit={(swiper) => {
+          onInit={() => {
             setIsInitialized(true);
-            // Check if navigation is needed (slides > slidesPerView)
-            const needsNavigation = swiper.slides.length > swiper.params.slidesPerView;
-            setShowNavigation(needsNavigation);
-          }}
-          onResize={(swiper) => {
-            // Update navigation visibility on window resize
-            const needsNavigation = swiper.slides.length > swiper.params.slidesPerView;
-            setShowNavigation(needsNavigation);
           }}
         >
           {items.map((item, index) => (

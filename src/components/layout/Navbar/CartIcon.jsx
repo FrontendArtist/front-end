@@ -49,7 +49,40 @@ export default function CartIcon() {
 
     // مدیریت وضعیت نمایش Dropdown
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const containerRef = useRef(null);
     const closeTimerRef = useRef(null);
+
+    /**
+     * بستن Dropdown هنگام کلیک در خارج از کامپوننت (به‌ویژه در حالت موبایل)
+     */
+    useEffect(() => {
+        if (!isDropdownOpen) return;
+
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
+    }, [isDropdownOpen]);
+
+    /**
+     * پاک‌سازی تایمر خروج موس در صورت unmount شدن
+     */
+    useEffect(() => {
+        return () => {
+            if (closeTimerRef.current) {
+                clearTimeout(closeTimerRef.current);
+            }
+        };
+    }, []);
 
     /**
      * تشخیص اینکه آیا در حالت موبایل هستیم یا نه
@@ -165,6 +198,7 @@ export default function CartIcon() {
 
     return (
         <div
+            ref={containerRef}
             className={styles.cartContainer}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -237,6 +271,7 @@ export default function CartIcon() {
                                 key={item.id}
                                 href={constructItemUrl(item)}
                                 className={styles.cartItem}
+                                onClick={() => setIsDropdownOpen(false)}
                             >
                                 {/* تصویر آیتم */}
                                 <div className={styles.itemImage}>
@@ -283,7 +318,11 @@ export default function CartIcon() {
                             <span>جمع کل:</span>
                             <strong>{formatPrice(totalPrice)} تومان</strong>
                         </div>
-                        <Link href="/cart" className={styles.viewCartButton}>
+                        <Link
+                            href="/cart"
+                            className={styles.viewCartButton}
+                            onClick={() => setIsDropdownOpen(false)}
+                        >
                             مشاهده و تسویه حساب
                         </Link>
                     </div>

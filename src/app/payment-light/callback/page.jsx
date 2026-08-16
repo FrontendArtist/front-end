@@ -17,15 +17,17 @@ function LightCallbackContent() {
         setMounted(true);
     }, []);
 
-    // پس از mount، نور را به Strapi اضافه می‌کنیم
+    // پس از mount، اگر پرداخت آنلاین باشد نور را به Strapi اضافه می‌کنیم
     useEffect(() => {
         if (!mounted) return;
 
         const sp = new URLSearchParams(window.location.search);
         const status = sp.get('status');
+        const source = sp.get('source');
         const amount = Number(sp.get('amount'));
 
-        if (status !== 'success' || !amount || amount <= 0) {
+        // اگر کارت به کارت باشد یا پرداخت موفق نباشد، آپدیت خودکار انجام نمی‌شود
+        if (status !== 'success' || source === 'card_to_card' || !amount || amount <= 0) {
             setUpdateDone(true);
             return;
         }
@@ -64,28 +66,43 @@ function LightCallbackContent() {
 
     const sp = new URLSearchParams(window.location.search);
     const status = sp.get('status');
+    const source = sp.get('source');
     const amount = Number(sp.get('amount'));
+    const isCardToCard = source === 'card_to_card';
 
     const formatNumber = (n) => new Intl.NumberFormat('fa-IR').format(n);
 
-    // ─── حالت موفقیت ────────────────────────────────────────────────────────
+    // ─── حالت موفقیت / در انتظار پرداخت ────────────────────────────────────
     if (status === 'success') {
         return (
-            <div className={`${styles.callbackPage} ${styles.success} container`}>
+            <div className={`${styles.callbackPage} ${isCardToCard ? styles.pending : styles.success} container`}>
                 <div className={styles.card}>
 
-                    {/* آیکون موفقیت */}
+                    {/* آیکون وضعیت */}
                     <div className={styles.icon}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                            <polyline points="22 4 12 14.01 9 11.01" />
-                        </svg>
+                        {isCardToCard ? (
+                            /* ساعت — در انتظار پرداخت */
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" strokeWidth="2"
+                                strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        ) : (
+                            /* تیک سبز — پرداخت آنلاین موفق */
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                <polyline points="22 4 12 14.01 9 11.01" />
+                            </svg>
+                        )}
                     </div>
 
-                    <h1 className={styles.title}>شارژ نور موفق!</h1>
+                    <h1 className={styles.title}>
+                        {isCardToCard ? 'در انتظار پرداخت کارت به کارت' : 'شارژ نور موفق!'}
+                    </h1>
 
-                    {/* نمایش مقدار افزوده‌شده */}
+                    {/* نمایش مقدار نور */}
                     {amount > 0 && (
                         <div className={styles.lightAdded}>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -93,12 +110,16 @@ function LightCallbackContent() {
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                             </svg>
                             <span>{formatNumber(amount)} نور</span>
-                            <span className={styles.lightAddedLabel}>به حساب شما اضافه شد</span>
+                            <span className={styles.lightAddedLabel}>
+                                {isCardToCard ? 'درخواست شارژ' : 'به حساب شما اضافه شد'}
+                            </span>
                         </div>
                     )}
 
                     <p className={styles.message}>
-                        نور با موفقیت به کیف پول شما افزوده شد.
+                        {isCardToCard
+                            ? 'درخواست شارژ نور ثبت شد. برای تکمیل، مبلغ را به کارت فروشگاه واریز کرده و فیش را جهت تایید ارسال کنید.'
+                            : 'نور با موفقیت به کیف پول شما افزوده شد.'}
                     </p>
 
                     <div className={styles.infoBox}>
@@ -109,8 +130,9 @@ function LightCallbackContent() {
                             <line x1="12" y1="8" x2="12.01" y2="8" />
                         </svg>
                         <p>
-                            می‌توانید موجودی نور خود را در پروفایل مشاهده کنید.
-                            نور قابل استفاده در خریدهای آینده است.
+                            {isCardToCard
+                                ? `مبلغ قابل واریز: ${formatNumber(amount * 1000)} تومان. پس از واریز و بررسی فیش، نورها به حساب شما واریز خواهد شد.`
+                                : 'می‌توانید موجودی نور خود را در پروفایل مشاهده کنید. نور قابل استفاده در خریدهای آینده است.'}
                         </p>
                     </div>
 

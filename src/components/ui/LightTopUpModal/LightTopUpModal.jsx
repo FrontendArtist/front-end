@@ -11,7 +11,7 @@ import styles from './LightTopUpModal.module.scss';
  *
  * جریان:
  * 1. کاربر مقدار نور را وارد می‌کند
- * 2. درگاه پرداخت انتخاب می‌کند
+ * 2. روش پرداخت انتخاب می‌کند
  * 3. دکمه «پرداخت» کلیک می‌شود
  * 4. شبیه‌سازی پرداخت (2 ثانیه)
  * 5. redirect به /payment-light/callback?status=success&amount=X
@@ -23,7 +23,7 @@ import styles from './LightTopUpModal.module.scss';
 export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
     const router = useRouter();
     const [lightAmount, setLightAmount] = useState('');
-    const [gateway, setGateway] = useState('zarinpal');
+    const [paymentMethod, setPaymentMethod] = useState('online'); // 'online' | 'card_to_card'
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
 
@@ -42,13 +42,12 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
     }, [isOpen]);
 
     // ریست state هنگام بسته‌شدن مدال
-    // چون در Next.js App Router لایه‌ها unmount نمی‌شن،
-    // isProcessing = true باقی می‌ماند — این effect آن را پاک می‌کند
     useEffect(() => {
         if (!isOpen) {
             setIsProcessing(false);
             setErrorMessage(null);
             setLightAmount('');
+            setPaymentMethod('online');
         }
     }, [isOpen]);
 
@@ -82,17 +81,24 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
         setErrorMessage(null);
 
         try {
-            // شبیه‌سازی انتقال به درگاه (مثل checkout)
+            // شبیه‌سازی ایجاد تراکنش/انتقال (مطابق با روند checkout)
             await new Promise((res) => setTimeout(res, 1800));
             onClose();
-            router.push(
-                `/payment-light/callback?status=success&amount=${parsedAmount}`
-            );
+
+            if (paymentMethod === 'card_to_card') {
+                router.push(
+                    `/payment-light/callback?status=success&source=card_to_card&amount=${parsedAmount}`
+                );
+            } else {
+                router.push(
+                    `/payment-light/callback?status=success&amount=${parsedAmount}`
+                );
+            }
         } catch (err) {
-            setErrorMessage('خطا در اتصال به درگاه. لطفاً دوباره تلاش کنید.');
+            setErrorMessage('خطا در فرایند پرداخت. لطفاً دوباره تلاش کنید.');
             setIsProcessing(false);
         }
-    }, [isValidAmount, parsedAmount, router, onClose]);
+    }, [isValidAmount, parsedAmount, paymentMethod, router, onClose]);
 
     if (!isOpen) return null;
 
@@ -198,26 +204,26 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
                         <line x1="12" y1="8" x2="12.01" y2="8" />
                     </svg>
                     <p>
-                        پس از پرداخت، نور به‌صورت خودکار به حساب شما اضافه می‌شود.
+                        پس از پرداخت، نور به حساب شما اضافه می‌شود.
                         هر نور معادل {formatNumber(LIGHT_TO_TOMAN_RATE)} تومان است.
                     </p>
                 </div>
 
-                {/* ── انتخاب درگاه ────────────────────────────────────────── */}
+                {/* ── انتخاب روش پرداخت (مشابه سبد خرید) ────────────────── */}
                 <div className={styles.gatewaySection}>
-                    <span className={styles.gatewayLabel}>درگاه پرداخت</span>
+                    <span className={styles.gatewayLabel}>روش پرداخت</span>
                     <div className={styles.gatewayList}>
                         <label
-                            className={`${styles.gatewayItem} ${gateway === 'zarinpal' ? styles.gatewayActive : ''}`}
-                            htmlFor="gw-zarinpal"
+                            className={`${styles.gatewayItem} ${paymentMethod === 'online' ? styles.gatewayActive : ''}`}
+                            htmlFor="pm-online"
                         >
                             <input
-                                id="gw-zarinpal"
+                                id="pm-online"
                                 type="radio"
-                                name="gateway"
-                                value="zarinpal"
-                                checked={gateway === 'zarinpal'}
-                                onChange={() => setGateway('zarinpal')}
+                                name="paymentMethod"
+                                value="online"
+                                checked={paymentMethod === 'online'}
+                                onChange={() => setPaymentMethod('online')}
                                 disabled={isProcessing}
                             />
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -225,19 +231,19 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
                                 <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
                                 <line x1="1" y1="10" x2="23" y2="10" />
                             </svg>
-                            <span>رسب‌ینال</span>
+                            <span>پرداخت آنلاین</span>
                         </label>
                         <label
-                            className={`${styles.gatewayItem} ${gateway === 'paystar' ? styles.gatewayActive : ''}`}
-                            htmlFor="gw-paystar"
+                            className={`${styles.gatewayItem} ${paymentMethod === 'card_to_card' ? styles.gatewayActive : ''}`}
+                            htmlFor="pm-card-to-card"
                         >
                             <input
-                                id="gw-paystar"
+                                id="pm-card-to-card"
                                 type="radio"
-                                name="gateway"
-                                value="paystar"
-                                checked={gateway === 'paystar'}
-                                onChange={() => setGateway('paystar')}
+                                name="paymentMethod"
+                                value="card_to_card"
+                                checked={paymentMethod === 'card_to_card'}
+                                onChange={() => setPaymentMethod('card_to_card')}
                                 disabled={isProcessing}
                             />
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -247,7 +253,7 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
                                 <path d="M7 15h2" />
                                 <path d="M11 15h4" />
                             </svg>
-                            <span>پی‌استار</span>
+                            <span>پرداخت کارت به کارت</span>
                         </label>
                     </div>
                 </div>
@@ -289,7 +295,9 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
                         {isProcessing ? (
                             <>
                                 <span className={styles.spinner} />
-                                در حال انتقال به درگاه...
+                                {paymentMethod === 'card_to_card'
+                                    ? 'در حال ثبت درخواست...'
+                                    : 'در حال انتقال به درگاه...'}
                             </>
                         ) : (
                             <>

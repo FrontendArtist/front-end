@@ -253,11 +253,12 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
           {activeMobileTab === 'menu' && (
             <ul className={styles.mobileNavList}>
               <li><Link href="/" onClick={closeMobileMenu}>صفحه اصلی</Link></li>
+              <li><Link href="/products" onClick={closeMobileMenu}>محصولات</Link></li>
               <li><Link href="/articles" onClick={closeMobileMenu}>مقالات</Link></li>
               <li><Link href="/courses" onClick={closeMobileMenu}>دوره‌ها</Link></li>
               <li><Link href="/services" onClick={closeMobileMenu}>خدمات</Link></li>
-              <li><Link href="/about-us" onClick={closeMobileMenu}>درباره ما</Link></li>
-              <li><Link href="/contact-us" onClick={closeMobileMenu}>تماس با ما</Link></li>
+              <li><Link href="/about" onClick={closeMobileMenu}>درباره ما</Link></li>
+              <li><Link href="/contact" onClick={closeMobileMenu}>تماس با ما</Link></li>
             </ul>
           )}
 
@@ -279,6 +280,11 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
                   )}
                 </li>
               ))}
+              <li>
+                <Link href="/products" onClick={closeMobileMenu} className={styles.mobileCategoryTitle} style={{ color: 'var(--color-accent, #f39c12)' }}>
+                  مشاهده همه محصولات
+                </Link>
+              </li>
             </ul>
           )}
 
@@ -335,6 +341,11 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
                   )}
                 </div>
               ))}
+              <div className={styles.megaMenuColumn}>
+                <Link href="/products" className={styles.categoryTitle} style={{ color: 'var(--color-accent, #f39c12)' }}>
+                  مشاهده همه محصولات
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -361,7 +372,11 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
                   </Link>
                 </div>
               ))}
-
+              <div className={styles.megaMenuColumn}>
+                <Link href="/articles" className={styles.categoryTitle} style={{ color: 'var(--color-accent, #f39c12)' }}>
+                  مشاهده همه مقالات
+                </Link>
+              </div>
             </div>
           </div>
         </>

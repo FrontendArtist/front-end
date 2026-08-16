@@ -24,7 +24,7 @@ const ProductsSection = ({ data = [], serverError = false }) => {
           <header className={styles.header}>
             <h2 className={styles.title}>جدیدترین محصولات</h2>
             <Link href="/products" className={styles.viewAllLink}>
-              مشاهده همه
+              مشاهده همه محصولات ...
             </Link>
           </header>
           <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-error)' }}>ارتباط با سرور برقرار نشد.</p>
@@ -40,7 +40,7 @@ const ProductsSection = ({ data = [], serverError = false }) => {
           <header className={styles.header}>
             <h2 className={styles.title}>جدیدترین محصولات</h2>
             <Link href="/products" className={styles.viewAllLink}>
-              مشاهده همه
+              مشاهده همه محصولات ...
             </Link>
           </header>
           <p style={{ textAlign: 'center', padding: '2rem' }}>در حال حاضر محصولی وجود ندارد.</p>
@@ -55,7 +55,7 @@ const ProductsSection = ({ data = [], serverError = false }) => {
         <header className={styles.header}>
           <h2 className={styles.title}>جدیدترین محصولات</h2>
           <Link href="/products" className={styles.viewAllLink}>
-            مشاهده همه
+            مشاهده همه محصولات ...
           </Link>
         </header>
         <div className={styles.sliderWrapper}>

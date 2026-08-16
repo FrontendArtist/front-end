@@ -11,7 +11,10 @@ const HakimElahiSection = () => {
           <div className={styles.innerWrapper} style={{ overflow: 'hidden' }}>
 
             <div className={styles.imageWrapper}>
-              <img src="/images/hakimelahi.png" alt="hakimElahiImage" />
+              <picture>
+                <source media="(min-width: 769px) and (max-width: 1200px)" srcSet="/images/HAKIMELAHI34.png" />
+                <img src="/images/HAKIMELAHI.webp" alt="hakimElahiImage" />
+              </picture>
             </div>
             <div className={styles.contentWrapper}>
               <h2 className={styles.title}>حکیم الهی</h2>
