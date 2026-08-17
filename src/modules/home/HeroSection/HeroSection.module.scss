@@ -9,6 +9,10 @@
   justify-content: center;
   overflow: hidden;
   box-shadow: 0px 630px 620px -170px var(--color-bg-primary) inset;
+  @include respond(md) {
+    box-shadow: 0px 430px 620px -170px var(--color-bg-primary) inset;
+    
+  }
 
 }
 
@@ -46,15 +50,18 @@
   margin-top: 110px;
 
   .navline {
-    width: 50%;
+    width: 40%;
     margin-bottom: 10px;
     margin: 0 auto;
+    @include respond(md) {
+      width: 60%;
+    }
   }
 }
 
 .title {
   color: var(--color-text-primary);
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: var(--font-weight-medium);
   line-height: 1.2;
   margin-bottom: var(--space-title-text-desktop);
@@ -64,8 +71,12 @@
     color: var(--color-title-hover);
   }
 
+  @include respond(md) {
+    font-size: 1.5rem;
+  }
+
   @include respond(sm) {
-    font-size: 2.5rem;
+    font-size: 1.3rem;
     margin-bottom: 16px;
   }
 

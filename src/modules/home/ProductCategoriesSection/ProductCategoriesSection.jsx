@@ -19,6 +19,14 @@ const ProductCategoriesSection = ({ data = [], serverError = false }) => {
     return <CategoryCard category={category} />;
   };
 
+  const servicesBreakpoints = {
+    0: { slidesPerView: 1, spaceBetween: 15 },
+    440: { slidesPerView: 2, spaceBetween: 15 },
+    768: { slidesPerView: 2, spaceBetween: 20 },
+    1024: { slidesPerView: 4, spaceBetween: 30 },
+    1280: { slidesPerView: 6, spaceBetween: 30 },
+  };
+
   const hasError = serverError;
   const isEmpty = !categories || categories.length === 0;
 
@@ -42,6 +50,7 @@ const ProductCategoriesSection = ({ data = [], serverError = false }) => {
               renderItem={renderCategoryCard}
               slidesPerView={6}
               loop={true}
+              breakpoints={servicesBreakpoints}
             />
           </div>
         )}

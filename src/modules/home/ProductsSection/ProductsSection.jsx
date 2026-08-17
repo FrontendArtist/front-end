@@ -53,9 +53,9 @@ const ProductsSection = ({ data = [], serverError = false }) => {
     <section id="products-section" className={`${styles.productsSection} section`}>
       <div className="container">
         <header className={styles.header}>
-          <h2 className={styles.title}>جدیدترین محصولات</h2>
+          <h2 className={styles.title}>آخرین محصولات</h2>
           <Link href="/products" className={styles.viewAllLink}>
-            مشاهده همه محصولات ...
+            مشاهده همه ...
           </Link>
         </header>
         <div className={styles.sliderWrapper}>

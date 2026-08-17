@@ -36,6 +36,14 @@
     outline: 2px solid var(--color-title-hover);
     outline-offset: 4px;
   }
+
+  @include respond(md) {
+    inline-size:250px;
+    block-size: 90px;
+    font-size: var(--font-sm);
+    bottom: 70px;
+  }
+  
 }
 
 .heroButtonLabel {

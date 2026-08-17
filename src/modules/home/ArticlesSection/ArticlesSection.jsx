@@ -13,9 +13,9 @@ const ArticlesSection = ({ data = [], serverError = false }) => {
       <section className={`${styles.articlesSection} section`}>
         <div className="container">
           <header className={styles.header}>
-            <h2 className={styles.title}>مقالات</h2>
+            <h2 className={styles.title}>مقالات آخرین</h2>
             <Link href="/articles" className={styles.viewAllLink}>
-              مشاهده همه مقالات ...
+              مشاهده همه ...
             </Link>
           </header>
           <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-error)' }}>ارتباط با سرور برقرار نشد.</p>
@@ -29,9 +29,9 @@ const ArticlesSection = ({ data = [], serverError = false }) => {
       <section className={`${styles.articlesSection} section`}>
         <div className="container">
           <header className={styles.header}>
-            <h2 className={styles.title}>مقالات</h2>
+            <h2 className={styles.title}>مقالات آخرین</h2>
             <Link href="/articles" className={styles.viewAllLink}>
-              مشاهده همه مقالات ...
+              مشاهده همه ...
             </Link>
           </header>
           <p style={{ textAlign: 'center', padding: '2rem' }}>در حال حاضر مقاله‌ای وجود ندارد.</p>
@@ -44,9 +44,9 @@ const ArticlesSection = ({ data = [], serverError = false }) => {
     <section className={`${styles.articlesSection} section`}>
       <div className="container">
         <header className={styles.header}>
-          <h2 className={styles.title}>مقالات</h2>
+          <h2 className={styles.title}>آخرین مقالات</h2>
           <Link href="/articles" className={styles.viewAllLink}>
-            مشاهده همه مقالات ...
+            مشاهده همه ...
           </Link>
         </header>
         <div className={styles.sliderWrapper}>

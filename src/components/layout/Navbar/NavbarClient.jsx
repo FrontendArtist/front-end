@@ -341,11 +341,6 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
                   )}
                 </div>
               ))}
-              <div className={styles.megaMenuColumn}>
-                <Link href="/products" className={styles.categoryTitle} style={{ color: 'var(--color-accent, #f39c12)' }}>
-                  مشاهده همه محصولات
-                </Link>
-              </div>
             </div>
           </div>
 
@@ -372,11 +367,6 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
                   </Link>
                 </div>
               ))}
-              <div className={styles.megaMenuColumn}>
-                <Link href="/articles" className={styles.categoryTitle} style={{ color: 'var(--color-accent, #f39c12)' }}>
-                  مشاهده همه مقالات
-                </Link>
-              </div>
             </div>
           </div>
         </>

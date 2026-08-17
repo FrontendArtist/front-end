@@ -141,5 +141,14 @@ export const authOptions = {
     },
     secret: process.env.NEXTAUTH_SECRET || 'dev-secret-key-change-this',
     trustHost: true,
+    logger: {
+        error(code, metadata) {
+            console.error(`🔴 [NextAuth]: ${code}`, metadata?.message || metadata || '');
+        },
+        warn(code) {
+            console.warn(`🟡 [NextAuth]: ${code}`);
+        },
+    },
 };
+
 
