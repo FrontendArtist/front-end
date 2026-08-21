@@ -9,6 +9,8 @@ import { Providers } from "./providers";
 import localFont from 'next/font/local';
 import CartSyncProvider from "@/components/providers/CartSyncProvider";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
+import Script from "next/script";
+
 const iranSans = localFont({
   src: '../assets/fonts/iransans_regular/iransans-regular-webfont.ttf',
   variable: '--font-iransans',
@@ -52,7 +54,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
-        <script
+        <Script
+          id="theme-initializer"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

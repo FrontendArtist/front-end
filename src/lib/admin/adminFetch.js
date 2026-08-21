@@ -1,4 +1,4 @@
-import { STRAPI_API_URL } from '../api';
+import { API_BASE_URL } from '../api';
 
 /**
  * واکشی ایمن از Strapi با Authorization هدر ادمین و پاکسازی آدرس (URL Sanitization)
@@ -9,7 +9,7 @@ import { STRAPI_API_URL } from '../api';
  */
 export async function adminFetch(endpoint, jwt) {
     try {
-        const cleanBase = (STRAPI_API_URL || 'https://api.tarhelahi.ir')
+        const cleanBase = (API_BASE_URL || 'http://localhost:1337')
             .trim()
             .replace(/\/+$/, '')
             .replace(/\/api\/?$/, '');

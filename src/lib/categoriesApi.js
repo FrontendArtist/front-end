@@ -7,7 +7,7 @@ import { formatSingleImage } from './strapiUtils';
 import { API_BASE_URL } from './api';
 
 /**
- * ✅ گرفتن دسته‌های اصلی (Parent=null)
+ * گرفتن دسته‌های اصلی (Parent=null)
  * برای صفحه Home و سایر بخش‌ها (سازگار با ساختار flat و attributes)
  */
 export async function getMainCategories() {
@@ -15,18 +15,16 @@ export async function getMainCategories() {
     const res = await apiClient(
       '/api/categories?filters[parent][$null]=true&populate[image][fields][0]=url&populate[image][fields][1]=alternativeText'
     );
-    // هم ساختار قدیمی { data: [...] } و هم آرایهٔ مستقیم
     const raw = res?.data?.data || res?.data || [];
     if (!Array.isArray(raw)) return [];
 
-    // خروجی استاندارد: [{id, name, slug, image:{url,alt}}]
     const formatted = raw.map(item => {
-      const base = item?.attributes || item; // ← پشتیبانی از هر دو
+      const base = item?.attributes || item;
       return {
         id: item.id,
         name: base?.name || '',
         slug: base?.slug || '',
-        image: formatSingleImage(base?.image), // alt/url امن
+        image: formatSingleImage(base?.image),
       };
     });
 
@@ -44,7 +42,7 @@ export async function getMainCategories() {
 }
 
 /**
- * ✅ گرفتن ساختار درختی (برای Navbar)
+ * گرفتن ساختار درختی (برای Navbar)
  */
 export async function getCategoryTree() {
   try {
