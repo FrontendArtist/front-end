@@ -1,32 +1,56 @@
-export const searchGlobal = async (query, type = 'all') => {
-    if (!query) return { products: [], articles: [], courses: [] };
+/**
+ * Search API - ماژول جستجوی سراسری
+ * @module lib/searchApi
+ */
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'; // Fallback or env
-    const q = encodeURIComponent(query);
+import { apiClient } from './apiClient';
+
+/**
+ * جستجوی سراسری میان محصولات، مقالات و دوره‌ها
+ * @param {string} query - عبارت مورد جستجو
+ * @param {string} type - فیلتر نوع محتوا ('all' | 'products' | 'articles' | 'courses')
+ * @returns {Promise<{ products: Array, articles: Array, courses: Array }>}
+ */
+export const searchGlobal = async (query, type = 'all') => {
+    if (!query || !query.trim()) {
+        return { products: [], articles: [], courses: [] };
+    }
+
+    const q = encodeURIComponent(query.trim());
     const typeLower = type?.toLowerCase() || 'all';
 
-    const endpoints = [];
+    const requests = [];
 
-    // Add endpoints based on type
+    // افزودن endpoint ها بر اساس نوع جستجو
     if (typeLower === 'all' || typeLower === 'محصولات' || typeLower === 'products') {
-        endpoints.push({ key: 'products', url: `${baseUrl}/api/products?filters[title][$containsi]=${q}&populate=images` });
+        requests.push({
+            key: 'products',
+            endpoint: `/api/products?filters[title][$containsi]=${q}&populate=images`
+        });
     }
     if (typeLower === 'all' || typeLower === 'مقالات' || typeLower === 'articles') {
-        endpoints.push({ key: 'articles', url: `${baseUrl}/api/articles?filters[title][$containsi]=${q}&populate=cover` });
+        requests.push({
+            key: 'articles',
+            endpoint: `/api/articles?filters[title][$containsi]=${q}&populate=cover`
+        });
     }
     if (typeLower === 'all' || typeLower === 'دوره‌ها' || typeLower === 'courses') {
-        endpoints.push({ key: 'courses', url: `${baseUrl}/api/courses?filters[title][$containsi]=${q}&populate=media` });
+        requests.push({
+            key: 'courses',
+            endpoint: `/api/courses?filters[title][$containsi]=${q}&populate=media`
+        });
     }
 
     try {
-        const responses = await Promise.all(endpoints.map(ep =>
-            fetch(ep.url).then(res => res.json().then(data => ({ key: ep.key, data: data.data })))
+        const responses = await Promise.all(requests.map(req =>
+            apiClient(req.endpoint, { suppressErrorLog: true })
+                .then(data => ({ key: req.key, data: data?.data || [] }))
+                .catch(() => ({ key: req.key, data: [] }))
         ));
 
-        // Initialize result object
+        // تجمیع نتایج در ساختار استاندارد
         const results = { products: [], articles: [], courses: [] };
 
-        // Map responses back to keys
         responses.forEach(res => {
             if (res.key === 'products') results.products = res.data || [];
             if (res.key === 'articles') results.articles = res.data || [];
@@ -35,7 +59,9 @@ export const searchGlobal = async (query, type = 'all') => {
 
         return results;
     } catch (error) {
-        console.error("Global search error:", error);
+        if (process.env.NODE_ENV === 'development') {
+            console.error('Global search error:', error);
+        }
         return { products: [], articles: [], courses: [] };
     }
 };

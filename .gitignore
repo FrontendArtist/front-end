@@ -44,3 +44,16 @@ next-env.d.ts
 
 reject/
 .light-teme.css
+
+
+node_modules
+.next
+.git
+.vscode
+.env
+.env.local
+package-lock.json
+context/
+/forai
+
+

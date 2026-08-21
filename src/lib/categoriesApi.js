@@ -45,7 +45,6 @@ export async function getMainCategories() {
 
 /**
  * ✅ گرفتن ساختار درختی (برای Navbar)
- * (بدون تغییر)
  */
 export async function getCategoryTree() {
   try {
@@ -62,16 +61,22 @@ export async function getCategoryTree() {
       const attrs = item;
       const img = attrs.image;
 
+      let imageUrl = null;
+      if (img) {
+        const rawUrl = img.formats?.thumbnail?.url || img.url;
+        if (rawUrl) {
+          imageUrl = rawUrl.startsWith('http') ? rawUrl : `${API_BASE_URL}${rawUrl}`;
+        }
+      }
+
       return {
         id: attrs.id,
         name: attrs.name || '',
         slug: attrs.slug || '',
-        image: img
+        image: imageUrl
           ? {
-            url: img.formats?.thumbnail?.url
-              ? API_BASE_URL + img.formats.thumbnail.url
-              : API_BASE_URL + img.url,
-            alt: img.alternativeText || attrs.name || '',
+            url: imageUrl,
+            alt: img?.alternativeText || attrs.name || '',
           }
           : null,
         subCategories: (attrs.subCategories || []).map(sub => ({
