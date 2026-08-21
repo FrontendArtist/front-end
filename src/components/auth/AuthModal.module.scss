@@ -99,7 +99,7 @@
   margin: 0;
 
   @include respond(md) {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
   }
 }
 

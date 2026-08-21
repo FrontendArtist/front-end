@@ -241,7 +241,7 @@
 }
 
 .lessonIcon {
-  font-size: var(--font-md-lg);
+  font-size: var(--font-lg);
   min-width: 24px;
   text-align: center;
 }
@@ -255,7 +255,7 @@
 .freeBadge {
   background: var(--color-success, #10b981);
   color: var(--color-white, #fff);
-  font-size: var(--font-ssm, 12px);
+  font-size: var(--font-xs, 12px);
   padding: 2px 8px;
   border-radius: 4px;
   font-weight: bold;
@@ -326,7 +326,7 @@
 }
 
 .chapterBadge {
-  font-size: var(--font-ssm, 12px);
+  font-size: var(--font-xs, 12px);
   font-weight: var(--font-weight-medium, 500);
   padding: 4px 10px;
   border-radius: 20px;
@@ -336,7 +336,7 @@
 }
 
 .chapterTitle {
-  font-size: var(--font-md-lg, 18px);
+  font-size: var(--font-lg);
   font-weight: var(--font-weight-bold, 700);
   color: var(--color-text-primary, #FFFAEA);
 }

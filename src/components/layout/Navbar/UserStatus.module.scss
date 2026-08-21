@@ -14,18 +14,21 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(
-        90deg,
-        fade(var(--color-primary), 10%) 25%,
-        fade(var(--color-primary), 20%) 50%,
-        fade(var(--color-primary), 10%) 75%
-    );
+    background: linear-gradient(90deg,
+            fade(var(--color-primary), 10%) 25%,
+            fade(var(--color-primary), 20%) 50%,
+            fade(var(--color-primary), 10%) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 
     @keyframes shimmer {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
+        0% {
+            background-position: 200% 0;
+        }
+
+        100% {
+            background-position: -200% 0;
+        }
     }
 }
 
@@ -196,7 +199,7 @@
 }
 
 .userCardName {
-    font-size: var(--font-sm-md);
+    font-size: var(--font-md);
     font-weight: var(--font-weight-bold);
     color: var(--color-card-text);
     white-space: nowrap;
@@ -209,7 +212,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: var(--color-text-primary);
     font-weight: var(--font-weight-medium);
 

@@ -86,7 +86,7 @@ $transition : 0.2s ease;
 }
 
 .arrow {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: var(--color-title-hover);
     opacity: 0.4;
     transition: transform $transition, opacity $transition;

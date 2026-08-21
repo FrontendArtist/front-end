@@ -137,7 +137,7 @@ export default function UserDetailsDrawer({ userId, onClose }) {
                                                         <span>{new Intl.NumberFormat('fa-IR').format(o.totalPrice)} تومان</span>
                                                     </div>
                                                     {o.items?.length > 0 && (
-                                                        <div style={{ marginTop: '0.5rem', fontSize: 'var(--font-ssm)', color: 'var(--color-card-text)' }}>
+                                                        <div style={{ marginTop: '0.5rem', fontSize: 'var(--font-xs)', color: 'var(--color-card-text)' }}>
                                                             {o.items.length} آیتم خریداری شده
                                                         </div>
                                                     )}

@@ -10,7 +10,7 @@
 }
 
 .pageTitle {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-card-text);
     margin: 0;
@@ -132,12 +132,12 @@
     tbody tr {
         background-color: fade(var(--color-black), 15%);
         transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-        
+
         &:hover {
             transform: translateY(-2px);
             background-color: fade(var(--color-black), 25%);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-            
+
             td:first-child {
                 border-right-color: var(--color-title-hover);
             }
@@ -168,22 +168,32 @@
     font-weight: var(--font-weight-bold);
     white-space: nowrap;
 
-    &--success, &--published, &--available, &--user, &--green {
+    &--success,
+    &--published,
+    &--available,
+    &--user,
+    &--green {
         background-color: fade(var(--color-success), 12%);
         color: var(--color-success);
     }
 
-    &--error, &--unavailable, &--admin, &--red {
+    &--error,
+    &--unavailable,
+    &--admin,
+    &--red {
         background-color: fade(var(--color-error), 12%);
         color: var(--color-error);
     }
 
-    &--warning, &--draft, &--yellow {
+    &--warning,
+    &--draft,
+    &--yellow {
         background-color: fade(var(--color-warning), 15%);
         color: var(--color-warning-amber);
     }
 
-    &--info, &--blue {
+    &--info,
+    &--blue {
         background-color: fade(var(--color-blue-alt), 20%);
         color: var(--color-blue-light);
     }
@@ -212,13 +222,15 @@
         transform: translateY(0);
     }
 
-    &--edit, &--reply {
+    &--edit,
+    &--reply {
         background-color: fade(var(--color-blue-alt), 20%);
         border: 1px solid fade(var(--color-blue-alt), 40%);
         color: var(--color-blue-light);
     }
 
-    &--delete, &--reject {
+    &--delete,
+    &--reject {
         background-color: transparent;
         border: 1px solid fade(var(--color-error), 35%);
         color: var(--color-error);
@@ -234,10 +246,12 @@
         border: 1px solid fade(var(--color-success), 50%);
     }
 
-    &--live, &--default {
+    &--live,
+    &--default {
         background-color: fade(var(--color-bg-primary-overlay), 60%);
         color: var(--color-text-primary);
         border: 1px solid fade(var(--color-primary), 20%);
+
         &:hover {
             background-color: var(--color-title-hover);
             color: var(--color-black);
@@ -320,6 +334,7 @@
     text-align: left;
 }
 
-.stockCell, .centerCell {
+.stockCell,
+.centerCell {
     text-align: center;
 }

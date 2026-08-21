@@ -33,7 +33,7 @@
 }
 
 .countBadge {
-    font-size: var(--font-ssm, 12px);
+    font-size: var(--font-xs, 12px);
     background: var(--color-text-primary);
     color: var(--color-bg-primary);
     padding: 0.15rem 0.6rem;
@@ -42,7 +42,7 @@
 }
 
 .title {
-    font-size: var(--font-xl2, 32px);
+    font-size: var(---font-3xl, 32px);
     font-weight: var(--font-weight-bold);
     color: var(--color-card-text);
     margin: 0;
@@ -141,7 +141,7 @@
 }
 
 .tabCount {
-    font-size: var(--font-ssm, 12px);
+    font-size: var(--font-xs, 12px);
     padding: 0.15rem 0.5rem;
     border-radius: 12px;
     background: color-mix(in srgb, var(--color-text-primary) 15%, transparent);
@@ -194,7 +194,7 @@
     box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
 
     h3 {
-        font-size: var(--font-lg-xl, 24px);
+        font-size: var(--font-xl, 24px);
         color: var(--color-title-hover, var(--color-text-primary));
         margin: 0;
         font-weight: var(--font-weight-bold);
@@ -237,4 +237,4 @@
 .emptyTip {
     font-size: var(--font-sm) !important;
     color: color-mix(in srgb, var(--color-card-text) 60%, transparent) !important;
-}
+}

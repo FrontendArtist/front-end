@@ -100,7 +100,7 @@
   background: rgba(0, 43, 32, 0.4);
 
   @include respond(sm) {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     padding: 0.8rem 1rem;
     width: 45%;
   }
@@ -114,7 +114,7 @@
   line-height: var(--line-height-md);
 
   @include respond(sm) {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     padding: 0.8rem 1rem;
   }
 }

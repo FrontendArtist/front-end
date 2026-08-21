@@ -14,12 +14,12 @@
     border-radius: 20px;
     padding: 24px;
     box-shadow: 0 8px 24px fade(var(--color-black), 20%),
-                0 0 0 1px fade(var(--color-primary), 8%) inset;
+        0 0 0 1px fade(var(--color-primary), 8%) inset;
 
     &:hover {
         border-color: fade(var(--color-title-hover), 35%);
         box-shadow: 0 12px 32px fade(var(--color-black), 30%),
-                    0 0 0 1px fade(var(--color-title-hover), 20%) inset;
+            0 0 0 1px fade(var(--color-title-hover), 20%) inset;
     }
 }
 
@@ -49,11 +49,11 @@
     }
 
     .username {
-        font-size: var(--font-sm-md);
+        font-size: var(--font-md);
     }
 
     .content {
-        font-size: var(--font-sm-md);
+        font-size: var(--font-md);
         line-height: 1.7;
         opacity: 0.9;
     }
@@ -132,7 +132,7 @@
     background: fade(var(--color-gold), 15%);
     border: 1px solid fade(var(--color-gold), 30%);
     color: var(--color-gold);
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     padding: 2px 8px;
     border-radius: 12px;
     font-weight: var(--font-weight-medium);
@@ -147,7 +147,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: var(--color-card-text);
     opacity: 0.75;
     background: fade(var(--color-title-hover), 10%);
@@ -170,7 +170,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: var(--color-card-text);
     opacity: 0.65;
 }
@@ -208,7 +208,7 @@
 }
 
 .ratingNum {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     font-weight: var(--font-weight-bold);
     color: var(--color-title-hover);
 }
@@ -242,7 +242,7 @@
     border: 1px solid fade(var(--color-primary), 18%);
     border-radius: 10px;
     padding: 5px 12px;
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -306,7 +306,7 @@
     align-items: center;
     gap: 8px;
     color: var(--color-card-text);
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     opacity: 0.75;
 
     .maxDepthIcon {

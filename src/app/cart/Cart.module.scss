@@ -74,7 +74,7 @@
 }
 
 .sectionTitle {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
 
@@ -248,7 +248,7 @@
     @include respond(md) {
         width: 28px;
         height: 28px;
-        font-size: var(--font-md-lg);
+        font-size: var(--font-lg);
     }
 }
 
@@ -354,7 +354,7 @@
 }
 
 .summaryTitle {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
     margin: 0 0 20px;
@@ -507,7 +507,7 @@
 .emptyButton {
     display: inline-block;
     padding: 14px 32px;
-    background: var( --color-primary-op-40);
+    background: var(--color-primary-op-40);
     color: var(--card-text);
     text-decoration: none;
     border-radius: var(--border-radius);

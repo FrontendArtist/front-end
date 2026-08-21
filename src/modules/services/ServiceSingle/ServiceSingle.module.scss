@@ -115,11 +115,11 @@
 
   // Responsive font size adjustments
   @include respond(md) {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
   }
 
   @include respond(sm) {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
   }
 }
 

@@ -98,7 +98,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: var(--font-ssm);
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--color-title-hover, #f5c452);
   background: rgba(246, 217, 130, 0.08);
@@ -175,7 +175,7 @@
 }
 
 .amount {
-  font-size: var(--font-md-lg);
+  font-size: var(--font-lg);
   font-weight: 800;
 }
 

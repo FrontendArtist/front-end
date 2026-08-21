@@ -119,7 +119,7 @@
   @include respond(md) {
     top: 12px;
     right: 12px;
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
   }
 
   @include respond(sm) {
@@ -178,7 +178,7 @@
   white-space: nowrap;
 
   @include respond(sm) {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     padding: 6px 12px;
   }
 }
@@ -597,7 +597,7 @@
 .freeBadge {
   background: var(--color-success);
   color: var(--color-white);
-  font-size: var(--font-ssm);
+  font-size: var(--font-xs);
   padding: 2px 8px;
   border-radius: 4px;
   font-weight: bold;

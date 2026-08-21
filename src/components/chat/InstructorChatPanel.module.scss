@@ -75,7 +75,7 @@
 }
 
 .sidebar__title {
-    font-size: var(--font-md-lg);
+    font-size: var(--font-lg);
     font-weight: var(--font-weight-bold);
     color: var(--color-title-hover);
     margin: 0;
@@ -92,7 +92,7 @@
     background: color-mix(in srgb, var(--color-text-primary) 12%, transparent);
     border: 1px solid color-mix(in srgb, var(--color-text-primary) 25%, transparent);
     color: var(--color-text-primary);
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     font-weight: var(--font-weight-bold);
     padding: 2px 8px;
     border-radius: 12px;
@@ -264,7 +264,7 @@
 }
 
 .chatItem__name {
-    font-size: var(--font-sm-md);
+    font-size: var(--font-md);
     font-weight: var(--font-weight-medium);
     color: var(--color-card-text);
     margin: 0 0 4px;
@@ -274,7 +274,7 @@
 }
 
 .chatItem__preview {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: color-mix(in srgb, var(--color-card-text) 50%, transparent);
     margin: 0;
     white-space: nowrap;
@@ -413,7 +413,7 @@
 }
 
 .chatHeader__name {
-    font-size: var(--font-md-lg);
+    font-size: var(--font-lg);
     font-weight: var(--font-weight-bold);
     color: var(--color-title-hover);
     margin: 0 0 2px;
@@ -559,7 +559,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     font-weight: var(--font-weight-medium);
     padding: 0 4px;
 }
@@ -567,7 +567,7 @@
 .bubble__text {
     padding: 14px 18px;
     border-radius: 18px;
-    font-size: var(--font-sm-md);
+    font-size: var(--font-md);
     line-height: var(--line-height-md);
     word-break: break-word;
     white-space: pre-wrap;
@@ -602,7 +602,7 @@
     border: 1px solid color-mix(in srgb, var(--color-text-primary) 15%, transparent);
     border-radius: 14px;
     color: var(--color-card-text);
-    font-size: var(--font-sm-md);
+    font-size: var(--font-md);
     font-family: inherit;
     resize: none;
     outline: none;

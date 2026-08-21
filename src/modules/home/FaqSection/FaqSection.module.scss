@@ -19,17 +19,17 @@
 }
 
 .title {
-  font-size: var(--font-lg-xl);
+  font-size: var(--font-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   line-height: var(--line-height-sm);
 
   @include respond(md) {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
   }
 
   @include respond(sm) {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
   }
 }
 

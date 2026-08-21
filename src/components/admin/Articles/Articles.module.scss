@@ -15,7 +15,7 @@
     }
 
     &__title {
-        font-size: var(--font-lg-xl);
+        font-size: var(--font-xl);
         font-weight: var(--font-weight-bold);
         color: var(--color-card-text);
         margin: 0;
@@ -702,7 +702,7 @@
         color: var(--color-white);
         border: none;
         cursor: pointer;
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
         display: flex;
         align-items: center;
         justify-content: center;

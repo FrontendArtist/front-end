@@ -17,13 +17,13 @@
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15),
-                0 2px 8px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+        0 2px 8px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     &:focus-within {
         border-color: var(--color-text-primary);
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2),
-                    0 0 0 4px color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+            0 0 0 4px color-mix(in srgb, var(--color-text-primary) 18%, transparent);
     }
 
     @include respond(md) {
@@ -45,7 +45,7 @@
     background-color: color-mix(in srgb, var(--color-bg-primary) 80%, transparent);
     color: var(--color-card-text);
     font-family: var(--font-iransans);
-    font-size: var(--font-sm-md);
+    font-size: var(--font-md);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
     outline: none;
@@ -92,7 +92,8 @@
 .input {
     width: 100%;
     padding: 0.75rem 1.25rem;
-    padding-left: 2.5rem; /* space for clear button */
+    padding-left: 2.5rem;
+    /* space for clear button */
     border: none;
     background: transparent;
     color: var(--color-card-text);
@@ -104,7 +105,7 @@
 
     &::placeholder {
         color: color-mix(in srgb, var(--color-card-text) 45%, transparent);
-        font-size: var(--font-sm-md);
+        font-size: var(--font-md);
     }
 
     @include respond(md) {
@@ -154,7 +155,7 @@
     border: none;
     border-radius: 40px;
     font-family: var(--font-iransans);
-    font-size: var(--font-sm-md);
+    font-size: var(--font-md);
     font-weight: var(--font-weight-bold);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -194,4 +195,4 @@
         height: 40px;
         justify-content: center;
     }
-}
+}

@@ -112,7 +112,7 @@ $transition: 0.25s ease;
 }
 
 .card__subtitle {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: $text-muted;
     margin-top: 2px;
 }
@@ -138,10 +138,10 @@ $transition: 0.25s ease;
         width: 44px;
         height: 44px;
         min-width: 44px;
-        font-size: var(--font-lg-xl);
+        font-size: var(--font-xl);
     }
 
     .card__value {
-        font-size: var(--font-xl2);
+        font-size: var(---font-3xl);
     }
 }

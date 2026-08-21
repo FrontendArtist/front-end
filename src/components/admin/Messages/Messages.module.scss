@@ -101,7 +101,7 @@
     th {
         font-weight: var(--font-weight-bold);
         color: var(--color-title-primary);
-        font-size: var(--font-sm-md);
+        font-size: var(--font-md);
         white-space: nowrap;
         background-color: fade(var(--color-primary), 5%);
     }
@@ -176,7 +176,7 @@
     padding: 0.4rem 0.8rem;
     border-radius: 6px;
     font-family: inherit;
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     cursor: pointer;
     transition: all 0.2s;
     margin-left: 0.5rem;
@@ -195,7 +195,7 @@
     padding: 0.4rem 0.8rem;
     border-radius: 6px;
     font-family: inherit;
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     cursor: pointer;
     transition: all 0.2s;
 
@@ -234,7 +234,7 @@
     gap: 0.25rem;
 
     .label {
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
         color: var(--color-text-muted);
         font-weight: var(--font-weight-medium);
     }
@@ -258,13 +258,13 @@
     gap: 0.5rem;
 
     .label {
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
         color: var(--color-text-muted);
         font-weight: var(--font-weight-medium);
     }
 
     .bodyText {
-        font-size: var(--font-sm-md);
+        font-size: var(--font-md);
         color: var(--color-card-text);
         line-height: var(--line-height-lg);
         background-color: fade(var(--color-primary), 5%);
@@ -417,7 +417,7 @@
 
     p {
         color: var(--color-text-primary);
-        font-size: var(--font-sm-md);
+        font-size: var(--font-md);
         line-height: var(--line-height-md);
         margin-bottom: 2rem;
     }
@@ -533,7 +533,7 @@
 }
 
 .bubbleAuthor {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
 }
@@ -588,7 +588,7 @@
     flex-wrap: wrap;
 
     span {
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
         color: var(--color-text-muted);
         font-weight: var(--font-weight-medium);
     }

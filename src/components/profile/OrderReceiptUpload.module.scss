@@ -112,7 +112,7 @@
     word-break: break-all;
 
     @include respond(md) {
-        font-size: var(--font-md-lg);
+        font-size: var(--font-lg);
         letter-spacing: 2px;
     }
 }
@@ -306,7 +306,7 @@
 
 // متن فرعی (حداکثر حجم)
 .dropzoneHint {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: var(--color-card-text);
     opacity: 0.55;
     pointer-events: none;

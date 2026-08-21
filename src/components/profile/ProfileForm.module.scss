@@ -82,7 +82,7 @@
     margin: 0 0 8px 0;
 
     @include respond(md) {
-        font-size: var(--font-lg-xl);
+        font-size: var(--font-xl);
     }
 }
 
@@ -135,7 +135,7 @@
 }
 
 .badge {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     padding: 4px 8px;
     border-radius: 6px;
     background: fade(var(--color-primary), 15%);

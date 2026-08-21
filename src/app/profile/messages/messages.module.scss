@@ -17,7 +17,7 @@
         margin: 0 0 0.4rem;
 
         @include respond(md) {
-            font-size: var(--font-lg-xl);
+            font-size: var(--font-xl);
         }
     }
 

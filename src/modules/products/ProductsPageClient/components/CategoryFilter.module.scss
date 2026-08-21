@@ -391,7 +391,7 @@
     }
 
     @include respond(md) {
-      font-size: var(--font-md-lg, 1.1rem);
+      font-size: var(--font-lg, 1.1rem);
       text-align: right;
     }
 
@@ -548,7 +548,7 @@
 
   &::after {
     content: '←';
-    font-size: var(--font-md-lg);
+    font-size: var(--font-lg);
     opacity: 0;
     transform: translateX(10px);
     transition: all 0.3s ease;

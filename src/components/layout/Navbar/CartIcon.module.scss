@@ -60,7 +60,7 @@
     justify-content: center;
     border: 2px solid var(--color-bg-primary);
     box-shadow: var(--shadow-sm);
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     font-weight: var(--font-weight-bold);
     color: var(--color-white);
     line-height: 1;
@@ -231,19 +231,19 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: fade(var(--color-white), 70%);
 }
 
 .itemQuantity {
     color: fade(var(--color-white), 80%);
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
 }
 
 .itemType {
     color: var(--color-white);
     font-weight: var(--font-weight-medium);
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     background: fade(var(--color-primary), 20%);
     padding: 1px 6px;
     border-radius: 4px;
@@ -261,7 +261,7 @@
 .moreItems {
     padding: 10px 16px;
     text-align: center;
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: fade(var(--color-white), 80%);
     font-style: italic;
     background: fade(var(--color-primary), 4%);
@@ -356,11 +356,11 @@
     }
 
     .itemTitle {
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
     }
 
     .itemPrice {
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
     }
 
     .dropdownHeader,

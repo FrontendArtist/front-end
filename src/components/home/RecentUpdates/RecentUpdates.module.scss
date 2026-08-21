@@ -79,7 +79,8 @@
 }
 
 .columnTitle {
-    font-size: var(--font-sm-md, 15px);
+    font-size: var(--font-md);
+
     font-weight: var(--font-weight-bold);
     color: var(--color-title-hover);
     margin: 0;
@@ -93,7 +94,7 @@
 }
 
 .columnBadge {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     font-weight: var(--font-weight-bold);
     color: var(--color-bg-primary);
     background-color: var(--color-text-primary);

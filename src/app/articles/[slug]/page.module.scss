@@ -25,7 +25,7 @@
 
 .date {
   color: var(--color-text-primary);
-  font-size: var(--font-ssm);
+  font-size: var(--font-xs);
   opacity: 0.8;
 }
 
@@ -68,7 +68,7 @@
   border: 1px solid rgba(246, 217, 130, 0.35);
   border-radius: 20px;
   color: var(--color-title-hover);
-  font-size: var(--font-ssm);
+  font-size: var(--font-xs);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -88,7 +88,7 @@
   padding: 1.5rem 2rem;
   border-radius: var(--radius-card, 24px);
   border: 1px solid rgba(246, 217, 130, 0.2);
-  font-size: var(--font-sm-md);
+  font-size: var(--font-md);
   font-weight: var(--font-weight-medium);
 }
 
@@ -184,7 +184,7 @@
 
   // Hide the h3 title inside TOC (the sidebar header already shows title)
   h3 {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     font-weight: 700;
     color: var(--color-title-hover, #F5C452);
     margin: 0 0 0.6rem;
@@ -209,7 +209,7 @@
         display: block;
         color: rgba(255, 255, 255, 0.88);
         text-decoration: none;
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
         line-height: 1.4;
         padding: 0.28rem 0.45rem;
         border-radius: 6px;
@@ -279,7 +279,7 @@
   }
 
   h2 {
-    font-size: var(--font-md-lg);
+    font-size: var(--font-lg);
     color: var(--color-title-hover, #F5C452);
     margin-top: 2.5rem;
     margin-bottom: 1rem;
@@ -358,13 +358,13 @@
     cite {
       display: block;
       font-style: normal;
-      font-size: var(--font-ssm);
+      font-size: var(--font-xs);
       color: rgba(255, 255, 255, 0.8);
       margin-top: 0.65rem;
     }
 
     .quran-text {
-      font-size: var(--font-lg-xl);
+      font-size: var(--font-xl);
       line-height: 2.1;
       color: var(--color-title-hover, #F5C452);
       text-align: center;
@@ -440,7 +440,7 @@
         td {
           padding: 0.85rem 1.1rem;
           color: #fff;
-          font-size: var(--font-ssm);
+          font-size: var(--font-xs);
           line-height: 1.6;
 
           strong {
@@ -503,7 +503,7 @@
 
     code {
       font-family: 'Fira Code', 'Courier New', monospace;
-      font-size: var(--font-ssm);
+      font-size: var(--font-xs);
       color: var(--color-text-primary, #F6D982);
       line-height: 1.75;
       white-space: pre-wrap;
@@ -529,7 +529,7 @@
         position: absolute;
         right: 0;
         top: 0;
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
         color: var(--color-title-hover, #F5C452);
       }
 
@@ -583,7 +583,7 @@
           align-items: center;
           justify-content: center;
           font-weight: 700;
-          font-size: var(--font-ssm);
+          font-size: var(--font-xs);
         }
 
         strong {
@@ -658,7 +658,7 @@
 
     figcaption {
       margin-top: 0.55rem;
-      font-size: var(--font-ssm);
+      font-size: var(--font-xs);
       color: rgba(255, 255, 255, 0.8);
       font-style: italic;
     }
@@ -913,7 +913,7 @@
 
 @media (max-width: 768px) {
   .title {
-    font-size: var(--font-md-lg);
+    font-size: var(--font-lg);
   }
 
   .excerpt {
@@ -957,7 +957,7 @@
     }
 
     .diagram-box code {
-      font-size: var(--font-ssm);
+      font-size: var(--font-xs);
     }
 
     ol.steps-list li {

@@ -20,7 +20,7 @@
   color: var(--card-text);
   padding: 4px 12px;
   border-radius: var(--border-radius);
-  font-size: var(--font-ssm);
+  font-size: var(--font-xs);
   font-weight: var(--font-weight-bold);
   z-index: 2;
   box-shadow: 0 2px 8px fade(var(--color-black), 20%);
@@ -105,7 +105,7 @@
   white-space: nowrap;
 
   @include respond(sm) {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     padding: 6px 12px;
   }
 }

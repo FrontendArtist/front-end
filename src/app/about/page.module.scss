@@ -46,11 +46,11 @@
     margin-bottom: 24px;
 
     @include respond(md) {
-        font-size: var(--font-xl2);
+        font-size: var(---font-3xl);
     }
 
     @include respond(sm) {
-        font-size: var(--font-lg-xl);
+        font-size: var(--font-xl);
         margin-bottom: 16px;
     }
 }
@@ -144,7 +144,7 @@
     color: var(--color-bg-primary);
     border-radius: 8px;
     font-weight: var(--font-weight-bold);
-    font-size: var(--font-md-lg);
+    font-size: var(--font-lg);
 }
 
 .valueTitle {
@@ -325,12 +325,12 @@
     color: var(--color-text-primary);
 
     @include respond(md) {
-        font-size: var(--font-lg-xl);
+        font-size: var(--font-xl);
         text-align: center;
     }
 
     @include respond(sm) {
-        font-size: var(--font-lg-xl);
+        font-size: var(--font-xl);
     }
 }
 
@@ -385,12 +385,12 @@
 }
 
 .statNumber {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
 
     @include respond(sm) {
-        font-size: var(--font-lg-xl);
+        font-size: var(--font-xl);
     }
 }
 
@@ -400,7 +400,7 @@
     opacity: 0.8;
 
     @include respond(sm) {
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
     }
 }
 
@@ -446,7 +446,7 @@
     }
 
     @include respond(sm) {
-        font-size: var(--font-lg-xl);
+        font-size: var(--font-xl);
     }
 }
 

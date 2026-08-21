@@ -5,10 +5,6 @@
     padding-top: var(--space-section-top-desktop);
     padding-bottom: var(--space-section-bottom-desktop);
 
-    @include respond(md) {
-        padding-top: 80px;
-        padding-bottom: 60px;
-    }
 }
 
 .container {

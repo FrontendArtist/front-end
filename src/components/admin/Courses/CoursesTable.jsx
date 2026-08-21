@@ -170,7 +170,7 @@ export default function CoursesTable({ initialCourses }) {
                                         <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-card-text)' }}>
                                             {course.title}
                                         </div>
-                                        <div style={{ fontSize: 'var(--font-ssm)', opacity: 0.55, direction: 'ltr', textAlign: 'right' }}>
+                                        <div style={{ fontSize: 'var(--font-xs)', opacity: 0.55, direction: 'ltr', textAlign: 'right' }}>
                                             {course.slug}
                                         </div>
                                     </td>

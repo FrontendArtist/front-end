@@ -80,7 +80,7 @@
   &:hover {
     transform: translateY(-2px) scale(1.02);
     box-shadow: 0 6px 16px rgba(255, 149, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-    
+
     svg {
       transform: translateX(-2px) scale(1.1) rotate(-10deg);
     }
@@ -98,7 +98,7 @@
     left: -100%;
     width: 50%;
     height: 100%;
-    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+    background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
     transform: skewX(-25deg);
     z-index: -1;
   }
@@ -109,13 +109,18 @@
 
   @include respond(md) {
     padding: 6px 12px;
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
   }
 }
 
 @keyframes buttonShineSmall {
-  0% { left: -100%; }
-  100% { left: 200%; }
+  0% {
+    left: -100%;
+  }
+
+  100% {
+    left: 200%;
+  }
 }
 
 // کنترلر تعداد محصول در سبد
@@ -155,7 +160,7 @@
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   svg {
     width: 16px;
     height: 16px;
@@ -165,7 +170,7 @@
   &:hover {
     background: fade(var(--color-primary, #d4af37), 15%);
     color: var(--color-primary);
-    
+
     svg {
       transform: scale(1.2);
     }
@@ -173,6 +178,7 @@
 
   &:active {
     background: fade(var(--color-primary, #d4af37), 25%);
+
     svg {
       transform: scale(0.9);
     }
@@ -182,6 +188,7 @@
     opacity: 0.3;
     cursor: not-allowed;
     background: transparent;
+
     &:hover svg {
       transform: none;
     }
@@ -201,6 +208,6 @@
   min-width: 20px;
 
   @include respond(md) {
-    font-size: var(--font-ssm, 12px);
+    font-size: var(--font-xs, 12px);
   }
 }

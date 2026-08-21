@@ -114,7 +114,7 @@
     border: 1px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
     border-radius: 10px;
     color: var(--color-card-text);
-    font-size: var(--font-sm-md);
+    font-size: var(--font-md);
     font-family: inherit;
     line-height: var(--line-height-md);
     transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
@@ -162,7 +162,7 @@
 }
 
 .preChatForm__error {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: var(--color-error);
     margin-top: 2px;
     padding-right: 2px;

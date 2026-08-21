@@ -166,94 +166,94 @@ export default function ProductsTable({ initialProducts }) {
                     </div>
                 ) : (
                     <AdminTable headers={headers}>
-                            {paginated.map((product) => {
-                                const imgUrl = product.images?.[0]?.url
-                                    ? `${STRAPI_URL}${product.images[0].url}`
-                                    : null;
-                                const isPublished = !!product.publishedAt;
+                        {paginated.map((product) => {
+                            const imgUrl = product.images?.[0]?.url
+                                ? `${STRAPI_URL}${product.images[0].url}`
+                                : null;
+                            const isPublished = !!product.publishedAt;
 
-                                return (
-                                    <tr key={product.documentId}>
-                                        {/* تصویر */}
-                                        <td>
-                                            {imgUrl ? (
-                                                <img
-                                                    src={imgUrl}
-                                                    alt={product.title}
-                                                    className={styles.thumbnail}
-                                                />
-                                            ) : (
-                                                <div className={styles.thumbnailPlaceholder}>📷</div>
-                                            )}
-                                        </td>
-
-                                        {/* نام */}
-                                        <td>
-                                            <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-card-text)' }}>
-                                                {product.title}
-                                            </div>
-                                            <div style={{ fontSize: 'var(--font-ssm)', opacity: 0.55, direction: 'ltr', textAlign: 'right' }}>
-                                                {product.slug}
-                                            </div>
-                                        </td>
-
-                                        {/* قیمت */}
-                                        <td className={styles.priceCell}>
-                                            {product.price != null
-                                                ? new Intl.NumberFormat('fa-IR').format(product.price)
-                                                : '—'}
-                                        </td>
-
-                                        {/* موجودی */}
-                                        <td className={styles.stockCell}>
-                                            {product.stock ?? '—'}
-                                        </td>
-
-                                        {/* وضعیت انتشار */}
-                                        <td>
-                                            <AdminBadge
-                                                status={isPublished ? 'منتشر شده' : 'پیش‌نویس'}
-                                                variant={isPublished ? 'success' : 'default'}
+                            return (
+                                <tr key={product.documentId}>
+                                    {/* تصویر */}
+                                    <td>
+                                        {imgUrl ? (
+                                            <img
+                                                src={imgUrl}
+                                                alt={product.title}
+                                                className={styles.thumbnail}
                                             />
-                                        </td>
+                                        ) : (
+                                            <div className={styles.thumbnailPlaceholder}>📷</div>
+                                        )}
+                                    </td>
 
-                                        {/* تاگل isAvailable */}
-                                        <td>
-                                            <label className={styles.toggleLabel} title="تغییر دسترس‌پذیری">
-                                                <input
-                                                    type="checkbox"
-                                                    className={styles.toggleInput}
-                                                    checked={!!product.isAvailable}
-                                                    disabled={!!loadingToggle[product.documentId]}
-                                                    onChange={() => handleToggle(product)}
-                                                    aria-label={`تاگل دسترس‌پذیری ${product.title}`}
-                                                />
-                                                <span className={styles.toggleTrack} />
-                                            </label>
-                                        </td>
+                                    {/* نام */}
+                                    <td>
+                                        <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-card-text)' }}>
+                                            {product.title}
+                                        </div>
+                                        <div style={{ fontSize: 'var(--font-xs)', opacity: 0.55, direction: 'ltr', textAlign: 'right' }}>
+                                            {product.slug}
+                                        </div>
+                                    </td>
 
-                                        {/* عملیات */}
-                                        <td>
-                                            <div className={styles.actions}>
-                                                <AdminButton
-                                                    href={`/admin/products/${product.documentId}`}
-                                                    variant="edit"
-                                                    title="ویرایش محصول"
-                                                >
-                                                    ✏️ ویرایش
-                                                </AdminButton>
-                                                <AdminButton
-                                                    variant="delete"
-                                                    onClick={() => setDeleteTarget(product)}
-                                                    title="حذف محصول"
-                                                >
-                                                    🗑 حذف
-                                                </AdminButton>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                                    {/* قیمت */}
+                                    <td className={styles.priceCell}>
+                                        {product.price != null
+                                            ? new Intl.NumberFormat('fa-IR').format(product.price)
+                                            : '—'}
+                                    </td>
+
+                                    {/* موجودی */}
+                                    <td className={styles.stockCell}>
+                                        {product.stock ?? '—'}
+                                    </td>
+
+                                    {/* وضعیت انتشار */}
+                                    <td>
+                                        <AdminBadge
+                                            status={isPublished ? 'منتشر شده' : 'پیش‌نویس'}
+                                            variant={isPublished ? 'success' : 'default'}
+                                        />
+                                    </td>
+
+                                    {/* تاگل isAvailable */}
+                                    <td>
+                                        <label className={styles.toggleLabel} title="تغییر دسترس‌پذیری">
+                                            <input
+                                                type="checkbox"
+                                                className={styles.toggleInput}
+                                                checked={!!product.isAvailable}
+                                                disabled={!!loadingToggle[product.documentId]}
+                                                onChange={() => handleToggle(product)}
+                                                aria-label={`تاگل دسترس‌پذیری ${product.title}`}
+                                            />
+                                            <span className={styles.toggleTrack} />
+                                        </label>
+                                    </td>
+
+                                    {/* عملیات */}
+                                    <td>
+                                        <div className={styles.actions}>
+                                            <AdminButton
+                                                href={`/admin/products/${product.documentId}`}
+                                                variant="edit"
+                                                title="ویرایش محصول"
+                                            >
+                                                ✏️ ویرایش
+                                            </AdminButton>
+                                            <AdminButton
+                                                variant="delete"
+                                                onClick={() => setDeleteTarget(product)}
+                                                title="حذف محصول"
+                                            >
+                                                🗑 حذف
+                                            </AdminButton>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </AdminTable>
                 )}
 

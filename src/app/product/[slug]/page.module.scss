@@ -46,11 +46,11 @@
   margin-bottom: 1rem;
 
   @include respond(md) {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
   }
 
   @include respond(sm) {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
   }
 }
 
@@ -61,7 +61,7 @@
   margin-bottom: 1.5rem;
 
   @include respond(md) {
-    font-size: var(--font-md-lg);
+    font-size: var(--font-lg);
     margin-bottom: 1rem;
   }
 }

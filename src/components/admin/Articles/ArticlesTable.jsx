@@ -162,87 +162,87 @@ export default function ArticlesTable({ initialArticles }) {
                     </div>
                 ) : (
                     <AdminTable headers={headers}>
-                            {paginated.map((article) => {
-                                const imgUrl = article.cover?.url
-                                    ? `${STRAPI_URL}${article.cover.url}`
-                                    : null;
-                                const isPublished = !!article.publishedAt;
+                        {paginated.map((article) => {
+                            const imgUrl = article.cover?.url
+                                ? `${STRAPI_URL}${article.cover.url}`
+                                : null;
+                            const isPublished = !!article.publishedAt;
 
-                                return (
-                                    <tr key={article.documentId}>
-                                        {/* تصویر */}
-                                        <td>
-                                            {imgUrl ? (
-                                                <img
-                                                    src={imgUrl}
-                                                    alt={article.title}
-                                                    className={styles.thumbnail}
+                            return (
+                                <tr key={article.documentId}>
+                                    {/* تصویر */}
+                                    <td>
+                                        {imgUrl ? (
+                                            <img
+                                                src={imgUrl}
+                                                alt={article.title}
+                                                className={styles.thumbnail}
+                                            />
+                                        ) : (
+                                            <div className={styles.thumbnailPlaceholder}>📷</div>
+                                        )}
+                                    </td>
+
+                                    {/* عنوان و اسلاگ */}
+                                    <td>
+                                        <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-card-text)' }}>
+                                            {article.title}
+                                        </div>
+                                        <div style={{ fontSize: 'var(--font-xs)', opacity: 0.55, direction: 'ltr', textAlign: 'right' }}>
+                                            {article.slug}
+                                        </div>
+                                    </td>
+
+                                    {/* خلاصه */}
+                                    <td>
+                                        <div style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-primary)' }}>
+                                            {article.excerpt ? (article.excerpt.length > 50 ? `${article.excerpt.substring(0, 50)}...` : article.excerpt) : '—'}
+                                        </div>
+                                    </td>
+
+                                    {/* وضعیت انتشار */}
+                                    <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                                            <AdminBadge
+                                                status={isPublished ? 'منتشر شده' : 'پیش‌نویس'}
+                                                variant={isPublished ? 'success' : 'default'}
+                                            />
+                                            <label className={styles.toggleLabel} title="تغییر وضعیت انتشار">
+                                                <input
+                                                    type="checkbox"
+                                                    className={styles.toggleInput}
+                                                    checked={isPublished}
+                                                    disabled={!!loadingToggle[article.documentId]}
+                                                    onChange={() => handleTogglePublish(article)}
+                                                    aria-label={`تغییر وضعیت انتشار مقاله‌ی ${article.title}`}
                                                 />
-                                            ) : (
-                                                <div className={styles.thumbnailPlaceholder}>📷</div>
-                                            )}
-                                        </td>
+                                                <span className={styles.toggleTrack} />
+                                            </label>
+                                        </div>
+                                    </td>
 
-                                        {/* عنوان و اسلاگ */}
-                                        <td>
-                                            <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-card-text)' }}>
-                                                {article.title}
-                                            </div>
-                                            <div style={{ fontSize: 'var(--font-ssm)', opacity: 0.55, direction: 'ltr', textAlign: 'right' }}>
-                                                {article.slug}
-                                            </div>
-                                        </td>
-
-                                        {/* خلاصه */}
-                                        <td>
-                                            <div style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-primary)' }}>
-                                                {article.excerpt ? (article.excerpt.length > 50 ? `${article.excerpt.substring(0, 50)}...` : article.excerpt) : '—'}
-                                            </div>
-                                        </td>
-
-                                        {/* وضعیت انتشار */}
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                                                <AdminBadge
-                                                    status={isPublished ? 'منتشر شده' : 'پیش‌نویس'}
-                                                    variant={isPublished ? 'success' : 'default'}
-                                                />
-                                                <label className={styles.toggleLabel} title="تغییر وضعیت انتشار">
-                                                    <input
-                                                        type="checkbox"
-                                                        className={styles.toggleInput}
-                                                        checked={isPublished}
-                                                        disabled={!!loadingToggle[article.documentId]}
-                                                        onChange={() => handleTogglePublish(article)}
-                                                        aria-label={`تغییر وضعیت انتشار مقاله‌ی ${article.title}`}
-                                                    />
-                                                    <span className={styles.toggleTrack} />
-                                                </label>
-                                            </div>
-                                        </td>
-
-                                        {/* عملیات */}
-                                        <td>
-                                            <div className={styles.actions}>
-                                                <AdminButton
-                                                    href={`/admin/articles/${article.documentId}`}
-                                                    variant="edit"
-                                                    title="ویرایش مقاله"
-                                                >
-                                                    ✏️ ویرایش
-                                                </AdminButton>
-                                                <AdminButton
-                                                    variant="delete"
-                                                    onClick={() => setDeleteTarget(article)}
-                                                    title="حذف مقاله"
-                                                >
-                                                    🗑 حذف
-                                                </AdminButton>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                                    {/* عملیات */}
+                                    <td>
+                                        <div className={styles.actions}>
+                                            <AdminButton
+                                                href={`/admin/articles/${article.documentId}`}
+                                                variant="edit"
+                                                title="ویرایش مقاله"
+                                            >
+                                                ✏️ ویرایش
+                                            </AdminButton>
+                                            <AdminButton
+                                                variant="delete"
+                                                onClick={() => setDeleteTarget(article)}
+                                                title="حذف مقاله"
+                                            >
+                                                🗑 حذف
+                                            </AdminButton>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </AdminTable>
                 )}
 

@@ -66,7 +66,7 @@
   background: rgba(246, 217, 130, 0.1);
   border: 1px solid rgba(246, 217, 130, 0.3);
   border-radius: 20px;
-  font-size: var(--font-ssm);
+  font-size: var(--font-xs);
   font-weight: var(--font-weight-medium);
   color: var(--color-title-hover);
   letter-spacing: 0.02em;
@@ -85,7 +85,7 @@
   margin: 0;
 
   @include respond(md) {
-    font-size: var(--font-lg-xl);
+    font-size: var(--font-xl);
   }
 
   @include respond(sm) {
@@ -98,7 +98,7 @@
 // =============================================================================
 
 .shortDescription {
-  font-size: var(--font-sm-md);
+  font-size: var(--font-md);
   color: rgba(255, 255, 255, 0.75);
   line-height: var(--line-height-lg);
   margin: 0;
@@ -123,14 +123,14 @@
 }
 
 .price {
-  font-size: var(--font-lg-xl);
+  font-size: var(--font-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-title-hover);
   letter-spacing: 0.01em;
 }
 
 .priceDiscount {
-  font-size: var(--font-lg-xl);
+  font-size: var(--font-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-success-light);
   letter-spacing: 0.01em;
@@ -206,10 +206,13 @@
 
 // انیمیشن چشمک‌زن برای FOMO
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.4;
     transform: scale(0.85);

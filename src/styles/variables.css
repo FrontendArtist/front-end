@@ -3,107 +3,106 @@
    so :root is treated as global — no "not pure" CSS Modules error. */
 
 :root {
-   /* === Colors === */
-   --color-bg-primary: #061818;
-   --color-text-primary: #F6D982;
-   --color-title-hover: #F5C452;
-   --color-card-text: #FFFAEA;
-   --color-overlay: #002B20;
-   --color-bg-primary-transparent: #061818d3;
-   --color-overlay-blured: rgba(6, 24, 24, 0.8);
+    /* === Colors === */
+    --color-bg-primary: #061818;
+    --color-text-primary: #F6D982;
+    --color-title-hover: #F5C452;
+    --color-card-text: #FFFAEA;
+    --color-overlay: #002B20;
+    --color-bg-primary-transparent: #061818d3;
+    --color-overlay-blured: rgba(6, 24, 24, 0.8);
 
-   /* === Gradients === */
-   --gradient-card-vertical: linear-gradient(to bottom, rgba(217, 217, 217, 0.3), rgba(115, 115, 115, 0.3));
-   --gradient-card-horizontal-ltr: linear-gradient(to right, rgba(217, 217, 217, 0.3), rgba(115, 115, 115, 0.3));
-   --gradient-card-horizontal-rtl: linear-gradient(to left, rgba(217, 217, 217, 0.3), rgba(115, 115, 115, 0.3));
+    /* === Gradients === */
+    --gradient-card-vertical: linear-gradient(to bottom, rgba(217, 217, 217, 0.3), rgba(115, 115, 115, 0.3));
+    --gradient-card-horizontal-ltr: linear-gradient(to right, rgba(217, 217, 217, 0.3), rgba(115, 115, 115, 0.3));
+    --gradient-card-horizontal-rtl: linear-gradient(to left, rgba(217, 217, 217, 0.3), rgba(115, 115, 115, 0.3));
 
-   /* === Typography === */
-   --font-ssm: 12px;
-   --font-sm: 14px;
-   --font-sm-md: 15px;
-   --font-md: 16px;
-   --font-md-lg: 18px;
-   --font-lg: 20px;
-   --font-lg-xl: 24px;
-   --font-xl: 28px;
-   --font-xl2: 36px;
-   --font-2xl: 40px;
-   --line-height-sm: 1.4;
-   --line-height-md: 1.6;
-   --line-height-lg: 1.8;
-   --font-weight-regular: 400;
-   --font-weight-medium: 500;
-   --font-weight-bold: 700;
+    /* === Typography === */
 
-   /* === Spacing Desktop === */
-   --space-section-top-desktop: 120px;
-   --space-section-bottom-desktop: 100px;
-   --space-title-content-desktop: 56px;
-   --space-gap-desktop: 48px;
-   --space-image-title-desktop: 32px;
-   --space-title-text-desktop: 24px;
-   --space-text-button-desktop: 24px;
-   --space-container-x-desktop: 80px;
-   --space-section-button-desktop: 40px;
+    --font-xs: 12px;
+    --font-sm: 14px;
+    --font-md: 16px;
+    --font-lg: 18px;
+    --font-xl: 24px;
+    --font-2xl: 28px;
+    --font-3xl: 36px;
+    --font-4xl: 48px;
+    --line-height-sm: 1.4;
+    --line-height-md: 1.6;
+    --line-height-lg: 1.8;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
 
-   /* === Component Radii === */
-   --radius-card: 24px;
-   --radius-card-xl: 32px;
+    /* === Spacing Desktop === */
+    --space-section-top-desktop: 120px;
+    --space-section-bottom-desktop: 100px;
+    --space-title-content-desktop: 56px;
+    --space-gap-desktop: 48px;
+    --space-image-title-desktop: 32px;
+    --space-title-text-desktop: 24px;
+    --space-text-button-desktop: 24px;
+    --space-container-x-desktop: 80px;
+    --space-section-button-desktop: 40px;
 
-   /* === Component Spacing === */
-   --space-card-padding-desktop: 40px;
-   --space-card-padding-tablet: 32px;
-   --space-card-padding-mobile: 24px;
+    /* === Component Radii === */
+    --radius-card: 24px;
+    --radius-card-xl: 32px;
 
-   /* === Shadows === */
-   --shadow-card-strong: 0 25px 50px rgba(0, 43, 32, 0.35);
+    /* === Component Spacing === */
+    --space-card-padding-desktop: 40px;
+    --space-card-padding-tablet: 32px;
+    --space-card-padding-mobile: 24px;
 
-   --border-radius: 12px;
+    /* === Shadows === */
+    --shadow-card-strong: 0 25px 50px rgba(0, 43, 32, 0.35);
+
+    --border-radius: 12px;
 
 
-   /* =========================
+    /* =========================
        THEME ACCENTS AND BASES
        ========================= */
-   --color-primary: var(--color-text-primary);
-   --color-gold: #F6D982;
-   --color-bg-primary-overlay: var(--color-bg-primary);
-   --color-bg-dark-green: #002b20;
-   --color-indigo: #6366f1;
-   --color-blue: #3b82f6;
-   --color-blue-alt: #64b4ff;
+    --color-primary: var(--color-text-primary);
+    --color-gold: #F6D982;
+    --color-bg-primary-overlay: var(--color-bg-primary);
+    --color-bg-dark-green: #002b20;
+    --color-indigo: #6366f1;
+    --color-blue: #3b82f6;
+    --color-blue-alt: #64b4ff;
 
 
-   /* =========================
+    /* =========================
        SYSTEM COLORS & STATUSES
        ========================= */
-   --color-success: #10b981;
-   --color-success-dark: #047857;
-   --color-success-border: color-mix(in srgb, var(--color-success) var(--op-20), transparent);
-   --color-success-green-badge: rgba(26, 153, 91, 0.9);
-   --color-success-green-text: #1a995b;
-   --color-success-light: #86efac;
+    --color-success: #10b981;
+    --color-success-dark: #047857;
+    --color-success-border: color-mix(in srgb, var(--color-success) var(--op-20), transparent);
+    --color-success-green-badge: rgba(26, 153, 91, 0.9);
+    --color-success-green-text: #1a995b;
+    --color-success-light: #86efac;
 
-   --color-error: #ff6b6b;
-   --color-error-darker: #a93226;
-   --color-error-border: color-mix(in srgb, var(--color-error) var(--op-20), transparent);
+    --color-error: #ff6b6b;
+    --color-error-darker: #a93226;
+    --color-error-border: color-mix(in srgb, var(--color-error) var(--op-20), transparent);
 
-   --color-warning: #fccd4d;
-   --color-warning-amber: #f59e0b;
-   --color-warning-amber-dark: #d97706;
-   --color-warning-amber-darker: #b45309;
+    --color-warning: #fccd4d;
+    --color-warning-amber: #f59e0b;
+    --color-warning-amber-dark: #d97706;
+    --color-warning-amber-darker: #b45309;
 
-   --color-white: #fff;
-   --color-black: #000;
+    --color-white: #fff;
+    --color-black: #000;
 
-   --color-dark-1a: #1a1a1a;
-   --color-dark-17: #171717;
-   --color-dark-0a: #0a0a0a;
-   --color-light-ed: #ededed;
-   --color-gray-38: #383838;
-   --color-gray-cc: #ccc;
-   --color-cream-light: #fffaea;
+    --color-dark-1a: #1a1a1a;
+    --color-dark-17: #171717;
+    --color-dark-0a: #0a0a0a;
+    --color-light-ed: #ededed;
+    --color-gray-38: #383838;
+    --color-gray-cc: #ccc;
+    --color-cream-light: #fffaea;
 
-   --color-blue-light: #6ab4ff;
-   --color-blue-light-93: #93c5fd;
-   --color-accent-indigo: #a5b4fc;
+    --color-blue-light: #6ab4ff;
+    --color-blue-light-93: #93c5fd;
+    --color-accent-indigo: #a5b4fc;
 }

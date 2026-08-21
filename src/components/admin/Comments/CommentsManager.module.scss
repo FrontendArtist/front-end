@@ -209,7 +209,7 @@
 }
 
 .targetBadge {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: rgba(255, 250, 234, 0.6);
     background: fade(var(--color-primary), 8%);
     padding: 4px 10px;
@@ -246,7 +246,7 @@
 }
 
 .dateCell {
-    font-size: var(--font-ssm);
+    font-size: var(--font-xs);
     color: rgba(255, 250, 234, 0.45);
     white-space: nowrap;
 }

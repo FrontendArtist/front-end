@@ -8,7 +8,7 @@
     &__item {
         width: 100%;
         text-align: right;
-        background:var(--gradient-card-horizontal-rtl);
+        background: var(--gradient-card-horizontal-rtl);
         border: none;
         border-radius: var(--border-radius);
         padding: 1.25rem 1.5rem;
@@ -51,7 +51,7 @@
         display: inline-block;
         padding: 0.2rem 0.65rem;
         border-radius: 999px;
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
         font-weight: var(--font-weight-bold);
 
         &--open {
@@ -92,7 +92,7 @@
     }
 
     &__date {
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
         color: var(--color-card-text);
     }
 
@@ -100,7 +100,7 @@
         display: flex;
         align-items: center;
         gap: 0.3rem;
-        font-size: var(--font-ssm);
+        font-size: var(--font-xs);
         color: var(--color-success);
         font-weight: var(--font-weight-medium);
 
