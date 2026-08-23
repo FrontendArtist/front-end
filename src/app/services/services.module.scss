@@ -1,3 +1,5 @@
+@use "@/styles/base/mixins" as *;
+
 .main {
   padding-top: var(--space-section-top-desktop);
   padding-bottom: var(--space-section-bottom-desktop);
