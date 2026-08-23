@@ -35,7 +35,7 @@
     --font-weight-bold: 700;
 
     /* === Spacing Desktop === */
-    --space-section-top-desktop: 120px;
+    --space-section-top-desktop: 100px;
     --space-section-bottom-desktop: 100px;
     --space-title-content-desktop: 56px;
     --space-gap-desktop: 48px;
@@ -43,7 +43,10 @@
     --space-title-text-desktop: 24px;
     --space-text-button-desktop: 24px;
     --space-container-x-desktop: 80px;
+    --space-container-x-laptop: 50px;
+
     --space-section-button-desktop: 40px;
+
 
     /* === Component Radii === */
     --radius-card: 24px;

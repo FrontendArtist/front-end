@@ -10,13 +10,7 @@
   padding-bottom: 2rem;
   min-height: 100vh;
 
-  @include respond(md) {
-    padding-top: 96px;
-  }
 
-  @include respond(sm) {
-    padding-top: 72px;
-  }
 }
 
 // =============================================================================
@@ -79,6 +73,11 @@
 
 .title {
   font-size: var(--font-xl);
+
+  @include respond(lg) {
+    font-size: var(--font-lg);
+  }
+
   font-weight: var(--font-weight-bold);
   color: var(--color-card-text);
   line-height: var(--line-height-sm);

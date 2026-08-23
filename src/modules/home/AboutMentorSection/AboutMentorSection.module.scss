@@ -1,126 +1,212 @@
 @use '../../../styles/base/mixins' as *;
 
+// =============================================
+// AboutMentorSection — Responsive Layout
+// Desktop:  image left (bleed) + content right
+// Tablet:   image top (bleed) + content below
+// Mobile:   single column, image bleed top
+// =============================================
+
 .aboutSection {
   @include section-spacing;
   background-color: var(--color-bg-primary);
-
 }
 
-
-
+// The container just passes through — card takes full width
 .container {
-
-  gap: var(--space-gap-desktop, 48px);
-  width: unset;
-  border-radius: 30px;
-  grid-template-columns: 1fr 1fr;
-  justify-content: space-between;
-  align-items: normal;
-  margin: 0 auto;
-  display: flex;
+  width: 100%;
   overflow: visible;
-
-  @include respond(lg) {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
-
 }
 
+// ─── Card ─────────────────────────────────────────────────────────────────────
+// The GradientBorderCard wrapper; we need overflow visible for image bleed
+.card {
+  overflow: visible !important;
+}
+
+// ─── Inner row ────────────────────────────────────────────────────────────────
 .innerWrapper {
   display: flex;
+  flex-direction: row-reverse; // RTL: content on right, image on left
+  align-items: stretch;
+  min-height: 320px;
+  overflow: visible;
 
+  // ── Laptop (≤1280px): a bit tighter but still side-by-side
+  @include respond(xl) {
+    min-height: 300px;
+  }
+
+  // ── Tablet (≤1024px): stack vertically, image on top
   @include respond(lg) {
     flex-direction: column;
+    min-height: unset;
   }
 }
 
+// ─── Image wrapper ────────────────────────────────────────────────────────────
 .imageWrapper {
-  border-radius: var(--border-radius);
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
   position: relative;
-  overflow: visible;
-  width: 37%;
+  flex-shrink: 0;
+  width: 38%;
   background: var(--color-overlay);
+  border-radius: var(--border-radius) 0 0 var(--border-radius); // left corners only (LTR card)
+  overflow: visible;
 
-  img {
-    width: auto;
-    height: 360px;
-    position: absolute;
-    bottom: 0;
-    left: 10px;
+  @include respond(xl) {
+    width: 36%;
   }
 
   @include respond(lg) {
     width: 100%;
-    height: 200px;
-    order: -1; // Move image on top on mobile
-    border-radius: 12px 12px 0 0;
+    height: 220px;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+  }
 
-    img {
-      width: auto;
-      height: 300px;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      margin: 0 auto;
-      right: 0;
-    }
+  @include respond(md) {
+    height: 190px;
   }
 
   @include respond(sm) {
     height: 160px;
-
-    img {
-      height: 240px;
-    }
   }
 }
 
+// ─── Master image ─────────────────────────────────────────────────────────────
+// Bleeds out of card upward on desktop; upward on tablet/mobile
+.masterImage {
+  position: absolute;
+  width: auto;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  object-fit: contain;
+  z-index: 5;
+  pointer-events: none;
 
-.contentWrapper {
-  flex-direction: column;
-  display: flex;
-  gap: 20px;
-  padding: 30px 50px 30px 50px;
-  width: 65%;
+  @include respond(xl) {
+    height: 105%;
+  }
 
   @include respond(lg) {
-    width: 100%;
-    gap: 24px;
+    height: 130%;
+    left: 50%;
+    transform: translateX(-50%);
   }
-}
-
-.title {
-  font-size: var(--font-xl, 32px);
-  color: var(--color-text-primary, var(--color-text-primary));
-  margin: 0;
-  line-height: 1.4;
-  font-family: 'Far Shafigh';
-  font-weight: 400;
 
   @include respond(md) {
-    font-size: var(--font-xl);
+    height: 120%;
+  }
+
+  @include respond(sm) {
+    height: 115%;
   }
 }
 
+// ─── Content wrapper ──────────────────────────────────────────────────────────
+.contentWrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: 36px 48px 36px 36px;
+  flex: 1;
+  text-align: right;
+  direction: rtl;
+
+  @include respond(xl) {
+    padding: 28px 40px 28px 28px;
+    gap: 16px;
+  }
+
+  @include respond(lg) {
+    padding: 28px 32px 32px;
+    gap: 16px;
+    align-items: center;
+    text-align: center;
+  }
+
+  @include respond(md) {
+    padding: 22px 24px 28px;
+    gap: 14px;
+  }
+
+  @include respond(sm) {
+    padding: 18px 20px 24px;
+    gap: 12px;
+  }
+}
+
+// ─── Title ────────────────────────────────────────────────────────────────────
+.title {
+  font-size: var(--font-2xl);
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.4;
+  font-family: 'Far Shafigh', serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+
+  @include respond(xl) {
+    font-size: var(--font-xl);
+  }
+
+  @include respond(lg) {
+    font-size: var(--font-xl);
+  }
+
+  @include respond(md) {
+    font-size: var(--font-lg);
+  }
+}
+
+// ─── Decorative gold divider ──────────────────────────────────────────────────
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to left, var(--color-text-primary), transparent);
+
+  &:last-child {
+    background: linear-gradient(to right, var(--color-text-primary), transparent);
+  }
+}
+
+.dividerIcon {
+  flex-shrink: 0;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-text-primary) 60%, transparent));
+}
+
+// ─── Description text ─────────────────────────────────────────────────────────
 .text {
   font-size: var(--font-sm);
-  line-height: 1.8;
+  line-height: 1.9;
   color: var(--color-card-text);
   margin: 0;
 
+  @include respond(xl) {
+    font-size: var(--font-sm);
+    line-height: 1.8;
+  }
+
   @include respond(md) {
-    line-height: 1.7;
+    line-height: 1.75;
   }
 }
 
+// ─── CTA Button ───────────────────────────────────────────────────────────────
 .ctaButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 14px 28px;
+  gap: 8px;
+  padding: 12px 28px;
   background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-title-hover) 100%);
   color: var(--color-bg-primary);
   font-size: var(--font-md);
@@ -130,11 +216,17 @@
   transition: all 0.25s ease;
   align-self: flex-start;
   box-shadow: 0 4px 15px color-mix(in srgb, var(--color-text-primary) 25%, transparent);
+  direction: rtl;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px color-mix(in srgb, var(--color-text-primary) 35%, transparent);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--color-text-primary) 40%, transparent);
     color: var(--color-bg-primary);
+  }
+
+  @include respond(lg) {
+    align-self: center;
+    padding: 12px 32px;
   }
 
   @include respond(md) {
@@ -143,33 +235,11 @@
   }
 }
 
-.laklak {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  z-index: 2;
-  pointer-events: none;
-}
+.ctaArrow {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
 
-.aboutImages {
-
-  position: absolute;
-  left: 0px;
-  z-index: 2;
-  pointer-events: none;
-  display: none;
-  align-items: center;
-  bottom: -200px;
-  justify-content: space-between;
-  width: 100%;
-
-  po &::before {
-    content: '';
-    position: absolute;
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    background: radial-gradient(circle at center, rgba(254, 240, 138, 0.5) 0%, rgba(234, 179, 8, 0.2) 40%, rgba(234, 179, 8, 0) 70%);
-    z-index: -1;
+  .ctaButton:hover & {
+    transform: translateX(-3px);
   }
 }

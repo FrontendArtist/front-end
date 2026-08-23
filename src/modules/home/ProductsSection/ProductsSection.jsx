@@ -62,8 +62,14 @@ const ProductsSection = ({ data = [], serverError = false }) => {
           <BaseSlider
             items={products}
             renderItem={renderProductCard}
-            slidesPerView={4}
             loop={true}
+            breakpoints={{
+              320: { slidesPerView: 1, spaceBetween: 15 },
+              576: { slidesPerView: 2, spaceBetween: 15 },
+              768: { slidesPerView: 3, spaceBetween: 20 },
+              1024: { slidesPerView: 3, spaceBetween: 20 },
+              1440: { slidesPerView: 4, spaceBetween: 20 },
+            }}
           />
         </div>
       </div>

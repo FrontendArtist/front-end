@@ -140,3 +140,216 @@
         transform: rotate(360deg);
     }
 }
+
+// ─── Inline Auth Box (for unauthenticated users) ──────────────────────────────
+.authBox {
+    width: 100%;
+    max-width: 460px;
+    margin: 24px;
+    padding: 48px 40px;
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--color-overlay) 55%, transparent) 0%,
+        color-mix(in srgb, var(--color-bg-primary) 70%, transparent) 100%
+    );
+    backdrop-filter: blur(20px);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
+    border-radius: var(--radius-card);
+    animation: fadeSlideUp 0.4s ease-out both;
+
+    @media (max-width: 480px) {
+        padding: 32px 20px;
+        border-radius: var(--border-radius);
+    }
+}
+
+.authBox__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.authBox__icon {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+    border-radius: 50%;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+}
+
+.authBox__title {
+    font-family: var(--font-lalezar);
+    font-size: var(--font-xl);
+    color: var(--color-text-primary);
+    margin: 0;
+    line-height: 1.4;
+
+    @media (max-width: 480px) {
+        font-size: var(--font-lg);
+    }
+}
+
+.authBox__subtitle {
+    font-size: var(--font-md);
+    color: color-mix(in srgb, var(--color-card-text) 65%, transparent);
+    margin: 0;
+    line-height: var(--line-height-md);
+
+    @media (max-width: 480px) {
+        font-size: var(--font-sm);
+    }
+}
+
+.authBox__form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.authBox__field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.authBox__label {
+    font-size: var(--font-md);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.authBox__input {
+    padding: 16px 20px;
+    border-radius: var(--border-radius);
+    border: 2px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+    background: color-mix(in srgb, var(--color-bg-primary-overlay) 60%, transparent);
+    color: var(--color-card-text);
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-medium);
+    transition: all 0.3s ease;
+    text-align: center;
+    letter-spacing: 2px;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+
+    &::placeholder {
+        color: color-mix(in srgb, var(--color-cream-light) 40%, transparent);
+        letter-spacing: normal;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-text-primary);
+        background: color-mix(in srgb, var(--color-bg-primary-overlay) 80%, transparent);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    @media (max-width: 480px) {
+        padding: 14px 16px;
+        font-size: var(--font-md);
+    }
+}
+
+.authBox__error {
+    background: color-mix(in srgb, var(--color-error) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-error) 40%, transparent);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--color-error);
+    font-size: var(--font-sm);
+    text-align: center;
+    animation: shake 0.3s ease;
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25%       { transform: translateX(-6px); }
+        75%       { transform: translateX(6px); }
+    }
+}
+
+.authBox__submit {
+    width: 100%;
+    padding: 16px 24px;
+    border-radius: var(--border-radius);
+    border: none;
+    background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
+    color: var(--color-bg-primary);
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 4px;
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px color-mix(in srgb, var(--color-primary) 30%, transparent);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    @media (max-width: 480px) {
+        padding: 14px 20px;
+        font-size: var(--font-md);
+    }
+}
+
+.authBox__back {
+    width: 100%;
+    padding: 12px 24px;
+    border-radius: var(--border-radius);
+    border: 2px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-medium);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+        border-color: var(--color-text-primary);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.authBox__otpHint {
+    font-size: var(--font-md);
+    color: color-mix(in srgb, var(--color-card-text) 65%, transparent);
+    text-align: center;
+    margin: 0;
+    line-height: var(--line-height-md);
+}
+
+.authBox__phoneDisplay {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-bold);
+    direction: ltr;
+    display: inline-block;
+}

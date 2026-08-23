@@ -9,6 +9,10 @@
 
 .title {
   font-size: var(--font-xl);
+
+  @include respond(lg) {
+    font-size: var(--font-lg);
+  }
+
   color: var(--color-title-hover);
 }
-

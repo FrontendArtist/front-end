@@ -13,6 +13,11 @@
 
 .title {
   font-size: var(--font-xl);
+
+  @include respond(lg) {
+    font-size: var(--font-lg);
+  }
+
   color: var(--color-text-primary);
   font-weight: var(--font-weight-bold);
 }

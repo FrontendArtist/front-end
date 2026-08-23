@@ -13,7 +13,7 @@ import CartIcon from '@/components/layout/Navbar/CartIcon';
 const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '[]' }) => {
   const [isClient, setIsClient] = useState(false);
   const [theme, setTheme] = useState('dark');
-
+  
   useEffect(() => {
     setIsClient(true);
     const savedTheme = localStorage.getItem('theme') || 'dark';

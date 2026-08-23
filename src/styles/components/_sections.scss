@@ -2,6 +2,10 @@
 
 .section {
   @include section-spacing;
+  @include respond(lg) {
+    padding-top: var(--space-section-top-mobile);
+    padding-bottom: var(--space-section-bottom-mobile);
+  }
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
 }

@@ -12,6 +12,11 @@
 
     &__title {
         font-size: var(--font-xl);
+
+        @include respond(lg) {
+            font-size: var(--font-lg);
+        }
+
         font-weight: var(--font-weight-bold);
         color: var(--color-text-primary);
         margin: 0 0 0.4rem;

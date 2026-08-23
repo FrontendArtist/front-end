@@ -1,7 +1,7 @@
 @use '../../../styles/base/mixins' as *;
 
 .categoriesSection {
-  // The global .section class will handle the padding
+  @include section-spacing;
 }
 
 .header {
@@ -13,6 +13,15 @@
 
 .title {
   font-size: var(--font-xl);
+
+  @include respond(lg) {
+    font-size: var(--font-lg);
+  }
+
+  @include respond(lg) {
+    font-size: var(--font-lg);
+  }
+
   color: var(--color-text-primary);
   font-weight: var(--font-weight-bold);
 }

@@ -35,7 +35,7 @@ const HeroSection = () => {
         </div>
         <p className={styles.subtitle}>
         </p>
-        <ScrollCTAButton targetId="about-mentor">
+        <ScrollCTAButton targetId="intro-section">
           شروع سفر
         </ScrollCTAButton>
       </div>

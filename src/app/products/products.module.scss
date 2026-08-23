@@ -1,3 +1,5 @@
+@use '@/styles/base/mixins' as *;
+
 .main {
   padding-top: var(--space-section-top-desktop);
   padding-bottom: var(--space-section-bottom-desktop);
@@ -9,15 +11,10 @@
 
 .title {
   font-size: var(--font-xl);
+
+  @include respond(lg) {
+    font-size: var(--font-lg);
+  }
+
   color: var(--color-title-hover);
 }
-
-
-
-
-
-
-
-
-
-

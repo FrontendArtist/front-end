@@ -663,6 +663,74 @@
       font-style: italic;
     }
   }
+
+  // ---- Poetry / شعر ----
+  // Usage in article HTML:
+  //
+  //   <div class="poem">
+  //     <div class="bayt">
+  //       <span class="hemistich">کرد مردی از سخندانی سوال</span>
+  //       <span class="hemistich">حق و باطل چیست ای نیکو مقال</span>
+  //     </div>
+  //     <div class="bayt">
+  //       <span class="hemistich">...</span>
+  //       <span class="hemistich">...</span>
+  //     </div>
+  //   </div>
+
+  .poem {
+    margin: 2rem auto;
+    max-width: 680px;
+    background: #051a1a;
+    border: 1px solid rgba(246, 217, 130, 0.2);
+    border-right: 4px solid var(--color-title-hover, #F5C452);
+    border-left: 4px solid var(--color-title-hover, #F5C452);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    direction: rtl;
+    text-align: center;
+
+    .bayt {
+      display: table;
+      width: 100%;
+      margin-bottom: 0.6rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .hemistich {
+        display: table-cell;
+        width: 50%;
+        font-size: var(--font-md);
+        line-height: 2.1;
+        color: #fff;
+        padding: 0 0.5rem;
+
+        // مصراع اول (راست): بدون جداکننده
+        &:first-child {
+          border-left: 1px solid rgba(246, 217, 130, 0.3);
+          padding-left: 1.5rem;
+        }
+
+        // مصراع دوم (چپ): با فاصله از جداکننده
+        &:last-child {
+          padding-right: 1.5rem;
+        }
+      }
+    }
+
+    // اگر فقط یک مصراع تنها (مصراع یتیم/عنوان)
+    .bayt-single {
+      display: block;
+      text-align: center;
+      font-size: var(--font-md);
+      line-height: 2.1;
+      color: var(--color-title-hover, #F5C452);
+      font-weight: var(--font-weight-bold, 700);
+      margin-bottom: 0.5rem;
+    }
+  }
 }
 
 // =============================================================================
@@ -904,6 +972,25 @@
     figure figcaption {
       color: #4E6155;
     }
+
+    .poem {
+      background: #FAFCF8;
+      border-color: rgba(199, 154, 43, 0.25);
+      border-right-color: #C79A2B;
+      border-left-color: #C79A2B;
+
+      .bayt .hemistich {
+        color: #18211B;
+
+        &:first-child {
+          border-left-color: rgba(199, 154, 43, 0.35);
+        }
+      }
+
+      .bayt-single {
+        color: #7B5A14;
+      }
+    }
   }
 }
 
@@ -967,6 +1054,35 @@
         width: 1.7rem;
         height: 1.7rem;
         font-size: 11px;
+      }
+    }
+
+    // Poem responsive: stack hemistichs vertically on mobile
+    .poem {
+      padding: 1.1rem 1rem;
+
+      .bayt {
+        display: block;
+
+        .hemistich {
+          display: block;
+          width: 100%;
+          padding: 0;
+          font-size: var(--font-sm);
+          line-height: 2;
+          text-align: center;
+
+          &:first-child {
+            border-left: none;
+            border-bottom: 1px solid rgba(246, 217, 130, 0.25);
+            padding-bottom: 0.25rem;
+            margin-bottom: 0.15rem;
+          }
+
+          &:last-child {
+            padding-right: 0;
+          }
+        }
       }
     }
   }

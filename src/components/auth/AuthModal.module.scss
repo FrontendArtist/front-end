@@ -1,72 +1,64 @@
 @use '@/styles/base/mixins' as *;
 
+// ─── Overlay ──────────────────────────────────────────────────────────────────
 .overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: fade(var(--color-black), 70%);
+  inset: 0;
+  background: color-mix(in srgb, var(--color-black) 70%, transparent);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  animation: fadeIn 0.3s ease-in-out;
   padding: 20px;
+  animation: fadeIn 0.25s ease-out;
 
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
 }
 
+// ─── Modal Card ───────────────────────────────────────────────────────────────
 .modal {
-  background: var(--gradient-card-vertical);
-  backdrop-filter: blur(20px);
-  border-radius: var(--border-radius);
-  padding: 40px;
-  max-width: 480px;
   width: 100%;
+  max-width: 460px;
   position: relative;
-  border: 1px solid fade(var(--color-primary), 20%);
-  box-shadow: 0 8px 32px fade(var(--color-black), 30%);
+  padding: 48px 40px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-overlay) 55%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-primary) 70%, transparent) 100%
+  );
+  backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
+  border-radius: var(--radius-card);
+  box-shadow: 0 24px 48px color-mix(in srgb, var(--color-black) 30%, transparent);
   animation: slideUp 0.3s ease-out;
 
   @keyframes slideUp {
-    from {
-      transform: translateY(30px);
-      opacity: 0;
-    }
-
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
+    from { transform: translateY(28px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
   }
 
   @include respond(md) {
-    padding: 32px 24px;
-    max-width: 400px;
+    padding: 36px 28px;
   }
 
   @include respond(sm) {
-    padding: 24px 20px;
+    padding: 28px 20px;
+    border-radius: var(--border-radius);
   }
 }
 
+// ─── Close Button ─────────────────────────────────────────────────────────────
 .closeButton {
   position: absolute;
   top: 16px;
   left: 16px;
   background: transparent;
   border: none;
-  color: var(--color-text-primary);
+  color: color-mix(in srgb, var(--color-text-primary) 60%, transparent);
   cursor: pointer;
   padding: 8px;
   display: flex;
@@ -76,36 +68,39 @@
   transition: all 0.2s ease;
 
   &:hover {
-    background: fade(var(--color-primary), 10%);
-    color: var(--color-title-hover);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    color: var(--color-text-primary);
   }
 
   &:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
   }
 }
 
+// ─── Content Wrapper ──────────────────────────────────────────────────────────
 .content {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
+// ─── Header ───────────────────────────────────────────────────────────────────
 .title {
   font-family: var(--font-lalezar);
   font-size: var(--font-xl);
   color: var(--color-text-primary);
   text-align: center;
   margin: 0;
+  line-height: 1.4;
 
   @include respond(md) {
-    font-size: var(--font-xl);
+    font-size: var(--font-lg);
   }
 }
 
 .description {
   font-size: var(--font-md);
-  color: var(--color-card-text);
+  color: color-mix(in srgb, var(--color-card-text) 65%, transparent);
   text-align: center;
   margin: 0;
   line-height: var(--line-height-md);
@@ -122,6 +117,7 @@
   display: inline-block;
 }
 
+// ─── Form Fields ──────────────────────────────────────────────────────────────
 .inputGroup {
   display: flex;
   flex-direction: column;
@@ -141,25 +137,28 @@
 .input {
   padding: 16px 20px;
   border-radius: var(--border-radius);
-  border: 2px solid fade(var(--color-primary), 30%);
-  background: fade(var(--color-bg-primary-overlay), 60%);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  background: color-mix(in srgb, var(--color-bg-primary-overlay) 60%, transparent);
   color: var(--color-card-text);
   font-size: var(--font-lg);
   font-weight: var(--font-weight-medium);
+  font-family: inherit;
   transition: all 0.3s ease;
   text-align: center;
   letter-spacing: 2px;
+  width: 100%;
+  box-sizing: border-box;
 
   &::placeholder {
-    color: fade(var(--color-cream-light), 40%);
+    color: color-mix(in srgb, var(--color-cream-light) 40%, transparent);
     letter-spacing: normal;
   }
 
   &:focus {
     outline: none;
     border-color: var(--color-text-primary);
-    background: fade(var(--color-bg-primary-overlay), 80%);
-    box-shadow: 0 0 0 4px fade(var(--color-primary), 10%);
+    background: color-mix(in srgb, var(--color-bg-primary-overlay) 80%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent);
   }
 
   &:disabled {
@@ -173,9 +172,10 @@
   }
 }
 
+// ─── Error ────────────────────────────────────────────────────────────────────
 .error {
-  background: fade(var(--color-error), 15%);
-  border: 1px solid fade(var(--color-error), 40%);
+  background: color-mix(in srgb, var(--color-error) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 40%, transparent);
   border-radius: 8px;
   padding: 12px 16px;
   color: var(--color-error);
@@ -184,22 +184,13 @@
   animation: shake 0.3s ease;
 
   @keyframes shake {
-
-    0%,
-    100% {
-      transform: translateX(0);
-    }
-
-    25% {
-      transform: translateX(-8px);
-    }
-
-    75% {
-      transform: translateX(8px);
-    }
+    0%, 100% { transform: translateX(0); }
+    25%       { transform: translateX(-6px); }
+    75%       { transform: translateX(6px); }
   }
 }
 
+// ─── Buttons ──────────────────────────────────────────────────────────────────
 .submitButton {
   width: 100%;
   padding: 16px 24px;
@@ -209,13 +200,14 @@
   color: var(--color-bg-primary);
   font-size: var(--font-lg);
   font-weight: var(--font-weight-bold);
+  font-family: inherit;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 8px;
+  margin-top: 4px;
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px fade(var(--color-primary), 30%);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--color-primary) 30%, transparent);
   }
 
   &:active:not(:disabled) {
@@ -237,16 +229,18 @@
   width: 100%;
   padding: 12px 24px;
   border-radius: var(--border-radius);
-  border: 2px solid fade(var(--color-primary), 30%);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
   background: transparent;
   color: var(--color-text-primary);
   font-size: var(--font-md);
   font-weight: var(--font-weight-medium);
+  font-family: inherit;
   cursor: pointer;
   transition: all 0.3s ease;
+  margin-top: 8px;
 
   &:hover:not(:disabled) {
-    background: fade(var(--color-primary), 10%);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
     border-color: var(--color-text-primary);
   }
 
@@ -263,4 +257,4 @@
     padding: 10px 20px;
     font-size: var(--font-sm);
   }
-}
+}

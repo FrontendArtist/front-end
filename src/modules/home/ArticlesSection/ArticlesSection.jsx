@@ -55,6 +55,12 @@ const ArticlesSection = ({ data = [], serverError = false }) => {
             renderItem={renderArticleCard}
             slidesPerView={3}
             loop={true}
+            breakpoints={{
+              320: { slidesPerView: 1, spaceBetween: 15 },
+              576: { slidesPerView: 2, spaceBetween: 15 },
+              768: { slidesPerView: 3, spaceBetween: 20 },
+
+            }}
           />
         </div>
       </div>

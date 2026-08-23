@@ -30,6 +30,11 @@
 
 .title {
   font-size: var(--font-xl);
+
+  @include respond(lg) {
+    font-size: var(--font-lg);
+  }
+
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin-bottom: 8px;

@@ -4,12 +4,19 @@
 }
 
 // Breakpoints for mixin logic
+$breakpoint-2xl: 1440px;
 $breakpoint-xl: 1280px;
 $breakpoint-lg: 1024px;
 $breakpoint-md: 768px;
 $breakpoint-sm: 440px;
 
 @mixin respond($breakpoint) {
+  @if $breakpoint ==2xl {
+    @media (max-width: $breakpoint-2xl) {
+      @content;
+    }
+  }
+
   @if $breakpoint ==xl {
     @media (max-width: $breakpoint-xl) {
       @content;
@@ -57,6 +64,22 @@ $breakpoint-sm: 440px;
 @mixin section-spacing {
   padding-top: var(--space-section-top-desktop);
   padding-bottom: var(--space-section-top-desktop);
+    @include respond(xl) {
+    padding-top: 70px;
+    padding-bottom: 70px;
+  }
+    @include respond(lg) {
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+    @include respond(md) {
+    padding-top: 50px;
+    padding-bottom: 50px;
+  }
+    @include respond(sm) {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
 }
 
 @mixin container {
@@ -64,16 +87,31 @@ $breakpoint-sm: 440px;
   padding-left: var(--space-container-x-desktop);
   padding-right: var(--space-container-x-desktop);
   max-width: $breakpoint-xl;
-
+  
+  @include respond(2xl) {
+    max-width: $breakpoint-lg;
+    padding-left: var(--space-container-x-laptop);
+    padding-right: var(--space-container-x-laptop);
+  }
+  
+  @include respond(xl) {
+    max-width: $breakpoint-lg;
+    padding-left: var(--space-container-x-laptop);
+    padding-right: var(--space-container-x-laptop);
+  }
   @include respond(lg) {
-    padding-left: 60px;
-    padding-right: 60px;
-  }
+    max-width: $breakpoint-lg;
+    padding-left: var(--space-container-x-laptop);
+    padding-right: var(--space-container-x-laptop);
 
-  @include respond(md) {
-    padding-left: 40px;
-    padding-right: 40px;
   }
+  
+  @include respond(md) {
+    padding-left: var(--space-container-x-laptop);
+    padding-right: var(--space-container-x-laptop);
+
+  }
+  
 
   @include respond(sm) {
     padding-left: 20px;
@@ -147,9 +185,11 @@ $breakpoint-sm: 440px;
   gap: 16px;
   height: 100%;
 
+
   @include respond(md) {
     padding: 20px;
     gap: 12px;
+    
   }
 
   @include respond(sm) {

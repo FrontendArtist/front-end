@@ -7,35 +7,185 @@
  * اولین پیام خود را به استاد ارسال کند.
  *
  * 🔐 Auth:
- * اگر کاربر لاگین نباشد به صفحه اصلی redirect می‌شود.
+ * اگر کاربر لاگین نباشد، فرم لاگین inline در همین صفحه نمایش داده می‌شود.
  *
  * 🔄 Flow:
- * 1. کاربر فرم PreChatForm را پر می‌کند
- * 2. پیام با type='instructor' و metaData ذخیره می‌شود
- * 3. پس از ارسال موفق، پیام تأیید نمایش داده می‌شود
+ * 1. کاربر لاگین نیست → فرم لاگین inline نمایش داده می‌شود
+ * 2. پس از لاگین موفق، فرم PreChatForm نمایش داده می‌شود
+ * 3. پیام با type='instructor' و metaData ذخیره می‌شود
+ * 4. پس از ارسال موفق، پیام تأیید نمایش داده می‌شود
  */
 
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useState } from 'react';
+import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
 import PreChatForm from '@/components/chat/PreChatForm';
 import styles from './contact-mentor.module.scss';
 
+// ─── Inline Login Form ────────────────────────────────────────────────────────
+function InlineLoginForm() {
+    const [step, setStep] = useState('phone'); // 'phone' | 'otp'
+    const [phone, setPhone] = useState('');
+    const [otp, setOtp] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handlePhoneSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        if (!phone || phone.length < 11) {
+            setError('شماره موبایل معتبر نیست');
+            return;
+        }
+        setLoading(true);
+        try {
+            const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+            const response = await fetch(`${strapiUrl}/api/auth/otp/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phoneNumber: phone }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'خطا در ارسال کد تایید');
+            setStep('otp');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleOTPSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        if (!otp || otp.length !== 6) {
+            setError('کد تایید باید ۶ رقم باشد');
+            return;
+        }
+        setLoading(true);
+        try {
+            const result = await signIn('otp-login', {
+                phoneNumber: phone,
+                otpCode: otp,
+                redirect: false,
+            });
+            if (result?.error) throw new Error('کد تایید نامعتبر است');
+            // session automatically refreshes — page re-renders with PreChatForm
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className={styles.authBox}>
+            {/* ── Header ── */}
+            <div className={styles.authBox__header}>
+                <div className={styles.authBox__icon} aria-hidden="true">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="1.8"
+                        strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                </div>
+                <h1 className={styles.authBox__title}>برای ارتباط با استاد لاگین شوید</h1>
+                <p className={styles.authBox__subtitle}>
+                    برای ارسال پیام به استاد، ابتدا وارد حساب کاربری خود شوید.
+                </p>
+            </div>
+
+            {/* ── Phone Step ── */}
+            {step === 'phone' && (
+                <form onSubmit={handlePhoneSubmit} className={styles.authBox__form}>
+                    <div className={styles.authBox__field}>
+                        <label htmlFor="cm-phone" className={styles.authBox__label}>
+                            شماره موبایل
+                        </label>
+                        <input
+                            type="tel"
+                            id="cm-phone"
+                            className={styles.authBox__input}
+                            placeholder="09123456789"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            disabled={loading}
+                            maxLength={11}
+                            dir="ltr"
+                            autoComplete="tel"
+                        />
+                    </div>
+                    {error && <div className={styles.authBox__error} role="alert">{error}</div>}
+                    <button
+                        type="submit"
+                        className={styles.authBox__submit}
+                        disabled={loading}
+                        id="cm-phone-submit"
+                    >
+                        {loading ? 'در حال ارسال...' : 'دریافت کد تایید'}
+                    </button>
+                </form>
+            )}
+
+            {/* ── OTP Step ── */}
+            {step === 'otp' && (
+                <form onSubmit={handleOTPSubmit} className={styles.authBox__form}>
+                    <p className={styles.authBox__otpHint}>
+                        کد ۶ رقمی ارسال شده به{' '}
+                        <span className={styles.authBox__phoneDisplay}>{phone}</span>{' '}
+                        را وارد کنید
+                    </p>
+                    <div className={styles.authBox__field}>
+                        <label htmlFor="cm-otp" className={styles.authBox__label}>
+                            کد تایید
+                        </label>
+                        <input
+                            type="text"
+                            id="cm-otp"
+                            className={styles.authBox__input}
+                            placeholder="123456"
+                            value={otp}
+                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                            disabled={loading}
+                            maxLength={6}
+                            dir="ltr"
+                            autoComplete="one-time-code"
+                            inputMode="numeric"
+                        />
+                    </div>
+                    {error && <div className={styles.authBox__error} role="alert">{error}</div>}
+                    <button
+                        type="submit"
+                        className={styles.authBox__submit}
+                        disabled={loading}
+                        id="cm-otp-submit"
+                    >
+                        {loading ? 'در حال تایید...' : 'تایید و ورود'}
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.authBox__back}
+                        onClick={() => { setStep('phone'); setOtp(''); setError(''); }}
+                        disabled={loading}
+                        id="cm-otp-back"
+                    >
+                        بازگشت به وارد کردن شماره
+                    </button>
+                </form>
+            )}
+        </div>
+    );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ContactMentorPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
 
-    // پس از ارسال موفق، این state پر می‌شود تا صفحه تأیید نشان داده شود
     const [submittedMessage, setSubmittedMessage] = useState(null);
-
-    // ─── Redirect اگر کاربر لاگین نباشد ────────────────────────────────────
-    useEffect(() => {
-        if (status === 'unauthenticated') {
-            router.push('/');
-        }
-    }, [status, router]);
 
     // نمایش loading در حین بررسی session
     if (status === 'loading') {
@@ -49,7 +199,14 @@ export default function ContactMentorPage() {
         );
     }
 
-    if (status === 'unauthenticated') return null;
+    // ─── اگر لاگین نیست → فرم لاگین inline ────────────────────────────────
+    if (status === 'unauthenticated') {
+        return (
+            <div className={styles.page}>
+                <InlineLoginForm />
+            </div>
+        );
+    }
 
     // ─── پس از ارسال موفق ────────────────────────────────────────────────────
     if (submittedMessage) {

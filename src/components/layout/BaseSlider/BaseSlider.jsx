@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -10,6 +10,7 @@ import { Navigation } from 'swiper/modules';
 import styles from './BaseSlider.module.scss';
 
 const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4, breakpoints }) => {
+  const [isLocked, setIsLocked] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // refs for custom navigation buttons
@@ -26,32 +27,37 @@ const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4, breakp
     768: { slidesPerView: 3, spaceBetween: 20 },
     1024: { slidesPerView: 4, spaceBetween: 30 },
     1280: { slidesPerView, spaceBetween: 30 },
+    1440: { slidesPerView, spaceBetween: 30 },
   };
 
   const swiperBreakpoints = breakpoints || defaultBreakpoints;
 
   return (
     <div className={styles.sliderWrapper}>
-      {/* 🔹 custom buttons (outside swiper) */}
-      <button
-        ref={nextRef}
-        className={`${styles.navBtn} ${styles.prev}`}
-        aria-label="Next Slide"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"></path>
-        </svg>
-      </button>
+      {/* 🔹 custom buttons (outside swiper) — hidden when all items fit */}
+      {!isLocked && (
+        <>
+          <button
+            ref={nextRef}
+            className={`${styles.navBtn} ${styles.prev}`}
+            aria-label="Next Slide"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"></path>
+            </svg>
+          </button>
 
-      <button
-        ref={prevRef}
-        className={`${styles.navBtn} ${styles.next}`}
-        aria-label="Previous Slide"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"></path>
-        </svg>
-      </button>
+          <button
+            ref={prevRef}
+            className={`${styles.navBtn} ${styles.next}`}
+            aria-label="Previous Slide"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"></path>
+            </svg>
+          </button>
+        </>
+      )}
 
       <div
         className={`${styles.sliderContainer} ${isInitialized ? styles.swiperInitialized : ''
@@ -60,16 +66,22 @@ const BaseSlider = ({ items, renderItem, loop = false, slidesPerView = 4, breakp
         <Swiper
           modules={[Navigation]}
           loop={loop}
-          watchOverflow={false}
+          watchOverflow={true}
           breakpoints={swiperBreakpoints}
           className={styles.swiper}
           onBeforeInit={(swiper) => {
             swiper.params.navigation.prevEl = prevRef.current;
             swiper.params.navigation.nextEl = nextRef.current;
           }}
-          onInit={() => {
+          onInit={(swiper) => {
             setIsInitialized(true);
+            setIsLocked(swiper.isLocked);
           }}
+          onBreakpoint={(swiper) => {
+            setIsLocked(swiper.isLocked);
+          }}
+          onLock={(swiper) => setIsLocked(true)}
+          onUnlock={(swiper) => setIsLocked(false)}
         >
           {items.map((item, index) => (
             <SwiperSlide key={index} className={styles.swiperSlide}>

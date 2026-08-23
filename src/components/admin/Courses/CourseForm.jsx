@@ -602,13 +602,15 @@ export default function CourseForm({ course = null }) {
                             <label>محتوای کامل دوره (ویرایشگر بصری)</label>
                             {isMounted ? (
                                 <Editor
-                                    apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY || 'no-api-key'}
+                                    tinymceScriptSrc="/tinymce/tinymce.min.js"
                                     onInit={(_evt, editor) => (editorRef.current = editor)}
                                     initialValue={course?.content || content || ''}
                                     init={{
                                         height: 480,
                                         menubar: false,
+                                        license_key: 'gpl',
                                         language: 'fa',
+                                        language_url: '/tinymce/langs/fa.js',
                                         directionality: 'rtl',
                                         plugins: [
                                             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
