@@ -19,8 +19,8 @@ const AboutMentorSection = () => {
           <div className={styles.innerWrapper}>
             {/* ===== Image — bleeds upward out of card ===== */}
             <div className={styles.imageWrapper}>
-              <img
-                src="/images/master.png"
+              <img 
+                src="/images/master.webp"
                 alt="مجید سعیدیان"
                 className={styles.masterImage}
               />

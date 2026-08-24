@@ -452,6 +452,60 @@
     }
   }
 
+  // ---- Table (direct — for CMS tables without .table-wrapper) ----
+  // .content روی <article> خود React است، نه داخل HTML خام،
+  // پس element selector ها مثل table همیشه کار می‌کنن.
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: right;
+    font-size: var(--font-sm);
+    overflow-x: auto;
+    display: block;
+    margin: 1.75rem 0;
+    border-radius: 12px;
+    border: 1px solid rgba(246, 217, 130, 0.2);
+    background: #041d1d;
+
+    thead tr {
+      background: #002b20;
+      border-bottom: 2px solid var(--color-title-hover, #F5C452);
+
+      th, td {
+        padding: 0.85rem 1.1rem;
+        color: var(--color-title-hover, #F5C452);
+        font-weight: 700;
+        font-size: var(--font-sm);
+        white-space: nowrap;
+      }
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      transition: background 0.2s;
+
+      &:nth-child(even) {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      &:hover {
+        background: rgba(246, 217, 130, 0.07);
+      }
+
+      td {
+        padding: 0.85rem 1.1rem;
+        color: #fff;
+        font-size: var(--font-xs);
+        line-height: 1.6;
+
+        strong {
+          color: inherit;
+          font-weight: 700;
+        }
+      }
+    }
+  }
+
   // ---- Callouts ----
   .callout {
     padding: 1.1rem 1.35rem;
@@ -665,6 +719,9 @@
   }
 
   // ---- Poetry / شعر ----
+  // NOTE: از :global() استفاده شده چون محتوا با dangerouslySetInnerHTML رندر می‌شه
+  // و CSS Modules نمی‌تواند کلاس‌های داخل HTML خام را scope کند.
+  //
   // Usage in article HTML:
   //
   //   <div class="poem">
@@ -672,13 +729,9 @@
   //       <span class="hemistich">کرد مردی از سخندانی سوال</span>
   //       <span class="hemistich">حق و باطل چیست ای نیکو مقال</span>
   //     </div>
-  //     <div class="bayt">
-  //       <span class="hemistich">...</span>
-  //       <span class="hemistich">...</span>
-  //     </div>
   //   </div>
 
-  .poem {
+  :global(.poem) {
     margin: 2rem auto;
     max-width: 680px;
     background: #051a1a;
@@ -690,7 +743,7 @@
     direction: rtl;
     text-align: center;
 
-    .bayt {
+    :global(.bayt) {
       display: table;
       width: 100%;
       margin-bottom: 0.6rem;
@@ -699,7 +752,7 @@
         margin-bottom: 0;
       }
 
-      .hemistich {
+      :global(.hemistich) {
         display: table-cell;
         width: 50%;
         font-size: var(--font-md);
@@ -707,13 +760,13 @@
         color: #fff;
         padding: 0 0.5rem;
 
-        // مصراع اول (راست): بدون جداکننده
+        // مصراع اول (راست)
         &:first-child {
           border-left: 1px solid rgba(246, 217, 130, 0.3);
           padding-left: 1.5rem;
         }
 
-        // مصراع دوم (چپ): با فاصله از جداکننده
+        // مصراع دوم (چپ)
         &:last-child {
           padding-right: 1.5rem;
         }
@@ -721,7 +774,7 @@
     }
 
     // اگر فقط یک مصراع تنها (مصراع یتیم/عنوان)
-    .bayt-single {
+    :global(.bayt-single) {
       display: block;
       text-align: center;
       font-size: var(--font-md);
@@ -880,6 +933,40 @@
       }
     }
 
+    // Light theme for direct table (no wrapper)
+    table {
+      background: #FAFCF8;
+      border-color: rgba(78, 107, 87, 0.2);
+
+      thead tr {
+        background: #4E6B57;
+
+        th, td {
+          color: #fff;
+        }
+      }
+
+      tbody tr {
+        border-bottom-color: rgba(78, 107, 87, 0.12);
+
+        &:nth-child(even) {
+          background: #F6F8F3;
+        }
+
+        &:hover {
+          background: rgba(199, 154, 43, 0.1);
+        }
+
+        td {
+          color: #18211B;
+
+          strong {
+            color: inherit;
+          }
+        }
+      }
+    }
+
     .callout {
       &.callout-warning {
         background: #FFF4D9;
@@ -973,13 +1060,13 @@
       color: #4E6155;
     }
 
-    .poem {
+    :global(.poem) {
       background: #FAFCF8;
       border-color: rgba(199, 154, 43, 0.25);
       border-right-color: #C79A2B;
       border-left-color: #C79A2B;
 
-      .bayt .hemistich {
+      :global(.bayt) :global(.hemistich) {
         color: #18211B;
 
         &:first-child {
@@ -987,7 +1074,7 @@
         }
       }
 
-      .bayt-single {
+      :global(.bayt-single) {
         color: #7B5A14;
       }
     }
@@ -1058,13 +1145,13 @@
     }
 
     // Poem responsive: stack hemistichs vertically on mobile
-    .poem {
+    :global(.poem) {
       padding: 1.1rem 1rem;
 
-      .bayt {
+      :global(.bayt) {
         display: block;
 
-        .hemistich {
+        :global(.hemistich) {
           display: block;
           width: 100%;
           padding: 0;

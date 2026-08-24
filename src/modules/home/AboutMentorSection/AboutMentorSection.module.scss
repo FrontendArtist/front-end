@@ -48,13 +48,35 @@
 .imageWrapper {
   position: relative;
   flex-shrink: 0;
-  width: 38%;
-  background: var(--color-overlay);
+  width: 33%;
+  background-color: var(--color-overlay);
+  background-image: url('/images/masterbg.webp');
+  background-size: cover; // سایز اصلی تصویر — فقط crop میشه، scale نمیشه
+  background-position: center top;
+  background-repeat: no-repeat;
   border-radius: var(--border-radius) 0 0 var(--border-radius); // left corners only (LTR card)
-  overflow: visible;
+
+  overflow-x: clip;
+
+  // لایه سبز نیمه‌شفاف روی تصویر — عدد % رو تغییر بده برای کم/زیاد کردن شدت
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--color-bg-primary) 70%, transparent);
+    border-radius: inherit;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  // img روی لایه سبز
+  > * {
+    position: relative;
+    z-index: 2;
+  }
 
   @include respond(xl) {
-    width: 36%;
+    width: 30%;
   }
 
   @include respond(lg) {
@@ -76,7 +98,7 @@
 // Bleeds out of card upward on desktop; upward on tablet/mobile
 .masterImage {
   position: absolute;
-  width: auto;
+  height: 110%;
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
@@ -85,7 +107,7 @@
   pointer-events: none;
 
   @include respond(xl) {
-    height: 105%;
+    height: 110%;
   }
 
   @include respond(lg) {
@@ -229,7 +251,7 @@
     padding: 12px 32px;
   }
 
-  @include respond(md) {
+  @include respond(sm) {
     width: 100%;
     padding: 12px 20px;
   }
