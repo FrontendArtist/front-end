@@ -65,7 +65,7 @@
   font-weight: var(--font-weight-medium);
   line-height: 1.2;
   margin-bottom: var(--space-title-text-desktop);
-  font-family: 'Far Shafigh';
+  font-family: var(--font-lalezar), 'Lalezar', serif;
 
   &:hover {
     color: var(--color-title-hover);

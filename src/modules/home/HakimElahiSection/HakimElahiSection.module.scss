@@ -91,7 +91,7 @@
   color: var(--color-text-primary, var(--color-text-primary));
   margin: 0;
   line-height: 1.4;
-  font-family: 'Far Shafigh';
+  font-family: var(--font-lalezar), 'Lalezar', serif;
   font-weight: 400;
 
   @include respond(md) {
