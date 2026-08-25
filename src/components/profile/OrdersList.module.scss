@@ -6,14 +6,14 @@
 
     &__title {
         font-family: var(--font-lalezar);
-        font-size: var(--font-xl);
+        font-size: var(--font-2xl);
         color: var(--color-text-primary);
         margin: 0 0 32px 0;
         position: relative;
         padding-bottom: 12px;
         border-bottom: 1px solid fade(var(--color-primary), 15%);
 
-        @include respond(md) {
+        @include respond(xl) {
             font-size: var(--font-xl);
             margin-bottom: 24px;
         }

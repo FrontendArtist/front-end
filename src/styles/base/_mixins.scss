@@ -83,39 +83,32 @@ $breakpoint-sm: 440px;
 }
 
 @mixin container {
-  margin: 0 auto;
-  padding-left: var(--space-container-x-desktop);
-  padding-right: var(--space-container-x-desktop);
-  max-width: $breakpoint-xl;
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--space-container-x-desktop);
+  max-width: $breakpoint-xl; // بالای 1280px
   
-  @include respond(2xl) {
+  @include respond(2xl) {  // ≤1440px
+    padding-inline: var(--space-container-x-laptop);
     max-width: $breakpoint-lg;
-    padding-left: var(--space-container-x-laptop);
-    padding-right: var(--space-container-x-laptop);
   }
   
-  @include respond(xl) {
-    max-width: $breakpoint-lg;
-    padding-left: var(--space-container-x-laptop);
-    padding-right: var(--space-container-x-laptop);
+  @include respond(xl) {   // ≤1280px
+    padding-inline: var(--space-container-x-desktop);
   }
-  @include respond(lg) {
-    max-width: $breakpoint-lg;
-    padding-left: var(--space-container-x-laptop);
-    padding-right: var(--space-container-x-laptop);
 
+  @include respond(lg) {   // ≤960px
+    max-width: 100%;
+    padding-inline: var(--space-container-x-laptop);
   }
-  
-  @include respond(md) {
-    padding-left: var(--space-container-x-laptop);
-    padding-right: var(--space-container-x-laptop);
 
+  @include respond(md) {   // ≤768px
+    max-width: 100%;       // از اینجا فلوئید می‌شه
+    padding-inline: var(--space-container-x-laptop);
   }
-  
 
-  @include respond(sm) {
-    padding-left: 20px;
-    padding-right: 20px;
+  @include respond(sm) {   // ≤440px
+    padding-inline: 20px;
   }
 }
 
@@ -153,6 +146,7 @@ $breakpoint-sm: 440px;
   aspect-ratio: 16 / 10;
   flex-shrink: 0;
   overflow: hidden;
+
 
   @include respond(md) {
     aspect-ratio: 4 / 3;

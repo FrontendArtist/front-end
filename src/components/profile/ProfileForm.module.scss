@@ -77,11 +77,11 @@
 
 .title {
     font-family: var(--font-lalezar);
-    font-size: var(--font-xl);
+    font-size: var(--font-2xl);
     color: var(--color-text-primary);
     margin: 0 0 8px 0;
 
-    @include respond(md) {
+    @include respond(xl) {
         font-size: var(--font-xl);
     }
 }

@@ -147,11 +147,9 @@
     max-width: 460px;
     margin: 24px;
     padding: 48px 40px;
-    background: linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--color-overlay) 55%, transparent) 0%,
-        color-mix(in srgb, var(--color-bg-primary) 70%, transparent) 100%
-    );
+    background: linear-gradient(135deg,
+            color-mix(in srgb, var(--color-overlay) 55%, transparent) 0%,
+            color-mix(in srgb, var(--color-bg-primary) 70%, transparent) 100%);
     backdrop-filter: blur(20px);
     border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
     border-radius: var(--radius-card);
@@ -187,13 +185,13 @@
 
 .authBox__title {
     font-family: var(--font-lalezar);
-    font-size: var(--font-xl);
+    font-size: var(--font-2xl);
     color: var(--color-text-primary);
     margin: 0;
     line-height: 1.4;
 
-    @media (max-width: 480px) {
-        font-size: var(--font-lg);
+    @include respond(xl) {
+        font-size: var(--font-xl);
     }
 }
 
@@ -275,9 +273,19 @@
     animation: shake 0.3s ease;
 
     @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25%       { transform: translateX(-6px); }
-        75%       { transform: translateX(6px); }
+
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+
+        25% {
+            transform: translateX(-6px);
+        }
+
+        75% {
+            transform: translateX(6px);
+        }
     }
 }
 
@@ -352,4 +360,4 @@
     font-weight: var(--font-weight-bold);
     direction: ltr;
     display: inline-block;
-}
+}

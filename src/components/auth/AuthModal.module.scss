@@ -14,8 +14,13 @@
   animation: fadeIn 0.25s ease-out;
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 }
 
@@ -25,11 +30,9 @@
   max-width: 460px;
   position: relative;
   padding: 48px 40px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--color-overlay) 55%, transparent) 0%,
-    color-mix(in srgb, var(--color-bg-primary) 70%, transparent) 100%
-  );
+  background: linear-gradient(135deg,
+      color-mix(in srgb, var(--color-overlay) 55%, transparent) 0%,
+      color-mix(in srgb, var(--color-bg-primary) 70%, transparent) 100%);
   backdrop-filter: blur(20px);
   border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
   border-radius: var(--radius-card);
@@ -37,8 +40,15 @@
   animation: slideUp 0.3s ease-out;
 
   @keyframes slideUp {
-    from { transform: translateY(28px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
+    from {
+      transform: translateY(28px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 
   @include respond(md) {
@@ -87,14 +97,14 @@
 // ─── Header ───────────────────────────────────────────────────────────────────
 .title {
   font-family: var(--font-lalezar);
-  font-size: var(--font-xl);
+  font-size: var(--font-2xl);
   color: var(--color-text-primary);
   text-align: center;
   margin: 0;
   line-height: 1.4;
 
-  @include respond(md) {
-    font-size: var(--font-lg);
+  @include respond(xl) {
+    font-size: var(--font-xl);
   }
 }
 
@@ -184,9 +194,19 @@
   animation: shake 0.3s ease;
 
   @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25%       { transform: translateX(-6px); }
-    75%       { transform: translateX(6px); }
+
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+
+    25% {
+      transform: translateX(-6px);
+    }
+
+    75% {
+      transform: translateX(6px);
+    }
   }
 }
 
@@ -257,4 +277,4 @@
     padding: 10px 20px;
     font-size: var(--font-sm);
   }
-}
+}

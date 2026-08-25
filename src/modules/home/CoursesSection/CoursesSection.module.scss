@@ -12,11 +12,11 @@
 }
 
 .title {
-  font-size: var(--font-xl);
+  font-size: var(--font-2xl);
   font-family: var(--font-lalezar), 'Lalezar', serif;
 
-  @include respond(lg) {
-    font-size: var(--font-lg);
+  @include respond(xl) {
+    font-size: var(--font-xl);
   }
 
   color: var(--color-text-primary);
