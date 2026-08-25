@@ -64,21 +64,21 @@ $breakpoint-sm: 440px;
 @mixin section-spacing {
   padding-top: var(--space-section-top-desktop);
   padding-bottom: var(--space-section-top-desktop);
-    @include respond(xl) {
-    padding-top: 70px;
-    padding-bottom: 70px;
-  }
-    @include respond(lg) {
+    @include respond(2xl) {
     padding-top: 60px;
     padding-bottom: 60px;
   }
-    @include respond(md) {
+    @include respond(xl) {
     padding-top: 50px;
     padding-bottom: 50px;
   }
-    @include respond(sm) {
+    @include respond(lg) {
     padding-top: 40px;
     padding-bottom: 40px;
+  }
+    @include respond(md) {
+    padding-top: 30px;
+    padding-bottom: 30px;
   }
 }
 

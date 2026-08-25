@@ -56,6 +56,11 @@
     height: 100%;
     bottom: 0;
     left: 10px;
+    @include respond(md){
+      height: 300px;
+      object-fit: cover;
+
+    }
   }
 
   @include respond(md) {
@@ -72,10 +77,12 @@
   gap: 20px;
   padding: 32px 50px 50px 50px;
   width: 65%;
-
+  
   @include respond(md) {
+    padding: 20px 30px 30px  ;
     gap: 24px;
     width: 100%;
+    text-align: justify;
   }
 }
 
@@ -100,6 +107,7 @@
 
   @include respond(md) {
     line-height: 1.7;
+    font-size: 14px;
   }
 }
 

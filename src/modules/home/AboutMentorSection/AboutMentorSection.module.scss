@@ -173,13 +173,7 @@
     font-size: var(--font-xl);
   }
 
-  @include respond(lg) {
-    font-size: var(--font-xl);
-  }
 
-  @include respond(md) {
-    font-size: var(--font-lg);
-  }
 }
 
 // ─── Decorative gold divider ──────────────────────────────────────────────────

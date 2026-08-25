@@ -44,7 +44,9 @@
   @include card-text-truncate(3);
 
   @include respond(md) {
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 3;
+    font-size: var(--font-sm);
+    font-weight: 100;
   }
 }
 
@@ -75,7 +77,7 @@
   @include respond(md) {
     margin-top: 16px;
     padding: 10px 24px;
-    font-size: var(--font-sm);
+ 
   }
 
   @include respond(sm) {
@@ -87,7 +89,7 @@
 // بخش نمایش قیمت
 .priceSection {
   margin-top: auto;
-  padding: 16px 0;
+  padding: 16px 0 0 0;
   border-top: 1px solid fade(var(--color-primary), 10%);
 
   @include respond(xl) {

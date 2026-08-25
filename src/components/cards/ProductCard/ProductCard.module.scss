@@ -24,7 +24,9 @@
 .cardTitle {
   @include card-title;
   // تنظیم سایز فونت کم‌تر برای ProductCard
-  font-size: var(--font-md);
+      @include respond(md) {
+        font-size: var(--font-sm);
+    }
 }
 
 .cardText {
@@ -45,9 +47,7 @@
   font-size: var(--font-sm);
   font-weight: var(--font-weight-bold);
 
-  @include respond(md) {
-    font-size: var(--font-md);
-  }
+
 }
 
 // دکمه افزودن به سبد خرید

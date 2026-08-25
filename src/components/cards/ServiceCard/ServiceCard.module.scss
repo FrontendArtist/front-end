@@ -43,6 +43,8 @@
   
   @include respond(md) {
     -webkit-line-clamp: 4;
+    font-size: var(--font-sm);
+    font-weight: 100;
   }
 
   @include respond(sm) {

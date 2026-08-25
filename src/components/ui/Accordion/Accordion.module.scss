@@ -34,14 +34,14 @@
   cursor: pointer;
   @include hover-transition;
 
-  @include respond(md) {
+  @include respond(lg) {
     padding: 16px 20px;
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
   }
 
-  @include respond(sm) {
+  @include respond(md) {
     padding: 14px 16px;
-    font-size: var(--font-sm);
+ 
   }
 
   &:hover {
@@ -79,7 +79,7 @@
   line-height: var(--line-height-lg);
   text-align: right;
 
-  @include respond(md) {
+  @include respond(lg) {
     padding: 0 20px 24px;
     font-size: var(--font-sm);
     line-height: var(--line-height-md);

@@ -136,6 +136,27 @@ footer{
     }
 }
 
+// footer variant — از 1024 به پایین گرادیانت عمودی
+.footer {
+    &.borderHorizontal,
+    &.borderHorizontalRtl {
+        @include respond(lg) {
+            background: linear-gradient(to bottom,
+                    var(--color-text-primary),
+                    transparent);
+        }
+    }
+
+    .cardContent {
+        &.gradientHorizontal,
+        &.gradientHorizontalRtl {
+            @include respond(lg) {
+                background: var(--gradient-card-vertical);
+            }
+        }
+    }
+}
+
 .gradientHorizontal {
     border-radius: var(--border-radius);
 }

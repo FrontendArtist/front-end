@@ -56,6 +56,11 @@
   color: var(--color-card-text);
   font-size: var(--font-md);
   line-height: var(--line-height-lg);
+
+  @include respond(md) {
+    font-size: var(--font-sm);
+    font-weight: 100;
+  }
 }
 
 

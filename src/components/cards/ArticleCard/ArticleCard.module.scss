@@ -38,6 +38,10 @@
     -webkit-line-clamp: 3;
   }
 
+  @include respond(md) {
+    font-size: var(--font-sm);
+    font-weight: 100;
+  }
 }
 
 .footer {
