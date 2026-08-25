@@ -11,6 +11,10 @@
 
 .serviceCard__imageWrapper {
   @include card-image-wrapper;
+
+  @include respond(xl) {
+    aspect-ratio: 16 / 9;
+  }
 }
 
 .serviceCard__image {
@@ -19,18 +23,24 @@
 
 .serviceCard__content {
   @include card-content;
+  gap: 10px;
+
 }
 
 .serviceCard__title {
   @include card-title;
   font-size: var(--font-xl);
   font-family: shafigh;
-  text-align: center
+  text-align: center;
+
+  @include respond(xl) {
+    line-height: 0.6;
+  } 
 }
 
 .serviceCard__description {
   @include card-text-truncate(3);
-
+  
   @include respond(md) {
     -webkit-line-clamp: 4;
   }
@@ -57,6 +67,12 @@
     background-color: var(--color-text-primary);
     color: var(--color-bg-primary);
     transform: scale(1.05);
+  }
+
+  @include respond(xl) {
+    margin-top: 8px;
+    padding: 10px 18px;
+    font-size: var(--font-sm);
   }
 
   @include respond(md) {

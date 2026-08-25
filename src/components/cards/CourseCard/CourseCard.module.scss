@@ -6,6 +6,9 @@
 
 .imageWrapper {
   @include card-image-wrapper;
+    @include respond(xl) {
+    aspect-ratio: 16 / 9;
+  }
 }
 
 .courseImage {
@@ -28,7 +31,9 @@
 
 .cardContent {
   @include card-content;
-
+  @include respond(xl) {
+    gap: 10px;
+  }
 }
 
 .cardTitle {
@@ -61,6 +66,12 @@
     transform: scale(1.05);
   }
 
+  @include respond(xl) {
+    margin-top: 0;
+    padding: 10px 18px;
+    font-size: var(--font-sm);
+  }
+
   @include respond(md) {
     margin-top: 16px;
     padding: 10px 24px;
@@ -78,17 +89,21 @@
   margin-top: auto;
   padding: 16px 0;
   border-top: 1px solid fade(var(--color-primary), 10%);
+
+  @include respond(xl) {
+    padding: 16px 0 0;
+    margin-top: 0;
+  }
 }
 
 .price {
   color: var(--color-text-primary);
   font-size: var(--font-md);
-  font-weight: var(--font-weight-bold);
+  
   display: block;
 
-  @include respond(md) {
-    font-size: var(--font-md);
-  }
+  @include respond(xl) {
+font-weight: var(--font-weight-regular);  }
 }
 
 .purchasedText {
@@ -104,7 +119,7 @@
   border: 1px solid rgba(26, 153, 91, 0.2);
   white-space: nowrap;
 
-  @include respond(sm) {
+  @include respond(xl) {
     font-size: var(--font-xs);
     padding: 6px 12px;
   }
