@@ -13,13 +13,14 @@
 
 .title {
   font-size: var(--font-xl);
+  font-family: var(--font-lalezar), 'Lalezar', serif;
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-regular);
 
   @include respond(lg) {
     font-size: var(--font-lg);
   }
 
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-bold);
 }
 
 .viewAllLink {
