@@ -2,32 +2,31 @@ import Link from 'next/link';
 import styles from './Footer.module.scss';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
 import Image from 'next/image';
+import SocialMedia from '@/modules/contact/components/SocialMedia';
 
-const Footer = () => {
+const Footer = async () => {
   return (
     <footer className={styles.footer}>
       <GradientBorderCard
         gradient="horizontal-rtl"
+        variant="footer"
         enableHover={false}
         className={`${styles.footerContainer} container`}
         contentClassName={styles.footerContent}
       >
+        {/* یک ردیف — همه ستون‌ها کنار هم */}
         <div className={styles.footerGrid}>
 
-          <div>
-            <Image src="/images/shamoparvane 1.png" alt="logo" width={250} height={550} className={styles.shamoparvane} />
-          </div>
-
-          {/* Column 1: About/Brand */}
-          <div className={styles.footerColumn}>
+          {/* درباره ما */}
+          <div className={styles.footerAboutus}>
             <h3 className={styles.columnTitle}>درباره ما</h3>
             <p>
-              ما به دنبال ساختن یک اقتصاد رحمانی هستیم که در آن واحد ارزش نه فقط مادیات، که «نور»، آگاهی و عشق باشد.
+              طرح الهی بستری برای نشر آگاهی، خودشناسی و بیداری معنوی با الهام از قرآن، مثنوی و آموزه‌های مولاناست.
             </p>
           </div>
 
-          {/* Column 2: Quick Links */}
-          <div className={styles.footerColumn}>
+          {/* دسترسی سریع */}
+          <div className={styles.footerLinks}>
             <h3 className={styles.columnTitle}>دسترسی سریع</h3>
             <ul className={styles.linkList}>
               <li><Link href="/products">محصولات</Link></li>
@@ -37,22 +36,31 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Column 3: Contact Info */}
-          <div className={styles.footerColumn}>
-            <h3 className={styles.columnTitle}>تماس با ما</h3>
-            <ul className={styles.linkList}>
-              <li>آدرس: ایران، تهران</li>
-              <li>تلفن: ۰۲۱-۱۲۳۴۵۶۷۸</li>
-              <li>ایمیل: info@example.com</li>
-            </ul>
-            {/* Social Icons Placeholder */}
-            <div className={styles.socialIcons}>
-              <span>Icon1</span> <span>Icon2</span> <span>Icon3</span>
+          {/* شبکه‌های اجتماعی */}
+          <div className={styles.footerCol}>
+            <SocialMedia />
+            <div className={styles.enamadBox}>
+              <Image
+                src="/images/namad/enamad.svg"
+                alt="نماد اعتماد الکترونیکی"
+                width={80}
+                height={80}
+                className={styles.enamadImage}
+              />
+              <span className={styles.enamadLabel}>در حال فعال‌سازی</span>
             </div>
           </div>
 
-
         </div>
+
+        {/* عکس پروانه — absolute */}
+        <Image
+          src="/images/shamoparvane 1.png"
+          alt="shamoparvane"
+          width={220}
+          height={480}
+          className={styles.shamoparvane}
+        />
 
         <div className={styles.footerBottom}>
           <p>تمامی حقوق برای این وب‌سایت محفوظ است. © 2025</p>
@@ -62,4 +70,4 @@ const Footer = () => {
   );
 };
 
-export default Footer;  
+export default Footer;

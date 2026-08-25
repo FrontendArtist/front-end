@@ -66,7 +66,7 @@ export default async function SocialMedia() {
 
     return (
         <div className={styles.socialMediaContainer}>
-            <h3 className={styles.title}>ما را در شبکه‌های اجتماعی دنبال کنید</h3>
+            <h3 className={styles.title}>طرح الهی را در شبکه‌های اجتماعی دنبال کنید :</h3>
             <div className={styles.socialIcons}>
                 {socialLinks.map((social) => (
                     <Link

@@ -127,6 +127,14 @@
         }
     }
 }
+footer{
+    .cardBackground {
+        overflow: visible !important;
+    }
+    .cardContent{
+        overflow: visible !important;
+    }
+}
 
 .gradientHorizontal {
     border-radius: var(--border-radius);

@@ -1,8 +1,12 @@
 @use '../../../styles/base/mixins' as *;
+
 .footer {
   color: var(--color-text-primary);
-  padding: 4rem 0 2rem;
+  padding: 4rem 2rem 2rem;
   direction: rtl;
+  @include respond(md){
+    padding: 2rem 1rem;
+  }
 }
 
 .footerContainer {
@@ -11,40 +15,69 @@
 }
 
 .footerContent {
-  padding: 20px;
-
+  padding: 2.5rem 2rem;
+  position: relative;
+  
   @media (max-width: 960px) {
-    padding-left: 60px;
-    padding-right: 60px;
+    padding-left: 3.75rem;
+    padding-right: 3.75rem;
   }
 
   @media (max-width: 768px) {
-    padding-left: 40px;
-    padding-right: 40px;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
   }
 
   @media (max-width: 440px) {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
   }
 }
 
-.footerGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-gap-desktop);
-  margin-bottom: 3rem;
+/* ─── یک ردیف — همه ستون‌ها کنار هم ─── */
+// .footerGrid {
+//   display: grid;
+//   grid-template-columns: 6fr 3fr 16fr;
+//   align-items: stretch;   /* ارتفاع همه ستون‌ها یکسان */
+//   gap: var(--space-gap-desktop, 2rem);
+//   padding-bottom: 2rem;
+  
+//   @include respond(xl){
+//     grid-template-columns: 7fr 4fr 16fr;
+    
+//   }
+//   @include respond(lg) {
+//     grid-template-columns: 1fr 1fr;
+//     gap: 10px 50px;
+//   }
 
-  @media (max-width: 960px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
+//   @media (max-width: 560px) {
+//     grid-template-columns: 1fr;
+//   }
+// }
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+.footerGrid{
+    gap: var(--space-gap-desktop, 2rem);
+    padding-bottom: 2rem;
+    display: flex;
+    
+    @include respond(lg){
+    gap: 20px 40px;
+    flex-wrap: wrap;
   }
+  @include respond(md){
+    flex-direction: column;
+    gap: 20px 40px;
+    flex-wrap: wrap;
+  }
+    
 }
 
-.footerColumn {
+/* ─── ستون‌های متن ─── */
+.footerAboutus {
+  display: flex;
+  flex-direction: column;
+  width: 25%;
   h3 {
     color: var(--color-title-hover);
     font-size: var(--font-lg);
@@ -54,13 +87,56 @@
   p {
     color: var(--color-card-text);
     line-height: var(--line-height-md);
-    margin-bottom: var(--space-text-button-desktop);
   }
+
+  @include respond(lg){
+    width: 50%;
+  }
+  @include respond(md){
+    width: 100%;
+  }
+}
+.footerLinks{
+  display: flex;
+  flex-direction: column;
+  width: 10%;
+
+  @include respond(lg){
+    width: 30%;
+  } 
+  @include respond(md){
+    width: 100%;
+  }
+}
+
+.footerCol {
+  display: flex;
+  flex-direction: row;
+  height: 100%;   /* پر کردن ارتفاع grid */
+  gap: 20px;
+
+  @include respond(xl){
+    flex-direction: column;
+  }
+  @include respond(lg){
+    flex-direction: row;
+  }
+  @include respond(sm){
+    flex-direction: column;
+  }
+  
+}
+
+.columnTitle {
+  color: var(--color-title-hover);
+  font-size: var(--font-lg);
+  margin-bottom: var(--space-title-text-desktop);
 }
 
 .linkList {
   list-style: none;
   padding: 0;
+  margin: 0;
 
   li {
     margin-bottom: var(--font-sm);
@@ -68,80 +144,82 @@
     a {
       color: var(--color-card-text);
       text-decoration: none;
-      transition: all 0.3s ease-in-out;
+      transition: color 0.25s ease-in-out;
 
       &:hover {
         color: var(--color-title-hover);
       }
     }
+
+  }
+  @include respond(md){
+    display: flex;
+    gap: 20px;
   }
 }
+/* ─── ستون‌های سوشال و اینماد ─── */
 
-.socialIcons {
+/* ─── اینماد ─── */
+.enamadBox {
   display: flex;
-  gap: var(--font-md);
-  margin-top: var(--space-text-button-desktop);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: fit-content;
+  height: 120px;
+  padding: 0.75rem 1rem;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.3s ease;
 
-  span {
-    cursor: pointer;
-    color: var(--color-text-primary);
-    transition: all 0.3s ease-in-out;
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+  @include respond(sm){
+    width: 100%;
+  }
+  
+}
 
-    &:hover {
-      color: var(--color-title-hover);
-    }
+.enamadImage {
+  opacity: 0.7;
+  filter: grayscale(30%);
+}
+
+.enamadLabel {
+  font-size: 0.7rem;
+  color: var(--color-card-text);
+  opacity: 0.55;
+  white-space: nowrap;
+
+  @include respond(md){
+    white-space: wrap;
   }
 }
 
-.newsletterForm {
-  display: flex;
-  gap: var(--font-sm);
-  margin-top: var(--space-text-button-desktop);
+/* ─── عکس پروانه ─── */
+.shamoparvane {
+  position: absolute;
+  left: 20px;
+  bottom: 0;
+  pointer-events: none;
+  object-fit: contain;
 
-  input {
-    flex: 1;
-    padding: 0.75rem;
-    border: 1px solid var(--color-text-primary);
-    border-radius: 8px;
-    background: transparent;
-    color: var(--color-card-text);
-    font-size: var(--font-md);
-
-    &::placeholder {
-      color: var(--color-text-primary);
-      opacity: 0.7;
-    }
-  }
-
-  button {
-    padding: 0.75rem 1.5rem;
-    background: var(--color-title-hover);
-    border: none;
-    border-radius: 8px;
-    color: var(--color-bg-primary);
-    cursor: pointer;
-    font-size: var(--font-md);
-    transition: all 0.3s ease-in-out;
-
-    &:hover {
-      background: var(--color-text-primary);
-    }
+  @include respond(md) {
+    display: none;
   }
 }
 
+/* ─── پایین فوتر ─── */
 .footerBottom {
   text-align: center;
-  padding-top: var(--space-gap-desktop);
-  border-top: 1px solid fade(var(--color-primary), 20%);
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 
   p {
     color: var(--color-card-text);
     font-size: var(--font-sm);
   }
-}
-
-.shamoparvane {
-position: absolute;
-right: 0;
-bottom: 0;
 }
