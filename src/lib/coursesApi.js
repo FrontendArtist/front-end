@@ -16,6 +16,7 @@
 import { apiClient } from './apiClient';
 import { formatStrapiCourses } from './strapiUtils';
 import { withErrorHandling } from './apiErrorHandler';
+import { COURSES_PAGE_SIZE } from './constants';
 
 /**
  * واکشی تمام دوره‌ها از Strapi با ساختار Deep Populate در Strapi v5
@@ -135,7 +136,7 @@ export async function getCourses({ limit = 4 } = {}) {
  * @param {string} sort - پارامتر مرتب‌سازی Strapi (پیش‌فرض: "createdAt:desc")
  * @returns {Promise<{data: Array, meta: object}>} دوره‌های فرمت شده با metadata صفحه‌بندی
  */
-export async function getCoursesPaginated(page = 1, pageSize = 6, sort = 'createdAt:desc') {
+export async function getCoursesPaginated(page = 1, pageSize = COURSES_PAGE_SIZE, sort = 'createdAt:desc') {
   return withErrorHandling(
     async () => {
       const searchParams = new URLSearchParams({

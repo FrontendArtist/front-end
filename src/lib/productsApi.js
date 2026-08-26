@@ -6,6 +6,7 @@
 import { apiClient } from './apiClient';
 import { formatStrapiProducts } from './strapiUtils';
 import { withErrorHandling } from './apiErrorHandler';
+import { PRODUCTS_PAGE_SIZE } from './constants';
 
 /**
  * واکشی تمام محصولات از Strapi
@@ -111,7 +112,7 @@ export async function getProducts({ limit = 4, sort = 'createdAt:desc' } = {}) {
  */
 export async function getProductsPaginated(
   page = 1,
-  pageSize = 6,
+  pageSize = PRODUCTS_PAGE_SIZE,
   sort = 'createdAt:desc',
   { categorySlug, subCategorySlug, subSlugs = [] } = {}
 ) {

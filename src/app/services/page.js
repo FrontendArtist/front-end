@@ -34,6 +34,7 @@ import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ServiceGrid from '@/modules/services/ServiceGrid/ServiceGrid';
 import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock';
 import { getServicesPaginated } from '@/lib/servicesApi';
+import { SERVICES_PAGE_SIZE } from '@/lib/constants';
 import { unstable_noStore as noStore } from 'next/cache';
 import styles from './services.module.scss';
 
@@ -119,7 +120,7 @@ export default async function ServicesPage({ searchParams: spPromise }) {
       ? Object.fromEntries(searchParams.entries())
       : searchParams || {};
   const hasFilters = Object.keys(normalizedSearchParams).length > 0;
-  const result = await getServicesPaginated(1, 3, 'createdAt:desc');
+  const result = await getServicesPaginated(1, SERVICES_PAGE_SIZE, 'createdAt:desc');
 
   if (result.error === 'BACKEND_UNAVAILABLE') {
     noStore();
@@ -186,7 +187,7 @@ export default async function ServicesPage({ searchParams: spPromise }) {
           entityName="خدمت"
           resetLink="/services"
         >
-          <ServiceGrid initialServices={services} />
+          <ServiceGrid initialServices={services} initialMeta={result.meta} />
         </ListGuard>
 
       </div>

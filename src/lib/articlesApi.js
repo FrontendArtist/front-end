@@ -6,6 +6,7 @@
 import { apiClient } from './apiClient';
 import { formatStrapiArticles, formatStrapiCourses, formatStrapiProducts } from './strapiUtils';
 import { withErrorHandling } from './apiErrorHandler';
+import { ARTICLES_PAGE_SIZE } from './constants';
 
 /**
  * واکشی دسته‌بندی‌های مقالات
@@ -103,7 +104,7 @@ export async function getArticles({
  */
 export async function getArticlesPaginated(
   page = 1,
-  pageSize = 6,
+  pageSize = ARTICLES_PAGE_SIZE,
   sort = 'publishedAt:desc',
   categorySlug = null
 ) {

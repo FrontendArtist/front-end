@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import CourseCard from '@/components/cards/CourseCard/CourseCard';
 import CardSkeletonVertical from '@/components/ui/Skeleton/CardSkeletonVertical';
 import SortControls from '@/components/ui/SortControls/SortControls';
+import { COURSES_PAGE_SIZE } from '@/lib/constants';
 import styles from '../../articles/ArticleGrid/ArticleGrid.module.scss'; // استفاده مجدد از استایل‌ها
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = COURSES_PAGE_SIZE;
 
 // تعریف گزینه‌های مرتب‌سازی دوره‌ها
 const SORT_OPTIONS = [
@@ -29,12 +30,14 @@ const SORT_OPTIONS = [
  * 
  * @param {Array} initialCourses - دوره‌های اولیه از SSR
  */
-const CourseGrid = ({ initialCourses }) => {
+const CourseGrid = ({ initialCourses, initialMeta = {} }) => {
   const [courses, setCourses] = useState(initialCourses || []);
   const [sortBy, setSortBy] = useState('latest');
   const [isLoading, setIsLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(initialCourses.length === PAGE_SIZE);
+  const [page, setPage] = useState(initialMeta?.pagination?.page || 1);
+  const [hasMore, setHasMore] = useState(
+    (initialMeta?.pagination?.page || 1) < (initialMeta?.pagination?.pageCount || 1)
+  );
 
   // Effect: مرتب‌سازی دوره‌ها
   // هنگامی که کاربر ترتیب مرتب‌سازی را تغییر می‌دهد، دوره‌ها را از ابتدا واکشی می‌کنیم

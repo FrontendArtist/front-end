@@ -5,9 +5,10 @@ import ProductCard from '@/components/cards/ProductCard/ProductCard';
 import CardSkeletonVertical from '@/components/ui/Skeleton/CardSkeletonVertical';
 import SortControls from '@/components/ui/SortControls/SortControls';
 import EmptyState from '@/components/ui/EmptyState/EmptyState';
+import { PRODUCTS_PAGE_SIZE } from '@/lib/constants';
 import styles from './ProductGrid.module.scss';
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = PRODUCTS_PAGE_SIZE;
 
 const SORT_OPTIONS = [
   { value: 'createdAt:desc', label: 'جدیدترین' },

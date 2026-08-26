@@ -20,7 +20,7 @@ import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock'
 import { unstable_noStore as noStore } from 'next/cache';
 import styles from './products.module.scss';
 
-import { SITE_NAME, SITE_URL } from '@/lib/constants';
+import { SITE_NAME, SITE_URL, PRODUCTS_PAGE_SIZE } from '@/lib/constants';
 
 // SEO Metadata for the page
 export const metadata = {
@@ -41,7 +41,7 @@ export const metadata = {
  * 
  * Architecture:
  * - Uses getProductsPaginated() برای واکشی صفحه اول با pagination
- * - PAGE_SIZE = 3 (فقط 3 محصول در بارگذاری اولیه)
+ * - PAGE_SIZE از lib/constants.js وارد می‌شود (Single Source of Truth)
  * - Follows Repository Pattern for clean separation of concerns
  * - SSR renders complete HTML with initial product data
  */
@@ -79,7 +79,7 @@ export default async function ProductsPage({ searchParams: spPromise }) {
     }
   }
 
-  const productsResult = await getProductsPaginated(page, 6, sort, {
+  const productsResult = await getProductsPaginated(page, PRODUCTS_PAGE_SIZE, sort, {
     categorySlug: categorySlug || undefined,
     subCategorySlug: subCategorySlug || undefined,
     subSlugs

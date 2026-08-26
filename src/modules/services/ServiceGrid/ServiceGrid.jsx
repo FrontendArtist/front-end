@@ -26,12 +26,14 @@ import styles from './ServiceGrid.module.scss';
  * 
  * @param {Array} initialServices - خدمات اولیه از SSR
  */
-const ServiceGrid = ({ initialServices }) => {
+const ServiceGrid = ({ initialServices, initialMeta = {} }) => {
   // State: لیست خدمات، صفحه فعلی، وضعیت بارگذاری، و وجود صفحات بیشتر
   const [services, setServices] = useState(initialServices || []);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialMeta?.pagination?.page || 1);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(initialServices.length === SERVICES_PAGE_SIZE);
+  const [hasMore, setHasMore] = useState(
+    (initialMeta?.pagination?.page || 1) < (initialMeta?.pagination?.pageCount || 1)
+  );
 
   /**
    * Handler: بارگذاری صفحه بعدی خدمات

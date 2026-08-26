@@ -22,6 +22,7 @@
 import { apiClient } from './apiClient';
 import { formatStrapiServices } from './strapiUtils';
 import { withErrorHandling } from './apiErrorHandler';
+import { SERVICES_PAGE_SIZE } from './constants';
 
 /**
  * واکشی تمام خدمات از Strapi
@@ -148,7 +149,7 @@ export async function getServices({ limit = 3, sort = 'createdAt:desc' } = {}) {
  * const result = await getServicesPaginated(2, 6, "createdAt:desc");
  * return Response.json(result);
  */
-export async function getServicesPaginated(page = 1, pageSize = 6, sort = 'createdAt:desc') {
+export async function getServicesPaginated(page = 1, pageSize = SERVICES_PAGE_SIZE, sort = 'createdAt:desc') {
   return withErrorHandling(
     async () => {
       const response = await apiClient(

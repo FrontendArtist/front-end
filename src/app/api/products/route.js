@@ -24,13 +24,14 @@
 
 import { getProductsPaginated } from '@/lib/productsApi';
 import { getCategoryTree } from '@/lib/categoriesApi';
+import { PRODUCTS_PAGE_SIZE } from '@/lib/constants';
 
 /**
  * GET Handler - دریافت لیست محصولات با صفحه‌بندی
  * 
  * Query Parameters پشتیبانی شده:
  * - page: شماره صفحه (پیش‌فرض: 1)
- * - pageSize: تعداد آیتم در هر صفحه (پیش‌فرض: 3)
+ * - pageSize: تعداد آیتم در هر صفحه (پیش‌فرض: PRODUCTS_PAGE_SIZE)
  * - sort: پارامتر مرتب‌سازی Strapi (پیش‌فرض: "createdAt:desc")
  *        مقادیر معتبر: "createdAt:desc", "price:asc", "price:desc"
  * 
@@ -39,7 +40,7 @@ import { getCategoryTree } from '@/lib/categoriesApi';
  * 
  * @example
  * // از Client Component:
- * const response = await fetch('/api/products?page=2&pageSize=6&sort=price:asc');
+ * const response = await fetch('/api/products?page=2&pageSize=8&sort=price:asc');
  * const result = await response.json();
  * // result = { data: [...], meta: { pagination: {...} } }
  */
@@ -47,7 +48,7 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const page = Number(searchParams.get('page') || 1);
-    const pageSize = Number(searchParams.get('pageSize') || 6);
+    const pageSize = Number(searchParams.get('pageSize') || PRODUCTS_PAGE_SIZE);
     const sort = searchParams.get('sort') || 'createdAt:desc';
     const category = searchParams.get('category') || '';
     const sub = searchParams.get('sub') || '';
@@ -72,7 +73,7 @@ export async function GET(req) {
   } catch (e) {
     console.error('API /products error:', e?.message);
     return Response.json(
-      { data: [], meta: { pagination: { page: 1, pageSize: 6, pageCount: 0, total: 0 } } },
+      { data: [], meta: { pagination: { page: 1, pageSize: PRODUCTS_PAGE_SIZE, pageCount: 0, total: 0 } } },
       { status: 200 }
     );
   }

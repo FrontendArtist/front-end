@@ -23,22 +23,23 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://tarhelahi.i
  * - app/articles/page.js (Server Component)
  * - app/api/articles/route.js (API Route Handler)
  */
-export const ARTICLES_PAGE_SIZE = 2;
+export const ARTICLES_PAGE_SIZE = 9;
 
 /**
  * تعداد محصولات در هر صفحه
  */
-export const PRODUCTS_PAGE_SIZE = 8;
+export const PRODUCTS_PAGE_SIZE = 12;
 
 /**
  * تعداد دوره‌ها در هر صفحه
  */
-export const COURSES_PAGE_SIZE = 6;
+export const COURSES_PAGE_SIZE = 9;
+
 
 /**
  * تعداد خدمات در هر صفحه
  */
-export const SERVICES_PAGE_SIZE = 3;
+export const SERVICES_PAGE_SIZE = 6;
 
 // ========================================
 // Light Currency Settings (واحد پولی نور)

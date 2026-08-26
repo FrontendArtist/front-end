@@ -17,7 +17,7 @@ import ServerErrorBlock from '@/components/ui/ServerErrorBlock/ServerErrorBlock'
 import { getCoursesPaginated } from '@/lib/coursesApi';
 import { unstable_noStore as noStore } from 'next/cache';
 import styles from './page.module.scss';
-import { SITE_NAME, SITE_URL } from '@/lib/constants';
+import { SITE_NAME, SITE_URL, COURSES_PAGE_SIZE } from '@/lib/constants';
 
 export const metadata = {
   title: `دوره‌ها | ${SITE_NAME}`,
@@ -37,20 +37,20 @@ export const metadata = {
  * 
  * Architecture:
  * - Uses getCoursesPaginated() برای واکشی صفحه اول با pagination
- * - PAGE_SIZE = 6 (فقط 6 دوره در بارگذاری اولیه)
+ * - PAGE_SIZE از lib/constants.js وارد می‌شود (Single Source of Truth)
  * - Follows Repository Pattern for clean separation of concerns
  * - SSR renders complete HTML with initial course data
  */
 export default async function CoursesPage({ searchParams: spPromise }) {
   // واکشی صفحه اول دوره‌ها با pagination
-  // فقط 6 دوره اول مرتب‌شده بر اساس تاریخ ایجاد
+  // تعداد دوره‌ها از COURSES_PAGE_SIZE در lib/constants.js
   const searchParams = await spPromise;
   const normalizedSearchParams =
     searchParams && typeof searchParams.entries === 'function'
       ? Object.fromEntries(searchParams.entries())
       : searchParams || {};
   const hasFilters = Object.keys(normalizedSearchParams).length > 0;
-  const result = await getCoursesPaginated(1, 6, 'createdAt:desc');
+  const result = await getCoursesPaginated(1, COURSES_PAGE_SIZE, 'createdAt:desc');
 
   if (result.error === 'BACKEND_UNAVAILABLE') {
     noStore();
@@ -89,7 +89,7 @@ export default async function CoursesPage({ searchParams: spPromise }) {
           entityName="دوره"
           resetLink="/courses"
         >
-          <CourseGrid initialCourses={initialCourses} />
+          <CourseGrid initialCourses={initialCourses} initialMeta={result.meta} />
         </ListGuard>
       </div>
     </main>

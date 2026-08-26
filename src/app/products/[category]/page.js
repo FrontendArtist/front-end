@@ -10,6 +10,7 @@ import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import { getProductsPaginated } from '@/lib/productsApi';
 import { getCategoryTree } from '@/lib/categoriesApi';
 import { getProductBreadcrumbs } from '@/lib/breadcrumbs';
+import { PRODUCTS_PAGE_SIZE } from '@/lib/constants';
 import ProductsPageClient from '@/modules/products/ProductsPageClient/ProductsPageClient';
 import styles from '../products.module.scss';
 
@@ -44,7 +45,7 @@ export default async function CategoryPage({ params, searchParams }) {
 
   // Fetch products for this category
   // We pass categorySlug to filter by this category (and its subcategories via subSlugs logic in API)
-  const { data, meta } = await getProductsPaginated(page, 6, sort, {
+  const { data, meta } = await getProductsPaginated(page, PRODUCTS_PAGE_SIZE, sort, {
     categorySlug: category,
     subSlugs
   });

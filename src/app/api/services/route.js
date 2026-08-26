@@ -23,13 +23,14 @@
  */
 
 import { getServicesPaginated } from '@/lib/servicesApi';
+import { SERVICES_PAGE_SIZE } from '@/lib/constants';
 
 /**
  * GET Handler - دریافت لیست خدمات با صفحه‌بندی
  * 
  * Query Parameters پشتیبانی شده:
  * - page: شماره صفحه (پیش‌فرض: 1)
- * - pageSize: تعداد آیتم در هر صفحه (پیش‌فرض: 6)
+ * - pageSize: تعداد آیتم در هر صفحه (پیش‌فرض: SERVICES_PAGE_SIZE)
  * - sort: پارامتر مرتب‌سازی Strapi (پیش‌فرض: "createdAt:desc")
  * 
  * @param {Request} request - شیء Request از Next.js
@@ -48,7 +49,7 @@ export async function GET(request) {
 
     // دریافت پارامترها با مقادیر پیش‌فرض
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(searchParams.get('pageSize') || '3', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || String(SERVICES_PAGE_SIZE), 10);
     const sort = searchParams.get('sort') || 'createdAt:desc';
 
     // فراخوانی تابع دامنه‌ای برای واکشی خدمات

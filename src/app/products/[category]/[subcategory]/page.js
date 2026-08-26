@@ -17,6 +17,7 @@ import { getProductsPaginated, getProductBySlug } from '@/lib/productsApi';
 import { getCategoryTree } from '@/lib/categoriesApi';
 import { getProductBreadcrumbs } from '@/lib/breadcrumbs';
 import { getComments } from '@/lib/commentsApi';
+import { PRODUCTS_PAGE_SIZE } from '@/lib/constants';
 import ProductsPageClient from '@/modules/products/ProductsPageClient/ProductsPageClient';
 import ProductDetails from '@/modules/products/ProductDetails/ProductDetails';
 import CommentsSection from '@/modules/comments/CommentsSection';
@@ -97,7 +98,7 @@ export default async function HybridPage({ params, searchParams }) {
     });
 
     // Fetch products for this subcategory
-    const { data, meta } = await getProductsPaginated(page, 6, sort, {
+    const { data, meta } = await getProductsPaginated(page, PRODUCTS_PAGE_SIZE, sort, {
       subCategorySlug: subcategory
     });
 
