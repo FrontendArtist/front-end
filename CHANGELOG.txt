@@ -1,3 +1,11 @@
+[2026-08-26] - Fix Strapi 401 Unauthorized & Auto-Assign Authenticated Role on OTP Registration
+
+── Backend OTP Auth & Permissions Fix ──────────────────────────────────────────
+- Auto-Assign Default Role (`backend/src/api/otp-auth/controllers/otp-auth.js`):
+  • In `send()`: Automatically query and assign the default `Authenticated` role (`plugin::users-permissions.role` where `type: 'authenticated'`) when creating new users via lazy OTP registration.
+  • In `verify()`: Added auto-healing logic to assign the `Authenticated` role to existing users whose `role` relation was previously `null` or undefined.
+  • Resolved `401 UnauthorizedError: Missing or invalid credentials` on user message fetching (`/api/contact-messages`, `/api/messages`) and contact form submissions caused by unassigned/null user roles in Strapi.
+
 [2026-08-26] - Checkout & Payment Flow Enhancements — Course-Only 3-Step Flow & Bank Info
 
 ── Cart & Checkout Flow ─────────────────────────────────────────────────────────

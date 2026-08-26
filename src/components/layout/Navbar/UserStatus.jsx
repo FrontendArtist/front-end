@@ -41,6 +41,30 @@ export default function UserStatus() {
         }, 300);
     };
 
+    const [profileData, setProfileData] = useState(null);
+
+    // ── fetch اطلاعات پروفایل (نام و شماره) برای همگام‌سازی همیشه دقیق ──────
+    useEffect(() => {
+        if (status !== 'authenticated') return;
+
+        const loadProfile = async () => {
+            try {
+                const res = await fetch('/api/profile', { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    setProfileData(data);
+                }
+            } catch {
+                // بی‌صدا رد می‌شویم
+            }
+        };
+
+        loadProfile();
+
+        window.addEventListener('profile-updated', loadProfile);
+        return () => window.removeEventListener('profile-updated', loadProfile);
+    }, [status]);
+
     // آپدیت موجودی نور بعد از بستن مدال (در صورت پرداخت موفق)
     const handleLightModalClose = useCallback(() => {
         setIsLightModalOpen(false);
@@ -50,15 +74,17 @@ export default function UserStatus() {
 
     const formatNumber = (n) => new Intl.NumberFormat('fa-IR').format(n);
 
-    // نام نمایشی: firstName lastName یا phoneNumber
-    const displayName = session?.user
-        ? (
-            [session.user.firstName, session.user.lastName].filter(Boolean).join(' ')
-            || session.user.name
-            || session.user.phoneNumber
-            || 'کاربر'
-        )
-        : '';
+    // نام نمایشی: اولویت با نام و نام خانوادگی، در غیر این صورت شماره موبایل
+    const firstName = profileData?.firstName ?? session?.user?.firstName ?? '';
+    const lastName = profileData?.lastName ?? session?.user?.lastName ?? '';
+    const fullName = [firstName, lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+
+    const phone = profileData?.phoneNumber || session?.user?.phoneNumber || '';
+    const displayName = fullName || session?.user?.name || phone || 'کاربر';
+    const isPhone = !fullName && !session?.user?.name && !!phone;
 
     // ── Loading state ──────────────────────────────────────────────────────
     if (status === 'loading') {
@@ -95,7 +121,7 @@ export default function UserStatus() {
                 onMouseLeave={handleMouseLeave}
             >
                 {/* ── آواتار کاربر ─────────────────────────────────────── */}
-                <div className={styles.avatarWrapper}>
+                <Link href="/profile" className={styles.avatarWrapper}>
                     <svg
                         className={styles.avatar}
                         xmlns="http://www.w3.org/2000/svg"
@@ -112,7 +138,7 @@ export default function UserStatus() {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                         </svg>
                     </div>
-                </div>
+                </Link>
 
                 {/* ── Dropdown ──────────────────────────────────────────── */}
                 <div className={`${styles.dropdown} ${isDropdownOpen ? styles.dropdownOpen : ''}`}>
@@ -126,7 +152,9 @@ export default function UserStatus() {
                             </svg>
                         </div>
                         <div className={styles.userCardInfo}>
-                            <span className={styles.userCardName}>{displayName}</span>
+                            <span className={styles.userCardName} dir={isPhone ? 'ltr' : 'auto'}>
+                                {displayName}
+                            </span>
                             <span className={styles.userCardLight}>
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" strokeWidth="0">
                                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />

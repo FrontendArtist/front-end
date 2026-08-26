@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import styles from './ProfileForm.module.scss';
 
 export default function ProfileForm() {
-    const { data: session, status } = useSession(); // 🚨 دریافت status
+    const { data: session, status, update } = useSession(); // 🚨 دریافت status و update
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
@@ -161,6 +161,17 @@ export default function ProfileForm() {
                     ...prev,
                     addressDocumentId: newAddress.data.documentId // ✅ Use documentId for Strapi V5
                 }));
+            }
+
+            // بروزرسانی سشن و اطلاع‌رسانی به هدر/نوبار برای انعکاس نام بدون رفرش
+            if (typeof update === 'function') {
+                await update({
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                });
+            }
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('profile-updated'));
             }
 
             setSuccess('اطلاعات با موفقیت ذخیره شد');

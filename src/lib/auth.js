@@ -15,7 +15,7 @@ if (process.env.NODE_ENV === 'production' && (!process.env.NEXTAUTH_SECRET || pr
  */
 async function fetchUserSessionData(userId, jwt) {
     try {
-        const tokenToUse = jwt || process.env.STRAPI_API_TOKEN;
+        const tokenToUse = process.env.STRAPI_API_TOKEN || jwt;
         const userRes = await fetch(`${STRAPI_API_URL}/api/users/${userId}?populate[0]=courses`, {
             headers: { Authorization: `Bearer ${tokenToUse}` },
             cache: 'no-store'
@@ -107,12 +107,18 @@ export const authOptions = {
     ],
 
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id;
                 token.jwt = user.jwt;
                 token.phoneNumber = user.phoneNumber;
                 token.role = user.role; // انتقال role به توکن
+                token.firstName = user.firstName || '';
+                token.lastName = user.lastName || '';
+            }
+            if (trigger === 'update' && session) {
+                if (session.firstName !== undefined) token.firstName = session.firstName;
+                if (session.lastName !== undefined) token.lastName = session.lastName;
             }
             return token;
         },
@@ -122,6 +128,8 @@ export const authOptions = {
                 session.user.jwt = token.jwt;
                 session.user.phoneNumber = token.phoneNumber;
                 session.user.role = token.role; // انتقال role به سشن برای دسترسی در فرانت‌اند
+                session.user.firstName = token.firstName || '';
+                session.user.lastName = token.lastName || '';
 
                 // واکشی آخرین وضعیت دوره‌ها و فصل‌های فعال کاربر از استراپی
                 if (token.id) {
@@ -131,8 +139,8 @@ export const authOptions = {
                         session.user.enrolledCourses = extraData.enrolledCourses;
                         session.user.enrolledSlugs = extraData.enrolledSlugs;
                         session.user.enrolledChapters = extraData.enrolledChapters;
-                        session.user.firstName = extraData.firstName;
-                        session.user.lastName = extraData.lastName;
+                        if (extraData.firstName !== undefined) session.user.firstName = extraData.firstName;
+                        if (extraData.lastName !== undefined) session.user.lastName = extraData.lastName;
                     }
                 }
             }
