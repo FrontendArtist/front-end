@@ -3,64 +3,93 @@
 // صفحه Checkout
 .checkoutPage {
     min-height: 100vh;
-    padding: var(--space-section-top-desktop) 0 var(--space-section-bottom-desktop);
+    padding-top: var(--space-section-top-desktop);
+    padding-bottom: var(--space-section-bottom-desktop);
+    position: relative;
+
+    @include respond(lg) {
+        padding-bottom: 60px;
+    }
 
     @include respond(md) {
-        padding: 100px 0 var(--space-section-bottom-desktop);
+        padding-bottom: 40px;
     }
+
+
+}
+
+// Container استاندارد بر اساس میکسین سراسری
+.container {
+    @include container;
 }
 
 // عنوان صفحه
 .pageTitle {
+    font-family: var(--font-lalezar);
     font-size: var(--font-3xl);
-    font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
-    margin-bottom: 32px;
+    margin: 16px 0 24px;
     text-align: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid fade(var(--color-primary), 15%);
+
+    @include respond(xl) {
+        font-size: var(--font-2xl);
+        margin-bottom: 20px;
+    }
 
     @include respond(md) {
-        font-size: var(--font-2xl);
-        margin-bottom: 24px;
+        font-size: var(--font-xl);
+        margin-bottom: 16px;
     }
 }
 
-// Container مرحله فعلی
+// Container مرحله فعلی (با عرض بهینه و متمرکز)
 .stepContainer {
-    max-width: 900px;
+    max-width: 780px;
+    width: 100%;
     margin: 0 auto;
 }
 
 // Empty State
 .emptyState {
+    background: var(--gradient-card-vertical);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-card);
+    border: 1px dashed fade(var(--color-primary), 30%);
+    box-shadow: var(--shadow-card-strong);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 60vh;
+    min-height: 45vh;
     text-align: center;
-    gap: 24px;
+    gap: 16px;
+    padding: 48px 24px;
+    margin-top: 24px;
 }
 
 .emptyIcon {
-    width: 120px;
-    height: 120px;
+    width: 76px;
+    height: 76px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: fade(var(--color-primary), 10%);
-    border: 3px solid fade(var(--color-primary), 30%);
+    border: 2px solid fade(var(--color-primary), 30%);
     border-radius: 50%;
 
     svg {
-        width: 60px;
-        height: 60px;
-        color: var(--color-card-text);
+        width: 38px;
+        height: 38px;
+        color: var(--color-text-primary);
     }
 }
 
 .emptyTitle {
+    font-family: var(--font-lalezar);
     font-size: var(--font-2xl);
-    font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
     margin: 0;
 
@@ -70,32 +99,32 @@
 }
 
 .emptyText {
-    font-size: var(--font-lg);
+    font-size: var(--font-md);
     color: var(--color-card-text);
-    max-width: 500px;
+    max-width: 440px;
     margin: 0;
 
     @include respond(md) {
-        font-size: var(--font-md);
+        font-size: var(--font-sm);
     }
 }
 
 .emptyButton {
     display: inline-block;
-    padding: 14px 32px;
+    padding: 10px 28px;
     background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
     color: var(--card-text);
     text-decoration: none;
     border-radius: var(--border-radius);
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     font-weight: var(--font-weight-bold);
     @include hover-transition;
-    margin-top: 16px;
-    box-shadow: 0 4px 12px fade(var(--color-black), 20%);
+    margin-top: 8px;
+    box-shadow: 0 4px 14px fade(var(--color-primary), 30%);
 
     &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px fade(var(--color-black), 30%);
+        box-shadow: 0 6px 20px fade(var(--color-primary), 45%);
     }
 
     &:active {

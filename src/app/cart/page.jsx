@@ -98,26 +98,28 @@ export default function CartPage() {
     // تا زمان hydration، loading نمایش می‌دهیم
     if (!isHydrated) {
         return (
-            <div className={`${styles.cartPage} container`}>
-                <div style={{ marginBottom: '24px' }}>
-                    <div style={{ width: '150px', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}></div>
-                </div>
-                <div className={styles.cartGrid}>
-                    <div className={styles.itemsColumn}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <CardSkeletonHorizontal />
-                            <CardSkeletonHorizontal />
-                            <CardSkeletonHorizontal />
-                        </div>
+            <div className={styles.cartPage}>
+                <div className={styles.container}>
+                    <div style={{ marginBottom: '24px' }}>
+                        <div style={{ width: '150px', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}></div>
                     </div>
-                    <aside className={styles.sidebar}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '24px' }}>
-                            <div style={{ width: '100%', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}></div>
-                            <div style={{ width: '100%', height: '1px', backgroundColor: 'rgba(255,255,255,0.1)' }}></div>
-                            <div style={{ width: '70%', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}></div>
-                            <div style={{ width: '100%', height: '48px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginTop: '16px' }}></div>
+                    <div className={styles.cartGrid}>
+                        <div className={styles.itemsColumn}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <CardSkeletonHorizontal />
+                                <CardSkeletonHorizontal />
+                                <CardSkeletonHorizontal />
+                            </div>
                         </div>
-                    </aside>
+                        <aside className={styles.sidebar}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '24px' }}>
+                                <div style={{ width: '100%', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}></div>
+                                <div style={{ width: '100%', height: '1px', backgroundColor: 'rgba(255,255,255,0.1)' }}></div>
+                                <div style={{ width: '70%', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}></div>
+                                <div style={{ width: '100%', height: '48px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginTop: '16px' }}></div>
+                            </div>
+                        </aside>
+                    </div>
                 </div>
             </div>
         );
@@ -146,24 +148,26 @@ export default function CartPage() {
      */
     if (itemsCount === 0) {
         return (
-            <div className={`${styles.cartPage} container`}>
-                <Breadcrumb items={breadcrumbItems} />
-                <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>
-                        {/* آیکون سبد خرید خالی */}
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="9" cy="21" r="1" />
-                            <circle cx="20" cy="21" r="1" />
-                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                        </svg>
+            <div className={styles.cartPage}>
+                <div className={styles.container}>
+                    <Breadcrumb items={breadcrumbItems} />
+                    <div className={styles.emptyState}>
+                        <div className={styles.emptyIcon}>
+                            {/* آیکون سبد خرید خالی */}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="9" cy="21" r="1" />
+                                <circle cx="20" cy="21" r="1" />
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                            </svg>
+                        </div>
+                        <h2 className={styles.emptyTitle}>سبد خرید شما خالی است</h2>
+                        <p className={styles.emptyText}>
+                            هنوز محصول یا دوره‌ای به سبد خرید خود اضافه نکرده‌اید.
+                        </p>
+                        <Link href="/products" className={styles.emptyButton}>
+                            بازگشت به فروشگاه
+                        </Link>
                     </div>
-                    <h2 className={styles.emptyTitle}>سبد خرید شما خالی است</h2>
-                    <p className={styles.emptyText}>
-                        هنوز محصول یا دوره‌ای به سبد خرید خود اضافه نکرده‌اید.
-                    </p>
-                    <Link href="/products" className={styles.emptyButton}>
-                        بازگشت به فروشگاه
-                    </Link>
                 </div>
             </div>
         );
@@ -174,10 +178,11 @@ export default function CartPage() {
      * شامل لیست محصولات/دوره‌ها و Sidebar خلاصه سفارش
      */
     return (
-        <div className={`${styles.cartPage} container`}>
-            <Breadcrumb items={breadcrumbItems} />
+        <div className={styles.cartPage}>
+            <div className={styles.container}>
+                <Breadcrumb items={breadcrumbItems} />
 
-            <div className={styles.cartGrid}>
+                <div className={styles.cartGrid}>
                 {/* ستون اصلی: لیست آیتم‌ها */}
                 <div className={styles.itemsColumn}>
 
@@ -352,6 +357,7 @@ export default function CartPage() {
                         </p>
                     </div>
                 </aside>
+            </div>
             </div>
         </div>
     );

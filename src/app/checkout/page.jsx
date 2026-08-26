@@ -8,6 +8,7 @@ import CheckoutStepper from '@/components/checkout/CheckoutStepper';
 import CartReviewStep from '@/components/checkout/CartReviewStep';
 import AuthStep from '@/components/checkout/AuthStep';
 import PaymentStep from '@/components/checkout/PaymentStep';
+import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import Link from 'next/link';
 import styles from './page.module.scss';
 
@@ -35,18 +36,22 @@ export default function CheckoutPage() {
         setIsHydrated(true);
     }, []);
 
-    // ملاحظه: redirect پس از پرداخت توسط PaymentStep مدیریت می‌شود، نه اینجا.
-    // حذف این useEffect جلوگیری می‌کند از بازنویسی URL ?source=card_to_card
-    // که PaymentStep برای کارت‌به‌کارت ساخته است.
+    const breadcrumbItems = [
+        { label: 'خانه', href: '/' },
+        { label: 'سبد خرید', href: '/cart' },
+        { label: 'تسویه حساب' }
+    ];
 
     // قبل از hydration، loading skeleton نمایش می‌دهیم
     if (!isHydrated) {
         return (
-            <div className={`${styles.checkoutPage} container`}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', padding: '60px 0' }}>
-                    <div style={{ width: '200px', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} />
-                    <div style={{ width: '100%', maxWidth: '600px', height: '80px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '8px' }} />
-                    <div style={{ width: '100%', maxWidth: '600px', height: '300px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '8px' }} />
+            <div className={styles.checkoutPage}>
+                <div className={styles.container}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', padding: '60px 0' }}>
+                        <div style={{ width: '200px', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} />
+                        <div style={{ width: '100%', maxWidth: '600px', height: '80px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '8px' }} />
+                        <div style={{ width: '100%', maxWidth: '600px', height: '300px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '8px' }} />
+                    </div>
                 </div>
             </div>
         );
@@ -55,22 +60,25 @@ export default function CheckoutPage() {
     // بررسی سبد خرید خالی (فقط بعد از hydration)
     if (itemsCount === 0) {
         return (
-            <div className={`${styles.checkoutPage} container`}>
-                <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="9" cy="21" r="1" />
-                            <circle cx="20" cy="21" r="1" />
-                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                        </svg>
+            <div className={styles.checkoutPage}>
+                <div className={styles.container}>
+                    <Breadcrumb items={breadcrumbItems} />
+                    <div className={styles.emptyState}>
+                        <div className={styles.emptyIcon}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="9" cy="21" r="1" />
+                                <circle cx="20" cy="21" r="1" />
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                            </svg>
+                        </div>
+                        <h2 className={styles.emptyTitle}>سبد خرید شما خالی است</h2>
+                        <p className={styles.emptyText}>
+                            برای تسویه حساب، ابتدا باید محصولی به سبد خرید اضافه کنید.
+                        </p>
+                        <Link href="/products" className={styles.emptyButton}>
+                            مشاهده محصولات
+                        </Link>
                     </div>
-                    <h2 className={styles.emptyTitle}>سبد خرید شما خالی است</h2>
-                    <p className={styles.emptyText}>
-                        برای تسویه حساب، ابتدا باید محصولی به سبد خرید اضافه کنید.
-                    </p>
-                    <Link href="/products" className={styles.emptyButton}>
-                        مشاهده محصولات
-                    </Link>
                 </div>
             </div>
         );
@@ -146,20 +154,23 @@ export default function CheckoutPage() {
     };
 
     return (
-        <div className={`${styles.checkoutPage} container`}>
-            <h1 className={styles.pageTitle}>تسویه حساب</h1>
+        <div className={styles.checkoutPage}>
+            <div className={styles.container}>
+                <Breadcrumb items={breadcrumbItems} />
+                <h1 className={styles.pageTitle}>تسویه حساب</h1>
 
-            {/* Stepper */}
-            <CheckoutStepper
-                currentStep={currentStep}
-                completedSteps={completedSteps}
-                onStepClick={goToStep}
-                isCoursesOnly={isCoursesOnly}
-            />
+                {/* Stepper */}
+                <CheckoutStepper
+                    currentStep={currentStep}
+                    completedSteps={completedSteps}
+                    onStepClick={goToStep}
+                    isCoursesOnly={isCoursesOnly}
+                />
 
-            {/* مرحله فعلی */}
-            <div className={styles.stepContainer}>
-                {renderCurrentStep()}
+                {/* مرحله فعلی */}
+                <div className={styles.stepContainer}>
+                    {renderCurrentStep()}
+                </div>
             </div>
         </div>
     );

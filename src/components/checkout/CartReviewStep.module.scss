@@ -1,79 +1,87 @@
 @use '@/styles/base/mixins' as *;
 
 .cartReview {
-    @include card-container;
     background: var(--gradient-card-vertical);
-    padding: 40px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-card);
+    border: 1px solid fade(var(--color-primary), 20%);
+    box-shadow: var(--shadow-card-strong);
+    padding: 28px 32px;
     display: flex;
     flex-direction: column;
-    gap: 32px;
-    border-radius: var(--border-radius);
+    gap: 22px;
 
     @include respond(md) {
-        padding: 24px;
-        gap: 24px;
+        padding: 20px 18px;
+        gap: 18px;
     }
 }
 
 .title {
-    font-size: var(--font-xl);
-    font-weight: var(--font-weight-bold);
+    font-family: var(--font-lalezar);
+    font-size: var(--font-2xl);
     color: var(--color-text-primary);
     margin: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid fade(var(--color-primary), 15%);
 
     @include respond(md) {
-        font-size: var(--font-lg);
+        font-size: var(--font-xl);
     }
 }
 
 .subtitle {
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     color: var(--color-card-text);
-    margin: -16px 0 0;
+    margin: -10px 0 0;
+    opacity: 0.85;
 
     @include respond(md) {
-        font-size: var(--font-sm);
+        font-size: var(--font-xs);
     }
 }
 
 .itemsList {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .item {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 16px;
-    background: fade(var(--color-primary), 5%);
-    border: 1px solid fade(var(--color-primary), 20%);
-    border-radius: var(--border-radius);
+    padding: 12px 16px;
+    background: fade(var(--color-primary), 6%);
+    border: 1px solid fade(var(--color-primary), 18%);
+    border-radius: 12px;
     @include hover-transition;
 
     &:hover {
-        background: fade(var(--color-primary), 10%);
+        background: fade(var(--color-primary), 12%);
+        border-color: fade(var(--color-primary), 35%);
     }
 
     @include respond(md) {
-        padding: 12px;
+        padding: 10px 12px;
         gap: 12px;
     }
 }
 
 .itemImage {
     position: relative;
-    width: 80px;
-    height: 80px;
-    border-radius: 8px;
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
     overflow: hidden;
     flex-shrink: 0;
-    background: fade(var(--color-primary), 5%);
+    background: fade(var(--color-primary), 8%);
+    border: 1px solid fade(var(--color-primary), 20%);
 
     @include respond(md) {
-        width: 60px;
-        height: 60px;
+        width: 52px;
+        height: 52px;
     }
 }
 
@@ -87,12 +95,30 @@
 }
 
 .itemTitle {
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    @include respond(md) {
+        font-size: var(--font-xs);
+    }
+}
+
+.itemMeta {
+    font-size: var(--font-xs);
+    color: var(--color-card-text);
+    margin: 0;
+    opacity: 0.8;
+}
+
+.itemPrice {
     font-size: var(--font-md);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
-    margin: 0 0 6px;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
 
     @include respond(md) {
@@ -100,35 +126,18 @@
     }
 }
 
-.itemMeta {
-    font-size: var(--font-sm);
-    color: var(--color-card-text);
-    margin: 0;
-}
-
-.itemPrice {
-    font-size: var(--font-lg);
-    font-weight: var(--font-weight-bold);
-    color: var(--color-text-primary);
-    white-space: nowrap;
-
-    @include respond(md) {
-        font-size: var(--font-md);
-    }
-}
-
 .summary {
-    padding: 24px;
-    background: fade(var(--color-primary), 5%);
-    border: 2px solid fade(var(--color-primary), 20%);
-    border-radius: var(--border-radius);
+    padding: 18px 20px;
+    background: fade(var(--color-primary), 6%);
+    border: 1px solid fade(var(--color-primary), 20%);
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 
     @include respond(md) {
-        padding: 20px;
-        gap: 12px;
+        padding: 14px 16px;
+        gap: 10px;
     }
 }
 
@@ -136,7 +145,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     color: var(--color-card-text);
 
     strong {
@@ -145,37 +154,43 @@
     }
 
     @include respond(md) {
-        font-size: var(--font-sm);
+        font-size: var(--font-xs);
     }
 }
 
 .divider {
     height: 1px;
-    background: fade(var(--color-primary), 30%);
-    margin: 4px 0;
+    background: fade(var(--color-primary), 20%);
+    margin: 2px 0;
 }
 
 .summaryTotal {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: var(--font-xl);
+    font-size: var(--font-md);
     color: var(--color-text-primary);
     padding-top: 8px;
 
     strong {
         font-weight: var(--font-weight-bold);
+        font-size: var(--font-lg);
+        color: var(--color-title-hover);
     }
 
     @include respond(md) {
-        font-size: var(--font-lg);
+        font-size: var(--font-sm);
+
+        strong {
+            font-size: var(--font-md);
+        }
     }
 }
 
 .actions {
     display: flex;
     justify-content: flex-end;
-    gap: 16px;
+    gap: 12px;
 
     @include respond(md) {
         flex-direction: column;
@@ -185,26 +200,26 @@
 .nextButton {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 14px 32px;
+    gap: 6px;
+    padding: 12px 32px;
     background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
     color: var(--card-text);
     border: none;
     border-radius: var(--border-radius);
-    font-size: var(--font-lg);
+    font-size: var(--font-md);
     font-weight: var(--font-weight-bold);
     cursor: pointer;
     @include hover-transition;
-    box-shadow: 0 4px 12px fade(var(--color-black), 20%);
+    box-shadow: 0 4px 14px fade(var(--color-primary), 30%);
 
     svg {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
     }
 
     &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px fade(var(--color-black), 30%);
+        box-shadow: 0 6px 20px fade(var(--color-primary), 45%);
     }
 
     &:active {
@@ -214,7 +229,7 @@
     @include respond(md) {
         width: 100%;
         justify-content: center;
-        padding: 12px 24px;
-        font-size: var(--font-md);
+        padding: 11px 20px;
+        font-size: var(--font-sm);
     }
 }
