@@ -3,8 +3,7 @@
 .socialMediaContainer {
   display: flex;
   flex-direction: column;
-  align-items: start;
-  justify-content: center;
+  align-items: center;
   justify-content: center;
   gap: 1rem;
   background: var(--color-bg-dark-green);
@@ -48,8 +47,8 @@
   transition: transform 0.2s ease;
 
   img {
-    width: 28px;
-    height: 28px;
+    width: 45px;
+    height: auto;
     object-fit: contain;
     transition: transform 0.2s ease;
   }

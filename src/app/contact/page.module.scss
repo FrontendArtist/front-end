@@ -2,10 +2,9 @@
 /* Contact Page Styles - استایل صفحه تماس با ما */
 
 
-.contactPage {
-    min-height: 100vh;
-    background: var(--color-bg-primary);
-    @include section-spacing;
+.main {
+    padding-top: var(--space-section-top-desktop);
+    padding-bottom: var(--space-section-bottom-desktop);
 }
 
 .container {
@@ -28,6 +27,10 @@
 .formSection {
     max-width: 600px;
     margin: 0 auto;
+    display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
 }
 
 

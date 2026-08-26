@@ -19,7 +19,7 @@ export const metadata = {
 
 export default function ContactPage() {
     return (
-        <main className={styles.contactPage}>
+        <main className={styles.main}>
             <div className={styles.container}>
                 <Breadcrumb items={[{ label: 'خانه', href: '/' }, { label: 'تماس با ما' }]} />
 
