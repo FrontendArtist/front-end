@@ -7,7 +7,6 @@ import { useCartStore, selectItemsCount, selectTotalPrice } from '@/store/useCar
 import CheckoutStepper from '@/components/checkout/CheckoutStepper';
 import CartReviewStep from '@/components/checkout/CartReviewStep';
 import AuthStep from '@/components/checkout/AuthStep';
-import ShippingStep from '@/components/checkout/ShippingStep';
 import PaymentStep from '@/components/checkout/PaymentStep';
 import Link from 'next/link';
 import styles from './page.module.scss';
@@ -15,25 +14,45 @@ import styles from './page.module.scss';
 /**
  * صفحه Checkout چند مرحله‌ای
  * 
- * 4 مرحله:
- * 1. بررسی سبد خرید
- * 2. ورود/ثبت‌نام
- * 3. اطلاعات ارسال
- * 4. روش پرداخت
+ * اگر سبد فقط دوره/فصل داشته باشد: 3 مرحله (CartReview > Auth > Payment)
+ * اگر محصول فیزیکی هم داشته باشد: 4 مرحله (با مرحله آدرس)
  */
 export default function CheckoutPage() {
     const router = useRouter();
     const { data: session, status } = useSession();
+    const items = useCartStore((state) => state.items);
     const itemsCount = useCartStore(selectItemsCount);
     const totalPrice = useCartStore(selectTotalPrice);
     const [currentStep, setCurrentStep] = useState(1);
     const [completedSteps, setCompletedSteps] = useState([]);
+    /**
+     * Hydration Fix
+     * صبر می‌کنیم تا store از localStorage بارگذاری شود
+     * بدون این، ممکن است itemsCount=0 قبل از لود شدن داده‌ها باشد
+     */
+    const [isHydrated, setIsHydrated] = useState(false);
+    useEffect(() => {
+        setIsHydrated(true);
+    }, []);
 
     // ملاحظه: redirect پس از پرداخت توسط PaymentStep مدیریت می‌شود، نه اینجا.
     // حذف این useEffect جلوگیری می‌کند از بازنویسی URL ?source=card_to_card
     // که PaymentStep برای کارت‌به‌کارت ساخته است.
 
-    // بررسی سبد خرید خالی
+    // قبل از hydration، loading skeleton نمایش می‌دهیم
+    if (!isHydrated) {
+        return (
+            <div className={`${styles.checkoutPage} container`}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', padding: '60px 0' }}>
+                    <div style={{ width: '200px', height: '24px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} />
+                    <div style={{ width: '100%', maxWidth: '600px', height: '80px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '8px' }} />
+                    <div style={{ width: '100%', maxWidth: '600px', height: '300px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '8px' }} />
+                </div>
+            </div>
+        );
+    }
+
+    // بررسی سبد خرید خالی (فقط بعد از hydration)
     if (itemsCount === 0) {
         return (
             <div className={`${styles.checkoutPage} container`}>
@@ -58,6 +77,14 @@ export default function CheckoutPage() {
     }
 
     /**
+     * تشخیص سبد فقط-دوره
+     * اگر تمام آیت‌م‌ها course یا chapter باشند، نیازی به آدرس نیست
+     */
+    const isCoursesOnly = items.length > 0 && items.every(
+        (item) => item.type === 'course' || item.type === 'chapter'
+    );
+
+    /**
      * Navigation Handlers
      */
     const goToNextStep = () => {
@@ -78,8 +105,27 @@ export default function CheckoutPage() {
 
     /**
      * رندر مرحله فعلی
+     * اگر isCoursesOnly: 3 مرحله (1سبد خرید, 2ورود, 3پرداخت)
+     * اگر محصول هم دارد: 4 مرحله (با مرحله آدرس)
      */
     const renderCurrentStep = () => {
+        if (isCoursesOnly) {
+            // جریان 3مرحله‌ای
+            switch (currentStep) {
+                case 1:
+                    return <CartReviewStep onNext={goToNextStep} />;
+                case 2:
+                    return <AuthStep onNext={goToNextStep} totalPrice={totalPrice} />;
+                case 3:
+                    return <PaymentStep onPrevious={goToPreviousStep} />;
+                default:
+                    return <CartReviewStep onNext={goToNextStep} />;
+            }
+        }
+
+        // جریان 4مرحله‌ای (شامل آدرس)
+        // ایمپورت ShippingStep در صورت نیاز dynamic بارگذاری می‌شود
+        const ShippingStep = require('@/components/checkout/ShippingStep').default;
         switch (currentStep) {
             case 1:
                 return <CartReviewStep onNext={goToNextStep} />;
@@ -108,6 +154,7 @@ export default function CheckoutPage() {
                 currentStep={currentStep}
                 completedSteps={completedSteps}
                 onStepClick={goToStep}
+                isCoursesOnly={isCoursesOnly}
             />
 
             {/* مرحله فعلی */}

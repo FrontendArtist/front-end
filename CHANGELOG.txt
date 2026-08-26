@@ -1,3 +1,22 @@
+[2026-08-26] - Checkout & Payment Flow Enhancements — Course-Only 3-Step Flow & Bank Info
+
+── Cart & Checkout Flow ─────────────────────────────────────────────────────────
+- Automatic Cart Clearance: Ensured cart is cleared (`clearCart()`) upon successful order submission for both online and card-to-card payment methods.
+- Hydration Fix (`src/app/checkout/page.jsx`): Introduced `isHydrated` state guard before checking `itemsCount === 0` to prevent flash of empty cart state before localStorage loads.
+- Course-Only 3-Step Checkout: Dynamic detection (`isCoursesOnly`) for carts containing only digital courses/chapters. Automatically skips the physical address step (`ShippingStep`), shortening the process to 3 steps: Cart Review → Auth → Payment.
+- Stepper Adaptation (`src/components/checkout/CheckoutStepper.jsx`): Updated to accept `isCoursesOnly` prop and render 3 steps instead of 4 for digital purchases.
+
+── Payment Step Adjustments ────────────────────────────────────────────────────
+- Disabled Online Payment (`src/components/checkout/PaymentStep.jsx`): Set online payment option to disabled with label "در حال فعال‌سازی" and defaulted selection to Card-to-Card (`card_to_card`).
+- UI Clean-up: Removed "بدون کارمزد" badge from Card-to-Card payment method card.
+
+── Payment Callback & Receipt Upload ───────────────────────────────────────────
+- Bank Details Card (`src/app/payment/callback/page.jsx` & `page.module.scss`): Added a styled store bank information card for Card-to-Card pending orders:
+  • Bank: بانک سامان
+  • Card Number: 6219 8618 1481 2854
+  • Account Holder: محمد مهدی عیدی
+- Action Button & Messaging: Updated primary button label to "ارسال فیش واریزی" and revised guide text instructing users to upload their receipt and tracking code on the order page.
+
 [2026-08-16] - Light (نور) Purchase Flow via Checkout — DRY Refactor
 
 ── Architecture & Flow ──────────────────────────────────────────────────────

@@ -87,8 +87,36 @@ function PaymentCallbackContent() {
                         <>
                             <h1 className={styles.title}>در انتظار پرداخت</h1>
                             <p className={styles.message}>
-                                سفارش شما ثبت شد. برای تکمیل خرید، مبلغ را به کارت فروشگاه واریز کرده و فیش آن را آپلود کنید.
+                                سفارش شما ثبت شد. برای تکمیل خرید، مبلغ را به کارت فروشگاه واریز کرده و فیش آن را ارسال کنید.
                             </p>
+
+                            {/* ── کارت اطلاعات بانکی ─────────────────────────────── */}
+                            <div className={styles.bankCard}>
+                                <div className={styles.bankCardHeader}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                                        <path d="M2 10h20" />
+                                        <path d="M7 15h2" />
+                                        <path d="M11 15h4" />
+                                    </svg>
+                                    <span>اطلاعات حساب بانکی فروشگاه</span>
+                                </div>
+                                <div className={styles.bankCardBody}>
+                                    <div className={styles.bankRow}>
+                                        <span className={styles.bankLabel}>بانک</span>
+                                        <span className={styles.bankValue}>بانک سامان</span>
+                                    </div>
+                                    <div className={styles.bankRow}>
+                                        <span className={styles.bankLabel}>شماره کارت</span>
+                                        <span className={styles.bankCardNumber}>6219 8618 1481 2854</span>
+                                    </div>
+                                    <div className={styles.bankRow}>
+                                        <span className={styles.bankLabel}>به نام</span>
+                                        <span className={styles.bankValue}>محمد مهدی عیدی</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className={styles.infoBox}>
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" strokeWidth="2">
@@ -97,8 +125,8 @@ function PaymentCallbackContent() {
                                     <line x1="12" y1="8" x2="12.01" y2="8" />
                                 </svg>
                                 <p>
-                                    با کلیک روی دکمه زیر به صفحه سفارش هدایت می‌شوید.
-                                    در آنجا شماره کارت فروشگاه را مشاهده کرده، مبلغ را واریز و فیش را آپلود کنید.
+                                    برای ارسال فیش واریزی بر روی دکمه زیر کلیک کنید.
+                                    تصویر فیش و کد پیگیری را در صفحه سفارش آپلود کنید.
                                 </p>
                             </div>
                         </>
@@ -146,7 +174,7 @@ function PaymentCallbackContent() {
                     {/* ── دکمه‌های عملیات ─────────────────────────────────────── */}
                     <div className={styles.actions}>
                         <Link href={primaryHref} className={styles.primaryButton}>
-                            {isCardToCard ? 'رفتن به سفارش و آپلود فیش'
+                            {isCardToCard ? 'ارسال فیش واریزی'
                                 : isLightTopup ? 'مشاهده پروفایل'
                                 : 'مشاهده سفارش‌ها'}
                         </Link>

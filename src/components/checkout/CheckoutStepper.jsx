@@ -5,17 +5,26 @@ import styles from './CheckoutStepper.module.scss';
 /**
  * کامپوننت Stepper برای نمایش مراحل checkout
  * 
- * @param {number} currentStep - مرحله فعلی (1-4)
+ * @param {number} currentStep - مرحله فعلی
  * @param {number[]} completedSteps - آرایه مراحل تکمیل‌شده
  * @param {function} onStepClick - callback برای کلیک روی مراحل تکمیل‌شده
+ * @param {boolean} isCoursesOnly - اگر true، مرحله آدرس حذف می‌شود (3 مرحله)
  */
-export default function CheckoutStepper({ currentStep, completedSteps = [], onStepClick }) {
-    const steps = [
-        { number: 1, title: 'سبد خرید', icon: 'cart' },
-        { number: 2, title: 'ورود', icon: 'user' },
-        { number: 3, title: 'آدرس', icon: 'location' },
-        { number: 4, title: 'پرداخت', icon: 'payment' },
-    ];
+export default function CheckoutStepper({ currentStep, completedSteps = [], onStepClick, isCoursesOnly = false }) {
+    const stepsAll = isCoursesOnly
+        ? [
+            { number: 1, title: 'سبد خرید', icon: 'cart' },
+            { number: 2, title: 'ورود', icon: 'user' },
+            { number: 3, title: 'پرداخت', icon: 'payment' },
+        ]
+        : [
+            { number: 1, title: 'سبد خرید', icon: 'cart' },
+            { number: 2, title: 'ورود', icon: 'user' },
+            { number: 3, title: 'آدرس', icon: 'location' },
+            { number: 4, title: 'پرداخت', icon: 'payment' },
+        ];
+
+    const steps = stepsAll;
 
     const getStepStatus = (stepNumber) => {
         if (completedSteps.includes(stepNumber)) return 'completed';

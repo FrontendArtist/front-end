@@ -24,8 +24,8 @@ export default function PaymentStep({ onPrevious }) {
     const totalPrice = useCartStore(selectTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
 
-    // مقدار پیش‌فرض: آنلاین (مطابق وضعیت قبلی)
-    const [paymentMethod, setPaymentMethod] = useState('online');
+    // مقدار پیش‌فرض: کارت به کارت (چون آنلاین فعلاً غیرفعال است)
+    const [paymentMethod, setPaymentMethod] = useState('card_to_card');
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
 
@@ -129,9 +129,9 @@ export default function PaymentStep({ onPrevious }) {
             <div className={styles.paymentMethods}>
                 <div className={styles.methodsList}>
 
-                    {/* گزینه ۱: پرداخت آنلاین (موجود قبلی) */}
+                    {/* گزینه ۱: پرداخت آنلاین — فعلاً غیرفعال */}
                     <label
-                        className={`${styles.method} ${paymentMethod === 'online' ? styles.selected : ''}`}
+                        className={`${styles.method} ${styles.disabled}`}
                         htmlFor="method-online"
                     >
                         <input
@@ -139,8 +139,7 @@ export default function PaymentStep({ onPrevious }) {
                             type="radio"
                             name="paymentMethod"
                             value="online"
-                            checked={paymentMethod === 'online'}
-                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            disabled
                         />
                         <div className={styles.methodContent}>
                             <div className={styles.methodIcon}>
@@ -151,12 +150,7 @@ export default function PaymentStep({ onPrevious }) {
                             </div>
                             <div className={styles.methodInfo}>
                                 <span className={styles.methodName}>پرداخت آنلاین</span>
-                                <span className={styles.methodDesc}>پرداخت امن از طریق درگاه بانکی</span>
-                            </div>
-                            <div className={styles.checkmark}>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                    <polyline points="20 6 9 17 4 12" />
-                                </svg>
+                                <span className={styles.methodDesc}>در حال فعال‌سازی</span>
                             </div>
                         </div>
                     </label>
@@ -187,8 +181,6 @@ export default function PaymentStep({ onPrevious }) {
                             <div className={styles.methodInfo}>
                                 <span className={styles.methodName}>
                                     پرداخت کارت به کارت
-                                    {/* بج «توصیه‌شده» یا «بدون کارمزد» */}
-                                    <span className={styles.methodBadge}>بدون کارمزد</span>
                                 </span>
                                 <span className={styles.methodDesc}>
                                     واریز مستقیم به کارت فروشگاه و ارسال فیش

@@ -358,3 +358,86 @@
         font-size: var(--font-sm);
     }
 }
+
+// ── کارت اطلاعات بانکی (کارت‌به‌کارت) ──────────────────────────────────────
+
+.bankCard {
+    width: 100%;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 2px solid fade(var(--color-warning), 35%);
+    box-shadow: 0 4px 20px fade(var(--color-warning), 15%);
+}
+
+.bankCardHeader {
+    background: linear-gradient(135deg, fade(var(--color-warning), 25%), fade(var(--color-warning-amber), 20%));
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-sm);
+    color: var(--color-warning);
+    border-bottom: 1px solid fade(var(--color-warning), 25%);
+
+    svg {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+    }
+}
+
+.bankCardBody {
+    background: fade(var(--color-warning), 5%);
+    padding: 8px 0;
+}
+
+.bankRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    gap: 12px;
+
+    &:not(:last-child) {
+        border-bottom: 1px solid fade(var(--color-warning), 10%);
+    }
+
+    @include respond(md) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        padding: 10px 16px;
+    }
+}
+
+.bankLabel {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    opacity: 0.75;
+    flex-shrink: 0;
+}
+
+.bankValue {
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    text-align: left;
+}
+
+.bankCardNumber {
+    font-size: var(--font-md);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-warning);
+    letter-spacing: 3px;
+    font-family: monospace;
+    direction: ltr;
+    background: fade(var(--color-warning), 10%);
+    padding: 4px 12px;
+    border-radius: 6px;
+
+    @include respond(md) {
+        font-size: var(--font-sm);
+        letter-spacing: 2px;
+    }
+}
