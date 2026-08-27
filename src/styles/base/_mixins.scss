@@ -108,7 +108,7 @@ $breakpoint-sm: 440px;
   }
 
   @include respond(sm) {   // ≤440px
-    padding-inline: 20px;
+    padding-inline: 25px;
   }
 }
 

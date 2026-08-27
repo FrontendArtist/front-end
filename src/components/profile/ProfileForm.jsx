@@ -12,6 +12,7 @@ export default function ProfileForm() {
     const [success, setSuccess] = useState('');
     const [isEditing, setIsEditing] = useState(false); // Track edit mode
 
+    const [initialFormData, setInitialFormData] = useState(null);
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -52,7 +53,7 @@ export default function ProfileForm() {
 
                 const data = await response.json();
 
-                setFormData({
+                const loadedData = {
                     firstName: data.firstName || '',
                     lastName: data.lastName || '',
                     phoneNumber: data.phoneNumber || session.user.phoneNumber || '',
@@ -65,7 +66,10 @@ export default function ProfileForm() {
                     postalCode: data.address?.postalCode || '',
                     recipientName: data.address?.recipientName || '',
                     recipientPhone: data.address?.recipientPhone || '',
-                });
+                };
+
+                setFormData(loadedData);
+                setInitialFormData(loadedData);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -83,11 +87,18 @@ export default function ProfileForm() {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // 🚨 اطمینان حاصل کنید که این console.log کار می‌کند
         setFormData(prev => ({
             ...prev,
             [name]: value
         }));
+    };
+
+    const handleCancel = () => {
+        if (initialFormData) {
+            setFormData(initialFormData);
+        }
+        setError('');
+        setIsEditing(false);
     };
 
     // ... (بقیه کدهای فرم و state ها و handleChange دست نخورده)
@@ -174,6 +185,10 @@ export default function ProfileForm() {
                 window.dispatchEvent(new CustomEvent('profile-updated'));
             }
 
+            setInitialFormData({
+                ...formData,
+                addressDocumentId: formData.addressDocumentId || newAddress?.data?.documentId || null
+            });
             setSuccess('اطلاعات با موفقیت ذخیره شد');
             setIsEditing(false); // Exit edit mode after successful save
 
@@ -209,7 +224,7 @@ export default function ProfileForm() {
                     <h1 className={styles.title}>اطلاعات حساب کاربری</h1>
                     <p className={styles.subtitle}>مدیریت اطلاعات شخصی و تماس</p>
                 </div>
-                {!isEditing && (
+                {!isEditing ? (
                     <button
                         type="button"
                         onClick={() => setIsEditing(true)}
@@ -221,10 +236,35 @@ export default function ProfileForm() {
                         </svg>
                         ویرایش
                     </button>
+                ) : (
+                    <div className={styles.headerActions}>
+                        <button
+                            type="button"
+                            onClick={handleCancel}
+                            className={styles.cancelButton}
+                            disabled={saving}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            انصراف
+                        </button>
+                        <button
+                            type="submit"
+                            form="profileForm"
+                            className={styles.saveButton}
+                            disabled={saving}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            {saving ? 'در حال ذخیره...' : 'ذخیره'}
+                        </button>
+                    </div>
                 )}
             </div>
 
-            <form onSubmit={handleSubmit} className={styles.form}>
+            <form id="profileForm" onSubmit={handleSubmit} className={styles.form}>
                 <div className={styles.row}>
                     <div className={styles.inputGroup}>
                         <label htmlFor="firstName" className={styles.label}>
@@ -402,26 +442,6 @@ export default function ProfileForm() {
                             <polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                         {success}
-                    </div>
-                )}
-
-                {isEditing && (
-                    <div className={styles.buttonGroup}>
-                        <button
-                            type="button"
-                            onClick={() => setIsEditing(false)}
-                            className={styles.cancelButton}
-                            disabled={saving}
-                        >
-                            انصراف
-                        </button>
-                        <button
-                            type="submit"
-                            className={styles.submitButton}
-                            disabled={saving}
-                        >
-                            {saving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
-                        </button>
                     </div>
                 )}
             </form>

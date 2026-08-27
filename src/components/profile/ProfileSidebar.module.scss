@@ -7,22 +7,19 @@
     border-radius: var(--radius-card);
     border: 1px solid fade(var(--color-primary), 20%);
     box-shadow: var(--shadow-card-strong);
-    padding: var(--space-card-padding-desktop);
+    padding: var(--space-card-padding-tablet);
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 24px;
     position: sticky;
     top: 100px;
 
     @include respond(lg) {
-        padding: var(--space-card-padding-tablet);
-    }
-
-    @include respond(md) {
         position: static;
         padding: var(--space-card-padding-mobile);
-        gap: 24px;
+        gap: 20px;
     }
+
 }
 
 // User Summary Section
@@ -93,12 +90,17 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 16px;
+    padding: 10px 16px;
     border-radius: var(--border-radius);
     color: var(--color-card-text);
     text-decoration: none;
     transition: all 0.3s ease;
     font-size: var(--font-md);
+
+    @include respond(xl) {
+        font-size: var(--font-sm);
+    }
+
     border: 1px solid transparent;
 
     svg {

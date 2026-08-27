@@ -7,7 +7,6 @@
 
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ContactForm from '@/modules/contact/components/ContactForm';
-import SocialMedia from '@/modules/contact/components/SocialMedia';
 
 import styles from './page.module.scss';
 
@@ -28,7 +27,6 @@ export default function ContactPage() {
                     {/* Contact Form */}
                     <div className={styles.formSection}>
                         <ContactForm />
-                        <SocialMedia />
                     </div>
 
                 </div>

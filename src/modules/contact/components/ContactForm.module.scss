@@ -7,7 +7,7 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--radius-card-xl);
-  padding: var(--space-card-padding-desktop);
+  padding: var(--space-card-padding-tablet);
   box-shadow: var(--shadow-card-strong);
   // border: 1px solid fade(var(--color-primary), 10%);
   @include hover-transition;
@@ -42,7 +42,7 @@
   font-size: var(--font-md);
   color: var(--color-card-text);
   text-align: center;
-  margin-bottom: var(--space-title-content-desktop);
+  margin-bottom: 30px;
   line-height: var(--line-height-md);
   opacity: 0.9;
 
@@ -77,6 +77,73 @@
   }
 }
 
+.inputWrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.inputWithAction {
+  padding-inline-end: 48px;
+}
+
+.inputLocked {
+  background: fade(var(--color-bg-primary-overlay), 20%);
+  border-color: fade(var(--color-primary), 12%);
+  color: fade(var(--color-card-text), 50%);
+  opacity: 0.55;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.85;
+    border-color: fade(var(--color-primary), 30%);
+    color: fade(var(--color-card-text), 85%);
+  }
+
+  &:focus {
+    border-color: fade(var(--color-primary), 30%);
+    box-shadow: none;
+  }
+}
+
+.inputActionBtn {
+  position: absolute;
+  inset-inline-end: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  opacity: 0.65;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  @include hover-transition;
+  z-index: 2;
+
+  &:hover {
+    opacity: 1;
+    color: var(--color-title-hover);
+    background: fade(var(--color-primary), 12%);
+  }
+
+  &.inputActionBtnActive {
+    color: var(--color-success);
+    opacity: 1;
+    background: fade(var(--color-success), 15%);
+
+    &:hover {
+      background: fade(var(--color-success), 25%);
+      color: #34d399;
+    }
+  }
+}
+
 .required {
   color: var(--color-error);
   margin-inline-start: 4px;
@@ -85,8 +152,8 @@
 .input,
 .textarea {
   width: 100%;
-  padding: 14px 18px;
-  font-size: var(--font-md);
+  padding: 12px 18px;
+  font-size: var(--font-sm);
   color: var(--color-card-text);
   background: fade(var(--color-bg-primary-overlay), 50%);
   border: 1px solid fade(var(--color-primary), 20%);
@@ -111,7 +178,7 @@
   }
 
   @include respond(sm) {
-    padding: 12px 16px;
+    padding: 10px 16px;
     font-size: var(--font-sm);
   }
 }

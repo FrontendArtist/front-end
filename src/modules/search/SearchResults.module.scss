@@ -1,7 +1,7 @@
 @use '@/styles/base/mixins' as *;
 
 .resultsContainer {
-    padding-top: var(--space-section-top-desktop, 60px);
+    padding-top: 20px;
     padding-bottom: var(--space-section-bottom-desktop, 80px);
     min-height: 60vh;
 }

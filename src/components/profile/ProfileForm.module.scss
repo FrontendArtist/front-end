@@ -7,20 +7,18 @@
     border-radius: var(--radius-card);
     border: 1px solid fade(var(--color-primary), 20%);
     box-shadow: var(--shadow-card-strong);
-    padding: var(--space-card-padding-desktop);
+    padding: var(--space-card-padding-tablet);
 
     @include respond(lg) {
-        padding: var(--space-card-padding-tablet);
-    }
-
-    @include respond(md) {
         padding: var(--space-card-padding-mobile);
     }
+
+
 }
 
 // Header
 .header {
-    margin-bottom: 32px;
+    margin-bottom: 24px;
     padding-bottom: 24px;
     border-bottom: 1px solid fade(var(--color-primary), 15%);
     display: flex;
@@ -36,6 +34,17 @@
     }
 }
 
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    @include respond(md) {
+        width: 100%;
+        gap: 10px;
+    }
+}
+
 .editButton {
     display: flex;
     align-items: center;
@@ -45,7 +54,7 @@
     border: 2px solid fade(var(--color-primary), 30%);
     background: fade(var(--color-bg-primary-overlay), 60%);
     color: var(--color-text-primary);
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
     transition: all 0.3s ease;
@@ -74,6 +83,88 @@
     }
 }
 
+.saveButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
+    color: var(--color-bg-primary);
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+
+    svg {
+        flex-shrink: 0;
+    }
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px fade(var(--color-primary), 30%);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    @include respond(md) {
+        flex: 1;
+        padding: 8px 16px;
+    }
+}
+
+.cancelButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 2px solid fade(var(--color-primary), 30%);
+    background: fade(var(--color-bg-primary-overlay), 60%);
+    color: var(--color-text-primary);
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+
+    svg {
+        flex-shrink: 0;
+    }
+
+    &:hover:not(:disabled) {
+        border-color: var(--color-text-primary);
+        background: fade(var(--color-bg-primary-overlay), 80%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px fade(var(--color-primary), 20%);
+    }
+
+    &:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    @include respond(md) {
+        flex: 1;
+        padding: 8px 16px;
+    }
+}
+
 
 .title {
     font-family: var(--font-lalezar);
@@ -87,7 +178,7 @@
 }
 
 .subtitle {
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     color: var(--color-card-text);
     opacity: 0.8;
     margin: 0;
@@ -122,16 +213,13 @@
 }
 
 .label {
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     color: var(--color-text-primary);
     font-weight: var(--font-weight-medium);
     display: flex;
     align-items: center;
     gap: 8px;
 
-    @include respond(md) {
-        font-size: var(--font-sm);
-    }
 }
 
 .badge {
@@ -146,12 +234,12 @@
 
 .input,
 .textarea {
-    padding: 14px 16px;
+    padding: 10px 16px;
     border-radius: var(--border-radius);
     border: 2px solid fade(var(--color-primary), 30%);
     background: fade(var(--color-bg-primary-overlay), 60%);
     color: var(--color-card-text);
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     transition: all 0.3s ease;
     font-family: inherit;
 
@@ -174,8 +262,8 @@
     }
 
     @include respond(md) {
-        padding: 12px 14px;
-        font-size: var(--font-sm);
+        padding: 10px 14px;
+        font-size: var(--font-xs);
     }
 }
 
@@ -189,7 +277,7 @@
 .addressSection {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
     padding: 24px;
     border-radius: var(--border-radius);
     background: fade(var(--color-bg-primary-overlay), 30%);
@@ -259,88 +347,6 @@
     border: 1px solid fade(var(--color-success), 40%);
     color: var(--color-success);
 }
-
-// Button Group
-.buttonGroup {
-    display: flex;
-    gap: 16px;
-    margin-top: 8px;
-    direction: rtl;
-
-    @include respond(md) {
-        flex-direction: column;
-        gap: 12px;
-    }
-}
-
-// Submit Button
-.submitButton {
-    flex: 1;
-    padding: 16px 24px;
-    border-radius: var(--border-radius);
-    border: none;
-    background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
-    color: var(--color-bg-primary);
-    font-size: var(--font-lg);
-    font-weight: var(--font-weight-bold);
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 16px fade(var(--color-primary), 30%);
-    }
-
-    &:active:not(:disabled) {
-        transform: translateY(0);
-    }
-
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    @include respond(md) {
-        padding: 14px 20px;
-        font-size: var(--font-md);
-    }
-}
-
-// Cancel Button
-.cancelButton {
-    flex: 1;
-    padding: 16px 24px;
-    border-radius: var(--border-radius);
-    border: 2px solid fade(var(--color-primary), 30%);
-    background: fade(var(--color-bg-primary-overlay), 60%);
-    color: var(--color-text-primary);
-    font-size: var(--font-lg);
-    font-weight: var(--font-weight-bold);
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &:hover:not(:disabled) {
-        border-color: var(--color-text-primary);
-        background: fade(var(--color-bg-primary-overlay), 80%);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px fade(var(--color-primary), 20%);
-    }
-
-    &:active:not(:disabled) {
-        transform: translateY(0);
-    }
-
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    @include respond(md) {
-        padding: 14px 20px;
-        font-size: var(--font-md);
-    }
-}
-
 
 // Loading State
 .loader {

@@ -1,3 +1,42 @@
+[2026-08-27] - Free VPN Detection API & Modal Warning System
+
+── VPN Detection Infrastructure & Modal System ──────────────────────────────
+- VPN Detection API Route (`src/app/api/check-vpn/route.js`):
+  • Built 100% free server-side VPN/Proxy detection endpoint using `ip-api.com`.
+  • Parses client IP from incoming headers (`x-forwarded-for`, `x-real-ip`, `cf-connecting-ip`) or optional `?ip=` query parameter.
+  • Flags datacenter/VPS IPs, proxy flags, hosting providers, and non-Iranian ISPs while allowing Iranian residential/mobile networks (MCI, Irancell, Shatel, TCI, AsiaTech, etc.).
+- VPN Warning Modal Component (`src/components/common/VpnModal/VpnModal.jsx` & `VpnModal.module.scss`):
+  • Designed a modern glassmorphic RTL modal warning users to disconnect active VPN connections.
+  • Features an interactive "خاموش کردم / بررسی مجدد" (Re-check) action button with active spinner state.
+  • Styled with theme variables (`--color-bg-primary`, `--color-primary`, `--color-black`) for seamless design integration.
+  • Added client-side fallback/public IP check on `isLocal` response to enable seamless testing on `localhost` as well as production.
+- Global Layout (`src/app/layout.js`):
+  • Integrated `<VpnModal />` into `RootLayout` so VPN status is automatically checked on site load across all pages.
+
+[2026-08-27] - Popup Message Modal Component & Strapi Integration
+
+── Popup Message Infrastructure & Modal System ──────────────────────────────────
+- Strapi Integration (`src/lib/popupApi.js` & `src/app/api/popup/route.js`):
+  • Built dedicated API service and Next.js route handler to fetch active `PopupMessage` entries (`isShow: true`) from Strapi.
+  • Added flexible formatting for image media URLs, text, button text, and link attributes across Strapi v4/v5 structures.
+- Popup Modal Component (`src/components/popup/PopupModal.jsx` & `PopupModal.module.scss`):
+  • Dynamic Image Aspect Ratio: Automatically calculates native image proportions (`naturalWidth / naturalHeight`) to adapt the modal container to any image ratio (4:3, 16:9, 5:3, 1:1, etc.) within max bounds (500px width).
+  • Background Image & Text Fallback: Uses uploaded media as background image with clean overlays, or falls back to stylized glassmorphic dark container when text-only.
+  • Centered Action Button: Renders an action button at bottom center when `buttonText` and `link` are provided, navigating to external/internal links smoothly.
+  • Image Preloading: Waits for full 100% image download before displaying the modal to prevent visual popping/flicker.
+  • Persistent Dismissal: Saves dismissal state to `localStorage` upon clicking the close button (X), clicking overlay, pressing Esc, or clicking the action button so it does not reappear repeatedly.
+- Global Layout (`src/app/layout.js`):
+  • Integrated `<PopupModal />` in `RootLayout` so all users (both guests and authenticated) receive active announcements on site load.
+
+[2026-08-26] - Contact Form User Profile Auto-fill & Inline Edit Support
+
+── Contact Form Enhancements ──────────────────────────────────────────────────
+- Auto-fill Profile Data (`src/modules/contact/components/ContactForm.jsx` & `ContactForm.module.scss`):
+  • When a user is logged in, their full name (`firstName` + `lastName` or `name`) and phone number (`phoneNumber`) are automatically retrieved from `/api/profile` (with session fallback) and populated into the contact form.
+  • Added sleek pencil icon buttons next to the label and inside the field container allowing the user to toggle edit mode and modify their contact details before submitting if desired.
+  • Clicking either the pencil button or the locked field unlocks it, focuses the input immediately, and allows custom edits.
+  • On successful submission, form resets gracefully back to the profile defaults.
+
 [2026-08-26] - Fix Strapi 401 Unauthorized & Auto-Assign Authenticated Role on OTP Registration
 
 ── Backend OTP Auth & Permissions Fix ──────────────────────────────────────────
