@@ -11,6 +11,7 @@ import { authOptions } from '@/lib/auth';
 import { marked } from 'marked';
 import ArticleReader from '@/app/articles/[slug]/ArticleReader';
 import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
+import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import styles from './page.module.scss';
 import { getUserCoursePurchases } from '@/lib/ordersApi';
 
@@ -85,6 +86,9 @@ export default async function CoursePage({ params }) {
     title: rawCourse.title,
     description: rawCourse.shortDescription,
     price: rawCourse.price,
+    originalPrice: rawCourse.originalPrice,
+    discountPercent: rawCourse.discountPercent || 0,
+    discountUntil: rawCourse.discountUntil || null,
     content: rawCourse.content,
     teaserUrl: rawCourse.teaserUrl,
     isChaptered: rawCourse.isChaptered || false,
@@ -128,6 +132,8 @@ export default async function CoursePage({ params }) {
       return lesson;
     }),
   };
+
+  const hasDiscount = (course.discountPercent > 0) && (course.originalPrice > (course.price?.toman || 0));
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -187,17 +193,46 @@ export default async function CoursePage({ params }) {
               )}
             </div >
             <p className={styles.description}>{course.description}</p>
+
+            {/* شمارش معکوس تخفیف در صفحه دوره */}
+            {!hasPurchasedServer && hasDiscount && course.discountUntil && (
+              <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+                <DiscountCountdown targetDate={course.discountUntil} compact={false} />
+              </div>
+            )}
+
             <div className={styles.buyDetail}>
               {!course.isChaptered && !isFreeCourse && !hasPurchasedServer && (
                 <div className={styles.actionWrapper}>
                   <AddToCartButton course={course} />
                 </div>
               )}
-              {course.isChaptered
-                ? 'خرید به صورت فصلی (از سرفصل‌های زیر انتخاب کنید)'
-                : course.price?.toman === 0
-                ? 'رایگان'
-                : <span className={styles.price}>{`${course.price?.toman}`} تومان</span>}
+              {course.isChaptered ? (
+                'خرید به صورت فصلی (از سرفصل‌های زیر انتخاب کنید)'
+              ) : isFreeCourse ? (
+                'رایگان'
+              ) : hasDiscount ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <del style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.85rem' }}>
+                    {course.originalPrice?.toLocaleString('fa-IR')} تومان
+                  </del>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className={styles.price}>{`${course.price?.toman?.toLocaleString('fa-IR')}`} تومان</span>
+                    <span style={{
+                      background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
+                      color: '#fff',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      fontWeight: 800
+                    }}>
+                      ٪{course.discountPercent} تخفیف
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <span className={styles.price}>{`${course.price?.toman?.toLocaleString('fa-IR')}`} تومان</span>
+              )}
 
             </div>
           </div>

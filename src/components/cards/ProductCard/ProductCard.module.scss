@@ -11,6 +11,33 @@
 
 .imageWrapper {
   @include card-image-wrapper;
+  position: relative;
+}
+
+.topBadges {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.discountBadge {
+  background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: var(--font-xs, 12px);
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .productImage {
@@ -19,14 +46,23 @@
 
 .cardContent {
   @include card-content;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
 }
 
 .cardTitle {
   @include card-title;
+  margin-bottom: 6px;
   // تنظیم سایز فونت کم‌تر برای ProductCard
-      @include respond(md) {
-        font-size: var(--font-sm);
-    }
+  @include respond(md) {
+    font-size: var(--font-sm);
+  }
+}
+
+.countdownWrapper {
+  margin-top: 4px;
+  margin-bottom: 4px;
 }
 
 .cardText {
@@ -38,16 +74,35 @@
   justify-content: space-between;
   align-items: center;
   margin-top: auto;
-  padding-top: 12px;
-  gap: 20px;
+  padding-top: 14px;
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.priceContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.originalPrice {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: var(--font-xs, 12px);
+  text-decoration: line-through;
+  font-weight: var(--font-weight-regular);
+}
+
+.discountPrice {
+  color: #ffd166;
+  font-size: var(--font-sm, 14px);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.01em;
 }
 
 .price {
   color: var(--color-text-primary);
   font-size: var(--font-sm);
   font-weight: var(--font-weight-bold);
-
-
 }
 
 // دکمه افزودن به سبد خرید

@@ -4,43 +4,34 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
+import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
 import styles from './ProductCard.module.scss';
 
 /**
- * کامپوننت کارت محصول با قابلیت اضافه کردن به سبد خرید
- * - اگر محصول در سبد نباشد: دکمه "افزودن به سبد" نمایش داده می‌شود
- * - اگر محصول در سبد باشد: کنترلر تعداد (+ / - / quantity) نمایش داده می‌شود
- * 
- * نکته مهم Hydration:
- * این کامپوننت به LocalStorage وابسته است (از طریق Zustand persist middleware).
- * برای جلوگیری از hydration mismatch، باید الگوی خاصی را دنبال کنیم:
- * 
- * چرا این مشکل پیش می‌آید؟
- * - Server: localStorage وجود ندارد، پس isInCart همیشه false است
- * - Client (اولین رندر): باید دقیقاً همان HTML سرور را تولید کند
- * - Client (بعد از hydration): می‌تواند localStorage را بخواند و state واقعی را نمایش دهد
- * 
- * راه حل:
- * با استفاده از isHydrated state، اطمینان حاصل می‌کنیم که:
- * 1. در سرور و اولین رندر کلاینت: همیشه دکمه "افزودن به سبد" نمایش داده می‌شود
- * 2. بعد از hydration: state واقعی سبد (کنترلر تعداد یا دکمه افزودن) نمایش داده می‌شود
- * 
- * @param {{
- * id: string | number;
- * slug: string;
- * image: { url: string; alt: string; };
- * title: string;
- * price: { toman: number; };
- * shortDescription?: string;
- * categories?: Array<{ slug: string; parent?: { slug: string } }>;
- * }} product - The product data to display.
+ * کامپوننت کارت محصول با قابلیت اضافه کردن به سبد خرید و نمایش تخفیف و تایمر شمارش معکوس
  */
 const ProductCard = ({ product }) => {
   if (!product) return null;
 
-  const { id, slug, image, title, price, shortDescription, categories, stock, isAvailable } = product;
+  const {
+    id,
+    slug,
+    image,
+    title,
+    price,
+    originalPrice: rawOriginalPrice,
+    discountPercent = 0,
+    discountUntil,
+    shortDescription,
+    categories,
+    stock,
+    isAvailable
+  } = product;
+
   const formattedPrice = (typeof price === "object" ? price?.toman : price) || 0;
+  const originalPrice = rawOriginalPrice ?? (typeof price === "object" && price?.original ? price.original : formattedPrice);
+  const hasDiscount = discountPercent > 0 && originalPrice > formattedPrice;
 
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -86,7 +77,9 @@ const ProductCard = ({ product }) => {
       slug,
       title,
       price: formattedPrice,
-      image: image?.url || '/images/placeholder.png',
+      originalPrice: hasDiscount ? originalPrice : formattedPrice,
+      discountPercent: hasDiscount ? discountPercent : 0,
+      image: (typeof image === 'string' && image.trim() !== '') ? image : (image?.url || '/images/forempties2.png'),
       type: 'product',
       stock: typeof stock === 'number' ? stock : null,
       categorySlug,
@@ -178,17 +171,38 @@ const ProductCard = ({ product }) => {
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
           className={styles.productImage}
         />
+        {hasDiscount && (
+          <div className={styles.topBadges}>
+            <span className={styles.discountBadge}>
+              ٪{discountPercent} تخفیف
+            </span>
+            {discountUntil && (
+              <DiscountCountdown targetDate={discountUntil} compact={true} />
+            )}
+          </div>
+        )}
       </div>
+
       <div className={styles.cardContent}>
         <h3 className={`${styles.cardTitle} card-title`}>{title}</h3>
+
         <div className={styles.footer}>
-          {formattedPrice > 0 && <span className={styles.price}>{formattedPrice.toLocaleString()}<br/> تومان</span>}
+          {hasDiscount ? (
+            <div className={styles.priceContainer}>
+              <del className={styles.originalPrice}>{originalPrice.toLocaleString()} تومان</del>
+              <span className={styles.discountPrice}>{formattedPrice.toLocaleString()} تومان</span>
+            </div>
+          ) : (
+            formattedPrice > 0 && (
+              <span className={styles.price}>{formattedPrice.toLocaleString()}<br/> تومان</span>
+            )
+          )}
 
           {isOutOfStock ? (
             <button
               className={styles.addToCartButton}
               disabled
-              style={{ color: '#ffffff73',background: '#ffffff0d',borderColor: '#ffffff1f', boxShadow: 'none' }}
+              style={{ color: '#ffffff73', background: '#ffffff0d', borderColor: '#ffffff1f', boxShadow: 'none' }}
             >
               ناموجود
             </button>

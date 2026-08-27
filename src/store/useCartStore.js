@@ -37,7 +37,15 @@ export const useCartStore = create(
                     console.warn(`⚠️ Warning: Item "${rawItem.title || rawItem.id}" was added to cart with an invalid or zero price.`, rawItem);
                 }
 
-                const item = { ...rawItem, price: finalPrice };
+                const rawImg = rawItem.image;
+                let imageUrl = '/images/forempties2.png';
+                if (typeof rawImg === 'string' && rawImg.trim() !== '') {
+                    imageUrl = rawImg.trim();
+                } else if (rawImg && typeof rawImg === 'object' && rawImg.url) {
+                    imageUrl = rawImg.url;
+                }
+
+                const item = { ...rawItem, price: finalPrice, image: imageUrl };
                 const currentItems = get().items;
 
                 const existingItemIndex = currentItems.findIndex(

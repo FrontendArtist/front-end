@@ -55,13 +55,18 @@ export default function ProductAddToCart({ product }) {
             }
         }
 
-        const imageUrl = image?.url || (product.images && product.images[0]?.url) || '/images/placeholder.png';
+        const imageUrl = (typeof image === 'string' && image.trim() !== '')
+            ? image
+            : (image?.url || (product.images && product.images[0]?.url) || '/images/forempties2.png');
+        const numOriginal = product.originalPrice ?? (typeof price === 'object' && price?.original ? price.original : formattedPrice);
 
         addItem({
             id,
             slug,
             title,
             price: formattedPrice,
+            originalPrice: numOriginal,
+            discountPercent: product.discountPercent || 0,
             image: imageUrl,
             type: 'product',
             stock: typeof stock === 'number' ? stock : null,

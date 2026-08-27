@@ -6,13 +6,35 @@
 
 .imageWrapper {
   @include card-image-wrapper;
-    @include respond(xl) {
+  position: relative;
+  @include respond(xl) {
     aspect-ratio: 16 / 9;
   }
 }
 
-.courseImage {
-  @include card-image;
+.topBadges {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.discountBadge {
+  background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: var(--font-xs, 12px);
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .purchasedBadge {
@@ -27,6 +49,11 @@
   font-weight: var(--font-weight-bold);
   z-index: 2;
   box-shadow: 0 2px 8px fade(var(--color-black), 20%);
+}
+
+.countdownWrapper {
+  margin-top: 4px;
+  margin-bottom: 4px;
 }
 
 .cardContent {
@@ -96,6 +123,26 @@
     padding: 16px 0 0;
     margin-top: 0;
   }
+}
+
+.priceContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.originalPrice {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: var(--font-xs, 12px);
+  text-decoration: line-through;
+  font-weight: var(--font-weight-regular);
+}
+
+.discountPrice {
+  color: #ffd166;
+  font-size: var(--font-md, 16px);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.01em;
 }
 
 .price {

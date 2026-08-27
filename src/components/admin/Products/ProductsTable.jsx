@@ -199,9 +199,25 @@ export default function ProductsTable({ initialProducts }) {
 
                                     {/* قیمت */}
                                     <td className={styles.priceCell}>
-                                        {product.price != null
-                                            ? new Intl.NumberFormat('fa-IR').format(product.price)
-                                            : '—'}
+                                        {product.price != null ? (
+                                            product.discountPercent > 0 ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <del style={{ fontSize: '0.75rem', opacity: 0.5 }}>
+                                                        {new Intl.NumberFormat('fa-IR').format(product.price)}
+                                                    </del>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <strong style={{ color: '#ffd166' }}>
+                                                            {new Intl.NumberFormat('fa-IR').format(Math.round(product.price * (1 - product.discountPercent / 100)))}
+                                                        </strong>
+                                                        <span style={{ fontSize: '0.7rem', background: '#ef4444', color: '#fff', padding: '1px 4px', borderRadius: '4px' }}>
+                                                            ٪{product.discountPercent}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                new Intl.NumberFormat('fa-IR').format(product.price)
+                                            )
+                                        ) : '—'}
                                     </td>
 
                                     {/* موجودی */}

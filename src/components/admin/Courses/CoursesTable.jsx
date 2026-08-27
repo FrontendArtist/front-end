@@ -177,9 +177,25 @@ export default function CoursesTable({ initialCourses }) {
 
                                     {/* قیمت */}
                                     <td className={styles.priceCell}>
-                                        {course.price != null
-                                            ? new Intl.NumberFormat('fa-IR').format(course.price)
-                                            : '—'}
+                                        {course.price != null ? (
+                                            course.discountPercent > 0 && !course.isFree ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <del style={{ fontSize: '0.75rem', opacity: 0.5 }}>
+                                                        {new Intl.NumberFormat('fa-IR').format(course.price)}
+                                                    </del>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        <strong style={{ color: '#ffd166' }}>
+                                                            {new Intl.NumberFormat('fa-IR').format(Math.round(course.price * (1 - course.discountPercent / 100)))}
+                                                        </strong>
+                                                        <span style={{ fontSize: '0.7rem', background: '#ef4444', color: '#fff', padding: '1px 4px', borderRadius: '4px' }}>
+                                                            ٪{course.discountPercent}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                new Intl.NumberFormat('fa-IR').format(course.price)
+                                            )
+                                        ) : '—'}
                                     </td>
 
                                     {/* رایگان */}

@@ -40,13 +40,20 @@ export default function AddToCartButton({ course }) {
     if (isInCart) return;
 
     const formattedPrice = (typeof price === 'object' ? price?.toman : price) || 0;
+    const numOriginal = course.originalPrice ?? (typeof price === 'object' && price?.original ? price.original : formattedPrice);
+
+    const courseImageUrl = (typeof image === 'string' && image.trim() !== '')
+      ? image
+      : (image?.url || course.media?.url || '/images/forempties2.png');
 
     addItem({
       id,
       slug,
       title,
       price: formattedPrice,
-      image,
+      originalPrice: numOriginal,
+      discountPercent: course.discountPercent || 0,
+      image: courseImageUrl,
       type: 'course',
     });
   };

@@ -5,28 +5,31 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useOrdersStore } from '@/store/useOrdersStore';
+import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
 import styles from './CourseCard.module.scss';
 
 /**
- * کامپوننت کارت دوره آموزشی
- * 
- * @param {{
- * course: {
- * id: string | number;
- * slug: string;
- * image: { url: string; alt: string; };
- * title: string;
- * price: { toman: number; };
- * shortDescription?: string;
- * }
- * }} props
+ * کامپوننت کارت دوره آموزشی همراه با پشتیبانی از تخفیف و شمارش معکوس
  */
 const CourseCard = ({ course }) => {
   if (!course) return null;
 
-  const { id, slug, image, title, price, shortDescription } = course;
+  const {
+    id,
+    slug,
+    image,
+    title,
+    price,
+    originalPrice: rawOriginalPrice,
+    discountPercent = 0,
+    discountUntil,
+    shortDescription
+  } = course;
+
   const formattedPrice = (typeof price === "object" ? price?.toman : price) || 0;
+  const originalPrice = rawOriginalPrice ?? (typeof price === "object" && price?.original ? price.original : formattedPrice);
+  const hasDiscount = discountPercent > 0 && originalPrice > formattedPrice;
 
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -64,9 +67,16 @@ const CourseCard = ({ course }) => {
           sizes="(max-width: 768px) 100vw, 50vw"
           className={styles.courseImage}
         />
-        {isHydrated && isPurchased && (
+        {isHydrated && isPurchased ? (
           <span className={styles.purchasedBadge}>خریداری شده</span>
-        )}
+        ) : hasDiscount ? (
+          <div className={styles.topBadges}>
+            <span className={styles.discountBadge}>٪{discountPercent} تخفیف</span>
+            {discountUntil && (
+              <DiscountCountdown targetDate={discountUntil} compact={true} />
+            )}
+          </div>
+        ) : null}
       </div>
       <div className={styles.cardContent}>
         <h3 className={styles.cardTitle}>{title}</h3>
@@ -76,6 +86,11 @@ const CourseCard = ({ course }) => {
         <div className={styles.priceSection}>
           {isHydrated && isPurchased ? (
             <span className={styles.purchasedText}>✓ دانشجوی دوره هستید</span>
+          ) : hasDiscount ? (
+            <div className={styles.priceContainer}>
+              <del className={styles.originalPrice}>{originalPrice.toLocaleString()} تومان</del>
+              <span className={styles.discountPrice}>{formattedPrice.toLocaleString()} تومان</span>
+            </div>
           ) : (
             <span className={styles.price}>
               {formattedPrice > 0 ? `${formattedPrice.toLocaleString()} تومان` : 'رایگان'}

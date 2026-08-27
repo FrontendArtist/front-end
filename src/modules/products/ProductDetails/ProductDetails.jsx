@@ -16,6 +16,7 @@ import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import ProductGallery from '@/components/products/ProductGallery/ProductGallery';
 import ProductAddToCart from '@/components/products/ProductAddToCart/ProductAddToCart';
 import ProductSpecs from '@/modules/products/ProductSpecs/ProductSpecs';
+import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import styles from './ProductDetails.module.scss';
 
 // ── تابع کمکی: محاسبه حالت FOMO موجودی ─────────────────────────────────────
@@ -37,19 +38,26 @@ function getStockStatus(stock, isAvailable) {
 // ── تابع فرمت‌دهی قیمت به صورت فارسی ──────────────────────────────────────
 function formatPrice(price) {
   const toman = typeof price === 'object' ? price?.toman : price;
-  if (!toman) return null;
+  if (!toman && toman !== 0) return null;
   return toman.toLocaleString('fa-IR');
 }
 
 export default function ProductDetails({ product, breadcrumbItems }) {
-  const { stock = 0, isAvailable = true, specifications = [] } = product;
+  const {
+    stock = 0,
+    isAvailable = true,
+    specifications = [],
+    discountPercent = 0,
+    originalPrice,
+    discountUntil
+  } = product;
 
   // وضعیت موجودی
   const stockStatus = getStockStatus(stock, isAvailable);
 
-  // قیمت‌ها
-  const mainPrice = formatPrice(product.price);
-  const discountPrice = product.discountPrice ? formatPrice(product.discountPrice) : null;
+  const finalToman = typeof product.price === 'object' ? product.price?.toman : product.price;
+  const numOriginal = originalPrice ?? (typeof product.price === 'object' && product.price?.original ? product.price.original : finalToman);
+  const hasDiscount = discountPercent > 0 && numOriginal > finalToman;
 
   return (
     <main className={styles.productPage}>
@@ -85,15 +93,25 @@ export default function ProductDetails({ product, breadcrumbItems }) {
 
             {/* ── بخش قیمت ────────────────────────────────────────────────── */}
             <div className={styles.priceBox}>
-              {discountPrice ? (
-                <>
-                  <span className={styles.priceOriginal}>{mainPrice} تومان</span>
-                  <span className={styles.priceDiscount}>{discountPrice} تومان</span>
-                </>
+              {hasDiscount ? (
+                <div className={styles.discountRow}>
+                  <del className={styles.priceOriginal}>{formatPrice(numOriginal)} تومان</del>
+                  <div className={styles.finalPriceWrap}>
+                    <span className={styles.priceDiscount}>{formatPrice(finalToman)} تومان</span>
+                    <span className={styles.discountBadge}>٪{discountPercent} تخفیف</span>
+                  </div>
+                </div>
               ) : (
-                <span className={styles.price}>{mainPrice} تومان</span>
+                <span className={styles.price}>{formatPrice(finalToman)} تومان</span>
               )}
             </div>
+
+            {/* ── شمارش معکوس تخفیف ────────────────────────────────────────── */}
+            {hasDiscount && discountUntil && (
+              <div className={styles.countdownSection}>
+                <DiscountCountdown targetDate={discountUntil} compact={false} />
+              </div>
+            )}
 
             {/* ── نشانگر موجودی FOMO ──────────────────────────────────────── */}
             <div

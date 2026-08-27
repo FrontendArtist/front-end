@@ -275,7 +275,7 @@ export default function CartIcon() {
                             >
                                 {/* تصویر آیتم */}
                                 <div className={styles.itemImage}>
-                                    <img src={item.image} alt={item.title} />
+                                    <img src={item.image || '/images/forempties2.png'} alt={item.title || 'تصویر آیتم'} />
                                 </div>
 
                                 {/* اطلاعات آیتم */}
@@ -299,7 +299,18 @@ export default function CartIcon() {
 
                                 {/* قیمت آیتم */}
                                 <div className={styles.itemPrice}>
-                                    {formatPrice(item.price * item.quantity)} تومان
+                                    {item.originalPrice && item.originalPrice > item.price ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
+                                            <del style={{ fontSize: '0.7rem', opacity: 0.5, color: '#f87171' }}>
+                                                {formatPrice(item.originalPrice * item.quantity)}
+                                            </del>
+                                            <span style={{ color: '#ffd166', fontWeight: 'bold' }}>
+                                                {formatPrice(item.price * item.quantity)} تومان
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        `${formatPrice(item.price * item.quantity)} تومان`
+                                    )}
                                 </div>
                             </Link>
                         ))}

@@ -1,0 +1,154 @@
+@use '@/styles/base/mixins' as *;
+
+// ── Compact Mode (برای کارت‌های محصول و دوره) ─────────────────────────
+.compactContainer {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: var(--font-xs, 12px);
+  color: #ffffff;
+  font-weight: 800;
+  direction: ltr;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  width: fit-content;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.pulseDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
+  animation: pulseDot 1.2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+.compactIcon {
+  font-size: 11px;
+}
+
+.compactDigits {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.unit {
+  font-size: 10px;
+  opacity: 0.9;
+  color: #fff;
+  margin: 0 1px;
+}
+
+.sep {
+  opacity: 0.8;
+  color: #ffffff;
+}
+
+// ── Full Mode (برای صفحات جزئیات و بنرها) ───────────────────────────────
+.fullContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(245, 158, 11, 0.1));
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 12px;
+  padding: 10px 16px;
+  width: fit-content;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badgePulse {
+  font-size: 16px;
+  animation: fireFlicker 1.5s ease infinite alternate;
+}
+
+.headerTitle {
+  font-size: var(--font-xs, 12px);
+  font-weight: 700;
+  color: #fca5a5;
+  letter-spacing: 0.02em;
+}
+
+.timerGrid {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  direction: ltr;
+}
+
+.timeBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(17, 17, 17, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  min-width: 44px;
+  padding: 4px 6px;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.05);
+}
+
+.timeVal {
+  font-size: var(--font-md, 16px);
+  font-weight: 800;
+  color: #ffd166;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.timeLabel {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 1px;
+}
+
+.colon {
+  font-size: var(--font-md, 16px);
+  font-weight: 800;
+  color: #ef4444;
+  opacity: 0.8;
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.7);
+  }
+}
+
+@keyframes fireFlicker {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    transform: scale(1.15) rotate(4deg);
+  }
+}

@@ -60,11 +60,25 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
             if (url) imageObj = { url, alt: data.title };
         }
 
+        let discountPercent = Number(data.discountPercent || 0);
+        const discountUntil = data.discountUntil || null;
+        if (discountUntil && new Date(discountUntil).getTime() <= Date.now()) {
+            discountPercent = 0;
+        }
+
+        const rawPrice = typeof data.price === 'object' ? data.price?.toman || 0 : (data.price || 0);
+        const discountPrice = discountPercent > 0 ? Math.round(rawPrice * (1 - discountPercent / 100)) : null;
+        const finalPrice = discountPrice !== null ? discountPrice : rawPrice;
+
         return {
             id,
             slug: data.slug,
             title: data.title,
-            price: data.price,
+            price: { toman: finalPrice, original: rawPrice },
+            originalPrice: rawPrice,
+            discountPercent,
+            discountPrice,
+            discountUntil,
             image: imageObj || { url: '/images/forempties2.png', alt: data.title },
         };
     };
@@ -95,11 +109,25 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
         const url = extractImageUrl(imageRaw);
         if (url) imageObj = { url, alt: data.title };
 
+        let discountPercent = Number(data.discountPercent || 0);
+        const discountUntil = data.discountUntil || null;
+        if (discountUntil && new Date(discountUntil).getTime() <= Date.now()) {
+            discountPercent = 0;
+        }
+
+        const rawPrice = typeof data.price === 'object' ? data.price?.toman || 0 : (data.price || 0);
+        const discountPrice = discountPercent > 0 ? Math.round(rawPrice * (1 - discountPercent / 100)) : null;
+        const finalPrice = discountPrice !== null ? discountPrice : rawPrice;
+
         return {
             id,
             slug: data.slug,
             title: data.title,
-            price: data.price,
+            price: { toman: finalPrice, original: rawPrice },
+            originalPrice: rawPrice,
+            discountPercent,
+            discountPrice,
+            discountUntil,
             shortDescription: data.shortDescription,
             image: imageObj || { url: '/images/forempties2.png', alt: data.title }
         };

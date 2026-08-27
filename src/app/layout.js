@@ -5,6 +5,8 @@ import '@/app/globals.css';
 import Footer from "@/components/layout/Footer/Footer";
 import Navbar from "@/components/layout/Navbar/Navbar";
 import AuthModal from "@/components/auth/AuthModal";
+import PopupModal from "@/components/popup/PopupModal";
+import VpnModal from "@/components/common/VpnModal/VpnModal";
 import { Providers } from "./providers";
 import localFont from 'next/font/local';
 import CartSyncProvider from "@/components/providers/CartSyncProvider";
@@ -26,6 +28,7 @@ const shafigh = localFont({
 const lalezar = localFont({
   src: '../assets/fonts/lalezar-regular.ttf',
   variable: '--font-lalezar',
+  weight: '100 900',
   display: 'swap',
 });
 
@@ -69,13 +72,15 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body>
+      <body className={`${iranSans.variable} ${shafigh.variable} ${lalezar.variable}`}>
         <Providers>
           <CartSyncProvider />
           <Navbar />
           {children}
           <Footer />
           <AuthModal />
+          <PopupModal />
+          <VpnModal />
         </Providers>
       </body>
     </html>

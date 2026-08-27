@@ -29,8 +29,8 @@ export default function CartReviewStep({ onNext }) {
                     <div key={item.id} className={styles.item}>
                         <div className={styles.itemImage}>
                             <Image
-                                src={item.image}
-                                alt={item.title}
+                                src={item.image || '/images/forempties2.png'}
+                                alt={item.title || 'تصویر محصول'}
                                 fill
                                 sizes="80px"
                                 className={styles.image}
@@ -44,7 +44,18 @@ export default function CartReviewStep({ onNext }) {
                             </p>
                         </div>
                         <div className={styles.itemPrice}>
-                            {formatPrice(item.price * item.quantity)} تومان
+                            {item.originalPrice && item.originalPrice > item.price ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                                    <del style={{ fontSize: '0.75rem', opacity: 0.5, color: '#f87171' }}>
+                                        {formatPrice(item.originalPrice * item.quantity)} تومان
+                                    </del>
+                                    <span style={{ color: '#ffd166', fontWeight: 'bold' }}>
+                                        {formatPrice(item.price * item.quantity)} تومان
+                                    </span>
+                                </div>
+                            ) : (
+                                <span>{formatPrice(item.price * item.quantity)} تومان</span>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -55,13 +66,17 @@ export default function CartReviewStep({ onNext }) {
                     <span>تعداد اقلام:</span>
                     <strong>{itemsCount} مورد</strong>
                 </div>
-                {/* <div className={styles.summaryRow}>
-                    <span>جمع جزء:</span>
-                    <strong>{formatPrice(totalPrice)} تومان</strong>
-                </div> */}
+                {items.some(i => i.originalPrice && i.originalPrice > i.price) && (
+                    <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
+                        <span>سود شما از تخفیف‌ها:</span>
+                        <strong>
+                            {formatPrice(items.reduce((sum, item) => sum + ((item.originalPrice && item.originalPrice > item.price ? (item.originalPrice - item.price) : 0) * item.quantity), 0))} تومان
+                        </strong>
+                    </div>
+                )}
                 <div className={styles.divider}></div>
                 <div className={styles.summaryTotal}>
-                    <span>جمع کل:</span>
+                    <span>مبلغ نهایی قابل پرداخت:</span>
                     <strong>{formatPrice(totalPrice)} تومان</strong>
                 </div>
             </div>

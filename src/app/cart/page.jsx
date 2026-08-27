@@ -196,8 +196,8 @@ export default function CartPage() {
                                         {/* تصویر محصول - لینک به صفحه جزئیات */}
                                         <Link href={constructProductUrl(item)} className={styles.itemImage}>
                                             <Image
-                                                src={item.image}
-                                                alt={item.title}
+                                                src={item.image || '/images/forempties2.png'}
+                                                alt={item.title || 'تصویر محصول'}
                                                 fill
                                                 sizes="(max-width: 768px) 100px, 120px"
                                                 className={styles.image}

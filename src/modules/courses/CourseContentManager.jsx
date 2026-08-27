@@ -164,7 +164,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       slug: `${course.slug}-chapter-${chapter.id}`,
       title: `${course.title} - ${chapter.title}`,
       price: chapterPrice,
-      image: course.media?.url,
+      image: course.media?.url || '/images/forempties2.png',
       type: 'chapter',
     });
 

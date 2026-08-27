@@ -52,12 +52,27 @@ export function formatStrapiCourses(apiResponse) {
         ? item.curriculum.map(formatLesson).filter(Boolean)
         : [];
 
+      let discountPercent = Number(item.discountPercent || 0);
+      const discountUntil = item.discountUntil || null;
+
+      if (discountUntil && new Date(discountUntil).getTime() <= Date.now()) {
+        discountPercent = 0;
+      }
+
+      const originalPrice = item.price || 0;
+      const discountPrice = discountPercent > 0 ? Math.round(originalPrice * (1 - discountPercent / 100)) : null;
+      const finalPrice = discountPrice !== null ? discountPrice : originalPrice;
+
       return {
         id: item.id,
         documentId: item.documentId,
         slug: item.slug,
         title: item.title,
-        price: { toman: item.price || 0 },
+        price: { toman: finalPrice, original: originalPrice },
+        originalPrice: originalPrice,
+        discountPercent: discountPercent,
+        discountPrice: discountPrice,
+        discountUntil: discountUntil,
         shortDescription:
           (item.description && item.description[0]?.children[0]?.text) || item.shortDescription || '',
         image: formatSingleImage(item.media ? item.media[0] : item.image || null),

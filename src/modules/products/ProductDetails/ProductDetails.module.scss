@@ -118,7 +118,29 @@
 .priceBox {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
+}
+
+.discountRow {
+  display: flex;
+  flex-direction: column;
   gap: 0.35rem;
+}
+
+.finalPriceWrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.discountBadge {
+  background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+  color: #ffffff;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: var(--font-xs, 12px);
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .price {
@@ -131,7 +153,7 @@
 .priceDiscount {
   font-size: var(--font-xl);
   font-weight: var(--font-weight-bold);
-  color: var(--color-success-light);
+  color: #ffd166;
   letter-spacing: 0.01em;
 }
 
@@ -140,6 +162,11 @@
   color: rgba(255, 255, 255, 0.45);
   text-decoration: line-through;
   font-weight: var(--font-weight-regular);
+}
+
+.countdownSection {
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 // =============================================================================

@@ -15,7 +15,6 @@ export function formatStrapiProducts(apiResponse) {
     .map(item => {
       const attrs = item.attributes || item;
       const priceVal = typeof attrs.price === 'object' ? attrs.price?.toman || 0 : (attrs.price || 0);
-      const priceObject = { toman: priceVal };
 
       const shortDescription =
         attrs.shortDescription ||
@@ -53,13 +52,29 @@ export function formatStrapiProducts(apiResponse) {
         };
       });
 
+      let discountPercent = Number(attrs.discountPercent || 0);
+      const discountUntil = attrs.discountUntil || null;
+
+      // اگر تاریخ انقضای تخفیف گذشته باشد، تخفیف غیرفعال می‌شود
+      if (discountUntil && new Date(discountUntil).getTime() <= Date.now()) {
+        discountPercent = 0;
+      }
+
+      const originalPrice = priceVal;
+      const discountPrice = discountPercent > 0 ? Math.round(originalPrice * (1 - discountPercent / 100)) : null;
+      const finalPrice = discountPrice !== null ? discountPrice : originalPrice;
+      const priceObject = { toman: finalPrice, original: originalPrice };
+
       return {
         id: item.id,
         documentId: item.documentId || String(item.id || ''),
         title: attrs.title || '',
         slug: attrs.slug || '',
         price: priceObject,
-        discountPrice: attrs.discountPrice || attrs.discount_price || null,
+        originalPrice: originalPrice,
+        discountPercent: discountPercent,
+        discountPrice: discountPrice,
+        discountUntil: discountUntil,
         shortDescription: shortDescription,
         content: content,
         specifications: specifications,
@@ -76,16 +91,29 @@ export function formatStrapiProducts(apiResponse) {
  * @private فرمت خلاصه محصول برای embed در داده‌های categories
  */
 export function formatStrapiProduct(product) {
-  const attr = product.attributes || {};
+  const attr = product.attributes || product || {};
   const img = attr.images?.data?.[0]
     ? formatSingleImage(attr.images.data[0])
     : { url: '/images/placeholder.png' };
+
+  let discountPercent = Number(attr.discountPercent || 0);
+  const discountUntil = attr.discountUntil || null;
+  if (discountUntil && new Date(discountUntil).getTime() <= Date.now()) {
+    discountPercent = 0;
+  }
+  const originalPrice = typeof attr.price === 'object' ? attr.price?.toman || 0 : (attr.price || 0);
+  const discountPrice = discountPercent > 0 ? Math.round(originalPrice * (1 - discountPercent / 100)) : null;
+  const finalPrice = discountPrice !== null ? discountPrice : originalPrice;
 
   return {
     id: product.id,
     title: attr.title,
     slug: attr.slug,
-    price: attr.price,
+    price: { toman: finalPrice, original: originalPrice },
+    originalPrice,
+    discountPercent,
+    discountPrice,
+    discountUntil,
     image: img.url,
   };
 }

@@ -1,3 +1,38 @@
+[2026-08-27] - Full Discount System & Expiration Countdown for Products and Courses
+
+── Backend Schema Updates (Strapi) ───────────────────────────────────────────
+- Product & Course Schemas (`backend/src/api/product/...` & `backend/src/api/course/...`):
+  • Added `discountPercent` field (integer, 0-100, default: 0).
+  • Added `discountUntil` field (datetime) for discount duration / expiry scheduling.
+
+── Discount Countdown Component & Design System ──────────────────────────────
+- Countdown Timer Component (`src/components/ui/DiscountCountdown/DiscountCountdown.jsx` & SCSS):
+  • Built versatile countdown timer with live seconds interval and Persian numerals.
+  • Compact Mode: Gradient badge (`#ef4444` → `#f97316`) with glowing white pulse dot, hourglass icon, and compact D/H/M/S for product and course cards.
+  • Full Mode: Luxury glassmorphic segmented boxes (Day, Hour, Min, Sec) with fire pulse for product/course detail pages.
+  • Automatic Expiration: Switches back to regular pricing dynamically once timer hits zero.
+
+── Admin Panel Management ─────────────────────────────────────────────────────
+- Product & Course Forms (`ProductForm.jsx` & `CourseForm.jsx`):
+  • Added percentage discount field (0-100%) and expiry datetime picker.
+  • Quick duration presets: "+۳ روز", "+۵ روز", "+۷ روز", "+۱ ماه" and clear button.
+  • Real-time price calculator displaying final discounted price and customer savings.
+- Product & Course Tables (`ProductsTable.jsx` & `CoursesTable.jsx`):
+  • Added visual discount badges and crossed-out original prices in admin price columns.
+
+── Store Cards & Detail Pages ────────────────────────────────────────────────
+- Product & Course Cards (`ProductCard.jsx` & `CourseCard.jsx`):
+  • Placed discount percentage badge and countdown timer in a floating top container (`topBadges`) over card cover.
+  • Re-styled card footers with strike-through original prices (`<del>`) and golden final prices.
+- Product & Course Details (`ProductDetails.jsx` & `courses/[slug]/page.js`):
+  • Integrated full countdown section, discount percentage badges, and crossed-out prices.
+
+── Cart & Checkout Flow ──────────────────────────────────────────────────────
+- Store & Cart (`useCartStore.js`, `CartReviewStep.jsx`, `PaymentStep.jsx`, `CartIcon.jsx`):
+  • Charges final discounted prices during checkout and cart computations.
+  • Displays strikethrough original prices and a dedicated "سود شما از تخفیف‌ها" savings line in checkout summaries.
+  • Added safe image fallback (`/images/forempties2.png`) to eliminate empty `src=""` console warnings.
+
 [2026-08-27] - Free VPN Detection API & Modal Warning System
 
 ── VPN Detection Infrastructure & Modal System ──────────────────────────────

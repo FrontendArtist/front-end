@@ -106,7 +106,18 @@ export default function PaymentStep({ onPrevious }) {
                                 )}
                             </span>
                             <span className={styles.itemPrice}>
-                                {formatPrice(item.price * item.quantity)} تومان
+                                {item.originalPrice && item.originalPrice > item.price ? (
+                                    <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                        <del style={{ fontSize: '0.75rem', opacity: 0.5, color: '#f87171' }}>
+                                            {formatPrice(item.originalPrice * item.quantity)}
+                                        </del>
+                                        <strong style={{ color: '#ffd166' }}>
+                                            {formatPrice(item.price * item.quantity)} تومان
+                                        </strong>
+                                    </span>
+                                ) : (
+                                    `${formatPrice(item.price * item.quantity)} تومان`
+                                )}
                             </span>
                         </div>
                     ))}
@@ -118,6 +129,15 @@ export default function PaymentStep({ onPrevious }) {
                     <span>تعداد اقلام:</span>
                     <strong>{itemsCount} مورد</strong>
                 </div>
+
+                {items.some(i => i.originalPrice && i.originalPrice > i.price) && (
+                    <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
+                        <span>مجموع تخفیف‌های شما:</span>
+                        <strong>
+                            {formatPrice(items.reduce((sum, item) => sum + ((item.originalPrice && item.originalPrice > item.price ? (item.originalPrice - item.price) : 0) * item.quantity), 0))} تومان
+                        </strong>
+                    </div>
+                )}
 
                 <div className={styles.summaryTotal}>
                     <span>مبلغ قابل پرداخت:</span>

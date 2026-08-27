@@ -244,6 +244,24 @@ export default function CourseForm({ course = null }) {
     const [title, setTitle] = useState(course?.title || '');
     const [slug, setSlug] = useState(course?.slug || '');
     const [price, setPrice] = useState(course?.price ?? '');
+    const [discountPercent, setDiscountPercent] = useState(course?.discountPercent ?? '');
+    const [discountUntil, setDiscountUntil] = useState(() => {
+        if (!course?.discountUntil) return '';
+        try {
+            const d = new Date(course.discountUntil);
+            const offset = d.getTimezoneOffset() * 60000;
+            return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+        } catch {
+            return '';
+        }
+    });
+
+    const setQuickDays = (days) => {
+        const d = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+        const offset = d.getTimezoneOffset() * 60000;
+        setDiscountUntil(new Date(d.getTime() - offset).toISOString().slice(0, 16));
+    };
+
     const [isFree, setIsFree] = useState(course?.isFree ?? false);
     const [isChaptered, setIsChaptered] = useState(course?.isChaptered ?? false);
     const [publishedAt, setPublishedAt] = useState(course?.publishedAt || null);
@@ -399,11 +417,17 @@ export default function CourseForm({ course = null }) {
                 duration: l.duration || null,
             }));
 
+        const numPrice = price !== '' ? Number(price) : null;
+        const numDiscount = discountPercent !== '' ? Math.min(100, Math.max(0, Number(discountPercent))) : 0;
+        const resolvedDiscountUntil = discountUntil ? new Date(discountUntil).toISOString() : null;
+
         return {
             title: title.trim(),
             slug: slug.trim(),
             description: descriptionBlocks,
-            price: price !== '' ? Number(price) : null,
+            price: numPrice,
+            discountPercent: numDiscount,
+            discountUntil: resolvedDiscountUntil,
             isFree,
             isChaptered,
             teaserUrl: teaserUrl.trim() || null,
@@ -517,7 +541,7 @@ export default function CourseForm({ course = null }) {
                         {/* ── قیمت ─────────────────────────────────────── */}
                         <div className={styles.field}>
                             <label htmlFor="cf-price">
-                                قیمت (تومان) <span className={styles.required}>*</span>
+                                قیمت اصلی (تومان) <span className={styles.required}>*</span>
                             </label>
                             <input
                                 id="cf-price"
@@ -531,6 +555,76 @@ export default function CourseForm({ course = null }) {
                                 disabled={saving}
                             />
                         </div>
+
+                        {/* ── درصد تخفیف ─────────────────────────────────── */}
+                        <div className={styles.field}>
+                            <label htmlFor="cf-discount">
+                                درصد تخفیف (٪)
+                            </label>
+                            <input
+                                id="cf-discount"
+                                type="number"
+                                min="0"
+                                max="100"
+                                className={styles.input}
+                                value={discountPercent}
+                                onChange={(e) => setDiscountPercent(e.target.value)}
+                                placeholder="مثلاً: 20"
+                                dir="ltr"
+                                disabled={saving}
+                            />
+                            <span className={styles.hint}>عددی بین ۰ تا ۱۰۰ درصد.</span>
+                        </div>
+
+                        {/* ── مهلت زمان تخفیف ───────────────────────────── */}
+                        <div className={styles.field}>
+                            <label htmlFor="cf-discount-until">
+                                مهلت زمان تخفیف (انقضا)
+                            </label>
+                            <input
+                                id="cf-discount-until"
+                                type="datetime-local"
+                                className={styles.input}
+                                value={discountUntil}
+                                onChange={(e) => setDiscountUntil(e.target.value)}
+                                dir="ltr"
+                                disabled={saving}
+                            />
+                            <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                                <button type="button" onClick={() => setQuickDays(3)} className={styles.btnSecondary} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>+۳ روز</button>
+                                <button type="button" onClick={() => setQuickDays(5)} className={styles.btnSecondary} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>+۵ روز</button>
+                                <button type="button" onClick={() => setQuickDays(7)} className={styles.btnSecondary} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>+۷ روز</button>
+                                <button type="button" onClick={() => setQuickDays(30)} className={styles.btnSecondary} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>+۱ ماه</button>
+                                {discountUntil && (
+                                    <button type="button" onClick={() => setDiscountUntil('')} className={styles.btnSecondary} style={{ fontSize: '0.75rem', padding: '2px 8px', color: '#ef4444' }}>پاک کردن</button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* ── محاسبه زنده تخفیف ────────────────────────── */}
+                        {Number(price) > 0 && Number(discountPercent) > 0 && !isFree && (
+                            <div className={`${styles.field} ${styles['field--full']}`} style={{
+                                background: 'rgba(245, 158, 11, 0.1)',
+                                border: '1px solid rgba(245, 158, 11, 0.3)',
+                                borderRadius: '8px',
+                                padding: '12px 16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                flexWrap: 'wrap',
+                                gap: '10px'
+                            }}>
+                                <div>
+                                    <span style={{ color: '#ffd166', fontWeight: 'bold' }}>🏷️ شهریه نهایی دوره با تخفیف: </span>
+                                    <strong style={{ fontSize: '1.1rem', color: '#fff', margin: '0 4px' }}>
+                                        {Math.round(Number(price) * (1 - Number(discountPercent) / 100)).toLocaleString('fa-IR')} تومان
+                                    </strong>
+                                </div>
+                                <span style={{ fontSize: '0.85rem', color: '#a7f3d0' }}>
+                                    سود دانشجو: {Math.round(Number(price) * (Number(discountPercent) / 100)).toLocaleString('fa-IR')} تومان ({discountPercent}٪)
+                                </span>
+                            </div>
+                        )}
 
                         {/* ── لینک تیزر ───────────────────────────────── */}
                         <div className={styles.field}>

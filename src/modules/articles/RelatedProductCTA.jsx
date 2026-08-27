@@ -61,14 +61,18 @@ export default function RelatedProductCTA({ enableCta = true, items, ctaItems, i
         const coverAlt =
           (typeof image === 'object' && image?.alt) || cover?.alt || title || 'تصویر کاور';
 
-        // استخراج و فرمت‌دهی قیمت به تومان ایران
-        const numericPrice = typeof price === 'object' ? price?.toman || 0 : (typeof price === 'number' ? price : 0);
-        const numericDiscountPrice = typeof discountPrice === 'number' ? discountPrice : null;
-        const numericOriginalPrice = typeof originalPrice === 'number' ? originalPrice : null;
+        const numericPrice = typeof price === 'object' ? (price?.original || price?.toman || 0) : (typeof price === 'number' ? price : 0);
+        const discountPercent = Number(target.discountPercent || 0);
+        const numericDiscountPrice = typeof discountPrice === 'number'
+          ? discountPrice
+          : (discountPercent > 0 ? Math.round(numericPrice * (1 - discountPercent / 100)) : (typeof price === 'object' && price?.toman && price?.original ? price.toman : null));
+        const numericOriginalPrice = typeof originalPrice === 'number' ? originalPrice : (typeof price === 'object' && price?.original ? price.original : null);
 
         // محاسبه قیمت نهایی و قیمت خط‌خورده
         const finalPrice = numericDiscountPrice !== null ? numericDiscountPrice : numericPrice;
-        const strikethroughPrice = numericDiscountPrice !== null ? numericPrice : (numericOriginalPrice && numericOriginalPrice > numericPrice ? numericOriginalPrice : null);
+        const strikethroughPrice = (numericDiscountPrice !== null && numericPrice > numericDiscountPrice)
+          ? numericPrice
+          : (numericOriginalPrice && numericOriginalPrice > finalPrice ? numericOriginalPrice : null);
 
         const formattedFinalPrice = finalPrice > 0 ? finalPrice.toLocaleString('fa-IR') : null;
         const formattedStrikethroughPrice = strikethroughPrice ? strikethroughPrice.toLocaleString('fa-IR') : null;
