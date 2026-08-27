@@ -167,13 +167,13 @@ export default function OrderDetailPage() {
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>روش پرداخت:</span>
                         <span className={styles.metaValue}>
-                            {isCardToCard ? 'کارت به کارت' : 'پرداخت آنلاین'}
+                            {isCardToCard ? 'کارت به کارت' : (order.paymentMethod === 'free' ? 'رایگان' : 'پرداخت آنلاین')}
                         </span>
                     </span>
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>مبلغ کل:</span>
                         <span className={`${styles.metaValue} ${styles.metaPrice}`}>
-                            {formatPrice(order.totalPrice)} تومان
+                            {Number(order.totalPrice) === 0 ? 'رایگان' : `${formatPrice(order.totalPrice)} تومان`}
                         </span>
                     </span>
                     <span className={styles.metaItem}>

@@ -173,15 +173,76 @@ export async function PUT(request, { params }) {
                         } else {
                             console.warn(`[AdminOrdersAPI] ⚠️ lightAmount=0, skipping light credit`);
                         }
-                    } else {
-                        console.log(`[AdminOrdersAPI] Not a light_topup order, skipping.`);
+                    }
+
+                    // ── فعال‌سازی و اتصال دوره‌ها و فصل‌ها به کاربر پس از تأیید سفارش ─────
+                    const items = orderDetails?.data?.items || [];
+                    const courseIdsToConnect = new Set();
+                    const chapterIdsToConnect = new Set();
+
+                    for (const item of items) {
+                        if (item.chapterId) {
+                            chapterIdsToConnect.add(Number(item.chapterId));
+                        } else if (item.courseId && !item.slug?.includes('-chapter-')) {
+                            courseIdsToConnect.add(Number(item.courseId));
+                        } else if (item.type === 'chapter') {
+                            const rawId = Number(String(item.chapterId || item.id).replace('chapter-', ''));
+                            if (rawId) chapterIdsToConnect.add(rawId);
+                        } else if (item.type === 'course' && item.id) {
+                            courseIdsToConnect.add(Number(item.id));
+                        }
+                    }
+
+                    if ((courseIdsToConnect.size > 0 || chapterIdsToConnect.size > 0) && userId) {
+                        try {
+                            const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+                            const userRes = await fetch(
+                                `${STRAPI_API_URL}/api/users/${userId}?populate[0]=courses`,
+                                { headers: { Authorization: `Bearer ${STRAPI_TOKEN || session.user.jwt}` } }
+                            );
+
+                            if (userRes.ok) {
+                                const userData = await userRes.json();
+                                const updatePayload = {};
+
+                                if (courseIdsToConnect.size > 0) {
+                                    const existingCourses = Array.isArray(userData.courses)
+                                        ? userData.courses.map(c => c.id)
+                                        : [];
+                                    updatePayload.courses = [...new Set([...existingCourses, ...Array.from(courseIdsToConnect)])];
+                                }
+
+                                if (chapterIdsToConnect.size > 0) {
+                                    const existingChapters = Array.isArray(userData.enrolledChapters)
+                                        ? userData.enrolledChapters.map(Number)
+                                        : [];
+                                    updatePayload.enrolledChapters = [...new Set([...existingChapters, ...Array.from(chapterIdsToConnect)])];
+                                }
+
+                                const userSyncRes = await fetch(`${STRAPI_API_URL}/api/users/${userId}`, {
+                                    method: 'PUT',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        Authorization: `Bearer ${STRAPI_TOKEN || session.user.jwt}`,
+                                    },
+                                    body: JSON.stringify(updatePayload),
+                                });
+
+                                if (userSyncRes.ok) {
+                                    console.log(`[AdminOrdersAPI] ✅ Activated purchases for user ${userId}: courses=[${Array.from(courseIdsToConnect)}], chapters=[${Array.from(chapterIdsToConnect)}]`);
+                                } else {
+                                    console.error(`[AdminOrdersAPI] ❌ Failed to activate purchases for user ${userId}:`, await userSyncRes.text());
+                                }
+                            }
+                        } catch (courseSyncErr) {
+                            console.error('[AdminOrdersAPI] Course/Chapter activation error:', courseSyncErr?.message);
+                        }
                     }
                 } else {
                     console.error(`[AdminOrdersAPI] ❌ Cannot fetch order ${strapiId}:`, orderDetailsRes.status);
                 }
-            } catch (lightErr) {
-                // خطا در اضافه کردن نور — لاگ می‌کنیم ولی response اصلی را بر نمی‌گردانیم
-                console.error('[AdminOrdersAPI] Light credit error:', lightErr?.message);
+            } catch (confirmErr) {
+                console.error('[AdminOrdersAPI] Order confirmation processing error:', confirmErr?.message);
             }
         }
 

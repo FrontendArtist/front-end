@@ -132,11 +132,31 @@ export const useCartStore = create(
             },
 
             /**
+             * اطلاعات کوپن تخفیف اعمال شده
+             * { code, title, discountType, discountValue, discountAmount, originalTotalPrice, finalTotalPrice }
+             */
+            appliedCoupon: null,
+
+            /**
+             * اعمال کوپن تخفیف در سبد خرید
+             */
+            applyCoupon: (couponData) => {
+                set({ appliedCoupon: couponData });
+            },
+
+            /**
+             * حذف کوپن تخفیف
+             */
+            removeCoupon: () => {
+                set({ appliedCoupon: null });
+            },
+
+            /**
              * پاکسازی کامل سبد خرید
-             * تمام آیتم‌ها (محصولات و دوره‌ها) حذف می‌شوند
+             * تمام آیتم‌ها (محصولات و دوره‌ها) و کوپن تخفیف حذف می‌شوند
              */
             clearCart: () => {
-                set({ items: [] });
+                set({ items: [], appliedCoupon: null });
             },
         }),
         {
@@ -165,11 +185,11 @@ export const useCartStore = create(
 
             /**
              * تنظیمات ذخیره‌سازی
-             * فقط items در LocalStorage ذخیره می‌شود
-             * توابع و computed values ذخیره نمی‌شوند
+             * items و appliedCoupon در LocalStorage ذخیره می‌شوند
              */
             partialize: (state) => ({
                 items: state.items,
+                appliedCoupon: state.appliedCoupon,
             }),
         }
     )
@@ -177,16 +197,31 @@ export const useCartStore = create(
 
 /**
  * سلکتورهای کمکی برای محاسبات مشتق‌شده از state
- * این توابع به صورت خودکار زمانی که items تغییر می‌کند، مقادیر جدید را محاسبه می‌کنند
+ * این توابع به صورت خودکار زمانی که items یا appliedCoupon تغییر می‌کند، مقادیر جدید را محاسبه می‌کنند
  */
 
 /**
- * محاسبه قیمت کل سبد خرید
+ * محاسبه قیمت ناخالص کل سبد خرید (بدون احتساب کد تخفیف)
  * @param {Object} state - state کامل استور
  * @returns {number} - مجموع قیمت تمام آیتم‌های سبد (price * quantity)
  */
 export const selectTotalPrice = (state) =>
     state.items.reduce((total, item) => total + item.price * item.quantity, 0);
+
+/**
+ * محاسبه مبلغ تخفیف کد تخفیف
+ */
+export const selectCouponDiscount = (state) =>
+    Number(state.appliedCoupon?.discountAmount) || 0;
+
+/**
+ * محاسبه مبلغ نهایی قابل پرداخت (پس از کسر تخفیف کوپن)
+ */
+export const selectFinalTotalPrice = (state) => {
+    const rawTotal = selectTotalPrice(state);
+    const couponDiscount = selectCouponDiscount(state);
+    return Math.max(0, rawTotal - couponDiscount);
+};
 
 /**
  * محاسبه تعداد کل آیتم‌های موجود در سبد خرید

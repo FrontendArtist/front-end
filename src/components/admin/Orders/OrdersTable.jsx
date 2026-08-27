@@ -45,6 +45,7 @@ const ORDER_STATUS_CONFIG = {
 const PAYMENT_METHOD_LABELS = {
     card_to_card: 'کارت‌به‌کارت',
     online: 'آنلاین',
+    free: 'رایگان',
     cash: 'نقدی',
 };
 

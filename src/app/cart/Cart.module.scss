@@ -437,6 +437,13 @@
     }
 }
 
+.couponSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 4px 0;
+}
+
 .divider {
     height: 1px;
     background: fade(var(--color-primary), 15%);

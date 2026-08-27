@@ -50,6 +50,8 @@ export default function StatusUpdateModal({ order, onClose, onUpdate }) {
         // ساخت payload برای Strapi
         const payload = {
             orderStatus: selectedStatus,
+            // اگر وضعیت به پرداخت شده تغییر کند، وضعیت پرداخت هم paid می‌شود
+            ...(selectedStatus === 'paid' && { paymentStatus: 'paid' }),
             // فقط کد رهگیری را اگر 'shipped' بود اضافه کن
             ...(needsTracking && { trackingNumber: trackingNumber.trim() }),
         };
@@ -63,6 +65,7 @@ export default function StatusUpdateModal({ order, onClose, onUpdate }) {
             // آپدیت state محلی در OrdersTable
             onUpdate(order.id, {
                 orderStatus: selectedStatus,
+                ...(selectedStatus === 'paid' && { paymentStatus: 'paid' }),
                 ...(needsTracking && { trackingNumber: trackingNumber.trim() }),
             });
             onClose();

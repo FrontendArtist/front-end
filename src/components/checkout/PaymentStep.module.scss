@@ -421,3 +421,60 @@
         }
     }
 }
+
+.freeOrderNotice {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background: rgba(74, 222, 128, 0.08);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    border-radius: 12px;
+    padding: 20px 22px;
+    box-shadow: 0 4px 16px rgba(74, 222, 128, 0.08);
+
+    @include respond(md) {
+        padding: 16px;
+        gap: 12px;
+    }
+}
+
+.freeOrderIcon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 50%;
+    background: rgba(74, 222, 128, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+        width: 26px;
+        height: 26px;
+    }
+}
+
+.freeOrderContent {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.freeOrderTitle {
+    font-family: var(--font-lalezar);
+    font-size: var(--font-lg);
+    color: #4ade80;
+    margin: 0;
+}
+
+.freeOrderDesc {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    margin: 0;
+    line-height: 1.7;
+    opacity: 0.95;
+
+    @include respond(md) {
+        font-size: var(--font-xs);
+    }
+}

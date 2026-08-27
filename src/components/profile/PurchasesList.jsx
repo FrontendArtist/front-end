@@ -35,8 +35,15 @@ export default function PurchasesList() {
         );
     }
 
-    // Extract and flatten all items from all orders
-    const allItems = orders.flatMap(order => {
+    // ⚠️ فقط سفارشاتی که پرداخت آنها قطعی و تأیید شده است در خریدهای من نمایش داده می‌شوند
+    const paidOrders = orders.filter(order => {
+        const oStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
+        const pStatus = (order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
+        return oStatus === 'paid' || pStatus === 'paid' || ['shipped', 'delivered'].includes(oStatus);
+    });
+
+    // Extract and flatten all items from all paid orders
+    const allItems = paidOrders.flatMap(order => {
         const items = order.attributes?.items || order.items;
         return Array.isArray(items) ? items : [];
     });

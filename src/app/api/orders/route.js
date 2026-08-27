@@ -150,16 +150,62 @@ export async function POST(request) {
             }
         });
 
-        // ── BUG FIX ─────────────────────────────────────────────────────────────
+        // ── 0. اعتبارسنجی امن کد تخفیف در صورت ارسال ─────────────────────────
+        let appliedCouponCode = body.couponCode || body.coupon?.code || null;
+        let discountAmount = 0;
+        let originalTotalPrice = Number(totalPrice) || 0;
+        let finalPayablePrice = originalTotalPrice;
+        let couponValidationResult = null;
+
+        if (appliedCouponCode) {
+            try {
+                const couponRes = await fetch(`${STRAPI_BASE_URL}/api/coupons/validate`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${STRAPI_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        code: appliedCouponCode,
+                        cartItems: cartItems,
+                        currentTotal: totalPrice
+                    })
+                });
+
+                if (couponRes.ok) {
+                    couponValidationResult = await couponRes.json();
+                    if (couponValidationResult?.valid) {
+                        discountAmount = Number(couponValidationResult.discountAmount) || 0;
+                        originalTotalPrice = Number(couponValidationResult.originalTotalPrice) || originalTotalPrice;
+                        finalPayablePrice = Number(couponValidationResult.finalTotalPrice) || Math.max(0, originalTotalPrice - discountAmount);
+                    } else {
+                        appliedCouponCode = null;
+                    }
+                } else {
+                    console.warn("Coupon validation failed on server order creation");
+                    appliedCouponCode = null;
+                }
+            } catch (couponErr) {
+                console.error("Coupon verification error during order create:", couponErr);
+                appliedCouponCode = null;
+            }
+        }
+
+        // ── وضعیت پرداخت و سفارش ─────────────────────────────────────────────
+        // سفارش رایگان (قیمت ۰ تومان یا تخفیف ۱۰۰٪) → مستقیماً paid
         // کارت‌به‌کارت → orderStatus: 'pending', paymentStatus: 'pending_payment'
         // آنلاین → orderStatus: 'paid', paymentStatus: 'paid'
-        const resolvedPaymentMethod = paymentMethod || 'online';
-        const resolvedOrderStatus = resolvedPaymentMethod === 'card_to_card'
-            ? 'pending'
-            : 'paid';
-        const resolvedPaymentStatus = resolvedPaymentMethod === 'card_to_card'
-            ? 'pending_payment'
-            : (paymentStatus && paymentStatus !== 'pending_payment' ? paymentStatus : 'paid');
+        const isFreeOrder = finalPayablePrice <= 0 || paymentMethod === 'free';
+        const resolvedPaymentMethod = isFreeOrder ? 'free' : (paymentMethod || 'online');
+        const resolvedOrderStatus = isFreeOrder
+            ? 'paid'
+            : (resolvedPaymentMethod === 'card_to_card' ? 'pending' : 'paid');
+        const resolvedPaymentStatus = isFreeOrder
+            ? 'paid'
+            : (resolvedPaymentMethod === 'card_to_card'
+                ? 'pending_payment'
+                : (paymentStatus && paymentStatus !== 'pending_payment' ? paymentStatus : 'paid'));
+        const isOrderPaid = resolvedOrderStatus === 'paid' || resolvedPaymentStatus === 'paid';
 
         // ── 1. هوشمندسازی نام خریدار (fullName) ───────────────────────────────────
         // اولویت 1: نام و نام‌خانوادگی در پروفایل کاربر
@@ -196,7 +242,7 @@ export async function POST(request) {
             }
         });
 
-        const generatedNotes = `📋 اقلام این سفارش:\n${itemSummaryList.join('\n')}`;
+        const generatedNotes = `📋 اقلام این سفارش:\n${itemSummaryList.join('\n')}${appliedCouponCode ? `\n\n🎟️ کد تخفیف اعمال شده: ${appliedCouponCode} (تخفیف: ${new Intl.NumberFormat('fa-IR').format(discountAmount)} تومان)` : ''}${isFreeOrder ? `\n\n🎁 این سفارش به صورت رایگان ثبت و تأیید شد.` : ''}`;
         const resolvedNotes = body.notes ? `${body.notes.trim()}\n\n${generatedNotes}` : generatedNotes;
 
         // استخراج آدرس کامل
@@ -216,7 +262,7 @@ export async function POST(request) {
         // ساخت بدنه پِیلود بر اساس فیلدهای واقعی دیتابیس شما
         const orderPayload = {
             data: {
-                totalPrice: Number(totalPrice) || 0,
+                totalPrice: Number(finalPayablePrice) || 0,
                 orderStatus: resolvedOrderStatus,
                 fullName: resolvedFullName,
                 address: resolvedAddress,
@@ -228,6 +274,9 @@ export async function POST(request) {
                 paymentMethod: resolvedPaymentMethod,
                 paymentStatus: resolvedPaymentStatus,
                 notes: resolvedNotes,
+                couponCode: appliedCouponCode,
+                discountAmount: Number(discountAmount) || 0,
+                originalTotalPrice: Number(originalTotalPrice) || Number(finalPayablePrice) || 0,
             }
         };
 
@@ -249,21 +298,55 @@ export async function POST(request) {
 
         const newOrder = await orderRes.json();
 
-        // آپدیت cartData کاربر به null برای خالی شدن سبد خرید در دیتابیس
-        // و اضافه کردن دوره‌ها و فصل‌های جدید به کاربر
-        let userUpdatePayload = { cartData: null };
-
-        if (courseIds.length > 0) {
-            const existingCourses = userData.courses ? userData.courses.map(c => c.id) : [];
-            const mergedCourses = [...new Set([...existingCourses, ...courseIds])];
-            userUpdatePayload.courses = mergedCourses;
+        // ── افزایش شمارنده مصرف کوپن در استراپی ───────────────────────────
+        if (appliedCouponCode && couponValidationResult?.valid) {
+            try {
+                const getCouponRes = await fetch(`${STRAPI_BASE_URL}/api/coupons?filters[code][$eqi]=${encodeURIComponent(appliedCouponCode)}`, {
+                    headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` }
+                });
+                if (getCouponRes.ok) {
+                    const cData = await getCouponRes.json();
+                    const targetCoupon = cData?.data?.[0];
+                    if (targetCoupon) {
+                        const targetDocId = targetCoupon.documentId || targetCoupon.id;
+                        const currentUsed = Number(targetCoupon.usedCount) || 0;
+                        await fetch(`${STRAPI_BASE_URL}/api/coupons/${targetDocId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `Bearer ${STRAPI_TOKEN}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                data: {
+                                    usedCount: currentUsed + 1
+                                }
+                            })
+                        });
+                    }
+                }
+            } catch (incErr) {
+                console.error("Failed to increment coupon usedCount:", incErr);
+            }
         }
 
-        if (chapterIds.length > 0) {
-            const existingChapters = Array.isArray(userData.enrolledChapters)
-                ? userData.enrolledChapters.map(Number)
-                : [];
-            userUpdatePayload.enrolledChapters = [...new Set([...existingChapters, ...chapterIds])];
+        // آپدیت cartData کاربر به null برای خالی شدن سبد خرید در دیتابیس
+        // دوره‌ها و فصل‌ها فقط و فقط در صورتی اضافه می‌شوند که سفارش پرداخت شده باشد (پرداخت آنلاین یا سفارش رایگان)
+        // در سفارشات کارت‌به‌کارت که وضعیت pending است، پس از تأیید پرداخت توسط ادمین فعال خواهند شد.
+        let userUpdatePayload = { cartData: null };
+
+        if (isOrderPaid) {
+            if (courseIds.length > 0) {
+                const existingCourses = userData.courses ? userData.courses.map(c => c.id) : [];
+                const mergedCourses = [...new Set([...existingCourses, ...courseIds])];
+                userUpdatePayload.courses = mergedCourses;
+            }
+
+            if (chapterIds.length > 0) {
+                const existingChapters = Array.isArray(userData.enrolledChapters)
+                    ? userData.enrolledChapters.map(Number)
+                    : [];
+                userUpdatePayload.enrolledChapters = [...new Set([...existingChapters, ...chapterIds])];
+            }
         }
 
         const userUpdateRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}`, {

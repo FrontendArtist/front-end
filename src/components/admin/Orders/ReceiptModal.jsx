@@ -34,13 +34,19 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
         setError(null);
 
         try {
-            await updateOrderStatus(order.id, {
+            const updatePayload = {
                 documentId: order.documentId,
                 paymentStatus: newStatus,
-            });
+                ...(newStatus === 'paid' ? { orderStatus: 'paid' } : {}),
+            };
+
+            await updateOrderStatus(order.id, updatePayload);
 
             // callback به OrdersTable برای آپدیت state محلی
-            onUpdate(order.id, { paymentStatus: newStatus });
+            onUpdate(order.id, {
+                paymentStatus: newStatus,
+                ...(newStatus === 'paid' ? { orderStatus: 'paid' } : {}),
+            });
             onClose();
         } catch (err) {
             setError(err.message);

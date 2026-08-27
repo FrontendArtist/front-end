@@ -1,18 +1,28 @@
 'use client';
 
 import Image from 'next/image';
-import { useCartStore, selectTotalPrice, selectItemsCount } from '@/store/useCartStore';
+import DiscountCouponInput from '@/components/cart/DiscountCouponInput/DiscountCouponInput';
+import {
+    useCartStore,
+    selectTotalPrice,
+    selectCouponDiscount,
+    selectFinalTotalPrice,
+    selectItemsCount,
+} from '@/store/useCartStore';
 import styles from './CartReviewStep.module.scss';
 
 /**
  * مرحله 1: بررسی سبد خرید
- * نمایش خلاصه اقلام سبد خرید
+ * نمایش خلاصه اقلام سبد خرید همراه با اعمال کد تخفیف
  * 
  * @param {function} onNext - callback برای رفتن به مرحله بعد
  */
 export default function CartReviewStep({ onNext }) {
     const items = useCartStore((state) => state.items);
+    const appliedCoupon = useCartStore((state) => state.appliedCoupon);
     const totalPrice = useCartStore(selectTotalPrice);
+    const couponDiscount = useCartStore(selectCouponDiscount);
+    const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
 
     const formatPrice = (price) => {
@@ -66,6 +76,12 @@ export default function CartReviewStep({ onNext }) {
                     <span>تعداد اقلام:</span>
                     <strong>{itemsCount} مورد</strong>
                 </div>
+
+                <div className={styles.summaryRow}>
+                    <span>جمع جزء:</span>
+                    <strong>{formatPrice(totalPrice)} تومان</strong>
+                </div>
+
                 {items.some(i => i.originalPrice && i.originalPrice > i.price) && (
                     <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
                         <span>سود شما از تخفیف‌ها:</span>
@@ -74,10 +90,28 @@ export default function CartReviewStep({ onNext }) {
                         </strong>
                     </div>
                 )}
+
                 <div className={styles.divider}></div>
+
+                {/* فرم کد تخفیف در چک‌اوت */}
+                <div style={{ margin: '8px 0' }}>
+                    <DiscountCouponInput />
+                </div>
+
+                {couponDiscount > 0 && (
+                    <div className={styles.summaryRow} style={{ color: '#86efac' }}>
+                        <span>تخفیف کوپن ({appliedCoupon?.code}):</span>
+                        <strong>-{formatPrice(couponDiscount)} تومان</strong>
+                    </div>
+                )}
+
+                <div className={styles.divider}></div>
+
                 <div className={styles.summaryTotal}>
                     <span>مبلغ نهایی قابل پرداخت:</span>
-                    <strong>{formatPrice(totalPrice)} تومان</strong>
+                    <strong style={{ color: '#ffd166', fontSize: '1.2rem' }}>
+                        {formatPrice(finalTotalPrice)} تومان
+                    </strong>
                 </div>
             </div>
 

@@ -29,6 +29,12 @@ export async function getUserCoursePurchases(userId, courseId, courseSlug) {
       const ordersList = ordersData.data || [];
 
       ordersList.forEach(order => {
+        // ⚠️ فقط سفارش‌های پرداخت‌شده و معتبر دسترسی ایجاد می‌کنند (سفارش‌های کارت‌به‌کارت در انتظار تایید نادیده گرفته می‌شوند)
+        const orderStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
+        const paymentStatus = (order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
+        const isPaid = orderStatus === 'paid' || paymentStatus === 'paid';
+        if (!isPaid) return;
+
         const items = order.attributes?.items || order.items || [];
         items.forEach(item => {
           // بررسی خرید کل دوره

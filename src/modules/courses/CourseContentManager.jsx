@@ -62,8 +62,14 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const isFreeCourse = course.price?.toman === 0 || course.price === 0;
 
   // بررسی خرید از طریق سفارشات با useMemo جهت داشتن مرجع پایدار (جلوگیری از حلقه بی‌نهایت رندر)
+  // ⚠️ فقط سفارش‌های پرداخت‌شده و تأییدشده دسترسی ایجاد می‌کنند (سفارش‌های کارت‌به‌کارت pending تا زمان تأیید ادمین دسترسی نمی‌دهند)
   const isPurchasedInOrders = useMemo(() => {
     return orders.some((order) => {
+      const oStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
+      const pStatus = (order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
+      const isPaid = oStatus === 'paid' || pStatus === 'paid';
+      if (!isPaid) return false;
+
       const items = order.attributes?.items || order.items || [];
       return items.some(
         (item) =>
@@ -98,9 +104,15 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   }, [status, wasUnauthenticated, router, fetchOrders]);
 
   // استخراج لیست شناسه‌های فصل‌های خریداری شده از سفارشات کاربر با useMemo جهت جلوگیری از تغییر reference
+  // ⚠️ فقط سفارش‌های پرداخت‌شده و تأییدشده لحاظ می‌شوند
   const purchasedChapterIdsFromOrders = useMemo(() => {
     const chapterIds = new Set();
     orders.forEach((order) => {
+      const oStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
+      const pStatus = (order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
+      const isPaid = oStatus === 'paid' || pStatus === 'paid';
+      if (!isPaid) return;
+
       const items = order.attributes?.items || order.items || [];
       items.forEach((item) => {
         if (item.type === 'chapter' || item.chapterId) {

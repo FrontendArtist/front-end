@@ -1,3 +1,44 @@
+[2026-08-27] - Zero-Total Free Checkout & Card-To-Card Premature Chapter Access Fix
+
+── Card-to-Card Premature Course/Chapter Access Fix ──────────────────────────────
+- Order Creation Route (`front-end/src/app/api/orders/route.js`):
+  • Fixed severe bug where creating a `card_to_card` order prematurely saved courses and chapters to `user.courses` and `user.enrolledChapters`.
+  • Courses and chapters are now ONLY attached to user profile if `isOrderPaid` is true (`orderStatus === 'paid'` or `paymentStatus === 'paid'`).
+  • For `card_to_card` orders, only `cartData: null` is sent to empty the cart while access remains locked until admin verification.
+- Course Content Manager (`front-end/src/modules/courses/CourseContentManager.jsx`):
+  • Added `isPaid` check (`orderStatus === 'paid' || paymentStatus === 'paid'`) inside `isPurchasedInOrders` and `purchasedChapterIdsFromOrders`.
+  • Pending card-to-card orders no longer grant access in client-side chapter checks.
+- Server Purchase Verification (`front-end/src/lib/ordersApi.js`):
+  • Added `isPaid` check in `getUserCoursePurchases` to prevent server-side media leakage on unapproved orders.
+- Profile Purchases List (`front-end/src/components/profile/PurchasesList.jsx`):
+  • Filtered orders in "خریدهای من" to only include paid orders (`orderStatus === 'paid' || paymentStatus === 'paid' || ['shipped', 'delivered'].includes(orderStatus)`).
+- Admin Order Verification (`front-end/src/app/api/admin/orders/[id]/route.js`):
+  • Automatically connects purchased courses and chapters to the user's Strapi account when admin confirms an order (`paymentStatus: 'paid'` / `orderStatus: 'paid'`).
+- Admin Receipt Modal (`front-end/src/components/admin/Orders/ReceiptModal.jsx`):
+  • Approving payment receipt now simultaneously updates both `paymentStatus: 'paid'` and `orderStatus: 'paid'`.
+
+── Zero-Total Cart Checkout (Free / 100% Coupon) ───────────────────────────────
+- Payment Step (`front-end/src/components/checkout/PaymentStep.jsx` & SCSS):
+  • Added `isFreeOrder = finalTotalPrice === 0` handling in checkout step 3.
+  • When total price is 0, payment method radio options (online / card-to-card) are hidden and replaced with an elegant green "سفارش ۱۰۰٪ رایگان" notice.
+  • Action button changes to "تأیید و دریافت سفارش (رایگان)" and bypasses manual payment flows.
+  • Submits order with `paymentMethod: 'free'`, `paymentStatus: 'paid'`, `orderStatus: 'paid'`.
+- Payment Callback Page (`front-end/src/app/payment/callback/page.jsx`):
+  • Added dedicated screen for `source=free`: displays congratulations message and direct action button to view purchased courses/products in `/profile/purchases`.
+- Backend Schema & Reports (`backend/src/api/order/content-types/order/schema.json` & `excel-export.js`):
+  • Added `'free'` to `paymentMethod` enumeration in Strapi Order schema.
+  • Mapped `'free'` to 'رایگان' in Excel report exports and admin orders table.
+
+── Coupon Discount System Integration ─────────────────────────────────────────
+- Coupon Input Component (`src/components/cart/DiscountCouponInput/`):
+  • Interactive coupon code entry with apply/remove, spinner, error messages, and success badge.
+  • Integrated into Cart page (`src/app/cart/page.jsx`) and Checkout Step 1 (`CartReviewStep.jsx`).
+- Cart Store & Price Selectors (`src/store/useCartStore.js`):
+  • Added `appliedCoupon` state, `applyCoupon()`, and `removeCoupon()`.
+  • Derived selectors: `selectCouponDiscount` and `selectFinalTotalPrice`.
+- Server Verification API (`src/app/api/coupons/validate/route.js`):
+  • Proxies and verifies coupon validity against Strapi backend with full expiration and scope checking.
+
 [2026-08-27] - Full Discount System & Expiration Countdown for Products and Courses
 
 ── Backend Schema Updates (Strapi) ───────────────────────────────────────────

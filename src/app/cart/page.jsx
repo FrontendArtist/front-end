@@ -5,7 +5,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
-import { useCartStore, selectTotalPrice, selectItemsCount } from '@/store/useCartStore';
+import DiscountCouponInput from '@/components/cart/DiscountCouponInput/DiscountCouponInput';
+import {
+    useCartStore,
+    selectTotalPrice,
+    selectCouponDiscount,
+    selectFinalTotalPrice,
+    selectItemsCount,
+} from '@/store/useCartStore';
 import styles from './Cart.module.scss';
 
 /**
@@ -16,6 +23,7 @@ import styles from './Cart.module.scss';
  * - جداسازی محصولات و دوره‌ها
  * - کنترلر تعداد برای محصولات
  * - حذف آیتم‌ها
+ * - سیستم پیشرفته و امن کد تخفیف
  * - نمایش خلاصه سفارش در Sidebar
  * - Empty state برای سبد خالی
  * - Hydration safe
@@ -36,7 +44,10 @@ export default function CartPage() {
     const items = useCartStore((state) => state.items);
     const updateQuantity = useCartStore((state) => state.updateQuantity);
     const removeItem = useCartStore((state) => state.removeItem);
+    const appliedCoupon = useCartStore((state) => state.appliedCoupon);
     const totalPrice = useCartStore(selectTotalPrice);
+    const couponDiscount = useCartStore(selectCouponDiscount);
+    const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
 
     /**
@@ -328,18 +339,46 @@ export default function CartPage() {
                             <strong>{itemsCount} مورد</strong>
                         </div>
 
-                        {/* جمع جزء */}
-                        {/* <div className={styles.summaryRow}>
-                            <span>جمع جزء:</span>
+                        {/* جمع کل خرید */}
+                        <div className={styles.summaryRow}>
+                            <span>جمع جزء سبد خرید:</span>
                             <strong>{formatPrice(totalPrice)} تومان</strong>
-                        </div> */}
+                        </div>
 
+                        {/* سود تخفیف خود محصولات در صورت وجود */}
+                        {items.some(i => i.originalPrice && i.originalPrice > i.price) && (
+                            <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
+                                <span>تخفیف شگفت‌انگیز:</span>
+                                <strong>
+                                    {formatPrice(items.reduce((sum, item) => sum + ((item.originalPrice && item.originalPrice > item.price ? (item.originalPrice - item.price) : 0) * item.quantity), 0))} تومان
+                                </strong>
+                            </div>
+                        )}
 
+                        <div className={styles.divider}></div>
 
-                        {/* مجموع کل */}
+                        {/* بخش کد تخفیف */}
+                        <div className={styles.couponSection}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>کد تخفیف:</span>
+                            <DiscountCouponInput />
+                        </div>
+
+                        {/* نمایش ردیف تخفیف کوپن در صورت اعمال */}
+                        {couponDiscount > 0 && (
+                            <div className={styles.summaryRow} style={{ color: '#86efac' }}>
+                                <span>تخفیف کوپن ({appliedCoupon?.code}):</span>
+                                <strong>-{formatPrice(couponDiscount)} تومان</strong>
+                            </div>
+                        )}
+
+                        <div className={styles.divider}></div>
+
+                        {/* مجموع نهایی قابل پرداخت */}
                         <div className={styles.summaryTotal}>
-                            <span>مجموع کل:</span>
-                            <strong>{formatPrice(totalPrice)} تومان</strong>
+                            <span>مبلغ قابل پرداخت:</span>
+                            <strong style={{ color: '#ffd166', fontSize: '1.15rem' }}>
+                                {formatPrice(finalTotalPrice)} تومان
+                            </strong>
                         </div>
 
                         {/* دکمه تسویه حساب */}

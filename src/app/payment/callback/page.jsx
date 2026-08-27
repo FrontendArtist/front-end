@@ -44,10 +44,13 @@ function PaymentCallbackContent() {
 
     // ─── حالت موفقیت ──────────────────────────────────────────────────────────
     if (status === 'success') {
+        const isFree = source === 'free';
         const isCardToCard = source === 'card_to_card';
         const isLightTopup = source === 'light_topup';
         const isLightCardToCard = isCardToCard && sp.get('orderType') === 'light_topup';
-        const primaryHref = isCardToCard && orderId
+        const primaryHref = isFree
+            ? '/profile/purchases'
+            : isCardToCard && orderId
             ? `/profile/orders/${orderId}`
             : isLightTopup ? '/profile'
             : '/profile/orders';
@@ -73,7 +76,7 @@ function PaymentCallbackContent() {
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                             </svg>
                         ) : (
-                            /* تیک سبز — پرداخت آنلاین موفق */
+                            /* تیک سبز — پرداخت موفق / سفارش رایگان */
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
@@ -83,7 +86,25 @@ function PaymentCallbackContent() {
                     </div>
 
                     {/* ── عنوان و پیام ────────────────────────────────────────── */}
-                    {isCardToCard ? (
+                    {isFree ? (
+                        <>
+                            <h1 className={styles.title}>سفارش شما با موفقیت ثبت شد! 🎉</h1>
+                            <p className={styles.message}>
+                                سفارش رایگان شما تأیید شد و دوره‌ها/محصولات بلافاصله به حساب شما افزوده شدند.
+                            </p>
+                            <div className={styles.infoBox}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="16" x2="12" y2="12" />
+                                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                                </svg>
+                                <p>
+                                    دسترسی به دوره‌ها و محتوای آموزشی اکنون برای شما فعال است. می‌توانید از بخش خریدهای من مستقیماً به آن‌ها دسترسی داشته باشید.
+                                </p>
+                            </div>
+                        </>
+                    ) : isCardToCard ? (
                         <>
                             <h1 className={styles.title}>در انتظار پرداخت</h1>
                             <p className={styles.message}>
@@ -174,7 +195,8 @@ function PaymentCallbackContent() {
                     {/* ── دکمه‌های عملیات ─────────────────────────────────────── */}
                     <div className={styles.actions}>
                         <Link href={primaryHref} className={styles.primaryButton}>
-                            {isCardToCard ? 'ارسال فیش واریزی'
+                            {isFree ? 'مشاهده دوره‌ها و محصولات من'
+                                : isCardToCard ? 'ارسال فیش واریزی'
                                 : isLightTopup ? 'مشاهده پروفایل'
                                 : 'مشاهده سفارش‌ها'}
                         </Link>
