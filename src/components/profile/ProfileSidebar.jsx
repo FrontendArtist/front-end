@@ -55,6 +55,24 @@ export default function ProfileSidebar() {
         }
     ];
 
+    const scrollToForm = () => {
+        if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+            setTimeout(() => {
+                const target = document.getElementById('profile-content') || document.getElementById('profileForm');
+                if (target) {
+                    const headerOffset = 90;
+                    const elementPosition = target.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 100);
+        }
+    };
+
     return (
         <aside className={styles.sidebar}>
             {/* User Summary */}
@@ -81,6 +99,7 @@ export default function ProfileSidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
+                            onClick={scrollToForm}
                             className={`${styles.navLink} ${isActive ? styles.active : ''}`}
                         >
                             {item.icon}

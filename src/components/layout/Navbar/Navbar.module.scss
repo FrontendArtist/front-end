@@ -428,9 +428,11 @@
   &::-webkit-scrollbar {
     width: 4px;
   }
+
   &::-webkit-scrollbar-track {
     background: transparent;
   }
+
   &::-webkit-scrollbar-thumb {
     background: fade(var(--color-text-primary), 25%);
     border-radius: 4px;
@@ -445,17 +447,17 @@
   flex-direction: column;
   gap: 0.6rem;
 
-  > li {
+  >li {
     width: 100%;
 
-    > a {
+    >a {
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0.85rem 1rem;
       border-radius: var(--border-radius, 12px);
       color: var(--color-card-text);
-      font-size: var(--font-md);
+      font-size: var(--font-sm);
       font-weight: var(--font-weight-medium);
       text-decoration: none;
       background: fade(var(--color-white), 4%);
@@ -488,22 +490,22 @@
 }
 
 .mobileCategoryTitle {
-  display: flex !important;
+  display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 0.85rem 1rem !important;
-  background: transparent !important;
-  color: var(--color-card-text) !important;
-  font-size: var(--font-md) !important;
-  font-weight: var(--font-weight-medium) !important;
+  padding: 0.85rem 1rem;
+  background: transparent;
+  color: var(--color-card-text);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
   text-decoration: none;
   border-bottom: 1px solid fade(var(--color-text-primary), 6%);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
   &:hover {
-    background: fade(var(--color-text-primary), 12%) !important;
-    color: var(--color-title-hover) !important;
+    background: fade(var(--color-text-primary), 12%);
+    color: var(--color-title-hover);
   }
 }
 
@@ -519,7 +521,7 @@
     display: flex;
     align-items: center;
     padding: 0.65rem 0.85rem;
-    font-size: var(--font-sm-md);
+    font-size: var(--font-sm);
     color: fade(var(--color-card-text), 80%);
     border-radius: calc(var(--border-radius, 12px) - 4px);
     transition: all 0.25s ease;

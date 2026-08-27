@@ -38,7 +38,7 @@ export default function ProfileLayout({ children }) {
             </div>
             <div className={styles.container}>
                 <ProfileSidebar />
-                <main className={styles.content}>
+                <main id="profile-content" className={styles.content}>
                     {children}
                 </main>
             </div>

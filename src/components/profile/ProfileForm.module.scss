@@ -184,7 +184,7 @@
     margin: 0;
 
     @include respond(md) {
-        font-size: var(--font-sm);
+        font-size: var(--font-xs);
     }
 }
 
@@ -200,6 +200,9 @@
     grid-template-columns: 1fr 1fr;
     gap: 20px;
 
+    @include respond(lg) {
+        grid-template-columns: 1fr;
+    }
     @include respond(md) {
         grid-template-columns: 1fr;
         gap: 16px;
