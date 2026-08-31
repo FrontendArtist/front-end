@@ -380,7 +380,6 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                     <div className={styles.chapterHeaderLeft}>
                       <div className={styles.chapterMeta}>
                         <span>{chapterLessons.length} جلسه</span>
-                        {chapter.duration && <span>• {chapter.duration}</span>}
                       </div>
 
                       {/* نمایش قیمت و دکمه خرید فصل مستقیماً روی هدر فصل */}

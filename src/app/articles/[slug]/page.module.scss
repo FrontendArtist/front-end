@@ -370,7 +370,7 @@
     }
 
     .quran-text {
-      font-size: var(--font-xl);
+      font-size: var(--font-lg);
       line-height: 2.1;
       color: var(--color-title-hover, #F5C452);
       text-align: center;
@@ -477,7 +477,8 @@
       background: #002b20;
       border-bottom: 2px solid var(--color-title-hover, #F5C452);
 
-      th, td {
+      th,
+      td {
         padding: 0.85rem 1.1rem;
         color: var(--color-title-hover, #F5C452);
         font-weight: 700;
@@ -947,7 +948,8 @@
       thead tr {
         background: #4E6B57;
 
-        th, td {
+        th,
+        td {
           color: #fff;
         }
       }
@@ -1106,25 +1108,25 @@
     border-radius: 16px;
 
     h1 {
-      font-size: var(--font-lg);
-      margin-top: 1.85rem;
+      font-size: var(--font-md);
+      margin-top: 1rem;
     }
 
     h2 {
       font-size: var(--font-md);
-      margin-top: 1.85rem;
+      margin-top: 1rem;
     }
 
     h3 {
       font-size: var(--font-sm);
-      margin-top: 1.35rem;
+      margin-top: 1rem;
     }
 
     blockquote {
       padding: 1.1rem 0.9rem;
 
       .quran-text {
-        font-size: var(--font-lg);
+        font-size: var(--font-md);
       }
 
       &.poem-quote {

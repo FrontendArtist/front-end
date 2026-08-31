@@ -358,8 +358,9 @@
   align-items: center;
   gap: 12px;
 
-  @include respond(sm) {
+  @include respond(md) {
     gap: 8px;
+    flex-direction: column;
   }
 }
 

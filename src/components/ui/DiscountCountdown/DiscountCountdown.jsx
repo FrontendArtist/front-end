@@ -98,7 +98,7 @@ export default function DiscountCountdown({
         {timeLeft.days > 0 && (
           <div className={styles.timeBox}>
             <span className={styles.timeVal}>{toPersian(timeLeft.days)}</span>
-            <span className={styles.timeLabel}></span>
+            <span className={styles.timeLabel}>روز</span>
           </div>
         )}
         <div className={styles.timeBox}>
