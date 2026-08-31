@@ -14,7 +14,7 @@
  */
 
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { authOptions, isUserMentor } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import styles from './mentor.module.scss';
 
@@ -32,8 +32,8 @@ export default async function MentorLayout({ children }) {
     // شرایط رد شدن:
     //   • !session          → کاربر اصلاً لاگین نکرده
     //   • !session.user     → سشن موجود است اما آبجکت user ندارد (edge case)
-    //   • role?.type !== 'administrator' → کاربر لاگین کرده اما ادمین نیست
-    if (!session || !session.user || session.user.role?.type !== 'administrator') {
+    //   • !isUserMentor(session.user) → کاربر نقش mentor (استاد) یا administrator ندارد
+    if (!session || !session.user || !isUserMentor(session.user)) {
         /**
          * `redirect('/')` یک خطای خاص Next.js پرتاب می‌کند که rendering را متوقف
          * و یک 307 Redirect صادر می‌کند. نباید در try/catch پیچیده شود.

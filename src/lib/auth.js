@@ -9,14 +9,14 @@ if (process.env.NODE_ENV === 'production' && (!process.env.NEXTAUTH_SECRET || pr
 }
 
 /**
- * واکشی اطلاعات تکمیلی کاربر (دوره‌ها و فصل‌های خریداری شده) برای قرارگیری در سشن
+ * واکشی اطلاعات تکمیلی کاربر (دوره‌ها و فصل‌های خریداری شده و نقش) برای قرارگیری در سشن
  * @param {string} userId - آیدی کاربر در Strapi
  * @param {string} jwt - توکن دسترسی
  */
 async function fetchUserSessionData(userId, jwt) {
     try {
         const tokenToUse = process.env.STRAPI_API_TOKEN || jwt;
-        const userRes = await fetch(`${STRAPI_API_URL}/api/users/${userId}?populate[0]=courses`, {
+        const userRes = await fetch(`${STRAPI_API_URL}/api/users/${userId}?populate[0]=courses&populate[1]=role`, {
             headers: { Authorization: `Bearer ${tokenToUse}` },
             cache: 'no-store'
         });
@@ -33,6 +33,7 @@ async function fetchUserSessionData(userId, jwt) {
                     : [],
                 firstName: userData.firstName || '',
                 lastName: userData.lastName || '',
+                role: userData.role || null,
             };
         }
     } catch (e) {
@@ -42,6 +43,41 @@ async function fetchUserSessionData(userId, jwt) {
     }
     return null;
 }
+
+/**
+ * دریافت مقدار نرمال‌شده نقش کاربر
+ * @param {object} user 
+ * @returns {string}
+ */
+export function getUserRole(user) {
+    if (!user || !user.role) return '';
+    if (typeof user.role === 'string') return user.role.trim().toLowerCase();
+    if (typeof user.role === 'object') {
+        return (user.role.type || user.role.name || '').trim().toLowerCase();
+    }
+    return '';
+}
+
+/**
+ * بررسی اینکه کاربر ادمین (administrator) است یا خیر
+ * @param {object} user 
+ * @returns {boolean}
+ */
+export function isUserAdmin(user) {
+    const role = getUserRole(user);
+    return role === 'administrator' || role === 'admin';
+}
+
+/**
+ * بررسی اینکه کاربر منتور / استاد (mentor) یا ادمین است یا خیر
+ * @param {object} user 
+ * @returns {boolean}
+ */
+export function isUserMentor(user) {
+    const role = getUserRole(user);
+    return role === 'mentor' || role === 'استاد' || role === 'administrator' || role === 'admin';
+}
+
 
 export const authOptions = {
     providers: [
@@ -141,6 +177,10 @@ export const authOptions = {
                         session.user.enrolledChapters = extraData.enrolledChapters;
                         if (extraData.firstName !== undefined) session.user.firstName = extraData.firstName;
                         if (extraData.lastName !== undefined) session.user.lastName = extraData.lastName;
+                        if (extraData.role) {
+                            session.user.role = extraData.role;
+                            token.role = extraData.role;
+                        }
                     }
                 }
             }
