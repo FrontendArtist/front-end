@@ -27,13 +27,27 @@ export function formatStrapiProducts(apiResponse) {
       const stock = typeof attrs.stock === 'number' ? attrs.stock : 0;
       const isAvailable = attrs.isAvailable !== false; 
 
-      const rawImage = attrs.image || (attrs.images && (attrs.images[0] || attrs.images.data?.[0])) || attrs.cover || null;
-      const images = (attrs.images || []).map(img => formatSingleImage(img));
-      const mainImage = formatSingleImage(rawImage || (images.length > 0 ? images[0] : null));
+      const rawImages =
+        attrs.images?.data ||
+        attrs.images ||
+        attrs.image?.data ||
+        attrs.image ||
+        attrs.cover?.data ||
+        attrs.cover ||
+        attrs.media?.data ||
+        attrs.media ||
+        null;
+      const imagesList = Array.isArray(rawImages) ? rawImages : (rawImages ? [rawImages] : []);
+      const images = imagesList.map(img => formatSingleImage(img));
+      const mainImage = images.length > 0
+        ? images[0]
+        : formatSingleImage(attrs.image || attrs.cover || attrs.images || null);
 
-      const categories = (attrs.categories || []).map(cat => {
-        const categoryData = cat.data ? cat.data : cat;
-        const categoryAttrs = categoryData.attributes || categoryData;
+      const rawCats = attrs.categories?.data || attrs.categories || [];
+      const catList = Array.isArray(rawCats) ? rawCats : (rawCats ? [rawCats] : []);
+      const categories = catList.map(cat => {
+        const categoryData = cat?.data ? cat.data : cat;
+        const categoryAttrs = categoryData?.attributes || categoryData || {};
 
         let parentData = null;
         if (categoryAttrs.parent && categoryAttrs.parent.slug) {
@@ -41,7 +55,7 @@ export function formatStrapiProducts(apiResponse) {
           parentData = { slug: pAttrs.slug, name: pAttrs.name };
         } else if (categoryAttrs.parent?.data) {
           const parentContent = categoryAttrs.parent.data;
-          const parentAttrs = parentContent.attributes || parentContent;
+          const parentAttrs = parentContent?.attributes || parentContent;
           parentData = { slug: parentAttrs.slug, name: parentAttrs.name };
         }
 
@@ -50,7 +64,7 @@ export function formatStrapiProducts(apiResponse) {
           name: categoryAttrs.name,
           parent: parentData
         };
-      });
+      }).filter(c => c.slug || c.name);
 
       let discountPercent = Number(attrs.discountPercent || 0);
       const discountUntil = attrs.discountUntil || null;
