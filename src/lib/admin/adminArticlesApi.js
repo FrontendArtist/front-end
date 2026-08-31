@@ -2,7 +2,7 @@ import { adminFetch } from './adminFetch';
 
 export async function getAdminArticles(jwt, { page = 1, pageSize = 100 } = {}) {
     const endpointDraft =
-        `/api/articles?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
+        `/api/articles?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
     const endpointPub =
         `/api/articles?fields[0]=documentId&fields[1]=publishedAt&pagination[limit]=500&status=published`;
 
@@ -18,7 +18,9 @@ export async function getAdminArticles(jwt, { page = 1, pageSize = 100 } = {}) {
         pubData.data.forEach((p) => {
             const attrs = p.attributes || p;
             const docId = p.documentId || String(p.id);
-            publishedMap.set(docId, attrs.publishedAt || attrs.createdAt || true);
+            if (attrs.publishedAt) {
+                publishedMap.set(docId, attrs.publishedAt);
+            }
         });
     }
 
@@ -54,7 +56,7 @@ export async function getAdminArticles(jwt, { page = 1, pageSize = 100 } = {}) {
         });
 
         const docId = item.documentId || String(item.id);
-        const actualPublishedAt = publishedMap.get(docId) || null;
+        const actualPublishedAt = publishedMap.get(docId) || attrs.publishedAt || null;
 
         return {
             id: item.id,
@@ -63,10 +65,33 @@ export async function getAdminArticles(jwt, { page = 1, pageSize = 100 } = {}) {
             slug: attrs.slug,
             excerpt: attrs.excerpt || '',
             publishedAt: actualPublishedAt,
+            createdAt: attrs.createdAt || null,
+            updatedAt: attrs.updatedAt || null,
             cover,
             categories,
             tags,
         };
+    });
+
+    // مرتب‌سازی مقالات:
+    // ۱. مقالاتی که publishedAt دارند بر اساس تاریخ انتشار (جدیدترین به قدیمی‌ترین)
+    // ۲. مقالاتی که منتشر نشده‌اند یا publishedAt ندارند بر اساس آخرین تغییرات / ایجاد (updatedAt یا createdAt)
+    articles.sort((a, b) => {
+        const aPub = a.publishedAt ? new Date(a.publishedAt).getTime() : null;
+        const bPub = b.publishedAt ? new Date(b.publishedAt).getTime() : null;
+
+        if (aPub && bPub) {
+            return bPub - aPub;
+        }
+        if (aPub && !bPub) {
+            return -1;
+        }
+        if (!aPub && bPub) {
+            return 1;
+        }
+        const aDate = new Date(a.updatedAt || a.createdAt || 0).getTime();
+        const bDate = new Date(b.updatedAt || b.createdAt || 0).getTime();
+        return bDate - aDate;
     });
 
     return { articles, meta: data.meta || null, error: false };

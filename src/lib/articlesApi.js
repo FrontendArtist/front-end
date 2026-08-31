@@ -49,7 +49,7 @@ export async function getArticleCategories() {
 export async function getAllArticles() {
   return withErrorHandling(
     async () => {
-      const response = await apiClient('/api/articles?status=published&populate=*&sort=publishedAt:desc');
+      const response = await apiClient('/api/articles?status=published&populate=*&sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc');
       return formatStrapiArticles(response);
     },
     'واکشی مقالات',
@@ -84,7 +84,16 @@ export async function getArticles({
 } = {}) {
   return withErrorHandling(
     async () => {
-      let url = `/api/articles?status=published&populate=*&pagination[limit]=${limit}&sort=${sort}`;
+      let sortParam = sort;
+      if (sort === 'publishedAt:desc') {
+        sortParam = 'sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc';
+      } else if (sort === 'publishedAt:asc') {
+        sortParam = 'sort[0]=publishedAt:asc&sort[1]=updatedAt:asc&sort[2]=createdAt:asc';
+      } else {
+        sortParam = `sort=${sort}`;
+      }
+
+      let url = `/api/articles?status=published&populate=*&pagination[limit]=${limit}&${sortParam}`;
 
       if (categorySlug) {
         url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
@@ -110,7 +119,16 @@ export async function getArticlesPaginated(
 ) {
   return withErrorHandling(
     async () => {
-      let url = `/api/articles?status=published&populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`;
+      let sortParam = sort;
+      if (sort === 'publishedAt:desc') {
+        sortParam = 'sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc';
+      } else if (sort === 'publishedAt:asc') {
+        sortParam = 'sort[0]=publishedAt:asc&sort[1]=updatedAt:asc&sort[2]=createdAt:asc';
+      } else {
+        sortParam = `sort=${sort}`;
+      }
+
+      let url = `/api/articles?status=published&populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}&${sortParam}`;
 
       if (categorySlug) {
         url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
@@ -172,7 +190,7 @@ export async function getAdjacentArticles(createdAt) {
 export async function getRelatedArticles({ categoryId = null, categorySlug = null, currentId = null, limit = 6 } = {}) {
   return withErrorHandling(
     async () => {
-      let url = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort=publishedAt:desc`;
+      let url = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort[0]=publishedAt:desc&sort[1]=createdAt:desc`;
 
       if (categoryId) {
         url += `&filters[articles_categories][id][$eq]=${categoryId}`;
@@ -194,7 +212,7 @@ export async function getRelatedArticles({ categoryId = null, categorySlug = nul
       }
 
       if (formattedArticles.length === 0 && (categoryId || categorySlug)) {
-        const fallbackUrl = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort=publishedAt:desc`;
+        const fallbackUrl = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort[0]=publishedAt:desc&sort[1]=createdAt:desc`;
         const fallbackResponse = await apiClient(fallbackUrl);
         formattedArticles = formatStrapiArticles(fallbackResponse).filter(
           (art) => String(art.id) !== String(currentId) && String(art.documentId) !== String(currentId)
