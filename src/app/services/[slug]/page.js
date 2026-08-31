@@ -39,7 +39,32 @@ import { notFound } from 'next/navigation';
 import { getServiceBySlug } from '@/lib/servicesApi';
 import ServiceSingle from '@/modules/services/ServiceSingle/ServiceSingle';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
+import ArticleReader from '@/app/articles/[slug]/ArticleReader';
+import { marked } from 'marked';
+import { strapiBlocksToHtml } from '@/lib/htmlUtils';
 import styles from './page.module.scss';
+
+/**
+ * ایمن‌سازی پارس محتوای Markdown / Blocks به HTML
+ *
+ * @param {string|Array|object|null} content - محتوای متنی یا بلوک‌های استراپی
+ * @returns {Promise<string|null>} HTML string یا null
+ */
+async function safeParseMarkdown(content) {
+  if (!content) return null;
+  if (Array.isArray(content) || (typeof content === 'object' && content !== null)) {
+    return strapiBlocksToHtml(content);
+  }
+  if (typeof content === 'string') {
+    try {
+      return await marked.parse(content);
+    } catch (error) {
+      console.error('Error parsing markdown for service:', error);
+      return content;
+    }
+  }
+  return null;
+}
 
 /**
  * Generate Dynamic Metadata for SEO
@@ -166,6 +191,9 @@ export default async function ServiceSinglePage({ params }) {
     notFound();
   }
 
+  // Parse rich text / markdown content
+  const parsedContent = await safeParseMarkdown(service.content);
+
   // ============================================================================
   // BREADCRUMB DATA PREPARATION
   // ============================================================================
@@ -199,6 +227,9 @@ export default async function ServiceSinglePage({ params }) {
    *    - Receives clean, formatted service data
    *    - Includes image, title, description, and CTA link
    * 
+   * 3. Content Section (ArticleReader)
+   *    - Renders deep/rich markdown content with TOC and reading mode
+   * 
    * ACCESSIBILITY:
    * - <main> landmark for main content area
    * - Breadcrumb component handles ARIA labels
@@ -214,6 +245,13 @@ export default async function ServiceSinglePage({ params }) {
 
         {/* Service Detail Content */}
         <ServiceSingle service={service} />
+
+        {/* ── محتوای تکمیلی / عمیق (Rich Text / ArticleReader) ─────────────── */}
+        {parsedContent && (
+          <div className={styles.contentSection}>
+            <ArticleReader content={parsedContent} />
+          </div>
+        )}
 
       </div>
     </main>
