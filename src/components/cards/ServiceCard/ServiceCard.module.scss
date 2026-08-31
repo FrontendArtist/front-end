@@ -30,17 +30,17 @@
 .serviceCard__title {
   @include card-title;
   font-size: var(--font-xl);
-  font-family: shafigh;
+  font-family: var(--font-iransans);
   text-align: center;
 
   @include respond(xl) {
-    line-height: 0.6;
-  } 
+    line-height: 1
+  }
 }
 
 .serviceCard__description {
   @include card-text-truncate(3);
-  
+
   @include respond(md) {
     -webkit-line-clamp: 4;
     font-size: var(--font-sm);
