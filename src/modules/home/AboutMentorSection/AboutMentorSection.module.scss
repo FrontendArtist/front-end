@@ -10,6 +10,10 @@
 .aboutSection {
   @include section-spacing;
   background-color: var(--color-bg-primary);
+
+  @include respond(lg) {
+    padding-top: 70px;
+  }
 }
 
 // The container just passes through — card takes full width
@@ -70,7 +74,7 @@
   }
 
   // img روی لایه سبز
-  > * {
+  >* {
     position: relative;
     z-index: 2;
   }

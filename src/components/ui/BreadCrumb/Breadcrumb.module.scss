@@ -16,6 +16,8 @@
               inset 0 1px 1px rgba(255, 255, 255, 0.05);
   max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
