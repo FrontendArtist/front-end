@@ -13,7 +13,7 @@ import CartIcon from '@/components/layout/Navbar/CartIcon';
 const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '[]' }) => {
   const [isClient, setIsClient] = useState(false);
   const [theme, setTheme] = useState('dark');
-  
+
   useEffect(() => {
     setIsClient(true);
     const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -102,27 +102,6 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
 
           {/* 🟢 Desktop Menu */}
           <ul className={styles.navList}>
-            <li
-              className={styles.navItem}
-              onMouseEnter={() => handleMouseEnter('products')}
-              onMouseLeave={handleMouseLeave}
-            >
-              <Link href="/products" className={styles.navLink}>
-                <span className={styles.navLinkContent}>
-                  محصولات
-                  <svg
-                    className={`${styles.dropdownIcon} ${activeMegaMenu === 'products' ? styles.dropdownIconOpen : ''}`}
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    focusable="false"
-                  >
-                    <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" />
-                  </svg>
-                </span>
-              </Link>
-            </li>
-
             <li
               className={styles.navItem}
               onMouseEnter={() => handleMouseEnter('articles')}
@@ -236,12 +215,6 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
             منو
           </button>
           <button
-            onClick={() => setActiveMobileTab('products')}
-            className={`${styles.tabBtn} ${activeMobileTab === 'products' ? styles.active : ''}`}
-          >
-            محصولات
-          </button>
-          <button
             onClick={() => setActiveMobileTab('articles')}
             className={`${styles.tabBtn} ${activeMobileTab === 'articles' ? styles.active : ''}`}
           >
@@ -253,7 +226,6 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
           {activeMobileTab === 'menu' && (
             <ul className={styles.mobileNavList}>
               <li><Link href="/" onClick={closeMobileMenu}>صفحه اصلی</Link></li>
-              <li><Link href="/products" onClick={closeMobileMenu}>محصولات</Link></li>
               <li><Link href="/articles" onClick={closeMobileMenu}>مقالات</Link></li>
               <li><Link href="/courses" onClick={closeMobileMenu}>دوره‌ها</Link></li>
               <li><Link href="/services" onClick={closeMobileMenu}>خدمات</Link></li>
@@ -358,11 +330,6 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
               {articleCategories.map(cat => (
                 <div key={cat.id} className={styles.megaMenuColumn}>
                   <Link href={`/articles?category=${cat.slug}`} className={styles.categoryTitle}>
-                    {cat.image && (
-                      <div className={styles.articleImage}>
-                        <Image src={cat.image} alt={cat.name} fill sizes="(max-width: 768px) 100vw, 300px" />
-                      </div>
-                    )}
                     {cat.name}
                   </Link>
                 </div>
