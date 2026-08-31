@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import MessageDetailModal from './MessageDetailModal';
 import styles from './MessagesList.module.scss';
 
@@ -11,9 +11,47 @@ const statusMap = {
     answered: { label: 'پاسخ داده شد', className: 'closed' },
 };
 
-export default function MessagesList({ messages = [], onUpdateMessage }) {
+export default function MessagesList({
+    messages = [],
+    onUpdateMessage,
+    autoOpenMentor = false,
+    autoOpenId = null,
+}) {
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const hasAutoOpenedRef = useRef(false);
+
+    useEffect(() => {
+        if (hasAutoOpenedRef.current || !messages || messages.length === 0) return;
+
+        let targetMsg = null;
+        if (autoOpenId) {
+            targetMsg = messages.find(
+                (m) => m.documentId === autoOpenId || String(m.id) === String(autoOpenId)
+            );
+        } else if (autoOpenMentor) {
+            targetMsg = messages.find(
+                (m) => m.messageType === 'instructor' || m.type === 'instructor'
+            );
+            if (!targetMsg) {
+                targetMsg = messages.find(
+                    (m) => m.subject?.includes('استاد') || m.subject?.includes('مشاوره')
+                );
+            }
+            if (!targetMsg && messages.length > 0) {
+                targetMsg = messages[0];
+            }
+        }
+
+        if (targetMsg) {
+            hasAutoOpenedRef.current = true;
+            setSelectedMessage(targetMsg);
+            setIsModalOpen(true);
+            if (typeof window !== 'undefined' && window.location.search) {
+                window.history.replaceState(null, '', window.location.pathname);
+            }
+        }
+    }, [messages, autoOpenMentor, autoOpenId]);
 
     const handleOpen = (msg) => {
         setSelectedMessage(msg);
@@ -94,8 +132,9 @@ export default function MessagesList({ messages = [], onUpdateMessage }) {
                 isOpen={isModalOpen}
                 onClose={handleClose}
                 onUpdateMessage={(updatedFields) => {
-                    if (onUpdateMessage) {
-                        onUpdateMessage(selectedMessage.documentId || String(selectedMessage.id), updatedFields);
+                    const currentDocId = selectedMessage?.documentId || (selectedMessage?.id ? String(selectedMessage.id) : null);
+                    if (onUpdateMessage && currentDocId) {
+                        onUpdateMessage(currentDocId, updatedFields);
                     }
                     setSelectedMessage((prev) =>
                         prev ? { ...prev, ...updatedFields } : null

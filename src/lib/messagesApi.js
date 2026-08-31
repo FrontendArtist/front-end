@@ -98,24 +98,23 @@ export async function updateMyMessage(id, token, payload) {
 
 /**
  * دریافت تنظیمات فرم پیش‌نیاز استاد
+ * در صورت عدم تعریف یا 404 در استرپی، مقدار پیش‌فرض بدون خطای کنسول برمی‌گردد
  * @param {string|null} [token] - JWT token اختیاری کاربر
  * @returns {Promise<object>} - { data: { title, description, questions: [...] } }
  */
 export async function getMentorFormSetting(token = null) {
-    return withErrorHandling(
-        async () => {
-            const headers = {};
-            if (token) headers.Authorization = `Bearer ${token}`;
+    try {
+        const headers = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
 
-            return apiClient('/api/mentor-form-setting?populate=questions', {
-                headers,
-                cache: 'no-store',
-                suppressErrorLog: true,
-            });
-        },
-        'دریافت تنظیمات فرم پیش‌نیاز استاد',
-        { data: { title: '', description: '', questions: [] } }
-    );
+        return await apiClient('/api/mentor-form-setting?populate=questions', {
+            headers,
+            cache: 'no-store',
+            suppressErrorLog: true,
+        });
+    } catch {
+        return { data: { title: '', description: '', questions: [] } };
+    }
 }
 
 /**
@@ -132,6 +131,24 @@ export async function updateMentorFormSetting(payload, token) {
         },
         body: JSON.stringify({ data: payload }),
     });
+}
+
+/**
+ * دریافت پیام‌های ارتباط با استاد کاربر لاگین‌شده
+ * جهت بررسی اینکه آیا قبلاً پیامی به استاد ارسال کرده یا خیر
+ * @param {string} token - JWT token کاربر
+ * @returns {Promise<object>} - { data: Message[] }
+ */
+export async function getMyMentorMessages(token) {
+    try {
+        return await apiClient('/api/messages?populate=user&sort=createdAt:desc', {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+            suppressErrorLog: true,
+        });
+    } catch {
+        return { data: [] };
+    }
 }
 
 /**

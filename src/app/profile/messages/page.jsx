@@ -1,14 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import MessagesList from '@/modules/profile/MessagesList';
 import EmptyState from '@/components/ui/EmptyState/EmptyState';
 import { getMyMessages } from '@/lib/messagesApi';
 import styles from './messages.module.scss';
 
-export default function MessagesPage() {
+function MessagesContent() {
     const { data: session } = useSession();
+    const searchParams = useSearchParams();
+    const openParam = searchParams.get('open');
+    const autoOpenMentor = openParam === 'mentor' || searchParams.get('mentor') === 'true';
+    const autoOpenId = (!autoOpenMentor && openParam) ? openParam : null;
+
     const [messages, setMessages] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -46,7 +52,7 @@ export default function MessagesPage() {
             <div className={styles.messagesPage__header}>
                 <h1 className={styles.messagesPage__title}>پیام‌های من</h1>
                 <p className={styles.messagesPage__subtitle}>
-                    لیست پیام‌هایی که از طریق فرم تماس ارسال کرده‌اید
+                    لیست پیام‌هایی که از طریق فرم تماس یا ارتباط با استاد ارسال کرده‌اید
                 </p>
             </div>
 
@@ -70,7 +76,7 @@ export default function MessagesPage() {
             {!isLoading && !error && messages.length === 0 && (
                 <EmptyState
                     title="پیامی وجود ندارد"
-                    description="هنوز هیچ پیامی از طریق فرم تماس ارسال نکرده‌اید"
+                    description="هنوز هیچ پیامی ارسال نکرده‌اید"
                     actionLabel="ارسال پیام"
                     actionHref="/contact"
                 />
@@ -80,8 +86,27 @@ export default function MessagesPage() {
                 <MessagesList
                     messages={messages}
                     onUpdateMessage={handleUpdateMessage}
+                    autoOpenMentor={autoOpenMentor}
+                    autoOpenId={autoOpenId}
                 />
             )}
         </div>
+    );
+}
+
+export default function MessagesPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className={styles.messagesPage} dir="rtl">
+                    <div className={styles.messagesPage__loader}>
+                        <div className={styles.messagesPage__spinner} />
+                        <span>در حال بارگذاری...</span>
+                    </div>
+                </div>
+            }
+        >
+            <MessagesContent />
+        </Suspense>
     );
 }
