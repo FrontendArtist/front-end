@@ -519,6 +519,11 @@
     justify-content: center;
     gap: 16px;
 
+    @include respond(md) {
+      flex-direction: column;
+      gap: 12px;
+    }
+
     .goToCartBtn {
       background: var(--color-primary, #F6D982);
       color: var(--color-bg-primary, #061818);

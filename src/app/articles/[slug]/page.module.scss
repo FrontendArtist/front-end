@@ -1,8 +1,5 @@
 @use '../../../styles/base/mixins' as *;
 
-:global(html) {
-  scroll-behavior: smooth;
-}
 
 // =============================================================================
 // Article Page

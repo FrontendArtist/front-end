@@ -21,21 +21,7 @@
 
 // Root container for the entire course page
 .coursePage {
-  // Apply consistent top and bottom spacing using CSS custom properties
-  // These variables are defined in _variables.scss and are globally available
-
-
-  // Responsive adjustments for smaller screens
-  // The respond() mixin comes from _mixins.scss
-  @include respond(md) {
-    // Reduce padding on tablets (max-width: 768px)
-    padding: 96px 0 80px 0;
-  }
-
-  @include respond(sm) {
-    // Further reduce padding on mobile (max-width: 440px)
-    padding: 64px 0 56px 0;
-  }
+  padding: var(--space-section-top-desktop) 0;
 }
 
 // =============================================================================
