@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
@@ -14,6 +14,10 @@ import styles from './page.module.scss';
 function PaymentCallbackContent() {
     const searchParams = useSearchParams();
     const [mounted, setMounted] = useState(false);
+    const [bankInfo, setBankInfo] = useState(null);
+    const [isBankLoading, setIsBankLoading] = useState(false);
+    const [bankError, setBankError] = useState(null);
+    const [isCopied, setIsCopied] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -23,7 +27,50 @@ function PaymentCallbackContent() {
             useCartStore.getState().clearCart();
             useOrdersStore.setState({ hasFetched: false, orders: [] });
         }
+
+        // دریافت اطلاعات بانکی برای سفارش‌های کارت‌به‌کارت
+        if (sp.get('source') === 'card_to_card') {
+            const fetchBankInfo = async () => {
+                setIsBankLoading(true);
+                setBankError(null);
+                try {
+                    const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+                    const res = await fetch(`${strapiUrl}/api/bank-setting`);
+
+                    if (!res.ok) throw new Error('دریافت اطلاعات بانکی با خطا مواجه شد.');
+
+                    const json = await res.json();
+                    const data = json?.data;
+                    if (!data) throw new Error('اطلاعات بانکی موجود نیست.');
+
+                    setBankInfo({
+                        bankName: data.bankName || '',
+                        cardNumber: data.cardNumber || '',
+                        accountHolder: data.accountHolder || '',
+                    });
+                } catch (err) {
+                    console.error('[PaymentCallback] fetchBankInfo error:', err);
+                    setBankError(err.message);
+                } finally {
+                    setIsBankLoading(false);
+                }
+            };
+
+            fetchBankInfo();
+        }
     }, []);
+
+    const handleCopyCard = useCallback(async () => {
+        if (!bankInfo?.cardNumber) return;
+        try {
+            const rawNumber = bankInfo.cardNumber.replace(/\s+/g, '');
+            await navigator.clipboard.writeText(rawNumber);
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } catch {
+            // fallback
+        }
+    }, [bankInfo]);
 
     // قبل از mount، صبر می‌کنیم تا URL واقعی خوانده شود
     if (!mounted) {
@@ -123,18 +170,59 @@ function PaymentCallbackContent() {
                                     <span>اطلاعات حساب بانکی فروشگاه</span>
                                 </div>
                                 <div className={styles.bankCardBody}>
-                                    <div className={styles.bankRow}>
-                                        <span className={styles.bankLabel}>بانک</span>
-                                        <span className={styles.bankValue}>بانک سامان</span>
-                                    </div>
-                                    <div className={styles.bankRow}>
-                                        <span className={styles.bankLabel}>شماره کارت</span>
-                                        <span className={styles.bankCardNumber}>6219 8614 0560 2722</span>
-                                    </div>
-                                    <div className={styles.bankRow}>
-                                        <span className={styles.bankLabel}>به نام</span>
-                                        <span className={styles.bankValue}>محبوبه جلائیان اذانی</span>
-                                    </div>
+                                    {isBankLoading && (
+                                        <div className={styles.bankLoading}>در حال دریافت اطلاعات بانکی...</div>
+                                    )}
+                                    {bankError && !isBankLoading && !bankInfo && (
+                                        <div className={styles.bankErrorMsg}>{bankError}</div>
+                                    )}
+                                    {bankInfo && !isBankLoading && (
+                                        <>
+                                            {bankInfo.bankName && (
+                                                <div className={styles.bankRow}>
+                                                    <span className={styles.bankLabel}>بانک</span>
+                                                    <span className={styles.bankValue}>{bankInfo.bankName}</span>
+                                                </div>
+                                            )}
+                                            {bankInfo.cardNumber && (
+                                                <div className={styles.bankRow}>
+                                                    <span className={styles.bankLabel}>شماره کارت</span>
+                                                    <div className={styles.cardNumberWrapper}>
+                                                        <span className={styles.bankCardNumber}>{bankInfo.cardNumber}</span>
+                                                        <button
+                                                            type="button"
+                                                            className={`${styles.copyBtn} ${isCopied ? styles.copied : ''}`}
+                                                            onClick={handleCopyCard}
+                                                            aria-label="کپی شماره کارت"
+                                                        >
+                                                            {isCopied ? (
+                                                                <>
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                        <polyline points="20 6 9 17 4 12" />
+                                                                    </svg>
+                                                                    <span>کپی شد!</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                                                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                                                                    </svg>
+                                                                    <span>کپی</span>
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {bankInfo.accountHolder && (
+                                                <div className={styles.bankRow}>
+                                                    <span className={styles.bankLabel}>به نام</span>
+                                                    <span className={styles.bankValue}>{bankInfo.accountHolder}</span>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
