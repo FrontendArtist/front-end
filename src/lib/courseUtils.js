@@ -81,6 +81,7 @@ export function formatStrapiCourses(apiResponse) {
         isChaptered: Boolean(item.isChaptered),
         chapters,
         curriculum,
+        telegramLink: item.telegramLink || item.telegram_link || item.telegramGroupLink || item.telegram || null,
       };
     });
 }

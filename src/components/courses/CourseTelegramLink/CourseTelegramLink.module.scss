@@ -1,0 +1,110 @@
+@use '../../../styles/base/mixins' as *;
+
+/* =============================================================================
+   Course Telegram Link Styles (SCSS Module)
+   کادر لینک گروه تلگرام برای خریداران دوره
+   ============================================================================= */
+
+.telegramBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 14px 20px;
+  background: linear-gradient(
+    270deg,
+    color-mix(in srgb, #229ed9 18%, transparent) 0%,
+    color-mix(in srgb, #229ed9 6%, transparent) 100%
+  );
+  border: 1px solid color-mix(in srgb, #229ed9 30%, transparent);
+  border-right: 4px solid #229ed9;
+  border-radius: 12px;
+  box-sizing: border-box;
+  animation: fadeInBox 0.3s ease-out;
+
+  @include respond(sm) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+}
+
+@keyframes fadeInBox {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.telegramHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.telegramIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #2aabee;
+  flex-shrink: 0;
+
+  svg {
+    display: block;
+  }
+}
+
+.telegramLabel {
+  font-size: var(--font-md, 16px);
+  font-weight: var(--font-weight-bold, 700);
+  color: var(--color-card-text, #FFFAEA);
+  white-space: nowrap;
+
+  @include respond(sm) {
+    font-size: var(--font-sm, 14px);
+  }
+}
+
+.telegramLinkBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #229ed9;
+  color: #ffffff;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: var(--font-sm, 14px);
+  font-weight: var(--font-weight-bold, 700);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+  font-family: inherit;
+
+  &:hover {
+    background: #2aabee;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(34, 158, 217, 0.4);
+  }
+
+  svg {
+    display: block;
+    transition: transform 0.2s ease;
+  }
+
+  &:hover svg {
+    transform: translate(-2px, -2px);
+  }
+
+  @include respond(sm) {
+    width: 100%;
+    padding: 10px 16px;
+  }
+}

@@ -11,6 +11,7 @@ import { authOptions } from '@/lib/auth';
 import { marked } from 'marked';
 import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
+import CourseTelegramLink from '@/components/courses/CourseTelegramLink/CourseTelegramLink';
 import styles from './page.module.scss';
 import { getUserCoursePurchases } from '@/lib/ordersApi';
 
@@ -91,6 +92,7 @@ export default async function CoursePage({ params }) {
     content: rawCourse.content,
     teaserUrl: rawCourse.teaserUrl,
     isChaptered: rawCourse.isChaptered || false,
+    telegramLink: rawCourse.telegramLink || rawCourse.telegram_link || rawCourse.telegramGroupLink || rawCourse.telegram || null,
     media: {
       url: rawCourse.image.url.startsWith('http') || rawCourse.image.url.startsWith('/images/')
         ? rawCourse.image.url
@@ -236,6 +238,15 @@ export default async function CoursePage({ params }) {
               )}
 
             </div>
+
+            {/* لینک گروه تلگرام دوره (نمایش فقط برای خریداران با وضعیت پرداخت شده) */}
+            <CourseTelegramLink
+              telegramLink={course.telegramLink}
+              courseId={course.id}
+              courseSlug={course.slug}
+              documentId={course.documentId}
+              initialHasPurchased={hasPurchasedServer}
+            />
           </div>
         </div>
 

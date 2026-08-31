@@ -267,6 +267,7 @@ export default function CourseForm({ course = null }) {
     const [publishedAt, setPublishedAt] = useState(course?.publishedAt || null);
     const isPublished = !!publishedAt;
     const [teaserUrl, setTeaserUrl] = useState(course?.teaserUrl || '');
+    const [telegramLink, setTelegramLink] = useState(course?.telegramLink || course?.telegram_link || course?.telegramGroupLink || '');
     const [description, setDescription] = useState(() => {
         // Strapi Blocks → extract text
         if (Array.isArray(course?.description)) {
@@ -431,6 +432,7 @@ export default function CourseForm({ course = null }) {
             isFree,
             isChaptered,
             teaserUrl: teaserUrl.trim() || null,
+            telegramLink: telegramLink.trim() || null,
             content: currentContent.trim() || null,
             chapters: isChaptered ? cleanChapters : [],
             curriculum: !isChaptered ? cleanCurriculum : [],
@@ -636,6 +638,21 @@ export default function CourseForm({ course = null }) {
                                 value={teaserUrl}
                                 onChange={(e) => setTeaserUrl(e.target.value)}
                                 placeholder="https://..."
+                                dir="ltr"
+                                disabled={saving}
+                            />
+                        </div>
+
+                        {/* ── لینک گروه تلگرام ──────────────────────── */}
+                        <div className={styles.field}>
+                            <label htmlFor="cf-telegram">لینک گروه تلگرام دوره (مخصوص دانشجویان)</label>
+                            <input
+                                id="cf-telegram"
+                                type="text"
+                                className={styles.input}
+                                value={telegramLink}
+                                onChange={(e) => setTelegramLink(e.target.value)}
+                                placeholder="https://t.me/joinchat/... یا https://t.me/..."
                                 dir="ltr"
                                 disabled={saving}
                             />
