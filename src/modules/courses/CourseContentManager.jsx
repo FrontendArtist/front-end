@@ -150,7 +150,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
    */
   const checkChapterAccess = (chapter) => {
     if (hasFullCourseAccess) return true;
-    if (chapter.price?.toman === 0 || chapter.price === 0) return true;
+    const chapterPrice = chapter.price?.toman ?? chapter.price ?? 0;
+    if (chapterPrice === 0) return true;
 
     const chapterIdStr = String(chapter.id);
 

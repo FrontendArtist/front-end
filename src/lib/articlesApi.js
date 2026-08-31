@@ -151,31 +151,73 @@ export async function getArticlesPaginated(
 }
 
 /**
- * واکشی مقالات مجاور (قبلی و بعدی بر اساس تاریخ انتشار)
- * @param {string | Date} createdAt - تاریخ مقاله جاری
+ * واکشی مقالات مجاور (قبلی و بعدی بر اساس ترتیب انتشار)
+ * @param {object | string} identifier - آبجکت مقاله جاری یا اسلاگ/شناسه آن
  * @returns {Promise<{ prev: { slug: string, title: string } | null, next: { slug: string, title: string } | null }>}
  */
-export async function getAdjacentArticles(createdAt) {
-  if (!createdAt) return { prev: null, next: null };
+export async function getAdjacentArticles(identifier) {
+  if (!identifier) return { prev: null, next: null };
 
   return withErrorHandling(
     async () => {
-      const isoDate = new Date(createdAt).toISOString();
+      // واکشی لیست مقالات منتشرشده با ترتیب نزولی تاریخ انتشار (مشابه صفحه مقالات)
+      const response = await apiClient(
+        '/api/articles?status=published&fields[0]=title&fields[1]=slug&fields[2]=documentId&fields[3]=publishedAt&fields[4]=createdAt&sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc&pagination[pageSize]=100'
+      );
 
-      const prevRes = await apiClient(
-        `/api/articles?filters[publishedAt][$lt]=${isoDate}&sort=publishedAt:desc&pagination[limit]=1`
-      ).catch(() => null);
+      const articles = formatStrapiArticles(response);
+      if (!articles || articles.length === 0) {
+        return { prev: null, next: null };
+      }
 
-      const nextRes = await apiClient(
-        `/api/articles?filters[publishedAt][$gt]=${isoDate}&sort=publishedAt:asc&pagination[limit]=1`
-      ).catch(() => null);
+      // تعیین مشخصه مقاله جاری
+      let targetSlug = null;
+      let targetId = null;
+      let targetDocId = null;
 
-      const prevArticles = prevRes ? formatStrapiArticles(prevRes) : [];
-      const nextArticles = nextRes ? formatStrapiArticles(nextRes) : [];
+      if (typeof identifier === 'object' && identifier !== null) {
+        targetSlug = identifier.slug;
+        targetId = identifier.id;
+        targetDocId = identifier.documentId;
+      } else if (typeof identifier === 'string') {
+        targetSlug = identifier;
+      }
+
+      // پیدا کردن ایندکس مقاله جاری در لیست
+      let currentIndex = -1;
+      if (targetSlug) {
+        currentIndex = articles.findIndex((art) => {
+          if (!art.slug) return false;
+          if (art.slug === targetSlug) return true;
+          try {
+            return decodeURIComponent(art.slug) === decodeURIComponent(targetSlug);
+          } catch {
+            return false;
+          }
+        });
+      }
+
+      if (currentIndex === -1 && (targetDocId || targetId)) {
+        currentIndex = articles.findIndex(
+          (art) =>
+            (targetDocId && (art.documentId === targetDocId || String(art.id) === String(targetDocId))) ||
+            (targetId && String(art.id) === String(targetId))
+        );
+      }
+
+      if (currentIndex === -1) {
+        return { prev: null, next: null };
+      }
+
+      // در آرایه مرتب‌شده از جدید به قدیم (publishedAt:desc):
+      // ایندکس کمتر (currentIndex - 1) = مقاله جدیدتر / بعدی
+      // ایندکس بیشتر (currentIndex + 1) = مقاله قدیمی‌تر / قبلی
+      const nextArticle = currentIndex > 0 ? articles[currentIndex - 1] : null;
+      const prevArticle = currentIndex < articles.length - 1 ? articles[currentIndex + 1] : null;
 
       return {
-        prev: prevArticles[0] ? { slug: prevArticles[0].slug, title: prevArticles[0].title } : null,
-        next: nextArticles[0] ? { slug: nextArticles[0].slug, title: nextArticles[0].title } : null,
+        prev: prevArticle ? { slug: prevArticle.slug, title: prevArticle.title } : null,
+        next: nextArticle ? { slug: nextArticle.slug, title: nextArticle.title } : null,
       };
     },
     'واکشی مقالات مجاور',

@@ -100,16 +100,19 @@ export default async function CoursePage({ params }) {
       alt: rawCourse.image.alt,
     },
     chapters: (rawCourse.chapters || []).map((chapter) => {
+      const isChapterFree = chapter.price?.toman === 0 || chapter.price === 0 || !chapter.price;
       const isChapterPurchased =
         hasPurchasedServer ||
         purchasedChapterIdsServer.includes(String(chapter.id)) ||
         (session?.user?.enrolledChapters || []).map(String).includes(String(chapter.id));
 
+      const hasChapterAccess = isFreeCourse || isChapterFree || (session && isChapterPurchased);
+
       return {
         ...chapter,
         lessons: (chapter.lessons || []).map((lesson) => {
-          // برای امنیت، اگر کاربر لاگین نیست یا مالک کل دوره/فصل نیست و درس رایگان نیست، لینک مدیا پاک می‌شود
-          const shouldStrip = !session || (!isFreeCourse && !isChapterPurchased);
+          // برای امنیت، اگر کاربر به دوره/فصل دسترسی ندارد و درس رایگان نیست، لینک مدیا پاک می‌شود
+          const shouldStrip = !hasChapterAccess;
           if (shouldStrip && !lesson.isFree) {
             return {
               ...lesson,
@@ -122,7 +125,8 @@ export default async function CoursePage({ params }) {
       };
     }),
     curriculum: (rawCourse.curriculum || []).map((lesson) => {
-      const shouldStrip = !session || (!isFreeCourse && !hasPurchasedServer);
+      const hasCurriculumAccess = isFreeCourse || (session && hasPurchasedServer);
+      const shouldStrip = !hasCurriculumAccess;
       if (shouldStrip && !lesson.isFree) {
         return {
           ...lesson,
@@ -254,7 +258,6 @@ export default async function CoursePage({ params }) {
         <CourseTabs
           course={course}
           parsedContent={course.content ? marked.parse(course.content) : null}
-          customStyles={styles}
         />
 
         {/* Comments Section */}
