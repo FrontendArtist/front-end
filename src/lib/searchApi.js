@@ -22,31 +22,36 @@ export const searchGlobal = async (query, type = 'all') => {
 
     const requests = [];
 
-    // افزودن endpoint ها بر اساس نوع جستجو
+    // افزودن endpoint ها بر اساس نوع جستجو با فیلدهای معتبر اسکیما
     if (typeLower === 'all' || typeLower === 'محصولات' || typeLower === 'products') {
         requests.push({
             key: 'products',
-            endpoint: `/api/products?status=published&filters[title][$containsi]=${q}&populate[categories][populate]=parent&populate[images]=true&populate[image]=true&populate[cover]=true`
+            endpoint: `/api/products?filters[title][$containsi]=${q}&populate[categories][populate]=parent&populate[images]=true`
         });
     }
     if (typeLower === 'all' || typeLower === 'مقالات' || typeLower === 'articles') {
         requests.push({
             key: 'articles',
-            endpoint: `/api/articles?filters[title][$containsi]=${q}&populate[cover]=true&populate[categories]=true`
+            endpoint: `/api/articles?filters[title][$containsi]=${q}&populate[cover]=true`
         });
     }
     if (typeLower === 'all' || typeLower === 'دوره‌ها' || typeLower === 'courses') {
         requests.push({
             key: 'courses',
-            endpoint: `/api/courses?filters[title][$containsi]=${q}&populate[media]=true&populate[image]=true`
+            endpoint: `/api/courses?filters[title][$containsi]=${q}&populate[media]=true`
         });
     }
 
     try {
         const responses = await Promise.all(requests.map(req =>
-            apiClient(req.endpoint, { suppressErrorLog: true })
+            apiClient(req.endpoint, { suppressErrorLog: false })
                 .then(data => ({ key: req.key, data }))
-                .catch(() => ({ key: req.key, data: null }))
+                .catch(err => {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.error(`Search failed for ${req.key}:`, err);
+                    }
+                    return { key: req.key, data: null };
+                })
         ));
 
         // تجمیع نتایج در ساختار استاندارد و فرمت‌شده

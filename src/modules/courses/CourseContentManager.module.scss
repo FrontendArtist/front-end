@@ -247,9 +247,13 @@
 }
 
 .lessonTitle {
-  font-size: var(--font-md, 16px);
+  font-size: var(--font-sm, 14px);
   color: var(--color-card-text, #FFFAEA);
   font-weight: var(--font-weight-medium, 500);
+
+  @include respond(md) {
+    font-size: var(--font-xs, 12px);
+  }
 }
 
 .freeBadge {
@@ -325,7 +329,7 @@
   gap: 12px;
 }
 
-.chapterBadge {
+.chapterTitle {
   font-size: var(--font-xs, 12px);
   font-weight: var(--font-weight-medium, 500);
   padding: 4px 10px;
@@ -333,12 +337,6 @@
   background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   color: var(--color-primary, #F6D982);
   white-space: nowrap;
-}
-
-.chapterTitle {
-  font-size: var(--font-lg);
-  font-weight: var(--font-weight-bold, 700);
-  color: var(--color-text-primary, #FFFAEA);
 }
 
 .chapterHeaderLeft {

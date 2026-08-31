@@ -23,7 +23,7 @@
 .coursePage {
   // Apply consistent top and bottom spacing using CSS custom properties
   // These variables are defined in _variables.scss and are globally available
-  padding: var(--space-section-top-desktop) 0 var(--space-section-bottom-desktop) 0;
+
 
   // Responsive adjustments for smaller screens
   // The respond() mixin comes from _mixins.scss

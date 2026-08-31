@@ -373,7 +373,6 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                     }}
                   >
                     <div className={styles.chapterHeaderRight}>
-                      <span className={styles.chapterBadge}>فصل {index + 1}</span>
                       <h3 className={styles.chapterTitle}>{chapter.title}</h3>
                     </div>
 

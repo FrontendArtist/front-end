@@ -51,9 +51,9 @@ function PaymentCallbackContent() {
         const primaryHref = isFree
             ? '/profile/purchases'
             : isCardToCard && orderId
-            ? `/profile/orders/${orderId}`
-            : isLightTopup ? '/profile'
-            : '/profile/orders';
+                ? `/profile/orders/${orderId}`
+                : isLightTopup ? '/profile'
+                    : '/profile/orders';
 
         return (
             <div className={`${styles.callbackPage} ${isCardToCard ? styles.pending : styles.success} container`}>
@@ -129,11 +129,11 @@ function PaymentCallbackContent() {
                                     </div>
                                     <div className={styles.bankRow}>
                                         <span className={styles.bankLabel}>شماره کارت</span>
-                                        <span className={styles.bankCardNumber}>6219 8618 1481 2854</span>
+                                        <span className={styles.bankCardNumber}>6219 8614 0560 2722</span>
                                     </div>
                                     <div className={styles.bankRow}>
                                         <span className={styles.bankLabel}>به نام</span>
-                                        <span className={styles.bankValue}>محمد مهدی عیدی</span>
+                                        <span className={styles.bankValue}>محبوبه جلائیان اذانی</span>
                                     </div>
                                 </div>
                             </div>
@@ -197,8 +197,8 @@ function PaymentCallbackContent() {
                         <Link href={primaryHref} className={styles.primaryButton}>
                             {isFree ? 'مشاهده دوره‌ها و محصولات من'
                                 : isCardToCard ? 'ارسال فیش واریزی'
-                                : isLightTopup ? 'مشاهده پروفایل'
-                                : 'مشاهده سفارش‌ها'}
+                                    : isLightTopup ? 'مشاهده پروفایل'
+                                        : 'مشاهده سفارش‌ها'}
                         </Link>
                         <Link href="/products" className={styles.secondaryButton}>
                             بازگشت به فروشگاه

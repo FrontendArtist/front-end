@@ -10,14 +10,8 @@ import VpnModal from "@/components/common/VpnModal/VpnModal";
 import { Providers } from "./providers";
 import localFont from 'next/font/local';
 import CartSyncProvider from "@/components/providers/CartSyncProvider";
-import ScrollResetProvider from "@/components/providers/ScrollResetProvider";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import Script from "next/script";
-
-export const viewport = {
-  width: 'device-width',
-  initialScale: 1,
-};
 
 const iranSans = localFont({
   src: '../assets/fonts/iransans_regular/iransans-regular-webfont.ttf',
@@ -80,7 +74,6 @@ export default function RootLayout({ children }) {
       </head>
       <body className={`${iranSans.variable} ${shafigh.variable} ${lalezar.variable}`}>
         <Providers>
-          <ScrollResetProvider />
           <CartSyncProvider />
           <Navbar />
           {children}

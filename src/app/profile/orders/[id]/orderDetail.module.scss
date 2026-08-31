@@ -262,6 +262,9 @@
     @include respond(md) {
         padding: 12px;
         gap: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 
