@@ -168,7 +168,7 @@ export default function ProductsTable({ initialProducts }) {
                     <AdminTable headers={headers}>
                         {paginated.map((product) => {
                             const imgUrl = product.images?.[0]?.url
-                                ? `${STRAPI_URL}${product.images[0].url}`
+                                ? (product.images[0].url.startsWith('http') ? product.images[0].url : `${STRAPI_URL}${product.images[0].url}`)
                                 : null;
                             const isPublished = !!product.publishedAt;
 

@@ -146,7 +146,7 @@ export default function CoursesTable({ initialCourses }) {
                     <AdminTable headers={headers}>
                         {paginated.map((course) => {
                             const imgUrl = course.media?.[0]?.url
-                                ? `${STRAPI_URL}${course.media[0].url}`
+                                ? (course.media[0].url.startsWith('http') ? course.media[0].url : `${STRAPI_URL}${course.media[0].url}`)
                                 : null;
                             const isPublished = !!course.publishedAt;
 
