@@ -107,7 +107,6 @@ export default function OrderReceiptUpload({ orderId, bankInfo: bankInfoProp = n
     const [bankError, setBankError] = useState(null);           // خطای دریافت اطلاعات بانک
 
     const [file, setFile] = useState(null);           // فایل تصویر انتخاب‌شده
-    const [trackingNumber, setTrackingNumber] = useState('');           // کد پیگیری بانکی
     const [cardHolderName, setCardHolderName] = useState('');           // نام صاحب کارت
 
     const [isDragOver, setIsDragOver] = useState(false);          // حالت Drag روی dropzone
@@ -217,10 +216,6 @@ export default function OrderReceiptUpload({ orderId, bankInfo: bankInfoProp = n
         setSuccessMessage(null);
 
         // اعتبارسنجی سمت کلاینت — قبل از ارسال شبکه
-        if (!trackingNumber.trim()) {
-            setErrorMessage('لطفاً کد پیگیری واریز را وارد کنید.');
-            return;
-        }
         if (!cardHolderName.trim()) {
             setErrorMessage('لطفاً نام صاحب کارت واریز کننده را وارد کنید.');
             return;
@@ -238,7 +233,6 @@ export default function OrderReceiptUpload({ orderId, bankInfo: bankInfoProp = n
             const formData = new FormData();
             formData.append('orderId', orderId);
             formData.append('file', file, file.name);
-            formData.append('trackingNumber', trackingNumber.trim());
             formData.append('cardHolderName', cardHolderName.trim());
 
             // ارسال به سرور-ساید proxy (توکن Strapi در سرور است، نه اینجا)
@@ -343,24 +337,6 @@ export default function OrderReceiptUpload({ orderId, bankInfo: bankInfoProp = n
                     noValidate
                     aria-label="فرم ثبت فیش واریزی"
                 >
-                    {/* کد پیگیری */}
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="trackingNumber" className={styles.label}>
-                            کد پیگیری / مرجع بانک
-                        </label>
-                        <input
-                            id="trackingNumber"
-                            type="text"
-                            className={styles.input}
-                            value={trackingNumber}
-                            onChange={(e) => setTrackingNumber(e.target.value)}
-                            placeholder="مثال: ۱۲۳۴۵۶۷۸"
-                            disabled={isSubmitting}
-                            autoComplete="off"
-                            dir="rtl"
-                        />
-                    </div>
-
                     {/* نام صاحب کارت */}
                     <div className={styles.inputGroup}>
                         <label htmlFor="cardHolderName" className={styles.label}>

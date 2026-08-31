@@ -6,7 +6,7 @@
  * DATA FLOW (all steps run server-side; Strapi token never reaches the client):
  *
  *  Client (browser)
- *    │  POST multipart/form-data  { orderId, file, trackingNumber, cardHolderName }
+ *    │  POST multipart/form-data  { orderId, file, cardHolderName }
  *    ▼
  *  This Next.js Route Handler   ← you are here
  *    │
@@ -18,7 +18,7 @@
  *    │
  *    └─ [STEP 3] PATCH the target order via Strapi's documentId-based endpoint
  *                 – link receiptImage (by media id)
- *                 – save trackingNumber & cardHolderName
+ *                 – save cardHolderName
  *                 – advance paymentStatus → "pending_verification"
  *    │
  *    ▼
@@ -77,20 +77,12 @@ export async function POST(request) {
     // ── Extract & validate fields ───────────────────────────────────────────────
     const orderId = formData.get("orderId");        // Strapi v5 documentId (string)
     const file = formData.get("file");           // File | null
-    const trackingNumber = formData.get("trackingNumber"); // string
     const cardHolderName = formData.get("cardHolderName"); // string
 
     // [VALIDATION 1] Required text fields
     if (!orderId || typeof orderId !== "string" || orderId.trim() === "") {
         return NextResponse.json(
             { message: "شناسه سفارش (orderId) الزامی است." },
-            { status: 400 }
-        );
-    }
-
-    if (!trackingNumber || trackingNumber.trim() === "") {
-        return NextResponse.json(
-            { message: "کد پیگیری واریز الزامی است." },
             { status: 400 }
         );
     }
@@ -184,7 +176,6 @@ export async function POST(request) {
         const orderUpdatePayload = {
             data: {
                 receiptImage: uploadedMediaId,         // Link the uploaded media by its numeric id
-                trackingNumber: trackingNumber.trim(),
                 cardHolderName: cardHolderName.trim(),
                 paymentMethod: "card_to_card",         // Confirm the payment channel
                 paymentStatus: "pending_verification", // Advance the status lifecycle
@@ -230,7 +221,6 @@ export async function POST(request) {
                 order: {
                     documentId: updatedOrder?.data?.documentId,
                     paymentStatus: updatedOrder?.data?.paymentStatus,
-                    trackingNumber: updatedOrder?.data?.trackingNumber,
                 },
             },
             { status: 200 }
