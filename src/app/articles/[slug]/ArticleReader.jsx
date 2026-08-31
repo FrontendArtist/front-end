@@ -59,6 +59,11 @@ export default function ArticleReader({ excerpt, content }) {
     // Also strip divider HR tags if present
     cleaned = cleaned.replace(/<hr\s+class(?:Name)?=["']divider["']\s*\/?>/gi, '');
 
+    // Strip redundant outer or nested <article> tags to prevent duplicate nested <article> in DOM
+    cleaned = cleaned
+      .replace(/<article[^>]*>/gi, '')
+      .replace(/<\/article>/gi, '');
+
     const items = [];
     let headingCounter = 0;
 
@@ -152,14 +157,13 @@ export default function ArticleReader({ excerpt, content }) {
     e.preventDefault();
     const element = document.getElementById(id);
     if (element) {
-      const offset = 110;
-      const bodyRect = document.body.getBoundingClientRect().top;
-      const elementRect = element.getBoundingClientRect().top;
-      const elementPosition = elementRect - bodyRect;
-      const offsetPosition = elementPosition - offset;
+      const navbarHeight = 120;
+      const currentScroll = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
+      const elementTop = element.getBoundingClientRect().top + currentScroll;
+      const targetPosition = elementTop - navbarHeight;
 
       window.scrollTo({
-        top: offsetPosition,
+        top: Math.max(0, targetPosition),
         behavior: 'smooth',
       });
 

@@ -265,6 +265,7 @@
     padding-bottom: 0.45rem;
     position: relative;
     font-weight: var(--font-weight-bold, 700);
+    scroll-margin-top: 130px;
 
     &::after {
       content: '';
@@ -286,6 +287,7 @@
     padding-bottom: 0.45rem;
     position: relative;
     font-weight: var(--font-weight-bold, 700);
+    scroll-margin-top: 130px;
 
     &::after {
       content: '';
@@ -305,6 +307,7 @@
     margin-top: 1.75rem;
     margin-bottom: 0.85rem;
     font-weight: var(--font-weight-bold, 700);
+    scroll-margin-top: 130px;
   }
 
   // ---- Paragraphs ----

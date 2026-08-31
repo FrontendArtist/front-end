@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
-import CourseContentManager from '@/modules/courses/CourseContentManager';
+import CourseTabs from '@/modules/courses/CourseTabs/CourseTabs';
 import { getCourseBySlug } from '@/lib/coursesApi';
 import { getComments } from '@/lib/commentsApi';
 import CommentsSection from '@/modules/comments/CommentsSection';
@@ -9,7 +9,6 @@ import { API_BASE_URL } from '@/lib/api';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { marked } from 'marked';
-import ArticleReader from '@/app/articles/[slug]/ArticleReader';
 import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import styles from './page.module.scss';
@@ -208,7 +207,9 @@ export default async function CoursePage({ params }) {
                 </div>
               )}
               {course.isChaptered ? (
-                'خرید به صورت فصلی (از سرفصل‌های زیر انتخاب کنید)'
+                <span className={styles.chapteredNotice}>
+                  خرید به صورت فصلی (از سرفصل‌های زیر انتخاب کنید)
+                </span>
               ) : isFreeCourse ? (
                 'رایگان'
               ) : hasDiscount ? (
@@ -238,16 +239,12 @@ export default async function CoursePage({ params }) {
           </div>
         </div>
 
-        {/* Course Description Content */}
-        {course.content && (
-          <div className={styles.contentSection}>
-            <h2 className={styles.contentSectionTitle}>توضیحات تکمیلی دوره</h2>
-            <ArticleReader content={marked.parse(course.content)} />
-          </div>
-        )}
-
-        {/* Course Content Manager for Player and Playlist */}
-        <CourseContentManager course={course} styles={styles} />
+        {/* Course Tabs (توضیحات و سرفصل‌ها) */}
+        <CourseTabs
+          course={course}
+          parsedContent={course.content ? marked.parse(course.content) : null}
+          customStyles={styles}
+        />
 
         {/* Comments Section */}
         <CommentsSection

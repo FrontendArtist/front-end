@@ -237,43 +237,57 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  background: linear-gradient(270deg, color-mix(in srgb, var(--color-primary, #F6D982) 15%, transparent) 0%, color-mix(in srgb, var(--color-primary, #F6D982) 4%, transparent) 100%);
+  border: 1px solid color-mix(in srgb, var(--color-primary, #F6D982) 15%, transparent);
+  border-right: 4px solid var(--color-primary, #F6D982);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 16px;
 
+  @include respond(sm) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 14px 16px;
+  }
+}
+
+.chapteredNotice {
+  font-size: var(--font-sm, 14px);
+  color: var(--color-text-primary, #F6D982);
+  font-weight: var(--font-weight-medium, 500);
 }
 
 // Price Display
 .price {
-  // Larger font size to emphasize the price
   font-size: var(--font-md); // 20px
-  // Use primary gold color to draw attention
   color: var(--color-text-primary);
-  // Bold weight for emphasis
   font-weight: var(--font-weight-bold);
-  // Spacing before the CTA button
+  margin: 0;
 
-  // Responsive adjustments
   @include respond(md) {
-    font-size: var(--font-md); // 16px on tablet
-    margin-bottom: 20px;
+    font-size: var(--font-md);
+    margin: 0;
   }
 
   @include respond(sm) {
-    margin-bottom: 16px;
+    margin: 0;
   }
 }
 
 .actionWrapper {
-  margin-top: auto;
   display: flex;
   justify-content: flex-start;
 
   :global(.card-button) {
     width: auto;
-    padding: 12px 32px;
-    font-size: var(--font-md);
+    padding: 10px 24px;
+    font-size: var(--font-sm, 14px);
+    font-weight: var(--font-weight-bold, 700);
 
     @include respond(sm) {
       width: 100%;
-      padding: 10px 24px;
+      padding: 10px 20px;
     }
   }
 }
@@ -285,7 +299,7 @@
 // Container for the curriculum section (below the main info grid)
 .curriculumSection {
   margin: 0 auto;
-  padding: 0 16px 24px 16px; // Add padding inside the border wrapper
+  padding: 16px 16px 24px 16px; // Add padding inside the border wrapper
 }
 
 // Section Title - "سرفصل‌های دوره"
@@ -368,7 +382,6 @@
 }
 
 .contentManager {
-  margin-top: var(--space-section-top-desktop);
 
   border-radius: 16px;
   overflow: hidden;
