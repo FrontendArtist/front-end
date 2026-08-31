@@ -8,6 +8,7 @@ import styles from './Navbar.module.scss';
 import SearchTrigger from '@/components/ui/SearchTrigger/SearchTrigger';
 import SearchOverlay from '@/components/ui/SearchOverlay/SearchOverlay';
 import UserStatus from '@/components/layout/Navbar/UserStatus';
+import NotificationBell from '@/components/layout/Navbar/NotificationBell';
 import CartIcon from '@/components/layout/Navbar/CartIcon';
 
 const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '[]' }) => {
@@ -151,6 +152,9 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
 
             {/* آیکون جستجو - فقط در دسکتاپ نمایش داده می‌شود */}
             <SearchTrigger className={`${styles.iconButton} ${styles.searchTrigger}`} />
+
+            {/* زنگوله اعلان‌های کاربر */}
+            <NotificationBell />
 
             {/* وضعیت کاربر (ورود/پروفایل) */}
             <UserStatus />

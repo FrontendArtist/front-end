@@ -1,0 +1,297 @@
+@use '@/styles/base/mixins' as *;
+
+.notificationContainer {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.iconButton {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: fade(var(--color-primary), 10%);
+    border: 2px solid fade(var(--color-primary), 30%);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+    color: var(--color-text-primary);
+
+    svg {
+        width: 21px;
+        height: 21px;
+        transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    &:hover,
+    &.active {
+        border-color: var(--color-text-primary);
+        background: fade(var(--color-primary), 18%);
+        color: var(--color-title-hover);
+
+        svg {
+            transform: rotate(15deg) scale(1.08);
+        }
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+}
+
+// نشانگر تعداد اعلان‌های خوانده‌نشده
+.badge {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    background: var(--color-error, #ef4444);
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+    border: 2px solid var(--color-background-primary, #0f172a);
+    animation: pulseBadge 2s infinite ease-in-out;
+}
+
+@keyframes pulseBadge {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+// منوی کشویی اعلان‌ها
+.dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    background: var(--color-background-card, rgba(15, 23, 42, 0.95));
+    border: 1px solid var(--color-border-card, rgba(255, 255, 255, 0.1));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    overflow: hidden;
+    animation: dropIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    direction: rtl;
+
+    @media (max-width: 480px) {
+        position: fixed;
+        top: 70px;
+        left: 16px;
+        right: 16px;
+        width: auto;
+        max-width: none;
+    }
+}
+
+@keyframes dropIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.dropdownHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--color-border-card, rgba(255, 255, 255, 0.08));
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.headerTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #fff);
+
+    svg {
+        color: var(--color-primary, #6366f1);
+    }
+}
+
+.unreadTag {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: fade(var(--color-primary), 20%);
+    color: var(--color-primary-light, #818cf8);
+}
+
+.markAllBtn {
+    background: none;
+    border: none;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary, #94a3b8);
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 4px 6px;
+    border-radius: 6px;
+
+    &:hover {
+        color: var(--color-primary-light, #818cf8);
+        background: rgba(255, 255, 255, 0.05);
+    }
+}
+
+.list {
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+    }
+}
+
+.item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.08);
+        transform: translateY(-1px);
+    }
+
+    &.unread {
+        background: fade(var(--color-primary), 8%);
+        border-color: fade(var(--color-primary), 25%);
+
+        .itemDot {
+            background: var(--color-primary, #6366f1);
+            box-shadow: 0 0 8px var(--color-primary, #6366f1);
+        }
+    }
+}
+
+.itemIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.itemContent {
+    flex: 1;
+    min-width: 0;
+}
+
+.itemTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.itemTitle {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #fff);
+    margin: 0;
+}
+
+.itemDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.itemMessage {
+    font-size: 0.78rem;
+    color: var(--color-text-secondary, #94a3b8);
+    margin: 0 0 6px 0;
+    line-height: 1.45;
+}
+
+.itemTime {
+    font-size: 0.7rem;
+    color: var(--color-text-muted, #64748b);
+}
+
+.emptyState {
+    padding: 32px 16px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+
+    svg {
+        width: 36px;
+        height: 36px;
+        color: var(--color-text-muted, #64748b);
+        opacity: 0.7;
+    }
+
+    p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--color-text-secondary, #94a3b8);
+    }
+}
+
+.dropdownFooter {
+    padding: 10px 16px;
+    border-top: 1px solid var(--color-border-card, rgba(255, 255, 255, 0.08));
+    background: rgba(0, 0, 0, 0.15);
+    text-align: center;
+}
+
+.footerLink {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-primary-light, #818cf8);
+    text-decoration: none;
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: #fff;
+        text-decoration: underline;
+    }
+}
