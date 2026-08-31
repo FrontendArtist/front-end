@@ -11,9 +11,7 @@ import styles from './ProductGrid.module.scss';
 const PAGE_SIZE = PRODUCTS_PAGE_SIZE;
 
 const SORT_OPTIONS = [
-  { value: 'createdAt:desc', label: 'جدیدترین' },
-  { value: 'price:asc', label: 'ارزان‌ترین' },
-  { value: 'price:desc', label: 'گران‌ترین' }
+  { value: 'createdAt:desc', label: 'جدیدترین' }
 ];
 
 /**
