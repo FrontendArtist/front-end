@@ -8,7 +8,7 @@ import ArticleCard from '@/components/cards/ArticleCard/ArticleCard';
 import CourseCard from '@/components/cards/CourseCard/CourseCard';
 import SearchBox from '@/components/ui/SearchBox/SearchBox';
 
-const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
+import { formatSingleImage } from '@/lib/strapiUtils';
 
 export default function SearchResults({ data, query, initialType = 'all' }) {
     const { products = [], articles = [], courses = [] } = data || {};
@@ -30,35 +30,28 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
 
     const hasResults = availableCategoriesCount > 0;
 
-    const extractImageUrl = (imageData) => {
-        if (!imageData) return null;
-        let relativeUrl = null;
-
-        if (imageData.url) relativeUrl = imageData.url;
-        if (imageData.attributes?.url) relativeUrl = imageData.attributes.url;
-
-        const formats = imageData.formats || imageData.attributes?.formats;
-        if (formats?.thumbnail?.url) relativeUrl = formats.thumbnail.url;
-        if (formats?.small?.url) relativeUrl = formats.small.url;
-
-        if (!relativeUrl) return null;
-
-        return relativeUrl.startsWith('http')
-            ? relativeUrl
-            : `${STRAPI_BASE_URL}${relativeUrl}`;
-    };
-
     const normalizeProduct = (item) => {
+        if (!item) return null;
+        if (item.image?.url && item.price && typeof item.price === 'object') {
+            return item;
+        }
+
         const data = item.attributes || item;
         const id = item.id;
-        let imageObj = null;
-        const imagesRaw = data.images?.data || data.images;
-
-        if (Array.isArray(imagesRaw) && imagesRaw.length > 0) {
-            const firstImage = imagesRaw[0];
-            const url = extractImageUrl(firstImage);
-            if (url) imageObj = { url, alt: data.title };
-        }
+        const rawImages =
+            data.images?.data ||
+            data.images ||
+            data.image?.data ||
+            data.image ||
+            data.cover?.data ||
+            data.cover ||
+            data.media?.data ||
+            data.media ||
+            null;
+        const imagesList = Array.isArray(rawImages) ? rawImages : (rawImages ? [rawImages] : []);
+        const imageObj = imagesList.length > 0
+            ? formatSingleImage(imagesList[0])
+            : formatSingleImage(data.image || data.cover || data.images || null);
 
         let discountPercent = Number(data.discountPercent || 0);
         const discountUntil = data.discountUntil || null;
@@ -79,35 +72,40 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
             discountPercent,
             discountPrice,
             discountUntil,
-            image: imageObj || { url: '/images/forempties2.png', alt: data.title },
+            image: imageObj,
+            categories: data.categories || [],
+            stock: data.stock,
+            isAvailable: data.isAvailable !== false,
         };
     };
 
     const normalizeArticle = (item) => {
+        if (!item) return null;
+        if (item.cover?.url) {
+            return item;
+        }
         const data = item.attributes || item;
         const id = item.id;
-        let coverObj = null;
-        const coverRaw = data.cover?.data || data.cover;
-        const url = extractImageUrl(coverRaw);
-        if (url) coverObj = { url, alt: data.title };
+        const coverObj = formatSingleImage(data.cover?.data || data.cover || data.image?.data || data.image);
 
         return {
             id,
             slug: data.slug,
             title: data.title,
-            date: data.date || data.publishedAt,
+            date: data.date || data.publishedAt || data.createdAt,
             excerpt: data.excerpt,
-            cover: coverObj || { url: '/images/forempties2.png', alt: data.title }
+            cover: coverObj,
         };
     };
 
     const normalizeCourse = (item) => {
+        if (!item) return null;
+        if (item.image?.url && item.price && typeof item.price === 'object') {
+            return item;
+        }
         const data = item.attributes || item;
         const id = item.id;
-        let imageObj = null;
-        const imageRaw = data.image?.data || data.image;
-        const url = extractImageUrl(imageRaw);
-        if (url) imageObj = { url, alt: data.title };
+        const imageObj = formatSingleImage(data.media?.[0] || data.media?.data?.[0] || data.image?.data || data.image || data.cover);
 
         let discountPercent = Number(data.discountPercent || 0);
         const discountUntil = data.discountUntil || null;
@@ -128,22 +126,25 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
             discountPercent,
             discountPrice,
             discountUntil,
-            shortDescription: data.shortDescription,
-            image: imageObj || { url: '/images/forempties2.png', alt: data.title }
+            shortDescription: data.shortDescription || '',
+            image: imageObj,
         };
     };
 
-    const renderProducts = () => products.map(product => (
-        <ProductCard key={`prod-${product.id}`} product={normalizeProduct(product)} />
-    ));
+    const renderProducts = () => products.map(product => {
+        const normalized = normalizeProduct(product);
+        return normalized ? <ProductCard key={`prod-${normalized.id}`} product={normalized} /> : null;
+    });
 
-    const renderArticles = () => articles.map(article => (
-        <ArticleCard key={`art-${article.id}`} article={normalizeArticle(article)} />
-    ));
+    const renderArticles = () => articles.map(article => {
+        const normalized = normalizeArticle(article);
+        return normalized ? <ArticleCard key={`art-${normalized.id}`} article={normalized} /> : null;
+    });
 
-    const renderCourses = () => courses.map(course => (
-        <CourseCard key={`crs-${course.id}`} course={normalizeCourse(course)} />
-    ));
+    const renderCourses = () => courses.map(course => {
+        const normalized = normalizeCourse(course);
+        return normalized ? <CourseCard key={`crs-${normalized.id}`} course={normalized} /> : null;
+    });
 
     return (
         <div className={styles.resultsContainer}>

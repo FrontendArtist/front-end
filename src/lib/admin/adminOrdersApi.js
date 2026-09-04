@@ -117,7 +117,7 @@ export async function getOrders(jwt, { page = 1, pageSize = 20 } = {}) {
                 phoneNumber: user.phoneNumber || '—',
             } : null,
             receiptImageUrl: receiptImage?.url
-                ? `${STRAPI_API_URL}${receiptImage.url}`
+                ? (receiptImage.url.startsWith('http') ? receiptImage.url : `${STRAPI_API_URL}${receiptImage.url}`)
                 : null,
         };
     });

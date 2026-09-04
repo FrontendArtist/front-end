@@ -91,15 +91,35 @@ export default function ArticlesTable({ initialArticles }) {
         }
     }
 
-    // ── Filtered articles ────────────────────────────────────────────────────
+    // ── Filtered & Sorted articles ──────────────────────────────────────────
     const filtered = useMemo(() => {
-        if (!searchQuery.trim()) return articles;
-        const q = searchQuery.toLowerCase();
-        return articles.filter(
-            (a) =>
-                a.title?.toLowerCase().includes(q) ||
-                a.slug?.toLowerCase().includes(q)
-        );
+        let list = articles;
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            list = articles.filter(
+                (a) =>
+                    a.title?.toLowerCase().includes(q) ||
+                    a.slug?.toLowerCase().includes(q)
+            );
+        }
+
+        return [...list].sort((a, b) => {
+            const aPub = a.publishedAt ? new Date(a.publishedAt).getTime() : null;
+            const bPub = b.publishedAt ? new Date(b.publishedAt).getTime() : null;
+
+            if (aPub && bPub) {
+                return bPub - aPub;
+            }
+            if (aPub && !bPub) {
+                return -1;
+            }
+            if (!aPub && bPub) {
+                return 1;
+            }
+            const aDate = new Date(a.updatedAt || a.createdAt || 0).getTime();
+            const bDate = new Date(b.updatedAt || b.createdAt || 0).getTime();
+            return bDate - aDate;
+        });
     }, [articles, searchQuery]);
 
     // Reset to page 1 when search changes
@@ -164,7 +184,7 @@ export default function ArticlesTable({ initialArticles }) {
                     <AdminTable headers={headers}>
                         {paginated.map((article) => {
                             const imgUrl = article.cover?.url
-                                ? `${STRAPI_URL}${article.cover.url}`
+                                ? (article.cover.url.startsWith('http') ? article.cover.url : `${STRAPI_URL}${article.cover.url}`)
                                 : null;
                             const isPublished = !!article.publishedAt;
 

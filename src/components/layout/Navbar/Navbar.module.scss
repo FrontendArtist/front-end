@@ -174,7 +174,7 @@
   .categoryTitle {
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     margin-bottom: 12px;
     display: block;
     text-decoration: none;
@@ -184,6 +184,7 @@
       color: var(--color-title-hover);
       padding-right: 4px;
     }
+
   }
 }
 
@@ -395,7 +396,7 @@
 .tabBtn {
   flex: 1;
   padding: 0.6rem 0.5rem;
-  font-size: var(--font-sm-md);
+  font-size: var(--font-sm);
   font-weight: var(--font-weight-medium);
   color: fade(var(--color-card-text), 65%);
   background: fade(var(--color-white), 3%);
@@ -450,7 +451,8 @@
   >li {
     width: 100%;
 
-    >a {
+    >a,
+    >span {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -470,6 +472,30 @@
         border-color: fade(var(--color-text-primary), 25%);
         transform: translateX(-4px);
       }
+    }
+  }
+}
+
+.disabledLink {
+  position: relative;
+  opacity: 0.45;
+  cursor: default !important;
+  user-select: none;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+
+    &::after {
+      content: ' (به زودی...)';
+      font-size: 0.8em;
+      color: #ef4444;
+      font-weight: bold;
+      position: absolute;
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      opacity: 100%;
     }
   }
 }

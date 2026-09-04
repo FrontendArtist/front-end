@@ -18,10 +18,11 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import PreChatForm from '@/components/chat/PreChatForm';
+import { getMyMentorMessages } from '@/lib/messagesApi';
 import styles from './contact-mentor.module.scss';
 
 // ─── Inline Login Form ────────────────────────────────────────────────────────
@@ -186,9 +187,50 @@ export default function ContactMentorPage() {
     const router = useRouter();
 
     const [submittedMessage, setSubmittedMessage] = useState(null);
+    const [isCheckingHistory, setIsCheckingHistory] = useState(true);
 
-    // نمایش loading در حین بررسی session
-    if (status === 'loading') {
+    useEffect(() => {
+        if (status === 'loading') return;
+
+        if (status === 'unauthenticated') {
+            setIsCheckingHistory(false);
+            return;
+        }
+
+        if (status === 'authenticated' && session?.user?.jwt) {
+            let isMounted = true;
+
+            const checkMentorHistory = async () => {
+                try {
+                    const res = await getMyMentorMessages(session.user.jwt);
+                    const mentorMsgs = res?.data || [];
+
+                    if (!isMounted) return;
+
+                    if (mentorMsgs.length > 0) {
+                        // کاربر قبلاً پیام به استاد ارسال کرده است → هدایت به پیام‌ها با باز شدن چت استاد
+                        router.replace('/profile/messages?open=mentor');
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Failed to check mentor chat history:', err);
+                } finally {
+                    if (isMounted) {
+                        setIsCheckingHistory(false);
+                    }
+                }
+            };
+
+            checkMentorHistory();
+
+            return () => {
+                isMounted = false;
+            };
+        }
+    }, [status, session?.user?.jwt, router]);
+
+    // نمایش loading در حین بررسی session یا بررسی تاریخچه پیام‌ها
+    if (status === 'loading' || (status === 'authenticated' && isCheckingHistory)) {
         return (
             <div className={styles.page}>
                 <div className={styles.loadingState}>
@@ -226,7 +268,7 @@ export default function ContactMentorPage() {
                     </p>
                     <div className={styles.successCard__actions}>
                         <button
-                            onClick={() => router.push('/profile/messages')}
+                            onClick={() => router.push('/profile/messages?open=mentor')}
                             className={styles.successCard__btn}
                             id="contact-mentor-goto-messages"
                         >

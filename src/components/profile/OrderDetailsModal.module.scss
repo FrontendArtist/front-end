@@ -309,12 +309,12 @@
     font-size: var(--font-md);
     color: var(--color-text-primary);
     font-weight: var(--font-weight-medium);
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 
     @include respond(md) {
         font-size: var(--font-sm);
+
     }
 }
 

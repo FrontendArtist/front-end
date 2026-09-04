@@ -91,7 +91,7 @@ export async function getServiceBySlug(slug) {
   return withErrorHandling(
     async () => {
       const response = await apiClient(
-        `/api/services?filters[slug][$eq]=${slug}&populate=image`
+        `/api/services?filters[slug][$eq]=${slug}&populate=*`
       );
       const formattedServices = formatStrapiServices(response);
       return formattedServices[0] || null;

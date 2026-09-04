@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import ProfileSidebar from '@/components/profile/ProfileSidebar';
+import OrderConfirmedBanner from '@/components/profile/OrderConfirmedBanner';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import styles from './profile.module.scss';
 
@@ -39,6 +40,7 @@ export default function ProfileLayout({ children }) {
             <div className={styles.container}>
                 <ProfileSidebar />
                 <main id="profile-content" className={styles.content}>
+                    <OrderConfirmedBanner />
                     {children}
                 </main>
             </div>

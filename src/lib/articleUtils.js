@@ -52,6 +52,10 @@ export function formatStrapiArticles(apiResponse) {
         };
       }).filter(t => t.name || t.slug);
 
+      const publishedAt = item.publishedAt || item.attributes?.publishedAt || null;
+      const createdAt = item.createdAt || item.attributes?.createdAt || null;
+      const updatedAt = item.updatedAt || item.attributes?.updatedAt || null;
+
       return {
         id: item.id,
         documentId: item.documentId,
@@ -59,9 +63,11 @@ export function formatStrapiArticles(apiResponse) {
         title: item.title,
         excerpt: item.excerpt,
         content: rawContent || '', 
-        date: item.publishedAt || item.createdAt,
-        createdAt: item.createdAt || item.publishedAt,
-        publishedAt: item.publishedAt || item.createdAt,
+        date: publishedAt || createdAt || updatedAt,
+        createdAt: createdAt || publishedAt,
+        updatedAt: updatedAt || createdAt,
+        publishedAt: publishedAt || createdAt,
+        actualPublishedAt: publishedAt,
         category: categories[0] || null,
         categories,
         tags,

@@ -1,0 +1,245 @@
+@use '../../../styles/base/mixins' as *;
+
+/* =============================================================================
+   Course Tabs Styles (SCSS Module)
+   تب‌های متصل به کانتینر اصلی توضیحات و سرفصل‌ها - بدون پس‌زمینه سبز ناخواسته
+   ============================================================================= */
+
+.tabsWrapper {
+  margin-top: var(--space-section-top-desktop, 48px);
+  margin-bottom: var(--space-section-bottom-desktop, 48px);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-primary, #F6D982) 18%, transparent);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--color-black) 25%, transparent);
+
+  @include respond(md) {
+    margin-top: 36px;
+    margin-bottom: 36px;
+    border-radius: 14px;
+  }
+
+  @include respond(sm) {
+    margin-top: 24px;
+    margin-bottom: 24px;
+    border-radius: 12px;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   نوار سربرگ تب‌ها - چسبیده به بالای باکس (Tabs Navigation Header)
+   ----------------------------------------------------------------------------- */
+.tabsNav {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 10px 16px 0 16px;
+  background: color-mix(in srgb, var(--color-bg-primary, #061818) 95%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-primary, #F6D982) 18%, transparent);
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  @include respond(md) {
+    padding: 8px 10px 0 10px;
+    gap: 4px;
+  }
+
+  @include respond(sm) {
+    padding: 6px 6px 0 6px;
+    gap: 4px;
+  }
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-bottom: -1px;
+  background: transparent;
+  color: color-mix(in srgb, var(--color-white, #fff) 65%, transparent);
+  font-size: var(--font-md, 16px);
+  font-weight: var(--font-weight-medium, 500);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-family: inherit;
+  user-select: none;
+  box-sizing: border-box;
+  position: relative;
+  white-space: nowrap;
+
+  @include respond(md) {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 10px 12px;
+    font-size: var(--font-sm, 14px);
+    gap: 6px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+
+  @include respond(sm) {
+    padding: 8px 6px;
+    font-size: 13px;
+    gap: 4px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+  }
+
+  @media (max-width: 360px) {
+    padding: 7px 4px;
+    font-size: 12px;
+    gap: 3px;
+  }
+
+  &:hover:not(.activeTab) {
+    color: var(--color-white, #fff);
+    background: color-mix(in srgb, var(--color-primary, #F6D982) 6%, transparent);
+  }
+
+  &.activeTab {
+    color: var(--color-text-primary, #F6D982);
+    background: var(--color-bg-primary, #061818);
+    border: 1px solid color-mix(in srgb, var(--color-primary, #F6D982) 25%, transparent);
+    border-top: 2px solid var(--color-primary, #F6D982);
+    border-bottom: 1px solid var(--color-bg-primary, #061818);
+    font-weight: var(--font-weight-bold, 700);
+    z-index: 2;
+
+    .tabIcon {
+      color: var(--color-text-primary, #F6D982);
+    }
+  }
+}
+
+.tabIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  flex-shrink: 0;
+
+  svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+  }
+
+  @include respond(md) {
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  @include respond(sm) {
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+.tabTitle {
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tabBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: var(--font-xs, 11px);
+  font-weight: var(--font-weight-medium, 500);
+  background: color-mix(in srgb, var(--color-primary, #F6D982) 15%, transparent);
+  color: var(--color-text-primary, #F6D982);
+  border: 1px solid color-mix(in srgb, var(--color-primary, #F6D982) 25%, transparent);
+  flex-shrink: 0;
+
+  @include respond(md) {
+    display: none;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   محتوای پنل‌ها (Tab Panels)
+   ----------------------------------------------------------------------------- */
+.tabPanels {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.tabPanel {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  animation: fadeInPanel 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &.hiddenPanel {
+    display: none !important;
+  }
+
+  /* اتصال یکپارچه کامپوننت سرفصل‌ها و پلیر به باکس کلی */
+  :global(.contentManager) {
+    margin-top: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+}
+
+@keyframes fadeInPanel {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   بخش توضیحات تکمیلی درون تب (Content Section inside Tab)
+   ----------------------------------------------------------------------------- */
+.contentSection {
+  padding: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-break: break-word;
+
+  @include respond(md) {
+    padding: 24px;
+  }
+
+  @include respond(sm) {
+    padding: 16px;
+  }
+}

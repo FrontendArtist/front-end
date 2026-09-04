@@ -76,8 +76,8 @@ export default async function ArticlePage({ params }) {
     notFound();
   }
 
-  // دریافت مقاله قبلی و بعدی بر اساس تاریخ
-  const adjacent = await getAdjacentArticles(rawArticle.createdAt || rawArticle.publishedAt);
+  // دریافت مقاله قبلی و بعدی بر اساس ترتیب انتشار
+  const adjacent = await getAdjacentArticles(rawArticle);
 
   // دریافت مقالات مرتبط هم‌دسته‌بندی
   const relatedArticles = await getRelatedArticles({
@@ -184,9 +184,9 @@ export default async function ArticlePage({ params }) {
             <Image
               src={finalCoverUrl}
               alt={rawArticle.cover?.alt || article.title}
-              width={800}
-              height={450}
+              fill
               priority
+              sizes="(max-width: 768px) 100vw, 800px"
               className={styles.coverImage}
             />
           </div>

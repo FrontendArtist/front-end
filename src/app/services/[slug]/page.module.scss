@@ -27,6 +27,51 @@
   padding-bottom: var(--space-section-bottom-desktop);
 }
 
+// ============================================================================
+// CONTENT SECTION - Rich Text / ArticleReader
+// ============================================================================
+
+.contentSection {
+  margin-top: 1rem;
+  padding-top: 3rem;
+  padding-bottom: 2rem;
+
+  // خط جداکننده بالایی ملایم و هماهنگ با طراحی سیستم
+  &::before {
+    content: '';
+    display: block;
+    width: 100%;
+    max-width: 1120px;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(246, 217, 130, 0.2),
+      transparent
+    );
+    margin: 0 auto 3rem;
+  }
+
+  @include respond(md) {
+    margin-top: 0.5rem;
+    padding-top: 2rem;
+    padding-bottom: 1.5rem;
+
+    &::before {
+      margin-bottom: 2rem;
+    }
+  }
+
+  @include respond(sm) {
+    padding-top: 1.5rem;
+    padding-bottom: 1rem;
+
+    &::before {
+      margin-bottom: 1.5rem;
+    }
+  }
+}
+
 /**
  * DESIGN SYSTEM COMPLIANCE:
  * 

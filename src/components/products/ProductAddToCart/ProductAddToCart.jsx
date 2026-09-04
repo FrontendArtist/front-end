@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
+import { useOrdersStore } from '@/store/useOrdersStore';
 import styles from './ProductAddToCart.module.scss';
 
 /**
@@ -17,10 +20,37 @@ export default function ProductAddToCart({ product }) {
     const formattedPrice = (typeof price === 'object' ? price?.toman : price) || 0;
 
     const [isHydrated, setIsHydrated] = useState(false);
+    const { status } = useSession();
+    const { fetchOrders } = useOrdersStore();
 
     useEffect(() => {
         setIsHydrated(true);
     }, []);
+
+    useEffect(() => {
+        if (status === 'authenticated') {
+            fetchOrders();
+        }
+    }, [status, fetchOrders]);
+
+    const pendingOrder = useOrdersStore((state) => {
+        return state.orders.find((order) => {
+            const oStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
+            const pStatus = (order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
+            const isPaid = oStatus === 'paid' || pStatus === 'paid' || ['shipped', 'delivered'].includes(oStatus);
+            if (isPaid) return false;
+
+            const isCardToCard = order.paymentMethod === 'card_to_card' || order.attributes?.paymentMethod === 'card_to_card';
+            if (!isCardToCard) return false;
+
+            const items = order.attributes?.items || order.items || [];
+            return items.some((item) =>
+                item.slug === slug ||
+                String(item.id) === String(id) ||
+                String(item.productId) === String(id)
+            );
+        });
+    });
 
     const addItem = useCartStore((state) => state.addItem);
     const updateQuantity = useCartStore((state) => state.updateQuantity);
@@ -125,6 +155,38 @@ export default function ProductAddToCart({ product }) {
         return (
             <div >
                 
+            </div>
+        );
+    }
+
+    // در صورتی که سفارش کارت‌به‌کارت در انتظار بررسی یا ارسال فیش باشد
+    if (isHydrated && pendingOrder) {
+        const pStatus = (pendingOrder.paymentStatus || pendingOrder.attributes?.paymentStatus || '').trim().toLowerCase();
+        const isVerification = pStatus === 'pending_verification';
+        const targetUrl = `/profile/orders/${pendingOrder.documentId || pendingOrder.id}`;
+
+        return (
+            <div className={styles.wrapper}>
+                <Link
+                    href={targetUrl}
+                    className={`${styles.pendingButton} ${!isVerification ? styles.pendingPayment : ''}`}
+                    title={isVerification ? 'سفارش شما در انتظار تأیید پرداخت توسط پشتیبانی است' : 'برای ارسال فیش واریز کلیک کنید'}
+                >
+                    {isVerification ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                    )}
+                    <span>{isVerification ? 'در حال بررسی پرداخت' : 'منتظر ارسال فیش'}</span>
+                </Link>
             </div>
         );
     }

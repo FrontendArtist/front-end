@@ -85,19 +85,19 @@ export default function PurchasesList() {
         const itemUrl = isCourse
             ? `/courses/${courseSlug}`
             : (item.itemUrl || (item.slug ? `/product/${item.slug}` : '#'));
-        
+
         return (
             <div key={item.id || item.slug} className={cartStyles.cartItem}>
                 {/* 1. تصویر/آیکون */}
-                <Link 
-                    href={itemUrl} 
-                    className={cartStyles.itemImage} 
-                    style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        background: 'rgba(246, 217, 130, 0.08)', 
-                        borderRadius: '10px' 
+                <Link
+                    href={itemUrl}
+                    className={cartStyles.itemImage}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'rgba(246, 217, 130, 0.08)',
+                        borderRadius: '10px'
                     }}
                 >
                     {isCourse ? (
@@ -144,7 +144,7 @@ export default function PurchasesList() {
     return (
         <div className={styles.purchases}>
             <h2 className={styles.purchases__title}>محصولات و دوره‌های من</h2>
-            
+
             {courses.length === 0 && products.length === 0 ? (
                 <div className={styles.purchases__empty}>
                     <p>شما تاکنون محصول یا دوره‌ای خریداری نکرده‌اید.</p>

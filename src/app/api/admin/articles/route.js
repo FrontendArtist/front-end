@@ -83,7 +83,7 @@ export async function GET(request) {
     const page = searchParams.get('page') || '1';
     const pageSize = searchParams.get('pageSize') || '100';
 
-    const endpoint = `${STRAPI_URL}/api/articles?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
+    const endpoint = `${STRAPI_URL}/api/articles?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
 
     try {
         const res = await fetch(endpoint, {

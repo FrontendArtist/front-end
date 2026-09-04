@@ -1,8 +1,5 @@
 @use '../../../styles/base/mixins' as *;
 
-:global(html) {
-  scroll-behavior: smooth;
-}
 
 // =============================================================================
 // Article Page
@@ -35,9 +32,15 @@
   max-width: 800px;
   margin: 0 auto var(--space-title-content-desktop);
   aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+
+  @include respond(sm) {
+    border-radius: 12px;
+  }
 
   .coverImage {
-    border-radius: 16px;
     object-fit: cover;
   }
 }
@@ -265,6 +268,7 @@
     padding-bottom: 0.45rem;
     position: relative;
     font-weight: var(--font-weight-bold, 700);
+    scroll-margin-top: 100px;
 
     &::after {
       content: '';
@@ -286,6 +290,7 @@
     padding-bottom: 0.45rem;
     position: relative;
     font-weight: var(--font-weight-bold, 700);
+    scroll-margin-top: 100px;
 
     &::after {
       content: '';
@@ -305,6 +310,7 @@
     margin-top: 1.75rem;
     margin-bottom: 0.85rem;
     font-weight: var(--font-weight-bold, 700);
+    scroll-margin-top: 100px;
   }
 
   // ---- Paragraphs ----
@@ -364,7 +370,7 @@
     }
 
     .quran-text {
-      font-size: var(--font-xl);
+      font-size: var(--font-lg);
       line-height: 2.1;
       color: var(--color-title-hover, #F5C452);
       text-align: center;
@@ -471,7 +477,8 @@
       background: #002b20;
       border-bottom: 2px solid var(--color-title-hover, #F5C452);
 
-      th, td {
+      th,
+      td {
         padding: 0.85rem 1.1rem;
         color: var(--color-title-hover, #F5C452);
         font-weight: 700;
@@ -941,7 +948,8 @@
       thead tr {
         background: #4E6B57;
 
-        th, td {
+        th,
+        td {
           color: #fff;
         }
       }
@@ -1100,25 +1108,25 @@
     border-radius: 16px;
 
     h1 {
-      font-size: var(--font-lg);
-      margin-top: 1.85rem;
+      font-size: var(--font-md);
+      margin-top: 1rem;
     }
 
     h2 {
       font-size: var(--font-md);
-      margin-top: 1.85rem;
+      margin-top: 1rem;
     }
 
     h3 {
       font-size: var(--font-sm);
-      margin-top: 1.35rem;
+      margin-top: 1rem;
     }
 
     blockquote {
       padding: 1.1rem 0.9rem;
 
       .quran-text {
-        font-size: var(--font-lg);
+        font-size: var(--font-md);
       }
 
       &.poem-quote {

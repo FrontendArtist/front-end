@@ -12,8 +12,6 @@ const PAGE_SIZE = COURSES_PAGE_SIZE;
 // تعریف گزینه‌های مرتب‌سازی دوره‌ها
 const SORT_OPTIONS = [
     { value: 'latest', label: 'جدیدترین' },
-    { value: 'price:asc', label: 'ارزان‌ترین' },
-    { value: 'price:desc', label: 'گران‌ترین' },
 ];
 
 /**

@@ -14,8 +14,9 @@
 
 .cardContent {
   @include card-content;
+
   @include respond(xl) {
-    height: 200px;
+    height: 210px;
   }
 
 }

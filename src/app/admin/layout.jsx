@@ -24,7 +24,7 @@
 import { getServerSession } from 'next-auth/next';
 
 // authOptions holds all provider/callback configuration for NextAuth
-import { authOptions } from '@/lib/auth';
+import { authOptions, isUserAdmin } from '@/lib/auth';
 
 // next/navigation redirect is the correct way to redirect inside Server Components
 import { redirect } from 'next/navigation';
@@ -59,15 +59,11 @@ export default async function AdminLayout({ children }) {
     // Condition breakdown:
     //   • !session                    → User is not logged in at all.
     //   • !session.user               → Session exists but user object is missing (edge case).
-    //   • session.user.role?.type !== 'administrator'
-    //                                 → User is logged in but is NOT an administrator.
-    //                                   The `?.` optional chain handles cases where
-    //                                   `role` is null/undefined (e.g., plain user accounts
-    //                                   that Strapi returns without a role object).
+    //   • !isUserAdmin(session.user)  → User is logged in but does NOT have the 'administrator' role.
     //
     // Any of these conditions → immediate server-side redirect to home page.
     // ─────────────────────────────────────────────────────────────────
-    if (!session || !session.user || session.user.role?.type !== 'administrator') {
+    if (!session || !session.user || !isUserAdmin(session.user)) {
         /**
          * `redirect('/')` from 'next/navigation' throws a special Next.js error
          * that terminates rendering and issues a 307 Temporary Redirect response.

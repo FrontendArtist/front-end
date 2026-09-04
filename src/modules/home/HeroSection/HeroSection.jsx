@@ -11,18 +11,18 @@ const HeroSection = () => {
           src="/hero/heropicshadow.webp"
           alt="Spiritual and tranquil background"
           fill
-          quality={[100 , 70]}
           priority={true}
-          style={{ objectFit: 'cover' }}
+          unoptimized={true}
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
           className={styles.heroDark}
         />
         <Image
           src="/hero/heropiclight.webp"
           alt="Spiritual and tranquil background"
           fill
-          quality={ [100 , 70 ]}
           priority={true}
-          style={{ objectFit: 'cover' }}
+          unoptimized={true}
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
           className={styles.heroLight}
         />
         <div className={styles.overlay}></div>

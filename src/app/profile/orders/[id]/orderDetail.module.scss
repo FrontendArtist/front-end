@@ -262,6 +262,9 @@
     @include respond(md) {
         padding: 12px;
         gap: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 
@@ -287,15 +290,14 @@
 }
 
 .itemTitle {
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     color: var(--color-text-primary);
     font-weight: var(--font-weight-medium);
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 
     @include respond(md) {
-        font-size: var(--font-sm);
+        font-size: var(--font-xs);
     }
 }
 

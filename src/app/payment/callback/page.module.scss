@@ -425,6 +425,18 @@
     text-align: left;
 }
 
+.bankLoading,
+.bankErrorMsg {
+    padding: 16px 20px;
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    text-align: center;
+}
+
+.bankErrorMsg {
+    color: var(--color-error);
+}
+
 .bankCardNumber {
     font-size: var(--font-md);
     font-weight: var(--font-weight-bold);
@@ -439,5 +451,47 @@
     @include respond(md) {
         font-size: var(--font-sm);
         letter-spacing: 2px;
+    }
+}
+
+.cardNumberWrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    @include respond(md) {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+.copyBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid fade(var(--color-warning), 35%);
+    background: fade(var(--color-warning), 15%);
+    color: var(--color-warning-amber);
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: fade(var(--color-warning), 25%);
+        border-color: var(--color-warning);
+    }
+
+    &.copied {
+        background: fade(var(--color-success), 20%);
+        border-color: var(--color-success);
+        color: var(--color-success);
+    }
+
+    svg {
+        flex-shrink: 0;
     }
 }
