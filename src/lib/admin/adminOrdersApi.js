@@ -5,17 +5,52 @@ export async function getOrdersStats(jwt) {
     const countData = await adminFetch('/api/orders?pagination[limit]=1', jwt);
     const totalOrders = countData?.meta?.pagination?.total ?? null;
 
-    const revenueData = await adminFetch(
-        '/api/orders?fields[0]=totalPrice&pagination[limit]=100',
-        jwt
-    );
-
     let totalRevenue = null;
-    if (revenueData?.data && Array.isArray(revenueData.data)) {
-        totalRevenue = revenueData.data.reduce((sum, order) => {
-            const price = order?.attributes?.totalPrice ?? order?.totalPrice ?? 0;
-            return sum + Number(price);
-        }, 0);
+    try {
+        const pageSize = 100;
+        const endpoint = `/api/orders?fields[0]=totalPrice&fields[1]=totalAmount&fields[2]=orderStatus&fields[3]=paymentStatus&pagination[page]=1&pagination[pageSize]=${pageSize}`;
+        const firstPageData = await adminFetch(endpoint, jwt);
+
+        if (firstPageData?.data && Array.isArray(firstPageData.data)) {
+            let allOrders = [...firstPageData.data];
+            const pageCount = firstPageData.meta?.pagination?.pageCount || 1;
+
+            if (pageCount > 1) {
+                const remainingPromises = [];
+                for (let page = 2; page <= pageCount; page++) {
+                    const pEndpoint = `/api/orders?fields[0]=totalPrice&fields[1]=totalAmount&fields[2]=orderStatus&fields[3]=paymentStatus&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+                    remainingPromises.push(adminFetch(pEndpoint, jwt));
+                }
+                const results = await Promise.allSettled(remainingPromises);
+                for (const res of results) {
+                    if (res.status === 'fulfilled' && res.value?.data && Array.isArray(res.value.data)) {
+                        allOrders.push(...res.value.data);
+                    }
+                }
+            }
+
+            // فقط سفارش‌های تأیید شده (پرداخت‌شده، ارسال‌شده، تحویل‌داده‌شده)
+            const confirmedStatuses = ['paid', 'shipped', 'delivered'];
+
+            totalRevenue = allOrders.reduce((sum, order) => {
+                const attrs = order?.attributes || order || {};
+                const oStatus = (attrs.orderStatus || order?.orderStatus || '').trim().toLowerCase();
+                const pStatus = (attrs.paymentStatus || order?.paymentStatus || '').trim().toLowerCase();
+
+                const isConfirmed = pStatus === 'paid' || confirmedStatuses.includes(oStatus);
+
+                if (isConfirmed) {
+                    const price = attrs.totalPrice ?? attrs.totalAmount ?? order?.totalPrice ?? order?.totalAmount ?? 0;
+                    return sum + Number(price || 0);
+                }
+                return sum;
+            }, 0);
+        }
+    } catch (err) {
+        if (process.env.NODE_ENV === 'development') {
+            console.error('[getOrdersStats] Error calculating revenue:', err);
+        }
+        totalRevenue = null;
     }
 
     return { totalOrders, totalRevenue };

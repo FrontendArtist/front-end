@@ -111,7 +111,7 @@ export default async function AdminDashboardPage() {
             value: formatCurrency(totalRevenue),
             icon: '💰',
             accentColor: 'var(--color-success)', // سبز برای درآمد
-            subtitle: 'مجموع سفارش‌های ثبت‌شده',
+            subtitle: 'مجموع سفارش‌های تأییدشده',
             isError: totalRevenue === null,
         },
         {
