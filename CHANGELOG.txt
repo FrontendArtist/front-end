@@ -1,3 +1,117 @@
+[2026-09-04] - Admin Orders Enhancements, Lazy Loading, VPN Modal UX & Media Resume Fix
+
+── Media Playback Progress & Instant Resume Fix ────────────────────────────────
+- Audio Player (`src/modules/courses/PlyrAudioPlayer.jsx`):
+  • Fixed bug where `ready` event fired prematurely before media metadata was fetched (`readyState === 0`), causing progress restoration to fail on first navigation.
+  • Added `readyState >= 1` validation before marking restoration as complete.
+  • Added listeners on `loadedmetadata`, `canplay`, and `play` as fallbacks to ensure playback starts from saved timestamp without requiring a page refresh.
+  • Guarded `timeupdate`, `seeked`, and `pause` listeners from overwriting stored progress before initial timestamp restoration completes.
+- Video Player (`src/modules/courses/VideoJSPlayer.jsx`):
+  • Added multi-event listener binding (`loadedmetadata`, `canplay`, `play`) with `readyState >= 1` checking.
+  • Protected localStorage timestamps from premature zero/initial overrides during player instantiation.
+
+── Admin Orders Management & Smart Receipt Extraction ─────────────────────────
+- Receipt Upload API (`src/app/api/orders/upload-receipt/route.js`):
+  • Added support for `depositorName` parameter in payment receipt upload requests.
+  • Automatically formats and appends the depositor's full name (`نام واریز کننده / صاحب حساب`) directly into order notes.
+  • Added validation to keep receipt tracking number optional while enforcing clean numeric handling.
+- Admin Orders Table (`src/components/admin/Orders/OrdersTable.jsx` & SCSS):
+  • Implemented smart customer name extraction: detects and prioritizes depositor name from receipt notes (`نام واریز کننده: ...`) when user account full name is empty, generic, or unavailable.
+  • Restructured table columns: شناسه (ID), نام خریدار / واریزکننده (Buyer/Depositor), اطلاعات تماس (Contact/Phone), تاریخ سفارش (Date), وضعیت سفارش (Order Status), وضعیت پرداخت (Payment Status), مبلغ کل (Total), روش پرداخت (Method), عملیات (Actions).
+  • Redesigned status badges (`AdminBadge.jsx` & SCSS) with distinct Persian visual styles: `ثبت شده` (warning yellow), `پرداخت شده` (success green), `ارسال شده` (info blue), `تحویل داده شده` (purple), and `لغو شده` (danger red).
+  • Added Persian digit formatting and currency units for prices and timestamps.
+- Admin Receipt Modal (`src/components/admin/Orders/ReceiptModal.jsx`):
+  • Enhanced receipt inspection modal with image preview, zoom controls, depositor name display, and tracking number.
+  • Approving receipt automatically triggers dual status update (`paymentStatus: 'paid'` and `orderStatus: 'paid'`), immediately unlocking course access and Light topups.
+
+── VPN Warning Modal Behavior & Dismissal UX ──────────────────────────────────
+- VPN Warning Modal (`src/components/common/VpnModal/VpnModal.jsx` & SCSS):
+  • Revised warning modal text copy to be more informative, friendly, and non-intrusive.
+  • Made the modal non-blocking: added a top-left 'X' close button and a secondary action button ("متوجه شدم، ادامه بدون فیلترشکن").
+  • Stored dismissal state in `sessionStorage` so users who dismiss the warning are not repeatedly interrupted on every navigation during the same session.
+
+── Admin Dashboard Lazy Loading & Total Revenue Fix ───────────────────────────
+- Admin Lazy Loading Architecture (`useAdminLazyLoad.js`, `AdminLazyLoad.jsx` & SCSS):
+  • Created reusable custom hook and UI component for client-side and server-side cursor/offset lazy-loading.
+  • Integrated "نمایش بیشتر" (Load More) pagination and loading spinners across all Admin Panel tables:
+    - Orders (`/admin/orders` & `OrdersTable.jsx`)
+    - Products (`/admin/products` & `ProductsTable.jsx`)
+    - Articles (`/admin/articles` & `ArticlesTable.jsx`)
+    - Courses (`/admin/courses` & `CoursesTable.jsx`)
+    - Comments (`/admin/comments` & `CommentsManager.jsx`)
+    - Users (`/admin/users` & `UsersTable.jsx`)
+    - Contact Messages (`/admin/contact-messages` & `MessagesTable.jsx`)
+- Admin Total Revenue Calculation (`src/lib/admin/adminOrdersApi.js` & `src/app/admin/page.jsx`):
+  • Fixed revenue calculation bug: now asynchronously fetches all paginated orders across all pages instead of only the first 100 items.
+  • Exclusively sums confirmed and paid orders (`paymentStatus === 'paid' || ['paid', 'shipped', 'delivered'].includes(orderStatus)`), avoiding unconfirmed or cancelled amounts.
+  • Updated dashboard subtitle to "مجموع سفارش‌های تأییدشده".
+- Admin Route Handlers:
+  • Updated `/api/admin/orders`, `/api/admin/products`, `/api/admin/articles`, `/api/admin/courses`, `/api/admin/comments`, `/api/admin/users`, and `/api/admin/contact-messages` with uniform `start`, `limit`, `page`, and `pageSize` query support.
+
+[2026-09-01] - Mentorship Chat History, Order Confirmation UI & Article Reader Layout
+
+── Mentorship Messaging & Chat History Auto-Opening ───────────────────────────
+- Mentor Chat Flow (`src/app/contact-mentor/page.jsx` & `src/app/profile/messages/page.jsx`):
+  • Auto-detection of prior conversation threads: navigating to contact mentor automatically checks existing chat history and opens the active thread.
+  • Added user messages list (`MessagesList.jsx`) with responsive layout, unread indicators, and instant reply capability.
+- Messages API Service (`src/lib/messagesApi.js`):
+  • Enhanced queries to populate mentor relations, message attachments, and thread timestamps.
+
+── Order Confirmation UI & Notification System ─────────────────────────────────
+- Navigation Notification Bell (`src/components/layout/Navbar/NotificationBell.jsx` & SCSS):
+  • Integrated notification bell in Navbar with unread counter badge, interactive dropdown list, and smooth opening animations.
+- Order Confirmed Banner (`src/components/profile/OrderConfirmedBanner.jsx` & SCSS):
+  • Added prominent success banner informing users when their pending card-to-card order has been verified and activated by admin.
+- Order Notifications Hook (`src/hooks/useOrderNotifications.js`):
+  • Custom hook tracking order state changes and generating user-facing notifications.
+
+── Article Reader Layout & Dynamic Content Rendering ──────────────────────────
+- Article Reader Page (`src/app/articles/[slug]/ArticleReader.jsx` & SCSS):
+  • Designed responsive Article Reader interface with sticky Table of Contents (TOC) and active scroll-spy heading tracking.
+  • Modular SCSS architecture for article reader, dynamic content blocks, blockquotes, code snippets, and image galleries.
+- Payment Callback Refinement (`src/app/payment/callback/page.jsx` & SCSS):
+  • Enhanced modular styles and informative status states for payment results and receipt uploads.
+
+[2026-08-31] - VIP Telegram Links, Date Sorting, Image Extraction & Mobile UX Polish
+
+── Course Telegram VIP Access ──────────────────────────────────────────────────
+- Admin Course Form (`src/components/admin/Courses/CourseForm.jsx` & `src/lib/courseUtils.js`):
+  • Added Telegram invite link field (`telegramLink`) to course management form.
+- Telegram Community Widget (`src/components/courses/CourseTelegramLink/`):
+  • Built VIP Telegram access component displayed exclusively to enrolled/purchased students on `/courses/[slug]`.
+  • Hidden from unauthorized visitors to protect private community links.
+
+── Content Sorting & Search Enhancements ───────────────────────────────────────
+- Article Date Sorting (`src/lib/articlesApi.js`, `src/lib/admin/adminArticlesApi.js`, `src/app/api/admin/articles/route.js`):
+  • Enforced strict descending order (`publishedAt:desc`) for articles across public listings and admin table views.
+- Search Image Extraction (`src/lib/productUtils.js`, `src/lib/searchApi.js`, `SearchResults.jsx`):
+  • Fixed thumbnail extraction logic in global search to reliably display main product and course images from nested Strapi media structures.
+
+── Mobile Responsiveness & Navigation Polish ───────────────────────────────────
+- Scroll Reset Provider (`src/components/providers/ScrollResetProvider.jsx` & `src/app/layout.js`):
+  • Implemented global scroll reset on route changes to ensure pages always start at top on navigation.
+- Viewport & Spacing Fixes (`src/app/globals.css`, `Navbar.module.scss`, `Breadcrumb.module.scss`):
+  • Resolved horizontal scroll issues on mobile devices.
+  • Improved Navbar mobile drawer spacing, category cards, and mentor sections.
+- Mobile User Menu Behavior (`src/components/layout/Navbar/UserStatus.jsx`):
+  • Fixed touch click event handling on user avatar to properly toggle dropdown account menu on mobile.
+
+── Course Tabs & Dynamic Content Sections ──────────────────────────────────────
+- Course Tabs Navigation (`src/modules/courses/CourseTabs/CourseTabs.jsx` & SCSS):
+  • Added tabbed navigation bar for course details (سرفصل‌ها، توضیحات، مدرس، نظرات).
+- Dynamic ContentSection Support:
+  • Integrated `ContentSection` rendering in Service detail pages (`/services/[slug]`) and Course content manager.
+
+── Access Control & Checkout UX Refinements ────────────────────────────────────
+- Role-Based Access Control (`src/lib/auth.js`, `src/app/admin/layout.jsx`, `src/app/mentor/layout.jsx`):
+  • Implemented robust role validation (`isAdmin`, `isMentor`) to protect admin and mentor routes.
+- Add to Cart UX (`src/components/ui/AddToCartButton/` & `ProductAddToCart/`):
+  • Unified button state handling, immediate cart navigation, and enrolled-course feedback.
+- Receipt Upload Validation (`src/app/api/orders/upload-receipt/route.js`):
+  • Made tracking code optional with client-side numeric validation.
+- Catalog Sorting Cleanup (`CourseGrid.jsx`, `ProductGrid.jsx`):
+  • Removed redundant price sorting buttons from catalog filters.
+
 [2026-08-27] - Zero-Total Free Checkout & Card-To-Card Premature Chapter Access Fix
 
 ── Card-to-Card Premature Course/Chapter Access Fix ──────────────────────────────

@@ -45,28 +45,54 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId }) {
       const cleanLessonId = String(lessonId).replace('-video', '').replace('-audio', '');
       const storageKey = `media_progress_c${courseId}_l${cleanLessonId}`;
 
-      // --- سیستم بازیابی پیشرفت پخش صوتی (تنها یک‌بار در لود اولیه) ---
+      // --- سیستم بازیابی پیشرفت پخش صوتی ---
       let hasRestored = false;
       const restoreProgress = () => {
         if (hasRestored) return;
-        hasRestored = true;
 
         const savedTime = localStorage.getItem(storageKey);
-        if (savedTime && !isNaN(savedTime)) {
-          const time = parseFloat(savedTime);
-          if (time > 0) {
+        if (!savedTime || isNaN(savedTime)) {
+          hasRestored = true;
+          return;
+        }
+
+        const time = parseFloat(savedTime);
+        if (time <= 0) {
+          hasRestored = true;
+          return;
+        }
+
+        const mediaEl = audioRef.current;
+        if (mediaEl && mediaEl.readyState >= 1) {
+          if (!mediaEl.duration || time < mediaEl.duration) {
             player.currentTime = time;
           }
+          hasRestored = true;
         }
       };
 
-      // استفاده از once به جای on تا با هر بار جلو/عقب زدن (seek) مجدداً به زمان قبلی برنگردد
-      player.once('canplay', restoreProgress);
-      player.once('ready', restoreProgress);
+      // گوش دادن به رویدادهای مختلف آمادگی مدیا برای بازیابی قطعی زمان
+      player.on('loadedmetadata', restoreProgress);
+      player.on('canplay', restoreProgress);
+      player.on('play', () => {
+        if (!hasRestored) {
+          restoreProgress();
+        }
+      });
+      player.on('ready', () => {
+        restoreProgress();
+      });
+
+      // بررسی وضعیت در صورتی که مدیا قبلاً لود شده باشد
+      if (audioRef.current && audioRef.current.readyState >= 1) {
+        restoreProgress();
+      }
 
       // ذخیره پیشرفت هر ۵ ثانیه (0, 5, 10, 15, ...)
       let lastSavedSecond = -1;
       player.on('timeupdate', () => {
+        if (!hasRestored) return;
+
         const currentTime = player.currentTime;
         const currentSecond = Math.floor(currentTime);
 
@@ -79,6 +105,7 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId }) {
 
       // ذخیره‌سازی هنگام جلو/عقب زدن کاربر (seeked)
       player.on('seeked', () => {
+        if (!hasRestored) return;
         if (player.currentTime > 0) {
           localStorage.setItem(storageKey, player.currentTime.toString());
         }
@@ -86,6 +113,7 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId }) {
 
       // ذخیره‌سازی فوری هنگام توقف (pause/stop)
       player.on('pause', () => {
+        if (!hasRestored) return;
         if (player.currentTime > 0) {
           localStorage.setItem(storageKey, player.currentTime.toString());
         }

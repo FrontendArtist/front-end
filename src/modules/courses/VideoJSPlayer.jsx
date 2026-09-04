@@ -40,17 +40,38 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, on
         const storageKey = `media_progress_c${courseId}_l${cleanLessonId}`;
 
         // --- سیستم بازیابی پیشرفت پخش (Resume Playback) ---
+        let hasRestored = false;
         const restoreProgress = () => {
+          if (hasRestored) return;
+
           const savedTime = localStorage.getItem(storageKey);
-          if (savedTime && !isNaN(savedTime)) {
-            const time = parseFloat(savedTime);
-            if (time > 0 && (!player.duration() || time < player.duration())) {
+          if (!savedTime || isNaN(savedTime)) {
+            hasRestored = true;
+            return;
+          }
+
+          const time = parseFloat(savedTime);
+          if (time <= 0) {
+            hasRestored = true;
+            return;
+          }
+
+          if (player.readyState() >= 1 || (player.duration && player.duration() > 0)) {
+            if (!player.duration() || time < player.duration()) {
               player.currentTime(time);
             }
+            hasRestored = true;
           }
         };
 
-        player.one('loadedmetadata', restoreProgress);
+        player.on('loadedmetadata', restoreProgress);
+        player.on('canplay', restoreProgress);
+        player.on('play', () => {
+          if (!hasRestored) {
+            restoreProgress();
+          }
+        });
+
         if (player.readyState() >= 1) {
           restoreProgress();
         }
@@ -58,6 +79,8 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, on
         // --- سیستم ذخیره‌سازی زمان فعلی کاربر ---
         let lastSavedSecond = -1;
         player.on('timeupdate', () => {
+          if (!hasRestored) return;
+
           const currentTime = player.currentTime();
           const currentSecond = Math.floor(currentTime);
 
@@ -69,6 +92,8 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, on
 
         // ذخیره‌سازی فوری هنگام توقف (pause/stop)
         player.on('pause', () => {
+          if (!hasRestored) return;
+
           const currentTime = player.currentTime();
           if (currentTime > 0) {
             localStorage.setItem(storageKey, currentTime.toString());
