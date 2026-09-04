@@ -7,7 +7,10 @@
 
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { updateInstructorMessage, getInstructorMessages } from '@/lib/messagesApi';
+import { updateInstructorMessage, deleteInstructorMessage, getInstructorMessages } from '@/lib/messagesApi';
+import { uploadMedia } from '@/lib/client/admin/mediaClient';
+import VoicePlayer from './VoicePlayer';
+import VoiceRecorder from './VoiceRecorder';
 import MentorFormEditor from './MentorFormEditor';
 import styles from './InstructorChatPanel.module.scss';
 
@@ -95,6 +98,13 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
     const [reply, setReply] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [isFormEditorOpen, setIsFormEditorOpen] = useState(false);
+    const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+    const [editingReplyIndex, setEditingReplyIndex] = useState(null);
+    const [editingReplyText, setEditingReplyText] = useState('');
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+    const [editError, setEditError] = useState(null);
+    const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null); // { type: 'reply', index } | { type: 'thread' }
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const messagesContainerRef = useRef(null);
 
@@ -141,12 +151,141 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
     function handleSelectThread(id) {
         setSelectedId(id);
         setReply('');
+        setIsRecordingVoice(false);
+        setEditingReplyIndex(null);
+        setEditingReplyText('');
+        setEditError(null);
+        setDeleteConfirmTarget(null);
         setMobileView('chat');
     }
 
     function handleBackToList() {
         setMobileView('list');
         setSelectedId(null);
+        setIsRecordingVoice(false);
+        setEditingReplyIndex(null);
+        setEditingReplyText('');
+        setEditError(null);
+        setDeleteConfirmTarget(null);
+    }
+
+    function handleStartEditReply(index, currentText) {
+        setEditingReplyIndex(index);
+        setEditingReplyText(currentText);
+        setEditError(null);
+    }
+
+    function handleCancelEditReply() {
+        setEditingReplyIndex(null);
+        setEditingReplyText('');
+        setEditError(null);
+    }
+
+    async function handleSaveEditReply(index) {
+        if (!editingReplyText.trim() || !selectedMessage || isSavingEdit) return;
+
+        const trimmed = editingReplyText.trim();
+        setIsSavingEdit(true);
+        setEditError(null);
+
+        try {
+            const existingReplies = [...(selectedMessage.replies || [])];
+            if (!existingReplies[index]) return;
+
+            existingReplies[index] = {
+                ...existingReplies[index],
+                body: trimmed,
+                isEdited: true,
+                updatedAt: new Date().toISOString(),
+            };
+
+            await updateInstructorMessage(
+                selectedMessage.documentId || selectedMessage.id,
+                token,
+                { replies: existingReplies }
+            );
+
+            setMessages((prev) =>
+                prev.map((m) =>
+                    (m.documentId === selectedId || String(m.id) === String(selectedId))
+                        ? { ...m, replies: existingReplies }
+                        : m
+                )
+            );
+
+            setEditingReplyIndex(null);
+            setEditingReplyText('');
+        } catch (err) {
+            setEditError('خطا در ذخیره ویرایش پیام. لطفاً مجدداً تلاش کنید.');
+        } finally {
+            setIsSavingEdit(false);
+        }
+    }
+
+    function handleEditKeyDown(e, index) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            handleCancelEditReply();
+        } else if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSaveEditReply(index);
+        }
+    }
+
+    async function handleDeleteReply(index) {
+        if (!selectedMessage || isDeleting) return;
+
+        setIsDeleting(true);
+        try {
+            const existingReplies = [...(selectedMessage.replies || [])];
+            if (!existingReplies[index]) return;
+
+            existingReplies.splice(index, 1);
+
+            const hasInstructorReply = existingReplies.some((r) => r.sender === 'instructor' || r.isAdmin);
+            const newStatus = hasInstructorReply ? 'answered' : 'open';
+
+            await updateInstructorMessage(
+                selectedMessage.documentId || selectedMessage.id,
+                token,
+                { replies: existingReplies, status: newStatus }
+            );
+
+            setMessages((prev) =>
+                prev.map((m) =>
+                    (m.documentId === selectedId || String(m.id) === String(selectedId))
+                        ? { ...m, replies: existingReplies, status: newStatus }
+                        : m
+                )
+            );
+
+            setDeleteConfirmTarget(null);
+        } catch (err) {
+            console.error('Failed to delete reply:', err);
+            alert('خطا در حذف پیام. لطفاً دوباره تلاش کنید.');
+        } finally {
+            setIsDeleting(false);
+        }
+    }
+
+    async function handleDeleteThread() {
+        if (!selectedMessage || isDeleting) return;
+
+        setIsDeleting(true);
+        try {
+            await deleteInstructorMessage(selectedMessage.documentId || selectedMessage.id, token);
+            setMessages((prev) =>
+                prev.filter((m) => m.documentId !== selectedId && String(m.id) !== String(selectedId))
+            );
+            setSelectedId(null);
+            setMobileView('list');
+            setDeleteConfirmTarget(null);
+        } catch (err) {
+            console.error('Failed to delete thread:', err);
+            alert('خطا در حذف مکالمه. لطفاً دوباره تلاش کنید.');
+        } finally {
+            setIsDeleting(false);
+        }
     }
 
     async function handleSendReply() {
@@ -186,6 +325,66 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
             }, 50);
         } catch {
             setReply(replyText);
+        } finally {
+            setIsSending(false);
+        }
+    }
+
+    async function handleSendVoiceReply(audioBlob, duration) {
+        if (!audioBlob || !selectedMessage || isSending) return;
+
+        setIsSending(true);
+        try {
+            const formData = new FormData();
+            const extension = audioBlob.type.includes('ogg') ? 'ogg' : audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
+            const filename = `voice_mentor_${Date.now()}.${extension}`;
+            formData.append('files', audioBlob, filename);
+
+            const uploadRes = await uploadMedia(formData);
+            const uploadedFile = Array.isArray(uploadRes) ? uploadRes[0] : uploadRes;
+            const audioUrl = uploadedFile?.url || uploadedFile?.data?.[0]?.url || '';
+
+            if (!audioUrl) {
+                throw new Error('بارگذاری فایل صوتی ناموفق بود.');
+            }
+
+            const existingReplies = selectedMessage.replies || [];
+            const newReply = {
+                body: reply.trim() || '',
+                audioUrl: audioUrl,
+                duration: duration || 0,
+                createdAt: new Date().toISOString(),
+                sender: 'instructor',
+                isAdmin: true,
+            };
+
+            const updatedReplies = [...existingReplies, newReply];
+
+            await updateInstructorMessage(
+                selectedMessage.documentId || selectedMessage.id,
+                token,
+                { replies: updatedReplies, status: 'answered' }
+            );
+
+            setMessages((prev) =>
+                prev.map((m) =>
+                    (m.documentId === selectedId || String(m.id) === String(selectedId))
+                        ? { ...m, replies: updatedReplies, status: 'answered' }
+                        : m
+                )
+            );
+
+            setReply('');
+            setIsRecordingVoice(false);
+
+            setTimeout(() => {
+                if (messagesContainerRef.current) {
+                    messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+                }
+            }, 50);
+        } catch (err) {
+            console.error('Failed to send voice message:', err);
+            alert(err.message || 'خطا در ارسال وویس');
         } finally {
             setIsSending(false);
         }
@@ -353,16 +552,33 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                                 </p>
                             </div>
 
-                            <span
-                                className={`${styles.badge} ${selectedMessage.status === 'answered' || selectedMessage.status === 'closed'
-                                    ? styles['badge--closed']
-                                    : styles['badge--open']
-                                    }`}
-                            >
-                                {selectedMessage.status === 'answered' || selectedMessage.status === 'closed'
-                                    ? 'پاسخ داده شد'
-                                    : 'در انتظار پاسخ'}
-                            </span>
+                            <div className={styles.chatHeader__actions}>
+                                <span
+                                    className={`${styles.badge} ${selectedMessage.status === 'answered' || selectedMessage.status === 'closed'
+                                        ? styles['badge--closed']
+                                        : styles['badge--open']
+                                        }`}
+                                >
+                                    {selectedMessage.status === 'answered' || selectedMessage.status === 'closed'
+                                        ? 'پاسخ داده شد'
+                                        : 'در انتظار پاسخ'}
+                                </span>
+
+                                <button
+                                    type="button"
+                                    className={styles.chatHeader__deleteBtn}
+                                    onClick={() => setDeleteConfirmTarget({ type: 'thread' })}
+                                    title="حذف کل مکالمه"
+                                    aria-label="حذف مکالمه"
+                                >
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                        <line x1="10" y1="11" x2="10" y2="17" />
+                                        <line x1="14" y1="11" x2="14" y2="17" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
                         {/* ── Panel متادیتا سالک ── */}
@@ -409,9 +625,16 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                                 <div className={styles.bubble__header}>
                                     <span>سالک</span>
                                 </div>
-                                <div className={styles.bubble__text}>
-                                    {selectedMessage.body}
-                                </div>
+                                {selectedMessage.audioUrl && (
+                                    <div className={styles.bubble__audioWrap}>
+                                        <VoicePlayer audioUrl={selectedMessage.audioUrl} duration={selectedMessage.duration} isSelf={false} />
+                                    </div>
+                                )}
+                                {selectedMessage.body && (
+                                    <div className={styles.bubble__text}>
+                                        {selectedMessage.body}
+                                    </div>
+                                )}
                                 <time className={styles.bubble__time}>
                                     {formatTime(selectedMessage.createdAt)}
                                 </time>
@@ -421,6 +644,8 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                             {Array.isArray(selectedMessage.replies) &&
                                 selectedMessage.replies.map((rep, idx) => {
                                     const isInstructor = rep.sender === 'instructor' || rep.isAdmin;
+                                    const isEditing = editingReplyIndex === idx;
+
                                     return (
                                         <div
                                             key={idx}
@@ -428,10 +653,96 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                                         >
                                             <div className={styles.bubble__header}>
                                                 <span>{isInstructor ? 'استاد (شما)' : 'سالک'}</span>
+
+                                                {isInstructor && !isEditing && (
+                                                    <div className={styles.bubble__actions}>
+                                                        <button
+                                                            type="button"
+                                                            className={styles.bubble__editBtn}
+                                                            onClick={() => handleStartEditReply(idx, rep.body)}
+                                                            title="ویرایش پیام"
+                                                            aria-label="ویرایش پیام"
+                                                        >
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                            </svg>
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            className={styles.bubble__deleteBtn}
+                                                            onClick={() => setDeleteConfirmTarget({ type: 'reply', index: idx })}
+                                                            title="حذف پیام"
+                                                            aria-label="حذف پیام"
+                                                        >
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <polyline points="3 6 5 6 21 6" />
+                                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div className={styles.bubble__text}>{rep.body}</div>
+
+                                            {/* نمایش پلیر صوتی در صورت وجود وویس */}
+                                            {rep.audioUrl && (
+                                                <div className={styles.bubble__audioWrap}>
+                                                    <VoicePlayer
+                                                        audioUrl={rep.audioUrl}
+                                                        duration={rep.duration}
+                                                        isSelf={isInstructor}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {isEditing ? (
+                                                <div className={styles.bubble__editContainer}>
+                                                    <textarea
+                                                        value={editingReplyText}
+                                                        onChange={(e) => setEditingReplyText(e.target.value)}
+                                                        onKeyDown={(e) => handleEditKeyDown(e, idx)}
+                                                        className={styles.bubble__editTextarea}
+                                                        rows={3}
+                                                        autoFocus
+                                                        disabled={isSavingEdit}
+                                                        placeholder="متن پیام را ویرایش کنید..."
+                                                    />
+                                                    {editError && (
+                                                        <p className={styles.bubble__editError}>{editError}</p>
+                                                    )}
+                                                    <div className={styles.bubble__editActions}>
+                                                        <button
+                                                            type="button"
+                                                            className={styles.bubble__saveBtn}
+                                                            onClick={() => handleSaveEditReply(idx)}
+                                                            disabled={!editingReplyText.trim() || isSavingEdit}
+                                                        >
+                                                            {isSavingEdit ? (
+                                                                <span className={styles.editSpinner} aria-hidden="true" />
+                                                            ) : (
+                                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                    <polyline points="20 6 9 17 4 12" />
+                                                                </svg>
+                                                            )}
+                                                            ذخیره
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className={styles.bubble__cancelBtn}
+                                                            onClick={handleCancelEditReply}
+                                                            disabled={isSavingEdit}
+                                                        >
+                                                            انصراف
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                rep.body ? <div className={styles.bubble__text}>{rep.body}</div> : null
+                                            )}
+
                                             <time className={styles.bubble__time}>
-                                                {formatTime(rep.createdAt)}
+                                                {formatTime(rep.createdAt || rep.updatedAt)}
                                             </time>
                                         </div>
                                     );
@@ -439,35 +750,62 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
 
                         </div>
 
-                        {/* ── ناحیه ارسال پاسخ ── */}
-                        <div className={styles.replyArea}>
-                            <textarea
-                                id="mentor-reply-input"
-                                value={reply}
-                                onChange={(e) => setReply(e.target.value)}
-                                onKeyDown={handleReplyKeyDown}
-                                placeholder="پاسخ خود را بنویسید... (Enter برای ارسال)"
-                                className={styles.replyArea__input}
-                                rows={1}
-                                aria-label="پاسخ به سالک"
-                                disabled={isSending}
-                            />
-                            <button
-                                id="mentor-send-reply"
-                                onClick={handleSendReply}
-                                disabled={!reply.trim() || isSending}
-                                className={styles.replyArea__send}
-                                aria-label="ارسال پاسخ"
-                            >
-                                {isSending ? (
-                                    <span className={styles.spinner} aria-hidden="true" />
-                                ) : (
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <line x1="22" y1="2" x2="11" y2="13" />
-                                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                                    </svg>
-                                )}
-                            </button>
+                        {/* ── ناحیه ارسال پاسخ یا ضبط وویس ── */}
+                        <div className={styles.replyAreaContainer}>
+                            {isRecordingVoice ? (
+                                <VoiceRecorder
+                                    onSendVoice={handleSendVoiceReply}
+                                    onCancel={() => setIsRecordingVoice(false)}
+                                    isSending={isSending}
+                                />
+                            ) : (
+                                <div className={styles.replyArea}>
+                                    <button
+                                        type="button"
+                                        id="mentor-mic-btn"
+                                        className={styles.replyArea__micBtn}
+                                        onClick={() => setIsRecordingVoice(true)}
+                                        title="ضبط و ارسال پیام صوتی (وویس)"
+                                        aria-label="ضبط پیام صوتی"
+                                        disabled={isSending}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                            <line x1="12" y1="19" x2="12" y2="23" />
+                                            <line x1="8" y1="23" x2="16" y2="23" />
+                                        </svg>
+                                    </button>
+
+                                    <textarea
+                                        id="mentor-reply-input"
+                                        value={reply}
+                                        onChange={(e) => setReply(e.target.value)}
+                                        onKeyDown={handleReplyKeyDown}
+                                        placeholder="پاسخ خود را بنویسید... (یا وویس ضبط کنید)"
+                                        className={styles.replyArea__input}
+                                        rows={1}
+                                        aria-label="پاسخ به سالک"
+                                        disabled={isSending}
+                                    />
+                                    <button
+                                        id="mentor-send-reply"
+                                        onClick={handleSendReply}
+                                        disabled={!reply.trim() || isSending}
+                                        className={styles.replyArea__send}
+                                        aria-label="ارسال پاسخ"
+                                    >
+                                        {isSending ? (
+                                            <span className={styles.spinner} aria-hidden="true" />
+                                        ) : (
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <line x1="22" y1="2" x2="11" y2="13" />
+                                                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </>
                 ) : (
@@ -488,6 +826,66 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
             isOpen={isFormEditorOpen}
             onClose={() => setIsFormEditorOpen(false)}
         />
+
+        {/* ── مودال تایید حذف ── */}
+        {deleteConfirmTarget && (
+            <div className={styles.modalOverlay} onClick={() => !isDeleting && setDeleteConfirmTarget(null)}>
+                <div className={styles.confirmModal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+                    <div className={styles.confirmModal__icon}>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
+                    </div>
+
+                    <h3 className={styles.confirmModal__title}>
+                        {deleteConfirmTarget.type === 'thread' ? 'حذف کل مکالمه' : 'حذف پیام'}
+                    </h3>
+
+                    <p className={styles.confirmModal__desc}>
+                        {deleteConfirmTarget.type === 'thread'
+                            ? 'آیا از حذف کامل این گفتگو و تمامی پیام‌های آن اطمینان دارید؟ این عملیات غیرقابل بازگشت است.'
+                            : 'آیا از حذف این پیام اطمینان دارید؟ پیام به طور کامل پاک خواهد شد.'}
+                    </p>
+
+                    <div className={styles.confirmModal__actions}>
+                        <button
+                            type="button"
+                            className={styles.confirmModal__deleteBtn}
+                            onClick={() => {
+                                if (deleteConfirmTarget.type === 'thread') {
+                                    handleDeleteThread();
+                                } else {
+                                    handleDeleteReply(deleteConfirmTarget.index);
+                                }
+                            }}
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? (
+                                <span className={styles.editSpinner} aria-hidden="true" />
+                            ) : (
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                </svg>
+                            )}
+                            <span>بله، حذف شود</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            className={styles.confirmModal__cancelBtn}
+                            onClick={() => setDeleteConfirmTarget(null)}
+                            disabled={isDeleting}
+                        >
+                            انصراف
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
     </>
     );
 }

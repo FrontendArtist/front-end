@@ -224,3 +224,17 @@ export async function updateInstructorMessage(id, token, payload) {
         body: JSON.stringify({ data: payload }),
     });
 }
+
+/**
+ * حذف پیام یا مکالمه چت استاد
+ * @param {number|string} id - documentId پیام
+ * @param {string} token - JWT token استاد
+ */
+export async function deleteInstructorMessage(id, token) {
+    return apiClient(`/api/messages/${id}`, {
+        method: 'DELETE',
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+}

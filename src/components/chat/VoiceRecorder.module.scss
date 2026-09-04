@@ -1,0 +1,302 @@
+/**
+ * @file src/components/chat/VoiceRecorder.module.scss
+ * @description Voice Message Recorder Styles — 100% strict adherence to variables.css
+ */
+
+.recorderContainer {
+    width: 100%;
+    direction: rtl;
+    animation: fadeInSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ─── Recording Mode ─── */
+.recordingMode {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 16px;
+    background: color-mix(in srgb, var(--color-bg-primary) 85%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-error) 35%, transparent);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--color-error) 15%, transparent);
+
+    @media (max-width: 576px) {
+        gap: 8px;
+        padding: 8px 10px;
+    }
+}
+
+.recordingTimerWrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.recDot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-error);
+    box-shadow: 0 0 10px var(--color-error);
+}
+
+.recDot--pulsing {
+    animation: pulseGlow 1.2s infinite ease-in-out;
+}
+
+.recDot--paused {
+    opacity: 0.6;
+    background: var(--color-warning-amber);
+    box-shadow: 0 0 10px var(--color-warning-amber);
+}
+
+.timerText {
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-card-text);
+    font-variant-numeric: tabular-nums;
+    min-width: 42px;
+}
+
+/* ─── Live Audio Visualizer ─── */
+.visualizerWrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 32px;
+    padding: 0 8px;
+    overflow: hidden;
+}
+
+.visualizerBar {
+    width: 3px;
+    min-height: 4px;
+    background: linear-gradient(180deg,
+            var(--color-title-hover) 0%,
+            var(--color-error) 100%);
+    border-radius: 3px;
+    transition: height 0.08s ease-out;
+}
+
+/* ─── Controls ─── */
+.recordControls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.controlIconBtn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--color-white) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
+    color: var(--color-card-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: color-mix(in srgb, var(--color-text-primary) 15%, transparent);
+        color: var(--color-title-hover);
+        transform: translateY(-1px);
+    }
+}
+
+.stopDoneBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg,
+            var(--color-error) 0%,
+            var(--color-gold-dark) 100%);
+    color: var(--color-white);
+    border: none;
+    border-radius: 10px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-bold);
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-error) 30%, transparent);
+    transition: all 0.2s ease;
+
+    &:hover {
+        transform: translateY(-1px) scale(1.02);
+        box-shadow: 0 6px 16px color-mix(in srgb, var(--color-error) 40%, transparent);
+    }
+
+    @media (max-width: 576px) {
+        padding: 6px 10px;
+        span {
+            display: none;
+        }
+    }
+}
+
+/* ─── Preview Mode ─── */
+.previewMode {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 14px;
+    background: color-mix(in srgb, var(--color-bg-primary) 90%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-title-hover) 30%, transparent);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--color-black) 25%, transparent);
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+}
+
+.previewPlayerWrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.previewActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+
+    @media (max-width: 768px) {
+        justify-content: flex-end;
+    }
+}
+
+.discardBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 14px;
+    background: color-mix(in srgb, var(--color-error) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
+    border-radius: 10px;
+    color: var(--color-error);
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-medium);
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--color-error) 20%, transparent);
+        transform: translateY(-1px);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.sendBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    background: linear-gradient(135deg,
+            var(--color-text-primary) 0%,
+            var(--color-title-hover) 100%);
+    color: var(--color-bg-primary);
+    border: none;
+    border-radius: 10px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-bold);
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 4px 15px color-mix(in srgb, var(--color-text-primary) 30%, transparent);
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+        transform: translateY(-1px) scale(1.02);
+        box-shadow: 0 6px 20px color-mix(in srgb, var(--color-text-primary) 40%, transparent);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+/* ─── Error Banner ─── */
+.errorBanner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: color-mix(in srgb, var(--color-error) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-error) 35%, transparent);
+    border-radius: 12px;
+    color: var(--color-card-text);
+    font-size: var(--font-xs);
+
+    svg {
+        color: var(--color-error);
+        flex-shrink: 0;
+    }
+
+    p {
+        margin: 0;
+        flex: 1;
+    }
+}
+
+.errorBtn {
+    padding: 4px 10px;
+    background: var(--color-error);
+    color: var(--color-white);
+    border: none;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid color-mix(in srgb, var(--color-bg-primary) 30%, transparent);
+    border-top-color: var(--color-bg-primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes pulseGlow {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.25);
+        opacity: 0.5;
+    }
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

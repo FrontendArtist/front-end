@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Calendar, Trash2, Send, X } from 'lucide-react';
+import VoicePlayer from '@/components/chat/VoicePlayer';
 import styles from './ChatModal.module.scss';
 
 const statusMap = {
@@ -225,9 +226,16 @@ export default function ChatModal({
                                 {formatTime(message.createdAt)}
                             </time>
                         </div>
-                        <div className={styles.bubble__text}>
-                            {message.body}
-                        </div>
+                        {message.audioUrl && (
+                            <div style={{ marginBottom: '6px' }}>
+                                <VoicePlayer audioUrl={message.audioUrl} duration={message.duration} isSelf={false} />
+                            </div>
+                        )}
+                        {message.body && (
+                            <div className={styles.bubble__text}>
+                                {message.body}
+                            </div>
+                        )}
                     </div>
 
                     {/* لیست پاسخ‌ها */}
@@ -258,9 +266,16 @@ export default function ChatModal({
                                         {formatTime(reply.createdAt)}
                                     </time>
                                 </div>
-                                <div className={styles.bubble__text}>
-                                    {reply.body}
-                                </div>
+                                {reply.audioUrl && (
+                                    <div style={{ marginBottom: '6px' }}>
+                                        <VoicePlayer audioUrl={reply.audioUrl} duration={reply.duration} isSelf={!isAdmin ? isStaff : !isStaff} />
+                                    </div>
+                                )}
+                                {reply.body && (
+                                    <div className={styles.bubble__text}>
+                                        {reply.body}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}

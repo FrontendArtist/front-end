@@ -7,14 +7,15 @@
  */
 
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { authOptions, isUserMentor } from '@/lib/auth';
 import { NextResponse } from 'next/server';
+import { STRAPI_API_URL } from '@/lib/api';
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+const STRAPI_URL = STRAPI_API_URL || 'http://localhost:1337';
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.jwt || session.user.role?.type !== 'administrator') {
+    if (!session?.user?.jwt || !isUserMentor(session.user)) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

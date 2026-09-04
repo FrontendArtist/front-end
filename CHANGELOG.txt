@@ -1,3 +1,27 @@
+[2026-09-04] - Mentor Chat Voice Messaging (HD 128kbps), Inline Message Editing & Deletion
+
+── Mentor Studio Voice Recording & Waveform Player ─────────────────────────────
+- Voice Player Component (`src/components/chat/VoicePlayer.jsx` & SCSS):
+  • Built modern Telegram/WhatsApp-styled audio player with interactive 32-bar seekable waveform, live timer, and 1x / 1.5x / 2x playback speed selectors.
+  • Fixed `NotSupportedError: The element has no supported sources` console error: added automatic URL resolution (`API_BASE_URL`), fallback MIME types, blob size validation, and explicit `audio.load()` on source updates.
+  • Integrated `VoicePlayer` into both `/mentor` dashboard and shared `ChatModal.jsx` for seamless audio playback across student, mentor, and admin views.
+- Voice Recorder Component (`src/components/chat/VoiceRecorder.jsx` & SCSS):
+  • Studio-quality audio recording with 128kbps Opus bitrate (`audioBitsPerSecond: 128000`), live Web Audio visualizer, and recording timer.
+  • Fixed slow/half-speed 1X playback bug: cloned audio input stream (`stream.clone()`) for the visualizer analyser to prevent Chromium hardware sample rate downsampling (24kHz clock mismatch), and eliminated timesliced chunks to avoid Opus packet jitter.
+  • Added in-app playback preview, pause/resume recording, cancel/discard, and instant upload directly to Strapi media library.
+- Media Upload API Route (`src/app/api/media/route.js`):
+  • Extended authorization logic to support mentor/instructor role sessions (`isUserMentor`) for uploading audio attachments.
+
+── Mentor Message Inline Editing & Deletion ────────────────────────────────────
+- Inline Reply Editing (`src/components/chat/InstructorChatPanel.jsx` & SCSS):
+  • Added inline edit mode for instructor replies with autofocus textarea, loading spinners, and keyboard shortcuts (`Enter` to save, `Escape` to cancel).
+  • Persists edits directly to Strapi API with real-time UI state synchronization.
+- Message & Conversation Deletion:
+  • Added single reply deletion button for instructor messages with automatic conversation status recalibration (resets to 'در انتظار پاسخ' if no instructor replies remain).
+  • Added complete thread deletion button in chat header.
+  • Designed glassmorphism confirmation modal with backdrop blur, alert icon, and safety confirmation to prevent accidental message removal.
+  • Added `deleteInstructorMessage` API endpoint in `src/lib/messagesApi.js`.
+
 [2026-09-04] - Admin Orders Enhancements, Lazy Loading, VPN Modal UX & Media Resume Fix
 
 ── 10-Second Skip Controls & Media Resume Playback ─────────────────────────────
