@@ -168,17 +168,86 @@ export async function POST(request) {
         );
     }
 
-    // ── STEP 3: Update the Order in Strapi ─────────────────────────────────────
+    // ── STEP 3: Check User/Order Name & Update Order in Strapi ────────────────
     // Strapi v5 uses documentId in the URL instead of numeric id.
-    // We set paymentStatus to "pending_verification" so the admin knows
-    // a receipt has been submitted and is awaiting manual review.
+    // If the order has a default/generic name or user profile name is empty,
+    // we assign cardHolderName to order.fullName and also update user profile.
     try {
+        let shouldUpdateOrderFullName = true;
+        let userToUpdateId = null;
+
+        // استعلام اطلاعات فعلی سفارش و کاربر متصل به آن
+        try {
+            const currentOrderRes = await fetch(
+                `${STRAPI_BASE_URL}/api/orders/${orderId.trim()}?populate[0]=user`,
+                {
+                    headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
+                    cache: "no-store",
+                }
+            );
+
+            if (currentOrderRes.ok) {
+                const currentOrderData = await currentOrderRes.json();
+                const existingOrder = currentOrderData?.data;
+                const existingUser = existingOrder?.user;
+
+                const userProfileName = (existingUser?.firstName || existingUser?.lastName)
+                    ? `${existingUser?.firstName || ''} ${existingUser?.lastName || ''}`.trim()
+                    : '';
+
+                const orderFullName = existingOrder?.fullName?.trim() || '';
+                const isOrderNameGeneric =
+                    !orderFullName ||
+                    orderFullName.startsWith('کاربر (') ||
+                    orderFullName === 'کاربر فروشگاه' ||
+                    /^\d+$/.test(orderFullName);
+
+                // اگر در پروفایل کاربر نام وجود داشت و سفارش نام معتبر داشت، نام قبلی را حفظ کن
+                if (userProfileName && !isOrderNameGeneric) {
+                    shouldUpdateOrderFullName = false;
+                }
+
+                // اگر کاربر در پروفایلش نام ندارد، برای ثبت خودکار نام در پروفایل ذخیره کن
+                if (existingUser?.id && !userProfileName && cardHolderName.trim()) {
+                    userToUpdateId = existingUser.id;
+                }
+            }
+        } catch (fetchErr) {
+            console.warn("[upload-receipt] Could not fetch current order details:", fetchErr);
+        }
+
+        const trimmedCardHolder = cardHolderName.trim();
+
+        // در صورت خالی بودن نام پروفایل، نام کاربر را نیز در دیتابیس کاربران تکمیل کن
+        if (userToUpdateId && trimmedCardHolder) {
+            try {
+                const nameParts = trimmedCardHolder.split(' ');
+                const firstName = nameParts[0] || trimmedCardHolder;
+                const lastName = nameParts.slice(1).join(' ') || '';
+
+                await fetch(`${STRAPI_BASE_URL}/api/users/${userToUpdateId}`, {
+                    method: 'PUT',
+                    headers: {
+                        Authorization: `Bearer ${STRAPI_TOKEN}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        firstName,
+                        lastName,
+                    }),
+                });
+            } catch (uErr) {
+                console.warn('[upload-receipt] Could not update user profile name:', uErr);
+            }
+        }
+
         const orderUpdatePayload = {
             data: {
                 receiptImage: uploadedMediaId,         // Link the uploaded media by its numeric id
-                cardHolderName: cardHolderName.trim(),
+                cardHolderName: trimmedCardHolder,
                 paymentMethod: "card_to_card",         // Confirm the payment channel
                 paymentStatus: "pending_verification", // Advance the status lifecycle
+                ...(shouldUpdateOrderFullName ? { fullName: trimmedCardHolder } : {}),
             },
         };
 

@@ -328,6 +328,31 @@ $transition: 0.2s ease;
     }
 }
 
+.receipt_link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: fade(var(--color-primary), 12%);
+    border: 1px solid fade(var(--color-primary), 30%);
+    border-radius: 8px;
+    color: var(--color-text-primary);
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    width: fit-content;
+
+    &:hover {
+        background: fade(var(--color-primary), 25%);
+        border-color: var(--color-primary);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px fade(var(--color-primary), 15%);
+    }
+}
+
 .expanded_empty {
     color: $muted;
     font-size: var(--font-sm);

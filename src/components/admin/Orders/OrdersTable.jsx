@@ -5,12 +5,12 @@
  * @description جدول سفارش‌ها – Client Component
  *
  * 🎯 مسئولیت‌ها:
- *   - نمایش جدول سفارش‌ها با ستون‌های: ID، کاربر، روش پرداخت، وضعیت، مبلغ، تاریخ، عملیات.
- *   - ردیف کشویی (Expandable Row) برای هر سفارش با تمام جزئیات خریدار و اقلام.
+ *   - نمایش جدول سفارش‌ها با ستون‌های: شناسه، کاربر، روش پرداخت، وضعیت سفارش، مبلغ، تاریخ، عملیات.
+ *   - ردیف کشویی (Expandable Row) برای هر سفارش با تمام جزئیات خریدار و اقلام و لینک مشاهده رسید.
  *   - مدیریت state محلی برای آپدیت optimistic (بدون reload صفحه).
  *   - کنترل باز/بسته شدن مودال‌های ReceiptModal و StatusUpdateModal.
  *
- * @param {{ initialOrders: object[] }} props
+ * @param {{ initialOrders: object[], initialMeta: object }} props
  */
 
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'react';
@@ -26,21 +26,13 @@ import { fetchAdminOrders } from '@/lib/client/admin/ordersClient';
 
 // ── ابزارهای نمایش ──────────────────────────────────────────────────────────
 
-/** برچسب‌های فارسی وضعیت پرداخت */
-const PAYMENT_STATUS_CONFIG = {
-    pending_payment: { label: 'در انتظار پرداخت', variant: 'warning' },
-    pending_verification: { label: 'انتظار تأیید رسید', variant: 'warning' },
-    paid: { label: 'پرداخت شده', variant: 'success' },
-    failed: { label: 'ناموفق / رد شده', variant: 'error' },
-};
-
-/** برچسب‌های فارسی وضعیت ارسال */
+/** برچسب‌های فارسی وضعیت سفارش */
 const ORDER_STATUS_CONFIG = {
-    'pending': { label: 'در پردازش', variant: 'warning' },
-    'paid': { label: 'پرداخت شده', variant: 'info' },
+    'pending': { label: 'در انتظار پرداخت', variant: 'warning' },
+    'paid': { label: 'پرداخت شده', variant: 'success' },
     'shipped': { label: 'ارسال شده', variant: 'info' },
     'delivered': { label: 'تحویل شده', variant: 'success' },
-    'canceled': { label: 'لغو شده', variant: 'default' },
+    'canceled': { label: 'لغو شده', variant: 'error' },
 };
 
 /** برچسب‌های روش پرداخت */
@@ -57,25 +49,73 @@ const ITEM_TYPE_LABELS = {
     'order.product-order-item': { icon: '📦', label: 'محصول فیزیکی' },
 };
 
+const formatPrice = (p) =>
+    p !== undefined && p !== null
+        ? new Intl.NumberFormat('fa-IR').format(Number(p)) + ' تومان'
+        : '—';
+
+const formatPriceRaw = (p) =>
+    p !== undefined && p !== null
+        ? new Intl.NumberFormat('fa-IR').format(Number(p))
+        : '۰';
+
+const formatDate = (d) => {
+    if (!d) return '—';
+    try {
+        return new Intl.DateTimeFormat('fa-IR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        }).format(new Date(d));
+    } catch {
+        return '—';
+    }
+};
+
+const formatDateShort = (d) => {
+    if (!d) return '—';
+    try {
+        return new Intl.DateTimeFormat('fa-IR', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        }).format(new Date(d));
+    } catch {
+        return '—';
+    }
+};
+
+/**
+ * تابع کمکی برای نمایش هوشمند نام خریدار:
+ * اگر fullName نام پیش‌فرض مثل «کاربر (...)» باشد، از نام صاحب کارت یا نام واقعی کاربر استفاده می‌شود.
+ */
+function getBuyerDisplayName(order) {
+    if (!order) return '—';
+    const isGeneric = (str) => {
+        if (!str || typeof str !== 'string') return true;
+        const s = str.trim();
+        return s.startsWith('کاربر (') || s === 'کاربر فروشگاه' || /^\d+$/.test(s);
+    };
+
+    if (order.fullName && !isGeneric(order.fullName)) {
+        return order.fullName;
+    }
+    if (order.cardHolderName && !isGeneric(order.cardHolderName)) {
+        return order.cardHolderName;
+    }
+    if (order.user?.username && !isGeneric(order.user.username)) {
+        return order.user.username;
+    }
+    return order.fullName || order.user?.username || '—';
+}
+
 /**
  * OrderExpandedRow – ردیف کشویی با تمام جزئیات سفارش
  */
-function OrderExpandedRow({ order, colSpan }) {
-    const formatPrice = (p) =>
-        p !== undefined && p !== null
-            ? new Intl.NumberFormat('fa-IR').format(Number(p)) + ' تومان'
-            : '—';
-
-    const formatDate = (d) =>
-        d
-            ? new Intl.DateTimeFormat('fa-IR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-            }).format(new Date(d))
-            : '—';
+function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
+    const buyerName = getBuyerDisplayName(order);
 
     return (
         <tr className={styles.expanded_row}>
@@ -88,8 +128,14 @@ function OrderExpandedRow({ order, colSpan }) {
                         <div className={styles.expanded_grid}>
                             <div className={styles.expanded_field}>
                                 <span className={styles.expanded_field__label}>نام و نام‌خانوادگی</span>
-                                <span className={styles.expanded_field__value}>{order.fullName || '—'}</span>
+                                <span className={styles.expanded_field__value}>{buyerName}</span>
                             </div>
+                            {order.cardHolderName && order.cardHolderName !== buyerName && (
+                                <div className={styles.expanded_field}>
+                                    <span className={styles.expanded_field__label}>نام صاحب کارت</span>
+                                    <span className={styles.expanded_field__value}>💳 {order.cardHolderName}</span>
+                                </div>
+                            )}
                             <div className={styles.expanded_field}>
                                 <span className={styles.expanded_field__label}>موبایل خریدار</span>
                                 <span className={styles.expanded_field__value} dir="ltr">{order.phone || order.user?.phoneNumber || '—'}</span>
@@ -110,6 +156,24 @@ function OrderExpandedRow({ order, colSpan }) {
                                 <div className={styles.expanded_field}>
                                     <span className={styles.expanded_field__label}>کد رهگیری</span>
                                     <span className={styles.expanded_field__value} dir="ltr">🚚 {order.trackingNumber}</span>
+                                </div>
+                            )}
+                            {order.receiptImageUrl && (
+                                <div className={`${styles.expanded_field} ${styles['expanded_field--full']}`}>
+                                    <span className={styles.expanded_field__label}>رسید پرداخت</span>
+                                    <span className={styles.expanded_field__value}>
+                                        <button
+                                            type="button"
+                                            className={styles.receipt_link}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (onOpenReceipt) onOpenReceipt(order);
+                                            }}
+                                            title="مشاهده تصویر رسید پرداخت"
+                                        >
+                                            🧾 مشاهده رسید
+                                        </button>
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -275,6 +339,8 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
         return orders.filter(
             (o) =>
                 o.orderNumber?.toLowerCase().includes(q) ||
+                o.fullName?.toLowerCase().includes(q) ||
+                o.cardHolderName?.toLowerCase().includes(q) ||
                 o.user?.username?.toLowerCase().includes(q) ||
                 o.user?.phoneNumber?.includes(q)
         );
@@ -300,10 +366,10 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
         );
     }
 
-    const COL_SPAN = 9; // تعداد ستون‌های جدول
+    const COL_SPAN = 8; // تعداد ستون‌های جدول
     const headers = [
         <div style={{ width: 16 }}></div>,
-        'شناسه', 'کاربر', 'روش پرداخت', 'وضعیت پرداخت', 'وضعیت سفارش', 'مبلغ (تومان)', 'تاریخ', 'عملیات'
+        'شناسه', 'کاربر', 'روش پرداخت', 'وضعیت سفارش', 'مبلغ (تومان)', 'تاریخ', 'عملیات'
     ];
 
     return (
@@ -327,7 +393,6 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
             <AdminTable headers={headers}>
 
                         {filteredOrders.map((order) => {
-                            const payConf = PAYMENT_STATUS_CONFIG[order.paymentStatus] || PAYMENT_STATUS_CONFIG.pending_payment;
                             const ordConf = ORDER_STATUS_CONFIG[order.orderStatus?.trim()] || ORDER_STATUS_CONFIG[order.orderStatus] || ORDER_STATUS_CONFIG.pending;
                             const isCardToCard = order.paymentMethod === 'card_to_card';
                             const needsReceiptApproval =
@@ -356,21 +421,27 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
 
                                         {/* کاربر */}
                                         <td>
-                                            <div className={styles.user_cell}>
-                                                <span className={styles.user_cell__name}>
-                                                    {order.user?.username || '—'}
-                                                </span>
-                                                {order.user?.phoneNumber && (
-                                                    <span className={styles.user_cell__phone}>
-                                                        {order.user.phoneNumber}
-                                                    </span>
-                                                )}
-                                                {order.cardHolderName && (
-                                                    <span className={styles.user_cell__card}>
-                                                        💳 {order.cardHolderName}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            {(() => {
+                                                const buyerName = getBuyerDisplayName(order);
+                                                const buyerPhone = order.phone || order.user?.phoneNumber;
+                                                return (
+                                                    <div className={styles.user_cell}>
+                                                        <span className={styles.user_cell__name}>
+                                                            {buyerName}
+                                                        </span>
+                                                        {buyerPhone && buyerPhone !== '00000000000' && (
+                                                            <span className={styles.user_cell__phone} dir="ltr">
+                                                                {buyerPhone}
+                                                            </span>
+                                                        )}
+                                                        {order.cardHolderName && order.cardHolderName !== buyerName && (
+                                                            <span className={styles.user_cell__card}>
+                                                                💳 {order.cardHolderName}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         </td>
 
                                         {/* روش پرداخت */}
@@ -380,19 +451,11 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
                                             </span>
                                         </td>
 
-                                        {/* وضعیت پرداخت */}
-                                        <td>
-                                            <AdminBadge
-                                                label={payConf.label}
-                                                variant={payConf.variant}
-                                            />
-                                        </td>
-
                                         {/* وضعیت سفارش */}
                                         <td>
                                             <div className={styles.status_cell}>
                                                 <AdminBadge
-                                                    label={ordConf.label}
+                                                    text={ordConf.label}
                                                     variant={ordConf.variant}
                                                 />
                                                 {order.trackingNumber && (
@@ -405,18 +468,12 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
 
                                         {/* مبلغ */}
                                         <td className={styles.table__amount}>
-                                            {new Intl.NumberFormat('fa-IR').format(order.totalPrice)}
+                                            {formatPriceRaw(order.totalPrice)}
                                         </td>
 
                                         {/* تاریخ */}
                                         <td className={styles.table__date}>
-                                            {order.createdAt
-                                                ? new Intl.DateTimeFormat('fa-IR', {
-                                                    year: 'numeric',
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                }).format(new Date(order.createdAt))
-                                                : '—'}
+                                            {formatDateShort(order.createdAt)}
                                         </td>
 
                                         {/* عملیات */}
@@ -455,6 +512,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
                                             key={`expanded-${order.id}`}
                                             order={order}
                                             colSpan={COL_SPAN}
+                                            onOpenReceipt={(ord) => setReceiptModal(ord)}
                                         />
                                     )}
                                 </Fragment>

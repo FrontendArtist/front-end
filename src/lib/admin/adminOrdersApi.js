@@ -73,7 +73,7 @@ export async function getOrders(jwt, { page = 1, pageSize = 50, start, limit } =
         : `pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
 
     const endpoint =
-        `/api/orders?populate[user][fields][0]=username&populate[user][fields][1]=email&populate[user][fields][2]=phoneNumber&populate[receiptImage]=true&populate[items]=true&sort=createdAt:desc&${paginationQuery}`;
+        `/api/orders?populate[user][fields][0]=username&populate[user][fields][1]=email&populate[user][fields][2]=phoneNumber&populate[user][fields][3]=firstName&populate[user][fields][4]=lastName&populate[receiptImage]=true&populate[items]=true&sort=createdAt:desc&${paginationQuery}`;
 
     const data = await adminFetch(endpoint, jwt);
     if (!data) return { orders: [], meta: null, error: true };
@@ -108,6 +108,10 @@ export async function getOrders(jwt, { page = 1, pageSize = 50, start, limit } =
             return { __component: comp, title: i.title || '—', price: i.price ?? 0 };
         });
 
+        const userFullName = (user?.firstName || user?.lastName)
+            ? `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
+            : null;
+
         return {
             id: item.id,
             documentId: item.documentId || String(item.id),
@@ -118,7 +122,7 @@ export async function getOrders(jwt, { page = 1, pageSize = 50, start, limit } =
             totalPrice: attrs.totalPrice ?? attrs.totalAmount ?? 0,
             trackingNumber: attrs.trackingNumber || null,
             cardHolderName: attrs.cardHolderName || null,
-            fullName: attrs.fullName || null,
+            fullName: attrs.fullName || userFullName || null,
             address: attrs.address || null,
             postalCode: attrs.postalCode || null,
             phone: attrs.phone || null,
@@ -127,7 +131,7 @@ export async function getOrders(jwt, { page = 1, pageSize = 50, start, limit } =
             createdAt: attrs.createdAt,
             items,
             user: user ? {
-                username: user.username || user.name || '—',
+                username: userFullName || user.username || user.name || '—',
                 email: user.email || '—',
                 phoneNumber: user.phoneNumber || '—',
             } : null,

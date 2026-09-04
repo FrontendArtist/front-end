@@ -17,7 +17,6 @@
  */
 
 import { useState } from 'react';
-import Image from 'next/image';
 import styles from './OrdersTable.module.scss';
 import { updateOrderStatus } from '@/lib/client/admin/ordersClient';
 
@@ -71,7 +70,7 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
                 {/* ── اطلاعات سفارش ────────────────────────────────── */}
                 <div className={styles.modal__meta}>
                     <span>سفارش: <strong>{order.orderNumber}</strong></span>
-                    <span>کاربر: <strong>{order.user?.username || '—'}</strong></span>
+                    <span>کاربر: <strong>{order.fullName || order.cardHolderName || order.user?.username || '—'}</strong></span>
                     {order.cardHolderName && (
                         <span>نام صاحب کارت: <strong>{order.cardHolderName}</strong></span>
                     )}
@@ -104,22 +103,41 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
                 {/* ── پیام خطا ────────────────────────────────────── */}
                 {error && <p className={styles.modal__error}>⚠️ {error}</p>}
 
-                {/* ── دکمه‌های تصمیم ──────────────────────────────── */}
+                {/* ── دکمه‌های تصمیم / وضعیت ────────────────────────── */}
                 <div className={styles.modal__actions}>
-                    <button
-                        className={`${styles.btn} ${styles['btn--danger']}`}
-                        onClick={() => handleDecision('rejected')}
-                        disabled={loading}
-                    >
-                        {loading ? '...' : '✕ رد پرداخت'}
-                    </button>
-                    <button
-                        className={`${styles.btn} ${styles['btn--success']}`}
-                        onClick={() => handleDecision('paid')}
-                        disabled={loading}
-                    >
-                        {loading ? '...' : '✓ تأیید پرداخت'}
-                    </button>
+                    {order.paymentStatus === 'paid' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
+                            <span style={{ color: 'var(--color-success)', fontSize: 'var(--font-sm)', fontWeight: 'bold' }}>
+                                ✓ پرداخت این سفارش تأیید شده است
+                            </span>
+                            <button
+                                type="button"
+                                className={`${styles.btn} ${styles['btn--ghost']}`}
+                                onClick={onClose}
+                            >
+                                بستن
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <button
+                                type="button"
+                                className={`${styles.btn} ${styles['btn--danger']}`}
+                                onClick={() => handleDecision('rejected')}
+                                disabled={loading}
+                            >
+                                {loading ? '...' : '✕ رد پرداخت'}
+                            </button>
+                            <button
+                                type="button"
+                                className={`${styles.btn} ${styles['btn--success']}`}
+                                onClick={() => handleDecision('paid')}
+                                disabled={loading}
+                            >
+                                {loading ? '...' : '✓ تأیید پرداخت'}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

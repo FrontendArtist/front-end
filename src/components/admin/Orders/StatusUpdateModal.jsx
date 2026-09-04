@@ -89,7 +89,7 @@ export default function StatusUpdateModal({ order, onClose, onUpdate }) {
                 {/* ── اطلاعات سفارش ────────────────────────────────── */}
                 <div className={styles.modal__meta}>
                     <span>سفارش: <strong>{order.orderNumber}</strong></span>
-                    <span>کاربر: <strong>{order.user?.username || '—'}</strong></span>
+                    <span>کاربر: <strong>{order.fullName || order.cardHolderName || order.user?.username || '—'}</strong></span>
                 </div>
 
                 {/* ── انتخاب وضعیت ─────────────────────────────────── */}

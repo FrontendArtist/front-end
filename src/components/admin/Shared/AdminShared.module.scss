@@ -161,41 +161,56 @@
 }
 
 .badge {
-    display: inline-block;
-    padding: 0.25rem 0.6rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
     font-weight: var(--font-weight-bold);
     white-space: nowrap;
+    line-height: 1.3;
+    border: 1px solid transparent;
+    box-shadow: 0 1px 3px fade(var(--color-black), 20%);
 
     &--success,
     &--published,
     &--available,
     &--user,
     &--green {
-        background-color: fade(var(--color-success), 12%);
+        background-color: fade(var(--color-success), 16%);
         color: var(--color-success);
+        border-color: fade(var(--color-success), 40%);
     }
 
     &--error,
     &--unavailable,
     &--admin,
     &--red {
-        background-color: fade(var(--color-error), 12%);
+        background-color: fade(var(--color-error), 16%);
         color: var(--color-error);
+        border-color: fade(var(--color-error), 40%);
     }
 
     &--warning,
     &--draft,
     &--yellow {
-        background-color: fade(var(--color-warning), 15%);
+        background-color: fade(var(--color-warning-amber), 16%);
         color: var(--color-warning-amber);
+        border-color: fade(var(--color-warning-amber), 40%);
     }
 
     &--info,
     &--blue {
-        background-color: fade(var(--color-blue-alt), 20%);
+        background-color: fade(var(--color-blue-alt), 22%);
         color: var(--color-blue-light);
+        border-color: fade(var(--color-blue-alt), 45%);
+    }
+
+    &--default {
+        background-color: fade(var(--color-primary), 12%);
+        color: var(--color-card-text);
+        border-color: fade(var(--color-primary), 25%);
     }
 }
 
