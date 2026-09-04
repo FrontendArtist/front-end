@@ -1,12 +1,18 @@
 [2026-09-04] - Admin Orders Enhancements, Lazy Loading, VPN Modal UX & Media Resume Fix
 
-── Media Playback Progress & Instant Resume Fix ────────────────────────────────
-- Audio Player (`src/modules/courses/PlyrAudioPlayer.jsx`):
+── 10-Second Skip Controls & Media Resume Playback ─────────────────────────────
+- Audio Player (`src/modules/courses/PlyrAudioPlayer.jsx` & SCSS):
+  • Added 10-second backward (`rewind`) and forward (`fast-forward`) buttons with Persian tooltips ("۱۰ ثانیه عقب" / "۱۰ ثانیه جلو").
+  • Fixed sticky yellow focus/hover state on mobile touch: wrapped hover styling in `@media (hover: hover) and (pointer: fine)`, styled instant `:active` tap effect, and added auto-blur on touchend.
+  • Hidden volume slider and mute controls on mobile screens (`@include respond(md)`) for a cleaner responsive UI.
   • Fixed bug where `ready` event fired prematurely before media metadata was fetched (`readyState === 0`), causing progress restoration to fail on first navigation.
   • Added `readyState >= 1` validation before marking restoration as complete.
   • Added listeners on `loadedmetadata`, `canplay`, and `play` as fallbacks to ensure playback starts from saved timestamp without requiring a page refresh.
   • Guarded `timeupdate`, `seeked`, and `pause` listeners from overwriting stored progress before initial timestamp restoration completes.
-- Video Player (`src/modules/courses/VideoJSPlayer.jsx`):
+- Video Player (`src/modules/courses/VideoJSPlayer.jsx`, `CourseContentManager.jsx` & SCSS):
+  • Added 10-second forward and backward skip buttons (`controlBar.skipButtons = { forward: 10, backward: 10 }`) with clean SVG icons and hover animations.
+  • Removed sticky yellow focus on touch devices with `@media (hover: hover)` encapsulation and touchend blur.
+  • Hidden volume panel on mobile screens (`@include respond(md)`).
   • Added multi-event listener binding (`loadedmetadata`, `canplay`, `play`) with `readyState >= 1` checking.
   • Protected localStorage timestamps from premature zero/initial overrides during player instantiation.
 

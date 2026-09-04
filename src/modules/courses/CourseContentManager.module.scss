@@ -88,7 +88,7 @@
     --plyr-audio-controls-background: var(--color-overlay, #002B20);
     --plyr-audio-control-color: color-mix(in srgb, var(--color-white) 70%, transparent);
     --plyr-audio-control-color-hover: var(--color-black);
-    --plyr-audio-control-background-hover: var(--color-primary, #F6D982);
+    --plyr-audio-control-background-hover: transparent;
     --plyr-control-radius: 12px;
     --plyr-range-thumb-background: var(--color-primary, #F6D982);
     --plyr-range-track-background: color-mix(in srgb, var(--color-white) 10%, transparent);
@@ -100,9 +100,171 @@
       background: var(--color-overlay, #002B20) !important;
     }
 
+    :global(.plyr__control) {
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent;
+
+      &:focus,
+      &:focus-visible {
+        background: transparent !important;
+        color: color-mix(in srgb, var(--color-white) 70%, transparent) !important;
+        outline: none !important;
+        box-shadow: none !important;
+      }
+
+      &:active {
+        background: var(--color-primary, #F6D982) !important;
+        color: var(--color-black) !important;
+        transform: scale(0.92);
+      }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      :global(.plyr__control:hover) {
+        background: var(--color-primary, #F6D982) !important;
+        color: var(--color-black) !important;
+      }
+    }
+
+    :global(.plyr__controls [data-plyr="rewind"]),
+    :global(.plyr__controls [data-plyr="fast-forward"]) {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+
+      svg {
+        width: 20px !important;
+        height: 20px !important;
+        fill: currentColor;
+        display: block;
+      }
+
+      &:focus,
+      &:focus-visible {
+        background: transparent !important;
+        color: color-mix(in srgb, var(--color-white) 70%, transparent) !important;
+        outline: none !important;
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        &:hover {
+          background: var(--color-primary, #F6D982) !important;
+          color: var(--color-black) !important;
+          transform: scale(1.1);
+        }
+      }
+
+      &:active {
+        background: var(--color-primary, #F6D982) !important;
+        color: var(--color-black) !important;
+        transform: scale(0.92) !important;
+      }
+    }
+
+    @include respond(md) {
+      :global(.plyr__volume),
+      :global([data-plyr="mute"]),
+      :global([data-plyr="volume"]) {
+        display: none !important;
+      }
+    }
+
     &.plyr--audio {
       border-radius: 16px;
       overflow: hidden;
+    }
+  }
+
+  /* Video.js custom styling overrides */
+  :global(.video-js) {
+    --vjs-theme-color: var(--color-primary, #F6D982);
+
+    :global(.vjs-control-bar) {
+      background: rgba(0, 43, 32, 0.85) !important;
+      backdrop-filter: blur(8px);
+      border-radius: 0 0 16px 16px;
+    }
+
+    :global(.vjs-play-progress) {
+      background-color: var(--color-primary, #F6D982) !important;
+    }
+
+    :global(.vjs-slider) {
+      background-color: color-mix(in srgb, var(--color-white) 20%, transparent);
+    }
+
+    :global(.vjs-button) {
+      outline: none !important;
+      -webkit-tap-highlight-color: transparent;
+
+      &:focus,
+      &:focus-visible {
+        outline: none !important;
+        color: color-mix(in srgb, var(--color-white) 70%, transparent) !important;
+        background: transparent !important;
+      }
+
+      &:active {
+        color: var(--color-primary, #F6D982) !important;
+        transform: scale(0.92);
+      }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      :global(.vjs-button:hover) {
+        color: var(--color-primary, #F6D982) !important;
+      }
+    }
+
+    :global(.vjs-skip-backward-10),
+    :global(.vjs-skip-forward-10) {
+      cursor: pointer;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+
+      :global(.vjs-icon-placeholder::before) {
+        content: '' !important;
+        display: none !important;
+      }
+
+      svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+        display: block;
+        margin: auto;
+      }
+
+      &:focus,
+      &:focus-visible {
+        outline: none !important;
+        color: color-mix(in srgb, var(--color-white) 70%, transparent) !important;
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        &:hover {
+          color: var(--color-primary, #F6D982) !important;
+          transform: scale(1.12);
+        }
+      }
+
+      &:active {
+        color: var(--color-primary, #F6D982) !important;
+        transform: scale(0.92) !important;
+      }
+    }
+
+    @include respond(md) {
+      :global(.vjs-volume-panel),
+      :global(.vjs-mute-control),
+      :global(.vjs-volume-control) {
+        display: none !important;
+      }
     }
   }
 }

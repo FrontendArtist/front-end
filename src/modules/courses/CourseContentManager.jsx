@@ -269,6 +269,12 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       fluid: true,
       fill: false,
       poster: course.media?.url,
+      controlBar: {
+        skipButtons: {
+          forward: 10,
+          backward: 10,
+        },
+      },
       sources: [
         {
           src: activeUrl,
