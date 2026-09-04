@@ -7,14 +7,37 @@ export default function VpnModal() {
   const [isVpn, setIsVpn] = useState(false);
   const [vpnInfo, setVpnInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [checking, setChecking] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
 
-  const checkVpn = useCallback(async (isManual = false) => {
-    if (isManual) {
-      setChecking(true);
-    } else {
-      setLoading(true);
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && sessionStorage.getItem('vpn_modal_dismissed') === 'true') {
+        setIsDismissed(true);
+      }
+    } catch (e) {
+      // sessionStorage unavailable
     }
+  }, []);
+
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    try {
+      sessionStorage.setItem('vpn_modal_dismissed', 'true');
+    } catch (e) {
+      // sessionStorage unavailable
+    }
+  };
+
+  const checkVpn = useCallback(async () => {
+    // If user already dismissed in this session, don't show
+    try {
+      if (typeof window !== 'undefined' && sessionStorage.getItem('vpn_modal_dismissed') === 'true') {
+        setLoading(false);
+        return;
+      }
+    } catch (e) {}
+
+    setLoading(true);
 
     try {
       // ۱. ابتدا بررسی سمت سرور
@@ -57,7 +80,6 @@ export default function VpnModal() {
       console.error('VPN check failed:', err);
     } finally {
       setLoading(false);
-      setChecking(false);
     }
   }, []);
 
@@ -65,14 +87,21 @@ export default function VpnModal() {
     checkVpn();
   }, [checkVpn]);
 
-  if (loading || !isVpn) {
+  if (loading || !isVpn || isDismissed) {
     return null;
   }
 
   return (
-    <div className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="vpn-modal-title">
-      <div className={styles.modal}>
-        {/* آیکون هشدار درخشان */}
+    <div className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="vpn-modal-title" onClick={handleDismiss}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        {/* دکمه بستن */}
+        <button className={styles.closeBtn} onClick={handleDismiss} aria-label="بستن" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* آیکون هشدار */}
         <div className={styles.iconWrapper}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path
@@ -83,14 +112,14 @@ export default function VpnModal() {
           </svg>
         </div>
 
-        {/* عنوان */}
+        {/* عنوان و پیام */}
         <h2 id="vpn-modal-title" className={styles.title}>
-          لطفاً VPN خود را خاموش کنید ⚠️
+          برای داشتن تجربه کاربری بهتر لطفا VPN خود را خاموش کنید
         </h2>
 
-        {/* توضیحات */}
+        {/* توضیحات تکمیلی */}
         <p className={styles.description}>
-          برای دسترسی کامل، افزایش سرعت و جلوگیری از بروز اختلال در دریافت خدمات سایت، لطفا <strong>فیلترشکن (VPN)</strong> خود را غیرفعال کرده و سپس روی دکمه زیر کلیک کنید.
+          روشن بودن فیلترشکن ممکن است سرعت بارگذاری صفحات و دسترسی به برخی بخش‌های سایت را کاهش دهد.
         </p>
 
         {/* اطلاعات IP شناسایی‌شده */}
@@ -105,27 +134,10 @@ export default function VpnModal() {
         <div className={styles.actions}>
           <button
             className={styles.retryBtn}
-            onClick={() => checkVpn(true)}
-            disabled={checking}
+            onClick={handleDismiss}
             type="button"
           >
-            {checking ? (
-              <>
-                <span className={styles.spinner} />
-                در حال بررسی مجدد...
-              </>
-            ) : (
-              <>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-                خاموش کردم / بررسی مجدد
-              </>
-            )}
+            باشه
           </button>
         </div>
       </div>
