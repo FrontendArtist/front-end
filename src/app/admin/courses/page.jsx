@@ -19,7 +19,7 @@ export default async function AdminCoursesPage() {
     const session = await getServerSession(authOptions);
     const jwt = session?.user?.jwt;
 
-    const { courses, meta, error } = await getAdminCoursesAll(jwt, { pageSize: 100 });
+    const { courses, meta, error } = await getAdminCoursesAll(jwt, { page: 1, pageSize: 50 });
 
     return (
         <div className={styles.page}>
@@ -63,7 +63,7 @@ export default async function AdminCoursesPage() {
             )}
 
             {/* ── جدول ─────────────────────────────────────────────────── */}
-            {!error && <CoursesTable initialCourses={courses} />}
+            {!error && <CoursesTable initialCourses={courses} initialMeta={meta} />}
         </div>
     );
 }

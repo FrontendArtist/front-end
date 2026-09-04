@@ -1,8 +1,12 @@
 import { adminFetch } from './adminFetch';
 
-export async function getAdminArticles(jwt, { page = 1, pageSize = 100 } = {}) {
+export async function getAdminArticles(jwt, { page = 1, pageSize = 50, start, limit } = {}) {
+    const paginationQuery = (start !== undefined && limit !== undefined)
+        ? `pagination[start]=${start}&pagination[limit]=${limit}`
+        : `pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+
     const endpointDraft =
-        `/api/articles?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
+        `/api/articles?populate[cover]=true&populate[articles_categories]=true&populate[tags]=true&sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc&${paginationQuery}&status=draft`;
     const endpointPub =
         `/api/articles?fields[0]=documentId&fields[1]=publishedAt&pagination[limit]=500&status=published`;
 

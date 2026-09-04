@@ -1,8 +1,17 @@
 import { adminFetch } from './adminFetch';
 import { STRAPI_API_URL } from '../api';
 
-export async function getAdminComments(jwt, { page = 1, pageSize = 150 } = {}) {
-    const endpoint = `/api/comments?sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&populate[user]=true&populate[article]=true&populate[product]=true&populate[course]=true&populate[comment_parent]=true`;
+export async function getAdminComments(jwt, { page, pageSize, start, limit = 20 } = {}) {
+    let paginationQuery = '';
+    if (start !== undefined && start !== null) {
+        paginationQuery = `pagination[start]=${start}&pagination[limit]=${limit}`;
+    } else {
+        const p = page || 1;
+        const ps = pageSize || 50;
+        paginationQuery = `pagination[page]=${p}&pagination[pageSize]=${ps}`;
+    }
+
+    const endpoint = `/api/comments?sort=createdAt:desc&${paginationQuery}&populate[user]=true&populate[article]=true&populate[product]=true&populate[course]=true&populate[comment_parent]=true`;
     try {
         const data = await adminFetch(endpoint, jwt);
         if (!data) return { comments: [], meta: null, error: true };

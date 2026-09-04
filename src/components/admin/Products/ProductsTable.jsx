@@ -12,7 +12,7 @@
  *   - اعلان Toast برای هر عملیات
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import styles from './Products.module.scss';
@@ -20,10 +20,11 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
-import { toggleProductStatus, deleteProduct } from '@/lib/client/admin/productsClient';
+import AdminLazyLoad from '../Shared/AdminLazyLoad';
+import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
+import { fetchAdminProducts, toggleProductStatus, deleteProduct } from '@/lib/client/admin/productsClient';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
-const PAGE_SIZE = 12;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Toast helper
@@ -49,14 +50,29 @@ const TOAST_ICONS = { success: '✅', error: '❌', info: 'ℹ️' };
 // ProductsTable
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function ProductsTable({ initialProducts }) {
+export default function ProductsTable({ initialProducts = [], initialMeta = null }) {
     const router = useRouter();
     const { toasts, addToast } = useToast();
 
-    // ── Local state ──────────────────────────────────────────────────────────
-    const [products, setProducts] = useState(initialProducts);
+    // ── Lazy Loading State ───────────────────────────────────────────────────
+    const {
+        items: products,
+        setItems: setProducts,
+        total: totalProducts,
+        hasMore,
+        isLoading: isLoadingMore,
+        loadError,
+        loadMore: loadMoreProducts,
+        sentinelRef,
+    } = useAdminLazyLoad({
+        initialItems: initialProducts,
+        initialMeta,
+        fetchFn: fetchAdminProducts,
+        chunkSize: 20,
+        idKey: 'documentId',
+    });
+
     const [searchQuery, setSearchQuery] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
     const [loadingToggle, setLoadingToggle] = useState({}); // { [documentId]: boolean }
     const [deleteTarget, setDeleteTarget] = useState(null); // product to confirm delete
     const [deleteLoading, setDeleteLoading] = useState(false);
@@ -71,16 +87,6 @@ export default function ProductsTable({ initialProducts }) {
                 p.slug?.toLowerCase().includes(q)
         );
     }, [products, searchQuery]);
-
-    // Reset to page 1 when search changes
-    useEffect(() => { setCurrentPage(1); }, [searchQuery]);
-
-    // ── Pagination ───────────────────────────────────────────────────────────
-    const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-    const paginated = filtered.slice(
-        (currentPage - 1) * PAGE_SIZE,
-        currentPage * PAGE_SIZE
-    );
 
     // ── Toggle isAvailable ───────────────────────────────────────────────────
     async function handleToggle(product) {
@@ -137,9 +143,6 @@ export default function ProductsTable({ initialProducts }) {
         }
     }
 
-    // ── Pagination pages array ────────────────────────────────────────────────
-    const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
-
     const headers = ['تصویر', 'نام محصول', 'قیمت (تومان)', 'موجودی', 'وضعیت', 'در دسترس', 'عملیات'];
 
     return (
@@ -154,19 +157,19 @@ export default function ProductsTable({ initialProducts }) {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                     <span className={styles.toolbar__count}>
-                        {new Intl.NumberFormat('fa-IR').format(filtered.length)} محصول
+                        نمایش {new Intl.NumberFormat('fa-IR').format(filtered.length)} از {new Intl.NumberFormat('fa-IR').format(totalProducts || filtered.length)} محصول
                     </span>
                 </AdminToolbar>
 
                 {/* ── Table ─────────────────────────────────────────────── */}
-                {paginated.length === 0 ? (
+                {filtered.length === 0 ? (
                     <div className={styles.emptyState}>
                         <span className={styles.emptyIcon}>📦</span>
                         <p>محصولی یافت نشد.</p>
                     </div>
                 ) : (
                     <AdminTable headers={headers}>
-                        {paginated.map((product) => {
+                        {filtered.map((product) => {
                             const imgUrl = product.images?.[0]?.url
                                 ? (product.images[0].url.startsWith('http') ? product.images[0].url : `${STRAPI_URL}${product.images[0].url}`)
                                 : null;
@@ -273,41 +276,17 @@ export default function ProductsTable({ initialProducts }) {
                     </AdminTable>
                 )}
 
-                {/* ── Pagination ─────────────────────────────────────────── */}
-                {pageCount > 1 && (
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem', direction: 'rtl' }}>
-                        <AdminButton
-                            variant="default"
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                        >
-                            ‹ قبلی
-                        </AdminButton>
-
-                        {pages.map((p) => (
-                            <AdminButton
-                                key={p}
-                                variant={p === currentPage ? 'edit' : 'default'}
-                                onClick={() => setCurrentPage(p)}
-                            >
-                                {new Intl.NumberFormat('fa-IR').format(p)}
-                            </AdminButton>
-                        ))}
-
-                        <AdminButton
-                            variant="default"
-                            onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
-                            disabled={currentPage === pageCount}
-                        >
-                            بعدی ›
-                        </AdminButton>
-
-                        <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)', marginRight: '1rem' }}>
-                            صفحه {new Intl.NumberFormat('fa-IR').format(currentPage)} از{' '}
-                            {new Intl.NumberFormat('fa-IR').format(pageCount)}
-                        </span>
-                    </div>
-                )}
+                {/* ── Lazy Load Sentinel & Load More Button ───────────────── */}
+                <AdminLazyLoad
+                    sentinelRef={sentinelRef}
+                    hasMore={hasMore}
+                    isLoading={isLoadingMore}
+                    error={loadError}
+                    onLoadMore={loadMoreProducts}
+                    currentCount={products.length}
+                    totalCount={totalProducts}
+                    itemLabel="محصول"
+                />
             </AdminTableContainer>
 
             {/* ─── Delete Confirmation Dialog ────────────────────────────── */}

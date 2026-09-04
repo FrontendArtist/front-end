@@ -13,7 +13,7 @@
  * @param {{ initialOrders: object[] }} props
  */
 
-import { useState, useMemo, Fragment } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'react';
 import ReceiptModal from './ReceiptModal';
 import StatusUpdateModal from './StatusUpdateModal';
 import styles from './OrdersTable.module.scss';
@@ -21,6 +21,8 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
+import AdminLazyLoad from '../Shared/AdminLazyLoad';
+import { fetchAdminOrders } from '@/lib/client/admin/ordersClient';
 
 // ── ابزارهای نمایش ──────────────────────────────────────────────────────────
 
@@ -182,13 +184,89 @@ function OrderExpandedRow({ order, colSpan }) {
 
 // ── OrdersTable ──────────────────────────────────────────────────────────────
 
-export default function OrdersTable({ initialOrders }) {
+export default function OrdersTable({ initialOrders = [], initialMeta = null }) {
     // ── State ──────────────────────────────────────────────────────────────────
     const [orders, setOrders] = useState(initialOrders);
     const [receiptModalOrder, setReceiptModal] = useState(null);
     const [statusModalOrder, setStatusModal] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedId, setExpandedId] = useState(null); // شناسه ردیف باز
+
+    // ── Pagination & Lazy Loading State ──────────────────────────────────────
+    const initialTotal = initialMeta?.pagination?.total ?? (initialOrders?.length || 0);
+    const [totalOrders, setTotalOrders] = useState(initialTotal);
+    const [hasMore, setHasMore] = useState(
+        initialMeta?.pagination
+            ? ((initialMeta.pagination.start ?? 0) + (initialMeta.pagination.limit ?? initialOrders.length) < initialMeta.pagination.total) ||
+              (initialMeta.pagination.page && initialMeta.pagination.page < initialMeta.pagination.pageCount)
+            : initialOrders.length < initialTotal
+    );
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [loadError, setLoadError] = useState(null);
+    const sentinelRef = useRef(null);
+
+    // ── متد دریافت صفحات بعدی (Lazy Loading: ۲۰ تا ۲۰ تا) ────────────────────
+    const loadMoreOrders = useCallback(async () => {
+        if (isLoadingMore || !hasMore) return;
+
+        setIsLoadingMore(true);
+        setLoadError(null);
+
+        try {
+            const data = await fetchAdminOrders({ start: orders.length, limit: 20 });
+
+            if (data?.orders && Array.isArray(data.orders)) {
+                setOrders((prev) => {
+                    const existingIds = new Set(prev.map((o) => o.id));
+                    const newUniqueOrders = data.orders.filter((o) => !existingIds.has(o.id));
+                    return [...prev, ...newUniqueOrders];
+                });
+
+                const pagination = data.meta?.pagination;
+                const newTotal = pagination?.total ?? totalOrders;
+                setTotalOrders(newTotal);
+
+                if (data.orders.length < 20 || orders.length + data.orders.length >= newTotal) {
+                    setHasMore(false);
+                }
+            } else {
+                setHasMore(false);
+            }
+        } catch (err) {
+            console.error('[OrdersTable] Error loading more orders:', err);
+            setLoadError('خطا در دریافت سفارش‌های بیشتر');
+        } finally {
+            setIsLoadingMore(false);
+        }
+    }, [hasMore, isLoadingMore, orders.length, totalOrders]);
+
+    // ── اتصال به اسکرول با IntersectionObserver ──────────────────────────────
+    useEffect(() => {
+        if (!hasMore || isLoadingMore) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    loadMoreOrders();
+                }
+            },
+            {
+                rootMargin: '250px',
+                threshold: 0.1,
+            }
+        );
+
+        const currentSentinel = sentinelRef.current;
+        if (currentSentinel) {
+            observer.observe(currentSentinel);
+        }
+
+        return () => {
+            if (currentSentinel) {
+                observer.unobserve(currentSentinel);
+            }
+        };
+    }, [hasMore, isLoadingMore, loadMoreOrders]);
 
     // ── فیلتر جستجو ──────────────────────────────────────────────────────────
     const filteredOrders = useMemo(() => {
@@ -239,7 +317,9 @@ export default function OrdersTable({ initialOrders }) {
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <span className={styles.toolbar__count}>
-                    {new Intl.NumberFormat('fa-IR').format(filteredOrders.length)} سفارش
+                    {searchQuery.trim()
+                        ? `${new Intl.NumberFormat('fa-IR').format(filteredOrders.length)} سفارش یافته‌شده`
+                        : `نمایش ${new Intl.NumberFormat('fa-IR').format(orders.length)} از ${new Intl.NumberFormat('fa-IR').format(totalOrders)} سفارش`}
                 </span>
             </AdminToolbar>
 
@@ -381,6 +461,18 @@ export default function OrdersTable({ initialOrders }) {
                             );
                         })}
             </AdminTable>
+
+            {/* ── بخش Lazy Loading و نشانگر بارگذاری ─────────────────── */}
+            <AdminLazyLoad
+                hasMore={hasMore}
+                isLoading={isLoadingMore}
+                loadError={loadError}
+                onLoadMore={loadMoreOrders}
+                total={totalOrders}
+                currentCount={orders.length}
+                sentinelRef={sentinelRef}
+                itemLabel="سفارش"
+            />
 
             {/* ── مودال رسید ──────────────────────────────────────────────── */}
             {receiptModalOrder && (

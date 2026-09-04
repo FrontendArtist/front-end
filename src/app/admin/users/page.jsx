@@ -25,7 +25,7 @@ export default async function AdminUsersPage() {
                     خطا در دریافت لیست کاربران. لطفاً دوباره تلاش کنید.
                 </div>
             ) : (
-                <UsersTable initialUsers={users} />
+                <UsersTable initialUsers={users} initialMeta={meta} />
             )}
         </div>
     );

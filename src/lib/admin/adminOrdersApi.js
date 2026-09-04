@@ -8,7 +8,8 @@ export async function getOrdersStats(jwt) {
     let totalRevenue = null;
     try {
         const pageSize = 100;
-        const endpoint = `/api/orders?fields[0]=totalPrice&fields[1]=totalAmount&fields[2]=orderStatus&fields[3]=paymentStatus&pagination[page]=1&pagination[pageSize]=${pageSize}`;
+        const fieldsParams = 'fields[0]=totalPrice&fields[1]=orderStatus&fields[2]=paymentStatus&fields[3]=discountAmount&fields[4]=originalTotalPrice';
+        const endpoint = `/api/orders?${fieldsParams}&pagination[page]=1&pagination[pageSize]=${pageSize}`;
         const firstPageData = await adminFetch(endpoint, jwt);
 
         if (firstPageData?.data && Array.isArray(firstPageData.data)) {
@@ -18,7 +19,7 @@ export async function getOrdersStats(jwt) {
             if (pageCount > 1) {
                 const remainingPromises = [];
                 for (let page = 2; page <= pageCount; page++) {
-                    const pEndpoint = `/api/orders?fields[0]=totalPrice&fields[1]=totalAmount&fields[2]=orderStatus&fields[3]=paymentStatus&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+                    const pEndpoint = `/api/orders?${fieldsParams}&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
                     remainingPromises.push(adminFetch(pEndpoint, jwt));
                 }
                 const results = await Promise.allSettled(remainingPromises);
@@ -40,8 +41,18 @@ export async function getOrdersStats(jwt) {
                 const isConfirmed = pStatus === 'paid' || confirmedStatuses.includes(oStatus);
 
                 if (isConfirmed) {
-                    const price = attrs.totalPrice ?? attrs.totalAmount ?? order?.totalPrice ?? order?.totalAmount ?? 0;
-                    return sum + Number(price || 0);
+                    // محاسبه مبلغ نهایی پرداختی پس از کسر کد تخفیف (درآمد واقعی)
+                    let paidAmount = Number(attrs.totalPrice ?? order?.totalPrice ?? 0);
+                    const discount = Number(attrs.discountAmount ?? order?.discountAmount ?? 0);
+                    const original = (attrs.originalTotalPrice !== null && attrs.originalTotalPrice !== undefined)
+                        ? Number(attrs.originalTotalPrice)
+                        : (order?.originalTotalPrice !== null && order?.originalTotalPrice !== undefined ? Number(order?.originalTotalPrice) : null);
+
+                    if (discount > 0 && original !== null) {
+                        paidAmount = Math.min(paidAmount, Math.max(0, original - discount));
+                    }
+
+                    return sum + Number(paidAmount || 0);
                 }
                 return sum;
             }, 0);
@@ -56,9 +67,13 @@ export async function getOrdersStats(jwt) {
     return { totalOrders, totalRevenue };
 }
 
-export async function getOrders(jwt, { page = 1, pageSize = 20 } = {}) {
+export async function getOrders(jwt, { page = 1, pageSize = 50, start, limit } = {}) {
+    const paginationQuery = (start !== undefined && limit !== undefined)
+        ? `pagination[start]=${start}&pagination[limit]=${limit}`
+        : `pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+
     const endpoint =
-        `/api/orders?populate[user][fields][0]=username&populate[user][fields][1]=email&populate[user][fields][2]=phoneNumber&populate[receiptImage]=true&populate[items]=true&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+        `/api/orders?populate[user][fields][0]=username&populate[user][fields][1]=email&populate[user][fields][2]=phoneNumber&populate[receiptImage]=true&populate[items]=true&sort=createdAt:desc&${paginationQuery}`;
 
     const data = await adminFetch(endpoint, jwt);
     if (!data) return { orders: [], meta: null, error: true };

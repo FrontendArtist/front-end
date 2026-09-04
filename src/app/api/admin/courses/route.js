@@ -91,6 +91,8 @@ export async function POST(request) {
     }
 }
 
+import { getAdminCoursesAll } from '@/lib/admin/adminCoursesApi';
+
 export async function GET(request) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.jwt || session.user.role?.type !== 'administrator') {
@@ -98,24 +100,34 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = searchParams.get('page') || '1';
-    const pageSize = searchParams.get('pageSize') || '100';
-
-    const endpoint = `${STRAPI_URL}/api/courses?populate[media]=true&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
+    const startParam = searchParams.get('start');
+    const limitParam = searchParams.get('limit');
+    const page = searchParams.get('page');
+    const pageSize = searchParams.get('pageSize');
 
     try {
-        const res = await fetch(endpoint, {
-            headers: {
-                Authorization: `Bearer ${session.user.jwt}`,
-                'Content-Type': 'application/json',
-            },
-            cache: 'no-store',
+        const options = {};
+        if (startParam !== null) {
+            options.start = parseInt(startParam, 10) || 0;
+            options.limit = parseInt(limitParam, 10) || 20;
+        } else if (page !== null) {
+            options.page = parseInt(page, 10) || 1;
+            options.pageSize = parseInt(pageSize, 10) || 50;
+        } else {
+            options.start = 0;
+            options.limit = 20;
+        }
+
+        const { courses, meta, error } = await getAdminCoursesAll(session.user.jwt, options);
+
+        if (error) {
+            return NextResponse.json({ error: 'خطا در دریافت لیست دوره‌ها' }, { status: 500 });
+        }
+
+        return NextResponse.json({
+            data: courses,
+            meta,
         });
-
-        const data = await res.json();
-        if (!res.ok) return NextResponse.json({ error: 'Strapi error' }, { status: res.status });
-
-        return NextResponse.json(data);
     } catch {
         return NextResponse.json({ error: 'Server error' }, { status: 500 });
     }

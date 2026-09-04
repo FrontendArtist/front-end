@@ -5,7 +5,7 @@
  * @description List of articles - Client Component
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import styles from './Articles.module.scss';
@@ -13,10 +13,11 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
-import { updateArticle, deleteArticle } from '@/lib/client/admin/articlesClient';
+import AdminLazyLoad from '../Shared/AdminLazyLoad';
+import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
+import { fetchAdminArticles, updateArticle, deleteArticle } from '@/lib/client/admin/articlesClient';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
-const PAGE_SIZE = 12;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Toast helper
@@ -42,14 +43,29 @@ const TOAST_ICONS = { success: '✅', error: '❌', info: 'ℹ️' };
 // ArticlesTable
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function ArticlesTable({ initialArticles }) {
+export default function ArticlesTable({ initialArticles = [], initialMeta = null }) {
     const router = useRouter();
     const { toasts, addToast } = useToast();
 
-    // ── Local state ──────────────────────────────────────────────────────────
-    const [articles, setArticles] = useState(initialArticles);
+    // ── Lazy Loading State ───────────────────────────────────────────────────
+    const {
+        items: articles,
+        setItems: setArticles,
+        total: totalArticles,
+        hasMore,
+        isLoading: isLoadingMore,
+        loadError,
+        loadMore: loadMoreArticles,
+        sentinelRef,
+    } = useAdminLazyLoad({
+        initialItems: initialArticles,
+        initialMeta,
+        fetchFn: fetchAdminArticles,
+        chunkSize: 20,
+        idKey: 'documentId',
+    });
+
     const [searchQuery, setSearchQuery] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
     const [loadingToggle, setLoadingToggle] = useState({}); // { [documentId]: boolean }
     const [deleteTarget, setDeleteTarget] = useState(null); // article to confirm delete
     const [deleteLoading, setDeleteLoading] = useState(false);
@@ -122,16 +138,6 @@ export default function ArticlesTable({ initialArticles }) {
         });
     }, [articles, searchQuery]);
 
-    // Reset to page 1 when search changes
-    useEffect(() => { setCurrentPage(1); }, [searchQuery]);
-
-    // ── Pagination ───────────────────────────────────────────────────────────
-    const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-    const paginated = filtered.slice(
-        (currentPage - 1) * PAGE_SIZE,
-        currentPage * PAGE_SIZE
-    );
-
     // ── Delete ───────────────────────────────────────────────────────────────
     async function handleDelete() {
         if (!deleteTarget) return;
@@ -153,9 +159,6 @@ export default function ArticlesTable({ initialArticles }) {
         }
     }
 
-    // ── Pagination pages array ────────────────────────────────────────────────
-    const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
-
     const headers = ['تصویر کاور', 'عنوان مقاله', 'خلاصه (Excerpt)', 'وضعیت انتشار', 'عملیات'];
 
     return (
@@ -170,19 +173,21 @@ export default function ArticlesTable({ initialArticles }) {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                     <span className={styles.toolbar__count}>
-                        {new Intl.NumberFormat('fa-IR').format(filtered.length)} مقاله
+                        {searchQuery.trim()
+                            ? `${new Intl.NumberFormat('fa-IR').format(filtered.length)} مقاله یافت‌شده`
+                            : `نمایش ${new Intl.NumberFormat('fa-IR').format(articles.length)} از ${new Intl.NumberFormat('fa-IR').format(totalArticles)} مقاله`}
                     </span>
                 </AdminToolbar>
 
                 {/* ── Table ─────────────────────────────────────────────── */}
-                {paginated.length === 0 ? (
+                {filtered.length === 0 ? (
                     <div className={styles.emptyState}>
                         <span className={styles.emptyIcon}>📝</span>
                         <p>مقاله‌ای یافت نشد.</p>
                     </div>
                 ) : (
                     <AdminTable headers={headers}>
-                        {paginated.map((article) => {
+                        {filtered.map((article) => {
                             const imgUrl = article.cover?.url
                                 ? (article.cover.url.startsWith('http') ? article.cover.url : `${STRAPI_URL}${article.cover.url}`)
                                 : null;
@@ -266,41 +271,17 @@ export default function ArticlesTable({ initialArticles }) {
                     </AdminTable>
                 )}
 
-                {/* ── Pagination ─────────────────────────────────────────── */}
-                {pageCount > 1 && (
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem', direction: 'rtl' }}>
-                        <AdminButton
-                            variant="default"
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                        >
-                            ‹ قبلی
-                        </AdminButton>
-
-                        {pages.map((p) => (
-                            <AdminButton
-                                key={p}
-                                variant={p === currentPage ? 'edit' : 'default'}
-                                onClick={() => setCurrentPage(p)}
-                            >
-                                {new Intl.NumberFormat('fa-IR').format(p)}
-                            </AdminButton>
-                        ))}
-
-                        <AdminButton
-                            variant="default"
-                            onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
-                            disabled={currentPage === pageCount}
-                        >
-                            بعدی ›
-                        </AdminButton>
-
-                        <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)', marginRight: '1rem' }}>
-                            صفحه {new Intl.NumberFormat('fa-IR').format(currentPage)} از{' '}
-                            {new Intl.NumberFormat('fa-IR').format(pageCount)}
-                        </span>
-                    </div>
-                )}
+                {/* ── Lazy Loading & Load More ───────────────────────── */}
+                <AdminLazyLoad
+                    hasMore={hasMore}
+                    isLoading={isLoadingMore}
+                    loadError={loadError}
+                    onLoadMore={loadMoreArticles}
+                    total={totalArticles}
+                    currentCount={articles.length}
+                    sentinelRef={sentinelRef}
+                    itemLabel="مقاله"
+                />
             </AdminTableContainer>
 
             {/* ─── Delete Confirmation Dialog ────────────────────────────── */}

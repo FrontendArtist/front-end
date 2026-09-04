@@ -5,9 +5,13 @@ export async function getTotalProductsCount(jwt) {
     return data?.meta?.pagination?.total ?? null;
 }
 
-export async function getAdminProducts(jwt, { page = 1, pageSize = 100 } = {}) {
+export async function getAdminProducts(jwt, { page = 1, pageSize = 50, start, limit } = {}) {
+    const paginationQuery = (start !== undefined && limit !== undefined)
+        ? `pagination[start]=${start}&pagination[limit]=${limit}`
+        : `pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+
     const endpointDraft =
-        `/api/products?populate[images][fields][0]=url&populate[images][fields][1]=name&populate[images][fields][2]=id&populate[images][fields][3]=documentId&populate[categories][fields][0]=name&populate[categories][fields][1]=documentId&populate[tags][fields][0]=name&populate[tags][fields][1]=documentId&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
+        `/api/products?populate[images][fields][0]=url&populate[images][fields][1]=name&populate[images][fields][2]=id&populate[images][fields][3]=documentId&populate[categories][fields][0]=name&populate[categories][fields][1]=documentId&populate[tags][fields][0]=name&populate[tags][fields][1]=documentId&sort=createdAt:desc&${paginationQuery}&status=draft`;
     const endpointPub = `/api/products?fields[0]=documentId&fields[1]=publishedAt&pagination[limit]=500&status=published`;
 
     const [data, pubData] = await Promise.all([

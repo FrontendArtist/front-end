@@ -18,7 +18,9 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
-import { updateCommentStatus, deleteComment, replyToComment } from '@/lib/client/admin/commentsClient';
+import AdminLazyLoad from '../Shared/AdminLazyLoad';
+import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
+import { fetchAdminComments, updateCommentStatus, deleteComment, replyToComment } from '@/lib/client/admin/commentsClient';
 
 /**
  * فرمت‌کننده تاریخ شمسی نسبی / فشرده
@@ -68,8 +70,25 @@ function buildTreeOrderedList(commentList) {
   return ordered;
 }
 
-export default function CommentsManager({ initialComments = [] }) {
-  const [comments, setComments] = useState(initialComments);
+export default function CommentsManager({ initialComments = [], initialMeta = null }) {
+  // ── Lazy Loading State ───────────────────────────────────────────────────
+  const {
+    items: comments,
+    setItems: setComments,
+    total: totalComments,
+    hasMore,
+    isLoading: isLoadingMore,
+    loadError,
+    loadMore: loadMoreComments,
+    sentinelRef,
+  } = useAdminLazyLoad({
+    initialItems: initialComments,
+    initialMeta,
+    fetchFn: fetchAdminComments,
+    chunkSize: 20,
+    idKey: 'documentId',
+  });
+
   const [filter, setFilter] = useState('all'); // 'all' | 'pending' | 'approved'
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -247,7 +266,7 @@ export default function CommentsManager({ initialComments = [] }) {
               variant={filter === 'all' ? 'edit' : 'default'}
               onClick={() => setFilter('all')}
             >
-              همه نظرات ({comments.length})
+              نمایش {comments.length} از {totalComments || comments.length} نظر
             </AdminButton>
             <AdminButton
               variant={filter === 'pending' ? 'edit' : 'default'}
@@ -363,6 +382,18 @@ export default function CommentsManager({ initialComments = [] }) {
                 })}
           </AdminTable>
         )}
+
+        {/* ── Lazy Load Sentinel & Load More Button ───────────────── */}
+        <AdminLazyLoad
+          sentinelRef={sentinelRef}
+          hasMore={hasMore}
+          isLoading={isLoadingMore}
+          error={loadError}
+          onLoadMore={loadMoreComments}
+          currentCount={comments.length}
+          totalCount={totalComments}
+          itemLabel="نظر"
+        />
       </AdminTableContainer>
 
       {/* ── Reply Modal ────────────────────────────────────────────────────── */}

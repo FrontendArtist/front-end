@@ -19,7 +19,7 @@ export default async function AdminProductsPage() {
     const session = await getServerSession(authOptions);
     const jwt = session?.user?.jwt;
 
-    const { products, meta, error } = await getAdminProducts(jwt, { pageSize: 100 });
+    const { products, meta, error } = await getAdminProducts(jwt, { page: 1, pageSize: 50 });
 
     return (
         <div className={styles.page}>
@@ -62,8 +62,8 @@ export default async function AdminProductsPage() {
                 </div>
             )}
 
-            {/* ── جدول ─────────────────────────────────────────────────── */}
-            {!error && <ProductsTable initialProducts={products} />}
+            {/* ── جدول همراه با Lazy Loading ───────────────────────────── */}
+            {!error && <ProductsTable initialProducts={products} initialMeta={meta} />}
         </div>
     );
 }

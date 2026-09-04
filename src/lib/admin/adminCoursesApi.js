@@ -1,8 +1,17 @@
 import { adminFetch } from './adminFetch';
 
-export async function getAdminCoursesAll(jwt, { page = 1, pageSize = 100 } = {}) {
+export async function getAdminCoursesAll(jwt, { page, pageSize, start, limit = 20 } = {}) {
+    let paginationQuery = '';
+    if (start !== undefined && start !== null) {
+        paginationQuery = `pagination[start]=${start}&pagination[limit]=${limit}`;
+    } else {
+        const p = page || 1;
+        const ps = pageSize || 50;
+        paginationQuery = `pagination[page]=${p}&pagination[pageSize]=${ps}`;
+    }
+
     const endpointDraft =
-        `/api/courses?populate[media][fields][0]=url&populate[media][fields][1]=name&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
+        `/api/courses?populate[media][fields][0]=url&populate[media][fields][1]=name&sort=createdAt:desc&${paginationQuery}&status=draft`;
     const endpointPub =
         `/api/courses?fields[0]=documentId&fields[1]=publishedAt&pagination[limit]=500&status=published`;
 

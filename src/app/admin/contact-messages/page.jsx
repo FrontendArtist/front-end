@@ -11,9 +11,7 @@ export default async function AdminContactMessagesPage() {
     const session = await getServerSession(authOptions);
     const jwt = session?.user?.jwt;
 
-    // Fetch initial contact message records (up to 100 for client-side pagination to start query,
-    // matches other tables page sizes/limit options)
-    const { messages, error } = await getContactMessages(jwt, { pageSize: 150 });
+    const { messages, meta, error } = await getContactMessages(jwt, { page: 1, pageSize: 50 });
 
     return (
         <div style={{ padding: '2rem' }}>
@@ -26,7 +24,7 @@ export default async function AdminContactMessagesPage() {
                     خطا در دریافت لیست پیام‌های تماس. لطفاً ارتباط با سرور را بررسی کرده و صفحه را مجدداً بارگذاری کنید.
                 </div>
             ) : (
-                <MessagesTable initialMessages={messages} />
+                <MessagesTable initialMessages={messages} initialMeta={meta} />
             )}
         </div>
     );

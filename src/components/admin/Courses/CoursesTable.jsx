@@ -12,17 +12,18 @@
  *   - Toast اعلان
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './Courses.module.scss';
 import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
-import { updateCourse, deleteCourse } from '@/lib/client/admin/coursesClient';
+import AdminLazyLoad from '../Shared/AdminLazyLoad';
+import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
+import { fetchAdminCourses, updateCourse, deleteCourse } from '@/lib/client/admin/coursesClient';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
-const PAGE_SIZE = 12;
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 function useToast() {
@@ -37,13 +38,29 @@ function useToast() {
 const TOAST_ICONS = { success: '✅', error: '❌', info: 'ℹ️' };
 
 // ──────────────────────────────────────────────────────────────────────────────
-export default function CoursesTable({ initialCourses }) {
+export default function CoursesTable({ initialCourses = [], initialMeta = null }) {
     const router = useRouter();
     const { toasts, addToast } = useToast();
 
-    const [courses, setCourses] = useState(initialCourses);
+    // ── Lazy Loading State ───────────────────────────────────────────────────
+    const {
+        items: courses,
+        setItems: setCourses,
+        total: totalCourses,
+        hasMore,
+        isLoading: isLoadingMore,
+        loadError,
+        loadMore: loadMoreCourses,
+        sentinelRef,
+    } = useAdminLazyLoad({
+        initialItems: initialCourses,
+        initialMeta,
+        fetchFn: fetchAdminCourses,
+        chunkSize: 20,
+        idKey: 'documentId',
+    });
+
     const [searchQuery, setSearchQuery] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
     const [loadingToggle, setLoadingToggle] = useState({});
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
@@ -56,12 +73,6 @@ export default function CoursesTable({ initialCourses }) {
             (c) => c.title?.toLowerCase().includes(q) || c.slug?.toLowerCase().includes(q)
         );
     }, [courses, searchQuery]);
-
-    useEffect(() => { setCurrentPage(1); }, [searchQuery]);
-
-    // ── Pagination ─────────────────────────────────────────────────────────────
-    const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-    const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
     // ── Toggle publish ────────────────────────────────────────────────────────
     async function handleTogglePublish(course) {
@@ -119,8 +130,6 @@ export default function CoursesTable({ initialCourses }) {
         }
     }
 
-    const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
-
     const headers = ['تصویر', 'عنوان دوره', 'قیمت (تومان)', 'رایگان', 'فصل‌بندی', 'وضعیت انتشار', 'عملیات'];
 
     return (
@@ -133,18 +142,18 @@ export default function CoursesTable({ initialCourses }) {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                     <span className={styles.toolbar__count}>
-                        {new Intl.NumberFormat('fa-IR').format(filtered.length)} دوره
+                        نمایش {new Intl.NumberFormat('fa-IR').format(filtered.length)} از {new Intl.NumberFormat('fa-IR').format(totalCourses || filtered.length)} دوره
                     </span>
                 </AdminToolbar>
 
-                {paginated.length === 0 ? (
+                {filtered.length === 0 ? (
                     <div className={styles.emptyState}>
                         <span className={styles.emptyIcon}>🎓</span>
                         <p>دوره‌ای یافت نشد.</p>
                     </div>
                 ) : (
                     <AdminTable headers={headers}>
-                        {paginated.map((course) => {
+                        {filtered.map((course) => {
                             const imgUrl = course.media?.[0]?.url
                                 ? (course.media[0].url.startsWith('http') ? course.media[0].url : `${STRAPI_URL}${course.media[0].url}`)
                                 : null;
@@ -260,41 +269,17 @@ export default function CoursesTable({ initialCourses }) {
                     </AdminTable>
                 )}
 
-                {/* Pagination */}
-                {pageCount > 1 && (
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem', direction: 'rtl' }}>
-                        <AdminButton
-                            variant="default"
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                        >
-                            ‹ قبلی
-                        </AdminButton>
-
-                        {pages.map((p) => (
-                            <AdminButton
-                                key={p}
-                                variant={p === currentPage ? 'edit' : 'default'}
-                                onClick={() => setCurrentPage(p)}
-                            >
-                                {new Intl.NumberFormat('fa-IR').format(p)}
-                            </AdminButton>
-                        ))}
-
-                        <AdminButton
-                            variant="default"
-                            onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
-                            disabled={currentPage === pageCount}
-                        >
-                            بعدی ›
-                        </AdminButton>
-
-                        <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)', marginRight: '1rem' }}>
-                            صفحه {new Intl.NumberFormat('fa-IR').format(currentPage)} از{' '}
-                            {new Intl.NumberFormat('fa-IR').format(pageCount)}
-                        </span>
-                    </div>
-                )}
+                {/* ── Lazy Load Sentinel & Load More Button ───────────────── */}
+                <AdminLazyLoad
+                    sentinelRef={sentinelRef}
+                    hasMore={hasMore}
+                    isLoading={isLoadingMore}
+                    error={loadError}
+                    onLoadMore={loadMoreCourses}
+                    currentCount={courses.length}
+                    totalCount={totalCourses}
+                    itemLabel="دوره"
+                />
             </AdminTableContainer>
 
             {/* Delete Confirm Dialog */}

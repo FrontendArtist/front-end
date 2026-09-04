@@ -11,7 +11,7 @@ export default async function AdminCommentsPage() {
     const session = await getServerSession(authOptions);
     const jwt = session?.user?.jwt;
 
-    const { comments, error } = await getAdminComments(jwt, { pageSize: 200 });
+    const { comments, meta, error } = await getAdminComments(jwt, { page: 1, pageSize: 50 });
 
     return (
         <div style={{ padding: '2rem' }}>
@@ -26,7 +26,7 @@ export default async function AdminCommentsPage() {
                     خطا در دریافت لیست نظرات. لطفاً ارتباط با سرور را بررسی کرده و صفحه را مجدداً بارگذاری کنید.
                 </div>
             ) : (
-                <CommentsManager initialComments={comments} />
+                <CommentsManager initialComments={comments} initialMeta={meta} />
             )}
         </div>
     );

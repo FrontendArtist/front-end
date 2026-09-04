@@ -23,8 +23,8 @@ export default async function AdminOrdersPage() {
     const session = await getServerSession(authOptions);
     const jwt = session?.user?.jwt;
 
-    // ── واکشی سفارش‌ها از Strapi ────────────────────────────────────
-    const { orders, meta, error } = await getOrders(jwt, { pageSize: 50 });
+    // ── واکشی اولیه سفارش‌ها از Strapi (صفحه اول با سایز ۵۰) ────────
+    const { orders, meta, error } = await getOrders(jwt, { page: 1, pageSize: 50 });
 
     return (
         <div className={styles.page}>
@@ -46,9 +46,9 @@ export default async function AdminOrdersPage() {
                 </div>
             )}
 
-            {/* ── جدول سفارش‌ها ────────────────────────────────────────── */}
+            {/* ── جدول سفارش‌ها همراه با Lazy Load ─────────────────────── */}
             {!error && (
-                <OrdersTable initialOrders={orders} />
+                <OrdersTable initialOrders={orders} initialMeta={meta} />
             )}
         </div>
     );

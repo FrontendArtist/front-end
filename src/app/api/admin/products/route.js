@@ -78,6 +78,8 @@ export async function POST(request) {
     }
 }
 
+import { getAdminProducts } from '@/lib/admin/adminProductsApi';
+
 export async function GET(request) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.jwt || session.user.role?.type !== 'administrator') {
@@ -85,25 +87,24 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = searchParams.get('page') || '1';
-    const pageSize = searchParams.get('pageSize') || '100';
+    const startParam = searchParams.get('start');
+    const limitParam = searchParams.get('limit');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '50', 10);
 
-    const endpoint = `${STRAPI_URL}/api/products?populate[images]=true&populate[categories]=true&populate[tags]=true&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
+    const options = (startParam !== null && limitParam !== null)
+        ? { start: parseInt(startParam, 10), limit: parseInt(limitParam, 10) }
+        : { page, pageSize };
 
     try {
-        const res = await fetch(endpoint, {
-            headers: {
-                Authorization: `Bearer ${session.user.jwt}`,
-                'Content-Type': 'application/json',
-            },
-            cache: 'no-store',
-        });
+        const { products, meta, error } = await getAdminProducts(session.user.jwt, options);
 
-        const data = await res.json();
-        if (!res.ok) return NextResponse.json({ error: 'Strapi error' }, { status: res.status });
+        if (error) {
+            return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+        }
 
-        return NextResponse.json(data);
-    } catch {
+        return NextResponse.json({ products, meta });
+    } catch (error) {
         return NextResponse.json({ error: 'Server error' }, { status: 500 });
     }
 }

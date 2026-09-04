@@ -19,7 +19,7 @@ export default async function AdminArticlesPage() {
     const session = await getServerSession(authOptions);
     const jwt = session?.user?.jwt;
 
-    const { articles, meta, error } = await getAdminArticles(jwt, { pageSize: 100 });
+    const { articles, meta, error } = await getAdminArticles(jwt, { page: 1, pageSize: 50 });
 
     return (
         <div className={styles.page}>
@@ -62,8 +62,8 @@ export default async function AdminArticlesPage() {
                 </div>
             )}
 
-            {/* ── جدول ─────────────────────────────────────────────────── */}
-            {!error && <ArticlesTable initialArticles={articles} />}
+            {/* ── جدول همراه با Lazy Loading ───────────────────────────── */}
+            {!error && <ArticlesTable initialArticles={articles} initialMeta={meta} />}
         </div>
     );
 }

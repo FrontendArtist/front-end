@@ -1,27 +1,55 @@
 import { adminFetch } from './adminFetch';
 
 export async function getTotalUsersCount(jwt) {
-    const data = await adminFetch('/api/users?pagination[limit]=1&pagination[withCount]=true', jwt);
-    if (data?.meta?.pagination?.total !== undefined) {
-        return data.meta.pagination.total;
-    }
-    if (Array.isArray(data)) {
-        return data.length;
-    }
+    try {
+        const countData = await adminFetch('/api/users/count', jwt);
+        if (typeof countData === 'number') return countData;
+        if (countData?.count !== undefined) return countData.count;
+    } catch (_) {}
+
+    try {
+        const data = await adminFetch('/api/users?pagination[limit]=1&pagination[withCount]=true', jwt);
+        if (data?.meta?.pagination?.total !== undefined) {
+            return data.meta.pagination.total;
+        }
+        if (Array.isArray(data)) {
+            return data.length;
+        }
+    } catch (_) {}
     return null;
 }
 
-export async function getUsers(jwt, { page = 1, pageSize = 50 } = {}) {
-    const endpoint = `/api/users?populate=role&sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+export async function getUsers(jwt, { page, pageSize, start, limit = 20 } = {}) {
+    const currentLimit = (pageSize || limit || 50);
+    let currentStart = 0;
+    if (start !== undefined && start !== null) {
+        currentStart = Number(start) || 0;
+    } else if (page !== undefined && page !== null) {
+        const p = Number(page) || 1;
+        const ps = Number(pageSize) || 50;
+        currentStart = (p - 1) * ps;
+    }
+
+    const paginationQuery = `_start=${currentStart}&_limit=${currentLimit}&start=${currentStart}&limit=${currentLimit}&pagination[start]=${currentStart}&pagination[limit]=${currentLimit}`;
+    const endpoint = `/api/users?populate=role&sort=createdAt:desc&${paginationQuery}`;
 
     try {
-        const res = await adminFetch(endpoint, jwt);
-        if (!res) return { users: [], error: true };
+        const [res, totalCount] = await Promise.all([
+            adminFetch(endpoint, jwt),
+            getTotalUsersCount(jwt).catch(() => null),
+        ]);
+        if (!res) return { users: [], meta: null, error: true };
 
         const isArray = Array.isArray(res);
         const usersList = isArray ? res : (res.data || []);
 
-        const users = usersList.map((u) => {
+        // اگر استراپی تمام کاربران را یکجا فرستاد و پارامتر لیمیت را اعمال نکرد، بر اساس start و limit برش می‌زنیم
+        let slicedList = usersList;
+        if (usersList.length > currentLimit) {
+            slicedList = usersList.slice(currentStart, currentStart + currentLimit);
+        }
+
+        const users = slicedList.map((u) => {
             const attrs = u.attributes || u;
             return {
                 id: u.id,
@@ -37,10 +65,22 @@ export async function getUsers(jwt, { page = 1, pageSize = 50 } = {}) {
             };
         });
 
-        return { users, meta: isArray ? null : res.meta, error: false };
+        const total = totalCount ?? (res.meta?.pagination?.total ?? usersList.length);
+
+        const meta = {
+            pagination: {
+                total,
+                start: currentStart,
+                limit: currentLimit,
+                page: page || 1,
+                pageSize: currentLimit,
+            }
+        };
+
+        return { users, meta, error: false };
     } catch (e) {
         console.error('[getUsers] error:', e);
-        return { users: [], error: true };
+        return { users: [], meta: null, error: true };
     }
 }
 

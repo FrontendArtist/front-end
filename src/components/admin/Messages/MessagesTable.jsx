@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Eye, Trash2, Mail, MailOpen, AlertCircle, Info, Search } from 'lucide-react';
 import styles from './Messages.module.scss';
 import MessageReadModal from './MessageReadModal';
@@ -8,9 +8,10 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
-import { updateMessage, deleteMessage } from '@/lib/client/admin/messagesClient';
+import AdminLazyLoad from '../Shared/AdminLazyLoad';
+import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
+import { fetchAdminMessages, updateMessage, deleteMessage } from '@/lib/client/admin/messagesClient';
 
-const PAGE_SIZE = 15;
 const TOAST_ICONS = { success: '✅', error: '❌', info: 'ℹ️' };
 
 function useToast() {
@@ -27,14 +28,29 @@ function useToast() {
     return { toasts, addToast };
 }
 
-export default function MessagesTable({ initialMessages }) {
+export default function MessagesTable({ initialMessages = [], initialMeta = null }) {
     const { toasts, addToast } = useToast();
 
-    // ── Local state ──────────────────────────────────────────────────────────
-    const [messages, setMessages] = useState(initialMessages || []);
+    // ── Lazy Loading State ───────────────────────────────────────────────────
+    const {
+        items: messages,
+        setItems: setMessages,
+        total: totalMessages,
+        hasMore,
+        isLoading: isLoadingMore,
+        loadError,
+        loadMore: loadMoreMessages,
+        sentinelRef,
+    } = useAdminLazyLoad({
+        initialItems: initialMessages,
+        initialMeta,
+        fetchFn: fetchAdminMessages,
+        chunkSize: 20,
+        idKey: 'documentId',
+    });
+
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState('all'); // 'all' | 'read' | 'unread'
-    const [currentPage, setCurrentPage] = useState(1);
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -105,20 +121,6 @@ export default function MessagesTable({ initialMessages }) {
         });
     }, [messages, searchQuery, filterType]);
 
-    // Reset current page when filters change
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchQuery, filterType]);
-
-    // ── Pagination ───────────────────────────────────────────────────────────
-    const pageCount = Math.max(1, Math.ceil(filteredMessages.length / PAGE_SIZE));
-    const paginated = useMemo(() => {
-        const startIndex = (currentPage - 1) * PAGE_SIZE;
-        return filteredMessages.slice(startIndex, startIndex + PAGE_SIZE);
-    }, [filteredMessages, currentPage]);
-
-    const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
-
     const formatDate = (dateString) => {
         try {
             return new Intl.DateTimeFormat('fa-IR', {
@@ -142,15 +144,13 @@ export default function MessagesTable({ initialMessages }) {
                             variant={filterType === 'all' ? 'edit' : 'default'}
                             onClick={() => setFilterType('all')}
                         >
-                            همه پیام‌ها
+                            نمایش {filteredMessages.length} از {totalMessages || filteredMessages.length} پیام
                         </AdminButton>
                         <AdminButton
                             variant={filterType === 'unread' ? 'edit' : 'default'}
                             onClick={() => setFilterType('unread')}
                         >
-                            خوانده نشده (
-                            {messages.filter((m) => !m.isRead).length}
-                            )
+                            خوانده نشده ({messages.filter((m) => !m.isRead).length})
                         </AdminButton>
                         <AdminButton
                             variant={filterType === 'read' ? 'edit' : 'default'}
@@ -168,15 +168,15 @@ export default function MessagesTable({ initialMessages }) {
                 </AdminToolbar>
 
                 {/* ── Messages Table ────────────────────────────────────────── */}
-                {paginated.length === 0 ? (
+                {filteredMessages.length === 0 ? (
                     <div className={styles.emptyState}>
                         <AlertCircle size={28} style={{ opacity: 0.5, marginBottom: '8px' }} />
                         <p>هیچ پیام تماسی یافت نشد.</p>
                     </div>
                 ) : (
                     <AdminTable headers={headers}>
-                            {paginated.map((msg, index) => {
-                                const rowNumber = (currentPage - 1) * PAGE_SIZE + index + 1;
+                            {filteredMessages.map((msg, index) => {
+                                const rowNumber = index + 1;
                                 return (
                                     <tr
                                         key={msg.documentId}
@@ -225,34 +225,17 @@ export default function MessagesTable({ initialMessages }) {
                     </AdminTable>
                 )}
 
-                {/* ── Table Pagination ───────────────────────────────────────── */}
-                {pageCount > 1 && (
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem', direction: 'rtl' }}>
-                        <AdminButton
-                            variant="default"
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                        >
-                            « قبلی
-                        </AdminButton>
-                        {pages.map((p) => (
-                            <AdminButton
-                                key={p}
-                                variant={currentPage === p ? 'edit' : 'default'}
-                                onClick={() => setCurrentPage(p)}
-                            >
-                                {new Intl.NumberFormat('fa-IR').format(p)}
-                            </AdminButton>
-                        ))}
-                        <AdminButton
-                            variant="default"
-                            onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
-                            disabled={currentPage === pageCount}
-                        >
-                            بعدی »
-                        </AdminButton>
-                    </div>
-                )}
+                {/* ── Lazy Load Sentinel & Load More Button ───────────────── */}
+                <AdminLazyLoad
+                    sentinelRef={sentinelRef}
+                    hasMore={hasMore}
+                    isLoading={isLoadingMore}
+                    error={loadError}
+                    onLoadMore={loadMoreMessages}
+                    currentCount={messages.length}
+                    totalCount={totalMessages}
+                    itemLabel="پیام"
+                />
             </AdminTableContainer>
 
             {/* ─── Delete Confirmation Modal ────────────────────────────── */}

@@ -7,6 +7,9 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
+import AdminLazyLoad from '../Shared/AdminLazyLoad';
+import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
+import { fetchAdminUsers } from '@/lib/client/admin/usersClient';
 import styles from './Users.module.scss';
 
 /**
@@ -279,14 +282,27 @@ function BulkLightHeader({ onBulkAdded }) {
     );
 }
 
-export default function UsersTable({ initialUsers }) {
-    const [usersList, setUsersList] = useState(initialUsers);
+export default function UsersTable({ initialUsers = [], initialMeta = null }) {
+    // ── Lazy Loading State ───────────────────────────────────────────────────
+    const {
+        items: usersList,
+        setItems: setUsersList,
+        total: totalUsers,
+        hasMore,
+        isLoading: isLoadingMore,
+        loadError,
+        loadMore: loadMoreUsers,
+        sentinelRef,
+    } = useAdminLazyLoad({
+        initialItems: initialUsers,
+        initialMeta,
+        fetchFn: fetchAdminUsers,
+        chunkSize: 20,
+        idKey: 'id',
+    });
+
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUserId, setSelectedUserId] = useState(null);
-
-    useEffect(() => {
-        setUsersList(initialUsers);
-    }, [initialUsers]);
 
     const handleSingleLightUpdated = (userId, newLight) => {
         setUsersList(prev => prev.map(u => u.id === userId ? { ...u, light: newLight } : u));
@@ -324,12 +340,15 @@ export default function UsersTable({ initialUsers }) {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
+                <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)', marginRight: 'auto' }}>
+                    نمایش {new Intl.NumberFormat('fa-IR').format(filteredUsers.length)} از {new Intl.NumberFormat('fa-IR').format(totalUsers || filteredUsers.length)} کاربر
+                </span>
             </AdminToolbar>
 
             <AdminTable headers={headers}>
                 {filteredUsers.length > 0 ? (
                     filteredUsers.map((user, index) => (
-                        <tr key={user.documentId}>
+                        <tr key={user.documentId || user.id}>
                             <td>{index + 1}</td>
                             <td>
                                 <div className={styles.usernameText}>
@@ -368,6 +387,18 @@ export default function UsersTable({ initialUsers }) {
                     </tr>
                 )}
             </AdminTable>
+
+            {/* ── Lazy Load Sentinel & Load More Button ───────────────── */}
+            <AdminLazyLoad
+                sentinelRef={sentinelRef}
+                hasMore={hasMore}
+                isLoading={isLoadingMore}
+                error={loadError}
+                onLoadMore={loadMoreUsers}
+                currentCount={usersList.length}
+                totalCount={totalUsers}
+                itemLabel="کاربر"
+            />
 
             {selectedUserId && (
                 <UserDetailsDrawer

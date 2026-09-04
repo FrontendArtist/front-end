@@ -1,7 +1,15 @@
 import { adminFetch } from './adminFetch';
 
-export async function getContactMessages(jwt, { page = 1, pageSize = 50 } = {}) {
-    const endpoint = `/api/contact-messages?sort=createdAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}&status=draft`;
+export async function getContactMessages(jwt, { page, pageSize, start, limit = 20 } = {}) {
+    let paginationQuery = '';
+    if (start !== undefined && start !== null) {
+        paginationQuery = `pagination[start]=${start}&pagination[limit]=${limit}`;
+    } else {
+        const p = page || 1;
+        const ps = pageSize || 50;
+        paginationQuery = `pagination[page]=${p}&pagination[pageSize]=${ps}`;
+    }
+    const endpoint = `/api/contact-messages?sort=createdAt:desc&${paginationQuery}&status=draft`;
     try {
         const data = await adminFetch(endpoint, jwt);
         if (!data) return { messages: [], meta: null, error: true };
