@@ -1,35 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import AuthForm from '@/components/auth/AuthForm';
 import styles from './AuthStep.module.scss';
 
 /**
- * مرحله 2: احراز هویت
- * نمایش فرم OTP inline یا پیام success اگر لاگین است
- * 
- * @param {function} onNext - callback برای رفتن به مرحله بعد
- * @param {number} totalPrice - مبلغ کل سفارش (اگر صفر باشد، دوره رایگان است)
+ * مرحله 2 چک‌اوت: احراز هویت
+ * از کامپوننت مشترک AuthForm استفاده می‌کند
  */
 export default function AuthStep({ onNext, totalPrice = 0 }) {
-    const { data: session, status } = useSession();
+    const { status } = useSession();
     const router = useRouter();
-    const [authStep, setAuthStep] = useState('phone'); // 'phone' | 'otp'
-    const [phone, setPhone] = useState('');
-    const [otp, setOtp] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
 
-    // اگر کاربر لاگین است، بررسی می‌کنیم که آیا سفارش رایگان است یا نه
     useEffect(() => {
         if (status === 'authenticated') {
             const timer = setTimeout(() => {
                 if (totalPrice === 0) {
-                    // دوره رایگان: مستقیم به صفحه موفقیت
                     router.replace('/payment/callback?status=success');
                 } else {
-                    // سفارش پولی: به مرحله بعد (Shipping) برو
                     onNext();
                 }
             }, 1500);
@@ -37,82 +27,6 @@ export default function AuthStep({ onNext, totalPrice = 0 }) {
         }
     }, [status, onNext, totalPrice, router]);
 
-    const handlePhoneSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-
-        // Validation
-        if (!phone || phone.length < 11) {
-            setError('شماره موبایل معتبر نیست');
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-            const response = await fetch(`${strapiUrl}/api/auth/otp/send`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ phoneNumber: phone }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'خطا در ارسال کد تایید');
-            }
-
-            // Success - move to OTP step
-            setAuthStep('otp');
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleOTPSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-
-        // Validation
-        if (!otp || otp.length !== 6) {
-            setError('کد تایید باید ۶ رقم باشد');
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            const result = await signIn('otp-login', {
-                phoneNumber: phone,
-                otpCode: otp,
-                redirect: false,
-            });
-
-            if (result?.error) {
-                throw new Error('کد تایید نامعتبر است');
-            }
-
-            // Success - session will update automatically
-            // onNext will be called by useEffect
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleBackToPhone = () => {
-        setAuthStep('phone');
-        setOtp('');
-        setError('');
-    };
-
-    // نمایش Loading هنگام چک کردن سشن
     if (status === 'loading') {
         return (
             <div className={styles.authStep}>
@@ -124,7 +38,6 @@ export default function AuthStep({ onNext, totalPrice = 0 }) {
         );
     }
 
-    // اگر لاگین است، پیام موفقیت نمایش بده
     if (status === 'authenticated') {
         return (
             <div className={styles.authStep}>
@@ -144,73 +57,12 @@ export default function AuthStep({ onNext, totalPrice = 0 }) {
         );
     }
 
-    // فرم ورود
     return (
         <div className={styles.authStep}>
-            <h2 className={styles.title}>ورود / ثبت‌نام</h2>
-            <p className={styles.subtitle}>برای ادامه خرید، لطفاً وارد شوید</p>
-
-            {authStep === 'phone' ? (
-                <form onSubmit={handlePhoneSubmit} className={styles.form}>
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="phone" className={styles.label}>شماره موبایل</label>
-                        <input
-                            type="tel"
-                            id="phone"
-                            className={styles.input}
-                            placeholder="09123456789"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            disabled={loading}
-                            maxLength={11}
-                            dir="ltr"
-                        />
-                    </div>
-
-                    {error && <div className={styles.error}>{error}</div>}
-
-                    <button type="submit" className={styles.submitButton} disabled={loading}>
-                        {loading ? 'در حال ارسال...' : 'دریافت کد تایید'}
-                    </button>
-                </form>
-            ) : (
-                <form onSubmit={handleOTPSubmit} className={styles.form}>
-                    <div className={styles.phoneDisplay}>
-                        کد ۶ رقمی ارسال شده به شماره <strong>{phone}</strong> را وارد کنید
-                    </div>
-
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="otp" className={styles.label}>کد تایید</label>
-                        <input
-                            type="text"
-                            id="otp"
-                            className={styles.input}
-                            placeholder="123456"
-                            value={otp}
-                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                            disabled={loading}
-                            maxLength={6}
-                            dir="ltr"
-                            autoFocus
-                        />
-                    </div>
-
-                    {error && <div className={styles.error}>{error}</div>}
-
-                    <button type="submit" className={styles.submitButton} disabled={loading}>
-                        {loading ? 'در حال تایید...' : 'تایید و ورود'}
-                    </button>
-
-                    <button
-                        type="button"
-                        className={styles.backButton}
-                        onClick={handleBackToPhone}
-                        disabled={loading}
-                    >
-                        بازگشت به وارد کردن شماره
-                    </button>
-                </form>
-            )}
+            <AuthForm
+                title="ورود / ثبت‌نام"
+                subtitle="برای ادامه خرید، لطفاً وارد شوید"
+            />
         </div>
     );
 }

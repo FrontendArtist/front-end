@@ -1,0 +1,256 @@
+@use '@/styles/base/mixins' as *;
+
+.card {
+  width: 100%;
+  max-width: 460px;
+  position: relative;
+  padding: 40px 36px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-overlay) 55%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg-primary) 70%, transparent) 100%
+  );
+  backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
+  border-radius: var(--radius-card);
+  box-shadow: 0 24px 48px color-mix(in srgb, var(--color-black) 30%, transparent);
+  animation: slideUp 0.3s ease-out;
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @include respond(md) {
+    padding: 32px 24px;
+  }
+
+  @include respond(sm) {
+    padding: 24px 18px;
+    border-radius: var(--border-radius);
+  }
+}
+
+.iconWrapper {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+  border-radius: 50%;
+  color: var(--color-text-primary);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.title {
+  font-family: var(--font-lalezar);
+  font-size: var(--font-2xl);
+  color: var(--color-text-primary);
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+
+  @include respond(xl) {
+    font-size: var(--font-xl);
+  }
+}
+
+.description {
+  font-size: var(--font-md);
+  color: color-mix(in srgb, var(--color-card-text) 70%, transparent);
+  text-align: center;
+  margin: 0;
+  line-height: var(--line-height-md);
+
+  @include respond(md) {
+    font-size: var(--font-sm);
+  }
+}
+
+.phoneDisplay {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+  direction: ltr;
+  display: inline-block;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: var(--font-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.input {
+  padding: 14px 18px;
+  border-radius: var(--border-radius);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  background: color-mix(in srgb, var(--color-bg-primary-overlay) 60%, transparent);
+  color: var(--color-card-text);
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-medium);
+  font-family: inherit;
+  transition: all 0.3s ease;
+  text-align: center;
+  letter-spacing: 2px;
+  width: 100%;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: color-mix(in srgb, var(--color-cream-light) 40%, transparent);
+    letter-spacing: normal;
+    font-size: var(--font-sm);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-bg-primary-overlay) 80%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @include respond(md) {
+    padding: 12px 14px;
+    font-size: var(--font-md);
+  }
+}
+
+.passwordWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+
+  .input {
+    padding-left: 48px;
+  }
+}
+
+.eyeButton {
+  position: absolute;
+  left: 12px;
+  background: transparent;
+  border: none;
+  color: color-mix(in srgb, var(--color-text-primary) 60%, transparent);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: var(--color-text-primary);
+  }
+}
+
+.error {
+  background: color-mix(in srgb, var(--color-error) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 40%, transparent);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: var(--color-error);
+  font-size: var(--font-sm);
+  text-align: center;
+  animation: shake 0.3s ease;
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+}
+
+.submitButton {
+  width: 100%;
+  padding: 14px 24px;
+  border-radius: var(--border-radius);
+  border: none;
+  background: linear-gradient(135deg, var(--color-text-primary), var(--color-title-hover));
+  color: var(--color-bg-primary);
+  font-size: var(--font-lg);
+  font-weight: var(--font-weight-bold);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 4px;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--color-primary) 30%, transparent);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @include respond(md) {
+    padding: 12px 20px;
+    font-size: var(--font-md);
+  }
+}
+
+.backButton {
+  width: 100%;
+  padding: 10px 20px;
+  border-radius: var(--border-radius);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-medium);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 6px;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    border-color: var(--color-text-primary);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @include respond(md) {
+    font-size: var(--font-sm);
+  }
+}

@@ -1,180 +1,10 @@
 @use '@/styles/base/mixins' as *;
 
 .authStep {
-    background: var(--gradient-card-vertical);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: var(--radius-card);
-    border: 1px solid fade(var(--color-primary), 20%);
-    box-shadow: var(--shadow-card-strong);
-    padding: 32px;
     display: flex;
-    flex-direction: column;
-    gap: 20px;
-    max-width: 460px;
+    justify-content: center;
+    width: 100%;
     margin: 0 auto;
-
-    @include respond(md) {
-        padding: 22px 18px;
-        gap: 16px;
-    }
-}
-
-.title {
-    font-family: var(--font-lalezar);
-    font-size: var(--font-2xl);
-    color: var(--color-text-primary);
-    margin: 0;
-    text-align: center;
-    padding-bottom: 8px;
-    border-bottom: 1px solid fade(var(--color-primary), 15%);
-
-    @include respond(md) {
-        font-size: var(--font-xl);
-    }
-}
-
-.subtitle {
-    font-size: var(--font-sm);
-    color: var(--color-card-text);
-    margin: -8px 0 0;
-    text-align: center;
-    opacity: 0.85;
-
-    @include respond(md) {
-        font-size: var(--font-xs);
-    }
-}
-
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.inputGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.label {
-    font-size: var(--font-sm);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
-}
-
-.input {
-    padding: 11px 14px;
-    background: fade(var(--color-primary), 6%);
-    border: 1.5px solid fade(var(--color-primary), 30%);
-    border-radius: var(--border-radius);
-    color: var(--color-text-primary);
-    font-size: var(--font-md);
-    font-weight: var(--font-weight-medium);
-    text-align: center;
-    letter-spacing: 3px;
-    @include hover-transition;
-
-    &:focus {
-        outline: none;
-        border-color: var(--color-accent);
-        background: fade(var(--color-primary), 12%);
-        box-shadow: 0 0 14px fade(var(--color-primary), 25%);
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    &::placeholder {
-        letter-spacing: normal;
-        font-size: var(--font-sm);
-    }
-}
-
-.phoneDisplay {
-    padding: 12px;
-    background: fade(var(--color-primary), 10%);
-    border: 1px solid fade(var(--color-primary), 30%);
-    border-radius: var(--border-radius);
-    font-size: var(--font-xs);
-    color: var(--color-card-text);
-    text-align: center;
-    line-height: 1.6;
-
-    strong {
-        color: var(--color-text-primary);
-        font-weight: var(--font-weight-bold);
-        direction: ltr;
-        display: inline-block;
-    }
-}
-
-.error {
-    padding: 10px 14px;
-    background: fade(var(--color-error), 12%);
-    border: 1px solid fade(var(--color-error), 35%);
-    border-radius: 8px;
-    color: var(--color-error);
-    font-size: var(--font-xs);
-    text-align: center;
-}
-
-.submitButton {
-    padding: 12px 24px;
-    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
-    color: var(--card-text);
-    border: none;
-    border-radius: var(--border-radius);
-    font-size: var(--font-md);
-    font-weight: var(--font-weight-bold);
-    cursor: pointer;
-    @include hover-transition;
-    box-shadow: 0 4px 14px fade(var(--color-primary), 30%);
-
-    &:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px fade(var(--color-primary), 45%);
-    }
-
-    &:active:not(:disabled) {
-        transform: translateY(0);
-    }
-
-    &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
-
-    @include respond(md) {
-        font-size: var(--font-sm);
-        padding: 11px 20px;
-    }
-}
-
-.backButton {
-    padding: 10px 20px;
-    background: transparent;
-    color: var(--color-card-text);
-    border: 1px solid fade(var(--color-primary), 30%);
-    border-radius: var(--border-radius);
-    font-size: var(--font-sm);
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
-    @include hover-transition;
-
-    &:hover:not(:disabled) {
-        background: fade(var(--color-primary), 10%);
-        border-color: fade(var(--color-primary), 50%);
-        color: var(--color-text-primary);
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
 }
 
 // Loading State
@@ -216,6 +46,14 @@
     gap: 14px;
     padding: 24px 16px;
     text-align: center;
+    background: var(--gradient-card-vertical);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-card);
+    border: 1px solid fade(var(--color-primary), 20%);
+    box-shadow: var(--shadow-card-strong);
+    width: 100%;
+    max-width: 460px;
 }
 
 .successIcon {
