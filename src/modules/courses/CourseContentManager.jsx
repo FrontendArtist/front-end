@@ -98,14 +98,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
     });
   }, [orders, course]);
 
-  // بررسی مالکیت کلی دوره (از طریق سشن یا سفارشات یا رایگان بودن)
-  const hasFullCourseAccess =
-    isFreeCourse ||
-    isPurchasedInOrders ||
-    enrolledCourses.includes(course.id) ||
-    enrolledCourses.includes(course.documentId) ||
-    enrolledCourses.includes(String(course.id)) ||
-    (course.slug && enrolledSlugs.includes(course.slug));
+  // بررسی مالکیت کلی دوره (از طریق سفارشات یا رایگان بودن)
+  const hasFullCourseAccess = isFreeCourse || isPurchasedInOrders;
 
   // هماهنگی بروزرسانی داده‌ها هنگام لاگین کاربر
   useEffect(() => {
@@ -151,25 +145,15 @@ export default function CourseContentManager({ course, styles: propStyles }) {
    * کاربر به فصل دسترسی دارد اگر:
    * 1. کل دوره را خریده باشد (hasFullCourseAccess)
    * 2. فصل رایگان باشد
-   * 3. فصل در سشن کاربر (enrolledChapters) باشد
-   * 4. فصل در سفارشات پرداخت‌شده کاربر (orders) ثبت شده باشد
+   * 3. فصل در سفارشات پرداخت‌شده کاربر (orders) ثبت شده باشد
    */
   const checkChapterAccess = (chapter) => {
     if (hasFullCourseAccess) return true;
     const chapterPrice = chapter.price?.toman ?? chapter.price ?? 0;
-    if (chapterPrice === 0) return true;
+    if (chapterPrice === 0 || chapter.isFree) return true;
 
     const chapterIdStr = String(chapter.id);
-
-    // بررسی سشن کاربر
-    const isEnrolledInSession = enrolledChapters.some(
-      (id) => String(id) === chapterIdStr
-    );
-
-    // بررسی سفارشات خریده‌شده
-    const isPurchasedInOrders = purchasedChapterIdsFromOrders.includes(chapterIdStr);
-
-    return isEnrolledInSession || isPurchasedInOrders;
+    return purchasedChapterIdsFromOrders.includes(chapterIdStr);
   };
 
   /**

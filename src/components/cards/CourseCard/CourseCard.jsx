@@ -81,23 +81,7 @@ const CourseCard = ({ course }) => {
     });
   });
 
-  const enrolledCourses = session?.user?.enrolledCourses || [];
-  const enrolledSlugs = session?.user?.enrolledSlugs || [];
-  const enrolledChapters = session?.user?.enrolledChapters || [];
-
-  const isEnrolledInSession =
-    enrolledCourses.includes(id) ||
-    enrolledCourses.includes(String(id)) ||
-    enrolledCourses.includes(Number(id)) ||
-    (course.documentId && enrolledCourses.includes(course.documentId)) ||
-    (slug && enrolledSlugs.includes(slug)) ||
-    (Array.isArray(course.chapters) && course.chapters.some(ch =>
-      enrolledChapters.includes(ch.id) ||
-      enrolledChapters.includes(String(ch.id)) ||
-      enrolledChapters.includes(Number(ch.id))
-    ));
-
-  const isPurchased = isPurchasedInOrders || isEnrolledInSession;
+  const isPurchased = isPurchasedInOrders;
 
   useEffect(() => {
     setIsHydrated(true);

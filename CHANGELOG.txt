@@ -1,3 +1,17 @@
+[2026-09-05] - Strict Order-Based Course Access & Legacy Session Fallback Removal
+
+── Course Access Control & Security Hardening ──────────────────────────────────
+- Strict Order-Only Authorization (`src/lib/ordersApi.js`):
+  • Removed legacy sessionUser.courses and enrolledCourses fallback check from checkCourseAccess.
+  • Enforced strict single source of truth where access is granted exclusively through confirmed and paid orders (orderStatus: 'paid' / paymentStatus: 'paid').
+  • Added pagination[pageSize]=100 and sort[0]=createdAt:desc to order query parameters to guarantee retrieval of all user orders across pagination boundaries.
+- Component Access Hardening:
+  • CourseContentManager.jsx: Decoupled hasFullCourseAccess and checkChapterAccess from session/profile fallback arrays, linking media unlock 100% to paid order items.
+  • CourseCard.jsx: Restricted student status badge ("✓ شما دانشجوی دوره هستید") strictly to verified paid orders.
+  • CourseTelegramLink.jsx: Restricted Telegram VIP group link access exclusively to users with active paid orders.
+- Database Relations Clean-up:
+  • Cleared legacy/stale users_permissions_users relations on all courses in Strapi to prevent unauthorized cached access upon order cancellation or deletion.
+
 [2026-09-05] - Mentor & Support Message Reply Notifications in NotificationBell
 
 ── Message Reply Notifications in NotificationBell ─────────────────────────────

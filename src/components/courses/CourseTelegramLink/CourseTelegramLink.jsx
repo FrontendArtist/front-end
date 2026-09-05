@@ -38,17 +38,7 @@ export default function CourseTelegramLink({
     });
   }, [orders, courseSlug, courseId, documentId]);
 
-  // بررسی دسترسی کاربر به دوره از طریق سشن یا سفارشات سرور/کلاینت
-  const enrolledCourses = session?.user?.enrolledCourses || [];
-  const enrolledSlugs = session?.user?.enrolledSlugs || [];
-
-  const isEnrolledInSession =
-    enrolledCourses.includes(courseId) ||
-    enrolledCourses.includes(documentId) ||
-    enrolledCourses.includes(String(courseId)) ||
-    (courseSlug && enrolledSlugs.includes(courseSlug));
-
-  const hasPurchased = initialHasPurchased || isPurchasedInOrders || isEnrolledInSession;
+  const hasPurchased = initialHasPurchased || isPurchasedInOrders;
 
   if (!hasPurchased || !telegramLink) {
     return null;

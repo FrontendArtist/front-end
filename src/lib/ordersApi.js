@@ -28,7 +28,7 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
 
   try {
     const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
-    const url = `${API_BASE_URL}/api/orders?filters[user][id][$eq]=${encodeURIComponent(userId)}&populate=*`;
+    const url = `${API_BASE_URL}/api/orders?filters[user][id][$eq]=${encodeURIComponent(userId)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate=*`;
 
     const res = await fetch(url, {
       headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
@@ -113,25 +113,6 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
     }
   } catch (error) {
     console.error('[course-access] error fetching orders:', error.message);
-  }
-
-  // ── بررسی Fallback از روی سشن / پروفایل کاربر ─────────────────────────────
-  if (!hasAccess && sessionUser) {
-    const isDirectlyEnrolled =
-      (sessionUser.enrolledCourses || []).some(id => String(id) === String(courseId)) ||
-      (sessionUser.enrolledSlugs || []).includes(courseSlug) ||
-      (sessionUser.courses || []).some(c => String(c.id) === String(courseId) || c.slug === courseSlug);
-
-    if (isDirectlyEnrolled) {
-      hasAccess = true;
-    }
-  }
-
-  // اضافه کردن فصل‌های موجود در سشن به لیست فصل‌های خریداری‌شده
-  if (sessionUser && Array.isArray(sessionUser.enrolledChapters)) {
-    sessionUser.enrolledChapters.forEach(chapId => {
-      purchasedChapterIds.push(String(chapId));
-    });
   }
 
   const uniqueChapterIds = [...new Set(purchasedChapterIds)];
