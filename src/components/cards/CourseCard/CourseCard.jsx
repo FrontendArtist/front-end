@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useOrdersStore } from '@/store/useOrdersStore';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';

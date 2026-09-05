@@ -66,11 +66,17 @@ export default function AuthForm({
                     throw new Error(sendData?.error?.message || sendData?.error || 'خطا در ارسال کد تایید');
                 }
 
+                setOtp('');
                 setAuthStep('otp');
             } else {
                 if (checkData.userExists && checkData.hasPassword) {
+                    setPassword('');
                     setAuthStep('password');
                 } else {
+                    setPassword('');
+                    setConfirmPassword('');
+                    setFirstName('');
+                    setLastName('');
                     setAuthStep('register');
                 }
             }
@@ -186,6 +192,8 @@ export default function AuthForm({
         setOtp('');
         setPassword('');
         setConfirmPassword('');
+        setFirstName('');
+        setLastName('');
         setError('');
     };
 
@@ -199,7 +207,7 @@ export default function AuthForm({
                     <h2 className={styles.title}>{title}</h2>
                     <p className={styles.description}>{subtitle}</p>
 
-                    <form onSubmit={handlePhoneSubmit} className={styles.form}>
+                    <form onSubmit={handlePhoneSubmit} className={styles.form} autoComplete="off">
                         <div className={styles.inputGroup}>
                             <label htmlFor="auth-phone" className={styles.label}>
                                 شماره موبایل
@@ -207,6 +215,8 @@ export default function AuthForm({
                             <input
                                 type="tel"
                                 id="auth-phone"
+                                name="phone_number_input"
+                                autoComplete="off"
                                 className={styles.input}
                                 placeholder="09123456789"
                                 value={phone}
@@ -234,12 +244,14 @@ export default function AuthForm({
                         کد ۶ رقمی ارسال شده به شماره <span className={styles.phoneDisplay}>{phone}</span> را وارد کنید
                     </p>
 
-                    <form onSubmit={handleOTPSubmit} className={styles.form}>
+                    <form onSubmit={handleOTPSubmit} className={styles.form} autoComplete="off">
                         <div className={styles.inputGroup}>
                             <label htmlFor="auth-otp" className={styles.label}>کد تایید</label>
                             <input
                                 type="text"
                                 id="auth-otp"
+                                name="otp_code_input"
+                                autoComplete="one-time-code"
                                 className={styles.input}
                                 placeholder="123456"
                                 value={otp}
@@ -277,13 +289,15 @@ export default function AuthForm({
                         رمز عبور حساب شماره <span className={styles.phoneDisplay}>{phone}</span> را وارد کنید
                     </p>
 
-                    <form onSubmit={handlePasswordLogin} className={styles.form}>
+                    <form onSubmit={handlePasswordLogin} className={styles.form} autoComplete="off">
                         <div className={styles.inputGroup}>
                             <label htmlFor="auth-password" className={styles.label}>رمز عبور</label>
                             <div className={styles.passwordWrapper}>
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     id="auth-password"
+                                    name="user_login_password"
+                                    autoComplete="new-password"
                                     className={styles.input}
                                     placeholder="رمز عبور"
                                     value={password}
@@ -339,12 +353,14 @@ export default function AuthForm({
                         تعیین رمز عبور برای شماره <span className={styles.phoneDisplay}>{phone}</span>
                     </p>
 
-                    <form onSubmit={handlePasswordRegister} className={styles.form}>
+                    <form onSubmit={handlePasswordRegister} className={styles.form} autoComplete="off">
                         <div className={styles.inputGroup}>
                             <label htmlFor="auth-fname" className={styles.label}>نام (اختیاری)</label>
                             <input
                                 type="text"
                                 id="auth-fname"
+                                name="reg_first_name"
+                                autoComplete="off"
                                 className={styles.input}
                                 placeholder="نام"
                                 value={firstName}
@@ -358,6 +374,8 @@ export default function AuthForm({
                             <input
                                 type="text"
                                 id="auth-lname"
+                                name="reg_last_name"
+                                autoComplete="off"
                                 className={styles.input}
                                 placeholder="نام خانوادگی"
                                 value={lastName}
@@ -372,6 +390,8 @@ export default function AuthForm({
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     id="auth-reg-pass"
+                                    name="reg_new_password"
+                                    autoComplete="new-password"
                                     className={styles.input}
                                     placeholder="رمز عبور"
                                     value={password}
@@ -405,6 +425,8 @@ export default function AuthForm({
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 id="auth-reg-confirm"
+                                name="reg_confirm_password"
+                                autoComplete="new-password"
                                 className={styles.input}
                                 placeholder="تکرار رمز عبور"
                                 value={confirmPassword}
