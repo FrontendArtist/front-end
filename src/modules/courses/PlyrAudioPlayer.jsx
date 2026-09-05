@@ -11,7 +11,7 @@ import React, { useEffect, useRef } from 'react';
  * @param {string} props.courseId - شناسه دوره (برای ذخیره پیشرفت)
  * @param {string} props.lessonId - شناسه جلسه (برای ذخیره پیشرفت)
  */
-export default function PlyrAudioPlayer({ src, courseId, lessonId }) {
+export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
   const audioRef = useRef(null);
   const playerRef = useRef(null);
 
@@ -60,6 +60,10 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId }) {
       const updateSkipIcons = () => {
         const container = player.elements?.container;
         if (!container) return;
+
+        // مسدودسازی کلیک راست روی کانتینر Plyr
+        container.addEventListener('contextmenu', (e) => e.preventDefault());
+
         const rewindBtn = container.querySelector('[data-plyr="rewind"]');
         if (rewindBtn) {
           rewindBtn.innerHTML = REPLAY_10_SVG + '<span class="plyr__sr-only">۱۰ ثانیه عقب</span>';
@@ -174,11 +178,40 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId }) {
     };
   }, [src, courseId, lessonId]);
 
+  const phone = user?.phoneNumber || user?.phone || '';
+  const name = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || '';
+  const userIdentifier = phone || name || (user?.id ? `ID: ${user.id}` : null);
+
   return (
-    <div style={{ width: '100%', padding: '16px' }}>
-      <audio ref={audioRef} preload="metadata">
-        <source src={src} type="audio/mp3" />
+    <div
+      style={{ width: '100%', padding: '16px', position: 'relative', userSelect: 'none' }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <audio
+        ref={audioRef}
+        preload="metadata"
+        controlsList="nodownload"
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <source src={src} type={src?.includes('.m3u8') ? 'application/x-mpegURL' : 'audio/mp3'} />
       </audio>
+      {userIdentifier && (
+        <div
+          aria-hidden="true"
+          style={{
+            textAlign: 'center',
+            marginTop: '8px',
+            fontSize: '11px',
+            color: 'color-mix(in srgb, var(--color-primary, #F6D982) 45%, transparent)',
+            direction: 'ltr',
+            letterSpacing: '0.8px',
+            pointerEvents: 'none',
+            userSelect: 'none',
+          }}
+        >
+          🔒 محتوای حفاظت‌شده طرح الهی • {userIdentifier}
+        </div>
+      )}
     </div>
   );
 }

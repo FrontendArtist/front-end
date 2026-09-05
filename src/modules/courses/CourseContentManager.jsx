@@ -278,7 +278,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       sources: [
         {
           src: activeUrl,
-          type: 'video/mp4',
+          type: activeUrl?.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4',
         },
       ],
     };
@@ -292,14 +292,11 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   return (
     <div className={styles.contentManager}>
       {/* =========================================================================
-          بخش ویدیو / صوت پلیر (Media Player Section)
-          ========================================================================= */}
-      {/* =========================================================================
-          بخش ویدیو / صوت پلیر (Media Player Section)
+          بخش ویدیو / صوت پلیر (Media Player Section) با تدابیر ضد دانلود
           ========================================================================= */}
       {activeLesson && (
-        <div className={styles.playerSection}>
-          <div className={styles.playerWrapper}>
+        <div className={styles.playerSection} onContextMenu={(e) => e.preventDefault()}>
+          <div className={styles.playerWrapper} onContextMenu={(e) => e.preventDefault()}>
             {/* تاگل انتخاب بین ویدیو و صوت */}
             {hasBoth && (
               <div className={styles.mediaToggle}>
@@ -337,6 +334,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                 src={activeUrl}
                 courseId={course.documentId || course.id}
                 lessonId={activeLesson.id}
+                user={session?.user}
               />
             ) : (
               <VideoJSPlayer
@@ -345,6 +343,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                 courseId={course.documentId || course.id}
                 lessonId={`${activeLesson.id}-video`}
                 isAudio={false}
+                user={session?.user}
               />
             )}
           </div>

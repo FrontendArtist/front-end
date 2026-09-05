@@ -1,3 +1,26 @@
+[2026-09-05] - Course Media Security, Anti-Download Measures & Dynamic User Watermark
+
+── Course Media Anti-Download & DRM Protections ────────────────────────────────
+- Dynamic Moving Watermark (`src/modules/courses/MediaWatermark.jsx`):
+  • Built standalone floating watermark displaying user's phone number or name (`session.user.phoneNumber`) with semi-transparent, angled aesthetic (`transform: rotate(-8deg)`).
+  • Implemented 12-second periodic repositioning between 6 screen coordinates to neutralize screen recorders and unauthorized distribution.
+- Video.js Player Security (`src/modules/courses/VideoJSPlayer.jsx`):
+  • Added `controlsList="nodownload"` and disabled Picture-in-Picture (`disablePictureInPicture="true"`).
+  • Blocked right-click context menu (`contextmenu`) on player container and video tech element.
+  • Disabled save shortcuts (`Ctrl+S`, `Ctrl+U`) inside player focus.
+  • Embedded user watermark directly inside `.video-js` container DOM so watermark persists even in native browser Fullscreen mode.
+- Plyr Audio Player Security (`src/modules/courses/PlyrAudioPlayer.jsx`):
+  • Added `controlsList="nodownload"` on `<audio>` tag and disabled right-click context menu on Plyr container.
+  • Added discrete content protection badge with buyer's identity.
+  • Added automatic HLS stream detection (`.m3u8` -> `application/x-mpegURL`).
+- Course Content Manager (`src/modules/courses/CourseContentManager.jsx`):
+  • Forwarded session user metadata to both VideoJS and Plyr players.
+  • Added HLS stream source type mapping (`application/x-mpegURL`) for `.m3u8` video streaming support.
+  • Prevented right-click on the media player section wrapper.
+- Course Teaser Player Client Component (`src/components/courses/CourseTeaserPlayer.jsx` & `src/app/courses/[slug]/page.js`):
+  • Created dedicated `'use client'` teaser player with `controlsList="nodownload"`, `disablePictureInPicture`, and context menu blocker.
+  • Resolved Server Component event handler boundary error in `page.js`.
+
 [2026-09-04] - Mentor Chat Voice Messaging (HD 128kbps), Inline Message Editing & Deletion
 
 ── Mentor Studio Voice Recording & Waveform Player ─────────────────────────────

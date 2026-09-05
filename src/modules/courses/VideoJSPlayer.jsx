@@ -14,7 +14,7 @@ import 'video.js/dist/video-js.css';
  * @param {boolean} props.isAudio - مشخص می‌کند که محتوا فقط صوتی است یا خیر
  * @param {Function} props.onReady - کال‌بک در زمان آماده شدن پلیر
  */
-export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, onReady }) {
+export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, user, onReady }) {
   const videoRef = useRef(null);
   const playerRef = useRef(null);
   const currentSrcRef = useRef(options?.sources?.[0]?.src);
@@ -22,9 +22,13 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, on
   useEffect(() => {
     // 1. مقداردهی اولیه پلیر (تنها در صورتی که پلیر قبلاً ساخته نشده باشد)
     if (!playerRef.current) {
-      // ساخت عنصر ویدیویی/صوتی متناسب با نوع محتوا
+      // ساخت عنصر ویدیویی/صوتی متناسب با نوع محتوا با ویژگی‌های امنیتی ضد دانلود
       const videoElement = document.createElement(isAudio ? 'audio' : 'video');
       videoElement.classList.add('video-js', 'vjs-big-play-centered');
+      videoElement.setAttribute('controlsList', 'nodownload');
+      videoElement.setAttribute('disablePictureInPicture', 'true');
+      videoElement.setAttribute('oncontextmenu', 'return false;');
+      videoElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
       videoRef.current.appendChild(videoElement);
 
@@ -47,13 +51,85 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, on
           onReady(player);
         }
 
+        const el = player.el();
+        if (el) {
+          // مسدودسازی کلیک راست روی کل کانتینر پلیر
+          el.addEventListener('contextmenu', (e) => e.preventDefault());
+
+          // مسدودسازی کلیدهای میانبر ذخیره صفحه و مدیا
+          el.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.key === 'u' || e.key === 'U')) {
+              e.preventDefault();
+            }
+          });
+
+          // ایجاد و الحاق واترمارک پویا داخل المنت پلیر (جهت پایداری حتی در حالت تمام‌صفحه / Fullscreen)
+          const watermarkPositions = [
+            { top: '12%', left: '10%', right: 'auto', bottom: 'auto' },
+            { top: '14%', right: '12%', left: 'auto', bottom: 'auto' },
+            { bottom: '18%', left: '12%', top: 'auto', right: 'auto' },
+            { bottom: '20%', right: '10%', top: 'auto', left: 'auto' },
+            { top: '45%', left: '25%', right: 'auto', bottom: 'auto' },
+            { top: '48%', right: '22%', left: 'auto', bottom: 'auto' },
+          ];
+
+          const phone = user?.phoneNumber || user?.phone || '';
+          const name = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || '';
+          const identifier = phone || name || (user?.id ? `ID: ${user.id}` : 'طرح الهی');
+          const watermarkText = `${identifier} • طرح الهی`;
+
+          const watermarkEl = document.createElement('div');
+          watermarkEl.className = 'vjs-watermark-overlay';
+          watermarkEl.setAttribute('aria-hidden', 'true');
+          Object.assign(watermarkEl.style, {
+            position: 'absolute',
+            top: watermarkPositions[0].top,
+            left: watermarkPositions[0].left,
+            pointerEvents: 'none',
+            userSelect: 'none',
+            webkitUserSelect: 'none',
+            zIndex: '25',
+            color: 'rgba(255, 255, 255, 0.85)',
+            opacity: '0.38',
+            fontSize: '13px',
+            fontWeight: '600',
+            letterSpacing: '1px',
+            direction: 'ltr',
+            padding: '3px 8px',
+            borderRadius: '4px',
+            background: 'rgba(0, 0, 0, 0.25)',
+            backdropFilter: 'blur(1px)',
+            textShadow: '0 1px 3px rgba(0, 0, 0, 0.9)',
+            transform: 'rotate(-8deg)',
+            transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1)',
+          });
+          watermarkEl.innerText = watermarkText;
+          el.appendChild(watermarkEl);
+
+          let posIdx = 0;
+          const watermarkTimer = setInterval(() => {
+            if (!watermarkEl.isConnected) {
+              clearInterval(watermarkTimer);
+              return;
+            }
+            watermarkEl.style.opacity = '0.1';
+            setTimeout(() => {
+              posIdx = (posIdx + 1) % watermarkPositions.length;
+              const nextPos = watermarkPositions[posIdx];
+              watermarkEl.style.top = nextPos.top;
+              watermarkEl.style.left = nextPos.left;
+              watermarkEl.style.right = nextPos.right;
+              watermarkEl.style.bottom = nextPos.bottom;
+              watermarkEl.style.opacity = (0.35 + Math.random() * 0.15).toFixed(2);
+            }, 500);
+          }, 12000);
+        }
+
         // جایگذاری آیکون‌های اختصاصی ۱۰ ثانیه با دایره و عدد ۱۰
         const REPLAY_10_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 5V1l-5 5 5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6h-2c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><path d="M10.89 16h-.85v-3.26l-1.01.31v-.69l1.77-.63h.09zM15.17 14.24c0 .32-.03.6-.1.82s-.17.42-.29.57-.28.26-.45.33-.37.1-.59.1-.41-.03-.59-.1-.33-.18-.46-.33-.23-.34-.3-.57-.11-.5-.11-.82v-.74c0-.32.03-.6.1-.82s.17-.42.29-.57.28-.26.45-.33.37-.1.59-.1.41.03.59.1.33.18.46.33.23.34.3.57.11.5.11.82zm-.85-.86c0-.19-.01-.35-.04-.48s-.07-.23-.12-.31-.11-.14-.19-.17-.16-.05-.25-.05-.18.02-.25.05-.14.09-.19.17-.09.18-.12.31-.04.29-.04.48v.97c0 .19.01.35.04.48s.07.24.12.32.11.14.19.17.16.05.25.05.18-.02.25-.05.14-.09.19-.17.09-.19.11-.32.04-.29.04-.48v-.97z"/></svg>`;
         const FORWARD_10_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 13c0 3.31-2.69 6-6 6s-6-2.69-6-6 2.69-6 6-6v4l5-5-5-5v4c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8z"/><path d="M10.86 15.94v-4.27h-.09L9 12.3v.69l1.01-.31v3.26zM12.25 13.44v.74c0 1.9 1.31 1.82 1.44 1.82.14 0 1.44.09 1.44-1.82v-.74c0-1.9-1.31-1.82-1.44-1.82-.14 0-1.44-.09-1.44 1.82m2.04-.12v.97c0 .77-.21 1.03-.59 1.03s-.6-.26-.6-1.03v-.97c0-.75.22-1.01.59-1.01.38-.01.6.26.6 1.01"/></svg>`;
 
         const updateVideoJSIcons = () => {
-          const el = player.el();
-          if (!el) return;
           const backBtn = el.querySelector('.vjs-skip-backward-10');
           if (backBtn) {
             backBtn.title = '۱۰ ثانیه عقب';
@@ -147,7 +223,6 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, on
       }));
     } else {
       // 2. فقط در صورت تغییر واقعی آدرس منبع ویدیو (src)، آدرس ویدیوی پلیر تغییر پیدا کند
-      // جلوگیری از ریست شدن منبع ویدیو در هنگام جلو/عقب زدن ویدیو یا رندر مجدد کامپوننت
       const player = playerRef.current;
       const newSrc = options?.sources?.[0]?.src;
       if (newSrc && newSrc !== currentSrcRef.current) {
@@ -158,7 +233,7 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, on
         }
       }
     }
-  }, [options, videoRef, courseId, lessonId, isAudio, onReady]);
+  }, [options, videoRef, courseId, lessonId, isAudio, user, onReady]);
 
   // 3. مکانیزم Disposal: از بین بردن شیء پلیر در هنگام Unmount برای جلوگیری از مموری لیک
   useEffect(() => {
@@ -172,8 +247,12 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, on
   }, [playerRef]);
 
   return (
-    <div data-vjs-player style={{ width: '100%' }}>
-      <div ref={videoRef} />
+    <div
+      data-vjs-player
+      style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <div ref={videoRef} onContextMenu={(e) => e.preventDefault()} />
     </div>
   );
 }

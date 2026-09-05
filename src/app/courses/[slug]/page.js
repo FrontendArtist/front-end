@@ -12,6 +12,7 @@ import { marked } from 'marked';
 import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import CourseTelegramLink from '@/components/courses/CourseTelegramLink/CourseTelegramLink';
+import CourseTeaserPlayer from '@/components/courses/CourseTeaserPlayer';
 import styles from './page.module.scss';
 import { getUserCoursePurchases } from '@/lib/ordersApi';
 
@@ -170,11 +171,9 @@ export default async function CoursePage({ params }) {
             {course.teaserUrl ? (
               <>
                 <div className={styles.teaserBadge}>🏆 تیزر معرفی دوره</div>
-                <video
+                <CourseTeaserPlayer
                   src={course.teaserUrl}
-                  controls
                   poster={course.media.url}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               </>
             ) : (
