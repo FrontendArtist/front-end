@@ -30,8 +30,8 @@ export default function NotificationBell() {
         };
     }, [isOpen]);
 
-    // فقط در صورتی که کاربر لاگین کرده باشد و حداقل یک پیام خوانده‌نشده داشته باشد، زنگوله نمایش داده می‌شود
-    if (status !== 'authenticated' || unreadCount === 0) {
+    // فقط در صورتی که کاربر لاگین کرده باشد و حداقل یک اعلان خوانده‌نشده داشته باشد (یا دراپ‌داون باز باشد)، زنگوله نمایش داده می‌شود
+    if (status !== 'authenticated' || (unreadCount === 0 && !isOpen)) {
         return null;
     }
 
@@ -127,19 +127,49 @@ export default function NotificationBell() {
                         ) : (
                             notifications.map((n) => {
                                 const isRejected = n.type === 'rejected';
+                                const isMentor = n.type === 'mentor_reply';
+                                const isSupport = n.type === 'support_reply';
+
+                                let itemTypeClass = '';
+                                let iconTypeClass = '';
+                                let dotTypeClass = '';
+
+                                if (isRejected) {
+                                    itemTypeClass = styles.rejectedItem;
+                                    iconTypeClass = styles.rejectedIcon;
+                                    dotTypeClass = styles.rejectedDot;
+                                } else if (isMentor) {
+                                    itemTypeClass = styles.mentorItem;
+                                    iconTypeClass = styles.mentorIcon;
+                                    dotTypeClass = styles.mentorDot;
+                                } else if (isSupport) {
+                                    itemTypeClass = styles.supportItem;
+                                    iconTypeClass = styles.supportIcon;
+                                    dotTypeClass = styles.supportDot;
+                                }
+
                                 return (
                                     <Link
                                         key={n.id}
                                         href={n.link}
-                                        className={`${styles.item} ${!n.isRead ? styles.unread : ''} ${isRejected ? styles.rejectedItem : ''}`}
+                                        className={`${styles.item} ${!n.isRead ? styles.unread : ''} ${itemTypeClass}`}
                                         onClick={() => handleNotificationClick(n)}
                                     >
-                                        <div className={`${styles.itemIcon} ${isRejected ? styles.rejectedIcon : ''}`}>
+                                        <div className={`${styles.itemIcon} ${iconTypeClass}`}>
                                             {isRejected ? (
                                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                                                     <circle cx="12" cy="12" r="10" />
                                                     <line x1="15" y1="9" x2="9" y2="15" />
                                                     <line x1="9" y1="9" x2="15" y2="15" />
+                                                </svg>
+                                            ) : isMentor ? (
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                                                </svg>
+                                            ) : isSupport ? (
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                                 </svg>
                                             ) : (
                                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -151,7 +181,7 @@ export default function NotificationBell() {
                                             <div className={styles.itemTop}>
                                                 <h4 className={styles.itemTitle}>{n.title}</h4>
                                                 {!n.isRead && (
-                                                    <span className={`${styles.itemDot} ${isRejected ? styles.rejectedDot : ''}`} />
+                                                    <span className={`${styles.itemDot} ${dotTypeClass}`} />
                                                 )}
                                             </div>
                                             <p className={styles.itemMessage}>{n.message}</p>
@@ -167,11 +197,19 @@ export default function NotificationBell() {
 
                     <div className={styles.dropdownFooter}>
                         <Link
+                            href="/profile/messages"
+                            className={styles.footerLink}
+                            onClick={() => setIsOpen(false)}
+                        >
+                            پیام‌های من ←
+                        </Link>
+                        <span className={styles.footerDivider}>•</span>
+                        <Link
                             href="/profile/orders"
                             className={styles.footerLink}
                             onClick={() => setIsOpen(false)}
                         >
-                            مشاهده تمام سفارش‌های من ←
+                            سفارش‌های من ←
                         </Link>
                     </div>
                 </div>

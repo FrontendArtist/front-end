@@ -1,3 +1,23 @@
+[2026-09-05] - Mentor & Support Message Reply Notifications in NotificationBell
+
+── Message Reply Notifications in NotificationBell ─────────────────────────────
+- User Messages Store (`src/store/useUserMessagesStore.js`):
+  • Added Zustand store to manage user contact and mentor messages with live caching and updating.
+- Unified Notifications Hook (`src/hooks/useOrderNotifications.js`):
+  • Integrated user contact messages and instructor/mentor messages with order notifications.
+  • Detected responses from instructor (`sender: 'instructor'`, `messageType: 'instructor'`) and support (`isAdmin: true`, `messageType: 'contact'`).
+  • Formatted notification titles: «پاسخ از طرف استاد 🎓» and «پاسخ از طرف پشتیبانی 💬».
+  • Formatted notification messages: only message subject is shown (e.g. «پیام شما با موضوع «...» توسط استاد/پشتیبانی پاسخ داده شد.») without exposing the reply body/text in the notification card.
+  • Added unique timestamped notification IDs (`msg_${rawId}_${type}_${replyTimestamp}`) to track read state per reply in localStorage.
+  • Added background polling every 45 seconds when page is active to detect new replies automatically.
+- NotificationBell Component & Styles (`src/components/layout/Navbar/NotificationBell.jsx` & SCSS):
+  • Distinctive styling and icons for mentor replies (amber/gold theme with graduation cap icon) and support replies (cyan/blue theme with message icon).
+  • Click-to-navigate directly to `/profile/messages?open=${id}` with automatic modal opening.
+  • Dropdown footer now provides dual navigation to both «پیام‌های من» و «سفارش‌های من».
+- Profile Messages List & Banner Fixes (`src/modules/profile/MessagesList.jsx`, `OrderConfirmedBanner.jsx`, `messages/page.jsx`):
+  • Automatically marks message notifications as read when the message is viewed.
+  • Ensured OrderConfirmedBanner only renders order notifications and ignores message replies.
+
 [2026-09-05] - Support Rejected Order Notifications, Red Rejection Banner & Status Localization
 
 ── Order Rejection Notifications & Red Banner UI ───────────────────────────

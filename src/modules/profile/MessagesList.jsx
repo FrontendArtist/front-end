@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import MessageDetailModal from './MessageDetailModal';
 import styles from './MessagesList.module.scss';
 
@@ -17,12 +18,16 @@ export default function MessagesList({
     autoOpenMentor = false,
     autoOpenId = null,
 }) {
+    const { markMessageAsRead } = useOrderNotifications();
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const hasAutoOpenedRef = useRef(false);
+    const lastOpenedKeyRef = useRef(null);
 
     useEffect(() => {
-        if (hasAutoOpenedRef.current || !messages || messages.length === 0) return;
+        if (!messages || messages.length === 0) return;
+
+        const currentKey = autoOpenId || (autoOpenMentor ? 'mentor' : null);
+        if (!currentKey || lastOpenedKeyRef.current === currentKey) return;
 
         let targetMsg = null;
         if (autoOpenId) {
@@ -44,18 +49,26 @@ export default function MessagesList({
         }
 
         if (targetMsg) {
-            hasAutoOpenedRef.current = true;
+            lastOpenedKeyRef.current = currentKey;
             setSelectedMessage(targetMsg);
             setIsModalOpen(true);
+            const msgId = targetMsg.documentId || targetMsg.id;
+            if (msgId) {
+                markMessageAsRead(msgId);
+            }
             if (typeof window !== 'undefined' && window.location.search) {
                 window.history.replaceState(null, '', window.location.pathname);
             }
         }
-    }, [messages, autoOpenMentor, autoOpenId]);
+    }, [messages, autoOpenMentor, autoOpenId, markMessageAsRead]);
 
     const handleOpen = (msg) => {
         setSelectedMessage(msg);
         setIsModalOpen(true);
+        const msgId = msg?.documentId || msg?.id;
+        if (msgId) {
+            markMessageAsRead(msgId);
+        }
     };
 
     const handleClose = () => {

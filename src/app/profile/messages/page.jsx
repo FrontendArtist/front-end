@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import MessagesList from '@/modules/profile/MessagesList';
 import EmptyState from '@/components/ui/EmptyState/EmptyState';
-import { getMyMessages } from '@/lib/messagesApi';
+import { useUserMessagesStore } from '@/store/useUserMessagesStore';
 import styles from './messages.module.scss';
 
 function MessagesContent() {
@@ -15,36 +15,15 @@ function MessagesContent() {
     const autoOpenMentor = openParam === 'mentor' || searchParams.get('mentor') === 'true';
     const autoOpenId = (!autoOpenMentor && openParam) ? openParam : null;
 
-    const [messages, setMessages] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const { messages, isLoading, error, fetchMessages, updateMessageInStore } = useUserMessagesStore();
 
     useEffect(() => {
         if (!session?.user?.jwt) return;
-
-        const fetchMessages = async () => {
-            try {
-                setIsLoading(true);
-                const res = await getMyMessages(session.user.jwt, session.user?.id);
-                setMessages(res?.data || []);
-            } catch (err) {
-                setError('خطا در دریافت پیام‌ها. لطفاً دوباره تلاش کنید.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchMessages();
-    }, [session?.user?.jwt, session?.user?.id]);
+        fetchMessages(session.user.jwt, session.user?.id);
+    }, [session?.user?.jwt, session?.user?.id, fetchMessages]);
 
     const handleUpdateMessage = (docId, updatedFields) => {
-        setMessages((prev) =>
-            prev.map((msg) =>
-                msg.documentId === docId || String(msg.id) === String(docId)
-                    ? { ...msg, ...updatedFields }
-                    : msg
-            )
-        );
+        updateMessageInStore(docId, updatedFields);
     };
 
     return (
