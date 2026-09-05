@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useCartStore, selectTotalPrice, selectCouponDiscount } from '@/store/useCartStore';
+import { formatPrice } from '@/lib/formatters';
 import styles from './DiscountCouponInput.module.scss';
 
 export default function DiscountCouponInput() {
@@ -15,10 +16,6 @@ export default function DiscountCouponInput() {
     const appliedCoupon = useCartStore((state) => state.appliedCoupon);
     const applyCoupon = useCartStore((state) => state.applyCoupon);
     const removeCoupon = useCartStore((state) => state.removeCoupon);
-
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('fa-IR').format(price);
-    };
 
     const handleApply = async (e) => {
         if (e) e.preventDefault();

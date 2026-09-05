@@ -6,12 +6,15 @@ import Image from 'next/image';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
 import DiscountCouponInput from '@/components/cart/DiscountCouponInput/DiscountCouponInput';
+import EmptyCartState from '@/components/cart/EmptyCartState/EmptyCartState';
+import { formatPrice } from '@/lib/formatters';
 import {
     useCartStore,
     selectTotalPrice,
     selectCouponDiscount,
     selectFinalTotalPrice,
     selectItemsCount,
+    selectItemLevelDiscount,
 } from '@/store/useCartStore';
 import styles from './Cart.module.scss';
 
@@ -47,15 +50,9 @@ export default function CartPage() {
     const appliedCoupon = useCartStore((state) => state.appliedCoupon);
     const totalPrice = useCartStore(selectTotalPrice);
     const couponDiscount = useCartStore(selectCouponDiscount);
+    const itemLevelDiscount = useCartStore(selectItemLevelDiscount);
     const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
-
-    /**
-     * فرمت کردن قیمت به صورت فارسی با جداکننده هزارگان
-     */
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('fa-IR').format(price);
-    };
 
     /**
      * هندلر افزایش تعداد محصول
@@ -162,23 +159,12 @@ export default function CartPage() {
             <div className={styles.cartPage}>
                 <div className={styles.container}>
                     <Breadcrumb items={breadcrumbItems} />
-                    <div className={styles.emptyState}>
-                        <div className={styles.emptyIcon}>
-                            {/* آیکون سبد خرید خالی */}
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="9" cy="21" r="1" />
-                                <circle cx="20" cy="21" r="1" />
-                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                            </svg>
-                        </div>
-                        <h2 className={styles.emptyTitle}>سبد خرید شما خالی است</h2>
-                        <p className={styles.emptyText}>
-                            هنوز محصول یا دوره‌ای به سبد خرید خود اضافه نکرده‌اید.
-                        </p>
-                        <Link href="/products" className={styles.emptyButton}>
-                            بازگشت به فروشگاه
-                        </Link>
-                    </div>
+                    <EmptyCartState
+                        title="سبد خرید شما خالی است"
+                        description="هنوز محصول یا دوره‌ای به سبد خرید خود اضافه نکرده‌اید."
+                        buttonText="بازگشت به فروشگاه"
+                        buttonHref="/products"
+                    />
                 </div>
             </div>
         );
@@ -346,11 +332,11 @@ export default function CartPage() {
                         </div>
 
                         {/* سود تخفیف خود محصولات در صورت وجود */}
-                        {items.some(i => i.originalPrice && i.originalPrice > i.price) && (
+                        {itemLevelDiscount > 0 && (
                             <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
                                 <span>تخفیف شگفت‌انگیز:</span>
                                 <strong>
-                                    {formatPrice(items.reduce((sum, item) => sum + ((item.originalPrice && item.originalPrice > item.price ? (item.originalPrice - item.price) : 0) * item.quantity), 0))} تومان
+                                    {formatPrice(itemLevelDiscount)} تومان
                                 </strong>
                             </div>
                         )}

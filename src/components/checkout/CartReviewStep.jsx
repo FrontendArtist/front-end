@@ -9,6 +9,7 @@ import {
     selectFinalTotalPrice,
     selectItemsCount,
 } from '@/store/useCartStore';
+import { formatPrice } from '@/lib/formatters';
 import styles from './CartReviewStep.module.scss';
 
 /**
@@ -24,10 +25,6 @@ export default function CartReviewStep({ onNext }) {
     const couponDiscount = useCartStore(selectCouponDiscount);
     const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
-
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('fa-IR').format(price);
-    };
 
     return (
         <div className={styles.cartReview}>

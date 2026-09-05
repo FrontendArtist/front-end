@@ -22,14 +22,16 @@ function PaymentCallbackContent() {
     useEffect(() => {
         setMounted(true);
         // پاکسازی سبد خرید وقتی status=success است
-        const sp = new URLSearchParams(window.location.search);
-        if (sp.get('status') === 'success') {
+        const statusParam = searchParams.get('status');
+        const sourceParam = searchParams.get('source');
+
+        if (statusParam === 'success') {
             useCartStore.getState().clearCart();
             useOrdersStore.setState({ hasFetched: false, orders: [] });
         }
 
         // دریافت اطلاعات بانکی برای سفارش‌های کارت‌به‌کارت
-        if (sp.get('source') === 'card_to_card') {
+        if (sourceParam === 'card_to_card') {
             const fetchBankInfo = async () => {
                 setIsBankLoading(true);
                 setBankError(null);
@@ -58,7 +60,7 @@ function PaymentCallbackContent() {
 
             fetchBankInfo();
         }
-    }, []);
+    }, [searchParams]);
 
     const handleCopyCard = useCallback(async () => {
         if (!bankInfo?.cardNumber) return;
@@ -72,7 +74,7 @@ function PaymentCallbackContent() {
         }
     }, [bankInfo]);
 
-    // قبل از mount، صبر می‌کنیم تا URL واقعی خوانده شود
+    // قبل از mount، لودر نمایش داده می‌شود
     if (!mounted) {
         return (
             <div className={styles.loadingContainer}>
@@ -81,13 +83,10 @@ function PaymentCallbackContent() {
         );
     }
 
-    // ── مهم: از window.location.search می‌خوانیم تا 100% مطمئن باشیم
-    // که پارامترها بعد از hydration درست هستند
-    const sp = new URLSearchParams(window.location.search);
-    const status = sp.get('status');
-    const source = sp.get('source');    // 'card_to_card' | 'light_topup' | null
-    const orderId = sp.get('orderId');  // Strapi documentId
-    const lightAmount = Number(sp.get('lightAmount') || '0');
+    const status = searchParams.get('status');
+    const source = searchParams.get('source'); // 'card_to_card' | 'light_topup' | null
+    const orderId = searchParams.get('orderId'); // Strapi documentId
+    const lightAmount = Number(searchParams.get('lightAmount') || '0');
 
     // ─── حالت موفقیت ──────────────────────────────────────────────────────────
     if (status === 'success') {

@@ -1,3 +1,16 @@
+[2026-09-05] - Shared Formatters, Order Constants & EmptyCartState Reusable Component
+
+── Shared Architecture & DRY Modernization ─────────────────────────────────────
+- Centralized Formatters (`src/lib/formatters.js`):
+  • Unified formatPrice, toPersianDigits, formatJalaliDate, formatDuration, and formatFileSize into a centralized helper module.
+  • Replaced duplicated formatting logic across cart, checkout, orders, and payment components.
+- Order Constants (`src/lib/constants/orderConstants.js`):
+  • Standardized status dictionaries for ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LABELS, and PAYMENT_STATUS_LABELS.
+- Shared EmptyCartState (`src/components/cart/EmptyCartState/`):
+  • Created reusable empty state component with animated illustration and action button for /cart and /checkout.
+- Updated Cart & Checkout Views:
+  • Refactored CartReviewStep.jsx, DiscountCouponInput.jsx, CartIcon.jsx, and payment/callback/page.jsx to use centralized helpers.
+
 [2026-09-05] - Server-side Price Verification & Order Creation Safety
 
 ── Orders Route & Checkout Flow ────────────────────────────────────────────────

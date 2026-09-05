@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore, selectTotalPrice, selectItemsCount } from '@/store/useCartStore';
+import { formatPrice } from '@/lib/formatters';
 import styles from './CartIcon.module.scss';
 
 /**
@@ -154,15 +155,6 @@ export default function CartIcon() {
             // در دسکتاپ: همیشه به صفحه cart برود
             router.push('/cart');
         }
-    };
-
-    /**
-     * فرمت کردن قیمت به صورت فارسی با جداکننده هزارگان
-     * @param {number} price - قیمت به عدد
-     * @returns {string} - قیمت فرمت شده
-     */
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('fa-IR').format(price);
     };
 
     /**

@@ -3,14 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useCartStore, selectItemsCount, selectTotalPrice } from '@/store/useCartStore';
 import CheckoutStepper from '@/components/checkout/CheckoutStepper';
 import CartReviewStep from '@/components/checkout/CartReviewStep';
 import AuthStep from '@/components/checkout/AuthStep';
 import PaymentStep from '@/components/checkout/PaymentStep';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
+import EmptyCartState from '@/components/cart/EmptyCartState/EmptyCartState';
 import Link from 'next/link';
 import styles from './page.module.scss';
+
+const ShippingStep = dynamic(() => import('@/components/checkout/ShippingStep'), {
+    loading: () => <div style={{ padding: '2rem', textAlign: 'center' }}>در حال بارگذاری فرم ارسال...</div>
+});
 
 /**
  * صفحه Checkout چند مرحله‌ای
@@ -63,22 +69,12 @@ export default function CheckoutPage() {
             <div className={styles.checkoutPage}>
                 <div className={styles.container}>
                     <Breadcrumb items={breadcrumbItems} />
-                    <div className={styles.emptyState}>
-                        <div className={styles.emptyIcon}>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="9" cy="21" r="1" />
-                                <circle cx="20" cy="21" r="1" />
-                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                            </svg>
-                        </div>
-                        <h2 className={styles.emptyTitle}>سبد خرید شما خالی است</h2>
-                        <p className={styles.emptyText}>
-                            برای تسویه حساب، ابتدا باید محصولی به سبد خرید اضافه کنید.
-                        </p>
-                        <Link href="/products" className={styles.emptyButton}>
-                            مشاهده محصولات
-                        </Link>
-                    </div>
+                    <EmptyCartState
+                        title="سبد خرید شما خالی است"
+                        description="برای تسویه حساب، ابتدا باید محصولی به سبد خرید اضافه کنید."
+                        buttonText="مشاهده محصولات"
+                        buttonHref="/products"
+                    />
                 </div>
             </div>
         );
@@ -131,9 +127,7 @@ export default function CheckoutPage() {
             }
         }
 
-        // جریان 4مرحله‌ای (شامل آدرس)
-        // ایمپورت ShippingStep در صورت نیاز dynamic بارگذاری می‌شود
-        const ShippingStep = require('@/components/checkout/ShippingStep').default;
+        // جریان 4مرحله‌ای (شامل مرحله ثبت آدرس)
         switch (currentStep) {
             case 1:
                 return <CartReviewStep onNext={goToNextStep} />;
