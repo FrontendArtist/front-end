@@ -135,6 +135,65 @@ export const authOptions = {
             },
         }),
 
+        CredentialsProvider({
+            id: 'password-login',
+            name: 'ورود با رمز عبور',
+            credentials: {
+                phoneNumber: { label: 'شماره موبایل', type: 'text' },
+                password: { label: 'رمز عبور', type: 'password' },
+                isRegister: { label: 'ثبت‌نام', type: 'text' },
+                firstName: { label: 'نام', type: 'text' },
+                lastName: { label: 'نام خانوادگی', type: 'text' },
+                email: { label: 'ایمیل', type: 'text' },
+            },
+            async authorize(credentials) {
+                const { phoneNumber, password, isRegister, firstName, lastName, email } = credentials;
+
+                if (!phoneNumber || !password) return null;
+
+                const endpoint = isRegister === 'true'
+                    ? `${STRAPI_API_URL}/api/auth/password/register`
+                    : `${STRAPI_API_URL}/api/auth/password/login`;
+
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phoneNumber, password, firstName, lastName, email }),
+                        cache: 'no-store'
+                    });
+
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        console.error('[NextAuth] Response is not JSON:', contentType);
+                        return null;
+                    }
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        const errMsg = data?.error?.message || data?.error || 'اطلاعات ورود اشتباه است';
+                        throw new Error(errMsg);
+                    }
+
+                    const { jwt, user } = data;
+
+                    if (user && jwt) {
+                        return { 
+                            ...user, 
+                            id: user.id, 
+                            jwt: jwt,
+                            role: user.role || 'user'
+                        };
+                    }
+                    return null;
+                } catch (error) {
+                    console.error('[NextAuth] password authorize error:', error.message);
+                    throw error;
+                }
+            },
+        }),
+
         GoogleProvider({
             clientId: process.env.GOOGLE_ID || '',
             clientSecret: process.env.GOOGLE_SECRET || '',
