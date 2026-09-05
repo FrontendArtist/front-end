@@ -50,7 +50,7 @@ import styles from './services.module.scss';
  * IMPORTANT: Keep synchronized with content for consistency
  */
 export const metadata = {
-  title: 'خدمات ما | طرح الهی',
+  title: 'خدمات ما',
   description: 'در این بخش می‌توانید با خدمات ما آشنا شوید و بر اساس نیاز خود انتخاب کنید.',
 };
 

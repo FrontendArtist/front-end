@@ -22,7 +22,7 @@ export async function generateMetadata({ params }) {
   const rawArticle = await getArticleBySlug(slug);
 
   if (!rawArticle) {
-    return { title: `مقاله یافت نشد | ${SITE_NAME}` };
+    return { title: 'مقاله یافت نشد' };
   }
 
   // محاسبه آدرس تصویر برای OpenGraph
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }) {
   }
 
   return {
-    title: `${rawArticle.title} | ${SITE_NAME}`,
+    title: rawArticle.title,
     description: rawArticle.excerpt || rawArticle.title,
     alternates: {
       canonical: `${SITE_URL}/articles/${slug}`,

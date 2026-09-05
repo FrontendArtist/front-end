@@ -17,7 +17,7 @@ import styles from '../products.module.scss';
 export async function generateMetadata({ params }) {
   const { category } = await params;
   return {
-    title: `محصولات دسته ${category} | فروشگاه آنلاین`,
+    title: `محصولات دسته ${category}`,
     description: `مشاهده محصولات در دسته ${category}`,
   };
 }

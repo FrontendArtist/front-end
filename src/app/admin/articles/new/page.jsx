@@ -13,7 +13,8 @@ import Link from 'next/link';
 import styles from '../../orders/orders.module.scss'; // using shared layout styles usually
 
 export const metadata = {
-    title: 'مقاله جدید | پنل ادمین',
+    title: 'مقاله جدید',
+    robots: { index: false, follow: false },
 };
 
 export default async function NewArticlePage() {

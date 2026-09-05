@@ -33,7 +33,7 @@ export async function generateMetadata({ params }) {
   const courseUrl = `${SITE_URL}/courses/${slug}`;
 
   return {
-    title: `${rawCourse.title} | ${SITE_NAME}`,
+    title: rawCourse.title,
     description: rawCourse.shortDescription,
     openGraph: {
       title: `${rawCourse.title} | ${SITE_NAME}`,

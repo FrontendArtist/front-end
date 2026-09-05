@@ -102,7 +102,7 @@ export async function generateMetadata({ params }) {
   const pageUrl = `${SITE_URL}/products/${category}/${subcategory}/${slug}`;
 
   return {
-    title: `${product.title} | ${SITE_NAME}`,
+    title: product.title,
     description: product.shortDescription || product.title,
     openGraph: {
       title: product.title,

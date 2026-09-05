@@ -10,7 +10,8 @@ import Link from 'next/link';
 import styles from '../../orders/orders.module.scss';
 
 export const metadata = {
-    title: 'دوره جدید | پنل ادمین',
+    title: 'دوره جدید',
+    robots: { index: false, follow: false },
 };
 
 export default async function NewCoursePage() {

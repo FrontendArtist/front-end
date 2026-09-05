@@ -4,7 +4,8 @@ import { getAdminComments } from '@/lib/admin/adminCommentsApi';
 import CommentsManager from '@/components/admin/Comments/CommentsManager';
 
 export const metadata = {
-    title: 'مدیریت نظرات | پنل مدیریت',
+    title: 'مدیریت نظرات',
+    robots: { index: false, follow: false },
 };
 
 export default async function AdminCommentsPage() {

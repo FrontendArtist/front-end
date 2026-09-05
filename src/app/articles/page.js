@@ -20,7 +20,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import styles from './articles.module.scss';
 
 export const metadata = {
-  title: `مقالات | ${SITE_NAME}`,
+  title: 'مقالات',
   description: 'آخرین مقالات و نوشته‌ها را مطالعه کنید.',
   openGraph: {
     title: `مقالات | ${SITE_NAME}`,

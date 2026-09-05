@@ -16,7 +16,8 @@ import OrdersTable from '@/components/admin/Orders/OrdersTable';
 import styles from './orders.module.scss';
 
 export const metadata = {
-    title: 'مدیریت سفارش‌ها | پنل ادمین',
+    title: 'مدیریت سفارش‌ها',
+    robots: { index: false, follow: false },
 };
 
 export default async function AdminOrdersPage() {

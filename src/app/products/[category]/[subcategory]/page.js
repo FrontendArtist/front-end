@@ -38,7 +38,7 @@ export async function generateMetadata({ params }) {
   if (currentSubCategory) {
     // It's a subcategory listing page
     return {
-      title: `محصولات ${currentSubCategory.name || subcategory} | فروشگاه آنلاین`,
+      title: `محصولات ${currentSubCategory.name || subcategory}`,
       description: `مشاهده محصولات در زیردسته ${currentSubCategory.name || subcategory} از دسته ${currentCategory?.name || category}`,
     };
   }
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }) {
   if (product) {
     // It's a product detail page
     return {
-      title: `${product.title} | فروشگاه آنلاین`,
+      title: product.title,
       description: product.shortDescription,
     };
   }

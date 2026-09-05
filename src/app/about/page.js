@@ -9,7 +9,7 @@ import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import styles from './page.module.scss';
 
 export const metadata = {
-    title: 'درباره ما | طرح الهی',
+    title: 'درباره ما',
     description: 'طرح الهی؛ مسیری برای خودشناسی، بیداری معنوی، نشر آگاهی و حرکت آگاهانه در مسیر زندگی بر پایه آموزه‌های قرآن و مولانا.',
     keywords: 'درباره ما, طرح الهی, نشر آگاهی, استاد مجید سعیدیان, خودشناسی, بیداری معنوی, قرآن, مثنوی, عرفان',
 };

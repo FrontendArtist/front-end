@@ -26,10 +26,12 @@ import { SITE_NAME, SITE_URL } from '@/lib/constants';
 export const revalidate = 60;
 
 export const metadata = {
-  title: `صفحه اصلی | ${SITE_NAME}`,
+  title: {
+    absolute: `${SITE_NAME} | مرجع آموزش و محصولات معنوی`,
+  },
   description: `به وب‌سایت ${SITE_NAME} خوش آمدید. مرجع آموزش و دریافت محصولات معنوی.`,
   openGraph: {
-    title: `صفحه اصلی | ${SITE_NAME}`,
+    title: `${SITE_NAME} | مرجع آموزش و محصولات معنوی`,
     description: `به وب‌سایت ${SITE_NAME} خوش آمدید. مرجع آموزش و دریافت محصولات معنوی.`,
   },
   alternates: {

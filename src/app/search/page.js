@@ -3,7 +3,7 @@ import SearchResults from '@/modules/search/SearchResults';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 
 export const metadata = {
-    title: 'جستجو | طرح الهی',
+    title: 'جستجو',
     description: 'نتایج جستجو در سایت طرح الهی',
 };
 

@@ -93,14 +93,14 @@ export async function generateMetadata({ params }) {
   // Fallback metadata if service not found
   if (!service) {
     return {
-      title: 'خدمت یافت نشد | طرح الهی',
+      title: 'خدمت یافت نشد',
       description: 'خدمت مورد نظر یافت نشد.',
     };
   }
 
   // Generate rich metadata for found service
   return {
-    title: `${service.title} | خدمات طرح الهی`,
+    title: service.title,
     description: service.description || 'اطلاعات بیشتر درباره این خدمت',
   };
 }

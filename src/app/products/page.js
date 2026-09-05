@@ -24,7 +24,7 @@ import { SITE_NAME, SITE_URL, PRODUCTS_PAGE_SIZE } from '@/lib/constants';
 
 // SEO Metadata for the page
 export const metadata = {
-  title: `محصولات | ${SITE_NAME}`,
+  title: 'محصولات',
   description: `لیست کامل محصولات فروشگاه ${SITE_NAME} را مشاهده کنید.`,
   openGraph: {
     title: `محصولات | ${SITE_NAME}`,

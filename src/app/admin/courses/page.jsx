@@ -11,8 +11,9 @@ import Link from 'next/link';
 import styles from '../orders/orders.module.scss';
 
 export const metadata = {
-    title: 'مدیریت دوره‌ها | پنل ادمین',
+    title: 'مدیریت دوره‌ها',
     description: 'مدیریت دوره‌های آموزشی سایت',
+    robots: { index: false, follow: false },
 };
 
 export default async function AdminCoursesPage() {

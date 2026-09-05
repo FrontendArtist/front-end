@@ -4,7 +4,8 @@ import { getUsers } from '@/lib/admin/adminUsersApi';
 import UsersTable from '@/components/admin/Users/UsersTable';
 
 export const metadata = {
-    title: 'مدیریت کاربران | پنل مدیریت',
+    title: 'مدیریت کاربران',
+    robots: { index: false, follow: false },
 };
 
 export default async function AdminUsersPage() {

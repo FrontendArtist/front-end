@@ -1,3 +1,23 @@
+[2026-09-05] - Global SEO Overhaul, Title Template Normalization & Robots/Sitemap Optimization
+
+── SEO Metadata & Title Template Fixes ──────────────────────────────────────
+- Root Title Template Normalization (`src/app/layout.js`):
+  • Handled %s interpolation conflict by stripping duplicate site names from all child route titles.
+  • Homepage (`src/app/page.js`): Configured `title.absolute: 'طرح الهی | مرجع آموزش و محصولات معنوی'` to prevent layout template duplicate suffix ('طرح الهی | طرح الهی').
+  • Public Pages: Cleaned static titles across `contact`, `about`, `courses`, `articles`, `products`, `services`, and `search` to allow layout template to append `| طرح الهی` cleanly without duplicate pipes or misspellings ('طره الهی' -> 'تماس با ما').
+  • Dynamic Route Pages: Updated `generateMetadata` in `courses/[slug]`, `articles/[slug]`, `products/[category]`, `products/.../[slug]`, and `services/[slug]` to return clean titles without redundant site name or category suffixes.
+  • User Profile & Protected Routes: Streamlined titles in `profile`, `profile/orders`, `profile/purchases`, `profile/messages`, and `profile/orders/[id]`. Corrected purchases title from duplicate 'سفارش های من' to 'خریدهای من'.
+  • Admin Dashboard: Standardized all admin module titles (`dashboard`, `users`, `orders`, `products`, `courses`, `articles`, `comments`, `contact-messages`) and removed mismatched `| پنل ادمین` / `| پنل مدیریت` suffixes.
+
+── Indexing, Robots & Sitemap Enhancements ──────────────────────────────────
+- Robots Noindex Protection:
+  • Applied `robots: { index: false, follow: false }` to all administrative, user profile, cart, checkout, payment, and mentor routes.
+  • Updated `src/app/robots.js` disallow directives to include `/mentor/` and `/cart/`.
+- Dynamic Sitemap Expansion (`src/app/sitemap.js`):
+  • Added missing primary static routes (`/about`, `/contact`, `/services`) to the sitemap index.
+- New Dedicated Layouts for Metadata Injection:
+  • Added Server Component layouts for `/cart`, `/checkout`, `/payment`, `/mentor`, `/contact-mentor`, `/profile/messages`, and `/profile/orders/[id]`.
+
 [2026-09-05] - Object Storage Multi-Folder Structure & Flat Receipts Upload
 
 ── Object Storage Upload & Route Enhancements ────────────────────────────────

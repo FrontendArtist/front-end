@@ -16,14 +16,14 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions, isUserMentor } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import styles from './mentor.module.scss';
+export const metadata = {
+    title: 'پنل استاد',
+    robots: {
+        index: false,
+        follow: false,
+    },
+};
 
-/**
- * MentorLayout — Root layout برای تمام مسیرهای زیر /mentor/*
- *
- * Next.js این layout را برای تمام صفحات زیر /app/mentor/ به صورت خودکار اعمال می‌کند.
- * @param {{ children: React.ReactNode }} props
- */
 export default async function MentorLayout({ children }) {
     // ─── STEP 1: دریافت سشن از سرور ─────────────────────────────────────────
     const session = await getServerSession(authOptions);

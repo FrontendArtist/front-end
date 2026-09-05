@@ -16,7 +16,8 @@ import styles from '../../orders/orders.module.scss';
 export async function generateMetadata({ params }) {
     const { id } = await params;
     return {
-        title: `ویرایش محصول (${id}) | پنل ادمین`,
+        title: `ویرایش محصول (${id})`,
+        robots: { index: false, follow: false },
     };
 }
 

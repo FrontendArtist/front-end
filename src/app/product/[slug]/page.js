@@ -23,7 +23,7 @@ export async function generateMetadata({ params }) {
   }
 
   return {
-    title: `${product.title} | فروشگاه آنلاین`,
+    title: product.title,
     description: product.shortDescription,
   };
 }

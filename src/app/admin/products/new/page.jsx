@@ -11,7 +11,8 @@ import Link from 'next/link';
 import styles from '../../orders/orders.module.scss';
 
 export const metadata = {
-    title: 'محصول جدید | پنل ادمین',
+    title: 'محصول جدید',
+    robots: { index: false, follow: false },
 };
 
 export default async function AdminNewProductPage() {

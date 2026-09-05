@@ -11,8 +11,9 @@ import Link from 'next/link';
 import styles from '../orders/orders.module.scss'; // using shared layout styles usually
 
 export const metadata = {
-    title: 'مدیریت مقالات | پنل ادمین',
+    title: 'مدیریت مقالات',
     description: 'مدیریت مقالات و وبلاگ سایت',
+    robots: { index: false, follow: false },
 };
 
 export default async function AdminArticlesPage() {

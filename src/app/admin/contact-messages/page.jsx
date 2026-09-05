@@ -4,7 +4,8 @@ import { getContactMessages } from '@/lib/admin/adminMessagesApi';
 import MessagesTable from '@/components/admin/Messages/MessagesTable';
 
 export const metadata = {
-    title: 'پیام‌های تماس | پنل مدیریت',
+    title: 'پیام‌های تماس',
+    robots: { index: false, follow: false },
 };
 
 export default async function AdminContactMessagesPage() {

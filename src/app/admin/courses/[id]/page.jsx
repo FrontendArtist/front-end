@@ -12,7 +12,8 @@ import { notFound } from 'next/navigation';
 import styles from '../../orders/orders.module.scss';
 
 export const metadata = {
-    title: 'ویرایش دوره | پنل ادمین',
+    title: 'ویرایش دوره',
+    robots: { index: false, follow: false },
 };
 
 export default async function EditCoursePage({ params }) {

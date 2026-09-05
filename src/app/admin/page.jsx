@@ -28,8 +28,9 @@ import RecentUpdates from '@/components/home/RecentUpdates/RecentUpdates';
 import styles from './page.module.scss';
 
 export const metadata = {
-    title: 'داشبورد | پنل ادمین',
+    title: 'داشبورد مدیریت',
     description: 'پنل مدیریت سایت – آمار کلی',
+    robots: { index: false, follow: false },
 };
 
 /**

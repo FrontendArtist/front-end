@@ -9,8 +9,9 @@
 import OrdersList from '@/components/profile/OrdersList';
 
 export const metadata = {
-    title: 'سفارش‌های من | پنل کاربری',
+    title: 'سفارش‌های من',
     description: 'مشاهده تاریخچه سفارشات و خریدهای شما در طرح الهی',
+    robots: { index: false, follow: false },
 };
 
 export default function OrdersPage() {

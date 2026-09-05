@@ -11,8 +11,9 @@ import Link from 'next/link';
 import styles from '../orders/orders.module.scss';
 
 export const metadata = {
-    title: 'مدیریت محصولات | پنل ادمین',
+    title: 'مدیریت محصولات',
     description: 'مدیریت لیست محصولات فروشگاه',
+    robots: { index: false, follow: false },
 };
 
 export default async function AdminProductsPage() {

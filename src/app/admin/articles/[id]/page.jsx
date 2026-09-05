@@ -14,7 +14,8 @@ import { notFound } from 'next/navigation';
 import styles from '../../orders/orders.module.scss'; // Using shared layout styles
 
 export const metadata = {
-    title: 'ویرایش مقاله | پنل ادمین',
+    title: 'ویرایش مقاله',
+    robots: { index: false, follow: false },
 };
 
 export default async function EditArticlePage({ params }) {

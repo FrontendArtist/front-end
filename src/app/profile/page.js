@@ -1,8 +1,9 @@
 import ProfileForm from '@/components/profile/ProfileForm';
 
 export const metadata = {
-    title: 'پروفایل کاربری | پنل کاربری',
+    title: 'پروفایل کاربری',
     description: 'مدیریت اطلاعات حساب کاربری',
+    robots: { index: false, follow: false },
 };
 
 export default function ProfilePage() {

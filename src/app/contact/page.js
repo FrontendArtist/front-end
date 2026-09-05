@@ -11,9 +11,9 @@ import ContactForm from '@/modules/contact/components/ContactForm';
 import styles from './page.module.scss';
 
 export const metadata = {
-    title: 'تماس با ما | طره الهی',
-    description: 'با ما در ارتباط باشید. فرم تماس، شماره تماس، ایمیل و آدرس دفتر طره الهی.',
-    keywords: 'تماس با ما, فرم تماس, پشتیبانی, ارتباط با طره الهی',
+    title: 'تماس با ما',
+    description: 'با ما در ارتباط باشید. فرم تماس با پشتیبانی طرح الهی.',
+    keywords: 'تماس با ما, فرم تماس, پشتیبانی, ارتباط با طرح الهی',
 };
 
 export default function ContactPage() {

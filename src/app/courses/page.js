@@ -20,7 +20,7 @@ import styles from './page.module.scss';
 import { SITE_NAME, SITE_URL, COURSES_PAGE_SIZE } from '@/lib/constants';
 
 export const metadata = {
-  title: `دوره‌ها | ${SITE_NAME}`,
+  title: 'دوره‌ها',
   description: 'لیست کامل دوره‌های آموزشی را مشاهده کنید.',
   openGraph: {
     title: `دوره‌ها | ${SITE_NAME}`,
