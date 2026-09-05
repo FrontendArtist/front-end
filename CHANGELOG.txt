@@ -1,3 +1,14 @@
+[2026-09-05] - Server-side Price Verification & Order Creation Safety
+
+── Orders Route & Checkout Flow ────────────────────────────────────────────────
+- Server-Side Order Verification (`src/app/api/orders/route.js`):
+  • Re-verified all item prices (products, courses, chapters) directly from backend entities to prevent client-side price tampering.
+  • Integrated atomic coupon consumption (/coupons/consume) directly inside order creation route.
+  • Validated calculated total amount against client request to ensure strict financial consistency.
+- Premature Cart Clearing Removal (`src/components/checkout/PaymentStep.jsx`):
+  • Removed premature clearCart() call before successful payment callback or order confirmation.
+  • Prevents users from losing their cart items if a network error occurs during payment initiation or receipt upload.
+
 [2026-09-05] - Cart Session Isolation & Security Cleanup
 
 ── Cart State & Session Management ─────────────────────────────────────────────

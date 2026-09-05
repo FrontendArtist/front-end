@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { ORDER_STATUS, PAYMENT_STATUS, PAYMENT_METHOD } from "@/lib/constants/orderConstants";
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -150,10 +151,16 @@ export async function POST(request) {
             }
         });
 
-        // ── 0. اعتبارسنجی امن کد تخفیف در صورت ارسال ─────────────────────────
+        // ── 0. محاسبه امن و سروری قیمت اقلام و اعتبارسنجی کد تخفیف ──────────
+        const calculatedCartTotal = cartItems.reduce((sum, item) => {
+            const price = Number(item.price) || 0;
+            const qty = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
+            return sum + (price * qty);
+        }, 0);
+
         let appliedCouponCode = body.couponCode || body.coupon?.code || null;
         let discountAmount = 0;
-        let originalTotalPrice = Number(totalPrice) || 0;
+        let originalTotalPrice = calculatedCartTotal;
         let finalPayablePrice = originalTotalPrice;
         let couponValidationResult = null;
 
@@ -168,7 +175,7 @@ export async function POST(request) {
                     body: JSON.stringify({
                         code: appliedCouponCode,
                         cartItems: cartItems,
-                        currentTotal: totalPrice
+                        currentTotal: calculatedCartTotal
                     })
                 });
 
@@ -176,7 +183,7 @@ export async function POST(request) {
                     couponValidationResult = await couponRes.json();
                     if (couponValidationResult?.valid) {
                         discountAmount = Number(couponValidationResult.discountAmount) || 0;
-                        originalTotalPrice = Number(couponValidationResult.originalTotalPrice) || originalTotalPrice;
+                        originalTotalPrice = Number(couponValidationResult.originalTotalPrice) || calculatedCartTotal;
                         finalPayablePrice = Number(couponValidationResult.finalTotalPrice) || Math.max(0, originalTotalPrice - discountAmount);
                     } else {
                         appliedCouponCode = null;
@@ -195,17 +202,17 @@ export async function POST(request) {
         // سفارش رایگان (قیمت ۰ تومان یا تخفیف ۱۰۰٪) → مستقیماً paid
         // کارت‌به‌کارت → orderStatus: 'pending', paymentStatus: 'pending_payment'
         // آنلاین → orderStatus: 'paid', paymentStatus: 'paid'
-        const isFreeOrder = finalPayablePrice <= 0 || paymentMethod === 'free';
-        const resolvedPaymentMethod = isFreeOrder ? 'free' : (paymentMethod || 'online');
+        const isFreeOrder = finalPayablePrice <= 0 || paymentMethod === PAYMENT_METHOD.FREE;
+        const resolvedPaymentMethod = isFreeOrder ? PAYMENT_METHOD.FREE : (paymentMethod || PAYMENT_METHOD.ONLINE);
         const resolvedOrderStatus = isFreeOrder
-            ? 'paid'
-            : (resolvedPaymentMethod === 'card_to_card' ? 'pending' : 'paid');
+            ? ORDER_STATUS.PAID
+            : (resolvedPaymentMethod === PAYMENT_METHOD.CARD_TO_CARD ? ORDER_STATUS.PENDING : ORDER_STATUS.PAID);
         const resolvedPaymentStatus = isFreeOrder
-            ? 'paid'
-            : (resolvedPaymentMethod === 'card_to_card'
-                ? 'pending_payment'
-                : (paymentStatus && paymentStatus !== 'pending_payment' ? paymentStatus : 'paid'));
-        const isOrderPaid = resolvedOrderStatus === 'paid' || resolvedPaymentStatus === 'paid';
+            ? PAYMENT_STATUS.PAID
+            : (resolvedPaymentMethod === PAYMENT_METHOD.CARD_TO_CARD
+                ? PAYMENT_STATUS.PENDING_PAYMENT
+                : (paymentStatus && paymentStatus !== PAYMENT_STATUS.PENDING_PAYMENT ? paymentStatus : PAYMENT_STATUS.PAID));
+        const isOrderPaid = resolvedOrderStatus === ORDER_STATUS.PAID || resolvedPaymentStatus === PAYMENT_STATUS.PAID;
 
         // ── 1. هوشمندسازی نام خریدار (fullName) ───────────────────────────────────
         // اولویت 1: نام و نام‌خانوادگی در پروفایل کاربر
@@ -298,34 +305,24 @@ export async function POST(request) {
 
         const newOrder = await orderRes.json();
 
-        // ── افزایش شمارنده مصرف کوپن در استراپی ───────────────────────────
+        // ── مصرف اتومیک کوپن در استراپی (جلوگیری قطعی از Race Condition) ───────
         if (appliedCouponCode && couponValidationResult?.valid) {
             try {
-                const getCouponRes = await fetch(`${STRAPI_BASE_URL}/api/coupons?filters[code][$eqi]=${encodeURIComponent(appliedCouponCode)}`, {
-                    headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` }
+                const consumeRes = await fetch(`${STRAPI_BASE_URL}/api/coupons/consume`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${STRAPI_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ code: appliedCouponCode })
                 });
-                if (getCouponRes.ok) {
-                    const cData = await getCouponRes.json();
-                    const targetCoupon = cData?.data?.[0];
-                    if (targetCoupon) {
-                        const targetDocId = targetCoupon.documentId || targetCoupon.id;
-                        const currentUsed = Number(targetCoupon.usedCount) || 0;
-                        await fetch(`${STRAPI_BASE_URL}/api/coupons/${targetDocId}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Authorization': `Bearer ${STRAPI_TOKEN}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                data: {
-                                    usedCount: currentUsed + 1
-                                }
-                            })
-                        });
-                    }
+
+                if (!consumeRes.ok) {
+                    const consumeErr = await consumeRes.json().catch(() => ({}));
+                    console.warn("Coupon consume rejected (limit reached or invalid):", consumeErr);
                 }
             } catch (incErr) {
-                console.error("Failed to increment coupon usedCount:", incErr);
+                console.error("Failed to atomically consume coupon:", incErr);
             }
         }
 

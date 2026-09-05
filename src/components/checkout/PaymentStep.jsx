@@ -8,7 +8,10 @@ import {
     selectCouponDiscount,
     selectFinalTotalPrice,
     selectItemsCount,
+    selectItemLevelDiscount,
 } from '@/store/useCartStore';
+import { formatPrice } from '@/lib/formatters';
+import { PAYMENT_METHOD, PAYMENT_STATUS } from '@/lib/constants/orderConstants';
 import styles from './PaymentStep.module.scss';
 
 /**
@@ -31,15 +34,13 @@ export default function PaymentStep({ onPrevious }) {
     const totalPrice = useCartStore(selectTotalPrice);
     const couponDiscount = useCartStore(selectCouponDiscount);
     const finalTotalPrice = useCartStore(selectFinalTotalPrice);
+    const itemLevelDiscount = useCartStore(selectItemLevelDiscount);
     const itemsCount = useCartStore(selectItemsCount);
 
     // مقدار پیش‌فرض: کارت به کارت (چون آنلاین فعلاً غیرفعال است)
-    const [paymentMethod, setPaymentMethod] = useState('card_to_card');
+    const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.CARD_TO_CARD);
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
-
-    const formatPrice = (price) =>
-        new Intl.NumberFormat('fa-IR').format(price);
 
     // آیا این سفارش به دلیل تخفیف ۱۰۰٪ یا اقلام رایگان، صفر تومان است؟
     const isFreeOrder = finalTotalPrice === 0;
@@ -53,9 +54,9 @@ export default function PaymentStep({ onPrevious }) {
         setErrorMessage(null);
 
         // تعیین وضعیت اولیه پرداخت بر اساس روش انتخاب‌شده
-        const isCardToCard = !isFreeOrder && paymentMethod === 'card_to_card';
-        const paymentMethodToSend = isFreeOrder ? 'free' : paymentMethod;
-        const initialPaymentStatus = isCardToCard ? 'pending_payment' : 'paid';
+        const isCardToCard = !isFreeOrder && paymentMethod === PAYMENT_METHOD.CARD_TO_CARD;
+        const paymentMethodToSend = isFreeOrder ? PAYMENT_METHOD.FREE : paymentMethod;
+        const initialPaymentStatus = isCardToCard ? PAYMENT_STATUS.PENDING_PAYMENT : PAYMENT_STATUS.PAID;
 
         try {
             const response = await fetch('/api/orders', {
@@ -80,9 +81,7 @@ export default function PaymentStep({ onPrevious }) {
 
             const newOrder = await response.json();
 
-            // ── پاک کردن سبد خرید (Zustand) ──────────────────────────────────
-            useCartStore.getState().clearCart();
-
+            // توجه: پاکسازی سبد خرید به صورت امن و قطعی در صفحه callback پس از تایید موفقیت (status=success) انجام می‌شود.
             if (isFreeOrder) {
                 router.push('/payment/callback?status=success&source=free');
             } else if (isCardToCard) {
@@ -158,11 +157,11 @@ export default function PaymentStep({ onPrevious }) {
                     <strong>{formatPrice(totalPrice)} تومان</strong>
                 </div>
 
-                {items.some(i => i.originalPrice && i.originalPrice > i.price) && (
+                {itemLevelDiscount > 0 && (
                     <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
                         <span>مجموع تخفیف‌های شما:</span>
                         <strong>
-                            {formatPrice(items.reduce((sum, item) => sum + ((item.originalPrice && item.originalPrice > item.price ? (item.originalPrice - item.price) : 0) * item.quantity), 0))} تومان
+                            {formatPrice(itemLevelDiscount)} تومان
                         </strong>
                     </div>
                 )}
