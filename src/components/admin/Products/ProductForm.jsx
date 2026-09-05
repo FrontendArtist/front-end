@@ -253,6 +253,7 @@ export default function ProductForm({ product = null, categories = [], tags = []
     async function uploadImages(files) {
         if (!files.length) return [];
         const formData = new FormData();
+        formData.append('path', 'media/products');
         files.forEach(({ file }) => formData.append('files', file));
 
         const data = await uploadMedia(formData);

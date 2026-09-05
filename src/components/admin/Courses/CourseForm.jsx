@@ -353,6 +353,7 @@ export default function CourseForm({ course = null }) {
     async function uploadMedia(files) {
         if (!files.length) return [];
         const formData = new FormData();
+        formData.append('path', 'media/courses');
         files.forEach(({ file }) => formData.append('files', file));
         const data = await uploadMediaApi(formData);
         return Array.isArray(data) ? data.map((f) => f.id) : [];

@@ -1,3 +1,15 @@
+[2026-09-05] - Object Storage Multi-Folder Structure & Flat Receipts Upload
+
+── Object Storage Upload & Route Enhancements ────────────────────────────────
+- Flat Order Receipts Storage (`src/app/api/orders/upload-receipt/route.js`):
+  • Storing all uploaded receipts directly in `receipts/` directory without nested folders.
+  • Injected `orderId` and timestamp into the filename (`order-{orderId}-{timestamp}.{ext}`) for instant identification.
+- Dedicated Media Form Paths:
+  • `ProductForm.jsx`: Explicitly assigned upload path to `media/products`.
+  • `ArticleForm.jsx`: Explicitly assigned upload path to `media/articles`.
+  • `CourseForm.jsx`: Explicitly assigned upload path to `media/courses`.
+  • `InstructorChatPanel.jsx`: Explicitly assigned upload path to `media/voices` for mentor voice audio replies.
+
 [2026-09-05] - Course Media Security, Anti-Download Measures & Dynamic User Watermark
 
 ── Course Media Anti-Download & DRM Protections ────────────────────────────────

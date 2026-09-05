@@ -336,6 +336,7 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
         setIsSending(true);
         try {
             const formData = new FormData();
+            formData.append('path', 'media/voices');
             const extension = audioBlob.type.includes('ogg') ? 'ogg' : audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
             const filename = `voice_mentor_${Date.now()}.${extension}`;
             formData.append('files', audioBlob, filename);

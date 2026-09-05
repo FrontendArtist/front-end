@@ -168,6 +168,7 @@ export default function ArticleForm({
 
         setUploadingImage(true);
         const formData = new FormData();
+        formData.append('path', 'media/articles');
         formData.append('files', file);
 
         try {

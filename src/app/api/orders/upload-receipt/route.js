@@ -130,6 +130,27 @@ export async function POST(request) {
         // Strapi's upload plugin expects the field name "files"
         uploadForm.append("files", file, file.name || "receipt.jpg");
 
+        // ── تنظیم مسیر ذخیره‌سازی receipt در Object Storage ────────────────────
+        // تمام فیش‌ها مستقیماً درون پوشه receipts ذخیره می‌شوند.
+        // شناسه سفارش در نام فایل قرار می‌گیرد تا فایل‌ها کاملاً متمایز و قابل‌شناسایی باشند.
+        const receiptFolder = "receipts";
+        const uniqueTimestamp = Date.now();
+        const fileExt = (file.name || "receipt.jpg").split(".").pop() || "jpg";
+        const uniqueFileName = `order-${orderId.trim()}-${uniqueTimestamp}.${fileExt}`;
+
+        // path مستقیماً در form data (سطح metas، نه fileInfo)
+        uploadForm.append("path", receiptFolder);
+
+        // fileInfo برای metadata ذخیره‌سازی در database Strapi
+        uploadForm.append(
+            "fileInfo",
+            JSON.stringify({
+                name: uniqueFileName,
+                caption: `Receipt for order ${orderId.trim()}`,
+                alternativeText: `Payment receipt for order ${orderId.trim()}`,
+            })
+        );
+
         const uploadRes = await fetch(`${STRAPI_BASE_URL}/api/upload`, {
             method: "POST",
             headers: {
