@@ -23,20 +23,28 @@ import { updateOrderStatus } from '@/lib/client/admin/ordersClient';
 export default function ReceiptModal({ order, onClose, onUpdate }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isRejecting, setIsRejecting] = useState(false);
+    const [rejectionReason, setRejectionReason] = useState(order.rejectionReason || '');
 
     /**
      * ارسال درخواست PUT به API Route ادمین
-     * @param {'paid'|'rejected'} newStatus
+     * @param {'paid'|'failed'} newStatus
+     * @param {string} [reason]
      */
-    async function handleDecision(newStatus) {
+    async function handleDecision(newStatus, reason = '') {
         setLoading(true);
         setError(null);
 
         try {
+            const isPaid = newStatus === 'paid';
+            const isFailed = newStatus === 'failed';
+            const finalReason = reason.trim() || 'فیش واریزی معتبر نمی‌باشد';
+
             const updatePayload = {
                 documentId: order.documentId,
                 paymentStatus: newStatus,
-                ...(newStatus === 'paid' ? { orderStatus: 'paid' } : {}),
+                ...(isPaid ? { orderStatus: 'paid', rejectionReason: null } : {}),
+                ...(isFailed ? { orderStatus: 'canceled', rejectionReason: finalReason } : {}),
             };
 
             await updateOrderStatus(order.id, updatePayload);
@@ -44,7 +52,8 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
             // callback به OrdersTable برای آپدیت state محلی
             onUpdate(order.id, {
                 paymentStatus: newStatus,
-                ...(newStatus === 'paid' ? { orderStatus: 'paid' } : {}),
+                ...(isPaid ? { orderStatus: 'paid', rejectionReason: null } : {}),
+                ...(isFailed ? { orderStatus: 'canceled', rejectionReason: finalReason } : {}),
             });
             onClose();
         } catch (err) {
@@ -100,45 +109,113 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
                     )}
                 </div>
 
+                {/* ── نمایش دلیل رد قبلی در صورت وجود ─────────────── */}
+                {order.rejectionReason && !isRejecting && (
+                    <div style={{
+                        margin: '12px 0',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.25)',
+                        color: 'var(--color-danger, #ef4444)',
+                        fontSize: 'var(--font-sm)',
+                    }}>
+                        <strong>علت رد قبلی:</strong> {order.rejectionReason}
+                    </div>
+                )}
+
                 {/* ── پیام خطا ────────────────────────────────────── */}
                 {error && <p className={styles.modal__error}>⚠️ {error}</p>}
 
-                {/* ── دکمه‌های تصمیم / وضعیت ────────────────────────── */}
-                <div className={styles.modal__actions}>
-                    {order.paymentStatus === 'paid' ? (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
-                            <span style={{ color: 'var(--color-success)', fontSize: 'var(--font-sm)', fontWeight: 'bold' }}>
-                                ✓ پرداخت این سفارش تأیید شده است
-                            </span>
+                {/* ── بخش ورود دلیل رد پرداخت ───────────────────────── */}
+                {isRejecting ? (
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px',
+                        padding: '12px',
+                        background: 'rgba(239, 68, 68, 0.05)',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        borderRadius: '10px',
+                        marginTop: '12px'
+                    }}>
+                        <label style={{ fontSize: 'var(--font-sm)', fontWeight: 'bold', color: '#ef4444' }}>
+                            علت رد پرداخت (این دلیل برای کاربر در بخش سفارش نمایش داده می‌شود):
+                        </label>
+                        <textarea
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            placeholder="مثلاً: تصویر فیش ناخوانا است / مبلغ واریز شده مغایرت دارد / فیش تکراری است..."
+                            rows={3}
+                            style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                background: 'var(--color-bg-surface, #fff)',
+                                color: 'inherit',
+                                fontFamily: 'inherit',
+                                fontSize: 'var(--font-sm)',
+                                resize: 'vertical'
+                            }}
+                        />
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
                             <button
                                 type="button"
                                 className={`${styles.btn} ${styles['btn--ghost']}`}
-                                onClick={onClose}
+                                onClick={() => setIsRejecting(false)}
+                                disabled={loading}
                             >
-                                بستن
+                                انصراف
                             </button>
-                        </div>
-                    ) : (
-                        <>
                             <button
                                 type="button"
                                 className={`${styles.btn} ${styles['btn--danger']}`}
-                                onClick={() => handleDecision('rejected')}
-                                disabled={loading}
+                                onClick={() => handleDecision('failed', rejectionReason)}
+                                disabled={loading || !rejectionReason.trim()}
                             >
-                                {loading ? '...' : '✕ رد پرداخت'}
+                                {loading ? 'در حال ثبت...' : 'ثبت قطعی رد پرداخت'}
                             </button>
-                            <button
-                                type="button"
-                                className={`${styles.btn} ${styles['btn--success']}`}
-                                onClick={() => handleDecision('paid')}
-                                disabled={loading}
-                            >
-                                {loading ? '...' : '✓ تأیید پرداخت'}
-                            </button>
-                        </>
-                    )}
-                </div>
+                        </div>
+                    </div>
+                ) : (
+                    /* ── دکمه‌های تصمیم / وضعیت ────────────────────────── */
+                    <div className={styles.modal__actions}>
+                        {order.paymentStatus === 'paid' ? (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
+                                <span style={{ color: 'var(--color-success)', fontSize: 'var(--font-sm)', fontWeight: 'bold' }}>
+                                    ✓ پرداخت این سفارش تأیید شده است
+                                </span>
+                                <button
+                                    type="button"
+                                    className={`${styles.btn} ${styles['btn--ghost']}`}
+                                    onClick={onClose}
+                                >
+                                    بستن
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <button
+                                    type="button"
+                                    className={`${styles.btn} ${styles['btn--danger']}`}
+                                    onClick={() => setIsRejecting(true)}
+                                    disabled={loading}
+                                >
+                                    ✕ رد پرداخت
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`${styles.btn} ${styles['btn--success']}`}
+                                    onClick={() => handleDecision('paid')}
+                                    disabled={loading}
+                                >
+                                    {loading ? '...' : '✓ تأیید پرداخت'}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

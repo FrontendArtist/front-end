@@ -102,11 +102,13 @@ export default function OrderDetailPage() {
     useEffect(() => { fetchOrder(); }, [fetchOrder]);
 
     // ── Callback موفقیت آپلود فیش ─────────────────────────────────────────────
-    // وضعیت محلی order را بروز می‌کند تا فرم آپلود پنهان شود
+    // وضعیت محلی order را بروز می‌کند تا فرم آپلود پنهان شود و به در حال بررسی تغییر کند
     const handleReceiptSuccess = (updatedOrderMeta) => {
         setOrder((prev) => ({
             ...prev,
+            orderStatus: 'pending',
             paymentStatus: updatedOrderMeta?.paymentStatus ?? 'pending_verification',
+            rejectionReason: null,
         }));
     };
 
@@ -134,7 +136,11 @@ export default function OrderDetailPage() {
 
     const items = Array.isArray(order.items) ? order.items : [];
     const isCardToCard = order.paymentMethod === 'card_to_card';
-    const needsReceiptUpload = isCardToCard && order.paymentStatus === 'pending_payment';
+    const isRejected = isCardToCard && (
+        order.paymentStatus === 'failed' || 
+        order.orderStatus === 'canceled'
+    );
+    const needsReceiptUpload = isCardToCard && (order.paymentStatus === 'pending_payment' || isRejected);
 
     return (
         <div className={styles.page}>
@@ -248,7 +254,31 @@ export default function OrderDetailPage() {
                 </div>
             )}
 
-            {/* ─── بخش آپلود فیش — فقط برای کارت‌به‌کارت در انتظار پرداخت ── */}
+            {/* ─── پیام رد یا لغو پرداخت به همراه دلیل ──────────────────── */}
+            {isRejected && (
+                <div className={styles.rejectionNoticeBox}>
+                    <div className={styles.rejectionHeader}>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="15" y1="9" x2="9" y2="15" />
+                            <line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
+                        <strong>پرداخت این سفارش تأیید نشده است</strong>
+                    </div>
+                    {order.rejectionReason && (
+                        <div className={styles.rejectionReason}>
+                            <span className={styles.rejectionReasonLabel}>علت عدم تأیید توسط مدیریت:</span>
+                            <p className={styles.rejectionReasonValue}>{order.rejectionReason}</p>
+                        </div>
+                    )}
+                    <p className={styles.rejectionActionNote}>
+                        در صورت واریز وجه، لطفاً تصویر فیش معتبر و مشخصات پرداخت را مجدداً از فرم زیر ارسال فرمایید تا پس از بررسی توسط پشتیبانی، سفارش تأیید و دسترسی دوره باز شود.
+                    </p>
+                </div>
+            )}
+
+            {/* ─── بخش آپلود فیش — برای کارت‌به‌کارت در انتظار پرداخت یا ردشده ── */}
             {needsReceiptUpload && (
                 <div className={styles.receiptUploadSection}>
                     <h2 className={styles.sectionTitle}>
@@ -258,7 +288,7 @@ export default function OrderDetailPage() {
                             <path d="M3 10l9-7 9 7" />
                             <line x1="12" y1="10" x2="12" y2="21" />
                         </svg>
-                        ارسال فیش واریزی
+                        {isRejected ? 'ارسال مجدد فیش واریزی' : 'ارسال فیش واریزی'}
                     </h2>
 
                     {/* توضیح راهنما */}

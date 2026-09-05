@@ -138,6 +138,7 @@ export async function getOrders(jwt, { page = 1, pageSize = 50, start, limit } =
             receiptImageUrl: receiptImage?.url
                 ? (receiptImage.url.startsWith('http') ? receiptImage.url : `${STRAPI_API_URL}${receiptImage.url}`)
                 : null,
+            rejectionReason: attrs.rejectionReason || null,
         };
     });
 

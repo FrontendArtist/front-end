@@ -1,3 +1,24 @@
+[2026-09-05] - Admin Receipt Rejection Fix, Rejection Reason UI & User Re-upload Flow
+
+── Payment Receipt Verification & Rejection Flow ───────────────────────────────
+- Fixed Payment Rejection Status Bug (`src/components/admin/Orders/ReceiptModal.jsx`):
+  • Corrected paymentStatus value from non-existent 'rejected' to valid enum 'failed', resolving Strapi validation error.
+  • Added interactive rejection reason prompt & textarea when rejecting receipts in admin modal.
+- Admin Status Update Modal (`src/components/admin/Orders/StatusUpdateModal.jsx`):
+  • Added optional rejection reason input field when order or payment status is marked as canceled or failed.
+  • Updated updateOrderStatus in adminOrdersApi.js to transmit rejectionReason.
+- User Re-upload & Order Resolution (`src/app/profile/orders/[id]/page.jsx` & SCSS):
+  • Added prominent rejection alert box showing the administrator's rejection reason when order/payment failed.
+  • Enabled users to upload a revised payment receipt directly from the order detail page for rejected orders.
+  • upload-receipt/route.js: Automatically reset orderStatus and paymentStatus back to pending_verification upon re-uploading receipt, clearing previous rejection state.
+
+[2026-09-05] - Backend Order Schema Update for Payment Rejection Reason
+
+── Backend Order Content Type ──────────────────────────────────────────────────
+- Rejection Reason Attribute (`backend/src/api/order/content-types/order/schema.json`):
+  • Added rejectionReason text attribute to the Order schema.
+  • Updated generated TypeScript definitions (contentTypes.d.ts) to permit administrators to specify rejection explanations when invalidating orders or payment receipts.
+
 [2026-09-05] - CourseCard Chapter Purchase Support & Student Badge Display
 
 ── Course Cards UI & Enrollment Status ─────────────────────────────────────────

@@ -268,6 +268,8 @@ export async function POST(request) {
                 cardHolderName: trimmedCardHolder,
                 paymentMethod: "card_to_card",         // Confirm the payment channel
                 paymentStatus: "pending_verification", // Advance the status lifecycle
+                orderStatus: "pending",                // ریست کردن وضعیت سفارش به در حال بررسی
+                rejectionReason: null,                 // پاک کردن دلیل رد قبلی
                 ...(shouldUpdateOrderFullName ? { fullName: trimmedCardHolder } : {}),
             },
         };

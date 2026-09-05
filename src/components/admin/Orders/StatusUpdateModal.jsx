@@ -31,16 +31,25 @@ const ORDER_STATUSES = [
 export default function StatusUpdateModal({ order, onClose, onUpdate }) {
     const [selectedStatus, setSelectedStatus] = useState(order.orderStatus?.trim() || 'pending');
     const [trackingNumber, setTrackingNumber] = useState(order.trackingNumber || '');
+    const [rejectionReason, setRejectionReason] = useState(order.rejectionReason || '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     // آیا وضعیت انتخاب‌شده نیاز به کد رهگیری دارد؟
     const needsTracking = selectedStatus.trim() === 'shipped';
+    // آیا وضعیت به لغو شده تغییر کرده است؟
+    const isCanceled = selectedStatus.trim() === 'canceled';
 
     async function handleSave() {
         // اعتبارسنجی: اگر 'shipped' انتخاب شده، کد رهگیری اجباری است
         if (needsTracking && !trackingNumber.trim()) {
             setError('لطفاً کد رهگیری مرسوله را وارد کنید.');
+            return;
+        }
+
+        // اعتبارسنجی: اگر 'canceled' انتخاب شده، دلیل لغو اجباری است
+        if (isCanceled && !rejectionReason.trim()) {
+            setError('لطفاً دلیل لغو سفارش را برای نمایش به کاربر وارد کنید.');
             return;
         }
 
@@ -51,7 +60,9 @@ export default function StatusUpdateModal({ order, onClose, onUpdate }) {
         const payload = {
             orderStatus: selectedStatus,
             // اگر وضعیت به پرداخت شده تغییر کند، وضعیت پرداخت هم paid می‌شود
-            ...(selectedStatus === 'paid' && { paymentStatus: 'paid' }),
+            ...(selectedStatus === 'paid' && { paymentStatus: 'paid', rejectionReason: null }),
+            // اگر وضعیت لغو شده باشد، وضعیت پرداخت failed و دلیل ذخیره می‌شود
+            ...(isCanceled && { paymentStatus: 'failed', rejectionReason: rejectionReason.trim() }),
             // فقط کد رهگیری را اگر 'shipped' بود اضافه کن
             ...(needsTracking && { trackingNumber: trackingNumber.trim() }),
         };
@@ -65,7 +76,8 @@ export default function StatusUpdateModal({ order, onClose, onUpdate }) {
             // آپدیت state محلی در OrdersTable
             onUpdate(order.id, {
                 orderStatus: selectedStatus,
-                ...(selectedStatus === 'paid' && { paymentStatus: 'paid' }),
+                ...(selectedStatus === 'paid' && { paymentStatus: 'paid', rejectionReason: null }),
+                ...(isCanceled && { paymentStatus: 'failed', rejectionReason: rejectionReason.trim() }),
                 ...(needsTracking && { trackingNumber: trackingNumber.trim() }),
             });
             onClose();
@@ -136,6 +148,30 @@ export default function StatusUpdateModal({ order, onClose, onUpdate }) {
                         />
                         <span className={styles.modal__hint}>
                             این کد در پروفایل کاربر نمایش داده خواهد شد.
+                        </span>
+                    </div>
+                )}
+
+                {/* ── فیلد دلیل لغو — فقط وقتی وضعیت 'canceled' باشد ─── */}
+                {isCanceled && (
+                    <div className={styles.modal__field}>
+                        <label className={styles.modal__label} htmlFor="rejection-input" style={{ color: '#ef4444' }}>
+                            دلیل لغو سفارش <span className={styles.modal__required}>*</span>
+                        </label>
+                        <textarea
+                            id="rejection-input"
+                            rows={3}
+                            className={styles.modal__input}
+                            placeholder="علت لغو سفارش را بنویسید (این دلیل برای کاربر در بخش جزئیات سفارش نمایش داده می‌شود)..."
+                            value={rejectionReason}
+                            onChange={(e) => {
+                                setRejectionReason(e.target.value);
+                                setError(null);
+                            }}
+                            style={{ resize: 'vertical' }}
+                        />
+                        <span className={styles.modal__hint}>
+                            این پیام در بخش سفارشات کاربر نمایش داده می‌شود و کاربر می‌تواند بر اساس آن فیش صحیح ارسال کند.
                         </span>
                     </div>
                 )}
