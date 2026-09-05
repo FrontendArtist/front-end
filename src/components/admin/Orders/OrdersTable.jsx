@@ -14,6 +14,7 @@
  */
 
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'react';
+import { ArrowUpDown, RotateCcw } from 'lucide-react';
 import ReceiptModal from './ReceiptModal';
 import StatusUpdateModal from './StatusUpdateModal';
 import styles from './OrdersTable.module.scss';
@@ -246,6 +247,20 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
     );
 }
 
+// ── توابع کمکی برای تشخیص وضعیت سفارش ───────────────────────────────────────
+const isWaitingReceipt = (o) =>
+    (o.paymentMethod === 'card_to_card' && o.paymentStatus === 'pending_verification') ||
+    (Boolean(o.receiptImageUrl) && o.orderStatus === 'pending');
+
+const isPendingNoReceipt = (o) =>
+    o.orderStatus === 'pending' && !o.receiptImageUrl && o.paymentStatus !== 'pending_verification';
+
+const isPaidOrder = (o) =>
+    ['paid', 'shipped', 'delivered'].includes(o.orderStatus) || o.paymentStatus === 'paid';
+
+const isCanceledOrder = (o) =>
+    o.orderStatus === 'canceled';
+
 // ── OrdersTable ──────────────────────────────────────────────────────────────
 
 export default function OrdersTable({ initialOrders = [], initialMeta = null }) {
@@ -254,6 +269,8 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
     const [receiptModalOrder, setReceiptModal] = useState(null);
     const [statusModalOrder, setStatusModal] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [filterType, setFilterType] = useState('all'); // 'all' | 'needs_receipt' | 'pending' | 'paid' | 'canceled'
+    const [isStatusSorted, setIsStatusSorted] = useState(false); // اولویت‌بندی هوشمند وضعیت
     const [expandedId, setExpandedId] = useState(null); // شناسه ردیف باز
 
     // ── Pagination & Lazy Loading State ──────────────────────────────────────
@@ -332,19 +349,65 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
         };
     }, [hasMore, isLoadingMore, loadMoreOrders]);
 
-    // ── فیلتر جستجو ──────────────────────────────────────────────────────────
-    const filteredOrders = useMemo(() => {
-        if (!searchQuery.trim()) return orders;
-        const q = searchQuery.toLowerCase();
-        return orders.filter(
-            (o) =>
-                o.orderNumber?.toLowerCase().includes(q) ||
-                o.fullName?.toLowerCase().includes(q) ||
-                o.cardHolderName?.toLowerCase().includes(q) ||
-                o.user?.username?.toLowerCase().includes(q) ||
-                o.user?.phoneNumber?.includes(q)
-        );
-    }, [orders, searchQuery]);
+    // ── شمارنده‌های آماری برای تب‌های فیلتر ──────────────────────────────────
+    const pendingCount = useMemo(() => orders.filter((o) => o.orderStatus === 'pending').length, [orders]);
+    const paidCount = useMemo(() => orders.filter(isPaidOrder).length, [orders]);
+    const canceledCount = useMemo(() => orders.filter(isCanceledOrder).length, [orders]);
+
+    // ── فیلتر و مرتب‌سازی سفارش‌ها ───────────────────────────────────────────
+    const filteredAndSortedOrders = useMemo(() => {
+        let result = orders;
+
+        // ۱. فیلتر بر اساس تب
+        if (filterType === 'pending') {
+            result = result.filter((o) => o.orderStatus === 'pending');
+        } else if (filterType === 'paid') {
+            result = result.filter(isPaidOrder);
+        } else if (filterType === 'canceled') {
+            result = result.filter(isCanceledOrder);
+        }
+
+        // ۲. فیلتر جستجو
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(
+                (o) =>
+                    o.orderNumber?.toLowerCase().includes(q) ||
+                    o.fullName?.toLowerCase().includes(q) ||
+                    o.cardHolderName?.toLowerCase().includes(q) ||
+                    o.user?.username?.toLowerCase().includes(q) ||
+                    o.user?.phoneNumber?.includes(q)
+            );
+        }
+
+        // ۳. مرتب‌سازی هوشمند اولویت وضعیت
+        // ترتیب اولویت:
+        // ۱. در انتظار پرداخت با فیش آپلود شده (بررسی فیش)
+        // ۲. در انتظار پرداخت بدون فیش
+        // ۳. پرداخت شده / تکمیل (paid / shipped / delivered)
+        // ۴. لغو شده / رد شده (canceled)
+        if (isStatusSorted) {
+            const getStatusRank = (o) => {
+                if (isWaitingReceipt(o)) return 1;
+                if (isPendingNoReceipt(o)) return 2;
+                if (isPaidOrder(o)) return 3;
+                if (isCanceledOrder(o)) return 4;
+                return 5;
+            };
+
+            result = [...result].sort((a, b) => {
+                const rankA = getStatusRank(a);
+                const rankB = getStatusRank(b);
+                if (rankA !== rankB) {
+                    return rankA - rankB;
+                }
+                // در اولویت یکسان، جدیدترین سفارش‌ها اول بیایند
+                return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+            });
+        }
+
+        return result;
+    }, [orders, filterType, searchQuery, isStatusSorted]);
 
     function handleOrderUpdate(orderId, changes) {
         setOrders((prev) =>
@@ -356,11 +419,10 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
         setExpandedId((prev) => (prev === orderId ? null : orderId));
     }
 
-    // ── رندر خالی ──────────────────────────────────────────────────────────────
+    // ── رندر خالی اولیه ────────────────────────────────────────────────────────
     if (orders.length === 0) {
         return (
             <div className={styles.empty}>
-                <span>📋</span>
                 <p>هیچ سفارشی ثبت نشده است.</p>
             </div>
         );
@@ -368,157 +430,225 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
 
     const COL_SPAN = 8; // تعداد ستون‌های جدول
     const headers = [
-        <div style={{ width: 16 }}></div>,
-        'شناسه', 'کاربر', 'روش پرداخت', 'وضعیت سفارش', 'مبلغ (تومان)', 'تاریخ', 'عملیات'
+        <div key="expand-col" style={{ width: 16 }}></div>,
+        'شناسه',
+        'کاربر',
+        'روش پرداخت',
+        <button
+            key="status-sort-btn"
+            type="button"
+            className={`${styles.sort_header_btn} ${isStatusSorted ? styles['sort_header_btn--active'] : ''}`}
+            onClick={() => setIsStatusSorted((prev) => !prev)}
+            title={
+                isStatusSorted
+                    ? 'مرتب‌سازی اولویت وضعیت فعال است (کلیک برای بازنشانی)'
+                    : 'مرتب‌سازی اولویت وضعیت: فیش‌های در انتظار پرداخت در بالا'
+            }
+        >
+            <span>وضعیت سفارش</span>
+            <ArrowUpDown
+                size={14}
+                className={`${styles.sort_header_icon} ${isStatusSorted ? styles['sort_header_icon--active'] : ''}`}
+            />
+            {isStatusSorted && <span className={styles.sort_active_dot} />}
+        </button>,
+        'مبلغ (تومان)',
+        'تاریخ',
+        'عملیات',
     ];
 
     return (
         <AdminTableContainer>
 
-            {/* ── نوار جستجو ──────────────────────────────────────────────── */}
+            {/* ── نوار ابزار: تب‌های فیلتر وضعیت و جستجو ─────────────── */}
             <AdminToolbar>
-                <AdminSearch
-                    placeholder="جستجو بر اساس شماره سفارش، کاربر یا موبایل..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <span className={styles.toolbar__count}>
-                    {searchQuery.trim()
-                        ? `${new Intl.NumberFormat('fa-IR').format(filteredOrders.length)} سفارش یافته‌شده`
-                        : `نمایش ${new Intl.NumberFormat('fa-IR').format(orders.length)} از ${new Intl.NumberFormat('fa-IR').format(totalOrders)} سفارش`}
-                </span>
+                <div className={styles.filterTabs}>
+                    <AdminButton
+                        variant={filterType === 'all' ? 'edit' : 'default'}
+                        onClick={() => setFilterType('all')}
+                    >
+                        همه ({new Intl.NumberFormat('fa-IR').format(totalOrders || orders.length)})
+                    </AdminButton>
+                    <AdminButton
+                        variant={filterType === 'pending' ? 'edit' : 'default'}
+                        onClick={() => setFilterType('pending')}
+                    >
+                        در انتظار پرداخت ({new Intl.NumberFormat('fa-IR').format(pendingCount)})
+                    </AdminButton>
+                    <AdminButton
+                        variant={filterType === 'paid' ? 'edit' : 'default'}
+                        onClick={() => setFilterType('paid')}
+                    >
+                        پرداخت شده ({new Intl.NumberFormat('fa-IR').format(paidCount)})
+                    </AdminButton>
+                    <AdminButton
+                        variant={filterType === 'canceled' ? 'edit' : 'default'}
+                        onClick={() => setFilterType('canceled')}
+                    >
+                        لغو شده ({new Intl.NumberFormat('fa-IR').format(canceledCount)})
+                    </AdminButton>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    <AdminSearch
+                        placeholder="جستجو بر اساس شماره سفارش، کاربر یا موبایل..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <span className={styles.toolbar__count}>
+                        {searchQuery.trim() || filterType !== 'all' || isStatusSorted
+                            ? `${new Intl.NumberFormat('fa-IR').format(filteredAndSortedOrders.length)} سفارش یافته‌شده`
+                            : `نمایش ${new Intl.NumberFormat('fa-IR').format(orders.length)} از ${new Intl.NumberFormat('fa-IR').format(totalOrders)} سفارش`}
+                    </span>
+                </div>
             </AdminToolbar>
 
-            {/* ── جدول ────────────────────────────────────────────────────── */}
-            <AdminTable headers={headers}>
+            {/* ── جدول سفارش‌ها ────────────────────────────────────────── */}
+            {filteredAndSortedOrders.length === 0 ? (
+                <div className={styles.emptyFiltered}>
+                    <p>هیچ سفارشی مطابق با فیلترها و جستجوی انتخابی یافت نشد.</p>
+                    <AdminButton
+                        variant="default"
+                        onClick={() => {
+                            setSearchQuery('');
+                            setFilterType('all');
+                            setIsStatusSorted(false);
+                        }}
+                    >
+                        <RotateCcw size={14} style={{ marginLeft: '4px' }} />
+                        بازنشانی فیلترها
+                    </AdminButton>
+                </div>
+            ) : (
+                <AdminTable headers={headers}>
+                    {filteredAndSortedOrders.map((order) => {
+                        const ordConf = ORDER_STATUS_CONFIG[order.orderStatus?.trim()] || ORDER_STATUS_CONFIG[order.orderStatus] || ORDER_STATUS_CONFIG.pending;
+                        const isCardToCard = order.paymentMethod === 'card_to_card';
+                        const needsReceiptApproval =
+                            isCardToCard && order.paymentStatus === 'pending_verification';
+                        const isExpanded = expandedId === order.id;
 
-                        {filteredOrders.map((order) => {
-                            const ordConf = ORDER_STATUS_CONFIG[order.orderStatus?.trim()] || ORDER_STATUS_CONFIG[order.orderStatus] || ORDER_STATUS_CONFIG.pending;
-                            const isCardToCard = order.paymentMethod === 'card_to_card';
-                            const needsReceiptApproval =
-                                isCardToCard && order.paymentStatus === 'pending_verification';
-                            const isExpanded = expandedId === order.id;
+                        return (
+                            <Fragment key={order.id}>
+                                <tr
+                                    className={`${styles.table__row} ${isExpanded ? styles['table__row--expanded'] : ''}`}
+                                    onClick={() => toggleExpand(order.id)}
+                                >
+                                    {/* دکمه toggle */}
+                                    <td className={styles.expand_toggle_cell}>
+                                        <span
+                                            className={`${styles.expand_toggle} ${isExpanded ? styles['expand_toggle--open'] : ''}`}
+                                            title={isExpanded ? 'بستن جزئیات' : 'مشاهده جزئیات سفارش'}
+                                            aria-label={isExpanded ? 'بستن جزئیات' : 'مشاهده جزئیات'}
+                                        >
+                                            ▶
+                                        </span>
+                                    </td>
 
-                            return (
-                                <Fragment key={order.id}>
-                                    <tr
-                                        className={`${styles.table__row} ${isExpanded ? styles['table__row--expanded'] : ''}`}
-                                        onClick={() => toggleExpand(order.id)}
-                                    >
-                                        {/* دکمه toggle */}
-                                        <td className={styles.expand_toggle_cell}>
-                                            <span
-                                                className={`${styles.expand_toggle} ${isExpanded ? styles['expand_toggle--open'] : ''}`}
-                                                title={isExpanded ? 'بستن جزئیات' : 'مشاهده جزئیات سفارش'}
-                                                aria-label={isExpanded ? 'بستن جزئیات' : 'مشاهده جزئیات'}
-                                            >
-                                                ▶
-                                            </span>
-                                        </td>
+                                    {/* شناسه */}
+                                    <td className={styles.table__id}>{order.orderNumber}</td>
 
-                                        {/* شناسه */}
-                                        <td className={styles.table__id}>{order.orderNumber}</td>
-
-                                        {/* کاربر */}
-                                        <td>
-                                            {(() => {
-                                                const buyerName = getBuyerDisplayName(order);
-                                                const buyerPhone = order.phone || order.user?.phoneNumber;
-                                                return (
-                                                    <div className={styles.user_cell}>
-                                                        <span className={styles.user_cell__name}>
-                                                            {buyerName}
-                                                        </span>
-                                                        {buyerPhone && buyerPhone !== '00000000000' && (
-                                                            <span className={styles.user_cell__phone} dir="ltr">
-                                                                {buyerPhone}
-                                                            </span>
-                                                        )}
-                                                        {order.cardHolderName && order.cardHolderName !== buyerName && (
-                                                            <span className={styles.user_cell__card}>
-                                                                💳 {order.cardHolderName}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })()}
-                                        </td>
-
-                                        {/* روش پرداخت */}
-                                        <td>
-                                            <span className={styles.method_label}>
-                                                {PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod}
-                                            </span>
-                                        </td>
-
-                                        {/* وضعیت سفارش */}
-                                        <td>
-                                            <div className={styles.status_cell}>
-                                                <AdminBadge
-                                                    text={ordConf.label}
-                                                    variant={ordConf.variant}
-                                                />
-                                                {order.trackingNumber && (
-                                                    <span className={styles.tracking_code}>
-                                                        🚚 {order.trackingNumber}
+                                    {/* کاربر */}
+                                    <td>
+                                        {(() => {
+                                            const buyerName = getBuyerDisplayName(order);
+                                            const buyerPhone = order.phone || order.user?.phoneNumber;
+                                            return (
+                                                <div className={styles.user_cell}>
+                                                    <span className={styles.user_cell__name}>
+                                                        {buyerName}
                                                     </span>
-                                                )}
-                                            </div>
-                                        </td>
+                                                    {buyerPhone && buyerPhone !== '00000000000' && (
+                                                        <span className={styles.user_cell__phone} dir="ltr">
+                                                            {buyerPhone}
+                                                        </span>
+                                                    )}
+                                                    {order.cardHolderName && order.cardHolderName !== buyerName && (
+                                                        <span className={styles.user_cell__card}>
+                                                            💳 {order.cardHolderName}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
+                                    </td>
 
-                                        {/* مبلغ */}
-                                        <td className={styles.table__amount}>
-                                            {formatPriceRaw(order.totalPrice)}
-                                        </td>
+                                    {/* روش پرداخت */}
+                                    <td>
+                                        <span className={styles.method_label}>
+                                            {PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod}
+                                        </span>
+                                    </td>
 
-                                        {/* تاریخ */}
-                                        <td className={styles.table__date}>
-                                            {formatDateShort(order.createdAt)}
-                                        </td>
+                                    {/* وضعیت سفارش */}
+                                    <td>
+                                        <div className={styles.status_cell}>
+                                            <AdminBadge
+                                                text={ordConf.label}
+                                                variant={ordConf.variant}
+                                            />
+                                            {order.trackingNumber && (
+                                                <span className={styles.tracking_code}>
+                                                    🚚 {order.trackingNumber}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
 
-                                        {/* عملیات */}
-                                        <td>
-                                            <div className={styles.actions}>
-                                                {needsReceiptApproval && (
-                                                    <AdminButton
-                                                        variant="edit"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setReceiptModal(order);
-                                                        }}
-                                                        title="مشاهده و تأیید رسید پرداخت"
-                                                    >
-                                                        🧾 رسید
-                                                    </AdminButton>
-                                                )}
+                                    {/* مبلغ */}
+                                    <td className={styles.table__amount}>
+                                        {formatPriceRaw(order.totalPrice)}
+                                    </td>
 
+                                    {/* تاریخ */}
+                                    <td className={styles.table__date}>
+                                        {formatDateShort(order.createdAt)}
+                                    </td>
+
+                                    {/* عملیات */}
+                                    <td>
+                                        <div className={styles.actions}>
+                                            {needsReceiptApproval && (
                                                 <AdminButton
-                                                    variant="default"
+                                                    variant="edit"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setStatusModal(order);
+                                                        setReceiptModal(order);
                                                     }}
-                                                    title="تغییر وضعیت سفارش"
+                                                    title="مشاهده و تأیید رسید پرداخت"
                                                 >
-                                                    ✏️ وضعیت
+                                                    رسید
                                                 </AdminButton>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            )}
 
-                                    {/* ردیف کشویی جزئیات */}
-                                    {isExpanded && (
-                                        <OrderExpandedRow
-                                            key={`expanded-${order.id}`}
-                                            order={order}
-                                            colSpan={COL_SPAN}
-                                            onOpenReceipt={(ord) => setReceiptModal(ord)}
-                                        />
-                                    )}
-                                </Fragment>
-                            );
-                        })}
-            </AdminTable>
+                                            <AdminButton
+                                                variant="default"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setStatusModal(order);
+                                                }}
+                                                title="تغییر وضعیت سفارش"
+                                            >
+                                                وضعیت
+                                            </AdminButton>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                {/* ردیف کشویی جزئیات */}
+                                {isExpanded && (
+                                    <OrderExpandedRow
+                                        key={`expanded-${order.id}`}
+                                        order={order}
+                                        colSpan={COL_SPAN}
+                                        onOpenReceipt={(ord) => setReceiptModal(ord)}
+                                    />
+                                )}
+                            </Fragment>
+                        );
+                    })}
+                </AdminTable>
+            )}
 
             {/* ── بخش Lazy Loading و نشانگر بارگذاری ─────────────────── */}
             <AdminLazyLoad
