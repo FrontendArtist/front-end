@@ -13,6 +13,8 @@
 - NotificationBell Component & Styles (`src/components/layout/Navbar/NotificationBell.jsx` & SCSS):
   • Distinctive styling and icons for mentor replies (amber/gold theme with graduation cap icon) and support replies (cyan/blue theme with message icon).
   • Click-to-navigate directly to `/profile/messages?open=${id}` with automatic modal opening.
+  • Completely filtered out read notifications from the dropdown list upon being marked as read, clicked, or dismissed.
+  • Added per-item dismiss button (X) to allow removing individual notifications directly without navigation.
   • Dropdown footer now provides dual navigation to both «پیام‌های من» و «سفارش‌های من».
 - Profile Messages List & Banner Fixes (`src/modules/profile/MessagesList.jsx`, `OrderConfirmedBanner.jsx`, `messages/page.jsx`):
   • Automatically marks message notifications as read when the message is viewed.

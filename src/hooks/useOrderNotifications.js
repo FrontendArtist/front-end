@@ -245,12 +245,13 @@ export function useOrderNotifications() {
             return timeB - timeA;
         });
 
-        return itemsList;
+        // طبق درخواست کاربر: اعلان‌هایی که خوانده می‌شوند کلاً از لیست حذف می‌شوند
+        return itemsList.filter((item) => !item.isRead);
     }, [userId, orders, messages, readIds]);
 
-    // محاسبه تعداد خوانده نشده
+    // محاسبه تعداد خوانده نشده (برابر با کل اعلان‌های موجود در لیست)
     const unreadCount = useMemo(() => {
-        return notifications.filter((n) => !n.isRead).length;
+        return notifications.length;
     }, [notifications]);
 
     // علامت‌گذاری یک اعلان به عنوان خوانده شده
