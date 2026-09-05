@@ -209,7 +209,6 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
             userSelect: 'none',
           }}
         >
-          🔒 محتوای حفاظت‌شده طرح الهی • {userIdentifier}
         </div>
       )}
     </div>

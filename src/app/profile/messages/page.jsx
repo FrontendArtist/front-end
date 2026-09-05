@@ -25,7 +25,7 @@ function MessagesContent() {
         const fetchMessages = async () => {
             try {
                 setIsLoading(true);
-                const res = await getMyMessages(session.user.jwt);
+                const res = await getMyMessages(session.user.jwt, session.user?.id);
                 setMessages(res?.data || []);
             } catch (err) {
                 setError('خطا در دریافت پیام‌ها. لطفاً دوباره تلاش کنید.');
@@ -35,7 +35,7 @@ function MessagesContent() {
         };
 
         fetchMessages();
-    }, [session?.user?.jwt]);
+    }, [session?.user?.jwt, session?.user?.id]);
 
     const handleUpdateMessage = (docId, updatedFields) => {
         setMessages((prev) =>

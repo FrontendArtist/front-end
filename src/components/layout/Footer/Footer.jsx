@@ -32,7 +32,7 @@ const Footer = async () => {
               <li><Link href="/products">محصولات</Link></li>
               <li><Link href="/articles">مقالات</Link></li>
               <li><Link href="/courses">دوره‌ها</Link></li>
-              <li><Link href="/about-us">درباره ما</Link></li>
+              <li><Link href="/about">درباره ما</Link></li>
             </ul>
           </div>
 

@@ -87,13 +87,14 @@ function PaymentCallbackContent() {
     const source = searchParams.get('source'); // 'card_to_card' | 'light_topup' | null
     const orderId = searchParams.get('orderId'); // Strapi documentId
     const lightAmount = Number(searchParams.get('lightAmount') || '0');
+    const orderType = searchParams.get('orderType');
 
     // ─── حالت موفقیت ──────────────────────────────────────────────────────────
     if (status === 'success') {
         const isFree = source === 'free';
         const isCardToCard = source === 'card_to_card';
         const isLightTopup = source === 'light_topup';
-        const isLightCardToCard = isCardToCard && sp.get('orderType') === 'light_topup';
+        const isLightCardToCard = isCardToCard && orderType === 'light_topup';
         const primaryHref = isFree
             ? '/profile/purchases'
             : isCardToCard && orderId

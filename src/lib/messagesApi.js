@@ -7,25 +7,47 @@ import { apiClient } from './apiClient';
 import { withErrorHandling } from './apiErrorHandler';
 
 /**
- * دریافت لیست پیام‌های کاربر لاگین‌شده
- * کنترلر override شده فقط پیام‌های همین کاربر را برمی‌گرداند
+ * دریافت لیست پیام‌های کاربر لاگین‌شده (شامل پیام‌های ارتباط با ما و چت با استاد)
+ * فقط پیام‌های متعلق به کاربر لاگین‌شده را برمی‌گرداند.
  * @param {string} token - JWT token از session
+ * @param {number|string} [userId] - شناسه کاربر برای فیلتر دقیق
  */
-export async function getMyMessages(token) {
+export async function getMyMessages(token, userId = null) {
     return withErrorHandling(
         async () => {
             const headers = { Authorization: `Bearer ${token}` };
+            const userFilter = userId ? `&filters[user][id][$eq]=${userId}` : '';
             
             const [contactRes, mentorRes] = await Promise.allSettled([
-                apiClient('/api/contact-messages?populate=user&sort=createdAt:desc', { headers, cache: 'no-store' }),
-                apiClient('/api/messages?populate=user&sort=createdAt:desc', { headers, cache: 'no-store' }),
+                apiClient(
+                    `/api/contact-messages?scope=my${userFilter}&populate=user&sort=createdAt:desc`,
+                    { headers, cache: 'no-store' }
+                ),
+                apiClient(
+                    `/api/messages?scope=my${userFilter}&populate=user&sort=createdAt:desc`,
+                    { headers, cache: 'no-store' }
+                ),
             ]);
 
-            const contactMsgs = contactRes.status === 'fulfilled' ? (contactRes.value?.data || []) : [];
-            const mentorMsgs = mentorRes.status === 'fulfilled' ? (mentorRes.value?.data || []) : [];
+            let contactMsgs = contactRes.status === 'fulfilled' ? (contactRes.value?.data || []) : [];
+            let mentorMsgs = mentorRes.status === 'fulfilled' ? (mentorRes.value?.data || []) : [];
 
-            const combined = [...contactMsgs, ...mentorMsgs].sort((a, b) => 
-                new Date(b.createdAt) - new Date(a.createdAt)
+            // برچسب‌گذاری نوع پیام در صورت عدم وجود
+            contactMsgs = contactMsgs.map((m) => ({ ...m, messageType: m.messageType || 'contact' }));
+            mentorMsgs = mentorMsgs.map((m) => ({ ...m, messageType: m.messageType || 'instructor' }));
+
+            // فیلتر امنیتی: تضمین قطعی اینکه فقط پیام‌های خود همین کاربر نمایش داده شوند
+            if (userId) {
+                const matchUser = (msg) => {
+                    const msgUserId = msg.user?.id || msg.attributes?.user?.data?.id || msg.user?.documentId;
+                    return String(msgUserId) === String(userId);
+                };
+                contactMsgs = contactMsgs.filter(matchUser);
+                mentorMsgs = mentorMsgs.filter(matchUser);
+            }
+
+            const combined = [...contactMsgs, ...mentorMsgs].sort(
+                (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
             );
 
             return { data: combined };
@@ -43,7 +65,7 @@ export async function getMyMessages(token) {
 export async function getMyMessageById(id, token) {
     return withErrorHandling(
         async () => {
-            return apiClient(`/api/contact-messages/${id}?populate=user`, {
+            return apiClient(`/api/contact-messages/${id}?scope=my&populate=user`, {
                 headers: { Authorization: `Bearer ${token}` },
                 cache: 'no-store',
             });
@@ -141,7 +163,7 @@ export async function updateMentorFormSetting(payload, token) {
  */
 export async function getMyMentorMessages(token) {
     try {
-        return await apiClient('/api/messages?populate=user&sort=createdAt:desc', {
+        return await apiClient('/api/messages?scope=my&populate=user&sort=createdAt:desc', {
             headers: { Authorization: `Bearer ${token}` },
             cache: 'no-store',
             suppressErrorLog: true,

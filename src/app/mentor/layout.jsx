@@ -16,6 +16,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions, isUserMentor } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import styles from './mentor.module.scss';
 export const metadata = {
     title: 'پنل استاد',
     robots: {

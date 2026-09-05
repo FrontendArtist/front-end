@@ -29,20 +29,22 @@ export default async function MentorPage() {
     // ─── واکشی اولیه پیام‌های instructor ────────────────────────────────────
     // در صورت بروز خطا، آرایه خالی پاس می‌دهیم؛ کامپوننت کلاینت خطا را مدیریت می‌کند.
     let initialMessages = [];
-    try {
-        const res = await getInstructorMessages(session.user.jwt);
-        initialMessages = res?.data || [];
-    } catch (err) {
-        // لاگ خطا فقط در development برای جلوگیری از expose شدن اطلاعات
-        if (process.env.NODE_ENV === 'development') {
-            console.error('❌ MentorPage: Failed to fetch instructor messages:', err.message);
+    if (session?.user?.jwt) {
+        try {
+            const res = await getInstructorMessages(session.user.jwt);
+            initialMessages = res?.data || [];
+        } catch (err) {
+            // لاگ خطا فقط در development برای جلوگیری از expose شدن اطلاعات
+            if (process.env.NODE_ENV === 'development') {
+                console.error('❌ MentorPage: Failed to fetch instructor messages:', err.message);
+            }
         }
     }
 
     return (
         <InstructorChatPanel
             initialMessages={initialMessages}
-            currentUser={session.user}
+            currentUser={session?.user || null}
         />
     );
 }

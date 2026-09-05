@@ -24,7 +24,7 @@ export default function MessageDetailModal({ message, isOpen, onClose, onUpdateM
         const fetchLatest = async () => {
             if (document.visibilityState !== 'visible') return;
             try {
-                const res = await getMyMessages(token);
+                const res = await getMyMessages(token, session?.user?.id);
                 const list = res?.data || [];
                 const updated = list.find(
                     (m) => m.documentId === msgId || String(m.id) === msgId
@@ -39,7 +39,7 @@ export default function MessageDetailModal({ message, isOpen, onClose, onUpdateM
 
         const intervalId = setInterval(fetchLatest, 5000);
         return () => clearInterval(intervalId);
-    }, [isOpen, message, session?.user?.jwt, onUpdateMessage]);
+    }, [isOpen, message, session?.user?.jwt, session?.user?.id, onUpdateMessage]);
 
     if (!isOpen || !message) return null;
 
