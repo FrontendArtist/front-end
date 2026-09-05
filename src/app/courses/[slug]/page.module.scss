@@ -277,3 +277,211 @@
     }
   }
 }
+
+// Status Badges in Title Wrapper
+.statusBadgeVerification {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: var(--font-sm, 14px);
+  font-weight: var(--font-weight-bold, 700);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+  }
+
+  @include respond(sm) {
+    font-size: var(--font-xs);
+    padding: 6px 12px;
+  }
+}
+
+.statusBadgePendingPayment {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: var(--font-sm, 14px);
+  font-weight: var(--font-weight-bold, 700);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+  }
+
+  @include respond(sm) {
+    font-size: var(--font-xs);
+    padding: 6px 12px;
+  }
+}
+
+.statusBadgeRejected {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: var(--font-sm, 14px);
+  font-weight: var(--font-weight-bold, 700);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+  }
+
+  @include respond(sm) {
+    font-size: var(--font-xs);
+    padding: 6px 12px;
+  }
+}
+
+// Rejection Notice Box on Course Page
+.rejectionNoticeBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 20px;
+  margin-top: 14px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.rejectionNoticeHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ef4444;
+  font-size: var(--font-sm, 14px);
+  font-weight: 700;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.rejectionReasonText {
+  margin: 0;
+  font-size: var(--font-sm, 13px);
+  color: var(--color-card-text);
+  line-height: 1.6;
+
+  strong {
+    color: #ef4444;
+  }
+}
+
+.rejectionActionLink {
+  display: inline-block;
+  color: #fca5a5;
+  font-size: var(--font-xs, 12px);
+  font-weight: 700;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #ffffff;
+  }
+}
+
+// Action Buttons in Buy Detail
+.statusActionBtnRejected {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1.5px solid #ef4444;
+  color: #fca5a5;
+  font-size: var(--font-sm, 14px);
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #ffffff;
+    transform: translateY(-2px);
+  }
+
+  @include respond(sm) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.statusActionBtnPending {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1.5px solid #f59e0b;
+  color: #fcd34d;
+  font-size: var(--font-sm, 14px);
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(245, 158, 11, 0.3);
+    color: #ffffff;
+    transform: translateY(-2px);
+  }
+
+  @include respond(sm) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.statusActionBtnUpload {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1.5px solid #3b82f6;
+  color: #93c5fd;
+  font-size: var(--font-sm, 14px);
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(59, 130, 246, 0.3);
+    color: #ffffff;
+    transform: translateY(-2px);
+  }
+
+  @include respond(sm) {
+    width: 100%;
+    justify-content: center;
+  }
+}

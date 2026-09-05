@@ -144,3 +144,17 @@
     color: #eff6ff;
   }
 }
+
+.rejectedPayment {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #f87171;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: #f87171;
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+    color: #fef2f2;
+  }
+}

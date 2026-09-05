@@ -1,3 +1,15 @@
+[2026-09-05] - Course Page Dynamic Order Status Badges & Action Flow
+
+── Course Single View & Order Lifecycle Badges ─────────────────────────────────
+- Active Order Lifecycle Cards (`src/app/courses/[slug]/page.js` & SCSS):
+  • Built dynamic order status banner above course sidebar action area.
+  • Pending Payment State (pending_payment): Displays amber notice indicating awaiting receipt upload with a direct CTA to upload payment receipt (/profile/orders/{id}).
+  • Pending Verification State (pending_verification): Displays blue notice informing student that their payment receipt is currently being reviewed by admin.
+  • Rejected State (failed): Displays rose alert indicating payment/receipt rejection with reason provided by admin and a direct CTA to re-upload receipt.
+- AddToCartButton Lifecycle Synchronization (`src/components/ui/AddToCartButton/`):
+  • Integrated student status badge ("✓ شما دانشجوی دوره هستید") in emerald style when user has full access to course.
+  • Integrated contextual badges/buttons when an order is pending verification or awaiting payment to prevent double purchases.
+
 [2026-09-05] - Admin Receipt Rejection Fix, Rejection Reason UI & User Re-upload Flow
 
 ── Payment Receipt Verification & Rejection Flow ───────────────────────────────

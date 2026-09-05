@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import CourseTabs from '@/modules/courses/CourseTabs/CourseTabs';
@@ -14,7 +15,7 @@ import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdo
 import CourseTelegramLink from '@/components/courses/CourseTelegramLink/CourseTelegramLink';
 import CourseTeaserPlayer from '@/components/courses/CourseTeaserPlayer';
 import styles from './page.module.scss';
-import { getUserCoursePurchases } from '@/lib/ordersApi';
+import { checkCourseAccess } from '@/lib/ordersApi';
 
 import { SITE_NAME, SITE_URL } from '@/lib/constants';
 
@@ -71,10 +72,18 @@ export default async function CoursePage({ params }) {
 
   const isFreeCourse = rawCourse.price?.toman === 0 || rawCourse.price === 0;
   
+  // بررسی واحد و متمرکز دسترسی دوره و فصل‌ها (منبع اصلی: سفارش‌های پرداخت‌شده + فال‌بک سشن)
   const { 
-    hasPurchasedServer, 
-    purchasedChapterIdsServer 
-  } = await getUserCoursePurchases(session?.user?.id, rawCourse.id, rawCourse.slug);
+    hasAccess, 
+    purchasedChapterIds,
+    activeCourseOrder
+  } = await checkCourseAccess(session?.user?.id, rawCourse.id, rawCourse.slug, session?.user);
+
+  const isUserEnrolledInCourse = isFreeCourse || Boolean(session && hasAccess);
+  const hasPurchasedAnyChapter = (rawCourse.chapters || []).some(ch =>
+    purchasedChapterIds.includes(String(ch.id))
+  );
+  const isUserStudentOfCourse = isUserEnrolledInCourse || Boolean(session && hasPurchasedAnyChapter);
 
   // Fetch comments for this course
   const initialComments = await getComments('course', rawCourse.documentId);
@@ -103,9 +112,8 @@ export default async function CoursePage({ params }) {
     chapters: (rawCourse.chapters || []).map((chapter) => {
       const isChapterFree = chapter.price?.toman === 0 || chapter.price === 0 || !chapter.price;
       const isChapterPurchased =
-        hasPurchasedServer ||
-        purchasedChapterIdsServer.includes(String(chapter.id)) ||
-        (session?.user?.enrolledChapters || []).map(String).includes(String(chapter.id));
+        isUserEnrolledInCourse ||
+        purchasedChapterIds.includes(String(chapter.id));
 
       const hasChapterAccess = isFreeCourse || isChapterFree || (session && isChapterPurchased);
 
@@ -126,7 +134,7 @@ export default async function CoursePage({ params }) {
       };
     }),
     curriculum: (rawCourse.curriculum || []).map((lesson) => {
-      const hasCurriculumAccess = isFreeCourse || (session && hasPurchasedServer);
+      const hasCurriculumAccess = isUserEnrolledInCourse;
       const shouldStrip = !hasCurriculumAccess;
       if (shouldStrip && !lesson.isFree) {
         return {
@@ -190,25 +198,114 @@ export default async function CoursePage({ params }) {
           <div className={styles.details}>
             <div className={styles.titleWrapper}>
               <h1 className={styles.title}>{course.title}</h1>
-              {hasPurchasedServer && (
+              {isUserStudentOfCourse ? (
                 <div className={styles.enrolledBadge}>
                   ✓ شما دانشجوی این دوره هستید
                 </div>
-              )}
+              ) : activeCourseOrder ? (
+                activeCourseOrder.isPendingVerification ? (
+                  <Link
+                    href={`/profile/orders/${activeCourseOrder.documentId || activeCourseOrder.orderId}`}
+                    className={styles.statusBadgeVerification}
+                    title="مشاهده وضعیت سفارش"
+                  >
+                    ⏳ در انتظار بررسی فیش واریزی
+                  </Link>
+                ) : activeCourseOrder.isPendingPayment ? (
+                  <Link
+                    href={`/profile/orders/${activeCourseOrder.documentId || activeCourseOrder.orderId}`}
+                    className={styles.statusBadgePendingPayment}
+                    title="برای ارسال فیش کلیک کنید"
+                  >
+                    💳 در انتظار ارسال فیش واریزی
+                  </Link>
+                ) : activeCourseOrder.isRejected ? (
+                  <Link
+                    href={`/profile/orders/${activeCourseOrder.documentId || activeCourseOrder.orderId}`}
+                    className={styles.statusBadgeRejected}
+                    title="برای مشاهده علت و ارسال مجدد فیش کلیک کنید"
+                  >
+                    ✕ پرداخت رد شد (ارسال مجدد فیش)
+                  </Link>
+                ) : null
+              ) : null}
             </div >
             <p className={styles.description}>{course.description}</p>
 
+            {/* اعلان رد پرداخت به همراه دلیل و دکمه اقدام */}
+            {!isUserStudentOfCourse && activeCourseOrder?.isRejected && (
+              <div className={styles.rejectionNoticeBox}>
+                <div className={styles.rejectionNoticeHeader}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                  <strong>پرداخت سفارش شما برای این دوره تأیید نشد</strong>
+                </div>
+                {activeCourseOrder.rejectionReason && (
+                  <p className={styles.rejectionReasonText}>
+                    <strong>علت عدم تأیید:</strong> {activeCourseOrder.rejectionReason}
+                  </p>
+                )}
+                <Link
+                  href={`/profile/orders/${activeCourseOrder.documentId || activeCourseOrder.orderId}`}
+                  className={styles.rejectionActionLink}
+                >
+                  برای ارسال مجدد فیش واریزی کلیک کنید ←
+                </Link>
+              </div>
+            )}
+
             {/* شمارش معکوس تخفیف در صفحه دوره */}
-            {!hasPurchasedServer && hasDiscount && course.discountUntil && (
+            {!isUserEnrolledInCourse && hasDiscount && course.discountUntil && (
               <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
                 <DiscountCountdown targetDate={course.discountUntil} compact={false} />
               </div>
             )}
 
             <div className={styles.buyDetail}>
-              {!course.isChaptered && !isFreeCourse && !hasPurchasedServer && (
+              {!course.isChaptered && !isFreeCourse && !isUserStudentOfCourse && (
                 <div className={styles.actionWrapper}>
-                  <AddToCartButton course={course} />
+                  {activeCourseOrder?.isRejected ? (
+                    <Link
+                      href={`/profile/orders/${activeCourseOrder.documentId || activeCourseOrder.orderId}`}
+                      className={styles.statusActionBtnRejected}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
+                      </svg>
+                      <span>پرداخت رد شد — ارسال مجدد فیش</span>
+                    </Link>
+                  ) : activeCourseOrder?.isPendingVerification ? (
+                    <Link
+                      href={`/profile/orders/${activeCourseOrder.documentId || activeCourseOrder.orderId}`}
+                      className={styles.statusActionBtnPending}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span>در حال بررسی فیش واریزی</span>
+                    </Link>
+                  ) : activeCourseOrder?.isPendingPayment ? (
+                    <Link
+                      href={`/profile/orders/${activeCourseOrder.documentId || activeCourseOrder.orderId}`}
+                      className={styles.statusActionBtnUpload}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="12" y1="18" x2="12" y2="12" />
+                        <line x1="9" y1="15" x2="15" y2="15" />
+                      </svg>
+                      <span>در انتظار ارسال فیش واریزی</span>
+                    </Link>
+                  ) : (
+                    <AddToCartButton course={course} />
+                  )}
                 </div>
               )}
               {course.isChaptered ? (
@@ -248,7 +345,7 @@ export default async function CoursePage({ params }) {
               courseId={course.id}
               courseSlug={course.slug}
               documentId={course.documentId}
-              initialHasPurchased={hasPurchasedServer}
+              initialHasPurchased={isUserEnrolledInCourse}
             />
           </div>
         </div>
