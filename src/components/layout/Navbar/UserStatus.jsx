@@ -8,6 +8,7 @@ import styles from './UserStatus.module.scss';
 import LightTopUpModal from '@/components/ui/LightTopUpModal/LightTopUpModal';
 import Link from 'next/link';
 import { isUserAdmin, isUserMentor } from '@/lib/auth';
+import { useCartStore } from '@/store/useCartStore';
 
 export default function UserStatus() {
     const router = useRouter();
@@ -303,7 +304,10 @@ export default function UserStatus() {
 
                     {/* ── آیتم خروج ────────────────────────────────────── */}
                     <button
-                        onClick={() => signOut({ callbackUrl: '/' })}
+                        onClick={() => {
+                            useCartStore.getState().clearCart();
+                            signOut({ callbackUrl: '/' });
+                        }}
                         className={styles.dropdownItem}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none">

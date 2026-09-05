@@ -152,11 +152,28 @@ export const useCartStore = create(
             },
 
             /**
+             * شناسه کاربری مرتبط با این سبد خرید جهت جلوگیری از Session Fixation
+             */
+            userId: null,
+
+            /**
+              * تنظیم شناسه کاربری و پاکسازی خودکار در صورت تغییر کاربر
+              */
+            setCartUser: (newUserId) => {
+                const currentUserId = get().userId;
+                if (currentUserId && newUserId && String(currentUserId) !== String(newUserId)) {
+                    set({ items: [], appliedCoupon: null, userId: newUserId });
+                } else {
+                    set({ userId: newUserId });
+                }
+            },
+
+            /**
              * پاکسازی کامل سبد خرید
              * تمام آیتم‌ها (محصولات و دوره‌ها) و کوپن تخفیف حذف می‌شوند
              */
             clearCart: () => {
-                set({ items: [], appliedCoupon: null });
+                set({ items: [], appliedCoupon: null, userId: null });
             },
         }),
         {
@@ -185,11 +202,12 @@ export const useCartStore = create(
 
             /**
              * تنظیمات ذخیره‌سازی
-             * items و appliedCoupon در LocalStorage ذخیره می‌شوند
+             * items, appliedCoupon و userId در LocalStorage ذخیره می‌شوند
              */
             partialize: (state) => ({
                 items: state.items,
                 appliedCoupon: state.appliedCoupon,
+                userId: state.userId,
             }),
         }
     )
@@ -206,7 +224,18 @@ export const useCartStore = create(
  * @returns {number} - مجموع قیمت تمام آیتم‌های سبد (price * quantity)
  */
 export const selectTotalPrice = (state) =>
-    state.items.reduce((total, item) => total + item.price * item.quantity, 0);
+    (state.items || []).reduce((total, item) => total + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
+
+/**
+ * محاسبه مجموع تخفیف‌های مستقیم اعمال‌شده روی تک‌تک آیتم‌ها (تفاوت originalPrice و price)
+ */
+export const selectItemLevelDiscount = (state) =>
+    (state.items || []).reduce((sum, item) => {
+        const orig = Number(item.originalPrice) || 0;
+        const current = Number(item.price) || 0;
+        const qty = Number(item.quantity) || 1;
+        return sum + (orig > current ? (orig - current) * qty : 0);
+    }, 0);
 
 /**
  * محاسبه مبلغ تخفیف کد تخفیف
@@ -228,5 +257,6 @@ export const selectFinalTotalPrice = (state) => {
  * @param {Object} state - state کامل استور
  * @returns {number} - تعداد کل آیتم‌های یکتا (برای نمایش روی آیکون سبد خرید)
  */
-export const selectItemsCount = (state) => state.items.length;
+export const selectItemsCount = (state) => (state.items || []).length;
+
 

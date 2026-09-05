@@ -2,7 +2,28 @@
 'use client';
 
 import { useEffect } from 'react';
-import { SessionProvider } from "next-auth/react";
+import { SessionProvider, useSession } from "next-auth/react";
+import { useCartStore } from '@/store/useCartStore';
+
+/**
+ * همگام‌ساز سبد خرید با نشست کاربر جهت جلوگیری از Session Fixation و نشت داده
+ */
+function CartSessionSync() {
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      const currentUserId = useCartStore.getState().userId;
+      if (currentUserId) {
+        useCartStore.getState().clearCart();
+      }
+    } else if (status === 'authenticated' && session?.user?.id) {
+      useCartStore.getState().setCartUser(session.user.id);
+    }
+  }, [session?.user?.id, status]);
+
+  return null;
+}
 
 export function Providers({ children }) {
   useEffect(() => {
@@ -24,6 +45,7 @@ export function Providers({ children }) {
 
   return (
     <SessionProvider basePath="/api/auth" refetchOnWindowFocus={false}>
+      <CartSessionSync />
       {children}
     </SessionProvider>
   );

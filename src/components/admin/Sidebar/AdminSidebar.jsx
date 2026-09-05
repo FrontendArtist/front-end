@@ -31,6 +31,7 @@ import {
     MessageSquare,    // Comments icon
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import { useCartStore } from '@/store/useCartStore';
 
 import styles from './AdminSidebar.module.scss';
 
@@ -143,7 +144,10 @@ export default function AdminSidebar({ user }) {
             <div className={styles.sidebar__footer}>
                 <button
                     className={styles.sidebar__signout}
-                    onClick={() => signOut({ callbackUrl: '/' })}
+                    onClick={() => {
+                        useCartStore.getState().clearCart();
+                        signOut({ callbackUrl: '/' });
+                    }}
                     aria-label="خروج از حساب"
                 >
                     <LogOut size={18} />

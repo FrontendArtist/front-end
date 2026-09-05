@@ -1,3 +1,21 @@
+[2026-09-05] - Cart Session Isolation & Security Cleanup
+
+── Cart State & Session Management ─────────────────────────────────────────────
+- User Cart Isolation (`src/store/useCartStore.js`):
+  • Keyed cart local storage persistence with the authenticated user ID (cart_${userId}) to prevent cart contamination between multiple users on shared devices.
+  • Added initCartForUser(userId) and clearCartOnLogout() to reset in-memory cart state upon session termination.
+- Session Providers & Logout Handlers:
+  • `src/app/providers.jsx`: Monitored user session authentication changes to automatically initialize the active user's cart.
+  • Updated logout routines in UserStatus.jsx, ProfileSidebar.jsx, and AdminSidebar.jsx to clear the active cart immediately upon sign-out.
+
+[2026-09-05] - Backend Atomic Coupon Validation & Race Condition Prevention
+
+── Backend Coupon Service & Controllers ────────────────────────────────────────
+- Atomic Coupon Consumption (`backend/src/api/coupon/services/coupon.js`):
+  • Built dedicated atomic check-and-consume service using Strapi database query engine.
+  • Prevents race condition during high-concurrency checkout by validating usedCount < maxUsage and incrementing atomically inside a transactional check.
+  • Custom API Route (`backend/src/api/coupon/routes/01-custom-coupon.js`) & Controller (`coupon.js`): Added /coupons/consume endpoint for trusted server-to-server redemption.
+
 [2026-09-05] - Global SEO Overhaul, Title Template Normalization & Robots/Sitemap Optimization
 
 ── SEO Metadata & Title Template Fixes ──────────────────────────────────────

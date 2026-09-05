@@ -3,6 +3,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useCartStore } from '@/store/useCartStore';
 import styles from './ProfileSidebar.module.scss';
 
 export default function ProfileSidebar() {
@@ -10,6 +11,7 @@ export default function ProfileSidebar() {
     const pathname = usePathname();
 
     const handleLogout = async () => {
+        useCartStore.getState().clearCart();
         await signOut({ callbackUrl: '/' });
     };
 
