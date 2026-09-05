@@ -32,7 +32,7 @@ const ORDER_STATUS_CONFIG = {
     'paid': { label: 'پرداخت شده', variant: 'success' },
     'shipped': { label: 'ارسال شده', variant: 'info' },
     'delivered': { label: 'تحویل شده', variant: 'success' },
-    'canceled': { label: 'لغو شده', variant: 'error' },
+    'canceled': { label: 'رد شده', variant: 'error' },
 };
 
 /** برچسب‌های روش پرداخت */

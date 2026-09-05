@@ -201,6 +201,13 @@
             box-shadow: 0 0 8px var(--color-primary, #6366f1);
         }
     }
+
+    &.rejectedItem {
+        &.unread {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.25);
+        }
+    }
 }
 
 .itemIcon {
@@ -213,6 +220,16 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+
+    &.rejectedIcon {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+    }
+}
+
+.rejectedDot {
+    background: #ef4444 !important;
+    box-shadow: 0 0 8px #ef4444 !important;
 }
 
 .itemContent {

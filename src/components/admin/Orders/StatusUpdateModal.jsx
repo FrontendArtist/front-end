@@ -25,7 +25,7 @@ const ORDER_STATUSES = [
     { value: 'paid', label: 'پرداخت شده' },
     { value: 'shipped', label: 'ارسال شده' },
     { value: 'delivered', label: 'تحویل داده شده' },
-    { value: 'canceled', label: 'لغو شده' },
+    { value: 'canceled', label: 'رد شده' },
 ];
 
 export default function StatusUpdateModal({ order, onClose, onUpdate }) {
@@ -49,7 +49,7 @@ export default function StatusUpdateModal({ order, onClose, onUpdate }) {
 
         // اعتبارسنجی: اگر 'canceled' انتخاب شده، دلیل لغو اجباری است
         if (isCanceled && !rejectionReason.trim()) {
-            setError('لطفاً دلیل لغو سفارش را برای نمایش به کاربر وارد کنید.');
+            setError('لطفاً دلیل رد سفارش را برای نمایش به کاربر وارد کنید.');
             return;
         }
 
@@ -156,13 +156,13 @@ export default function StatusUpdateModal({ order, onClose, onUpdate }) {
                 {isCanceled && (
                     <div className={styles.modal__field}>
                         <label className={styles.modal__label} htmlFor="rejection-input" style={{ color: '#ef4444' }}>
-                            دلیل لغو سفارش <span className={styles.modal__required}>*</span>
+                            دلیل رد سفارش <span className={styles.modal__required}>*</span>
                         </label>
                         <textarea
                             id="rejection-input"
                             rows={3}
                             className={styles.modal__input}
-                            placeholder="علت لغو سفارش را بنویسید (این دلیل برای کاربر در بخش جزئیات سفارش نمایش داده می‌شود)..."
+                            placeholder="علت رد سفارش را بنویسید (این دلیل برای کاربر در بخش جزئیات سفارش نمایش داده می‌شود)..."
                             value={rejectionReason}
                             onChange={(e) => {
                                 setRejectionReason(e.target.value);

@@ -1,3 +1,18 @@
+[2026-09-05] - Support Rejected Order Notifications, Red Rejection Banner & Status Localization
+
+── Order Rejection Notifications & Red Banner UI ───────────────────────────
+- Order Notifications Hook (`src/hooks/useOrderNotifications.js`):
+  • Added detection for rejected orders ('canceled', 'cancelled', 'rejected', paymentStatus 'failed', or presence of rejectionReason).
+  • Generates "سفارش شما رد شد ❌" notifications with reason and direct link to profile order details page.
+  • Updated notification sorting by timestamp (descending) and deduplicated read status tracking.
+- Navigation Notification Bell (`src/components/layout/Navbar/NotificationBell.jsx` & SCSS):
+  • Displayed red danger icon, red unread indicator dot, and crimson highlighted card background for rejected order notifications.
+- Profile Order Banner (`src/components/profile/OrderConfirmedBanner.jsx` & SCSS):
+  • Completely decoupled green confirmed (.bannerConfirmed) and red rejected (.bannerRejected) theme classes to prevent style collisions.
+  • Added dedicated red button ("مشاهده جزئیات سفارش"), red alert icon, and light-red text styling for rejected orders.
+- Order Status Localization (`src/components/profile/OrdersList.jsx`, `StatusUpdateModal.jsx`, `OrdersTable.jsx`, `AdminBadge.jsx`):
+  • Standardized order cancellation status label from "لغو شده" to "رد شده".
+
 [2026-09-05] - Fix Course Full Access Bug on Single Chapter Purchase
 
 ── Chapter Access Isolation & Verification ──────────────────────────────────────

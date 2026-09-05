@@ -34,7 +34,7 @@ export default function OrdersList({ limit }) {
             pending: { label: 'در انتظار پرداخت', cls: styles.orders__badgeWarning },
             shipped: { label: 'ارسال شده', cls: styles.orders__badgeDefault },
             delivered: { label: 'تحویل داده شد', cls: styles.orders__badgeSuccess },
-            canceled: { label: 'لغو شده', cls: styles.orders__badgeDanger },
+            canceled: { label: 'رد شده', cls: styles.orders__badgeDanger },
             failed: { label: 'ناموفق', cls: styles.orders__badgeDanger },
         };
         const { label, cls } = map[normalizedStatus] ?? { label: status || 'نامشخص', cls: styles.orders__badgeDefault };

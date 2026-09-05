@@ -9,11 +9,8 @@
     padding: 16px 20px;
     margin-bottom: 24px;
     border-radius: 16px;
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 95, 70, 0.18) 100%);
-    border: 1px solid rgba(16, 185, 129, 0.35);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 0 15px rgba(16, 185, 129, 0.1);
     animation: bannerSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     direction: rtl;
 
@@ -22,6 +19,82 @@
         align-items: stretch;
         padding: 14px 16px;
         gap: 12px;
+    }
+}
+
+// ─── تم سبز (سفارش تایید شده) ──────────────────────────────────
+.bannerConfirmed {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(6, 95, 70, 0.22) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.38);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 0 15px rgba(16, 185, 129, 0.1);
+
+    .iconWrap {
+        background: rgba(16, 185, 129, 0.2);
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        color: #10b981;
+    }
+
+    .title {
+        color: #ecfdf5;
+    }
+
+    .description {
+        color: #a7f3d0;
+    }
+
+    .actionBtn {
+        background: #10b981;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+
+        &:hover {
+            background: #059669;
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+        }
+    }
+
+    .dismissBtn {
+        color: #a7f3d0;
+    }
+}
+
+// ─── تم قرمز (سفارش رد شده) ────────────────────────────────────
+.bannerRejected {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(153, 27, 27, 0.32) 100%) !important;
+    border: 1px solid rgba(239, 68, 68, 0.5) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25), 0 0 20px rgba(239, 68, 68, 0.2) !important;
+
+    .iconWrap {
+        background: rgba(239, 68, 68, 0.25) !important;
+        border: 1px solid rgba(239, 68, 68, 0.55) !important;
+        color: #ef4444 !important;
+    }
+
+    .title {
+        color: #fff1f2 !important;
+    }
+
+    .description {
+        color: #fca5a5 !important;
+    }
+
+    .actionBtn {
+        background: #ef4444 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4) !important;
+
+        &:hover {
+            background: #dc2626 !important;
+            box-shadow: 0 6px 18px rgba(239, 68, 68, 0.5) !important;
+        }
+    }
+
+    .dismissBtn {
+        color: #fca5a5 !important;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.16) !important;
+            color: #ffffff !important;
+        }
     }
 }
 
@@ -48,9 +121,6 @@
     width: 42px;
     height: 42px;
     border-radius: 12px;
-    background: rgba(16, 185, 129, 0.2);
-    border: 1px solid rgba(16, 185, 129, 0.4);
-    color: #10b981;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -60,6 +130,12 @@
     svg {
         width: 22px;
         height: 22px;
+    }
+
+    &.iconWrapRejected {
+        background: rgba(239, 68, 68, 0.25) !important;
+        border: 1px solid rgba(239, 68, 68, 0.55) !important;
+        color: #ef4444 !important;
     }
 }
 
@@ -73,14 +149,20 @@
     margin: 0;
     font-size: 0.95rem;
     font-weight: 700;
-    color: #ecfdf5;
+
+    &.titleRejected {
+        color: #fff1f2 !important;
+    }
 }
 
 .description {
     margin: 0;
     font-size: 0.82rem;
-    color: #a7f3d0;
     line-height: 1.45;
+
+    &.descriptionRejected {
+        color: #fca5a5 !important;
+    }
 }
 
 .actions {
@@ -99,19 +181,22 @@
     align-items: center;
     gap: 6px;
     padding: 8px 16px;
-    background: #10b981;
-    color: #ffffff;
     border-radius: 10px;
     font-size: 0.82rem;
     font-weight: 700;
     text-decoration: none;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
 
-    &:hover {
-        background: #059669;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+    &.actionBtnRejected {
+        background: #ef4444 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4) !important;
+
+        &:hover {
+            background: #dc2626 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(239, 68, 68, 0.5) !important;
+        }
     }
 }
 
@@ -124,7 +209,6 @@
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #a7f3d0;
     cursor: pointer;
     transition: all 0.2s ease;
 
@@ -136,5 +220,14 @@
     svg {
         width: 16px;
         height: 16px;
+    }
+
+    &.dismissBtnRejected {
+        color: #fca5a5 !important;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.16) !important;
+            color: #ffffff !important;
+        }
     }
 }

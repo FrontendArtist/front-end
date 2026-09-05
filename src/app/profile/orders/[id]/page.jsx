@@ -55,7 +55,7 @@ const OrderStatusBadge = ({ status }) => {
         pending: { label: 'در انتظار', cls: styles.badgeWarning },
         shipped: { label: 'ارسال شده', cls: styles.badgeInfo },
         delivered: { label: 'تحویل داده شد', cls: styles.badgeSuccess },
-        canceled: { label: 'لغو شده', cls: styles.badgeDanger },
+        canceled: { label: 'رد شده', cls: styles.badgeDanger },
     };
     const entry = map[normalized] ?? { label: status || 'نامشخص', cls: styles.badgeDefault };
     return <span className={`${styles.badge} ${entry.cls}`}>{entry.label}</span>;
