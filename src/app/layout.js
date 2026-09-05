@@ -39,13 +39,40 @@ export const metadata = {
     template: `%s | ${SITE_NAME}`
   },
   description: `مرجع آموزش و محصولات معنوی ${SITE_NAME}`,
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/images/SITELOGO.png', type: 'image/png', sizes: '548x548' },
+      { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/images/SITELOGO.png' },
+    ],
+  },
+  manifest: '/site.webmanifest',
   openGraph: {
     title: SITE_NAME,
     description: `مرجع آموزش و محصولات معنوی ${SITE_NAME}`,
     url: SITE_URL,
     siteName: SITE_NAME,
+    images: [
+      {
+        url: '/images/SITELOGO.png',
+        width: 548,
+        height: 548,
+        alt: SITE_NAME,
+      },
+    ],
     locale: 'fa_IR',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: SITE_NAME,
+    description: `مرجع آموزش و محصولات معنوی ${SITE_NAME}`,
+    images: ['/images/SITELOGO.png'],
   },
   robots: {
     index: true,
@@ -54,9 +81,23 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: `${SITE_URL}/images/SITELOGO.png`,
+  };
+
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationSchema),
+          }}
+        />
         <Script
           id="theme-initializer"
           strategy="beforeInteractive"

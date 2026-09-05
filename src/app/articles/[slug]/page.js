@@ -28,7 +28,7 @@ export async function generateMetadata({ params }) {
   // محاسبه آدرس تصویر برای OpenGraph
   const rawCoverUrl = rawArticle.cover?.url || '';
   const isLocalFallback = rawCoverUrl.startsWith('/images/') || rawCoverUrl.includes('forempties');
-  let ogImageUrl = `${SITE_URL}/logo.png`; // تصویر پیش‌فرض
+  let ogImageUrl = `${SITE_URL}/images/SITELOGO.png`; // تصویر پیش‌فرض
 
   if (rawCoverUrl) {
     if (rawCoverUrl.startsWith('http')) {
@@ -132,7 +132,7 @@ export default async function ArticlePage({ params }) {
     },
     headline: article.title,
     description: article.excerpt || article.title,
-    image: showCoverImage ? [finalCoverUrl] : [`${SITE_URL}/logo.png`],
+    image: showCoverImage ? [finalCoverUrl] : [`${SITE_URL}/images/SITELOGO.png`],
     datePublished: article.isoDate,
     dateModified: article.updatedAt,
     author: {
@@ -146,7 +146,7 @@ export default async function ArticlePage({ params }) {
       url: SITE_URL,
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/logo.png`,
+        url: `${SITE_URL}/images/SITELOGO.png`,
       },
     },
   };
