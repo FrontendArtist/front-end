@@ -1,3 +1,11 @@
+[2026-09-05] - CourseCard Chapter Purchase Support & Student Badge Display
+
+── Course Cards UI & Enrollment Status ─────────────────────────────────────────
+- Student Status Badge (`src/components/cards/CourseCard/CourseCard.jsx` & SCSS):
+  • Added student status badge ("✓ شما دانشجوی دوره هستید") in emerald gradient for enrolled users.
+  • Handled both full-course enrollments and individual chapter purchases (hasAnyAccess).
+  • Automatically replaced course price tag with active student status badge.
+
 [2026-09-05] - Unified Course Access & Single Source of Truth
 
 ── Course Access Architecture ──────────────────────────────────────────────────

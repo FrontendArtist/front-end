@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useOrdersStore } from '@/store/useOrdersStore';
+import { isOrderPaid } from '@/lib/constants/orderConstants';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
 import styles from './CourseCard.module.scss';
@@ -37,11 +38,7 @@ const CourseCard = ({ course }) => {
   const { fetchOrders } = useOrdersStore();
 
   const isPurchasedInOrders = useOrdersStore(state => {
-    const paidOrders = state.orders.filter(order => {
-      const oStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
-      const pStatus = (order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
-      return oStatus === 'paid' || pStatus === 'paid' || ['shipped', 'delivered'].includes(oStatus);
-    });
+    const paidOrders = state.orders.filter(isOrderPaid);
 
     const allItems = paidOrders.flatMap(order => {
       const items = order.attributes?.items || order.items;
@@ -49,27 +46,56 @@ const CourseCard = ({ course }) => {
     });
 
     return allItems.some(item => {
-      // اگر آیتم صرفاً یک فصل باشد، نباید کل دوره به عنوان خریداری‌شده علامت بخورد
-      if (item.type === 'chapter' || item.chapterId || item.slug?.includes('-chapter-')) {
-        return false;
-      }
-      return (
+      // ۱. بررسی خرید کل دوره
+      const isDirectCourseMatch =
         item.slug === slug ||
         String(item.id) === String(id) ||
         String(item.courseId) === String(id) ||
-        (course.documentId && String(item.documentId) === String(course.documentId))
-      );
+        (course.documentId && String(item.documentId) === String(course.documentId));
+
+      if (isDirectCourseMatch) return true;
+
+      // ۲. بررسی خرید حداقل یکی از فصل‌های این دوره
+      const isChapterItem =
+        item.type === 'chapter' ||
+        Boolean(item.chapterId) ||
+        (typeof item.slug === 'string' && item.slug.includes('-chapter-'));
+
+      if (isChapterItem) {
+        // تطابق دوره والد بر اساس courseId یا اسلاگ
+        const parentCourseMatches =
+          String(item.courseId) === String(id) ||
+          (course.documentId && String(item.courseId) === String(course.documentId)) ||
+          (slug && typeof item.slug === 'string' && item.slug.startsWith(`${slug}-chapter-`));
+
+        if (parentCourseMatches) return true;
+
+        // تطابق با شناسه فصل‌ها در صورت وجود آرایه chapters در آبجکت دوره
+        if (Array.isArray(course.chapters) && course.chapters.length > 0) {
+          const rawItemChapterId = item.chapterId || (item.id && String(item.id).replace('chapter-', ''));
+          return course.chapters.some(ch => String(ch.id) === String(rawItemChapterId));
+        }
+      }
+
+      return false;
     });
   });
 
   const enrolledCourses = session?.user?.enrolledCourses || [];
   const enrolledSlugs = session?.user?.enrolledSlugs || [];
+  const enrolledChapters = session?.user?.enrolledChapters || [];
+
   const isEnrolledInSession =
     enrolledCourses.includes(id) ||
     enrolledCourses.includes(String(id)) ||
     enrolledCourses.includes(Number(id)) ||
     (course.documentId && enrolledCourses.includes(course.documentId)) ||
-    (slug && enrolledSlugs.includes(slug));
+    (slug && enrolledSlugs.includes(slug)) ||
+    (Array.isArray(course.chapters) && course.chapters.some(ch =>
+      enrolledChapters.includes(ch.id) ||
+      enrolledChapters.includes(String(ch.id)) ||
+      enrolledChapters.includes(Number(ch.id))
+    ));
 
   const isPurchased = isPurchasedInOrders || isEnrolledInSession;
 
@@ -97,7 +123,12 @@ const CourseCard = ({ course }) => {
           className={styles.courseImage}
         />
         {isHydrated && isPurchased ? (
-          <span className={styles.purchasedBadge}>خریداری شده</span>
+          <span className={styles.purchasedBadge}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            شما دانشجوی دوره هستید
+          </span>
         ) : hasDiscount ? (
           <div className={styles.topBadges}>
             <span className={styles.discountBadge}>٪{discountPercent} تخفیف</span>
