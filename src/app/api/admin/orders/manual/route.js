@@ -306,6 +306,7 @@ export async function POST(request) {
             const chapterId = c.chapterId ? Number(c.chapterId) : null;
             const price = Number(c.price) >= 0 ? Number(c.price) : 0;
             const slug = c.slug || '';
+            const itemSlug = chapterId ? `${slug}-chapter-${chapterId}` : slug;
 
             if (chapterId) {
                 chapterIdsToActivate.add(chapterId);
@@ -319,7 +320,7 @@ export async function POST(request) {
                 price,
                 courseId,
                 chapterId,
-                slug,
+                slug: itemSlug,
                 itemUrl: slug ? `/courses/${slug}` : '#',
             };
         });
@@ -384,17 +385,23 @@ export async function POST(request) {
         const isPaid = orderStatus === 'paid' || paymentStatus === 'paid';
         if (isPaid) {
             try {
-                // الف) به‌روزرسانی دوره‌های کاربر
-                const existingCourses = Array.isArray(targetUser.courses)
-                    ? targetUser.courses.map(c => typeof c === 'object' ? c.id : Number(c))
-                    : [];
-                const mergedCourses = [...new Set([...existingCourses, ...Array.from(courseIdsToActivate)])];
-
-                // ب) به‌روزرسانی سرفصل‌های خریداری‌شده کاربر
+                // به‌روزرسانی سرفصل‌های خریداری‌شده کاربر
                 const existingChapters = Array.isArray(targetUser.enrolledChapters)
                     ? targetUser.enrolledChapters.map(Number)
                     : [];
                 const mergedChapters = [...new Set([...existingChapters, ...Array.from(chapterIdsToActivate)])];
+
+                const userUpdateData = {
+                    enrolledChapters: mergedChapters,
+                };
+
+                // فقط در صورتی که خرید کامل دوره انتخاب شده باشد، دوره به لیست دوره‌های کلی اضافه می‌شود
+                if (courseIdsToActivate.size > 0) {
+                    const existingCourses = Array.isArray(targetUser.courses)
+                        ? targetUser.courses.map(c => typeof c === 'object' ? c.id : Number(c))
+                        : [];
+                    userUpdateData.courses = [...new Set([...existingCourses, ...Array.from(courseIdsToActivate)])];
+                }
 
                 await fetch(`${STRAPI_BASE_URL}/api/users/${targetUser.id}`, {
                     method: 'PUT',
@@ -402,10 +409,7 @@ export async function POST(request) {
                         Authorization: `Bearer ${tokenToUse}`,
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        courses: mergedCourses,
-                        enrolledChapters: mergedChapters,
-                    }),
+                    body: JSON.stringify(userUpdateData),
                 });
 
                 // ج) به‌روزرسانی رابطه دوطرفه در سمت Courseها جهت نمایش در Strapi Admin UI

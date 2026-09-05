@@ -1,3 +1,13 @@
+[2026-09-05] - Fix Course Full Access Bug on Single Chapter Purchase
+
+── Chapter Access Isolation & Verification ──────────────────────────────────────
+- Fixed Course Access Logic (`src/lib/ordersApi.js` & `CourseContentManager.jsx`):
+  • Added `isChapterItem` check to avoid falsely treating chapter order items as full course purchases when matching `item.courseId === course.id`.
+  • Prevented full course unlock when only a single chapter is present in paid orders.
+- Manual Order Chapter Slug Standardization (`src/app/api/admin/orders/manual/route.js`):
+  • Formatted chapter item slug as `${courseSlug}-chapter-${chapterId}`.
+  • Prevented updating user's global `courses` relation when only individual chapters are enrolled.
+
 [2026-09-05] - Admin Manual Order Creation, User Registration & Course Activation
 
 ── Admin Manual Order & Course Activation ───────────────────────────────────────

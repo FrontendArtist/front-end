@@ -78,13 +78,23 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       if (!isOrderPaid(order)) return false;
 
       const items = order.attributes?.items || order.items || [];
-      return items.some(
-        (item) =>
+      return items.some((item) => {
+        // اگر آیتم مربوط به فصل باشد، نباید دسترسی کل دوره ایجاد کند
+        const isChapterItem = Boolean(
+          item.type === 'chapter' ||
+          item.chapterId ||
+          (item.slug && String(item.slug).includes('-chapter-')) ||
+          (item.id && String(item.id).startsWith('chapter-'))
+        );
+        if (isChapterItem) return false;
+
+        return (
           item.slug === course.slug ||
           String(item.courseId) === String(course.id) ||
           String(item.id) === String(course.id) ||
           String(item.documentId) === String(course.documentId)
-      );
+        );
+      });
     });
   }, [orders, course]);
 

@@ -62,17 +62,27 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
             const itemSlug = String(item.slug ?? '');
             const itemId = String(item.id ?? '');
 
-            // بررسی خرید کامل دوره
+            const isChapterItem = Boolean(
+              item.type === 'chapter' ||
+              item.chapterId ||
+              itemSlug.includes('-chapter-') ||
+              itemId.startsWith('chapter-')
+            );
+
+            // بررسی خرید کامل دوره (فقط در صورتی که قلم مربوط به فصل نباشد)
             if (
-              itemCourseId === String(courseId) ||
-              itemSlug === String(courseSlug) ||
-              itemId === String(courseId)
+              !isChapterItem &&
+              (
+                itemCourseId === String(courseId) ||
+                itemSlug === String(courseSlug) ||
+                itemId === String(courseId)
+              )
             ) {
               hasAccess = true;
             }
 
             // بررسی خرید فصل‌های مجزا
-            if (item.type === 'chapter' || item.chapterId) {
+            if (isChapterItem) {
               if (item.chapterId) purchasedChapterIds.push(String(item.chapterId));
               if (item.id) {
                 const cleanId = String(item.id).replace('chapter-', '');
