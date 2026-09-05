@@ -21,3 +21,26 @@ export async function fetchAdminOrders({ start, limit = 20, page, pageSize } = {
     if (!res.ok) throw new Error(data.error || 'خطا در دریافت سفارش‌ها');
     return data; // { orders, meta }
 }
+
+export async function createManualOrder(formData) {
+    const res = await fetch('/api/admin/orders/manual', {
+        method: 'POST',
+        body: formData,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data.error || 'خطا در ثبت سفارش دستی');
+    }
+    return data;
+}
+
+export async function searchAdminUsers(query) {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    const res = await fetch(`/api/admin/orders/manual?${params.toString()}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        throw new Error(data.error || 'خطا در جستجوی کاربران');
+    }
+    return data.users || [];
+}

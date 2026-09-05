@@ -13,6 +13,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getOrders } from '@/lib/admin/adminOrdersApi';
 import OrdersTable from '@/components/admin/Orders/OrdersTable';
+import Link from 'next/link';
 import styles from './orders.module.scss';
 
 export const metadata = {
@@ -31,12 +32,32 @@ export default async function AdminOrdersPage() {
         <div className={styles.page}>
             {/* ── سرصفحه ──────────────────────────────────────────────── */}
             <header className={styles.page__header}>
-                <h1 className={styles.page__title}>مدیریت سفارش‌ها</h1>
-                {meta?.pagination && (
-                    <span className={styles.page__count}>
-                        {new Intl.NumberFormat('fa-IR').format(meta.pagination.total)} سفارش
-                    </span>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <h1 className={styles.page__title}>مدیریت سفارش‌ها</h1>
+                    {meta?.pagination && (
+                        <span className={styles.page__count}>
+                            {new Intl.NumberFormat('fa-IR').format(meta.pagination.total)} سفارش
+                        </span>
+                    )}
+                </div>
+                <Link
+                    href="/admin/orders/new"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        padding: '0.6rem 1.25rem',
+                        borderRadius: '8px',
+                        background: 'var(--color-title-hover)',
+                        color: 'var(--color-bg-primary)',
+                        fontWeight: 'var(--font-weight-bold)',
+                        fontSize: 'var(--font-sm)',
+                        textDecoration: 'none',
+                        transition: 'opacity 0.2s',
+                    }}
+                >
+                    ➕ ثبت دستی سفارش و دوره
+                </Link>
             </header>
 
             {/* ── خطای عدم اتصال ──────────────────────────────────────── */}

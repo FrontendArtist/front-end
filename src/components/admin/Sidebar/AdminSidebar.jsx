@@ -21,6 +21,7 @@ import Link from 'next/link';
 import {
     LayoutDashboard,  // Dashboard overview icon
     ShoppingCart,     // Orders icon
+    UserPlus,         // Manual order & course enrollment icon
     Users,            // Users management icon
     Package,          // Products icon
     FileText,         // Articles icon
@@ -45,6 +46,7 @@ import styles from './AdminSidebar.module.scss';
 const NAV_LINKS = [
     { href: '/admin', label: 'داشبورد', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'سفارش‌ها', icon: ShoppingCart },
+    { href: '/admin/orders/new', label: 'ثبت دستی سفارش و دوره', icon: UserPlus },
     { href: '/admin/users', label: 'کاربران', icon: Users },
     { href: '/admin/products', label: 'محصولات', icon: Package },
     { href: '/admin/articles', label: 'مقالات', icon: FileText },
@@ -74,9 +76,8 @@ export default function AdminSidebar({ user }) {
     /**
      * Determines whether a given href matches the current pathname.
      *
-     * Special case for '/admin' (the dashboard root):
-     *   - We use an exact match (`pathname === href`) to prevent it from
-     *     being active on ALL /admin/* sub-routes.
+     * Special case for '/admin' (the dashboard root) and '/admin/orders':
+     *   - Exact match prevents them from falsely staying active on sub-routes.
      *   - For all other links, we use startsWith() so that nested routes
      *     (e.g. '/admin/orders/123') still highlight the parent nav item.
      *
@@ -85,6 +86,7 @@ export default function AdminSidebar({ user }) {
      */
     const isActive = (href) => {
         if (href === '/admin') return pathname === '/admin';
+        if (href === '/admin/orders') return pathname === '/admin/orders';
         return pathname.startsWith(href);
     };
 

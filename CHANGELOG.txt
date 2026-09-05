@@ -1,3 +1,20 @@
+[2026-09-05] - Admin Manual Order Creation, User Registration & Course Activation
+
+── Admin Manual Order & Course Activation ───────────────────────────────────────
+- Manual Order Creation Page (`src/app/admin/orders/new/page.jsx` & SCSS):
+  • Built dedicated server-side protected admin route for issuing manual orders and enrollments.
+- ManualOrderForm Component (`src/components/admin/Orders/ManualOrderForm/`):
+  • User selection & creation tabs: create new user with phone/name or live search existing users with debounce.
+  • Course & chapter selector: support for full courses or individual chapters with live sum calculation and custom price override.
+  • Payment & receipt attachment: image upload with preview, tracking number, card holder name, and payment method selection.
+  • Styled with project design system variables (var(--color-title-hover), var(--color-bg-primary), var(--color-card-text)).
+- Server Route Handler (`src/app/api/admin/orders/manual/route.js`):
+  • Uploads receipt images to Strapi upload plugin under receipts folder.
+  • Creates or links users with mobile verification and authenticated role.
+  • Creates order in Strapi and explicitly synchronizes user course enrollments.
+- Navigation & Action Buttons:
+  • Added "ثبت دستی سفارش و دوره" to AdminSidebar.jsx and admin orders page header.
+
 [2026-09-05] - Course Page Dynamic Order Status Badges & Action Flow
 
 ── Course Single View & Order Lifecycle Badges ─────────────────────────────────
