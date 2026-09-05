@@ -9,20 +9,20 @@ import 'video.js/dist/video-js.css';
  * این کامپوننت وظیفه رندر پلیر، مدیریت پخش و ذخیره‌سازی/بازیابی خودکار پیشرفت کاربر (Resume Playback) را بر عهده دارد.
  *
  * @param {Object} props.options - تنظیمات استاندارد Video.js
- * @param {string} props.courseId - شناسه دوره (برای یکتا کردن کلید ذخیره‌سازی)
- * @param {string} props.lessonId - شناسه جلسه (برای یکتا کردن کلید ذخیره‌سازی)
- * @param {boolean} props.isAudio - مشخص می‌کند که محتوا فقط صوتی است یا خیر
- * @param {Function} props.onReady - کال‌بک در زمان آماده شدن پلیر
+ * @param {Function} props.onReady - کال‌بک آماده شدن پلیر
+ * @param {string} props.courseId - شناسه دوره
+ * @param {string} props.lessonId - شناسه جلسه
+ * @param {boolean} props.isAudio - آیا محتوای صوتی است
+ * @param {Object} props.user - اطلاعات کاربر (اختیاری)
  */
-export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, user, onReady }) {
+export default function VideoJSPlayer({ options, onReady, courseId, lessonId, isAudio, user }) {
   const videoRef = useRef(null);
   const playerRef = useRef(null);
-  const currentSrcRef = useRef(options?.sources?.[0]?.src);
+  const currentSrcRef = useRef(null);
 
   useEffect(() => {
-    // 1. مقداردهی اولیه پلیر (تنها در صورتی که پلیر قبلاً ساخته نشده باشد)
+    // 1. مقداردهی اولیه پلیر
     if (!playerRef.current) {
-      // ساخت عنصر ویدیویی/صوتی متناسب با نوع محتوا با ویژگی‌های امنیتی ضد دانلود
       const videoElement = document.createElement(isAudio ? 'audio' : 'video');
       videoElement.classList.add('video-js', 'vjs-big-play-centered');
       videoElement.setAttribute('controlsList', 'nodownload');
@@ -36,10 +36,7 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, us
       const mergedOptions = {
         ...options,
         controlBar: {
-          skipButtons: {
-            forward: 10,
-            backward: 10,
-          },
+          skipButtons: { forward: 10, backward: 10 },
           ...(options?.controlBar || {}),
         },
       };
@@ -47,195 +44,95 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, us
       // اینیشیالایز پلیر Video.js روی عنصر ساخته شده
       const player = (playerRef.current = videojs(videoElement, mergedOptions, () => {
         videojs.log('Player is ready');
-        if (onReady) {
-          onReady(player);
-        }
+        if (onReady) onReady(player);
 
         const el = player.el();
         if (el) {
           // مسدودسازی کلیک راست روی کل کانتینر پلیر
           el.addEventListener('contextmenu', (e) => e.preventDefault());
-
           // مسدودسازی کلیدهای میانبر ذخیره صفحه و مدیا
           el.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.key === 'u' || e.key === 'U')) {
               e.preventDefault();
             }
           });
-
-          // ایجاد و الحاق واترمارک پویا داخل المنت پلیر (جهت پایداری حتی در حالت تمام‌صفحه / Fullscreen)
-          const watermarkPositions = [
-            { top: '12%', left: '10%', right: 'auto', bottom: 'auto' },
-            { top: '14%', right: '12%', left: 'auto', bottom: 'auto' },
-            { bottom: '18%', left: '12%', top: 'auto', right: 'auto' },
-            { bottom: '20%', right: '10%', top: 'auto', left: 'auto' },
-            { top: '45%', left: '25%', right: 'auto', bottom: 'auto' },
-            { top: '48%', right: '22%', left: 'auto', bottom: 'auto' },
-          ];
-
-          const phone = user?.phoneNumber || user?.phone || '';
-          const name = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || '';
-          const identifier = phone || name || (user?.id ? `ID: ${user.id}` : 'طرح الهی');
-          const watermarkText = `${identifier} • طرح الهی`;
-
-          const watermarkEl = document.createElement('div');
-          watermarkEl.className = 'vjs-watermark-overlay';
-          watermarkEl.setAttribute('aria-hidden', 'true');
-          Object.assign(watermarkEl.style, {
-            position: 'absolute',
-            top: watermarkPositions[0].top,
-            left: watermarkPositions[0].left,
-            pointerEvents: 'none',
-            userSelect: 'none',
-            webkitUserSelect: 'none',
-            zIndex: '25',
-            color: 'rgba(255, 255, 255, 0.85)',
-            opacity: '0.38',
-            fontSize: '13px',
-            fontWeight: '600',
-            letterSpacing: '1px',
-            direction: 'ltr',
-            padding: '3px 8px',
-            borderRadius: '4px',
-            background: 'rgba(0, 0, 0, 0.25)',
-            backdropFilter: 'blur(1px)',
-            textShadow: '0 1px 3px rgba(0, 0, 0, 0.9)',
-            transform: 'rotate(-8deg)',
-            transition: 'all 1s cubic-bezier(0.4, 0, 0.2, 1)',
-          });
-          watermarkEl.innerText = watermarkText;
-          el.appendChild(watermarkEl);
-
-          let posIdx = 0;
-          const watermarkTimer = setInterval(() => {
-            if (!watermarkEl.isConnected) {
-              clearInterval(watermarkTimer);
-              return;
-            }
-            watermarkEl.style.opacity = '0.1';
-            setTimeout(() => {
-              posIdx = (posIdx + 1) % watermarkPositions.length;
-              const nextPos = watermarkPositions[posIdx];
-              watermarkEl.style.top = nextPos.top;
-              watermarkEl.style.left = nextPos.left;
-              watermarkEl.style.right = nextPos.right;
-              watermarkEl.style.bottom = nextPos.bottom;
-              watermarkEl.style.opacity = (0.35 + Math.random() * 0.15).toFixed(2);
-            }, 500);
-          }, 12000);
         }
 
-        // جایگذاری آیکون‌های اختصاصی ۱۰ ثانیه با دایره و عدد ۱۰
-        const REPLAY_10_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 5V1l-5 5 5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6h-2c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><path d="M10.89 16h-.85v-3.26l-1.01.31v-.69l1.77-.63h.09zM15.17 14.24c0 .32-.03.6-.1.82s-.17.42-.29.57-.28.26-.45.33-.37.1-.59.1-.41-.03-.59-.1-.33-.18-.46-.33-.23-.34-.3-.57-.11-.5-.11-.82v-.74c0-.32.03-.6.1-.82s.17-.42.29-.57.28-.26.45-.33.37-.1.59-.1.41.03.59.1.33.18.46.33.23.34.3.57.11.5.11.82zm-.85-.86c0-.19-.01-.35-.04-.48s-.07-.23-.12-.31-.11-.14-.19-.17-.16-.05-.25-.05-.18.02-.25.05-.14.09-.19.17-.09.18-.12.31-.04.29-.04.48v.97c0 .19.01.35.04.48s.07.24.12.32.11.14.19.17.16.05.25.05.18-.02.25-.05.14-.09.19-.17.09-.19.11-.32.04-.29.04-.48v-.97z"/></svg>`;
+        // آیکون‌های سفارشی ۱۰ ثانیه
+        const REPLAY_10_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 5V1l-5 5 5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6h-2c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><path d="M10.89 16h-.85v-3.26l-1.01.31v-.69l1.77-.63h.09zM15.17 14.24c0 .32-.03.6-.1.82s-.17.42-.29.57-.28.26-.45.33-.37.1-.59.1-.41-.03-.59-.1-.33-.18-.46-.33-.23-.34-.3-.57-.11-.5-.11-.82v-.74c0-.32.03-.6.1-.82s.17-.42.29-.57.28-.26.45-.33.37-.1.59-.1.41.03.59.1.33.18.46.33.23.34.3.57.11.5.11.82zm-.85-.86c0-.19-.01-.35-.04-.48s-.07-.23-.12-.31-.11-.14-.19-.17-.16-.05-.25-.05-.18.02-.25.05-.14.09-.19.17-.09.18-.12.31-.04.29-.04.48v-.97c0 .19.01.35.04.48s.07.24.12.32.11.14.19.17.16.05.25.05.18-.02.25-.05.14-.09.19-.17.09-.19.11-.32.04-.29.04.48v-.97z"/></svg>`;
         const FORWARD_10_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 13c0 3.31-2.69 6-6 6s-6-2.69-6-6 2.69-6 6-6v4l5-5-5-5v4c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8z"/><path d="M10.86 15.94v-4.27h-.09L9 12.3v.69l1.01-.31v3.26zM12.25 13.44v.74c0 1.9 1.31 1.82 1.44 1.82.14 0 1.44.09 1.44-1.82v-.74c0-1.9-1.31-1.82-1.44-1.82-.14 0-1.44-.09-1.44 1.82m2.04-.12v.97c0 .77-.21 1.03-.59 1.03s-.6-.26-.6-1.03v-.97c0-.75.22-1.01.59-1.01.38-.01.6.26.6 1.01"/></svg>`;
 
-        const updateVideoJSIcons = () => {
+        const updateIcons = () => {
           const backBtn = el.querySelector('.vjs-skip-backward-10');
           if (backBtn) {
             backBtn.title = '۱۰ ثانیه عقب';
-            const iconPlaceholder = backBtn.querySelector('.vjs-icon-placeholder');
-            if (iconPlaceholder) iconPlaceholder.innerHTML = REPLAY_10_SVG;
+            const placeholder = backBtn.querySelector('.vjs-icon-placeholder');
+            if (placeholder) placeholder.innerHTML = REPLAY_10_SVG;
             backBtn.addEventListener('touchend', () => setTimeout(() => backBtn.blur(), 50), { passive: true });
             backBtn.addEventListener('mouseup', () => setTimeout(() => backBtn.blur(), 50), { passive: true });
           }
-          const forwardBtn = el.querySelector('.vjs-skip-forward-10');
-          if (forwardBtn) {
-            forwardBtn.title = '۱۰ ثانیه جلو';
-            const iconPlaceholder = forwardBtn.querySelector('.vjs-icon-placeholder');
-            if (iconPlaceholder) iconPlaceholder.innerHTML = FORWARD_10_SVG;
-            forwardBtn.addEventListener('touchend', () => setTimeout(() => forwardBtn.blur(), 50), { passive: true });
-            forwardBtn.addEventListener('mouseup', () => setTimeout(() => forwardBtn.blur(), 50), { passive: true });
+          const fwdBtn = el.querySelector('.vjs-skip-forward-10');
+          if (fwdBtn) {
+            fwdBtn.title = '۱۰ ثانیه جلو';
+            const placeholder = fwdBtn.querySelector('.vjs-icon-placeholder');
+            if (placeholder) placeholder.innerHTML = FORWARD_10_SVG;
+            fwdBtn.addEventListener('touchend', () => setTimeout(() => fwdBtn.blur(), 50), { passive: true });
+            fwdBtn.addEventListener('mouseup', () => setTimeout(() => fwdBtn.blur(), 50), { passive: true });
           }
         };
+        player.ready(updateIcons);
+        setTimeout(updateIcons, 100);
 
-        player.ready(updateVideoJSIcons);
-        setTimeout(updateVideoJSIcons, 100);
-
-        // --- کلید یکتا برای ذخیره‌سازی زمان هر جلسه از هر دوره ---
+        // ذخیره‌سازی پیشرفت
         const cleanLessonId = String(lessonId).replace('-video', '').replace('-audio', '');
         const storageKey = `media_progress_c${courseId}_l${cleanLessonId}`;
-
-        // --- سیستم بازیابی پیشرفت پخش (Resume Playback) ---
         let hasRestored = false;
         const restoreProgress = () => {
           if (hasRestored) return;
-
-          const savedTime = localStorage.getItem(storageKey);
-          if (!savedTime || isNaN(savedTime)) {
-            hasRestored = true;
-            return;
-          }
-
-          const time = parseFloat(savedTime);
-          if (time <= 0) {
-            hasRestored = true;
-            return;
-          }
-
+          const saved = localStorage.getItem(storageKey);
+          if (!saved || isNaN(saved)) { hasRestored = true; return; }
+          const time = parseFloat(saved);
+          if (time <= 0) { hasRestored = true; return; }
           if (player.readyState() >= 1 || (player.duration && player.duration() > 0)) {
-            if (!player.duration() || time < player.duration()) {
-              player.currentTime(time);
-            }
+            if (!player.duration() || time < player.duration()) player.currentTime(time);
             hasRestored = true;
           }
         };
-
         player.on('loadedmetadata', restoreProgress);
         player.on('canplay', restoreProgress);
-        player.on('play', () => {
-          if (!hasRestored) {
-            restoreProgress();
-          }
-        });
+        player.on('play', () => { if (!hasRestored) restoreProgress(); });
+        if (player.readyState() >= 1) restoreProgress();
 
-        if (player.readyState() >= 1) {
-          restoreProgress();
-        }
-
-        // --- سیستم ذخیره‌سازی زمان فعلی کاربر ---
-        let lastSavedSecond = -1;
+        let lastSaved = -1;
         player.on('timeupdate', () => {
           if (!hasRestored) return;
-
-          const currentTime = player.currentTime();
-          const currentSecond = Math.floor(currentTime);
-
-          if (currentSecond > 0 && currentSecond % 5 === 0 && currentSecond !== lastSavedSecond) {
-            localStorage.setItem(storageKey, currentTime.toString());
-            lastSavedSecond = currentSecond;
+          const ct = player.currentTime();
+          const sec = Math.floor(ct);
+          if (sec > 0 && sec % 5 === 0 && sec !== lastSaved) {
+            localStorage.setItem(storageKey, ct.toString());
+            lastSaved = sec;
           }
         });
-
-        // ذخیره‌سازی فوری هنگام توقف (pause/stop)
         player.on('pause', () => {
           if (!hasRestored) return;
-
-          const currentTime = player.currentTime();
-          if (currentTime > 0) {
-            localStorage.setItem(storageKey, currentTime.toString());
-          }
+          const ct = player.currentTime();
+          if (ct > 0) localStorage.setItem(storageKey, ct.toString());
         });
-
-        // پاکسازی لوکال استوریج پس از پایان کامل ویدیو
-        player.on('ended', () => {
-          localStorage.removeItem(storageKey);
-        });
+        player.on('ended', () => localStorage.removeItem(storageKey));
       }));
     } else {
-      // 2. فقط در صورت تغییر واقعی آدرس منبع ویدیو (src)، آدرس ویدیوی پلیر تغییر پیدا کند
+      // به‌روزرسانی منبع در صورت تغییر
       const player = playerRef.current;
       const newSrc = options?.sources?.[0]?.src;
       if (newSrc && newSrc !== currentSrcRef.current) {
         currentSrcRef.current = newSrc;
         player.src(options.sources);
-        if (options.poster) {
-          player.poster(options.poster);
-        }
+        if (options.poster) player.poster(options.poster);
       }
     }
-  }, [options, videoRef, courseId, lessonId, isAudio, user, onReady]);
+  }, [options, courseId, lessonId, isAudio, user, onReady]);
 
-  // 3. مکانیزم Disposal: از بین بردن شیء پلیر در هنگام Unmount برای جلوگیری از مموری لیک
+  // پاک‌سازی هنگام unmount
   useEffect(() => {
     const player = playerRef.current;
     return () => {
@@ -244,14 +141,10 @@ export default function VideoJSPlayer({ options, courseId, lessonId, isAudio, us
         playerRef.current = null;
       }
     };
-  }, [playerRef]);
+  }, []);
 
   return (
-    <div
-      data-vjs-player
-      style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
-      onContextMenu={(e) => e.preventDefault()}
-    >
+    <div data-vjs-player style={{ width: '100%', position: 'relative', overflow: 'hidden' }} onContextMenu={(e) => e.preventDefault()}>
       <div ref={videoRef} onContextMenu={(e) => e.preventDefault()} />
     </div>
   );
