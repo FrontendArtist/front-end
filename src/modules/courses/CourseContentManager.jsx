@@ -8,6 +8,7 @@ import clsx from 'clsx';
 import useAuthStore from '@/store/authStore';
 import { useOrdersStore } from '@/store/useOrdersStore';
 import { useCartStore } from '@/store/useCartStore';
+import { isOrderPaid } from '@/lib/constants/orderConstants';
 import Modal from '@/components/ui/Modal/Modal';
 import VideoJSPlayer from './VideoJSPlayer';
 import PlyrAudioPlayer from './PlyrAudioPlayer';
@@ -74,15 +75,13 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   // ⚠️ فقط سفارش‌های پرداخت‌شده و تأییدشده دسترسی ایجاد می‌کنند (سفارش‌های کارت‌به‌کارت pending تا زمان تأیید ادمین دسترسی نمی‌دهند)
   const isPurchasedInOrders = useMemo(() => {
     return orders.some((order) => {
-      const oStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
-      const pStatus = (order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
-      const isPaid = oStatus === 'paid' || pStatus === 'paid';
-      if (!isPaid) return false;
+      if (!isOrderPaid(order)) return false;
 
       const items = order.attributes?.items || order.items || [];
       return items.some(
         (item) =>
           item.slug === course.slug ||
+          String(item.courseId) === String(course.id) ||
           String(item.id) === String(course.id) ||
           String(item.documentId) === String(course.documentId)
       );
@@ -117,10 +116,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const purchasedChapterIdsFromOrders = useMemo(() => {
     const chapterIds = new Set();
     orders.forEach((order) => {
-      const oStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
-      const pStatus = (order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
-      const isPaid = oStatus === 'paid' || pStatus === 'paid';
-      if (!isPaid) return;
+      if (!isOrderPaid(order)) return;
 
       const items = order.attributes?.items || order.items || [];
       items.forEach((item) => {

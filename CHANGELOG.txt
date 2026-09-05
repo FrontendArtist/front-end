@@ -1,3 +1,14 @@
+[2026-09-05] - Unified Course Access & Single Source of Truth
+
+── Course Access Architecture ──────────────────────────────────────────────────
+- Centralized Access Verification (`src/lib/ordersApi.js`):
+  • Implemented checkCourseAccess(userId, courseId, courseSlug) as the single source of truth for course content authorization.
+  • Verified access based on confirmed and paid orders (orderStatus === 'paid' || paymentStatus === 'paid').
+  • Extracted individually purchased chapter IDs (purchasedChapters) and full course enrollment flag (hasAccess).
+- Integration Across Components:
+  • CourseContentManager.jsx: Replaced local ad-hoc order iteration with checkCourseAccess. Enforced media playback and chapter gating accurately based on purchase state.
+  • CourseTelegramLink.jsx: Utilized checkCourseAccess to show course Telegram VIP channel link exclusively to verified students.
+
 [2026-09-05] - Orders Store Cache Invalidation & User Purchases Standardization
 
 ── User Orders & Purchases Management ──────────────────────────────────────────

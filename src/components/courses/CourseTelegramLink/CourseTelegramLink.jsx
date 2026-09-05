@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useOrdersStore } from '@/store/useOrdersStore';
+import { isOrderPaid } from '@/lib/constants/orderConstants';
 import styles from './CourseTelegramLink.module.scss';
 
 /**
@@ -24,10 +25,7 @@ export default function CourseTelegramLink({
   // بررسی خرید کل دوره از سفارشات با وضعیت paid
   const isPurchasedInOrders = useMemo(() => {
     return orders.some((order) => {
-      const oStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
-      const pStatus = (order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
-      const isPaid = oStatus === 'paid' || pStatus === 'paid';
-      if (!isPaid) return false;
+      if (!isOrderPaid(order)) return false;
 
       const items = order.attributes?.items || order.items || [];
       return items.some(
