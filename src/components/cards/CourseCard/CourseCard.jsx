@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 import { useOrdersStore } from '@/store/useOrdersStore';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
+import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
 import styles from './CourseCard.module.scss';
@@ -15,6 +15,9 @@ import styles from './CourseCard.module.scss';
  */
 const CourseCard = ({ course }) => {
   if (!course) return null;
+
+  const { data: session, status } = useSession();
+  const { fetchOrders } = useOrdersStore();
 
   const {
     id,
@@ -28,14 +31,19 @@ const CourseCard = ({ course }) => {
     shortDescription
   } = course;
 
-  const formattedPrice = (typeof price === "object" ? price?.toman : price) || 0;
-  const originalPrice = rawOriginalPrice ?? (typeof price === "object" && price?.original ? price.original : formattedPrice);
-  const hasDiscount = discountPercent > 0 && originalPrice > formattedPrice;
+  const isForeign = Boolean(
+    session?.user?.is_foreigner || 
+    (session?.user?.phoneNumber && !isIranianPhoneNumber(session.user.phoneNumber))
+  );
+
+  const intlPrice = course.internationalPrice ? Number(course.internationalPrice) : null;
+  const hasIntl = isForeign && intlPrice && intlPrice > 0;
+
+  const formattedPrice = hasIntl ? intlPrice : ((typeof price === "object" ? price?.toman : price) || 0);
+  const originalPrice = hasIntl ? intlPrice : (rawOriginalPrice ?? (typeof price === "object" && price?.original ? price.original : formattedPrice));
+  const hasDiscount = !hasIntl && discountPercent > 0 && originalPrice > formattedPrice;
 
   const [isHydrated, setIsHydrated] = useState(false);
-
-  const { data: session, status } = useSession();
-  const { fetchOrders } = useOrdersStore();
 
   const isPurchasedInOrders = useOrdersStore(state => {
     const paidOrders = state.orders.filter(isOrderPaid);

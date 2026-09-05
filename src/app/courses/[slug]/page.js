@@ -16,6 +16,7 @@ import CourseTelegramLink from '@/components/courses/CourseTelegramLink/CourseTe
 import CourseTeaserPlayer from '@/components/courses/CourseTeaserPlayer';
 import styles from './page.module.scss';
 import { checkCourseAccess } from '@/lib/ordersApi';
+import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 
 import { SITE_NAME, SITE_URL } from '@/lib/constants';
 
@@ -70,6 +71,11 @@ export default async function CoursePage({ params }) {
 
   const session = await getServerSession(authOptions);
 
+  const isForeign = Boolean(
+    session?.user?.is_foreigner || 
+    (session?.user?.phoneNumber && !isIranianPhoneNumber(session.user.phoneNumber))
+  );
+
   const isFreeCourse = rawCourse.price?.toman === 0 || rawCourse.price === 0;
   
   // بررسی واحد و متمرکز دسترسی دوره و فصل‌ها (منبع اصلی: سفارش‌های پرداخت‌شده + فال‌بک سشن)
@@ -85,6 +91,12 @@ export default async function CoursePage({ params }) {
   );
   const isUserStudentOfCourse = isUserEnrolledInCourse || Boolean(session && hasPurchasedAnyChapter);
 
+  // محاسبه قیمت بر اساس وضعیت کاربر (خارجی یا ایرانی)
+  const hasIntlPrice = isForeign && rawCourse.internationalPrice && Number(rawCourse.internationalPrice) > 0;
+  const effectivePriceToman = hasIntlPrice ? Number(rawCourse.internationalPrice) : (rawCourse.price?.toman || rawCourse.price || 0);
+  const effectiveOriginalPrice = hasIntlPrice ? Number(rawCourse.internationalPrice) : (rawCourse.originalPrice || effectivePriceToman);
+  const effectiveDiscountPercent = hasIntlPrice ? 0 : (rawCourse.discountPercent || 0);
+
   // Fetch comments for this course
   const initialComments = await getComments('course', rawCourse.documentId);
 
@@ -95,10 +107,12 @@ export default async function CoursePage({ params }) {
     slug: rawCourse.slug,
     title: rawCourse.title,
     description: rawCourse.shortDescription,
-    price: rawCourse.price,
-    originalPrice: rawCourse.originalPrice,
-    discountPercent: rawCourse.discountPercent || 0,
-    discountUntil: rawCourse.discountUntil || null,
+    price: { toman: effectivePriceToman, original: effectiveOriginalPrice },
+    originalPrice: effectiveOriginalPrice,
+    internationalPrice: rawCourse.internationalPrice || null,
+    isInternationalPrice: hasIntlPrice,
+    discountPercent: effectiveDiscountPercent,
+    discountUntil: hasIntlPrice ? null : (rawCourse.discountUntil || null),
     content: rawCourse.content,
     teaserUrl: rawCourse.teaserUrl,
     isChaptered: rawCourse.isChaptered || false,
@@ -147,7 +161,7 @@ export default async function CoursePage({ params }) {
     }),
   };
 
-  const hasDiscount = (course.discountPercent > 0) && (course.originalPrice > (course.price?.toman || 0));
+  const hasDiscount = !hasIntlPrice && (course.discountPercent > 0) && (course.originalPrice > (course.price?.toman || 0));
 
   const jsonLd = {
     "@context": "https://schema.org",

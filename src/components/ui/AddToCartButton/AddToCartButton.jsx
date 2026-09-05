@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
 import { useOrdersStore } from '@/store/useOrdersStore';
+import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 import styles from './AddToCartButton.module.scss';
 
 /**
@@ -22,7 +23,7 @@ export default function AddToCartButton({ course }) {
   const { id, slug, title, price, image } = course;
 
   const [isHydrated, setIsHydrated] = useState(false);
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const { fetchOrders } = useOrdersStore();
 
   useEffect(() => {
@@ -70,8 +71,19 @@ export default function AddToCartButton({ course }) {
   const handleAddToCart = () => {
     if (isInCart) return;
 
-    const formattedPrice = (typeof price === 'object' ? price?.toman : price) || 0;
-    const numOriginal = course.originalPrice ?? (typeof price === 'object' && price?.original ? price.original : formattedPrice);
+    const isForeign = Boolean(
+      session?.user?.is_foreigner || 
+      (session?.user?.phoneNumber && !isIranianPhoneNumber(session.user.phoneNumber))
+    );
+
+    const intlPrice = course.internationalPrice ? Number(course.internationalPrice) : null;
+    const formattedPrice = (isForeign && intlPrice && intlPrice > 0)
+      ? intlPrice
+      : ((typeof price === 'object' ? price?.toman : price) || 0);
+
+    const numOriginal = (isForeign && intlPrice && intlPrice > 0)
+      ? intlPrice
+      : (course.originalPrice ?? (typeof price === 'object' && price?.original ? price.original : formattedPrice));
 
     const courseImageUrl = (typeof image === 'string' && image.trim() !== '')
       ? image
@@ -83,7 +95,8 @@ export default function AddToCartButton({ course }) {
       title,
       price: formattedPrice,
       originalPrice: numOriginal,
-      discountPercent: course.discountPercent || 0,
+      internationalPrice: intlPrice,
+      discountPercent: (isForeign && intlPrice && intlPrice > 0) ? 0 : (course.discountPercent || 0),
       image: courseImageUrl,
       type: 'course',
     });

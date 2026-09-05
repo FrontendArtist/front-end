@@ -34,6 +34,7 @@ async function fetchUserSessionData(userId, jwt) {
                 firstName: userData.firstName || '',
                 lastName: userData.lastName || '',
                 role: userData.role || null,
+                is_foreigner: Boolean(userData.is_foreigner),
             };
         }
     } catch (e) {
@@ -210,10 +211,12 @@ export const authOptions = {
                 token.role = user.role; // انتقال role به توکن
                 token.firstName = user.firstName || '';
                 token.lastName = user.lastName || '';
+                token.is_foreigner = Boolean(user.is_foreigner);
             }
             if (trigger === 'update' && session) {
                 if (session.firstName !== undefined) token.firstName = session.firstName;
                 if (session.lastName !== undefined) token.lastName = session.lastName;
+                if (session.is_foreigner !== undefined) token.is_foreigner = session.is_foreigner;
             }
             return token;
         },
@@ -225,6 +228,7 @@ export const authOptions = {
                 session.user.role = token.role; // انتقال role به سشن برای دسترسی در فرانت‌اند
                 session.user.firstName = token.firstName || '';
                 session.user.lastName = token.lastName || '';
+                session.user.is_foreigner = Boolean(token.is_foreigner);
 
                 // واکشی آخرین وضعیت دوره‌ها و فصل‌های فعال کاربر از استراپی
                 if (token.id) {
@@ -236,6 +240,10 @@ export const authOptions = {
                         session.user.enrolledChapters = extraData.enrolledChapters;
                         if (extraData.firstName !== undefined) session.user.firstName = extraData.firstName;
                         if (extraData.lastName !== undefined) session.user.lastName = extraData.lastName;
+                        if (extraData.is_foreigner !== undefined) {
+                            session.user.is_foreigner = Boolean(extraData.is_foreigner);
+                            token.is_foreigner = Boolean(extraData.is_foreigner);
+                        }
                         if (extraData.role) {
                             session.user.role = extraData.role;
                             token.role = extraData.role;

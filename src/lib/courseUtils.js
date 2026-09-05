@@ -1,4 +1,37 @@
 import { formatSingleImage } from './strapiUtils';
+import { isIranianPhoneNumber } from './phoneUtils';
+
+/**
+ * بررسی و دریافت قیمت موثر دوره بر اساس کاربر (عادی یا خارجی)
+ */
+export function getEffectiveCoursePrice(course, user) {
+  if (!course) return { toman: 0, original: 0, isInternational: false };
+
+  const isForeign = Boolean(
+    user?.is_foreigner || 
+    (user?.phoneNumber && !isIranianPhoneNumber(user.phoneNumber))
+  );
+
+  const intlPrice = course.internationalPrice ? Number(course.internationalPrice) : null;
+
+  if (isForeign && intlPrice && intlPrice > 0) {
+    return {
+      toman: intlPrice,
+      original: intlPrice,
+      isInternational: true,
+    };
+  }
+
+  const rawToman = typeof course.price === 'object' ? course.price?.toman : course.price;
+  const toman = Number(rawToman) || 0;
+  const original = Number(course.originalPrice || (typeof course.price === 'object' ? course.price?.original : toman)) || toman;
+
+  return {
+    toman,
+    original,
+    isInternational: false,
+  };
+}
 
 /**
  * Formats your specific Strapi API response for COURSES.
@@ -59,7 +92,8 @@ export function formatStrapiCourses(apiResponse) {
         discountPercent = 0;
       }
 
-      const originalPrice = item.price || 0;
+      const originalPrice = Number(item.price) || 0;
+      const internationalPrice = item.internationalPrice ? Number(item.internationalPrice) : null;
       const discountPrice = discountPercent > 0 ? Math.round(originalPrice * (1 - discountPercent / 100)) : null;
       const finalPrice = discountPrice !== null ? discountPrice : originalPrice;
 
@@ -70,6 +104,7 @@ export function formatStrapiCourses(apiResponse) {
         title: item.title,
         price: { toman: finalPrice, original: originalPrice },
         originalPrice: originalPrice,
+        internationalPrice,
         discountPercent: discountPercent,
         discountPrice: discountPrice,
         discountUntil: discountUntil,

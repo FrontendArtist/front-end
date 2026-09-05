@@ -45,7 +45,13 @@ export const useCartStore = create(
                     imageUrl = rawImg.url;
                 }
 
-                const item = { ...rawItem, price: finalPrice, image: imageUrl };
+                const item = { 
+                    ...rawItem, 
+                    price: finalPrice,
+                    normalPrice: rawItem.normalPrice || (typeof rawItem.price === 'object' ? rawItem.price?.original : finalPrice),
+                    internationalPrice: rawItem.internationalPrice ? Number(rawItem.internationalPrice) : null,
+                    image: imageUrl 
+                };
                 const currentItems = get().items;
 
                 const existingItemIndex = currentItems.findIndex(
@@ -88,6 +94,32 @@ export const useCartStore = create(
                             },
                         ],
                     });
+                }
+            },
+
+            /**
+             * بروزرسانی قیمت دوره‌های موجود در سبد خرید بر اساس وضعیت کاربر (خارجی یا داخلی)
+             */
+            updateUserPricing: (isForeign) => {
+                const currentItems = get().items;
+                let hasChanges = false;
+                const updatedItems = currentItems.map((item) => {
+                    if (item.type === 'course' && item.internationalPrice && Number(item.internationalPrice) > 0) {
+                        const targetPrice = isForeign ? Number(item.internationalPrice) : Number(item.normalPrice || item.originalPrice || item.price);
+                        if (item.price !== targetPrice) {
+                            hasChanges = true;
+                            return {
+                                ...item,
+                                normalPrice: item.normalPrice || item.price,
+                                price: targetPrice,
+                                isInternationalPrice: isForeign,
+                            };
+                        }
+                    }
+                    return item;
+                });
+                if (hasChanges) {
+                    set({ items: updatedItems });
                 }
             },
 

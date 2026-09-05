@@ -1,10 +1,8 @@
-// src/hooks/useCartSync.js
-"use client";
-
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useCartStore } from "@/store/useCartStore";
 import { fetchProfileCartData, updateProfileCartData } from "@/lib/client/profileClientApi";
+import { isIranianPhoneNumber } from "@/lib/phoneUtils";
 
 const useCartSync = () => {
   const { data: session, status } = useSession();
@@ -14,6 +12,15 @@ const useCartSync = () => {
 
   const timeoutRef = useRef(null);
   const isFirstMount = useRef(true);
+
+  // ۰. بروزرسانی قیمت‌های سبد بر اساس وضعیت کاربر (ایرانی یا خارجی)
+  useEffect(() => {
+    const isForeign = Boolean(
+      session?.user?.is_foreigner || 
+      (session?.user?.phoneNumber && !isIranianPhoneNumber(session.user.phoneNumber))
+    );
+    useCartStore.getState().updateUserPricing(isForeign);
+  }, [session]);
 
   // ... (بقیه کد بدون تغییر باقی می‌ماند)
 
