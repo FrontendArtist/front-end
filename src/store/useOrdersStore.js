@@ -27,5 +27,9 @@ export const useOrdersStore = create((set, get) => ({
                 isLoading: false 
             });
         }
+    },
+
+    invalidateOrders: () => {
+        set({ hasFetched: false });
     }
 }));

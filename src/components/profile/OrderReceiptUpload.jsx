@@ -21,6 +21,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useOrdersStore } from '@/store/useOrdersStore';
 import styles from './OrderReceiptUpload.module.scss';
 
 // ─── ثابت‌ها ──────────────────────────────────────────────────────────────────
@@ -252,6 +253,9 @@ export default function OrderReceiptUpload({ orderId, bankInfo: bankInfoProp = n
             // ── موفقیت ──────────────────────────────────────────────────────
             setSuccessMessage(data.message || 'فیش واریزی با موفقیت ثبت شد.');
             setIsSubmitted(true);
+
+            // ابطال کش لیست سفارشات تا وضعیت جدید در پروفایل بلافاصله نمایش داده شود
+            useOrdersStore.getState().invalidateOrders();
 
             // callback والد (مثلاً refresh لیست سفارشات)
             if (typeof onSuccess === 'function') {

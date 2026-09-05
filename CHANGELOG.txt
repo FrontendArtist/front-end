@@ -1,3 +1,12 @@
+[2026-09-05] - Orders Store Cache Invalidation & User Purchases Standardization
+
+── User Orders & Purchases Management ──────────────────────────────────────────
+- Dynamic Cache Invalidation (`src/store/useOrdersStore.js`):
+  • Added invalidateCache() action to force fresh fetch of orders list and detail views.
+  • Integrated cache invalidation inside OrderReceiptUpload.jsx upon successful receipt upload so order status updates immediately without manual browser refresh.
+- Standardized Purchases List (`src/components/profile/PurchasesList.jsx`):
+  • Replaced ad-hoc number formatting with centralized formatPrice helper.
+
 [2026-09-05] - Shared Formatters, Order Constants & EmptyCartState Reusable Component
 
 ── Shared Architecture & DRY Modernization ─────────────────────────────────────
