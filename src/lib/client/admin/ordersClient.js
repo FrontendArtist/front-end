@@ -9,12 +9,15 @@ export async function updateOrderStatus(orderId, payload) {
     return data;
 }
 
-export async function fetchAdminOrders({ start, limit = 20, page, pageSize } = {}) {
+export async function fetchAdminOrders({ start, limit = 20, page, pageSize, status, search, statusPriority } = {}) {
     const params = new URLSearchParams();
     if (start !== undefined) params.set('start', String(start));
     if (limit !== undefined) params.set('limit', String(limit));
     if (page !== undefined && start === undefined) params.set('page', String(page));
     if (pageSize !== undefined && limit === undefined) params.set('pageSize', String(pageSize));
+    if (status && status !== 'all') params.set('status', status);
+    if (statusPriority) params.set('statusPriority', 'true');
+    if (search && search.trim()) params.set('search', search.trim());
 
     const res = await fetch(`/api/admin/orders?${params.toString()}`);
     const data = await res.json().catch(() => ({}));

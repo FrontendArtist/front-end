@@ -11,7 +11,7 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getOrders } from '@/lib/admin/adminOrdersApi';
+import { getOrders, getOrdersStats } from '@/lib/admin/adminOrdersApi';
 import OrdersTable from '@/components/admin/Orders/OrdersTable';
 import Link from 'next/link';
 import styles from './orders.module.scss';
@@ -25,8 +25,13 @@ export default async function AdminOrdersPage() {
     const session = await getServerSession(authOptions);
     const jwt = session?.user?.jwt;
 
-    // ── واکشی اولیه سفارش‌ها از Strapi (صفحه اول با سایز ۵۰) ────────
-    const { orders, meta, error } = await getOrders(jwt, { page: 1, pageSize: 50 });
+    // ── واکشی اولیه سفارش‌ها از Strapi (صفحه اول) و آمار وضعیت‌ها ────────
+    const [{ orders, meta, error }, statsData] = await Promise.all([
+        getOrders(jwt, { start: 0, limit: 20 }),
+        getOrdersStats(jwt),
+    ]);
+
+    const totalCount = meta?.pagination?.total ?? statsData?.totalOrders ?? (orders?.length || 0);
 
     return (
         <div className={styles.page}>
@@ -34,9 +39,9 @@ export default async function AdminOrdersPage() {
             <header className={styles.page__header}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <h1 className={styles.page__title}>مدیریت سفارش‌ها</h1>
-                    {meta?.pagination && (
+                    {totalCount > 0 && (
                         <span className={styles.page__count}>
-                            {new Intl.NumberFormat('fa-IR').format(meta.pagination.total)} سفارش
+                            {new Intl.NumberFormat('fa-IR').format(totalCount)} سفارش
                         </span>
                     )}
                 </div>
@@ -68,9 +73,13 @@ export default async function AdminOrdersPage() {
                 </div>
             )}
 
-            {/* ── جدول سفارش‌ها همراه با Lazy Load ─────────────────────── */}
+            {/* ── جدول سفارش‌ها همراه با Lazy Load و مرتب‌سازی سروری ─────── */}
             {!error && (
-                <OrdersTable initialOrders={orders} initialMeta={meta} />
+                <OrdersTable
+                    initialOrders={orders}
+                    initialMeta={meta}
+                    initialStats={statsData?.statusCounts || null}
+                />
             )}
         </div>
     );

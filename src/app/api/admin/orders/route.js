@@ -22,10 +22,18 @@ export async function GET(request) {
         const limitParam = searchParams.get('limit');
         const page = parseInt(searchParams.get('page') || '1', 10);
         const pageSize = parseInt(searchParams.get('pageSize') || '50', 10);
+        const status = searchParams.get('status');
+        const statusPriority = searchParams.get('statusPriority') === 'true';
+        const search = searchParams.get('search') || searchParams.get('q') || '';
 
-        const options = (startParam !== null && limitParam !== null)
-            ? { start: parseInt(startParam, 10), limit: parseInt(limitParam, 10) }
-            : { page, pageSize };
+        const options = {
+            ...(startParam !== null && limitParam !== null
+                ? { start: parseInt(startParam, 10), limit: parseInt(limitParam, 10) }
+                : { page, pageSize }),
+            status,
+            statusPriority,
+            search,
+        };
 
         const { orders, meta, error } = await getOrders(session.user.jwt, options);
 

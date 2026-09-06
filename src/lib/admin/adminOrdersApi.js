@@ -6,6 +6,8 @@ export async function getOrdersStats(jwt) {
     const totalOrders = countData?.meta?.pagination?.total ?? null;
 
     let totalRevenue = null;
+    let statusCounts = null;
+
     try {
         const pageSize = 100;
         const fieldsParams = 'fields[0]=totalPrice&fields[1]=orderStatus&fields[2]=paymentStatus&fields[3]=discountAmount&fields[4]=originalTotalPrice';
@@ -56,6 +58,27 @@ export async function getOrdersStats(jwt) {
                 }
                 return sum;
             }, 0);
+
+            // آمار وضعیت‌ها
+            const pendingCount = allOrders.filter(o => (o.attributes?.orderStatus || o.orderStatus || '').trim().toLowerCase() === 'pending').length;
+            const paidCount = allOrders.filter(o => {
+                const s = (o.attributes?.orderStatus || o.orderStatus || '').trim().toLowerCase();
+                const ps = (o.attributes?.paymentStatus || o.paymentStatus || '').trim().toLowerCase();
+                return ['paid', 'shipped', 'delivered'].includes(s) || ps === 'paid';
+            }).length;
+            const canceledCount = allOrders.filter(o => (o.attributes?.orderStatus || o.orderStatus || '').trim().toLowerCase() === 'canceled').length;
+
+            statusCounts = {
+                pending: pendingCount,
+                paid: paidCount,
+                canceled: canceledCount,
+            };
+
+            return {
+                totalOrders: totalOrders ?? allOrders.length,
+                totalRevenue,
+                statusCounts,
+            };
         }
     } catch (err) {
         if (process.env.NODE_ENV === 'development') {
@@ -64,17 +87,62 @@ export async function getOrdersStats(jwt) {
         totalRevenue = null;
     }
 
-    return { totalOrders, totalRevenue };
+    return { totalOrders, totalRevenue, statusCounts };
 }
 
-export async function getOrders(jwt, { page = 1, pageSize = 50, start, limit } = {}) {
-    const paginationQuery = (start !== undefined && limit !== undefined)
-        ? `pagination[start]=${start}&pagination[limit]=${limit}`
-        : `pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+export async function getOrders(jwt, { page, pageSize = 50, start, limit, status, search, statusPriority } = {}) {
+    const params = new URLSearchParams();
 
-    const endpoint =
-        `/api/orders?populate[user][fields][0]=username&populate[user][fields][1]=email&populate[user][fields][2]=phoneNumber&populate[user][fields][3]=firstName&populate[user][fields][4]=lastName&populate[receiptImage]=true&populate[items]=true&sort=createdAt:desc&${paginationQuery}`;
+    // ۱. صفحه‌بندی
+    if (start !== undefined && limit !== undefined) {
+        params.set('pagination[start]', String(start));
+        params.set('pagination[limit]', String(limit));
+    } else {
+        params.set('pagination[page]', String(page || 1));
+        params.set('pagination[pageSize]', String(pageSize));
+    }
 
+    // ۲. فیلدهای ارتباطی و مدیا
+    params.set('populate[user][fields][0]', 'username');
+    params.set('populate[user][fields][1]', 'email');
+    params.set('populate[user][fields][2]', 'phoneNumber');
+    params.set('populate[user][fields][3]', 'firstName');
+    params.set('populate[user][fields][4]', 'lastName');
+    params.set('populate[receiptImage]', 'true');
+    params.set('populate[items]', 'true');
+
+    // ۳. اولویت‌بندی وضعیت / مرتب‌سازی
+    if (statusPriority) {
+        params.set('statusPriority', 'true');
+    } else {
+        params.set('sort', 'createdAt:desc');
+    }
+
+    // ۴. فیلتر وضعیت سفارش
+    if (status && status !== 'all') {
+        if (status === 'pending') {
+            params.set('filters[orderStatus][$eq]', 'pending');
+        } else if (status === 'paid') {
+            params.set('filters[orderStatus][$in][0]', 'paid');
+            params.set('filters[orderStatus][$in][1]', 'shipped');
+            params.set('filters[orderStatus][$in][2]', 'delivered');
+        } else if (status === 'canceled') {
+            params.set('filters[orderStatus][$eq]', 'canceled');
+        }
+    }
+
+    // ۵. فیلتر جستجو
+    if (search && search.trim()) {
+        const q = search.trim();
+        params.set('filters[$or][0][orderNumber][$containsi]', q);
+        params.set('filters[$or][1][fullName][$containsi]', q);
+        params.set('filters[$or][2][cardHolderName][$containsi]', q);
+        params.set('filters[$or][3][phone][$containsi]', q);
+        params.set('filters[$or][4][user][username][$containsi]', q);
+        params.set('filters[$or][5][user][phoneNumber][$containsi]', q);
+    }
+
+    const endpoint = `/api/orders?${params.toString()}`;
     const data = await adminFetch(endpoint, jwt);
     if (!data) return { orders: [], meta: null, error: true };
 

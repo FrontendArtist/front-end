@@ -263,15 +263,17 @@ const isCanceledOrder = (o) =>
 
 // ── OrdersTable ──────────────────────────────────────────────────────────────
 
-export default function OrdersTable({ initialOrders = [], initialMeta = null }) {
+export default function OrdersTable({ initialOrders = [], initialMeta = null, initialStats = null }) {
     // ── State ──────────────────────────────────────────────────────────────────
     const [orders, setOrders] = useState(initialOrders);
     const [receiptModalOrder, setReceiptModal] = useState(null);
     const [statusModalOrder, setStatusModal] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterType, setFilterType] = useState('all'); // 'all' | 'needs_receipt' | 'pending' | 'paid' | 'canceled'
-    const [isStatusSorted, setIsStatusSorted] = useState(false); // اولویت‌بندی هوشمند وضعیت
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [filterType, setFilterType] = useState('all'); // 'all' | 'pending' | 'paid' | 'canceled'
+    const [isStatusSorted, setIsStatusSorted] = useState(false); // اولویت‌بندی هوشمند وضعیت در سرور
     const [expandedId, setExpandedId] = useState(null); // شناسه ردیف باز
+    const [isInitialLoading, setIsInitialLoading] = useState(false);
 
     // ── Pagination & Lazy Loading State ──────────────────────────────────────
     const initialTotal = initialMeta?.pagination?.total ?? (initialOrders?.length || 0);
@@ -285,16 +287,76 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [loadError, setLoadError] = useState(null);
     const sentinelRef = useRef(null);
+    const isFirstMount = useRef(true);
+
+    // ── Debounce Search Query ───────────────────────────────────────────────
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery.trim());
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // ── بارگذاری داده‌ها از سرور هنگام تغییر تب، جستجو یا مرتب‌سازی اولویت ───
+    useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
+
+        let isCancelled = false;
+        async function reloadOrders() {
+            setIsInitialLoading(true);
+            setLoadError(null);
+
+            try {
+                const data = await fetchAdminOrders({
+                    start: 0,
+                    limit: 20,
+                    status: filterType,
+                    statusPriority: isStatusSorted,
+                    search: debouncedSearch,
+                });
+
+                if (!isCancelled && data?.orders) {
+                    setOrders(data.orders);
+                    const newTotal = data.meta?.pagination?.total ?? data.orders.length;
+                    setTotalOrders(newTotal);
+                    setHasMore(data.orders.length < newTotal);
+                }
+            } catch (err) {
+                if (!isCancelled) {
+                    console.error('[OrdersTable] Error fetching orders:', err);
+                    setLoadError('خطا در دریافت سفارش‌ها از سرور');
+                }
+            } finally {
+                if (!isCancelled) {
+                    setIsInitialLoading(false);
+                }
+            }
+        }
+
+        reloadOrders();
+        return () => {
+            isCancelled = true;
+        };
+    }, [filterType, isStatusSorted, debouncedSearch]);
 
     // ── متد دریافت صفحات بعدی (Lazy Loading: ۲۰ تا ۲۰ تا) ────────────────────
     const loadMoreOrders = useCallback(async () => {
-        if (isLoadingMore || !hasMore) return;
+        if (isLoadingMore || !hasMore || isInitialLoading) return;
 
         setIsLoadingMore(true);
         setLoadError(null);
 
         try {
-            const data = await fetchAdminOrders({ start: orders.length, limit: 20 });
+            const data = await fetchAdminOrders({
+                start: orders.length,
+                limit: 20,
+                status: filterType,
+                statusPriority: isStatusSorted,
+                search: debouncedSearch,
+            });
 
             if (data?.orders && Array.isArray(data.orders)) {
                 setOrders((prev) => {
@@ -319,11 +381,11 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
         } finally {
             setIsLoadingMore(false);
         }
-    }, [hasMore, isLoadingMore, orders.length, totalOrders]);
+    }, [hasMore, isLoadingMore, isInitialLoading, orders.length, totalOrders, filterType, isStatusSorted, debouncedSearch]);
 
     // ── اتصال به اسکرول با IntersectionObserver ──────────────────────────────
     useEffect(() => {
-        if (!hasMore || isLoadingMore) return;
+        if (!hasMore || isLoadingMore || isInitialLoading) return;
 
         const observer = new IntersectionObserver(
             (entries) => {
@@ -347,67 +409,23 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
                 observer.unobserve(currentSentinel);
             }
         };
-    }, [hasMore, isLoadingMore, loadMoreOrders]);
+    }, [hasMore, isLoadingMore, isInitialLoading, loadMoreOrders]);
 
     // ── شمارنده‌های آماری برای تب‌های فیلتر ──────────────────────────────────
-    const pendingCount = useMemo(() => orders.filter((o) => o.orderStatus === 'pending').length, [orders]);
-    const paidCount = useMemo(() => orders.filter(isPaidOrder).length, [orders]);
-    const canceledCount = useMemo(() => orders.filter(isCanceledOrder).length, [orders]);
-
-    // ── فیلتر و مرتب‌سازی سفارش‌ها ───────────────────────────────────────────
-    const filteredAndSortedOrders = useMemo(() => {
-        let result = orders;
-
-        // ۱. فیلتر بر اساس تب
-        if (filterType === 'pending') {
-            result = result.filter((o) => o.orderStatus === 'pending');
-        } else if (filterType === 'paid') {
-            result = result.filter(isPaidOrder);
-        } else if (filterType === 'canceled') {
-            result = result.filter(isCanceledOrder);
-        }
-
-        // ۲. فیلتر جستجو
-        if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase();
-            result = result.filter(
-                (o) =>
-                    o.orderNumber?.toLowerCase().includes(q) ||
-                    o.fullName?.toLowerCase().includes(q) ||
-                    o.cardHolderName?.toLowerCase().includes(q) ||
-                    o.user?.username?.toLowerCase().includes(q) ||
-                    o.user?.phoneNumber?.includes(q)
-            );
-        }
-
-        // ۳. مرتب‌سازی هوشمند اولویت وضعیت
-        // ترتیب اولویت:
-        // ۱. در انتظار پرداخت با فیش آپلود شده (بررسی فیش)
-        // ۲. در انتظار پرداخت بدون فیش
-        // ۳. پرداخت شده / تکمیل (paid / shipped / delivered)
-        // ۴. لغو شده / رد شده (canceled)
-        if (isStatusSorted) {
-            const getStatusRank = (o) => {
-                if (isWaitingReceipt(o)) return 1;
-                if (isPendingNoReceipt(o)) return 2;
-                if (isPaidOrder(o)) return 3;
-                if (isCanceledOrder(o)) return 4;
-                return 5;
+    const counts = useMemo(() => {
+        if (initialStats) {
+            return {
+                pending: initialStats.pending ?? 0,
+                paid: initialStats.paid ?? 0,
+                canceled: initialStats.canceled ?? 0,
             };
-
-            result = [...result].sort((a, b) => {
-                const rankA = getStatusRank(a);
-                const rankB = getStatusRank(b);
-                if (rankA !== rankB) {
-                    return rankA - rankB;
-                }
-                // در اولویت یکسان، جدیدترین سفارش‌ها اول بیایند
-                return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-            });
         }
-
-        return result;
-    }, [orders, filterType, searchQuery, isStatusSorted]);
+        return {
+            pending: orders.filter((o) => o.orderStatus === 'pending').length,
+            paid: orders.filter(isPaidOrder).length,
+            canceled: orders.filter(isCanceledOrder).length,
+        };
+    }, [initialStats, orders]);
 
     function handleOrderUpdate(orderId, changes) {
         setOrders((prev) =>
@@ -419,8 +437,8 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
         setExpandedId((prev) => (prev === orderId ? null : orderId));
     }
 
-    // ── رندر خالی اولیه ────────────────────────────────────────────────────────
-    if (orders.length === 0) {
+    // ── رندر خالی اولیه کلی ───────────────────────────────────────────────────
+    if (!isInitialLoading && orders.length === 0 && filterType === 'all' && !searchQuery.trim() && !isStatusSorted) {
         return (
             <div className={styles.empty}>
                 <p>هیچ سفارشی ثبت نشده است.</p>
@@ -442,7 +460,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
             title={
                 isStatusSorted
                     ? 'مرتب‌سازی اولویت وضعیت فعال است (کلیک برای بازنشانی)'
-                    : 'مرتب‌سازی اولویت وضعیت: فیش‌های در انتظار پرداخت در بالا'
+                    : 'مرتب‌سازی اولویت وضعیت در کل دیتابیس: فیش‌های در انتظار پرداخت در بالا'
             }
         >
             <span>وضعیت سفارش</span>
@@ -467,25 +485,25 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
                         variant={filterType === 'all' ? 'edit' : 'default'}
                         onClick={() => setFilterType('all')}
                     >
-                        همه ({new Intl.NumberFormat('fa-IR').format(totalOrders || orders.length)})
+                        همه ({new Intl.NumberFormat('fa-IR').format(filterType === 'all' ? totalOrders : (totalOrders || orders.length))})
                     </AdminButton>
                     <AdminButton
                         variant={filterType === 'pending' ? 'edit' : 'default'}
                         onClick={() => setFilterType('pending')}
                     >
-                        در انتظار پرداخت ({new Intl.NumberFormat('fa-IR').format(pendingCount)})
+                        در انتظار پرداخت ({new Intl.NumberFormat('fa-IR').format(counts.pending)})
                     </AdminButton>
                     <AdminButton
                         variant={filterType === 'paid' ? 'edit' : 'default'}
                         onClick={() => setFilterType('paid')}
                     >
-                        پرداخت شده ({new Intl.NumberFormat('fa-IR').format(paidCount)})
+                        پرداخت شده ({new Intl.NumberFormat('fa-IR').format(counts.paid)})
                     </AdminButton>
                     <AdminButton
                         variant={filterType === 'canceled' ? 'edit' : 'default'}
                         onClick={() => setFilterType('canceled')}
                     >
-                        لغو شده ({new Intl.NumberFormat('fa-IR').format(canceledCount)})
+                        لغو شده ({new Intl.NumberFormat('fa-IR').format(counts.canceled)})
                     </AdminButton>
                 </div>
 
@@ -497,14 +515,18 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
                     />
                     <span className={styles.toolbar__count}>
                         {searchQuery.trim() || filterType !== 'all' || isStatusSorted
-                            ? `${new Intl.NumberFormat('fa-IR').format(filteredAndSortedOrders.length)} سفارش یافته‌شده`
+                            ? `${new Intl.NumberFormat('fa-IR').format(totalOrders)} سفارش یافته‌شده`
                             : `نمایش ${new Intl.NumberFormat('fa-IR').format(orders.length)} از ${new Intl.NumberFormat('fa-IR').format(totalOrders)} سفارش`}
                     </span>
                 </div>
             </AdminToolbar>
 
             {/* ── جدول سفارش‌ها ────────────────────────────────────────── */}
-            {filteredAndSortedOrders.length === 0 ? (
+            {isInitialLoading ? (
+                <div className={styles.emptyFiltered} style={{ opacity: 0.8 }}>
+                    <p>در حال بارگذاری و مرتب‌سازی سفارش‌ها از سرور...</p>
+                </div>
+            ) : orders.length === 0 ? (
                 <div className={styles.emptyFiltered}>
                     <p>هیچ سفارشی مطابق با فیلترها و جستجوی انتخابی یافت نشد.</p>
                     <AdminButton
@@ -521,7 +543,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null }) 
                 </div>
             ) : (
                 <AdminTable headers={headers}>
-                    {filteredAndSortedOrders.map((order) => {
+                    {orders.map((order) => {
                         const ordConf = ORDER_STATUS_CONFIG[order.orderStatus?.trim()] || ORDER_STATUS_CONFIG[order.orderStatus] || ORDER_STATUS_CONFIG.pending;
                         const isCardToCard = order.paymentMethod === 'card_to_card';
                         const needsReceiptApproval =
