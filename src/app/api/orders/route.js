@@ -35,6 +35,7 @@ export async function GET(request) {
             // دریافت همه سفارشات کاربر (رفتار قبلی)
             strapiUrl = `${STRAPI_BASE_URL}/api/orders`
                 + `?filters[user][id][$eq]=${session.user.id}`
+                + `&pagination[pageSize]=100`
                 + `&sort=createdAt:desc`
                 + `&populate=*`;
         }
