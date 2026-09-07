@@ -259,11 +259,54 @@
       }
     }
 
+    /* نمایش همیشگی زمان باقی‌مانده و کنترل‌های زمان حتی در سایزهای کوچک و موبایل */
+    :global(.vjs-remaining-time),
+    :global(.vjs-time-control) {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      direction: ltr !important;
+      unicode-bidi: embed !important;
+      font-variant-numeric: tabular-nums;
+      padding: 0 8px !important;
+      min-width: auto !important;
+      font-size: 12px !important;
+      white-space: nowrap !important;
+      color: color-mix(in srgb, var(--color-white) 90%, transparent) !important;
+    }
+
+    /* لغو قانون پیش‌فرض Video.js که در حالت‌های کوچک (small, x-small, tiny) تایمر را display: none می‌کرد */
+    &[class*="vjs-layout-small"],
+    &[class*="vjs-layout-x-small"],
+    &[class*="vjs-layout-tiny"] {
+      :global(.vjs-remaining-time),
+      :global(.vjs-time-control) {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+    }
+
     @include respond(md) {
       :global(.vjs-volume-panel),
       :global(.vjs-mute-control),
       :global(.vjs-volume-control) {
         display: none !important;
+      }
+
+      :global(.vjs-remaining-time),
+      :global(.vjs-time-control) {
+        display: flex !important;
+        padding: 0 4px !important;
+        font-size: 11px !important;
+      }
+
+      :global(.vjs-control) {
+        width: 3.2em;
+      }
+
+      :global(.vjs-remaining-time) {
+        width: auto !important;
       }
     }
   }

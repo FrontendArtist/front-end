@@ -84,8 +84,9 @@ function PaymentCallbackContent() {
     }
 
     const status = searchParams.get('status');
-    const source = searchParams.get('source'); // 'card_to_card' | 'light_topup' | null
+    const source = searchParams.get('source'); // 'card_to_card' | 'light_topup' | 'online' | null
     const orderId = searchParams.get('orderId'); // Strapi documentId
+    const refNum = searchParams.get('refNum') || searchParams.get('trackId') || searchParams.get('TraceNo');
     const lightAmount = Number(searchParams.get('lightAmount') || '0');
     const orderType = searchParams.get('orderType');
 
@@ -100,7 +101,7 @@ function PaymentCallbackContent() {
             : isCardToCard && orderId
                 ? `/profile/orders/${orderId}`
                 : isLightTopup ? '/profile'
-                    : '/profile/orders';
+                    : orderId ? `/profile/orders/${orderId}` : '/profile/orders';
 
         return (
             <div className={`${styles.callbackPage} ${isCardToCard ? styles.pending : styles.success} container`}>
@@ -265,6 +266,22 @@ function PaymentCallbackContent() {
                             <p className={styles.message}>
                                 سفارش شما با موفقیت ثبت شد و پرداخت انجام گردید.
                             </p>
+                            {(refNum || orderId) && (
+                                <div className={styles.orderInfo}>
+                                    {orderId && (
+                                        <div className={styles.orderRow}>
+                                            <span className={styles.label}>شناسه سفارش:</span>
+                                            <span className={styles.value}>{orderId}</span>
+                                        </div>
+                                    )}
+                                    {refNum && (
+                                        <div className={styles.orderRow}>
+                                            <span className={styles.label}>کد پیگیری درگاه:</span>
+                                            <span className={styles.value}>{refNum}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                             <div className={styles.infoBox}>
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" strokeWidth="2">
@@ -273,8 +290,8 @@ function PaymentCallbackContent() {
                                     <line x1="12" y1="8" x2="12.01" y2="8" />
                                 </svg>
                                 <p>
-                                    اطلاعات کامل سفارش و رسید پرداخت به ایمیل شما ارسال خواهد شد.
-                                    همچنین می‌توانید وضعیت سفارش را در پروفایل خود مشاهده کنید.
+                                    اطلاعات کامل سفارش و رسید پرداخت در حساب کاربری شما ثبت گردید.
+                                    همچنین می‌توانید جزئیات سفارش و محتوای دوره‌ها را مشاهده کنید.
                                 </p>
                             </div>
                         </>

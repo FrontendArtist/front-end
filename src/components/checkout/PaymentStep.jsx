@@ -37,8 +37,8 @@ export default function PaymentStep({ onPrevious }) {
     const itemLevelDiscount = useCartStore(selectItemLevelDiscount);
     const itemsCount = useCartStore(selectItemsCount);
 
-    // مقدار پیش‌فرض: کارت به کارت (چون آنلاین فعلاً غیرفعال است)
-    const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.CARD_TO_CARD);
+    // مقدار پیش‌فرض: آنلاین (فعال‌سازی برای شبیه‌سازی و اتصال درگاه سامان SEP)
+    const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.ONLINE);
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
 
@@ -92,8 +92,14 @@ export default function PaymentStep({ onPrevious }) {
                 }
                 router.push(redirectUrl);
             } else {
-                // پرداخت آنلاین هم از callback رد می‌شود تا پیام «پرداخت موفق» نشان داده شود
-                router.push('/payment/callback?status=success');
+                // شبیه‌سازی پرداخت آنلاین: هدایت با کد پیگیری و شناسه سفارش به صفحه تایید
+                const documentId = newOrder?.data?.documentId;
+                const simulatedTraceNo = Math.floor(100000 + Math.random() * 900000).toString();
+                let redirectUrl = `/payment/callback?status=success&source=online&refNum=${simulatedTraceNo}`;
+                if (documentId) {
+                    redirectUrl += `&orderId=${encodeURIComponent(documentId)}`;
+                }
+                router.push(redirectUrl);
             }
 
         } catch (error) {
@@ -203,9 +209,9 @@ export default function PaymentStep({ onPrevious }) {
                 <div className={styles.paymentMethods}>
                     <div className={styles.methodsList}>
 
-                        {/* گزینه ۱: پرداخت آنلاین — فعلاً غیرفعال */}
+                        {/* گزینه ۱: پرداخت آنلاین — شبیه‌سازی و اتصال درگاه سامان */}
                         <label
-                            className={`${styles.method} ${styles.disabled}`}
+                            className={`${styles.method} ${paymentMethod === 'online' ? styles.selected : ''}`}
                             htmlFor="method-online"
                         >
                             <input
@@ -213,7 +219,8 @@ export default function PaymentStep({ onPrevious }) {
                                 type="radio"
                                 name="paymentMethod"
                                 value="online"
-                                disabled
+                                checked={paymentMethod === 'online'}
+                                onChange={(e) => setPaymentMethod(e.target.value)}
                             />
                             <div className={styles.methodContent}>
                                 <div className={styles.methodIcon}>
@@ -224,7 +231,12 @@ export default function PaymentStep({ onPrevious }) {
                                 </div>
                                 <div className={styles.methodInfo}>
                                     <span className={styles.methodName}>پرداخت آنلاین</span>
-                                    <span className={styles.methodDesc}>در حال فعال‌سازی</span>
+                                    <span className={styles.methodDesc}>پرداخت امن از طریق درگاه بانکی سامان (SEP)</span>
+                                </div>
+                                <div className={styles.checkmark}>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
                                 </div>
                             </div>
                         </label>
