@@ -133,13 +133,31 @@ export async function getOrders(jwt, { page, pageSize = 50, start, limit, status
 
     // ۵. فیلتر جستجو
     if (search && search.trim()) {
-        const q = search.trim();
-        params.set('filters[$or][0][orderNumber][$containsi]', q);
-        params.set('filters[$or][1][fullName][$containsi]', q);
-        params.set('filters[$or][2][cardHolderName][$containsi]', q);
-        params.set('filters[$or][3][phone][$containsi]', q);
-        params.set('filters[$or][4][user][username][$containsi]', q);
-        params.set('filters[$or][5][user][phoneNumber][$containsi]', q);
+        const rawQ = search.trim();
+        const numericQ = rawQ.replace(/^#/, '').trim();
+        const isNumeric = /^\d+$/.test(numericQ);
+
+        let orIdx = 0;
+        if (isNumeric) {
+            params.set(`filters[$or][${orIdx}][id][$eq]`, numericQ);
+            orIdx++;
+        }
+        params.set(`filters[$or][${orIdx}][documentId][$containsi]`, rawQ);
+        orIdx++;
+        params.set(`filters[$or][${orIdx}][fullName][$containsi]`, rawQ);
+        orIdx++;
+        params.set(`filters[$or][${orIdx}][cardHolderName][$containsi]`, rawQ);
+        orIdx++;
+        params.set(`filters[$or][${orIdx}][phone][$containsi]`, rawQ);
+        orIdx++;
+        params.set(`filters[$or][${orIdx}][email][$containsi]`, rawQ);
+        orIdx++;
+        params.set(`filters[$or][${orIdx}][trackingNumber][$containsi]`, rawQ);
+        orIdx++;
+        params.set(`filters[$or][${orIdx}][user][username][$containsi]`, rawQ);
+        orIdx++;
+        params.set(`filters[$or][${orIdx}][user][phoneNumber][$containsi]`, rawQ);
+        orIdx++;
     }
 
     const endpoint = `/api/orders?${params.toString()}`;

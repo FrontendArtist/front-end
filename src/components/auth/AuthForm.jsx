@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession, getSession } from 'next-auth/react';
 import { validatePhoneNumber, normalizeDigits } from '@/lib/phoneUtils';
 import styles from './AuthForm.module.scss';
 
@@ -16,7 +16,7 @@ export default function AuthForm({
     onSuccess,
     className = '',
 }) {
-    const [authStep, setAuthStep] = useState('phone'); // 'phone' | 'otp' | 'password' | 'register'
+    const [authStep, setAuthStep] = useState('phone'); // 'phone' | 'otp' | 'password' | 'register' | 'profile'
     const [phone, setPhone] = useState('');
     const [otp, setOtp] = useState('');
     const [password, setPassword] = useState('');
@@ -26,6 +26,8 @@ export default function AuthForm({
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const { update: updateSession } = useSession();
 
     const handlePhoneSubmit = async (e) => {
         e.preventDefault();
@@ -110,7 +112,18 @@ export default function AuthForm({
                 throw new Error('کد تایید نامعتبر یا منقضی شده است');
             }
 
-            if (onSuccess) onSuccess();
+            // بررسی تکمیل بودن اطلاعات پروفایل
+            const freshSession = await getSession();
+            const userFirstName = freshSession?.user?.firstName || '';
+            const userLastName = freshSession?.user?.lastName || '';
+
+            if (!userFirstName.trim() || !userLastName.trim()) {
+                setFirstName(userFirstName);
+                setLastName(userLastName);
+                setAuthStep('profile');
+            } else {
+                if (onSuccess) onSuccess();
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -141,7 +154,18 @@ export default function AuthForm({
                 throw new Error('رمز عبور وارد شده نادرست است');
             }
 
-            if (onSuccess) onSuccess();
+            // بررسی تکمیل بودن اطلاعات پروفایل
+            const freshSession = await getSession();
+            const userFirstName = freshSession?.user?.firstName || '';
+            const userLastName = freshSession?.user?.lastName || '';
+
+            if (!userFirstName.trim() || !userLastName.trim()) {
+                setFirstName(userFirstName);
+                setLastName(userLastName);
+                setAuthStep('profile');
+            } else {
+                if (onSuccess) onSuccess();
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -178,6 +202,65 @@ export default function AuthForm({
             if (result?.error) {
                 throw new Error(result.error);
             }
+
+            // بررسی تکمیل بودن اطلاعات پروفایل بعد از ثبت‌نام
+            const freshSession = await getSession();
+            const userFirstName = freshSession?.user?.firstName || firstName.trim();
+            const userLastName = freshSession?.user?.lastName || lastName.trim();
+
+            if (!userFirstName.trim() || !userLastName.trim()) {
+                setFirstName(userFirstName);
+                setLastName(userLastName);
+                setAuthStep('profile');
+            } else {
+                if (onSuccess) onSuccess();
+            }
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleProfileSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+
+        if (!firstName.trim()) {
+            setError('لطفاً نام خود را وارد کنید');
+            return;
+        }
+        if (!lastName.trim()) {
+            setError('لطفاً نام خانوادگی خود را وارد کنید');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const sessionData = await updateSession();
+            const userId = sessionData?.user?.id;
+            const jwt = sessionData?.user?.jwt;
+
+            if (!userId || !jwt) throw new Error('خطا در دریافت اطلاعات کاربر');
+
+            const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+            const res = await fetch(`${strapiUrl}/api/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${jwt}`,
+                },
+                body: JSON.stringify({ firstName: firstName.trim(), lastName: lastName.trim() }),
+            });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData?.error?.message || 'خطا در ذخیره اطلاعات');
+            }
+
+            // آپدیت session با نام جدید
+            await updateSession({ firstName: firstName.trim(), lastName: lastName.trim() });
 
             if (onSuccess) onSuccess();
         } catch (err) {
@@ -449,6 +532,55 @@ export default function AuthForm({
                             disabled={loading}
                         >
                             بازگشت به وارد کردن شماره
+                        </button>
+                    </form>
+                </div>
+            )}
+
+            {/* ── مرحله تکمیل پروفایل: نام و نام خانوادگی ── */}
+            {authStep === 'profile' && (
+                <div className={styles.content}>
+                    <h2 className={styles.title}>تکمیل پروفایل</h2>
+                    <p className={styles.description}>
+                        برای ادامه، لطفاً نام و نام خانوادگی خود را وارد کنید
+                    </p>
+
+                    <form onSubmit={handleProfileSubmit} className={styles.form} autoComplete="off">
+                        <div className={styles.inputGroup}>
+                            <label htmlFor="profile-fname" className={styles.label}>نام</label>
+                            <input
+                                type="text"
+                                id="profile-fname"
+                                name="profile_first_name"
+                                autoComplete="off"
+                                className={styles.input}
+                                placeholder="نام"
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                                disabled={loading}
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className={styles.inputGroup}>
+                            <label htmlFor="profile-lname" className={styles.label}>نام خانوادگی</label>
+                            <input
+                                type="text"
+                                id="profile-lname"
+                                name="profile_last_name"
+                                autoComplete="off"
+                                className={styles.input}
+                                placeholder="نام خانوادگی"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                                disabled={loading}
+                            />
+                        </div>
+
+                        {error && <div className={styles.error}>{error}</div>}
+
+                        <button type="submit" className={styles.submitButton} disabled={loading}>
+                            {loading ? 'در حال ذخیره...' : 'ذخیره و ورود به حساب'}
                         </button>
                     </form>
                 </div>
