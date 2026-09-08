@@ -37,7 +37,7 @@ export const metadata = {
     default: SITE_NAME,
     template: `%s | ${SITE_NAME}`
   },
-  description: `مرجع آموزش و محصولات معنوی ${SITE_NAME}`,
+  description: `مرجع آموزه های معنوی ${SITE_NAME}`,
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -53,7 +53,7 @@ export const metadata = {
   manifest: '/site.webmanifest',
   openGraph: {
     title: SITE_NAME,
-    description: `مرجع آموزش و محصولات معنوی ${SITE_NAME}`,
+    description: `مرجع آموزه های معنوی${SITE_NAME}`,
     url: SITE_URL,
     siteName: SITE_NAME,
     images: [
@@ -70,7 +70,7 @@ export const metadata = {
   twitter: {
     card: 'summary',
     title: SITE_NAME,
-    description: `مرجع آموزش و محصولات معنوی ${SITE_NAME}`,
+    description: `مرجع آموزه های معنوی${SITE_NAME}`,
     images: ['/images/SITELOGO.png'],
   },
   robots: {

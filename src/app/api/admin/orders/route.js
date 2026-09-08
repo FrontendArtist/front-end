@@ -25,6 +25,8 @@ export async function GET(request) {
         const status = searchParams.get('status');
         const statusPriority = searchParams.get('statusPriority') === 'true';
         const search = searchParams.get('search') || searchParams.get('q') || '';
+        const period = searchParams.get('period') || 'current';
+        const settlementId = searchParams.get('settlementId') || null;
 
         const options = {
             ...(startParam !== null && limitParam !== null
@@ -33,6 +35,8 @@ export async function GET(request) {
             status,
             statusPriority,
             search,
+            period,
+            settlementId,
         };
 
         const { orders, meta, error } = await getOrders(session.user.jwt, options);

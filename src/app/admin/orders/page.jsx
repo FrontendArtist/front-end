@@ -79,6 +79,7 @@ export default async function AdminOrdersPage() {
                     initialOrders={orders}
                     initialMeta={meta}
                     initialStats={statsData?.statusCounts || null}
+                    settlementStats={statsData}
                 />
             )}
         </div>

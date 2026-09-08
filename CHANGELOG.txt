@@ -1,3 +1,21 @@
+[2026-09-08] - Admin Settlement Management, Collapsible Panel & Bulk Order Cleanup
+
+── Settlement Management & Cycle Closure ──────────────────────────────────────
+- Settlement Dialog & Archive Components:
+  • SettlementModal.jsx: Added modal for closing financial periods with live calculation of eligible orders, pending revenue, custom title, and settlement notes.
+  • SettlementArchiveModal.jsx: Added archive viewer modal for historical settlement cycles with order count, total revenue, and detailed notes.
+  • BulkDeleteModal.jsx: Added modal for bulk deletion of rejected orders (رد شده / لغو شده) and pending payment orders (در انتظار پرداخت) with safety confirmations and item counts.
+- Settlement Panel & Orders Table Integration (`OrdersTable.jsx` & SCSS):
+  • Added collapsible settlement panel (`settlementPanel`) with toggle open/close chevron icon, smooth expansion, bottom margin, and live counters for unsettled orders and pending revenue.
+  • Added action buttons for cycle closure ("بستن دوره و تسویه"), viewing past cycles ("آرشیو دوره‌ها"), and quick cleanup ("پاکسازی و حذف سریع").
+  • Fixed modal styling, backdrop, action buttons (`modal__btn_cancel`, `modal__btn_save`), and loading spinner animations.
+- Next.js API Routes:
+  • `src/app/api/admin/settlements/route.js`: Added GET handler to fetch settlements list and POST handler to create new settlement cycle and link eligible orders.
+  • `src/app/api/admin/orders/bulk-delete/route.js`: Added POST handler for bulk deleting orders by category (rejected/pending) with admin auth validation.
+- API Client Helpers (`adminOrdersApi.js` & `ordersClient.js`):
+  • Added `getSettlements`, `createSettlement`, and `bulkDeleteOrders` functions.
+  • Supported filtering orders by settlement status (`unsettled` / `settlementId`).
+
 [2026-09-05] - Strict Order-Based Course Access & Legacy Session Fallback Removal
 
 ── Course Access Control & Security Hardening ──────────────────────────────────

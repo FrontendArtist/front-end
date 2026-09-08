@@ -90,8 +90,10 @@ export default async function AdminDashboardPage() {
     const ordersStats =
         ordersResult.status === 'fulfilled' ? ordersResult.value : null;
 
-    const totalOrders = ordersStats?.totalOrders ?? null;
-    const totalRevenue = ordersStats?.totalRevenue ?? null;
+    const totalOrders = ordersStats?.currentPeriod?.totalOrders ?? ordersStats?.totalOrders ?? null;
+    const totalRevenue = ordersStats?.currentPeriod?.totalRevenue ?? ordersStats?.totalRevenue ?? null;
+    const allTimeOrders = ordersStats?.allTime?.totalOrders ?? null;
+    const allTimeRevenue = ordersStats?.allTime?.totalRevenue ?? null;
 
     // ─────────────────────────────────────────────────────────────────
     // STEP 3: تعریف کارت‌ها با داده‌های واقعی یا null
@@ -99,20 +101,20 @@ export default async function AdminDashboardPage() {
     const statsCards = [
         {
             id: 'orders',
-            title: 'کل سفارش‌ها',
+            title: 'سفارش‌های دوره جاری',
             value: formatCount(totalOrders),
             icon: '🛒',
             accentColor: 'var(--color-text-primary)', // gold – رنگ اصلی پروژه
-            subtitle: 'از ابتدای سیستم',
+            subtitle: allTimeOrders !== null ? `کل تاریخچه: ${formatCount(allTimeOrders)} سفارش` : 'دوره تسویه‌نشده جاری',
             isError: totalOrders === null,
         },
         {
             id: 'revenue',
-            title: 'درآمد کل',
+            title: 'درآمد دوره جاری',
             value: formatCurrency(totalRevenue),
             icon: '💰',
             accentColor: 'var(--color-success)', // سبز برای درآمد
-            subtitle: 'مجموع سفارش‌های تأییدشده',
+            subtitle: allTimeRevenue !== null ? `کل تاریخچه: ${formatCurrency(allTimeRevenue)}` : 'آماده تسویه با فروشندگان',
             isError: totalRevenue === null,
         },
         {

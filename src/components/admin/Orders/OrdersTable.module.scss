@@ -545,7 +545,8 @@ $transition: 0.2s ease;
 /* MODAL                                                                      */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-.modal_backdrop {
+.modal_backdrop,
+.overlay {
     position: fixed;
     inset: 0;
     background: fade(var(--color-black), 70%);
@@ -749,6 +750,53 @@ $transition: 0.2s ease;
         justify-content: flex-end;
         flex-wrap: wrap;
     }
+
+    &__btn_cancel {
+        padding: 10px 20px;
+        background: transparent;
+        border: 1px solid fade(var(--color-primary), 20%);
+        color: $muted;
+        border-radius: $radius-sm;
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        font-family: inherit;
+        transition: all $transition;
+
+        &:hover:not(:disabled) {
+            background: fade(var(--color-white), 5%);
+            color: $text;
+            border-color: fade(var(--color-primary), 40%);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+
+    &__btn_save {
+        padding: 10px 20px;
+        background: var(--color-text-primary);
+        border: 1px solid var(--color-text-primary);
+        color: var(--color-bg-primary);
+        border-radius: $radius-sm;
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-bold);
+        cursor: pointer;
+        font-family: inherit;
+        transition: all $transition;
+
+        &:hover:not(:disabled) {
+            background: var(--color-title-hover);
+            border-color: var(--color-title-hover);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
 }
 
 @keyframes slideUp {
@@ -760,6 +808,19 @@ $transition: 0.2s ease;
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+.spin {
+    animation: spinIcon 0.8s linear infinite;
+}
+
+@keyframes spinIcon {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
     }
 }
 
@@ -1048,4 +1109,357 @@ $transition: 0.2s ease;
         font-size: var(--font-sm);
         color: $text;
     }
-}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* SETTLEMENT & PERIOD MANAGEMENT                                              */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+.settlementPanel {
+    background: linear-gradient(135deg, fade(var(--color-black), 35%) 0%, fade(var(--color-bg-primary), 90%) 100%);
+    border: 1px solid fade(var(--color-primary), 20%);
+    border-radius: 14px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+
+    &__toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 14px 20px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        transition: background $transition;
+        gap: 10px;
+
+        &:hover {
+            background: fade(var(--color-primary), 6%);
+        }
+    }
+
+    &__chevron {
+        color: var(--color-card-text);
+        flex-shrink: 0;
+        transition: transform 0.25s ease;
+        transform: rotate(-90deg); // بسته = فلش به چپ
+
+        &--open {
+            transform: rotate(0deg); // باز = فلش به پایین
+        }
+    }
+
+    &__body {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding: 0 20px 16px;
+        animation: fadeIn 0.2s ease;
+    }
+
+    &__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--font-xs);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-title-hover);
+        background: fade(var(--color-title-hover), 10%);
+        border: 1px solid fade(var(--color-title-hover), 25%);
+        padding: 3px 10px;
+        border-radius: 20px;
+        width: fit-content;
+    }
+
+    &__dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--color-success);
+        box-shadow: 0 0 8px var(--color-success);
+        animation: pulseDot 2s infinite ease-in-out;
+    }
+
+    &__numbers {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+}
+
+@keyframes pulseDot {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.4;
+        transform: scale(0.85);
+    }
+}
+
+.settlementStatItem {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+
+    &__label {
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+    }
+
+    &__value {
+        font-size: 1.15rem;
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-primary);
+    }
+
+    &__valueSuccess {
+        font-size: 1.25rem;
+        font-weight: var(--font-weight-bold);
+        color: var(--color-success);
+        text-shadow: 0 0 10px fade(var(--color-success), 25%);
+    }
+}
+
+.periodSwitch {
+    display: flex;
+    align-items: center;
+    background: fade(var(--color-black), 30%);
+    border: 1px solid fade(var(--color-primary), 15%);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+
+    &__btn {
+        background: none;
+        border: none;
+        color: var(--color-card-text);
+        font-size: var(--font-xs);
+        font-weight: var(--font-weight-medium);
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all $transition;
+
+        &:hover {
+            color: var(--color-text-primary);
+        }
+
+        &--active {
+            background: fade(var(--color-primary), 20%);
+            color: var(--color-title-hover);
+            font-weight: var(--font-weight-bold);
+        }
+    }
+}
+
+.archiveBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: fade(var(--color-black), 30%);
+    border: 1px solid fade(var(--color-primary), 20%);
+    color: var(--color-text-primary);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all $transition;
+
+    &:hover {
+        background: fade(var(--color-primary), 15%);
+        border-color: var(--color-title-hover);
+        color: var(--color-title-hover);
+    }
+
+    &__badge {
+        background: var(--color-title-hover);
+        color: var(--color-bg-primary);
+        font-size: 0.7rem;
+        font-weight: bold;
+        padding: 1px 6px;
+        border-radius: 10px;
+    }
+}
+
+.settleActionBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--color-success) 0%, #1db954 100%);
+    color: #ffffff;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    box-shadow: 0 4px 14px fade(var(--color-success), 35%);
+    transition: all $transition;
+
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px fade(var(--color-success), 50%);
+        filter: brightness(1.06);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+.settlementBannerArchive {
+    background: linear-gradient(135deg, fade(var(--color-title-hover), 12%) 0%, fade(var(--color-black), 30%) 100%);
+    border: 1.5px solid var(--color-title-hover);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    animation: fadeIn 0.25s ease;
+
+    &__info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        strong {
+            font-size: var(--font-sm);
+            color: var(--color-title-hover);
+        }
+
+        p {
+            margin: 2px 0 0 0;
+            font-size: var(--font-xs);
+            color: var(--color-card-text);
+        }
+    }
+
+    &__btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--color-title-hover);
+        color: var(--color-bg-primary);
+        border: none;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: var(--font-xs);
+        font-weight: var(--font-weight-bold);
+        cursor: pointer;
+        transition: opacity $transition;
+
+        &:hover {
+            opacity: 0.9;
+        }
+    }
+}
+
+.settlementSuccessAlert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: fade(var(--color-success), 14%);
+    border: 1px solid var(--color-success);
+    color: var(--color-success);
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    animation: slideDown 0.25s ease;
+
+    &__content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    &__close {
+        background: none;
+        border: none;
+        color: var(--color-success);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0 4px;
+        opacity: 0.7;
+        &:hover {
+            opacity: 1;
+        }
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bulkDeleteBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--color-error);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all $transition;
+
+    &:hover {
+        background: var(--color-error);
+        color: #ffffff;
+        border-color: var(--color-error);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+    }
+}
+
+.bulkDeletePendingBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(234, 179, 8, 0.12);
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    color: var(--color-warning);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all $transition;
+
+    &:hover {
+        background: var(--color-warning);
+        color: #000000;
+        border-color: var(--color-warning);
+        box-shadow: 0 2px 8px rgba(234, 179, 8, 0.35);
+    }
+}
+
+

@@ -14,9 +14,12 @@
  */
 
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'react';
-import { ArrowUpDown, RotateCcw } from 'lucide-react';
+import { ArrowUpDown, RotateCcw, Folder, CreditCard, CheckCircle2, ArrowLeft, Trash2, ChevronDown } from 'lucide-react';
 import ReceiptModal from './ReceiptModal';
 import StatusUpdateModal from './StatusUpdateModal';
+import SettlementModal from './SettlementModal';
+import SettlementArchiveModal from './SettlementArchiveModal';
+import BulkDeleteModal from './BulkDeleteModal';
 import styles from './OrdersTable.module.scss';
 import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
@@ -263,7 +266,7 @@ const isCanceledOrder = (o) =>
 
 // ── OrdersTable ──────────────────────────────────────────────────────────────
 
-export default function OrdersTable({ initialOrders = [], initialMeta = null, initialStats = null }) {
+export default function OrdersTable({ initialOrders = [], initialMeta = null, initialStats = null, settlementStats = null }) {
     // ── State ──────────────────────────────────────────────────────────────────
     const [orders, setOrders] = useState(initialOrders);
     const [receiptModalOrder, setReceiptModal] = useState(null);
@@ -274,6 +277,16 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
     const [isStatusSorted, setIsStatusSorted] = useState(false); // اولویت‌بندی هوشمند وضعیت در سرور
     const [expandedId, setExpandedId] = useState(null); // شناسه ردیف باز
     const [isInitialLoading, setIsInitialLoading] = useState(false);
+
+    // ── Settlement & Bulk Delete State ─────────────────────────────────────────
+    const [periodFilter, setPeriodFilter] = useState('current'); // 'current' | 'all'
+    const [activeSettlement, setActiveSettlement] = useState(null); // پوشه انتخاب‌شده آرشیو
+    const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
+    const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+    const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null); // null | 'canceled' | 'pending'
+    const [settlementSuccessMessage, setSettlementSuccessMessage] = useState(null);
+    const [statsInfo, setStatsInfo] = useState(settlementStats);
+    const [isSettlementPanelOpen, setIsSettlementPanelOpen] = useState(true); // باز/بسته بودن پنل تسویه
 
     // ── Pagination & Lazy Loading State ──────────────────────────────────────
     const initialTotal = initialMeta?.pagination?.total ?? (initialOrders?.length || 0);
@@ -297,7 +310,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
         return () => clearTimeout(timer);
     }, [searchQuery]);
 
-    // ── بارگذاری داده‌ها از سرور هنگام تغییر تب، جستجو یا مرتب‌سازی اولویت ───
+    // ── بارگذاری داده‌ها از سرور هنگام تغییر تب، جستجو، مرتب‌سازی یا دوره تسویه ───
     useEffect(() => {
         if (isFirstMount.current) {
             isFirstMount.current = false;
@@ -316,6 +329,8 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                     status: filterType,
                     statusPriority: isStatusSorted,
                     search: debouncedSearch,
+                    period: activeSettlement ? undefined : periodFilter,
+                    settlementId: activeSettlement ? (activeSettlement.id || activeSettlement.documentId) : undefined,
                 });
 
                 if (!isCancelled && data?.orders) {
@@ -340,7 +355,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
         return () => {
             isCancelled = true;
         };
-    }, [filterType, isStatusSorted, debouncedSearch]);
+    }, [filterType, isStatusSorted, debouncedSearch, periodFilter, activeSettlement]);
 
     // ── متد دریافت صفحات بعدی (Lazy Loading: ۲۰ تا ۲۰ تا) ────────────────────
     const loadMoreOrders = useCallback(async () => {
@@ -356,6 +371,8 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                 status: filterType,
                 statusPriority: isStatusSorted,
                 search: debouncedSearch,
+                period: activeSettlement ? undefined : periodFilter,
+                settlementId: activeSettlement ? (activeSettlement.id || activeSettlement.documentId) : undefined,
             });
 
             if (data?.orders && Array.isArray(data.orders)) {
@@ -381,7 +398,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
         } finally {
             setIsLoadingMore(false);
         }
-    }, [hasMore, isLoadingMore, isInitialLoading, orders.length, totalOrders, filterType, isStatusSorted, debouncedSearch]);
+    }, [isLoadingMore, hasMore, isInitialLoading, orders.length, totalOrders, filterType, isStatusSorted, debouncedSearch, periodFilter, activeSettlement]);
 
     // ── اتصال به اسکرول با IntersectionObserver ──────────────────────────────
     useEffect(() => {
@@ -413,7 +430,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
 
     // ── شمارنده‌های آماری برای تب‌های فیلتر ──────────────────────────────────
     const counts = useMemo(() => {
-        if (initialStats) {
+        if (initialStats && periodFilter === 'current' && !activeSettlement) {
             return {
                 pending: initialStats.pending ?? 0,
                 paid: initialStats.paid ?? 0,
@@ -425,7 +442,91 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
             paid: orders.filter(isPaidOrder).length,
             canceled: orders.filter(isCanceledOrder).length,
         };
-    }, [initialStats, orders]);
+    }, [initialStats, orders, periodFilter, activeSettlement]);
+
+    // ── محاسبات دوره تسویه مالی ──────────────────────────────────────────────
+    const settlementsCount = statsInfo?.settlementsCount ?? 0;
+
+    const currentEligibleOrdersCount = useMemo(() => {
+        if (activeSettlement) return activeSettlement.ordersCount || 0;
+        if (periodFilter === 'current') {
+            const confirmedCount = orders.filter(isPaidOrder).length;
+            const statsCount = statsInfo?.currentPeriod?.statusCounts?.paid;
+            return statsCount !== undefined && statsCount !== null ? statsCount : confirmedCount;
+        }
+        return orders.filter(isPaidOrder).length;
+    }, [orders, periodFilter, activeSettlement, statsInfo]);
+
+    const currentPeriodRevenue = useMemo(() => {
+        if (activeSettlement) return activeSettlement.totalAmount || 0;
+        if (periodFilter === 'current' && statsInfo?.currentPeriod?.totalRevenue !== undefined && statsInfo?.currentPeriod?.totalRevenue !== null) {
+            return statsInfo.currentPeriod.totalRevenue;
+        }
+        const confirmedStatuses = ['paid', 'shipped', 'delivered'];
+        return orders.reduce((sum, order) => {
+            const oStatus = (order.orderStatus || '').trim().toLowerCase();
+            const pStatus = (order.paymentStatus || '').trim().toLowerCase();
+            if (pStatus === 'paid' || confirmedStatuses.includes(oStatus)) {
+                return sum + Number(order.totalPrice || 0);
+            }
+            return sum;
+        }, 0);
+    }, [orders, statsInfo, activeSettlement, periodFilter]);
+
+    function handleSettlementSuccess(newSettlement) {
+        setSettlementSuccessMessage(
+            `دوره تسویه با موفقیت بسته شد و ${new Intl.NumberFormat('fa-IR').format(newSettlement.ordersCount)} سفارش به ارزش ${new Intl.NumberFormat('fa-IR').format(newSettlement.totalAmount)} تومان در آرشیو ثبت شد.`
+        );
+
+        // صفر کردن سفارش‌های دوره جاری در UI
+        setOrders([]);
+        setTotalOrders(0);
+        setHasMore(false);
+        setStatsInfo((prev) => ({
+            ...prev,
+            totalOrders: 0,
+            totalRevenue: 0,
+            currentPeriod: {
+                totalOrders: 0,
+                totalRevenue: 0,
+                statusCounts: { pending: 0, paid: 0, canceled: 0 },
+            },
+            settlementsCount: (prev?.settlementsCount || 0) + 1,
+        }));
+
+        setTimeout(() => {
+            setSettlementSuccessMessage(null);
+        }, 8000);
+    }
+
+    function handleBulkDeleteSuccess(res) {
+        setSettlementSuccessMessage(res.message);
+        setOrders((prev) =>
+            prev.filter((o) => {
+                const status = (o.orderStatus || '').trim().toLowerCase();
+                return status !== bulkDeleteTarget;
+            })
+        );
+        const deletedCount = res.deletedCount || 0;
+        setTotalOrders((prev) => Math.max(0, prev - deletedCount));
+        setStatsInfo((prev) => {
+            if (!prev) return prev;
+            const currentPeriod = prev.currentPeriod ? { ...prev.currentPeriod } : {};
+            const statusCounts = currentPeriod.statusCounts ? { ...currentPeriod.statusCounts } : {};
+            if (bulkDeleteTarget === 'canceled') statusCounts.canceled = 0;
+            if (bulkDeleteTarget === 'pending') statusCounts.pending = 0;
+            currentPeriod.statusCounts = statusCounts;
+            currentPeriod.totalOrders = Math.max(0, (currentPeriod.totalOrders || 0) - deletedCount);
+            return {
+                ...prev,
+                totalOrders: Math.max(0, (prev.totalOrders || 0) - deletedCount),
+                currentPeriod,
+            };
+        });
+        setTimeout(() => {
+            setSettlementSuccessMessage(null);
+        }, 8000);
+    }
 
     function handleOrderUpdate(orderId, changes) {
         setOrders((prev) =>
@@ -435,15 +536,6 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
 
     function toggleExpand(orderId) {
         setExpandedId((prev) => (prev === orderId ? null : orderId));
-    }
-
-    // ── رندر خالی اولیه کلی ───────────────────────────────────────────────────
-    if (!isInitialLoading && orders.length === 0 && filterType === 'all' && !searchQuery.trim() && !isStatusSorted) {
-        return (
-            <div className={styles.empty}>
-                <p>هیچ سفارشی ثبت نشده است.</p>
-            </div>
-        );
     }
 
     const COL_SPAN = 8; // تعداد ستون‌های جدول
@@ -477,6 +569,139 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
 
     return (
         <AdminTableContainer>
+            {/* ── پیام موفقیت تسویه ───────────────────────────────────── */}
+            {settlementSuccessMessage && (
+                <div className={styles.settlementSuccessAlert}>
+                    <div className={styles.settlementSuccessAlert__content}>
+                        <CheckCircle2 size={20} />
+                        <span>{settlementSuccessMessage}</span>
+                    </div>
+                    <button
+                        type="button"
+                        className={styles.settlementSuccessAlert__close}
+                        onClick={() => setSettlementSuccessMessage(null)}
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+
+            {/* ── بنر مشاهده پوشه آرشیو دوره یا ویجت دوره جاری ─────────── */}
+            {activeSettlement ? (
+                <div className={styles.settlementBannerArchive}>
+                    <div className={styles.settlementBannerArchive__info}>
+                        <span style={{ fontSize: '1.4rem' }}>📁</span>
+                        <div>
+                            <strong>در حال مشاهده پوشه آرشیو: {activeSettlement.title}</strong>
+                            <p>
+                                تعداد: {new Intl.NumberFormat('fa-IR').format(activeSettlement.ordersCount)} سفارش |
+                                مبلغ کل تسویه: {new Intl.NumberFormat('fa-IR').format(activeSettlement.totalAmount)} تومان |
+                                تاریخ بسته‌شدن: {formatDate(activeSettlement.settledAt)}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        className={styles.settlementBannerArchive__btn}
+                        onClick={() => {
+                            setActiveSettlement(null);
+                            setPeriodFilter('current');
+                        }}
+                    >
+                        <ArrowLeft size={16} />
+                        <span>بازگشت به سفارش‌های دوره جاری</span>
+                    </button>
+                </div>
+            ) : (
+                <div className={styles.settlementPanel} style={{ marginBottom: '8px' }}>
+                    {/* ── هدر قابل کلیک برای collapse/expand ────────────── */}
+                    <button
+                        type="button"
+                        className={styles.settlementPanel__toggle}
+                        onClick={() => setIsSettlementPanelOpen((prev) => !prev)}
+                        title={isSettlementPanelOpen ? 'بستن پنل تسویه' : 'باز کردن پنل تسویه'}
+                    >
+                        <div className={styles.settlementPanel__badge}>
+                            <span className={styles.settlementPanel__dot} />
+                            <span>
+                                {periodFilter === 'current'
+                                    ? 'دوره مالی جاری'
+                                    : 'نمایش کل تاریخچه سفارش‌ها'}
+                            </span>
+                        </div>
+                        <ChevronDown
+                            size={16}
+                            className={`${styles.settlementPanel__chevron} ${isSettlementPanelOpen ? styles['settlementPanel__chevron--open'] : ''}`}
+                        />
+                    </button>
+
+                    {/* ── محتوای قابل collapse ───────────────────────────── */}
+                    {isSettlementPanelOpen && (
+                        <div className={styles.settlementPanel__body}>
+                            <div className={styles.settlementPanel__numbers}>
+                                <div className={styles.settlementStatItem}>
+                                    <span className={styles.settlementStatItem__label}>مبلغ قابل تسویه:</span>
+                                    <strong className={styles.settlementStatItem__valueSuccess}>
+                                        {new Intl.NumberFormat('fa-IR').format(currentPeriodRevenue)} تومان
+                                    </strong>
+                                </div>
+                                <div className={styles.settlementStatItem}>
+                                    <span className={styles.settlementStatItem__label}>سفارش‌های آماده تسویه:</span>
+                                    <strong className={styles.settlementStatItem__value}>
+                                        {new Intl.NumberFormat('fa-IR').format(currentEligibleOrdersCount)} سفارش
+                                    </strong>
+                                </div>
+                            </div>
+
+                            <div className={styles.settlementPanel__actions}>
+                                {/* سوییچ دوره جاری vs تمام تاریخچه */}
+                                <div className={styles.periodSwitch}>
+                                    <button
+                                        type="button"
+                                        className={`${styles.periodSwitch__btn} ${periodFilter === 'current' ? styles['periodSwitch__btn--active'] : ''}`}
+                                        onClick={() => setPeriodFilter('current')}
+                                    >
+                                        دوره جاری
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`${styles.periodSwitch__btn} ${periodFilter === 'all' ? styles['periodSwitch__btn--active'] : ''}`}
+                                        onClick={() => setPeriodFilter('all')}
+                                    >
+                                        همه تاریخچه
+                                    </button>
+                                </div>
+
+                                {/* دکمه پوشه آرشیو */}
+                                <button
+                                    type="button"
+                                    className={styles.archiveBtn}
+                                    onClick={() => setIsArchiveModalOpen(true)}
+                                    title="مشاهده دوره‌های تسویه‌شده گذشته"
+                                >
+                                    <Folder size={16} />
+                                    <span>📁 آرشیو دوره‌ها</span>
+                                    {settlementsCount > 0 && (
+                                        <span className={styles.archiveBtn__badge}>
+                                            {new Intl.NumberFormat('fa-IR').format(settlementsCount)}
+                                        </span>
+                                    )}
+                                </button>
+
+                                {/* دکمه بستن دوره مالی */}
+                                <button
+                                    type="button"
+                                    className={styles.settleActionBtn}
+                                    onClick={() => setIsSettlementModalOpen(true)}
+                                >
+                                    <CreditCard size={16} />
+                                    <span>بستن دوره و تسویه</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* ── نوار ابزار: تب‌های فیلتر وضعیت و جستجو ─────────────── */}
             <AdminToolbar>
@@ -505,6 +730,31 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                     >
                         لغو شده ({new Intl.NumberFormat('fa-IR').format(counts.canceled)})
                     </AdminButton>
+
+                    {/* دکمه‌های پاکسازی گروهی */}
+                    {counts.canceled > 0 && (
+                        <button
+                            type="button"
+                            className={styles.bulkDeleteBtn}
+                            onClick={() => setBulkDeleteTarget('canceled')}
+                            title="حذف دائمی تمام سفارش‌های رد شده"
+                        >
+                            <Trash2 size={13} />
+                            <span>حذف ردشده‌ها ({new Intl.NumberFormat('fa-IR').format(counts.canceled)})</span>
+                        </button>
+                    )}
+
+                    {counts.pending > 0 && (
+                        <button
+                            type="button"
+                            className={styles.bulkDeletePendingBtn}
+                            onClick={() => setBulkDeleteTarget('pending')}
+                            title="حذف دائمی تمام سفارش‌های در انتظار پرداخت"
+                        >
+                            <Trash2 size={13} />
+                            <span>حذف در انتظارها ({new Intl.NumberFormat('fa-IR').format(counts.pending)})</span>
+                        </button>
+                    )}
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
@@ -701,6 +951,35 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                     onUpdate={handleOrderUpdate}
                 />
             )}
+
+            {/* ── مودال بستن دوره مالی و تسویه ─────────────────────────────── */}
+            <SettlementModal
+                isOpen={isSettlementModalOpen}
+                onClose={() => setIsSettlementModalOpen(false)}
+                onSuccess={handleSettlementSuccess}
+                pendingRevenue={currentPeriodRevenue}
+                eligibleCount={currentEligibleOrdersCount}
+            />
+
+            {/* ── مودال پوشه‌های آرشیو دوره‌ها ──────────────────────────────── */}
+            <SettlementArchiveModal
+                isOpen={isArchiveModalOpen}
+                onClose={() => setIsArchiveModalOpen(false)}
+                activeSettlementId={activeSettlement?.id || activeSettlement?.documentId || null}
+                onSelectSettlement={(settlement) => {
+                    setActiveSettlement(settlement);
+                    setFilterType('all');
+                }}
+            />
+
+            {/* ── مودال حذف گروهی سفارش‌ها ─────────────────────────────── */}
+            <BulkDeleteModal
+                isOpen={Boolean(bulkDeleteTarget)}
+                status={bulkDeleteTarget || 'canceled'}
+                count={bulkDeleteTarget === 'canceled' ? (counts.canceled || 0) : (counts.pending || 0)}
+                onClose={() => setBulkDeleteTarget(null)}
+                onSuccess={handleBulkDeleteSuccess}
+            />
         </AdminTableContainer>
     );
 }

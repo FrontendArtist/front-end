@@ -8,9 +8,54 @@ export async function getOrdersStats(jwt) {
     let totalRevenue = null;
     let statusCounts = null;
 
+    // تابع کمکی برای محاسبه آمار یک لیست سفارش
+    function computeStatsForList(list) {
+        const confirmedStatuses = ['paid', 'shipped', 'delivered'];
+        const revenue = list.reduce((sum, order) => {
+            const attrs = order?.attributes || order || {};
+            const oStatus = (attrs.orderStatus || order?.orderStatus || '').trim().toLowerCase();
+            const pStatus = (attrs.paymentStatus || order?.paymentStatus || '').trim().toLowerCase();
+
+            const isConfirmed = pStatus === 'paid' || confirmedStatuses.includes(oStatus);
+
+            if (isConfirmed) {
+                let paidAmount = Number(attrs.totalPrice ?? order?.totalPrice ?? 0);
+                const discount = Number(attrs.discountAmount ?? order?.discountAmount ?? 0);
+                const original = (attrs.originalTotalPrice !== null && attrs.originalTotalPrice !== undefined)
+                    ? Number(attrs.originalTotalPrice)
+                    : (order?.originalTotalPrice !== null && order?.originalTotalPrice !== undefined ? Number(order?.originalTotalPrice) : null);
+
+                if (discount > 0 && original !== null) {
+                    paidAmount = Math.min(paidAmount, Math.max(0, original - discount));
+                }
+
+                return sum + Number(paidAmount || 0);
+            }
+            return sum;
+        }, 0);
+
+        const pendingCount = list.filter(o => (o.attributes?.orderStatus || o.orderStatus || '').trim().toLowerCase() === 'pending').length;
+        const paidCount = list.filter(o => {
+            const s = (o.attributes?.orderStatus || o.orderStatus || '').trim().toLowerCase();
+            const ps = (o.attributes?.paymentStatus || o.paymentStatus || '').trim().toLowerCase();
+            return ['paid', 'shipped', 'delivered'].includes(s) || ps === 'paid';
+        }).length;
+        const canceledCount = list.filter(o => (o.attributes?.orderStatus || o.orderStatus || '').trim().toLowerCase() === 'canceled').length;
+
+        return {
+            totalOrders: list.length,
+            totalRevenue: revenue,
+            statusCounts: {
+                pending: pendingCount,
+                paid: paidCount,
+                canceled: canceledCount,
+            },
+        };
+    }
+
     try {
         const pageSize = 100;
-        const fieldsParams = 'fields[0]=totalPrice&fields[1]=orderStatus&fields[2]=paymentStatus&fields[3]=discountAmount&fields[4]=originalTotalPrice';
+        const fieldsParams = 'fields[0]=totalPrice&fields[1]=orderStatus&fields[2]=paymentStatus&fields[3]=discountAmount&fields[4]=originalTotalPrice&fields[5]=settledAt';
         const endpoint = `/api/orders?${fieldsParams}&pagination[page]=1&pagination[pageSize]=${pageSize}`;
         const firstPageData = await adminFetch(endpoint, jwt);
 
@@ -32,52 +77,34 @@ export async function getOrdersStats(jwt) {
                 }
             }
 
-            // فقط سفارش‌های تأیید شده (پرداخت‌شده، ارسال‌شده، تحویل‌داده‌شده)
-            const confirmedStatuses = ['paid', 'shipped', 'delivered'];
+            // فیلتر سفارش‌های دوره جاری (که هنوز تسویه نشده‌اند)
+            const currentPeriodOrders = allOrders.filter((o) => {
+                const attrs = o?.attributes || o || {};
+                return !attrs.settledAt && !attrs.settlement;
+            });
 
-            totalRevenue = allOrders.reduce((sum, order) => {
-                const attrs = order?.attributes || order || {};
-                const oStatus = (attrs.orderStatus || order?.orderStatus || '').trim().toLowerCase();
-                const pStatus = (attrs.paymentStatus || order?.paymentStatus || '').trim().toLowerCase();
+            const currentStats = computeStatsForList(currentPeriodOrders);
+            const allTimeStats = computeStatsForList(allOrders);
 
-                const isConfirmed = pStatus === 'paid' || confirmedStatuses.includes(oStatus);
-
-                if (isConfirmed) {
-                    // محاسبه مبلغ نهایی پرداختی پس از کسر کد تخفیف (درآمد واقعی)
-                    let paidAmount = Number(attrs.totalPrice ?? order?.totalPrice ?? 0);
-                    const discount = Number(attrs.discountAmount ?? order?.discountAmount ?? 0);
-                    const original = (attrs.originalTotalPrice !== null && attrs.originalTotalPrice !== undefined)
-                        ? Number(attrs.originalTotalPrice)
-                        : (order?.originalTotalPrice !== null && order?.originalTotalPrice !== undefined ? Number(order?.originalTotalPrice) : null);
-
-                    if (discount > 0 && original !== null) {
-                        paidAmount = Math.min(paidAmount, Math.max(0, original - discount));
-                    }
-
-                    return sum + Number(paidAmount || 0);
-                }
-                return sum;
-            }, 0);
-
-            // آمار وضعیت‌ها
-            const pendingCount = allOrders.filter(o => (o.attributes?.orderStatus || o.orderStatus || '').trim().toLowerCase() === 'pending').length;
-            const paidCount = allOrders.filter(o => {
-                const s = (o.attributes?.orderStatus || o.orderStatus || '').trim().toLowerCase();
-                const ps = (o.attributes?.paymentStatus || o.paymentStatus || '').trim().toLowerCase();
-                return ['paid', 'shipped', 'delivered'].includes(s) || ps === 'paid';
-            }).length;
-            const canceledCount = allOrders.filter(o => (o.attributes?.orderStatus || o.orderStatus || '').trim().toLowerCase() === 'canceled').length;
-
-            statusCounts = {
-                pending: pendingCount,
-                paid: paidCount,
-                canceled: canceledCount,
-            };
+            // دریافت تعداد کل دوره‌های تسویه انجام شده
+            let settlementsCount = 0;
+            try {
+                const sCountData = await adminFetch('/api/settlements?pagination[limit]=1', jwt);
+                settlementsCount = sCountData?.meta?.pagination?.total ?? 0;
+            } catch {
+                settlementsCount = 0;
+            }
 
             return {
-                totalOrders: totalOrders ?? allOrders.length,
-                totalRevenue,
-                statusCounts,
+                totalOrders: currentStats.totalOrders, // مقدار پیش‌فرض: سفارش‌های باز دوره جاری
+                totalRevenue: currentStats.totalRevenue, // درآمد دوره جاری
+                statusCounts: currentStats.statusCounts,
+                currentPeriod: currentStats,
+                allTime: {
+                    ...allTimeStats,
+                    totalOrders: totalOrders ?? allOrders.length,
+                },
+                settlementsCount,
             };
         }
     } catch (err) {
@@ -87,10 +114,17 @@ export async function getOrdersStats(jwt) {
         totalRevenue = null;
     }
 
-    return { totalOrders, totalRevenue, statusCounts };
+    return {
+        totalOrders,
+        totalRevenue,
+        statusCounts,
+        currentPeriod: { totalOrders: totalOrders ?? 0, totalRevenue: null, statusCounts: null },
+        allTime: { totalOrders: totalOrders ?? 0, totalRevenue: null, statusCounts: null },
+        settlementsCount: 0,
+    };
 }
 
-export async function getOrders(jwt, { page, pageSize = 50, start, limit, status, search, statusPriority } = {}) {
+export async function getOrders(jwt, { page, pageSize = 50, start, limit, status, search, statusPriority, period = 'current', settlementId } = {}) {
     const params = new URLSearchParams();
 
     // ۱. صفحه‌بندی
@@ -110,6 +144,9 @@ export async function getOrders(jwt, { page, pageSize = 50, start, limit, status
     params.set('populate[user][fields][4]', 'lastName');
     params.set('populate[receiptImage]', 'true');
     params.set('populate[items]', 'true');
+    params.set('populate[settlement][fields][0]', 'title');
+    params.set('populate[settlement][fields][1]', 'periodNumber');
+    params.set('populate[settlement][fields][2]', 'settledAt');
 
     // ۳. اولویت‌بندی وضعیت / مرتب‌سازی
     if (statusPriority) {
@@ -118,7 +155,17 @@ export async function getOrders(jwt, { page, pageSize = 50, start, limit, status
         params.set('sort', 'createdAt:desc');
     }
 
-    // ۴. فیلتر وضعیت سفارش
+    // ۴. فیلتر دوره تسویه
+    if (settlementId) {
+        params.set('filters[settlement][id][$eq]', String(settlementId));
+    } else if (period === 'current') {
+        params.set('filters[settledAt][$null]', 'true');
+    } else if (period === 'settled') {
+        params.set('filters[settledAt][$notNull]', 'true');
+    }
+    // اگر period === 'all' باشد، هیچ فیلتری روی settledAt اعمال نمی‌شود
+
+    // ۵. فیلتر وضعیت سفارش
     if (status && status !== 'all') {
         if (status === 'pending') {
             params.set('filters[orderStatus][$eq]', 'pending');
@@ -131,7 +178,7 @@ export async function getOrders(jwt, { page, pageSize = 50, start, limit, status
         }
     }
 
-    // ۵. فیلتر جستجو
+    // ۶. فیلتر جستجو
     if (search && search.trim()) {
         const rawQ = search.trim();
         const numericQ = rawQ.replace(/^#/, '').trim();
@@ -168,6 +215,7 @@ export async function getOrders(jwt, { page, pageSize = 50, start, limit, status
         const attrs = item.attributes || item;
         const user = attrs.user?.data?.attributes || attrs.user || null;
         const receiptImage = attrs.receiptImage?.data?.attributes || attrs.receiptImage || null;
+        const settlement = attrs.settlement?.data?.attributes || attrs.settlement || null;
 
         const rawItems = attrs.items || [];
         const items = rawItems.map(i => {
@@ -215,6 +263,13 @@ export async function getOrders(jwt, { page, pageSize = 50, start, limit, status
             email: attrs.email || null,
             notes: attrs.notes || null,
             createdAt: attrs.createdAt,
+            settledAt: attrs.settledAt || null,
+            settlement: settlement ? {
+                id: attrs.settlement?.data?.id || attrs.settlement?.id,
+                title: settlement.title,
+                periodNumber: settlement.periodNumber,
+                settledAt: settlement.settledAt,
+            } : null,
             items,
             user: user ? {
                 username: userFullName || user.username || user.name || '—',

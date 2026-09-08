@@ -210,7 +210,7 @@ export default function PaymentStep({ onPrevious }) {
                     <div className={styles.methodsList}>
 
                         {/* گزینه ۱: پرداخت آنلاین — شبیه‌سازی و اتصال درگاه سامان */}
-                        <label
+                        {/* <label
                             className={`${styles.method} ${paymentMethod === 'online' ? styles.selected : ''}`}
                             htmlFor="method-online"
                         >
@@ -239,7 +239,7 @@ export default function PaymentStep({ onPrevious }) {
                                     </svg>
                                 </div>
                             </div>
-                        </label>
+                        </label> */}
 
                         {/* گزینه ۲: پرداخت کارت‌به‌کارت */}
                         <label
