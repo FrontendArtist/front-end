@@ -91,21 +91,24 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
             }
           }
         } else if (matchesThisCourse && !activeCourseOrder) {
-          // ذخیره وضعیت آخرین سفارش معلق یا رد شده مربوط به این دوره
+          // ذخیره وضعیت آخرین سفارش در صورتی که در وضعیت انتظار یا بررسی باشد
+          // سفارش‌های رد یا لغو شده نادیده گرفته می‌شوند تا صفحه دوره کاملاً آزاد بوده و امکان خرید مجدد وجود داشته باشد
           const oStatus = String(order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
           const pStatus = String(order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
-          const rejectionReason = order.rejectionReason || order.attributes?.rejectionReason || null;
+          const isRejected = pStatus === 'failed' || pStatus === 'rejected' || oStatus === 'canceled' || oStatus === 'cancelled' || oStatus === 'rejected';
 
-          activeCourseOrder = {
-            orderId: order.id,
-            documentId: order.documentId || String(order.id),
-            orderStatus: oStatus,
-            paymentStatus: pStatus,
-            rejectionReason,
-            isPendingVerification: pStatus === 'pending_verification',
-            isPendingPayment: pStatus === 'pending_payment',
-            isRejected: pStatus === 'failed' || oStatus === 'canceled',
-          };
+          if (!isRejected) {
+            activeCourseOrder = {
+              orderId: order.id,
+              documentId: order.documentId || String(order.id),
+              orderStatus: oStatus,
+              paymentStatus: pStatus,
+              rejectionReason: order.rejectionReason || order.attributes?.rejectionReason || null,
+              isPendingVerification: pStatus === 'pending_verification',
+              isPendingPayment: pStatus === 'pending_payment',
+              isRejected: false,
+            };
+          }
         }
       }
     } else {

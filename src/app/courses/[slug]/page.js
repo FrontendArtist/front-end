@@ -233,43 +233,10 @@ export default async function CoursePage({ params }) {
                   >
                     💳 در انتظار ارسال فیش واریزی
                   </Link>
-                ) : activeCourseOrder.isRejected ? (
-                  <Link
-                    href={`/profile/orders/${activeCourseOrder.documentId || activeCourseOrder.orderId}`}
-                    className={styles.statusBadgeRejected}
-                    title="برای مشاهده علت و ارسال مجدد فیش کلیک کنید"
-                  >
-                    ✕ پرداخت رد شد (ارسال مجدد فیش)
-                  </Link>
                 ) : null
               ) : null}
             </div >
             <p className={styles.description}>{course.description}</p>
-
-            {/* اعلان رد پرداخت به همراه دلیل و دکمه اقدام */}
-            {!isUserStudentOfCourse && activeCourseOrder?.isRejected && (
-              <div className={styles.rejectionNoticeBox}>
-                <div className={styles.rejectionNoticeHeader}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="15" y1="9" x2="9" y2="15" />
-                    <line x1="9" y1="9" x2="15" y2="15" />
-                  </svg>
-                  <strong>پرداخت سفارش شما برای این دوره تأیید نشد</strong>
-                </div>
-                {activeCourseOrder.rejectionReason && (
-                  <p className={styles.rejectionReasonText}>
-                    <strong>علت عدم تأیید:</strong> {activeCourseOrder.rejectionReason}
-                  </p>
-                )}
-                <Link
-                  href={`/profile/orders/${activeCourseOrder.documentId || activeCourseOrder.orderId}`}
-                  className={styles.rejectionActionLink}
-                >
-                  برای ارسال مجدد فیش واریزی کلیک کنید ←
-                </Link>
-              </div>
-            )}
 
             {/* شمارش معکوس تخفیف در صفحه دوره */}
             {!isUserEnrolledInCourse && hasDiscount && course.discountUntil && (
@@ -281,19 +248,7 @@ export default async function CoursePage({ params }) {
             <div className={styles.buyDetail}>
               {!course.isChaptered && !isFreeCourse && !isUserStudentOfCourse && (
                 <div className={styles.actionWrapper}>
-                  {activeCourseOrder?.isRejected ? (
-                    <Link
-                      href={`/profile/orders/${activeCourseOrder.documentId || activeCourseOrder.orderId}`}
-                      className={styles.statusActionBtnRejected}
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="15" y1="9" x2="9" y2="15" />
-                        <line x1="9" y1="9" x2="15" y2="15" />
-                      </svg>
-                      <span>پرداخت رد شد — ارسال مجدد فیش</span>
-                    </Link>
-                  ) : activeCourseOrder?.isPendingVerification ? (
+                  {activeCourseOrder?.isPendingVerification ? (
                     <Link
                       href={`/profile/orders/${activeCourseOrder.documentId || activeCourseOrder.orderId}`}
                       className={styles.statusActionBtnPending}

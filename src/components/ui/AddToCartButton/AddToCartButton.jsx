@@ -43,6 +43,9 @@ export default function AddToCartButton({ course }) {
       const isPaid = oStatus === 'paid' || pStatus === 'paid' || ['shipped', 'delivered'].includes(oStatus);
       if (isPaid) return false;
 
+      const isRejected = oStatus === 'canceled' || oStatus === 'cancelled' || oStatus === 'rejected' || pStatus === 'failed' || pStatus === 'rejected';
+      if (isRejected) return false;
+
       const isCardToCard = order.paymentMethod === 'card_to_card' || order.attributes?.paymentMethod === 'card_to_card';
       if (!isCardToCard) return false;
 
@@ -116,27 +119,19 @@ export default function AddToCartButton({ course }) {
     </svg>
   );
 
-  // نمایش وضعیت سفارش معلق یا ردشده کارت‌به‌کارت
+  // نمایش وضعیت سفارش معلق کارت‌به‌کارت
   if (isHydrated && pendingOrder) {
     const pStatus = (pendingOrder.paymentStatus || pendingOrder.attributes?.paymentStatus || '').trim().toLowerCase();
-    const oStatus = (pendingOrder.orderStatus || pendingOrder.attributes?.orderStatus || '').trim().toLowerCase();
     const isVerification = pStatus === 'pending_verification';
-    const isRejected = pStatus === 'failed' || oStatus === 'canceled';
     const targetUrl = `/profile/orders/${pendingOrder.documentId || pendingOrder.id}`;
 
     return (
       <Link
         href={targetUrl}
-        className={`${styles.pendingButton} ${isRejected ? styles.rejectedPayment : !isVerification ? styles.pendingPayment : ''}`}
-        title={isRejected ? 'پرداخت رد شد — برای ارسال مجدد فیش کلیک کنید' : isVerification ? 'سفارش شما در انتظار تأیید پرداخت توسط پشتیبانی است' : 'برای ارسال فیش واریز کلیک کنید'}
+        className={`${styles.pendingButton} ${!isVerification ? styles.pendingPayment : ''}`}
+        title={isVerification ? 'سفارش شما در انتظار تأیید پرداخت توسط پشتیبانی است' : 'برای ارسال فیش واریز کلیک کنید'}
       >
-        {isRejected ? (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="15" y1="9" x2="9" y2="15"></line>
-            <line x1="9" y1="9" x2="15" y2="15"></line>
-          </svg>
-        ) : isVerification ? (
+        {isVerification ? (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
@@ -149,7 +144,7 @@ export default function AddToCartButton({ course }) {
             <line x1="9" y1="15" x2="15" y2="15"></line>
           </svg>
         )}
-        <span>{isRejected ? 'پرداخت رد شد (ارسال مجدد فیش)' : isVerification ? 'در حال بررسی پرداخت' : 'منتظر ارسال فیش'}</span>
+        <span>{isVerification ? 'در حال بررسی پرداخت' : 'منتظر ارسال فیش'}</span>
       </Link>
     );
   }

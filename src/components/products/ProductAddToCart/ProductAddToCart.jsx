@@ -40,6 +40,9 @@ export default function ProductAddToCart({ product }) {
             const isPaid = oStatus === 'paid' || pStatus === 'paid' || ['shipped', 'delivered'].includes(oStatus);
             if (isPaid) return false;
 
+            const isRejected = oStatus === 'canceled' || oStatus === 'cancelled' || oStatus === 'rejected' || pStatus === 'failed' || pStatus === 'rejected';
+            if (isRejected) return false;
+
             const isCardToCard = order.paymentMethod === 'card_to_card' || order.attributes?.paymentMethod === 'card_to_card';
             if (!isCardToCard) return false;
 

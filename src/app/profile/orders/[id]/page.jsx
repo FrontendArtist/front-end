@@ -136,11 +136,13 @@ export default function OrderDetailPage() {
 
     const items = Array.isArray(order.items) ? order.items : [];
     const isCardToCard = order.paymentMethod === 'card_to_card';
-    const isRejected = isCardToCard && (
+    const isRejected = 
         order.paymentStatus === 'failed' || 
-        order.orderStatus === 'canceled'
-    );
-    const needsReceiptUpload = isCardToCard && (order.paymentStatus === 'pending_payment' || isRejected);
+        order.paymentStatus === 'rejected' ||
+        order.orderStatus === 'canceled' ||
+        order.orderStatus === 'cancelled' ||
+        order.orderStatus === 'rejected';
+    const needsReceiptUpload = isCardToCard && order.paymentStatus === 'pending_payment' && !isRejected;
 
     return (
         <div className={styles.page}>
@@ -264,7 +266,7 @@ export default function OrderDetailPage() {
                             <line x1="15" y1="9" x2="9" y2="15" />
                             <line x1="9" y1="9" x2="15" y2="15" />
                         </svg>
-                        <strong>پرداخت این سفارش تأیید نشده است</strong>
+                        <strong>این سفارش توسط مدیریت رد شده است</strong>
                     </div>
                     {order.rejectionReason && (
                         <div className={styles.rejectionReason}>
@@ -272,9 +274,6 @@ export default function OrderDetailPage() {
                             <p className={styles.rejectionReasonValue}>{order.rejectionReason}</p>
                         </div>
                     )}
-                    <p className={styles.rejectionActionNote}>
-                        در صورت واریز وجه، لطفاً تصویر فیش معتبر و مشخصات پرداخت را مجدداً از فرم زیر ارسال فرمایید تا پس از بررسی توسط پشتیبانی، سفارش تأیید و دسترسی دوره باز شود.
-                    </p>
                 </div>
             )}
 

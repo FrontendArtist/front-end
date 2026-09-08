@@ -1,3 +1,18 @@
+[2026-09-09] - Disallow Receipt Re-upload on Rejected Orders & Course Page Repurchase Restoration
+
+── Rejected Order Flow & Course Page Repurchase ──────────────────────────────
+- Course Detail Page & Access Check (`src/app/courses/[slug]/page.js` & `src/lib/ordersApi.js`):
+  • Excluded rejected and canceled orders ('canceled', 'failed', 'rejected') from activeCourseOrder in checkCourseAccess.
+  • Removed rejection notice banner (rejectionNoticeBox), rejection status badge, and receipt re-upload action button from course detail page.
+  • Restored standard AddToCartButton display so users can freely repurchase courses without blocking messages when a previous order was rejected.
+- Add To Cart Buttons (`AddToCartButton.jsx` & `ProductAddToCart.jsx`):
+  • Excluded rejected/canceled orders from pendingOrder detection so the "افزودن به سبد خرید" button stays enabled and responsive.
+  • Cleaned up rejected payment button state from AddToCartButton.
+- Order Detail Page & Upload Receipt Security (`src/app/profile/orders/[id]/page.jsx` & `/api/orders/upload-receipt/route.js`):
+  • Removed receipt upload form (<OrderReceiptUpload />) for rejected/canceled orders to permanently close them.
+  • Removed receipt re-submission invitation text from the rejection notice box, keeping only the rejection status and admin's reason.
+  • Added server-side validation in upload-receipt API route to block receipt uploads on canceled or rejected orders.
+
 [2026-09-08] - Admin Settlement Management, Collapsible Panel & Bulk Order Cleanup
 
 ── Settlement Management & Cycle Closure ──────────────────────────────────────

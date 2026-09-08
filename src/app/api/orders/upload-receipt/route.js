@@ -121,6 +121,31 @@ export async function POST(request) {
         );
     }
 
+    // [VALIDATION 5] Check if order is already rejected or canceled
+    try {
+        const orderCheckRes = await fetch(
+            `${STRAPI_BASE_URL}/api/orders/${orderId.trim()}`,
+            {
+                headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
+                cache: "no-store",
+            }
+        );
+        if (orderCheckRes.ok) {
+            const orderCheckData = await orderCheckRes.json();
+            const existingOrder = orderCheckData?.data;
+            const oStatus = String(existingOrder?.orderStatus || '').trim().toLowerCase();
+            const pStatus = String(existingOrder?.paymentStatus || '').trim().toLowerCase();
+            if (oStatus === 'canceled' || oStatus === 'cancelled' || oStatus === 'rejected' || pStatus === 'failed' || pStatus === 'rejected') {
+                return NextResponse.json(
+                    { message: "این سفارش رد شده است و امکان ارسال مجدد فیش برای آن وجود ندارد." },
+                    { status: 400 }
+                );
+            }
+        }
+    } catch (checkErr) {
+        console.warn("[upload-receipt] Could not check order status beforehand:", checkErr);
+    }
+
     // ── STEP 2: Upload image to Strapi /api/upload ──────────────────────────────
     // Rebuild a fresh FormData so we only forward the file blob to Strapi.
     // The Bearer token is injected server-side and never exposed to the client.
