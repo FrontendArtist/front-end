@@ -10,6 +10,8 @@ export default function ProfileSidebar() {
     const { data: session } = useSession();
     const pathname = usePathname();
 
+    const userName = session?.user?.name || session?.user?.firstName || '';
+
     const handleLogout = async () => {
         useCartStore.getState().clearCart();
         await signOut({ callbackUrl: '/' });
@@ -86,8 +88,8 @@ export default function ProfileSidebar() {
                     </svg>
                 </div>
                 <div className={styles.userInfo}>
-                    <span className={styles.phoneNumber} dir="ltr">
-                        {session?.user?.phoneNumber || '---'}
+                    <span className={styles.userName}>
+                        {userName || 'کاربر عزیز'}
                     </span>
                     <span className={styles.welcomeText}>خوش آمدید</span>
                 </div>

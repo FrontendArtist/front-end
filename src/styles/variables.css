@@ -55,7 +55,7 @@
     /* === Component Spacing === */
     --space-card-padding-desktop: 40px;
     --space-card-padding-tablet: 32px;
-    --space-card-padding-mobile: 24px;
+    --space-card-padding-mobile: 16px;
 
     /* === Shadows === */
     --shadow-card-strong: 0 25px 50px rgba(0, 43, 32, 0.35);

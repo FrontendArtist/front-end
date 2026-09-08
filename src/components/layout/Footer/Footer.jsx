@@ -40,14 +40,22 @@ const Footer = async () => {
           <div className={styles.footerCol}>
             <SocialMedia />
             <div className={styles.enamadBox}>
-              <Image
-                src="/images/namad/enamad.svg"
-                alt="نماد اعتماد الکترونیکی"
-                width={80}
-                height={80}
-                className={styles.enamadImage}
-              />
-              <span className={styles.enamadLabel}>در حال فعال‌سازی</span>
+              <a
+                referrerPolicy="origin"
+                target="_blank"
+                rel="noopener noreferrer"
+                href="https://trustseal.enamad.ir/?id=7461009&Code=Wc5jZTVcCetG63ZZrCS37nUpJzOv1K4u"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  referrerPolicy="origin"
+                  src="https://trustseal.enamad.ir/logo.aspx?id=7461009&Code=Wc5jZTVcCetG63ZZrCS37nUpJzOv1K4u"
+                  alt="نماد اعتماد الکترونیکی"
+                  style={{ cursor: 'pointer' }}
+                  code="Wc5jZTVcCetG63ZZrCS37nUpJzOv1K4u"
+                  className={styles.enamadImage}
+                />
+              </a>
             </div>
           </div>
 

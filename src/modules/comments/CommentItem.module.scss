@@ -44,16 +44,16 @@
     .avatar {
         width: 34px;
         height: 34px;
-        font-size: var(--font-md);
+        font-size: var(--font-sm);
         border-width: 1px;
     }
 
     .username {
-        font-size: var(--font-md);
+        font-size: var(--font-sm);
     }
 
     .content {
-        font-size: var(--font-md);
+        font-size: var(--font-sm);
         line-height: 1.7;
         opacity: 0.9;
     }
@@ -93,7 +93,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--font-lg);
+    font-size: var(--font-md);
     color: var(--color-title-hover);
     font-weight: var(--font-weight-bold);
     box-shadow: 0 4px 12px fade(var(--color-black), 20%);
@@ -120,7 +120,7 @@
 }
 
 .username {
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     color: var(--color-text-primary);
     font-weight: var(--font-weight-bold);
 }
@@ -218,7 +218,7 @@
 }
 
 .content {
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     color: var(--color-card-text);
     line-height: 1.8;
     white-space: pre-wrap;

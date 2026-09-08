@@ -67,6 +67,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const [addedChapterModal, setAddedChapterModal] = useState(null); // مودال تایید اضافه شدن فصل به سبد
   const [wasUnauthenticated, setWasUnauthenticated] = useState(false);
   const listRef = useRef(null);
+  const playerSectionRef = useRef(null);
 
   // بررسی رایگان بودن کل دوره
   const isFreeCourse = course.price?.toman === 0 || course.price === 0;
@@ -196,9 +197,38 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       return;
     }
 
+    const hasVideo = Boolean(lesson.videoUrl);
+    const hasAudio = Boolean(lesson.audioUrl);
+
+    // اولویت انتخاب نوع مدیا:
+    // ۱. اگر جلسه فقط فایل صوتی دارد -> audio
+    // ۲. اگر جلسه هر دو را دارد -> حفظ مد فعلی اگر معتبر باشد، در غیر این صورت پیش‌فرض video
+    // ۳. در غیر این صورت -> video
+    let nextMode = 'video';
+    if (!hasVideo && hasAudio) {
+      nextMode = 'audio';
+    } else if (hasVideo && hasAudio) {
+      nextMode = playMode === 'audio' ? 'audio' : 'video';
+    } else {
+      nextMode = 'video';
+    }
+
     setActiveLesson(lesson);
-    setPlayMode(lesson.audioUrl ? 'audio' : 'video');
-    scrollToItem(event);
+    setPlayMode(nextMode);
+
+    // رفتار هوشمند اسکرول (توصیه UX):
+    // اگر جلسه ویدیویی است -> اسکرول نرم به بالای پلیر تا ویدیو در کادر دید کاربر قرار گیرد
+    // اگر جلسه صوتی است -> هیچ اسکرولی انجام نمی‌شود تا کاربر با آرامش در جایگاه فعلی خود در لیست سرفصل‌ها بماند
+    if (nextMode === 'video') {
+      setTimeout(() => {
+        if (playerSectionRef.current) {
+          playerSectionRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }
+      }, 100);
+    }
   };
 
   /**
@@ -256,8 +286,9 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       autoplay: true,
       controls: true,
       responsive: true,
-      fluid: true,
-      fill: false,
+      fluid: false,
+      fill: true,
+      aspectRatio: '16:9',
       poster: course.media?.url,
       controlBar: {
         skipButtons: {
@@ -285,7 +316,11 @@ export default function CourseContentManager({ course, styles: propStyles }) {
           بخش ویدیو / صوت پلیر (Media Player Section) با تدابیر ضد دانلود
           ========================================================================= */}
       {activeLesson && (
-        <div className={styles.playerSection} onContextMenu={(e) => e.preventDefault()}>
+        <div
+          ref={playerSectionRef}
+          className={styles.playerSection}
+          onContextMenu={(e) => e.preventDefault()}
+        >
           <div className={styles.playerWrapper} onContextMenu={(e) => e.preventDefault()}>
             {/* تاگل انتخاب بین ویدیو و صوت */}
             {hasBoth && (
@@ -294,7 +329,15 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                   className={clsx(styles.toggleBtn, {
                     [styles.toggleActive]: playMode === 'video',
                   })}
-                  onClick={() => setPlayMode('video')}
+                  onClick={() => {
+                    setPlayMode('video');
+                    setTimeout(() => {
+                      playerSectionRef.current?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                      });
+                    }, 50);
+                  }}
                 >
                   🎥 ویدیو
                 </button>
@@ -319,22 +362,26 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                 ></iframe>
               </div>
             ) : isAudio ? (
-              <PlyrAudioPlayer
-                key={`${activeLesson.id}-audio`}
-                src={activeUrl}
-                courseId={course.documentId || course.id}
-                lessonId={activeLesson.id}
-                user={session?.user}
-              />
+              <div className={styles.audioWrapper}>
+                <PlyrAudioPlayer
+                  key={`${activeLesson.id}-audio`}
+                  src={activeUrl}
+                  courseId={course.documentId || course.id}
+                  lessonId={activeLesson.id}
+                  user={session?.user}
+                />
+              </div>
             ) : (
-              <VideoJSPlayer
-                key={`${activeLesson.id}-video`}
-                options={videoJsOptions}
-                courseId={course.documentId || course.id}
-                lessonId={`${activeLesson.id}-video`}
-                isAudio={false}
-                user={session?.user}
-              />
+              <div className={styles.videoContainer}>
+                <VideoJSPlayer
+                  key={`${activeLesson.id}-video`}
+                  options={videoJsOptions}
+                  courseId={course.documentId || course.id}
+                  lessonId={`${activeLesson.id}-video`}
+                  isAudio={false}
+                  user={session?.user}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -464,11 +511,26 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                             >
                               <div className={styles.lessonInfo}>
                                 <span className={styles.lessonIcon}>
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                                  {isLessonLocked ? (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                  ) : isLessonActive ? (
+                                    playMode === 'audio' ? (
+                                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                    ) : (
+                                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    )
+                                  ) : (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                                  )}
                                 </span>
                                 <span className={styles.lessonTitle}>
                                   {lesson.title}
                                 </span>
+                                {isLessonActive && (
+                                  <span className={styles.playingBadge}>
+                                    {playMode === 'audio' ? '🎵 در حال پخش' : '🎥 در حال پخش'}
+                                  </span>
+                                )}
                                 {lesson.isFree && (
                                   <span className={styles.freeBadge}>رایگان</span>
                                 )}
@@ -508,11 +570,22 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                       <span className={styles.lessonIcon}>
                         {isLessonLocked ? (
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        ) : isLessonActive ? (
+                          playMode === 'audio' ? (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                          ) : (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                          )
                         ) : (
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
                         )}
                       </span>
                       <span className={styles.lessonTitle}>{lesson.title}</span>
+                      {isLessonActive && (
+                        <span className={styles.playingBadge}>
+                          {playMode === 'audio' ? '🎵 در حال پخش' : '🎥 در حال پخش'}
+                        </span>
+                      )}
                       {lesson.isFree && (
                         <span className={styles.freeBadge}>رایگان</span>
                       )}

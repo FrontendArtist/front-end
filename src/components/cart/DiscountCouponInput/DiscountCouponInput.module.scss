@@ -15,12 +15,17 @@
     gap: 8px;
     position: relative;
     width: 100%;
+    @include respond(sm){
+        flex-direction: column;
+        height: 100px;
+
+    }
 }
 
 .couponInput {
     flex: 1;
     min-width: 0;
-    height: 42px;
+    height: 45px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;

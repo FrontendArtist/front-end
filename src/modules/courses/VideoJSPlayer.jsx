@@ -24,11 +24,13 @@ export default function VideoJSPlayer({ options, onReady, courseId, lessonId, is
     // 1. مقداردهی اولیه پلیر
     if (!playerRef.current) {
       const videoElement = document.createElement(isAudio ? 'audio' : 'video');
-      videoElement.classList.add('video-js', 'vjs-big-play-centered');
+      videoElement.classList.add('video-js', 'vjs-big-play-centered', 'vjs-fill');
       videoElement.setAttribute('controlsList', 'nodownload');
       videoElement.setAttribute('disablePictureInPicture', 'true');
       videoElement.setAttribute('oncontextmenu', 'return false;');
       videoElement.addEventListener('contextmenu', (e) => e.preventDefault());
+      videoElement.style.width = '100%';
+      videoElement.style.height = '100%';
 
       videoRef.current.appendChild(videoElement);
 
@@ -144,8 +146,8 @@ export default function VideoJSPlayer({ options, onReady, courseId, lessonId, is
   }, []);
 
   return (
-    <div data-vjs-player style={{ width: '100%', position: 'relative', overflow: 'hidden' }} onContextMenu={(e) => e.preventDefault()}>
-      <div ref={videoRef} onContextMenu={(e) => e.preventDefault()} />
+    <div data-vjs-player style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }} onContextMenu={(e) => e.preventDefault()}>
+      <div ref={videoRef} style={{ width: '100%', height: '100%' }} onContextMenu={(e) => e.preventDefault()} />
     </div>
   );
 }
