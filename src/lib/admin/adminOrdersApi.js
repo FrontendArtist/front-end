@@ -1,6 +1,13 @@
 import { adminFetch } from './adminFetch';
 import { STRAPI_API_URL } from '../api';
 
+function toEnglishDigits(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+        .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+}
+
 export async function getOrdersStats(jwt) {
     const countData = await adminFetch('/api/orders?pagination[limit]=1', jwt);
     const totalOrders = countData?.meta?.pagination?.total ?? null;
@@ -178,33 +185,75 @@ export async function getOrders(jwt, { page, pageSize = 50, start, limit, status
         }
     }
 
-    // ۶. فیلتر جستجو
+    // ۶. فیلتر جستجو (هوشمند بر اساس نوع ورودی: شناسه عددی سفارش، شماره تلفن، یا متن)
     if (search && search.trim()) {
         const rawQ = search.trim();
-        const numericQ = rawQ.replace(/^#/, '').trim();
-        const isNumeric = /^\d+$/.test(numericQ);
+        const normalizedQ = toEnglishDigits(rawQ);
+        const cleanDigits = normalizedQ.replace(/\D/g, '');
+        const numericQ = normalizedQ.replace(/^#/, '').trim();
+        const isPureNumber = /^\d+$/.test(numericQ);
+        const isLikelyPhone = cleanDigits.length >= 7 || cleanDigits.startsWith('09') || cleanDigits.startsWith('98');
 
         let orIdx = 0;
-        if (isNumeric) {
-            params.set(`filters[$or][${orIdx}][id][$eq]`, numericQ);
+
+        if (isPureNumber && !isLikelyPhone) {
+            // حالت اول: کاربر یک عدد وارد کرده است (مثلاً 615، 12، 1 یا #615) -> هدف قطعاً شناسه دقیق سفارش (ID) است
+            const idVal = parseInt(numericQ, 10);
+            if (idVal > 0 && idVal <= 2147483647) {
+                params.set(`filters[$or][${orIdx}][id][$eq]`, String(idVal));
+                orIdx++;
+            }
+            // اگر عدد طولانی‌تر باشد می‌تواند کد رهگیری پستی باشد
+            if (numericQ.length >= 4) {
+                params.set(`filters[$or][${orIdx}][trackingNumber][$containsi]`, numericQ);
+                orIdx++;
+            }
+        } else if (isLikelyPhone) {
+            // حالت دوم: کاربر شماره موبایل وارد کرده است (شروع با 09 یا حداقل 7 رقم) -> جستجو در شماره تماس سفارش و حساب کاربری
+            const phoneCandidates = new Set();
+            phoneCandidates.add(cleanDigits);
+            if (cleanDigits.startsWith('98') && cleanDigits.length === 12) {
+                phoneCandidates.add('0' + cleanDigits.slice(2));
+                phoneCandidates.add(cleanDigits.slice(2));
+            } else if (cleanDigits.startsWith('0') && cleanDigits.length === 11) {
+                phoneCandidates.add(cleanDigits.slice(1));
+            } else if (cleanDigits.startsWith('9') && cleanDigits.length === 10) {
+                phoneCandidates.add('0' + cleanDigits);
+            }
+
+            for (const phone of phoneCandidates) {
+                params.set(`filters[$or][${orIdx}][phone][$containsi]`, phone);
+                orIdx++;
+                params.set(`filters[$or][${orIdx}][user][phoneNumber][$containsi]`, phone);
+                orIdx++;
+                params.set(`filters[$or][${orIdx}][user][username][$containsi]`, phone);
+                orIdx++;
+            }
+        } else {
+            // حالت سوم: کاربر متن یا نام وارد کرده است -> جستجو در فیلدهای نام، ایمیل، صاحب کارت و ...
+            params.set(`filters[$or][${orIdx}][fullName][$containsi]`, rawQ);
             orIdx++;
+            if (rawQ !== normalizedQ) {
+                params.set(`filters[$or][${orIdx}][fullName][$containsi]`, normalizedQ);
+                orIdx++;
+            }
+            params.set(`filters[$or][${orIdx}][cardHolderName][$containsi]`, rawQ);
+            orIdx++;
+            params.set(`filters[$or][${orIdx}][email][$containsi]`, normalizedQ);
+            orIdx++;
+            params.set(`filters[$or][${orIdx}][trackingNumber][$containsi]`, normalizedQ);
+            orIdx++;
+            params.set(`filters[$or][${orIdx}][user][username][$containsi]`, rawQ);
+            orIdx++;
+            if (rawQ !== normalizedQ) {
+                params.set(`filters[$or][${orIdx}][user][username][$containsi]`, normalizedQ);
+                orIdx++;
+            }
+            if (normalizedQ.length >= 8) {
+                params.set(`filters[$or][${orIdx}][documentId][$containsi]`, normalizedQ);
+                orIdx++;
+            }
         }
-        params.set(`filters[$or][${orIdx}][documentId][$containsi]`, rawQ);
-        orIdx++;
-        params.set(`filters[$or][${orIdx}][fullName][$containsi]`, rawQ);
-        orIdx++;
-        params.set(`filters[$or][${orIdx}][cardHolderName][$containsi]`, rawQ);
-        orIdx++;
-        params.set(`filters[$or][${orIdx}][phone][$containsi]`, rawQ);
-        orIdx++;
-        params.set(`filters[$or][${orIdx}][email][$containsi]`, rawQ);
-        orIdx++;
-        params.set(`filters[$or][${orIdx}][trackingNumber][$containsi]`, rawQ);
-        orIdx++;
-        params.set(`filters[$or][${orIdx}][user][username][$containsi]`, rawQ);
-        orIdx++;
-        params.set(`filters[$or][${orIdx}][user][phoneNumber][$containsi]`, rawQ);
-        orIdx++;
     }
 
     const endpoint = `/api/orders?${params.toString()}`;

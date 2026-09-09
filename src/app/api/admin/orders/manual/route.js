@@ -43,8 +43,13 @@ export async function GET(request) {
         let endpoint = `${STRAPI_BASE_URL}/api/users?populate[courses][fields][0]=id&populate[courses][fields][1]=title&sort=createdAt:desc&pagination[limit]=20`;
 
         if (query && query.trim()) {
-            const cleanQ = encodeURIComponent(query.trim());
+            const rawQ = query.trim();
+            const cleanQ = encodeURIComponent(rawQ);
+            const normalizedPhone = normalizePhoneNumber(rawQ);
             endpoint += `&filters[$or][0][phoneNumber][$containsi]=${cleanQ}&filters[$or][1][firstName][$containsi]=${cleanQ}&filters[$or][2][lastName][$containsi]=${cleanQ}&filters[$or][3][email][$containsi]=${cleanQ}&filters[$or][4][username][$containsi]=${cleanQ}`;
+            if (normalizedPhone && normalizedPhone !== rawQ) {
+                endpoint += `&filters[$or][5][phoneNumber][$containsi]=${encodeURIComponent(normalizedPhone)}`;
+            }
         }
 
         const res = await fetch(endpoint, {

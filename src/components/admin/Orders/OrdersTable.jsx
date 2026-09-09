@@ -272,7 +272,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
     const [receiptModalOrder, setReceiptModal] = useState(null);
     const [statusModalOrder, setStatusModal] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [appliedSearch, setAppliedSearch] = useState('');
     const [filterType, setFilterType] = useState('all'); // 'all' | 'pending' | 'paid' | 'canceled'
     const [isStatusSorted, setIsStatusSorted] = useState(false); // اولویت‌بندی هوشمند وضعیت در سرور
     const [expandedId, setExpandedId] = useState(null); // شناسه ردیف باز
@@ -302,13 +302,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
     const sentinelRef = useRef(null);
     const isFirstMount = useRef(true);
 
-    // ── Debounce Search Query ───────────────────────────────────────────────
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchQuery.trim());
-        }, 350);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
+
 
     // ── بارگذاری داده‌ها از سرور هنگام تغییر تب، جستجو، مرتب‌سازی یا دوره تسویه ───
     useEffect(() => {
@@ -328,7 +322,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                     limit: 20,
                     status: filterType,
                     statusPriority: isStatusSorted,
-                    search: debouncedSearch,
+                    search: appliedSearch,
                     period: activeSettlement ? undefined : periodFilter,
                     settlementId: activeSettlement ? (activeSettlement.id || activeSettlement.documentId) : undefined,
                 });
@@ -355,7 +349,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
         return () => {
             isCancelled = true;
         };
-    }, [filterType, isStatusSorted, debouncedSearch, periodFilter, activeSettlement]);
+    }, [filterType, isStatusSorted, appliedSearch, periodFilter, activeSettlement]);
 
     // ── متد دریافت صفحات بعدی (Lazy Loading: ۲۰ تا ۲۰ تا) ────────────────────
     const loadMoreOrders = useCallback(async () => {
@@ -370,7 +364,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                 limit: 20,
                 status: filterType,
                 statusPriority: isStatusSorted,
-                search: debouncedSearch,
+                search: appliedSearch,
                 period: activeSettlement ? undefined : periodFilter,
                 settlementId: activeSettlement ? (activeSettlement.id || activeSettlement.documentId) : undefined,
             });
@@ -398,7 +392,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
         } finally {
             setIsLoadingMore(false);
         }
-    }, [isLoadingMore, hasMore, isInitialLoading, orders.length, totalOrders, filterType, isStatusSorted, debouncedSearch, periodFilter, activeSettlement]);
+    }, [isLoadingMore, hasMore, isInitialLoading, orders.length, totalOrders, filterType, isStatusSorted, appliedSearch, periodFilter, activeSettlement]);
 
     // ── اتصال به اسکرول با IntersectionObserver ──────────────────────────────
     useEffect(() => {
@@ -761,10 +755,19 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                     <AdminSearch
                         placeholder="جستجو بر اساس شماره سفارش، کاربر یا موبایل..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setSearchQuery(val);
+                            if (!val.trim() && appliedSearch) {
+                                setAppliedSearch('');
+                            }
+                        }}
+                        onSubmit={() => {
+                            setAppliedSearch(searchQuery.trim());
+                        }}
                     />
                     <span className={styles.toolbar__count}>
-                        {searchQuery.trim() || filterType !== 'all' || isStatusSorted
+                        {appliedSearch || filterType !== 'all' || isStatusSorted
                             ? `${new Intl.NumberFormat('fa-IR').format(totalOrders)} سفارش یافته‌شده`
                             : `نمایش ${new Intl.NumberFormat('fa-IR').format(orders.length)} از ${new Intl.NumberFormat('fa-IR').format(totalOrders)} سفارش`}
                     </span>
@@ -783,6 +786,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                         variant="default"
                         onClick={() => {
                             setSearchQuery('');
+                            setAppliedSearch('');
                             setFilterType('all');
                             setIsStatusSorted(false);
                         }}

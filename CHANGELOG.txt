@@ -1,3 +1,21 @@
+[2026-09-09] - Smart Order Search Fix: Phone Number Overflow & Explicit Search Trigger
+
+── Admin Order Search & Filtering Optimizations ──────────────────────────────
+- Fix PostgreSQL 32-bit Integer Overflow on Phone Search (`src/lib/admin/adminOrdersApi.js`):
+  • Prevented sending 11-digit Iranian mobile numbers (> 2.14 billion) to PostgreSQL order ID integer filter (`filters[id][$eq]`), eliminating 500 server errors on phone search.
+  • Added `toEnglishDigits` helper to automatically convert Persian and Arabic digits (۰-۹ و ٠-٩) to standard English digits.
+  • Implemented smart search input classification:
+    - Pure numbers (e.g. 615, #615, 12): mapped to exact order ID and postal tracking code without falsely matching phone numbers.
+    - Phone numbers (>= 7 digits, 09..., 98...): formatted and searched across `phone`, `user.phoneNumber`, and `user.username`.
+    - Text and names: searched in `fullName`, `cardHolderName`, `email`, and `username`.
+  • Restricted `documentId` partial search to queries with length >= 8 to prevent short digits from matching every random 24-character Strapi documentId.
+- Search Trigger Refactoring (`src/components/admin/Orders/OrdersTable.jsx`):
+  • Removed automatic debounced keystroke requests, allowing the admin to type queries freely without triggering unwanted background API calls.
+  • Bound search execution explicitly to clicking the search icon button or pressing the Enter key.
+  • Automatically resets order list when search box is completely cleared.
+- Manual Order Search Enhancements (`src/app/api/admin/orders/manual/route.js`):
+  • Added normalized phone number matching for user search in manual order creation dialog.
+
 [2026-09-09] - Disallow Receipt Re-upload on Rejected Orders & Course Page Repurchase Restoration
 
 ── Rejected Order Flow & Course Page Repurchase ──────────────────────────────
