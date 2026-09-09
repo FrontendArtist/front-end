@@ -14,11 +14,10 @@ const STRAPI_BASE_URL = (process.env.NEXT_PUBLIC_STRAPI_API_URL || process.env.S
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
 function getAuthHeader(session) {
-    // اولویت با JWT کاربر لاگین‌شده است (session-based auth)
+    // احراز هویت با JWT کاربر ادمین لاگین‌شده
     if (session?.user?.jwt) {
         return `Bearer ${session.user.jwt}`;
     }
-    // fallback: توکن سرویس Strapi
     if (STRAPI_TOKEN) {
         return `Bearer ${STRAPI_TOKEN}`;
     }

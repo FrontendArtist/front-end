@@ -1,4 +1,13 @@
+[2026-09-09] - Admin Settlements & Bulk-Delete Auth Alignment: Admin Session JWT
+
+── Admin API Security & Session Token Alignment ─────────────────────────────
+- Admin Settlements API (`src/app/api/admin/settlements/route.js`):
+  • Guaranteed standard admin session token authentication (`session.user.jwt`), allowing operations to function with standard Strapi Administrator role permissions without relying on Full Access system tokens.
+- Bulk Delete API (`src/app/api/admin/orders/bulk-delete/route.js`):
+  • Aligned authentication mechanism to strictly utilize the logged-in administrator's JWT session.
+
 [2026-09-09] - Smart Order Search Fix: Phone Number Overflow & Explicit Search Trigger
+
 
 ── Admin Order Search & Filtering Optimizations ──────────────────────────────
 - Fix PostgreSQL 32-bit Integer Overflow on Phone Search (`src/lib/admin/adminOrdersApi.js`):
