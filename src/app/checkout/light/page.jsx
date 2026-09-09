@@ -20,7 +20,7 @@ function LightCheckoutContent() {
     const lightAmount = Number.isFinite(rawAmount) && rawAmount > 0 ? rawAmount : 0;
     const totalPrice = lightAmount * LIGHT_TO_TOMAN_RATE;
 
-    const [paymentMethod, setPaymentMethod] = useState('online');
+    const [paymentMethod, setPaymentMethod] = useState('card_to_card');
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
 
@@ -160,9 +160,9 @@ function LightCheckoutContent() {
                 <div className={styles.paymentMethods}>
                     <div className={styles.methodsList}>
 
-                        {/* پرداخت آنلاین */}
+                        {/* پرداخت آنلاین — فعلاً غیرفعال */}
                         <label
-                            className={`${styles.method} ${paymentMethod === 'online' ? styles.selected : ''}`}
+                            className={`${styles.method} ${styles.disabled}`}
                             htmlFor="light-method-online"
                         >
                             <input
@@ -170,9 +170,7 @@ function LightCheckoutContent() {
                                 type="radio"
                                 name="lightPaymentMethod"
                                 value="online"
-                                checked={paymentMethod === 'online'}
-                                onChange={() => setPaymentMethod('online')}
-                                disabled={isProcessing}
+                                disabled
                             />
                             <div className={styles.methodContent}>
                                 <div className={styles.methodIcon}>
@@ -183,12 +181,7 @@ function LightCheckoutContent() {
                                 </div>
                                 <div className={styles.methodInfo}>
                                     <span className={styles.methodName}>پرداخت آنلاین</span>
-                                    <span className={styles.methodDesc}>پرداخت امن از طریق درگاه بانکی</span>
-                                </div>
-                                <div className={styles.checkmark}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                        <polyline points="20 6 9 17 4 12" />
-                                    </svg>
+                                    <span className={styles.methodDesc}>در حال فعال‌سازی</span>
                                 </div>
                             </div>
                         </label>

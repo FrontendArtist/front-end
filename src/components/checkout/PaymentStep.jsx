@@ -37,8 +37,8 @@ export default function PaymentStep({ onPrevious }) {
     const itemLevelDiscount = useCartStore(selectItemLevelDiscount);
     const itemsCount = useCartStore(selectItemsCount);
 
-    // مقدار پیش‌فرض: آنلاین (فعال‌سازی برای شبیه‌سازی و اتصال درگاه سامان SEP)
-    const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.ONLINE);
+    // مقدار پیش‌فرض: کارت به کارت (چون آنلاین فعلاً غیرفعال است)
+    const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.CARD_TO_CARD);
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
 
@@ -209,9 +209,9 @@ export default function PaymentStep({ onPrevious }) {
                 <div className={styles.paymentMethods}>
                     <div className={styles.methodsList}>
 
-                        {/* گزینه ۱: پرداخت آنلاین — شبیه‌سازی و اتصال درگاه سامان */}
-                        {/* <label
-                            className={`${styles.method} ${paymentMethod === 'online' ? styles.selected : ''}`}
+                        {/* گزینه ۱: پرداخت آنلاین — فعلاً غیرفعال */}
+                        <label
+                            className={`${styles.method} ${styles.disabled}`}
                             htmlFor="method-online"
                         >
                             <input
@@ -219,8 +219,7 @@ export default function PaymentStep({ onPrevious }) {
                                 type="radio"
                                 name="paymentMethod"
                                 value="online"
-                                checked={paymentMethod === 'online'}
-                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                disabled
                             />
                             <div className={styles.methodContent}>
                                 <div className={styles.methodIcon}>
@@ -231,15 +230,10 @@ export default function PaymentStep({ onPrevious }) {
                                 </div>
                                 <div className={styles.methodInfo}>
                                     <span className={styles.methodName}>پرداخت آنلاین</span>
-                                    <span className={styles.methodDesc}>پرداخت امن از طریق درگاه بانکی سامان (SEP)</span>
-                                </div>
-                                <div className={styles.checkmark}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                        <polyline points="20 6 9 17 4 12" />
-                                    </svg>
+                                    <span className={styles.methodDesc}>در حال فعال‌سازی</span>
                                 </div>
                             </div>
-                        </label> */}
+                        </label>
 
                         {/* گزینه ۲: پرداخت کارت‌به‌کارت */}
                         <label
