@@ -1,3 +1,28 @@
+[2026-09-10] - Admin Discount Coupon Management Dashboard & Stability Bug Fixes
+
+── Admin Coupon Management Dashboard (`/admin/coupons`) ─────────────────────────────
+- Admin Coupons Management UI & Components:
+  • `src/app/admin/coupons/page.jsx`: Added coupons overview page with live metrics and table.
+  • `src/app/admin/coupons/new/page.jsx`: Added create coupon page with product & course pickers.
+  • `src/app/admin/coupons/[id]/page.jsx`: Added edit coupon page with pre-populated data.
+  • `src/components/admin/Coupons/CouponsTable.jsx`: Built interactive table with stats cards (total, active, expired, total usage), quick filter tabs, one-click code copy, instant active toggle switch, usage progress bar, and delete confirmation modal.
+  • `src/components/admin/Coupons/CouponForm.jsx`: Built glassmorphism coupon form featuring random code generator, percentage or fixed discount, max discount cap, min order amount, target scope selection (all products, all courses, or multi-select specific products/courses), usage limits, and quick expiration presets.
+  • `src/components/admin/Coupons/Coupons.module.scss`: Implemented clean, responsive SCSS styles adhering to admin design system.
+  • `src/components/admin/Sidebar/AdminSidebar.jsx`: Integrated "کدهای تخفیف" nav link with Ticket icon.
+- Admin Coupons API Routes & Client Helpers:
+  • `src/app/api/admin/coupons/route.js`: Implemented GET (list with pagination & search) and POST (create coupon).
+  • `src/app/api/admin/coupons/[id]/route.js`: Implemented GET (single), PUT (update / toggle active), and DELETE.
+  • `src/lib/admin/adminCouponsApi.js` & `src/lib/client/admin/couponsClient.js`: Added server and client helper functions for coupon CRUD.
+
+── Stability & Bug Fixes ────────────────────────────────────────────────────────────
+- Admin Table Headers Bug Fix (`src/components/admin/Shared/AdminTable.jsx` & `CouponsTable.jsx`):
+  • Safely defaulted `headers` prop to empty array in `AdminTable.jsx` to eliminate `Cannot read properties of undefined (reading 'map')` error.
+  • Provided `TABLE_HEADERS` in `CouponsTable.jsx` and resolved unbalanced JSX ternary closing tags.
+- React 19 Script Warning Fix (`src/app/layout.js`):
+  • Migrated inline `<script>` tags to Next.js `<Script strategy="beforeInteractive">` for schema and theme initialization to prevent React 19 console warning.
+- Bulk Settle Optimization (`src/app/api/admin/settlements/route.js`):
+  • Integrated `/api/orders/bulk-settle` endpoint with single DB update to prevent timeout on large order batches.
+
 [2026-09-09] - Admin Settlements & Bulk-Delete Auth Alignment: Admin Session JWT
 
 ── Admin API Security & Session Token Alignment ─────────────────────────────

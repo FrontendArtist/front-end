@@ -8,6 +8,7 @@ import AuthModal from "@/components/auth/AuthModal";
 import PopupModal from "@/components/popup/PopupModal";
 import VpnModal from "@/components/common/VpnModal/VpnModal";
 import { Providers } from "./providers";
+import Script from 'next/script';
 import localFont from 'next/font/local';
 import CartSyncProvider from "@/components/providers/CartSyncProvider";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
@@ -91,14 +92,17 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
-        <script
+        <Script
+          id="organization-schema"
           type="application/ld+json"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(organizationSchema),
           }}
         />
-        <script
+        <Script
           id="theme-initializer"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

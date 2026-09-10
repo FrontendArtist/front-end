@@ -30,6 +30,7 @@ import {
     UserCircle,       // Profile avatar fallback icon
     Mail,             // Contact messages icon
     MessageSquare,    // Comments icon
+    Ticket,           // Discount coupons icon
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
@@ -47,6 +48,7 @@ const NAV_LINKS = [
     { href: '/admin', label: 'داشبورد', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'سفارش‌ها', icon: ShoppingCart },
     { href: '/admin/orders/new', label: 'ثبت دستی سفارش و دوره', icon: UserPlus },
+    { href: '/admin/coupons', label: 'کدهای تخفیف', icon: Ticket },
     { href: '/admin/users', label: 'کاربران', icon: Users },
     { href: '/admin/products', label: 'محصولات', icon: Package },
     { href: '/admin/articles', label: 'مقالات', icon: FileText },
