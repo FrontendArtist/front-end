@@ -244,12 +244,52 @@
 
     &.plyr--audio {
       border-radius: 16px;
-      overflow: hidden;
+      overflow: visible;
+    }
+
+    /* دکمه تغییر سریع سرعت (Quick Speed Badge) */
+    :global(.plyr__control--speed-badge) {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      height: 30px;
+      padding: 0 8px !important;
+      font-size: 12.5px !important;
+      font-weight: 700 !important;
+      font-family: inherit;
+      color: var(--color-primary, #F6D982) !important;
+      background: color-mix(in srgb, var(--color-primary, #F6D982) 12%, transparent) !important;
+      border: 1px solid color-mix(in srgb, var(--color-primary, #F6D982) 30%, transparent) !important;
+      border-radius: 8px !important;
+      margin: 0 4px !important;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      letter-spacing: 0.5px;
+      direction: ltr;
+
+      span {
+        pointer-events: none;
+        line-height: 1;
+      }
+
+      &:hover {
+        background: var(--color-primary, #F6D982) !important;
+        color: var(--color-black, #000000) !important;
+        border-color: var(--color-primary, #F6D982) !important;
+        transform: scale(1.06);
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary, #F6D982) 35%, transparent);
+      }
+
+      &:active {
+        transform: scale(0.94);
+      }
     }
   }
-.plyr__control {
-  padding: 2px !important;
-}
+
+  .plyr__control {
+    padding: 2px !important;
+  }
   /* Video.js custom styling overrides */
   :global(.video-js) {
     --vjs-theme-color: var(--color-primary, #F6D982);

@@ -28,6 +28,17 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
       // ایمپورت CSS به صورت داینامیک
       await import('plyr/dist/plyr.css');
 
+      // کلید ذخیره‌سازی سرعت پخش
+      const SPEED_STORAGE_KEY = 'plyr_audio_playback_speed';
+      const AVAILABLE_SPEEDS = [1, 1.25, 1.5, 1.75, 2];
+      let savedSpeed = 1;
+      try {
+        const stored = parseFloat(localStorage.getItem(SPEED_STORAGE_KEY));
+        if (AVAILABLE_SPEEDS.includes(stored)) {
+          savedSpeed = stored;
+        }
+      } catch (e) {}
+
       player = new Plyr(audioRef.current, {
         controls: [
           'rewind',
@@ -57,7 +68,19 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
       const REPLAY_10_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 5V1l-5 5 5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6h-2c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><path d="M10.89 16h-.85v-3.26l-1.01.31v-.69l1.77-.63h.09zM15.17 14.24c0 .32-.03.6-.1.82s-.17.42-.29.57-.28.26-.45.33-.37.1-.59.1-.41-.03-.59-.1-.33-.18-.46-.33-.23-.34-.3-.57-.11-.5-.11-.82v-.74c0-.32.03-.6.1-.82s.17-.42.29-.57.28-.26.45-.33.37-.1.59-.1.41.03.59.1.33.18.46.33.23.34.3.57.11.5.11.82zm-.85-.86c0-.19-.01-.35-.04-.48s-.07-.23-.12-.31-.11-.14-.19-.17-.16-.05-.25-.05-.18.02-.25.05-.14.09-.19.17-.09.18-.12.31-.04.29-.04.48v.97c0 .19.01.35.04.48s.07.24.12.32.11.14.19.17.16.05.25.05.18-.02.25-.05.14-.09.19-.17.09-.19.11-.32.04-.29.04-.48v-.97z"/></svg>`;
       const FORWARD_10_SVG = `<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 13c0 3.31-2.69 6-6 6s-6-2.69-6-6 2.69-6 6-6v4l5-5-5-5v4c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8z"/><path d="M10.86 15.94v-4.27h-.09L9 12.3v.69l1.01-.31v3.26zM12.25 13.44v.74c0 1.9 1.31 1.82 1.44 1.82.14 0 1.44.09 1.44-1.82v-.74c0-1.9-1.31-1.82-1.44-1.82-.14 0-1.44-.09-1.44 1.82m2.04-.12v.97c0 .77-.21 1.03-.59 1.03s-.6-.26-.6-1.03v-.97c0-.75.22-1.01.59-1.01.38-.01.6.26.6 1.01"/></svg>`;
 
-      const updateSkipIcons = () => {
+      const updateSpeedBadge = (speed) => {
+        const container = player.elements?.container;
+        if (!container) return;
+        const curSpeed = speed ?? player.speed ?? audioRef.current?.playbackRate ?? 1;
+        const speedBtn = container.querySelector('[data-plyr="custom-speed"]');
+        if (speedBtn) {
+          const label = curSpeed === 1 ? '1×' : `${curSpeed}×`;
+          speedBtn.innerHTML = `<span>${label}</span>`;
+          speedBtn.setAttribute('title', `سرعت پخش: ${label} (کلیک برای تغییر)`);
+        }
+      };
+
+      const updateCustomControls = () => {
         const container = player.elements?.container;
         if (!container) return;
 
@@ -76,10 +99,71 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
           fwdBtn.addEventListener('touchend', () => setTimeout(() => fwdBtn.blur(), 50), { passive: true });
           fwdBtn.addEventListener('mouseup', () => setTimeout(() => fwdBtn.blur(), 50), { passive: true });
         }
+
+        // دکمه تغییر سریع سرعت پخش (۱x, ۱.۲۵x, ۱.۵x, ۱.۷۵x, ۲x)
+        const controls = container.querySelector('.plyr__controls');
+        if (controls) {
+          let speedBtn = controls.querySelector('[data-plyr="custom-speed"]');
+          if (!speedBtn) {
+            speedBtn = document.createElement('button');
+            speedBtn.type = 'button';
+            speedBtn.className = 'plyr__control plyr__control--speed-badge';
+            speedBtn.setAttribute('data-plyr', 'custom-speed');
+
+            speedBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const cycleList = [1, 1.25, 1.5, 1.75, 2];
+              const cur = player.speed || audioRef.current?.playbackRate || 1;
+              const idx = cycleList.indexOf(cur);
+              const next = idx === -1 ? 1 : cycleList[(idx + 1) % cycleList.length];
+              player.speed = next;
+              if (audioRef.current) {
+                audioRef.current.playbackRate = next;
+              }
+              try {
+                localStorage.setItem(SPEED_STORAGE_KEY, next.toString());
+              } catch (err) {}
+              updateSpeedBadge(next);
+            });
+
+            controls.appendChild(speedBtn);
+          }
+          updateSpeedBadge(player.speed || savedSpeed);
+        }
       };
 
-      player.on('ready', updateSkipIcons);
-      setTimeout(updateSkipIcons, 100);
+      player.on('ready', () => {
+        if (savedSpeed && savedSpeed !== 1) {
+          player.speed = savedSpeed;
+          if (audioRef.current) {
+            audioRef.current.playbackRate = savedSpeed;
+          }
+        }
+        updateCustomControls();
+      });
+
+      player.on('play', () => {
+        const cur = player.speed || audioRef.current?.playbackRate || 1;
+        const currentSaved = parseFloat(localStorage.getItem(SPEED_STORAGE_KEY)) || savedSpeed;
+        if (currentSaved && cur !== currentSaved) {
+          player.speed = currentSaved;
+          if (audioRef.current) {
+            audioRef.current.playbackRate = currentSaved;
+          }
+          updateSpeedBadge(currentSaved);
+        }
+      });
+
+      // ذخیره‌سازی سرعت هنگام تغییر
+      player.on('ratechange', () => {
+        const curSpeed = player.speed || audioRef.current?.playbackRate || 1;
+        try {
+          localStorage.setItem(SPEED_STORAGE_KEY, curSpeed.toString());
+        } catch (e) {}
+        updateSpeedBadge(curSpeed);
+      });
+
+      setTimeout(updateCustomControls, 100);
 
       playerRef.current = player;
 
