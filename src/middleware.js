@@ -4,6 +4,14 @@ export function middleware(req) {
   const url = req.nextUrl.clone();
   const { pathname, searchParams } = url;
 
+  // Temporarily redirect /products and /products/:path* to /courses
+  if (pathname === '/products' || pathname.startsWith('/products/')) {
+    const nextUrl = req.nextUrl.clone();
+    nextUrl.pathname = '/courses';
+    nextUrl.search = '';
+    return NextResponse.redirect(nextUrl, { status: 307 });
+  }
+
   // Redirect /products?category=...&sub=... → /products/... (preserve sort/page)
   if (pathname === '/products') {
     const category = searchParams.get('category');

@@ -48,15 +48,15 @@ import styles from './AdminSidebar.module.scss';
 const NAV_LINKS = [
     { href: '/admin', label: 'داشبورد', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'سفارش‌ها', icon: ShoppingCart },
-    { href: '/admin/orders/new', label: 'ثبت دستی سفارش و دوره', icon: UserPlus },
+    { href: '/admin/orders/new', label: 'ثبت دستی', icon: UserPlus },
     { href: '/admin/users', label: 'کاربران', icon: Users },
     { href: '/admin/products', label: 'محصولات', icon: Package },
     { href: '/admin/articles', label: 'مقالات', icon: FileText },
     { href: '/admin/courses', label: 'دوره‌ها', icon: BookOpen },
     { href: '/admin/contact-messages', label: 'پیام ها', icon: Mail },
     { href: '/admin/comments', label: 'نظرات', icon: MessageSquare },
-    { href: '/admin/coupons', label: 'کدهای تخفیف', icon: Ticket },
-    { href: '/admin/top-banner', label: 'نوار اعلان بالای سایت', icon: Megaphone },
+    { href: '/admin/coupons', label: 'کد تخفیف', icon: Ticket },
+    { href: '/admin/top-banner', label: 'نوار اعلان', icon: Megaphone },
 ];
 
 /**

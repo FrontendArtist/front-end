@@ -62,6 +62,16 @@ const nextConfig = {
         destination: '/about',
         permanent: true,
       },
+      {
+        source: '/products',
+        destination: '/courses',
+        permanent: false,
+      },
+      {
+        source: '/products/:path*',
+        destination: '/courses',
+        permanent: false,
+      },
     ];
   },
 };
