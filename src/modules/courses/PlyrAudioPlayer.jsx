@@ -101,35 +101,35 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
         }
 
         // دکمه تغییر سریع سرعت پخش (۱x, ۱.۲۵x, ۱.۵x, ۱.۷۵x, ۲x)
-        const controls = container.querySelector('.plyr__controls');
-        if (controls) {
-          let speedBtn = controls.querySelector('[data-plyr="custom-speed"]');
-          if (!speedBtn) {
-            speedBtn = document.createElement('button');
-            speedBtn.type = 'button';
-            speedBtn.className = 'plyr__control plyr__control--speed-badge';
-            speedBtn.setAttribute('data-plyr', 'custom-speed');
+        // const controls = container.querySelector('.plyr__controls');
+        // if (controls) {
+        //   let speedBtn = controls.querySelector('[data-plyr="custom-speed"]');
+        //   if (!speedBtn) {
+        //     speedBtn = document.createElement('button');
+        //     speedBtn.type = 'button';
+        //     speedBtn.className = 'plyr__control plyr__control--speed-badge';
+        //     speedBtn.setAttribute('data-plyr', 'custom-speed');
 
-            speedBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              const cycleList = [1, 1.25, 1.5, 1.75, 2];
-              const cur = player.speed || audioRef.current?.playbackRate || 1;
-              const idx = cycleList.indexOf(cur);
-              const next = idx === -1 ? 1 : cycleList[(idx + 1) % cycleList.length];
-              player.speed = next;
-              if (audioRef.current) {
-                audioRef.current.playbackRate = next;
-              }
-              try {
-                localStorage.setItem(SPEED_STORAGE_KEY, next.toString());
-              } catch (err) {}
-              updateSpeedBadge(next);
-            });
+        //     speedBtn.addEventListener('click', (e) => {
+        //       e.stopPropagation();
+        //       const cycleList = [1, 1.25, 1.5, 1.75, 2];
+        //       const cur = player.speed || audioRef.current?.playbackRate || 1;
+        //       const idx = cycleList.indexOf(cur);
+        //       const next = idx === -1 ? 1 : cycleList[(idx + 1) % cycleList.length];
+        //       player.speed = next;
+        //       if (audioRef.current) {
+        //         audioRef.current.playbackRate = next;
+        //       }
+        //       try {
+        //         localStorage.setItem(SPEED_STORAGE_KEY, next.toString());
+        //       } catch (err) {}
+        //       updateSpeedBadge(next);
+        //     });
 
-            controls.appendChild(speedBtn);
-          }
-          updateSpeedBadge(player.speed || savedSpeed);
-        }
+        //     controls.appendChild(speedBtn);
+        //   }
+        //   updateSpeedBadge(player.speed || savedSpeed);
+        // }
       };
 
       player.on('ready', () => {

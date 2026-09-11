@@ -6,13 +6,10 @@
    ============================================================================= */
 
 .contentManager {
-  margin-top: var(--space-section-top-desktop, 48px);
   overflow: hidden;
   background: var(--color-bg-primary-overlay, #061818);
 
-  @include respond(md) {
-    margin-top: 30px;
-  }
+
 }
 
 /* -----------------------------------------------------------------------------
@@ -428,8 +425,7 @@
 .mediaToggle {
   display: flex;
   gap: 8px;
-  padding: 12px 16px;
-  background: color-mix(in srgb, var(--color-black) 40%, transparent);
+  padding: 16px 16px;
   border-bottom: 1px solid color-mix(in srgb, var(--color-white) 8%, transparent);
 
   .toggleBtn {
