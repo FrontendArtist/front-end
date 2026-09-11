@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import styles from './Navbar.module.scss';
 import SearchTrigger from '@/components/ui/SearchTrigger/SearchTrigger';
@@ -10,8 +10,9 @@ import SearchOverlay from '@/components/ui/SearchOverlay/SearchOverlay';
 import UserStatus from '@/components/layout/Navbar/UserStatus';
 import NotificationBell from '@/components/layout/Navbar/NotificationBell';
 import CartIcon from '@/components/layout/Navbar/CartIcon';
+import TopBanner from '@/components/layout/TopBanner/TopBanner';
 
-const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '[]' }) => {
+const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '[]', topBannerSnapshot = 'null' }) => {
   const [isClient, setIsClient] = useState(false);
   const [theme, setTheme] = useState('dark');
 
@@ -29,6 +30,13 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
   const articleCategories = useMemo(() => {
     try { return JSON.parse(articleCategoriesSnapshot) || []; } catch { return []; }
   }, [articleCategoriesSnapshot]);
+
+  const topBannerData = useMemo(() => {
+    try { return JSON.parse(topBannerSnapshot); } catch { return null; }
+  }, [topBannerSnapshot]);
+
+  const pathname = usePathname();
+  const isAdminRoute = pathname?.startsWith('/admin');
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState('menu'); // menu | products | articles
@@ -87,6 +95,7 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
   return (
     <>
       <header className={`${styles.header} ${isScrolled ? styles.scrolled : ''} ${activeMegaMenu ? styles.megaOpen : ''}`}>
+        {!isAdminRoute && <TopBanner initialData={topBannerData} />}
         <nav className={`${styles.navbar} container`}>
           {/* 🟢 Logo */}
           <div className={styles.logo}>

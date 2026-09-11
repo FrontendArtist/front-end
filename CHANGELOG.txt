@@ -1,3 +1,37 @@
+[2026-09-11] - Top Announcement & Discount Bar: Public Banner, HTML/Style Support & Admin Dashboard
+
+── Top Announcement Bar Component & Public UI ──────────────────────────────────
+- Top Banner Component (`src/components/layout/TopBanner/TopBanner.jsx`):
+  • Built luxury, responsive announcement bar positioned directly above the main header/navbar.
+  • Added rich HTML and inline style rendering via `dangerouslySetInnerHTML` for custom badges, discount coupon boxes, colors, bold text, and emojis.
+  • Integrated optional Call to Action button (CTA) with hover translation animation and support for internal/external links.
+  • Added dismissible behavior (close button X) with smooth slide-up collapse animation and session persistence to avoid re-prompting users.
+  • Implemented 5 vibrant gradient themes: Gold Luxury (default), Emerald Green, Sunset Magenta, Royal Purple, and Obsidian Dark.
+- Top Banner Styling (`src/components/layout/TopBanner/TopBanner.module.scss`):
+  • Implemented dynamic light beam shimmer animation (`@keyframes shimmer`).
+  • Full responsive layout optimizations for mobile, tablet, and desktop screens.
+- Global Header & Spacing Integration (`src/components/layout/Navbar/NavbarClient.jsx`, `Navbar.jsx`, `variables.css`):
+  • Server Component data fetching in `Navbar.jsx` to prevent Cumulative Layout Shift (CLS).
+  • Rendered `TopBanner` within sticky `<header>` container in `NavbarClient.jsx` (excluded on `/admin` routes for clean dashboard view).
+  • Dynamically bound `--space-section-top-desktop` to `calc(100px + var(--top-banner-height, 0px))` across all pages to perfectly align page content.
+
+── Admin Dashboard Management (`/admin/top-banner`) ─────────────────────────────
+- Admin Top Banner Manager UI (`src/components/admin/TopBanner/TopBannerManager.jsx` & `.module.scss`):
+  • Built dedicated management interface with real-time Live Preview reflecting changes as the admin types.
+  • Added instant active toggle switch (enable/disable banner across the entire site).
+  • Implemented quick formatting toolbar above textarea for one-click insertion of bold tags, styled discount code boxes with dashed border, highlights, gold/emerald/pink colors, and emojis.
+  • Provided Call to Action button label and link inputs, badge text input, and visual theme selection grid.
+  • Added dismissible toggle and one-click sample discount reset button.
+  • Server page at `src/app/admin/top-banner/page.jsx` with administrator session check.
+  • Integrated "نوار اعلان بالای سایت" navigation item into `src/components/admin/Sidebar/AdminSidebar.jsx` with `Megaphone` icon.
+
+── APIs & Client Helpers ────────────────────────────────────────────────────────
+- Public & Admin API Routes:
+  • `src/app/api/top-banner/route.js`: Public route returning active banner data with no-store cache.
+  • `src/app/api/admin/top-banner/route.js`: Admin-only route for GET settings and PUT updates with Administrator JWT verification.
+- API Client Integration (`src/lib/topBannerApi.js` & `src/lib/admin/adminTopBannerApi.js`):
+  • Added resilient fetching with `suppressErrorLog: true` and safe null handling when banner is inactive or empty.
+
 [2026-09-10] - Admin Discount Coupon Management Dashboard & Stability Bug Fixes
 
 ── Admin Coupon Management Dashboard (`/admin/coupons`) ─────────────────────────────
