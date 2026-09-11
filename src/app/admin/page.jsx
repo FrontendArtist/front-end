@@ -23,7 +23,9 @@ import { authOptions } from '@/lib/auth';
 import { getTotalProductsCount } from '@/lib/admin/adminProductsApi';
 import { getTotalUsersCount } from '@/lib/admin/adminUsersApi';
 import { getOrdersStats } from '@/lib/admin/adminOrdersApi';
+import { getVisitorStats } from '@/lib/admin/adminVisitorApi';
 import StatsCard from '@/components/admin/StatsCard/StatsCard';
+import VisitorAnalyticsSection from '@/components/admin/VisitorAnalytics/VisitorAnalyticsSection';
 import RecentUpdates from '@/components/home/RecentUpdates/RecentUpdates';
 import styles from './page.module.scss';
 
@@ -74,10 +76,11 @@ export default async function AdminDashboardPage() {
     //
     // ترتیب اجرا موازی است، سریع‌تر از await های متوالی.
     // ─────────────────────────────────────────────────────────────────
-    const [productsResult, usersResult, ordersResult] = await Promise.allSettled([
+    const [productsResult, usersResult, ordersResult, visitorStatsResult] = await Promise.allSettled([
         getTotalProductsCount(jwt),
         getTotalUsersCount(jwt),
         getOrdersStats(jwt),
+        getVisitorStats(jwt),
     ]);
 
     // استخراج مقادیر – اگر Promise رد شد یا null برگشت، null نگه می‌داریم
@@ -89,6 +92,9 @@ export default async function AdminDashboardPage() {
 
     const ordersStats =
         ordersResult.status === 'fulfilled' ? ordersResult.value : null;
+
+    const visitorStats =
+        visitorStatsResult.status === 'fulfilled' ? visitorStatsResult.value : null;
 
     const totalOrders = ordersStats?.currentPeriod?.totalOrders ?? ordersStats?.totalOrders ?? null;
     const totalRevenue = ordersStats?.currentPeriod?.totalRevenue ?? ordersStats?.totalRevenue ?? null;
@@ -178,6 +184,9 @@ export default async function AdminDashboardPage() {
                     ))}
                 </div>
             </section>
+
+            {/* ── بخش آمار و ترافیک بازدیدکنندگان سایت ─────────────── */}
+            <VisitorAnalyticsSection initialStats={visitorStats} />
 
             <RecentUpdates />
 

@@ -53,8 +53,8 @@ const NAV_LINKS = [
     { href: '/admin/products', label: 'محصولات', icon: Package },
     { href: '/admin/articles', label: 'مقالات', icon: FileText },
     { href: '/admin/courses', label: 'دوره‌ها', icon: BookOpen },
-    { href: '/admin/comments', label: 'نظرات', icon: MessageSquare },
     { href: '/admin/contact-messages', label: 'پیام ها', icon: Mail },
+    { href: '/admin/comments', label: 'نظرات', icon: MessageSquare },
     { href: '/admin/coupons', label: 'کدهای تخفیف', icon: Ticket },
     { href: '/admin/top-banner', label: 'نوار اعلان بالای سایت', icon: Megaphone },
 ];

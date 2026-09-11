@@ -1,0 +1,468 @@
+@use '../../../styles/base/mixins' as *;
+
+.section {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(246, 217, 130, 0.12);
+
+    &__title_group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    &__title {
+        font-size: var(--font-xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-card-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__online_badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.35);
+        color: #4ade80;
+        font-size: var(--font-xs);
+        font-weight: var(--font-weight-bold);
+        letter-spacing: -0.2px;
+    }
+
+    &__pulse_dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #22c55e;
+        box-shadow: 0 0 10px #22c55e;
+        position: relative;
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            border: 2px solid #22c55e;
+            animation: ripple 1.8s infinite ease-out;
+        }
+    }
+
+    &__actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    &__auto_info {
+        font-size: var(--font-xs);
+        color: rgba(255, 250, 234, 0.5);
+    }
+
+    &__refresh_btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 12px;
+        background: rgba(246, 217, 130, 0.08);
+        border: 1px solid rgba(246, 217, 130, 0.25);
+        color: var(--color-text-primary);
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: all 0.25s ease;
+
+        &:hover:not(:disabled) {
+            background: rgba(246, 217, 130, 0.18);
+            border-color: var(--color-text-primary);
+            transform: translateY(-1px);
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    }
+
+    &__spin {
+        animation: spin 0.8s linear infinite;
+    }
+}
+
+/* ── Grid of Stat Cards ── */
+.cards_grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+
+    @media (max-width: 1024px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 640px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 22px 20px;
+    background: rgba(0, 43, 32, 0.35);
+    border: 1px solid rgba(246, 217, 130, 0.12);
+    border-right: 4px solid var(--card-accent, #F6D982);
+    border-radius: 18px;
+    backdrop-filter: blur(10px);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+        border-color: rgba(246, 217, 130, 0.3);
+    }
+
+    &__icon_wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: var(--card-accent, #F6D982);
+    }
+
+    &__content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    &__label {
+        font-size: var(--font-xs);
+        color: rgba(255, 250, 234, 0.65);
+        margin: 0;
+    }
+
+    &__value_row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    &__value {
+        font-size: 26px;
+        font-weight: 700;
+        line-height: 1.2;
+        margin: 0;
+        color: var(--card-accent, #F6D982);
+    }
+
+    &__unit {
+        font-size: var(--font-xs);
+        color: rgba(255, 250, 234, 0.5);
+    }
+
+    &__sub {
+        font-size: 11px;
+        color: rgba(255, 250, 234, 0.45);
+        margin-top: 2px;
+    }
+}
+
+/* ── Chart & Secondary Analytics Row ── */
+.analytics_details {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+
+    @media (max-width: 1024px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart_card {
+    background: rgba(0, 43, 32, 0.35);
+    border: 1px solid rgba(246, 217, 130, 0.12);
+    border-radius: 20px;
+    padding: 24px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    &__title {
+        font-size: var(--font-md);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-card-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__tabs {
+        display: flex;
+        gap: 6px;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 4px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    &__tab {
+        padding: 4px 12px;
+        font-size: var(--font-xs);
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: rgba(255, 250, 234, 0.6);
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &--active {
+            background: rgba(246, 217, 130, 0.2);
+            color: var(--color-text-primary);
+            font-weight: 600;
+        }
+    }
+
+    &__body {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+        height: 220px;
+        padding-top: 30px;
+        position: relative;
+    }
+}
+
+.chart_bar_item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+    justify-content: flex-end;
+    position: relative;
+
+    &:hover .chart_tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(-8px);
+    }
+
+    &__bar_container {
+        width: 100%;
+        max-width: 36px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 8px 8px 0 0;
+        height: 100%;
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+    }
+
+    &__bar {
+        width: 100%;
+        background: linear-gradient(180deg, #F6D982 0%, #D4AF37 100%);
+        border-radius: 8px 8px 0 0;
+        transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
+
+        &--uniques {
+            background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+        }
+
+        &:hover {
+            filter: brightness(1.2);
+        }
+    }
+
+    &__label_day {
+        font-size: 11px;
+        color: rgba(255, 250, 234, 0.7);
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    &__label_date {
+        font-size: 10px;
+        color: rgba(255, 250, 234, 0.4);
+    }
+}
+
+.chart_tooltip {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    background: #061818;
+    border: 1px solid rgba(246, 217, 130, 0.3);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    color: #FFFAEA;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 10;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+}
+
+/* ── Secondary Widgets ── */
+.widgets_card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: rgba(0, 43, 32, 0.35);
+    border: 1px solid rgba(246, 217, 130, 0.12);
+    border-radius: 20px;
+    padding: 24px;
+    backdrop-filter: blur(10px);
+
+    &__title {
+        font-size: var(--font-md);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-card-text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    &__group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    &__group_header {
+        font-size: var(--font-xs);
+        color: rgba(255, 250, 234, 0.55);
+        font-weight: var(--font-weight-medium);
+        margin: 0;
+    }
+}
+
+.device_item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    &__row {
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--font-xs);
+        color: rgba(255, 250, 234, 0.85);
+    }
+
+    &__bar_bg {
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+    }
+
+    &__bar_fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+}
+
+.pages_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.page_item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: var(--font-xs);
+
+    &__path {
+        color: var(--color-text-primary);
+        direction: ltr;
+        text-align: right;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 180px;
+    }
+
+    &__badge {
+        font-size: 11px;
+        color: rgba(255, 250, 234, 0.6);
+        background: rgba(255, 255, 255, 0.06);
+        padding: 2px 8px;
+        border-radius: 6px;
+        white-space: nowrap;
+    }
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.9;
+    }
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

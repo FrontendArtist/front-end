@@ -11,6 +11,7 @@ import { Providers } from "./providers";
 import Script from 'next/script';
 import localFont from 'next/font/local';
 import CartSyncProvider from "@/components/providers/CartSyncProvider";
+import VisitorTracker from "@/components/common/VisitorTracker/VisitorTracker";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 
 const iranSans = localFont({
@@ -118,6 +119,7 @@ export default function RootLayout({ children }) {
       <body className={`${iranSans.variable} ${shafigh.variable} ${lalezar.variable}`}>
         <Providers>
           <CartSyncProvider />
+          <VisitorTracker />
           <Navbar />
           {children}
           <Footer />

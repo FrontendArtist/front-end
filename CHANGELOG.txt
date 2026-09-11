@@ -1,3 +1,26 @@
+[2026-09-11] - Real-Time Website Visitor Analytics & Live Online Users: Admin Dashboard & Tracking
+
+── Live Online Users Counter & Client Heartbeat ─────────────────────────────
+- Client Tracking Component (`src/components/common/VisitorTracker/VisitorTracker.jsx`):
+  • Built ultra-lightweight client tracker mounted globally in `src/app/layout.js`.
+  • Automatically tracks pageviews across public routes while strictly bypassing admin routes (`/admin/*`) to prevent metric skew.
+  • Integrated 60-second background heartbeat ping with visibility detection (`document.hidden`) to accurately identify online visitors.
+  • Uses non-blocking `fetch(..., { keepalive: true })` with anonymous browser UUID persistence in `localStorage`.
+- Next.js Proxy Route (`src/app/api/analytics/track/route.js`):
+  • Proxies client tracking events and heartbeats to Strapi backend with client IP forwarding.
+
+── Admin Visitor Analytics Section (`/admin`) ───────────────────────────────
+- Analytics Dashboard Component (`src/components/admin/VisitorAnalytics/VisitorAnalyticsSection.jsx` & `.module.scss`):
+  • Built luxury glassmorphism analytics panel integrated into main admin dashboard (`src/app/admin/page.jsx`).
+  • Added Live Online Users badge with animated neon-green pulsing indicator (`@keyframes ripple`) and 30-second background auto-refresh.
+  • Integrated instant manual refresh button with spinning state animation.
+  • Implemented 6 KPI stat cards: Live Online Users (active within 3 minutes), Today's Visits (pageviews + unique visitors), Weekly Visits (7-day total), Monthly Visits (30-day total), Yearly Visits (365-day total), and All-Time total.
+  • Built custom interactive 7-day SVG/CSS traffic trend chart with Persian dates/weekdays, hover tooltip (pageviews + unique visitors), and toggle view.
+  • Added device breakdown progress bars (Mobile, Desktop, Tablet) and top visited pages list (last 30 days).
+- Admin API Integration (`src/lib/admin/adminVisitorApi.js` & `src/app/api/admin/visitor-stats/route.js`):
+  • Server Component data fetching via `Promise.allSettled` in `src/app/admin/page.jsx` with graceful fallback.
+  • Secure client-side refresh endpoint with NextAuth Administrator role verification.
+
 [2026-09-11] - Top Announcement & Discount Bar: Public Banner, HTML/Style Support & Admin Dashboard
 
 ── Top Announcement Bar Component & Public UI ──────────────────────────────────
