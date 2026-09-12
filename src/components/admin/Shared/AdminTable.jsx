@@ -9,19 +9,27 @@ export function AdminToolbar({ children }) {
     return <div className={styles.toolbar}>{children}</div>;
 }
 
-export function AdminTable({ headers, children }) {
+export function AdminTable({ headers = [], children }) {
+    const hasHeaders = Array.isArray(headers) && headers.length > 0;
+
     return (
         <table className={styles.table}>
-            <thead>
-                <tr>
-                    {headers.map((header, index) => (
-                        <th key={index}>{header}</th>
-                    ))}
-                </tr>
-            </thead>
-            <tbody>
-                {children}
-            </tbody>
+            {hasHeaders && (
+                <thead>
+                    <tr>
+                        {headers.map((header, index) => (
+                            <th key={index}>{header}</th>
+                        ))}
+                    </tr>
+                </thead>
+            )}
+            {hasHeaders ? (
+                <tbody>
+                    {children}
+                </tbody>
+            ) : (
+                children
+            )}
         </table>
     );
 }

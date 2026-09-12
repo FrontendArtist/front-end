@@ -1,0 +1,54 @@
+export async function toggleCouponStatus(documentId, isActive) {
+    const res = await fetch(`/api/admin/coupons/${documentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'خطا در تغییر وضعیت کد تخفیف');
+    return data;
+}
+
+export async function deleteCoupon(documentId) {
+    const res = await fetch(`/api/admin/coupons/${documentId}`, {
+        method: 'DELETE',
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'خطا در حذف کد تخفیف');
+    return data;
+}
+
+export async function createCoupon(payload) {
+    const res = await fetch('/api/admin/coupons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'خطا در ایجاد کد تخفیف');
+    return data;
+}
+
+export async function updateCoupon(documentId, payload) {
+    const res = await fetch(`/api/admin/coupons/${documentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'خطا در بروزرسانی کد تخفیف');
+    return data;
+}
+
+export async function fetchAdminCoupons({ start, limit = 20, page, pageSize } = {}) {
+    const params = new URLSearchParams();
+    if (start !== undefined) params.set('start', String(start));
+    if (limit !== undefined) params.set('limit', String(limit));
+    if (page !== undefined && start === undefined) params.set('page', String(page));
+    if (pageSize !== undefined && limit === undefined) params.set('pageSize', String(pageSize));
+
+    const res = await fetch(`/api/admin/coupons?${params.toString()}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'خطا در دریافت کدهای تخفیف');
+    return data; // { coupons, meta }
+}

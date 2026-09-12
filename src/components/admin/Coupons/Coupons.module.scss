@@ -1,0 +1,532 @@
+@use '../../../styles/base/mixins' as *;
+
+// ── Stats Row ─────────────────────────────────────────────────────────────
+.statsRow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    @include respond(xl) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include respond(sm) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.statCard {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+}
+
+.statIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+
+    &.primary {
+        background: rgba(255, 209, 102, 0.15);
+        color: #ffd166;
+    }
+
+    &.success {
+        background: rgba(34, 197, 94, 0.15);
+        color: #4ade80;
+    }
+
+    &.danger {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+    }
+
+    &.info {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+    }
+}
+
+.statInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.statTitle {
+    font-size: var(--font-xs, 0.8rem);
+    color: var(--color-card-text, #94a3b8);
+}
+
+.statValue {
+    font-size: var(--font-xl, 1.35rem);
+    font-weight: 700;
+    color: var(--color-text-primary, #ffffff);
+    font-family: inherit;
+}
+
+// ── Quick Filter Tabs ──────────────────────────────────────────────────────
+.filterTabs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+}
+
+.filterTab {
+    padding: 0.45rem 0.9rem;
+    border-radius: 8px;
+    font-size: var(--font-xs, 0.8rem);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+    }
+
+    &.active {
+        background: rgba(255, 209, 102, 0.15);
+        border-color: rgba(255, 209, 102, 0.5);
+        color: #ffd166;
+    }
+}
+
+// ── Code Chip in Table ──────────────────────────────────────────────────────
+.codeChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 209, 102, 0.08);
+    border: 1px solid rgba(255, 209, 102, 0.25);
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #ffd166;
+    letter-spacing: 0.5px;
+}
+
+.copyBtn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: rgba(255, 209, 102, 0.6);
+    display: flex;
+    align-items: center;
+    transition: color 0.15s ease;
+
+    &:hover {
+        color: #ffd166;
+    }
+}
+
+// ── Progress Bar ───────────────────────────────────────────────────────────
+.usageProgressWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 100px;
+}
+
+.usageText {
+    font-size: 0.75rem;
+    color: var(--color-card-text, #94a3b8);
+}
+
+.progressBarBg {
+    width: 100%;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progressBarFill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+
+    &.normal {
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    }
+
+    &.warning {
+        background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    }
+
+    &.full {
+        background: linear-gradient(90deg, #ef4444, #f87171);
+    }
+}
+
+// ── Toggle Switch ──────────────────────────────────────────────────────────
+.toggleSwitch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 22px;
+}
+
+.toggleSwitch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.15);
+    transition: .3s;
+    border-radius: 22px;
+
+    &:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+}
+
+input:checked + .slider {
+    background-color: #22c55e;
+}
+
+input:checked + .slider:before {
+    transform: translateX(16px);
+}
+
+// ── Target Tag Badges ──────────────────────────────────────────────────────
+.targetBadgeGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.targetTag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+
+    &.all {
+        background: rgba(168, 85, 247, 0.15);
+        border-color: rgba(168, 85, 247, 0.3);
+        color: #d8b4fe;
+    }
+}
+
+// ── Action Buttons ─────────────────────────────────────────────────────────
+.actionBtnGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.iconBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+    }
+
+    &.delete:hover {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: rgba(239, 68, 68, 0.4);
+        color: #f87171;
+    }
+
+    &.edit:hover {
+        background: rgba(59, 130, 246, 0.2);
+        border-color: rgba(59, 130, 246, 0.4);
+        color: #60a5fa;
+    }
+}
+
+// ── Form Styles ────────────────────────────────────────────────────────────
+.formCard {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    border-radius: 14px;
+    padding: 1.75rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+
+    @include respond(md) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.fullWidth {
+    grid-column: 1 / -1;
+}
+
+.fieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.label {
+    font-size: var(--font-xs, 0.825rem);
+    font-weight: 600;
+    color: var(--color-text-primary, #ffffff);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.subLabel {
+    font-size: 0.725rem;
+    color: var(--color-card-text, #94a3b8);
+    font-weight: 400;
+}
+
+.input, .select, .textarea {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 0.65rem 0.9rem;
+    font-size: var(--font-sm, 0.875rem);
+    color: #fff;
+    font-family: inherit;
+    transition: all 0.2s ease;
+
+    &:focus {
+        outline: none;
+        border-color: rgba(255, 209, 102, 0.6);
+        background: rgba(255, 255, 255, 0.07);
+        box-shadow: 0 0 10px rgba(255, 209, 102, 0.15);
+    }
+
+    &::placeholder {
+        color: rgba(255, 255, 255, 0.35);
+    }
+}
+
+.inputLtr {
+    direction: ltr;
+    text-align: right;
+}
+
+.inputUpper {
+    text-transform: uppercase;
+}
+
+.inputWithAction {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.quickBtn {
+    padding: 0 0.9rem;
+    background: rgba(255, 209, 102, 0.15);
+    border: 1px solid rgba(255, 209, 102, 0.3);
+    color: #ffd166;
+    font-size: 0.775rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba(255, 209, 102, 0.25);
+    }
+}
+
+// ── Checkbox & Radio Card ──────────────────────────────────────────────────
+.checkboxCard {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #ffd166;
+        cursor: pointer;
+    }
+}
+
+.checkboxText {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+
+    strong {
+        font-size: 0.825rem;
+        color: #fff;
+    }
+
+    span {
+        font-size: 0.725rem;
+        color: var(--color-card-text, #94a3b8);
+    }
+}
+
+// ── Multi-select Picker Dropdown ───────────────────────────────────────────
+.pickerContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0.75rem;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.pickerItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.07);
+    }
+
+    &.selected {
+        background: rgba(255, 209, 102, 0.12);
+        border-color: rgba(255, 209, 102, 0.35);
+    }
+}
+
+.pickerItemTitle {
+    font-size: 0.8rem;
+    color: #fff;
+}
+
+.pickerItemPrice {
+    font-size: 0.725rem;
+    color: #ffd166;
+}
+
+// ── Form Actions ───────────────────────────────────────────────────────────
+.formActions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.submitButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.75rem;
+    background: linear-gradient(135deg, #ffd166, #f59e0b);
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 0.875rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.cancelButton {
+    padding: 0.7rem 1.25rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+    }
+}

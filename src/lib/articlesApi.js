@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from './apiClient';
+import { API_BASE_URL } from './api';
 import { formatStrapiArticles, formatStrapiCourses, formatStrapiProducts } from './strapiUtils';
 import { withErrorHandling } from './apiErrorHandler';
 import { ARTICLES_PAGE_SIZE } from './constants';
@@ -23,16 +24,29 @@ export async function getArticleCategories() {
 
       const categories = categoriesRaw.map((item) => {
         const data = item.attributes || item;
+        const rawImg = data.image?.data?.attributes || data.image || null;
 
-        const imageSource = data.image?.data?.attributes || data.image || null;
-        const imageUrl = imageSource?.url || null;
+        let imageUrl = null;
+        if (typeof rawImg === 'string' && rawImg.trim()) {
+          const trimmed = rawImg.trim();
+          imageUrl = (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/images/'))
+            ? trimmed
+            : `${API_BASE_URL}${trimmed.startsWith('/') ? trimmed : `/${trimmed}`}`;
+        } else if (rawImg && typeof rawImg === 'object') {
+          const rawUrl = rawImg.url || rawImg.formats?.small?.url || rawImg.formats?.thumbnail?.url || null;
+          if (rawUrl) {
+            imageUrl = (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('/images/'))
+              ? rawUrl
+              : `${API_BASE_URL}${rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`}`;
+          }
+        }
 
         return {
           id: item.id,
           name: data.name ?? '',
           slug: data.slug ?? '',
           description: data.description ?? '',
-          image: imageUrl
+          image: imageUrl || '/images/placeholder.png'
         };
       });
 

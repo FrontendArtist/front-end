@@ -1,14 +1,16 @@
 import { getCategoryTree } from '@/lib/categoriesApi';
 import { getArticleCategories } from '@/lib/articlesApi';
+import { getTopBanner } from '@/lib/topBannerApi';
 import NavbarClient from './NavbarClient';
 import { unstable_noStore as noStore } from 'next/cache';
 
 export const revalidate = 300;
 
 const Navbar = async () => {
-  const [productCategories, articleCategories] = await Promise.all([
+  const [productCategories, articleCategories, topBanner] = await Promise.all([
     getCategoryTree(),
-    getArticleCategories()
+    getArticleCategories(),
+    getTopBanner(),
   ]);
 
   if ((productCategories && productCategories.error === 'BACKEND_UNAVAILABLE') ||
@@ -19,11 +21,13 @@ const Navbar = async () => {
   // Snapshot کاملاً سریالایز شده برای جلوگیری از mismatch
   const categoriesSnapshot = JSON.stringify(productCategories ?? []);
   const articleCategoriesSnapshot = JSON.stringify(articleCategories ?? []);
+  const topBannerSnapshot = JSON.stringify(topBanner ?? null);
 
   return (
     <NavbarClient
       categoriesSnapshot={categoriesSnapshot}
       articleCategoriesSnapshot={articleCategoriesSnapshot}
+      topBannerSnapshot={topBannerSnapshot}
     />
   );
 };

@@ -27,16 +27,18 @@ export default function CategoryFilter({
 
   const resolveImage = category => {
     const source = category?.image || category?.icon || category?.thumbnail;
-    const url = source?.url || source?.src || FALLBACK_IMAGE;
-    const alt =
-      source?.alt ||
-      source?.alternativeText ||
-      category?.name ||
-      category?.title ||
-      'دسته‌بندی';
+    let url = FALLBACK_IMAGE;
+    let alt = category?.name || category?.title || 'دسته‌بندی';
+
+    if (typeof source === 'string' && source.trim()) {
+      url = source;
+    } else if (source && typeof source === 'object') {
+      url = source.url || source.src || source.data?.attributes?.url || FALLBACK_IMAGE;
+      alt = source.alt || source.alternativeText || alt;
+    }
 
     return {
-      url,
+      url: url || FALLBACK_IMAGE,
       alt,
       unoptimized: Boolean(url?.includes?.('picsum.photos'))
     };

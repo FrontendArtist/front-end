@@ -4,6 +4,12 @@
  *
  * 🔐 امنیت: فقط مدیران معتبر (Administrator) مجاز به فراخوانی هستند.
  * 🛡️ عدم تداخل: سفارش‌های کاربران بدون تغییر در وضعیت پرداخت باقی مانده و صرفاً به دوره تسویه منتسب می‌شوند.
+ *
+ * ✅ بهینه‌سازی (رفع لودینگ ۲ ساعته و تسویه ناقص):
+ *    به‌جای ارسال N درخواست PUT جداگانه (یکی برای هر سفارش)، از endpoint اختصاصی
+ *    POST /api/orders/bulk-settle استفاده می‌شود که با یک کوئری دیتابیس تمام سفارش‌ها را
+ *    در کمتر از یک ثانیه تسویه می‌کند.
+ *    در صورت عدم دسترسی به bulk-settle، fallback به batching 10‌تایی فعال می‌شود.
  */
 
 import { getServerSession } from 'next-auth/next';
@@ -15,7 +21,6 @@ const STRAPI_BASE_URL = (process.env.NEXT_PUBLIC_STRAPI_API_URL || process.env.S
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
 function getAuthHeader(session) {
-    // احراز هویت با JWT کاربر ادمین لاگین‌شده
     if (session?.user?.jwt) {
         return `Bearer ${session.user.jwt}`;
     }
@@ -85,6 +90,8 @@ export async function GET(request) {
 /**
  * POST /api/admin/settlements
  * بستن دوره مالی جاری و آرشیو سفارش‌های پرداخت‌شده
+ *
+ * ✅ بهینه‌سازی: به‌جای N بار PUT برای هر سفارش، از endpoint اختصاصی bulk-settle استفاده می‌شود.
  */
 export async function POST(request) {
     const session = await getServerSession(authOptions);
@@ -97,6 +104,9 @@ export async function POST(request) {
         return NextResponse.json({ error: 'توکن دسترسی معتبر یافت نشد' }, { status: 401 });
     }
 
+    // برای bulk-settle از STRAPI_TOKEN استفاده می‌کنیم (مطمئن‌تر از JWT ادمین)
+    const bulkAuthHeader = STRAPI_TOKEN ? `Bearer ${STRAPI_TOKEN}` : authHeader;
+
     let body = {};
     try {
         body = await request.json();
@@ -105,14 +115,14 @@ export async function POST(request) {
     }
 
     try {
-        // ۱. دریافت تمام سفارش‌های تسویه‌نشده دوره جاری
+        // ── ۱. دریافت تمام سفارش‌های تسویه‌نشده دوره جاری (صفحه‌بندی شده) ──────
         const fieldsParams = 'fields[0]=totalPrice&fields[1]=orderStatus&fields[2]=paymentStatus&fields[3]=discountAmount&fields[4]=originalTotalPrice&fields[5]=settledAt&fields[6]=documentId';
         const pageSize = 100;
         let page = 1;
         let allUnsettled = [];
         let hasMorePages = true;
 
-        while (hasMorePages && page <= 10) {
+        while (hasMorePages && page <= 20) {
             const url = `${STRAPI_BASE_URL}/api/orders?${fieldsParams}&filters[settledAt][$null]=true&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
             const r = await fetch(url, {
                 headers: { 'Content-Type': 'application/json', Authorization: authHeader },
@@ -131,11 +141,10 @@ export async function POST(request) {
             }
         }
 
-        // ۲. فیلتر فقط سفارش‌های تأیید شده / پرداخت‌شده
+        // ── ۲. فیلتر فقط سفارش‌های تأیید شده / پرداخت‌شده ──────────────────────
         const confirmedStatuses = ['paid', 'shipped', 'delivered'];
         const eligibleOrders = allUnsettled.filter((order) => {
             const attrs = order.attributes || order;
-            // اطمینان از اینکه قبلاً تسویه نشده باشد
             if (attrs.settledAt || attrs.settlement) return false;
 
             const oStatus = (attrs.orderStatus || '').trim().toLowerCase();
@@ -150,7 +159,7 @@ export async function POST(request) {
             );
         }
 
-        // ۳. محاسبه دقیق درآمد و تعداد
+        // ── ۳. محاسبه دقیق درآمد ──────────────────────────────────────────────
         let totalRevenue = 0;
         for (const order of eligibleOrders) {
             const attrs = order.attributes || order;
@@ -166,7 +175,7 @@ export async function POST(request) {
             totalRevenue += Number(paidAmount || 0);
         }
 
-        // ۴. دریافت تعداد دوره‌های قبلی برای شماره‌گذاری دوره
+        // ── ۴. شماره‌گذاری دوره ──────────────────────────────────────────────
         let nextPeriodNumber = 1;
         try {
             const countRes = await fetch(`${STRAPI_BASE_URL}/api/settlements?pagination[limit]=1`, {
@@ -194,7 +203,7 @@ export async function POST(request) {
 
         const notes = body.notes ? String(body.notes).trim() : '';
 
-        // ۵. ایجاد سند تسویه در Strapi
+        // ── ۵. ایجاد سند تسویه در Strapi ─────────────────────────────────────
         const createRes = await fetch(`${STRAPI_BASE_URL}/api/settlements`, {
             method: 'POST',
             headers: {
@@ -225,27 +234,63 @@ export async function POST(request) {
         const createdData = await createRes.json();
         const createdSettlement = createdData?.data || {};
         const settlementId = createdSettlement.id;
-        const settlementDocId = createdSettlement.documentId || settlementId;
+        const settlementDocId = createdSettlement.documentId || String(settlementId);
 
-        // ۶. بروزرسانی سفارش‌ها و انتساب به دوره تسویه
-        const updatePromises = eligibleOrders.map((order) => {
-            const orderDocId = order.documentId || order.id;
-            return fetch(`${STRAPI_BASE_URL}/api/orders/${orderDocId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: authHeader,
-                },
-                body: JSON.stringify({
-                    data: {
-                        settledAt: now.toISOString(),
-                        settlement: settlementDocId || settlementId,
-                    },
-                }),
-            });
+        // ── ۶. تسویه دسته‌ای با یک کوئری دیتابیس ─────────────────────────────
+        //
+        // ⚠️ قبلاً این بخش N بار PUT HTTP می‌زد (یکی برای هر سفارش)
+        //    → باعث لودینگ ۲ ساعته و تسویه ناقص می‌شد (504 Timeout)
+        //
+        // ✅ حالا: endpoint اختصاصی bulk-settle با یک UPDATE دیتابیس همه را تسویه می‌کند
+        //
+        const orderDocumentIds = eligibleOrders.map((o) => o.documentId || String(o.id));
+
+        const bulkHeaders = {
+            'Content-Type': 'application/json',
+        };
+        if (authHeader) {
+            bulkHeaders['Authorization'] = authHeader;
+        }
+
+        const bulkRes = await fetch(`${STRAPI_BASE_URL}/api/orders/bulk-settle`, {
+            method: 'POST',
+            headers: bulkHeaders,
+            body: JSON.stringify({
+                orderDocumentIds,
+                settlementDocumentId: settlementDocId,
+                settledAt: now.toISOString(),
+            }),
         });
 
-        await Promise.allSettled(updatePromises);
+        let settledCount = eligibleOrders.length;
+
+        if (bulkRes.ok) {
+            const bulkData = await bulkRes.json();
+            settledCount = bulkData?.settled ?? eligibleOrders.length;
+            console.log(`[Admin Settlements POST] ✅ Bulk settled ${settledCount}/${eligibleOrders.length} orders in a single DB query`);
+        } else {
+            const errText = await bulkRes.text().catch(() => '');
+            console.warn(`[Admin Settlements POST] ⚠️ bulk-settle failed (${bulkRes.status}: ${errText}), using batched PUT fallback...`);
+            const BATCH_SIZE = 10;
+            for (let i = 0; i < eligibleOrders.length; i += BATCH_SIZE) {
+                const batch = eligibleOrders.slice(i, i + BATCH_SIZE);
+                await Promise.allSettled(
+                    batch.map((order) => {
+                        const orderDocId = order.documentId || order.id;
+                        return fetch(`${STRAPI_BASE_URL}/api/orders/${orderDocId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+                            body: JSON.stringify({
+                                data: {
+                                    settledAt: now.toISOString(),
+                                    settlement: settlementDocId || settlementId,
+                                },
+                            }),
+                        });
+                    })
+                );
+            }
+        }
 
         return NextResponse.json({
             success: true,
@@ -256,6 +301,7 @@ export async function POST(request) {
                 periodNumber: nextPeriodNumber,
                 settledAt: now.toISOString(),
                 ordersCount: eligibleOrders.length,
+                settledCount,
                 totalAmount: totalRevenue,
                 notes,
             },

@@ -61,7 +61,7 @@ export default async function AdminOrdersPage() {
                         transition: 'opacity 0.2s',
                     }}
                 >
-                    ➕ ثبت دستی سفارش و دوره
+                    ➕ ثبت دستی 
                 </Link>
             </header>
 

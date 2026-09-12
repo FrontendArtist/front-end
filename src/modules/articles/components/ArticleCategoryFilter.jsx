@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import styles from './ArticleCategoryFilter.module.scss';
 import BaseSlider from '@/components/layout/BaseSlider/BaseSlider';
+import { API_BASE_URL } from '@/lib/api';
 
 const FALLBACK_IMAGE = '/images/placeholder.png';
 
@@ -23,11 +24,27 @@ export default function ArticleCategoryFilter({ categories = [], activeSlug = ''
 
   const resolveImage = (category) => {
     const source = category?.image || category?.icon || category?.thumbnail;
-    const url = source?.url || source?.src || FALLBACK_IMAGE;
-    const alt = source?.alt || source?.alternativeText || category?.name || 'دسته‌بندی مقاله';
+    let url = FALLBACK_IMAGE;
+    let alt = category?.name || 'دسته‌بندی مقاله';
+
+    if (typeof source === 'string' && source.trim()) {
+      url = source.trim();
+    } else if (source && typeof source === 'object') {
+      url = source.url || source.src || source.data?.attributes?.url || FALLBACK_IMAGE;
+      alt = source.alt || source.alternativeText || alt;
+    }
+
+    if (url === '/images/forempties2.png' || !url) {
+      url = FALLBACK_IMAGE;
+    }
+
+    if (url && url !== FALLBACK_IMAGE && !url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/images/')) {
+      const cleanPath = url.startsWith('/') ? url : `/${url}`;
+      url = `${API_BASE_URL}${cleanPath}`;
+    }
 
     return {
-      url,
+      url: url || FALLBACK_IMAGE,
       alt,
       unoptimized: Boolean(url?.includes?.('picsum.photos'))
     };
