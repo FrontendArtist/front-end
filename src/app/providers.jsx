@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 import { SessionProvider, useSession } from "next-auth/react";
 import { useCartStore } from '@/store/useCartStore';
+import { syncByeMoneyUser } from '@/lib/byeMoneySync';
 
 /**
  * همگام‌ساز سبد خرید با نشست کاربر جهت جلوگیری از Session Fixation و نشت داده
@@ -21,6 +22,21 @@ function CartSessionSync() {
       useCartStore.getState().setCartUser(session.user.id);
     }
   }, [session?.user?.id, status]);
+
+  return null;
+}
+
+/**
+ * همگام‌ساز پس‌زمینه کاربر با سرویس ByeMoney پس از ورود یا در بارگذاری اولیه با نشست معتبر
+ */
+function ByeMoneySessionSync() {
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.jwt) {
+      syncByeMoneyUser(session.user.jwt);
+    }
+  }, [session?.user?.jwt, status]);
 
   return null;
 }
@@ -46,7 +62,9 @@ export function Providers({ children }) {
   return (
     <SessionProvider basePath="/api/auth" refetchOnWindowFocus={false}>
       <CartSessionSync />
+      <ByeMoneySessionSync />
       {children}
     </SessionProvider>
   );
-}
+}
+
