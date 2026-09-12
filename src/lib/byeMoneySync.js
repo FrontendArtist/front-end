@@ -8,7 +8,7 @@
 const rawBaseUrl =
   process.env.NEXT_PUBLIC_BYEMONEY_API_URL ||
   process.env.NEXT_PUBLIC_BYEMONEY_URL ||
-  'http://localhost:4000';
+  'http://localhost:5000';
 
 export const BYEMONEY_API_URL = rawBaseUrl
   .trim()
