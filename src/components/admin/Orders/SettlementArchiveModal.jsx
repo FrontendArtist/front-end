@@ -87,7 +87,7 @@ export default function SettlementArchiveModal({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Folder size={22} style={{ color: 'var(--color-title-hover)' }} />
                         <h3 className={styles.modal__title}>
-                            بایگانی دوره‌های تسویه با فروشندگان
+                            بایگانی سغارش ها
                         </h3>
                     </div>
                     <button
@@ -100,8 +100,7 @@ export default function SettlementArchiveModal({
                 </div>
 
                 <p style={{ fontSize: '0.85rem', color: 'var(--color-card-text)', margin: 0 }}>
-                    لیست دوره‌های مالی بسته‌شده و آرشیو سفارش‌های مربوط به هر دوره. با انتخاب هر پوشه، می‌توانید فاکتورهای آن دوره را مشاهده فرمایید.
-                </p>
+                    لیست دوره‌های مالی بسته‌شده و آرشیو سفارش‌های مربوط به هر دوره.                 </p>
 
                 {/* ── بدنه و لیست پوشه‌ها ───────────────────────── */}
                 <div style={{ maxHeight: '55vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingLeft: '4px' }}>
@@ -205,7 +204,7 @@ export default function SettlementArchiveModal({
 
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <CreditCard size={15} style={{ color: 'var(--color-success)' }} />
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--color-card-text)' }}>مبلغ تسویه‌شده:</span>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--color-card-text)' }}>میزان درآمد:</span>
                                             <strong style={{ fontSize: '0.85rem', color: 'var(--color-success)' }}>
                                                 {formatAmount(s.totalAmount)}
                                             </strong>

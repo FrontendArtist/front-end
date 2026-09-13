@@ -15,7 +15,7 @@
   border: 1px solid color-mix(in srgb, var(--color-primary, #F6D982) 18%, transparent);
   border-radius: 16px;
   box-shadow: 0 8px 32px color-mix(in srgb, var(--color-black) 25%, transparent);
-
+  overflow: hidden;
   @include respond(md) {
     margin-top: 36px;
     margin-bottom: 36px;
