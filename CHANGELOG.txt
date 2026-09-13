@@ -1,3 +1,18 @@
+[2026-09-13] - Custom React Video Player: Component-Based Architecture & Modular Controls
+
+── Custom React Video Player Architecture ───────────────────────────────────────
+- Custom Video Player Component (`src/modules/courses/VideoJSPlayer.jsx` & `.module.scss`):
+  • Replaced imperative Video.js global DOM overrides with a clean, fully-modular React Custom Video Player.
+  • Implemented modern Two-Row Control Bar:
+    - Top Row: Formatted current time & duration (`00:00 / 00:00`) on the left, right-aligned controls for 10s backward, play/pause, 10s forward, and fullscreen toggle.
+    - Bottom Row: Smooth seekable progress bar with buffer/played status and permanently open horizontal volume slider with mute toggle.
+  • Added center play button overlay when paused and click/double-click gesture triggers.
+  • Added comprehensive keyboard shortcuts (Space/K for play-pause, ArrowLeft/ArrowRight for 10s skip, M for mute, F for fullscreen).
+  • Preserved DRM & anti-download measures (`controlsList="nodownload"`, right-click blocker, save shortcuts blocker).
+  • Preserved automatic user progress persistence and restoration via `localStorage`.
+- Style Isolation & Cleanup (`src/modules/courses/CourseContentManager.module.scss`):
+  • Removed legacy `:global(.video-js)` CSS rules and complex grid overrides, eliminating style coupling.
+
 [2026-09-11] - Real-Time Website Visitor Analytics & Live Online Users: Admin Dashboard & Tracking
 
 ── Live Online Users Counter & Client Heartbeat ─────────────────────────────

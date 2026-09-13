@@ -62,7 +62,7 @@
 
   .videoContainer {
     position: relative;
-    width: 100%;
+
     aspect-ratio: 16 / 9;
     max-height: 540px;
     background-color: #000000;
@@ -72,6 +72,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+        width: auto;
+    margin: 20px;
 
     @include respond(md) {
       max-height: 400px;
@@ -287,139 +289,6 @@
   .plyr__control {
     padding: 2px !important;
   }
-  /* Video.js custom styling overrides */
-  :global(.video-js) {
-    --vjs-theme-color: var(--color-primary, #F6D982);
-
-    :global(.vjs-control-bar) {
-      background: rgba(0, 43, 32, 0.85) !important;
-      backdrop-filter: blur(8px);
-      border-radius: 0 0 16px 16px;
-    }
-
-    :global(.vjs-play-progress) {
-      background-color: var(--color-primary, #F6D982) !important;
-    }
-
-    :global(.vjs-slider) {
-      background-color: color-mix(in srgb, var(--color-white) 20%, transparent);
-    }
-
-    :global(.vjs-button) {
-      outline: none !important;
-      -webkit-tap-highlight-color: transparent;
-
-      &:focus,
-      &:focus-visible {
-        outline: none !important;
-        color: color-mix(in srgb, var(--color-white) 70%, transparent) !important;
-        background: transparent !important;
-      }
-
-      &:active {
-        color: var(--color-primary, #F6D982) !important;
-        transform: scale(0.92);
-      }
-    }
-
-    @media (hover: hover) and (pointer: fine) {
-      :global(.vjs-button:hover) {
-        color: var(--color-primary, #F6D982) !important;
-      }
-    }
-
-    :global(.vjs-skip-backward-10),
-    :global(.vjs-skip-forward-10) {
-      cursor: pointer;
-      display: inline-flex !important;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s ease;
-      -webkit-tap-highlight-color: transparent;
-
-      :global(.vjs-icon-placeholder::before) {
-        content: '' !important;
-        display: none !important;
-      }
-
-      svg {
-        width: 20px;
-        height: 20px;
-        fill: currentColor;
-        display: block;
-        margin: auto;
-      }
-
-      &:focus,
-      &:focus-visible {
-        outline: none !important;
-        color: color-mix(in srgb, var(--color-white) 70%, transparent) !important;
-      }
-
-      @media (hover: hover) and (pointer: fine) {
-        &:hover {
-          color: var(--color-primary, #F6D982) !important;
-          transform: scale(1.12);
-        }
-      }
-
-      &:active {
-        color: var(--color-primary, #F6D982) !important;
-        transform: scale(0.92) !important;
-      }
-    }
-
-    /* نمایش همیشگی زمان باقی‌مانده و کنترل‌های زمان حتی در سایزهای کوچک و موبایل */
-    :global(.vjs-remaining-time),
-    :global(.vjs-time-control) {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      direction: ltr !important;
-      unicode-bidi: embed !important;
-      font-variant-numeric: tabular-nums;
-      padding: 0 8px !important;
-      min-width: auto !important;
-      font-size: 12px !important;
-      white-space: nowrap !important;
-      color: color-mix(in srgb, var(--color-white) 90%, transparent) !important;
-    }
-
-    /* لغو قانون پیش‌فرض Video.js که در حالت‌های کوچک (small, x-small, tiny) تایمر را display: none می‌کرد */
-    &[class*="vjs-layout-small"],
-    &[class*="vjs-layout-x-small"],
-    &[class*="vjs-layout-tiny"] {
-      :global(.vjs-remaining-time),
-      :global(.vjs-time-control) {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-      }
-    }
-
-    @include respond(md) {
-      :global(.vjs-volume-panel),
-      :global(.vjs-mute-control),
-      :global(.vjs-volume-control) {
-        display: none !important;
-      }
-
-      :global(.vjs-remaining-time),
-      :global(.vjs-time-control) {
-        display: flex !important;
-        padding: 0 4px !important;
-        font-size: 11px !important;
-      }
-
-      :global(.vjs-control) {
-        width: 3.2em;
-      }
-
-      :global(.vjs-remaining-time) {
-        width: auto !important;
-      }
-    }
-  }
 }
 
 .mediaToggle {
@@ -459,7 +328,7 @@
    ----------------------------------------------------------------------------- */
 .curriculumSection {
   margin: 0 auto;
-  padding: 0 16px 24px 16px;
+  padding: 16px 16px 24px 16px;
 }
 
 .sectionTitle {
