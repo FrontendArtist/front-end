@@ -11,7 +11,7 @@ import React, { useEffect, useRef } from 'react';
  * @param {string} props.courseId - شناسه دوره (برای ذخیره پیشرفت)
  * @param {string} props.lessonId - شناسه جلسه (برای ذخیره پیشرفت)
  */
-export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
+export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autoplay = false }) {
   const audioRef = useRef(null);
   const playerRef = useRef(null);
 
@@ -207,6 +207,13 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
       });
       player.on('ready', () => {
         restoreProgress();
+        // پخش خودکار در صورت فعال بودن autoplay
+        // کلیک کاربر روی جلسه = user gesture کافی برای اجازه autoplay مرورگر
+        if (autoplay) {
+          player.play().catch(() => {
+            // برخی مرورگرها autoplay را block می‌کنند - بی‌صدا بگذریم
+          });
+        }
       });
 
       // بررسی وضعیت در صورتی که مدیا قبلاً لود شده باشد

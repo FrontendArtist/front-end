@@ -68,6 +68,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const [wasUnauthenticated, setWasUnauthenticated] = useState(false);
   const listRef = useRef(null);
   const playerSectionRef = useRef(null);
+  const mediaToggleRef = useRef(null);
 
   // بررسی رایگان بودن کل دوره
   const isFreeCourse = course.price?.toman === 0 || course.price === 0;
@@ -216,19 +217,27 @@ export default function CourseContentManager({ course, styles: propStyles }) {
     setActiveLesson(lesson);
     setPlayMode(nextMode);
 
-    // رفتار هوشمند اسکرول (توصیه UX):
-    // اگر جلسه ویدیویی است -> اسکرول نرم به بالای پلیر تا ویدیو در کادر دید کاربر قرار گیرد
-    // اگر جلسه صوتی است -> هیچ اسکرولی انجام نمی‌شود تا کاربر با آرامش در جایگاه فعلی خود در لیست سرفصل‌ها بماند
-    if (nextMode === 'video') {
-      setTimeout(() => {
-        if (playerSectionRef.current) {
-          playerSectionRef.current.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-        }
-      }, 100);
-    }
+    // رفتار اسکرول: پس از انتخاب جلسه، اسکرول نرم به ابتدای tabsWrapper انجام می‌شود
+    // scrollToElement ارتفاع navbar ثابت را هم لحاظ می‌کند تا پلیر پشت navbar پنهان نشود
+    setTimeout(() => {
+      const tabsWrapper = document.getElementById('course-tabs-wrapper');
+      scrollToElement(tabsWrapper || mediaToggleRef.current || playerSectionRef.current);
+    }, 100);
+  };
+
+  /**
+   * اسکرول نرم به یک المان با در نظر گرفتن ارتفاع navbar ثابت (fixed)
+   * از window.scrollTo استفاده می‌کند تا المان پشت navbar پنهان نشود
+   */
+  const scrollToElement = (element, extraOffset = 0) => {
+    if (!element) return;
+    const NAVBAR_HEIGHT = 100; // ارتفاع navbar ثابت + کمی فضای تنفس
+    const rect = element.getBoundingClientRect();
+    const absoluteTop = rect.top + window.scrollY;
+    window.scrollTo({
+      top: absoluteTop - NAVBAR_HEIGHT - extraOffset,
+      behavior: 'smooth',
+    });
   };
 
   /**
@@ -267,6 +276,16 @@ export default function CourseContentManager({ course, styles: propStyles }) {
 
   // --- محاسبات پلیر ---
   const hasBoth = activeLesson?.videoUrl && activeLesson?.audioUrl;
+
+  // بررسی اینکه آیا دوره به طور کلی هر دو نوع مدیا (صوت و ویدیو) دارد
+  // برای نمایش mediaToggle قبل از انتخاب جلسه
+  const courseHasBoth = useMemo(() => {
+    const allLessons = course.isChaptered
+      ? (course.chapters || []).flatMap((ch) => ch.lessons || ch.curriculum || [])
+      : (course.curriculum || []);
+    return allLessons.some((l) => l.videoUrl && l.audioUrl);
+  }, [course]);
+
   const activeUrl =
     playMode === 'audio'
       ? activeLesson?.audioUrl
@@ -315,43 +334,45 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       {/* =========================================================================
           بخش ویدیو / صوت پلیر (Media Player Section) با تدابیر ضد دانلود
           ========================================================================= */}
-      {activeLesson && (
-        <div
-          ref={playerSectionRef}
-          className={styles.playerSection}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <div className={styles.playerWrapper} onContextMenu={(e) => e.preventDefault()}>
-            {/* تاگل انتخاب بین ویدیو و صوت */}
-            {hasBoth && (
-              <div className={styles.mediaToggle}>
-                <button
-                  className={clsx(styles.toggleBtn, {
-                    [styles.toggleActive]: playMode === 'video',
-                  })}
-                  onClick={() => {
-                    setPlayMode('video');
-                    setTimeout(() => {
-                      playerSectionRef.current?.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center',
-                      });
-                    }, 50);
-                  }}
-                >
-                  🎥 ویدیو
-                </button>
-                <button
-                  className={clsx(styles.toggleBtn, {
-                    [styles.toggleActive]: playMode === 'audio',
-                  })}
-                  onClick={() => setPlayMode('audio')}
-                >
-                  🎵 صوت
-                </button>
-              </div>
-            )}
+      <div
+        ref={playerSectionRef}
+        className={styles.playerSection}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        {/* تاگل انتخاب بین ویدیو و صوت – همیشه نمایش داده می‌شود اگر دوره هر دو نوع مدیا داشته باشد */}
+        {courseHasBoth && (
+          <div ref={mediaToggleRef} className={styles.mediaToggle}>
+            <button
+              className={clsx(styles.toggleBtn, {
+                [styles.toggleActive]: playMode === 'video',
+              })}
+              onClick={() => {
+                setPlayMode('video');
+                if (activeLesson) {
+                  setTimeout(() => scrollToElement(mediaToggleRef.current), 50);
+                }
+              }}
+            >
+              🎥 ویدیو
+            </button>
+            <button
+              className={clsx(styles.toggleBtn, {
+                [styles.toggleActive]: playMode === 'audio',
+              })}
+              onClick={() => {
+                setPlayMode('audio');
+                if (activeLesson) {
+                  setTimeout(() => scrollToElement(mediaToggleRef.current), 50);
+                }
+              }}
+            >
+              🎵 صوت
+            </button>
+          </div>
+        )}
 
+        {activeLesson && (
+          <div className={styles.playerWrapper} onContextMenu={(e) => e.preventDefault()}>
             {/* رندر پلیر مربوطه: آپارات / Plyr صوتی / Video.js ویدیویی */}
             {isAparat ? (
               <div className={styles.aparatWrapper}>
@@ -369,6 +390,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                   courseId={course.documentId || course.id}
                   lessonId={activeLesson.id}
                   user={session?.user}
+                  autoplay={true}
                 />
               </div>
             ) : (
@@ -384,8 +406,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
               </div>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* =========================================================================
           گام ۲ & ۳: انشعاب رندرینگ سرفصل‌ها (Render Branching: Branch A & Branch B)
