@@ -172,48 +172,46 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
       const storageKey = `media_progress_c${courseId}_l${cleanLessonId}`;
 
       // --- سیستم بازیابی پیشرفت پخش صوتی ---
+      // hasRestored: true وقتی restore انجام شد (چه زمانی وجود داشت چه نه)
       let hasRestored = false;
-      const restoreProgress = () => {
-        if (hasRestored) return;
 
-        const savedTime = localStorage.getItem(storageKey);
-        if (!savedTime || isNaN(savedTime)) {
-          hasRestored = true;
-          return;
-        }
-
-        const time = parseFloat(savedTime);
-        if (time <= 0) {
-          hasRestored = true;
-          return;
-        }
-
-        const mediaEl = audioRef.current;
-        if (mediaEl && mediaEl.readyState >= 1) {
-          if (!mediaEl.duration || time < mediaEl.duration) {
-            player.currentTime = time;
-          }
-          hasRestored = true;
-        }
-      };
-
-      // گوش دادن به رویدادهای مختلف آمادگی مدیا برای بازیابی قطعی زمان
-      player.on('loadedmetadata', restoreProgress);
-      player.on('canplay', restoreProgress);
-      player.on('play', () => {
-        if (!hasRestored) {
-          restoreProgress();
-        }
-      });
-      player.on('ready', () => {
-        restoreProgress();
-        // پخش خودکار در صورت فعال بودن autoplay
-        // کلیک کاربر روی جلسه = user gesture کافی برای اجازه autoplay مرورگر
+      const doAutoplay = () => {
         if (autoplay) {
           player.play().catch(() => {
             // برخی مرورگرها autoplay را block می‌کنند - بی‌صدا بگذریم
           });
         }
+      };
+
+      const restoreProgress = () => {
+        if (hasRestored) return;
+
+        const mediaEl = audioRef.current;
+        // صبر می‌کنیم تا metadata مدیا کاملاً لود شود
+        if (!mediaEl || mediaEl.readyState < 1) return;
+
+        const savedTime = localStorage.getItem(storageKey);
+        if (!savedTime || isNaN(savedTime)) {
+          // هیچ پیشرفتی ذخیره نشده - مستقیم autoplay
+          hasRestored = true;
+          doAutoplay();
+          return;
+        }
+
+        const time = parseFloat(savedTime);
+        if (time > 0 && (!mediaEl.duration || time < mediaEl.duration)) {
+          player.currentTime = time;
+        }
+        hasRestored = true;
+        // autoplay را پس از set کردن currentTime شروع می‌کنیم
+        doAutoplay();
+      };
+
+      // گوش دادن به رویدادهای مختلف آمادگی مدیا برای بازیابی قطعی زمان
+      player.on('loadedmetadata', restoreProgress);
+      player.on('canplay', restoreProgress);
+      player.on('ready', () => {
+        restoreProgress();
       });
 
       // بررسی وضعیت در صورتی که مدیا قبلاً لود شده باشد
@@ -224,6 +222,8 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
       // ذخیره پیشرفت هر ۵ ثانیه (0, 5, 10, 15, ...)
       let lastSavedSecond = -1;
       player.on('timeupdate', () => {
+        // اگر هنوز restore نشده، timeupdate را نادیده می‌گیریم
+        // تا مانع از overwrite شدن localStorage با مقدار ۰ نشویم
         if (!hasRestored) return;
 
         const currentTime = player.currentTime;
@@ -252,9 +252,31 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
         }
       });
 
+      // ذخیره‌سازی هنگام بستن/رفرش صفحه (مهم برای گوشی)
+      const handleBeforeUnload = () => {
+        if (!hasRestored) return;
+        const ct = player.currentTime;
+        if (ct > 0) {
+          localStorage.setItem(storageKey, ct.toString());
+        }
+      };
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      // visibilitychange برای زمانی که تب مرورگر یا اپ گوشی به پس‌زمینه می‌رود
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden' && hasRestored) {
+          const ct = player.currentTime;
+          if (ct > 0) {
+            localStorage.setItem(storageKey, ct.toString());
+          }
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
       // پاکسازی لوکال استوریج در صورت اتمام کامل صوت
       player.on('ended', () => {
         localStorage.removeItem(storageKey);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
       });
     };
 
@@ -262,7 +284,17 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
 
     // Cleanup
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (playerRef.current) {
+        // ذخیره آخرین زمان قبل از destroy
+        try {
+          const ct = playerRef.current.currentTime;
+          if (ct > 0 && courseId && lessonId) {
+            const cleanId = String(lessonId).replace('-video', '').replace('-audio', '');
+            localStorage.setItem(`media_progress_c${courseId}_l${cleanId}`, ct.toString());
+          }
+        } catch (e) {}
         playerRef.current.destroy();
         playerRef.current = null;
       }
@@ -286,22 +318,7 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
       >
         <source src={src} type={src?.includes('.m3u8') ? 'application/x-mpegURL' : 'audio/mp3'} />
       </audio>
-      {userIdentifier && (
-        <div
-          aria-hidden="true"
-          style={{
-            textAlign: 'center',
-            marginTop: '8px',
-            fontSize: '11px',
-            color: 'color-mix(in srgb, var(--color-primary, #F6D982) 45%, transparent)',
-            direction: 'ltr',
-            letterSpacing: '0.8px',
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
-        >
-        </div>
-      )}
+      
     </div>
   );
 }

@@ -193,18 +193,43 @@ export default function VideoJSPlayer({ options, onReady, courseId, lessonId, is
       }
     };
 
+    // ذخیره‌سازی هنگام بستن/رفرش صفحه (مهم برای گوشی)
+    const handleBeforeUnload = () => {
+      if (!hasRestored) return;
+      const ct = video.currentTime;
+      if (ct > 0) localStorage.setItem(storageKey, ct.toString());
+    };
+
+    // visibilitychange برای زمانی که اپ گوشی به پس‌زمینه می‌رود
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && hasRestored) {
+        const ct = video.currentTime;
+        if (ct > 0) localStorage.setItem(storageKey, ct.toString());
+      }
+    };
+
     const handleEnded = () => {
       localStorage.removeItem(storageKey);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
 
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('ended', handleEnded);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       video.removeEventListener('loadedmetadata', restoreProgress);
       video.removeEventListener('canplay', restoreProgress);
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleEnded);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // ذخیره آخرین زمان قبل از unmount
+      if (hasRestored && video.currentTime > 0) {
+        localStorage.setItem(storageKey, video.currentTime.toString());
+      }
     };
   }, [courseId, lessonId, videoSrc]);
 

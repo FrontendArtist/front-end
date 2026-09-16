@@ -384,6 +384,13 @@ export default function CourseContentManager({ course, styles: propStyles }) {
               </div>
             ) : isAudio ? (
               <div className={styles.audioWrapper}>
+                <button
+                  className={styles.audioCloseBtn}
+                  onClick={() => setActiveLesson(null)}
+                  aria-label="بستن پخش‌کننده صوتی"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
                 <PlyrAudioPlayer
                   key={`${activeLesson.id}-audio`}
                   src={activeUrl}
@@ -548,20 +555,22 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                                 <span className={styles.lessonTitle}>
                                   {lesson.title}
                                 </span>
+                                {lesson.isFree && (
+                                  <span className={styles.freeBadge}>رایگان</span>
+                                )}
+                              </div>
+                              <div className={styles.lessonMeta}>
+                                {lesson.duration && (
+                                  <span className={styles.lessonDuration}>
+                                    {lesson.duration}
+                                  </span>
+                                )}
                                 {isLessonActive && (
                                   <span className={styles.playingBadge}>
                                     {playMode === 'audio' ? '🎵 در حال پخش' : '🎥 در حال پخش'}
                                   </span>
                                 )}
-                                {lesson.isFree && (
-                                  <span className={styles.freeBadge}>رایگان</span>
-                                )}
                               </div>
-                              {lesson.duration && (
-                                <span className={styles.lessonDuration}>
-                                  {lesson.duration}
-                                </span>
-                              )}
                             </li>
                           );
                         })}
@@ -603,20 +612,22 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                         )}
                       </span>
                       <span className={styles.lessonTitle}>{lesson.title}</span>
+                      {lesson.isFree && (
+                        <span className={styles.freeBadge}>رایگان</span>
+                      )}
+                    </div>
+                    <div className={styles.lessonMeta}>
+                      {lesson.duration && (
+                        <span className={styles.lessonDuration}>
+                          {lesson.duration}
+                        </span>
+                      )}
                       {isLessonActive && (
                         <span className={styles.playingBadge}>
                           {playMode === 'audio' ? '🎵 در حال پخش' : '🎥 در حال پخش'}
                         </span>
                       )}
-                      {lesson.isFree && (
-                        <span className={styles.freeBadge}>رایگان</span>
-                      )}
                     </div>
-                    {lesson.duration && (
-                      <span className={styles.lessonDuration}>
-                        {lesson.duration}
-                      </span>
-                    )}
                   </li>
                 );
               })}
