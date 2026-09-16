@@ -28,7 +28,7 @@ export default function CourseTabs({ course, parsedContent, customStyles, isPurc
     if (status === 'authenticated' && typeof fetchOrders === 'function') {
       fetchOrders();
     }
-  }, [status, fetchOrders]);
+  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // بررسی وضعیت خرید دوره توسط کاربر
   const isPurchased = useMemo(() => {

@@ -12,8 +12,8 @@ export default function PurchasesList() {
     const { orders, isLoading, error, fetchOrders } = useOrdersStore();
 
     useEffect(() => {
-        fetchOrders(true);
-    }, [fetchOrders]);
+        fetchOrders();
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (isLoading) {
         return (

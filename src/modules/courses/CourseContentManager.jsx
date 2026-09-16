@@ -115,7 +115,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
         setWasUnauthenticated(false);
       }
     }
-  }, [status, wasUnauthenticated, router, fetchOrders]);
+  }, [status, wasUnauthenticated, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // استخراج لیست شناسه‌های فصل‌های خریداری شده از سفارشات کاربر با useMemo جهت جلوگیری از تغییر reference
   // ⚠️ فقط سفارش‌های پرداخت‌شده و تأییدشده لحاظ می‌شوند

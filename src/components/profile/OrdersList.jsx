@@ -10,8 +10,8 @@ export default function OrdersList({ limit }) {
     const { orders, isLoading, error, fetchOrders, hasFetched } = useOrdersStore();
 
     useEffect(() => {
-        fetchOrders(true);
-    }, [fetchOrders]);
+        fetchOrders();
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const formatPrice = (price) => {
         return Number(price || 0).toLocaleString('fa-IR');
