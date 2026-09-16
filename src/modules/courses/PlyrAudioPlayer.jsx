@@ -14,6 +14,9 @@ import React, { useEffect, useRef } from 'react';
 export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autoplay = false }) {
   const audioRef = useRef(null);
   const playerRef = useRef(null);
+  // نگه‌داری اشاره‌گر به handlers جهت دسترسی در cleanup خارج از async scope
+  const beforeUnloadRef = useRef(null);
+  const visibilityRef = useRef(null);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -256,20 +259,21 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
       const handleBeforeUnload = () => {
         if (!hasRestored) return;
         const ct = player.currentTime;
-        if (ct > 0) {
-          localStorage.setItem(storageKey, ct.toString());
-        }
+        if (ct > 0) localStorage.setItem(storageKey, ct.toString());
       };
-      window.addEventListener('beforeunload', handleBeforeUnload);
       // visibilitychange برای زمانی که تب مرورگر یا اپ گوشی به پس‌زمینه می‌رود
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'hidden' && hasRestored) {
           const ct = player.currentTime;
-          if (ct > 0) {
-            localStorage.setItem(storageKey, ct.toString());
-          }
+          if (ct > 0) localStorage.setItem(storageKey, ct.toString());
         }
       };
+
+      // ذخیره ref ها جهت دسترسی در cleanup خارج از این async scope
+      beforeUnloadRef.current = handleBeforeUnload;
+      visibilityRef.current = handleVisibilityChange;
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
       document.addEventListener('visibilitychange', handleVisibilityChange);
 
       // پاکسازی لوکال استوریج در صورت اتمام کامل صوت
@@ -277,6 +281,8 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
         localStorage.removeItem(storageKey);
         window.removeEventListener('beforeunload', handleBeforeUnload);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
+        beforeUnloadRef.current = null;
+        visibilityRef.current = null;
       });
     };
 
@@ -284,8 +290,15 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
 
     // Cleanup
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // حذف event listeners با استفاده از ref (چون handlers داخل async scope بودند)
+      if (beforeUnloadRef.current) {
+        window.removeEventListener('beforeunload', beforeUnloadRef.current);
+        beforeUnloadRef.current = null;
+      }
+      if (visibilityRef.current) {
+        document.removeEventListener('visibilitychange', visibilityRef.current);
+        visibilityRef.current = null;
+      }
       if (playerRef.current) {
         // ذخیره آخرین زمان قبل از destroy
         try {
