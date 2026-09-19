@@ -250,7 +250,8 @@ export async function POST(request) {
             }
         });
 
-        const generatedNotes = `📋 اقلام این سفارش:\n${itemSummaryList.join('\n')}${appliedCouponCode ? `\n\n🎟️ کد تخفیف اعمال شده: ${appliedCouponCode} (تخفیف: ${new Intl.NumberFormat('fa-IR').format(discountAmount)} تومان)` : ''}${isFreeOrder ? `\n\n🎁 این سفارش به صورت رایگان ثبت و تأیید شد.` : ''}`;
+        const topUpTag = body.topUpRequestId ? `\n\n⚡ شناسه شارژ بای‌مانی: [TOPUP_ID:${body.topUpRequestId}]` : '';
+        const generatedNotes = `📋 اقلام این سفارش:\n${itemSummaryList.join('\n')}${topUpTag}${appliedCouponCode ? `\n\n🎟️ کد تخفیف اعمال شده: ${appliedCouponCode} (تخفیف: ${new Intl.NumberFormat('fa-IR').format(discountAmount)} تومان)` : ''}${isFreeOrder ? `\n\n🎁 این سفارش به صورت رایگان ثبت و تأیید شد.` : ''}`;
         const resolvedNotes = body.notes ? `${body.notes.trim()}\n\n${generatedNotes}` : generatedNotes;
 
         // استخراج آدرس کامل

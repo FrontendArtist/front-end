@@ -11,6 +11,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { marked } from 'marked';
 import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
+import CoursePurchaseButton from '@/components/courses/CoursePurchaseButton/CoursePurchaseButton';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import CourseTelegramLink from '@/components/courses/CourseTelegramLink/CourseTelegramLink';
 import CourseTeaserPlayer from '@/components/courses/CourseTeaserPlayer';
@@ -273,7 +274,7 @@ export default async function CoursePage({ params }) {
                       <span>در انتظار ارسال فیش واریزی</span>
                     </Link>
                   ) : (
-                    <AddToCartButton course={course} />
+                    <CoursePurchaseButton course={course} />
                   )}
                 </div>
               )}

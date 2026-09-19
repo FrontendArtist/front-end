@@ -1,0 +1,356 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal {
+  background: #131d17;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 30px rgba(212, 175, 55, 0.1);
+  overflow: hidden;
+  color: #fff;
+  direction: rtl;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0;
+    color: #fffaea;
+  }
+}
+
+.headerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(212, 175, 55, 0.15);
+  color: #d4af37;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+
+  &:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.body {
+  padding: 1.5rem;
+}
+
+.courseNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+
+  .noticeIcon {
+    color: #d4af37;
+    margin-top: 2px;
+    flex-shrink: 0;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .noticeText {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #e2d9b8;
+
+    strong {
+      color: #fff;
+    }
+  }
+}
+
+.amountSummaryCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 1.1rem;
+  margin-bottom: 1.25rem;
+
+  .summaryRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 0.6rem;
+
+    &:last-child {
+      margin-bottom: 0;
+      padding-top: 0.6rem;
+      border-top: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  .summaryValue {
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .highlightShortfall {
+    color: #ffd15c;
+    font-size: 1.05rem;
+  }
+}
+
+.instructionsNote {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.bankCardSection {
+  background: linear-gradient(135deg, rgba(26, 40, 32, 0.95), rgba(16, 26, 20, 0.95));
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 14px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+
+  .bankHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #ffd15c;
+    margin-bottom: 1rem;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .bankRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.88rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .label {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .value {
+      color: #fff;
+      font-weight: 600;
+    }
+  }
+
+  .cardNumberRow {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.6rem 0.85rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+
+    .cardNumber {
+      font-family: monospace, sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      color: #ffd15c;
+      direction: ltr;
+    }
+
+    .copyBtn {
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      color: #ffd15c;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: rgba(212, 175, 55, 0.25);
+      }
+
+      &.copied {
+        background: #10b981;
+        color: #fff;
+        border-color: #10b981;
+      }
+    }
+  }
+}
+
+.successNote {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-bottom: 1.25rem;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+}
+
+.errorBox {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+
+  button {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .primaryBtn {
+    background: linear-gradient(135deg, #d4af37, #aa820a);
+    color: #0b140f;
+    border: none;
+
+    &:hover:not(:disabled) {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .secondaryBtn {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+  }
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: #0b140f;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

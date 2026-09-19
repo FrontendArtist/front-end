@@ -20,15 +20,35 @@ import { useState } from 'react';
 import styles from './OrdersTable.module.scss';
 import { updateOrderStatus } from '@/lib/client/admin/ordersClient';
 
+/**
+ * استخراج شناسه یکتای تاپ‌آپ بای‌مانی (GUID) از فیلدها یا توضیحات سفارش
+ */
+function extractTopUpId(order) {
+    if (!order) return null;
+    if (order.topUpId) return order.topUpId;
+    if (order.topUpRequestId) return order.topUpRequestId;
+    const notes = order.notes || '';
+    const tagMatch = notes.match(/\[(?:TOPUP_ID|BYEMONEY_TOPUP_ID):([0-9a-fA-F-]{36})\]/i);
+    if (tagMatch) return tagMatch[1];
+    const guidMatch = notes.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+    if (guidMatch) return guidMatch[0];
+    if (order.trackingNumber && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(order.trackingNumber.trim())) {
+        return order.trackingNumber.trim();
+    }
+    return null;
+}
+
 export default function ReceiptModal({ order, onClose, onUpdate }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isRejecting, setIsRejecting] = useState(false);
     const [rejectionReason, setRejectionReason] = useState(order.rejectionReason || '');
 
+    const topUpId = extractTopUpId(order);
+
     /**
      * ارسال درخواست PUT به API Route ادمین
-     * @param {'paid'|'failed'} newStatus
+     * @param {'paid'|'rejected'|'failed'} newStatus
      * @param {string} [reason]
      */
     async function handleDecision(newStatus, reason = '') {
@@ -37,12 +57,15 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
 
         try {
             const isPaid = newStatus === 'paid';
-            const isFailed = newStatus === 'failed';
+            const isFailed = newStatus === 'failed' || newStatus === 'rejected';
             const finalReason = reason.trim() || 'فیش واریزی معتبر نمی‌باشد';
 
             const updatePayload = {
                 documentId: order.documentId,
-                paymentStatus: newStatus,
+                paymentStatus: isFailed ? 'rejected' : newStatus,
+                topUpId: topUpId || undefined,
+                confirmedAmount: order.lightAmount || undefined,
+                rejectionReason: isFailed ? finalReason : null,
                 ...(isPaid ? { orderStatus: 'paid', rejectionReason: null } : {}),
                 ...(isFailed ? { orderStatus: 'canceled', rejectionReason: finalReason } : {}),
             };
@@ -51,7 +74,7 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
 
             // callback به OrdersTable برای آپدیت state محلی
             onUpdate(order.id, {
-                paymentStatus: newStatus,
+                paymentStatus: isFailed ? 'rejected' : newStatus,
                 ...(isPaid ? { orderStatus: 'paid', rejectionReason: null } : {}),
                 ...(isFailed ? { orderStatus: 'canceled', rejectionReason: finalReason } : {}),
             });
@@ -89,6 +112,26 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
                         </strong>
                     </span>
                 </div>
+
+                {/* ── شناسه متصل به سامانه ByeMoney ─────────────── */}
+                {topUpId && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        background: 'rgba(59, 130, 246, 0.08)',
+                        border: '1px solid rgba(59, 130, 246, 0.25)',
+                        color: 'var(--color-primary, #3b82f6)',
+                        fontSize: 'var(--font-xs)',
+                        marginTop: '8px',
+                        direction: 'rtl'
+                    }}>
+                        <span>⚡ <strong>متصل به شارژ بای‌مانی:</strong></span>
+                        <code style={{ fontFamily: 'monospace', letterSpacing: '0.5px', direction: 'ltr' }}>{topUpId}</code>
+                    </div>
+                )}
 
                 {/* ── تصویر رسید ──────────────────────────────────── */}
                 <div className={styles.modal__receipt}>
@@ -171,7 +214,7 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
                             <button
                                 type="button"
                                 className={`${styles.btn} ${styles['btn--danger']}`}
-                                onClick={() => handleDecision('failed', rejectionReason)}
+                                onClick={() => handleDecision('rejected', rejectionReason)}
                                 disabled={loading || !rejectionReason.trim()}
                             >
                                 {loading ? 'در حال ثبت...' : 'ثبت قطعی رد پرداخت'}
