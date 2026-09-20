@@ -32,7 +32,7 @@ import styles from './PaymentStep.module.scss';
  * در صورت سبد دوره‌ای خالص (فقط دوره بدون محصول فیزیکی یا فصل):
  *  - ارسال به قرارداد خرید سبدی ByeMoney با externalCourseIds
  *  - در صورت موفقیت: پاکسازی سبد و هدایت مستقیم به کتابخانه دوره‌ها
- *  - در صورت کسری موجودی: باز شدن خودکار مودال تاپ‌آپ و ارسال pendingItems
+ *  - در صورت کسری موجودی: پیش‌ثبت درخواست شارژ تاپ‌آپ و ثبت سفارش کارت‌به‌کارت
  *  - بازاعتبارسنجی خودکار وضعیت سبد جهت تکمیل Zero-Click
  *
  * در غیر این صورت:
@@ -59,9 +59,6 @@ export default function PaymentStep({ onPrevious }) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
 
-    // وضعیت‌های سبد معلق ByeMoney
-    const [insufficientDetails, setInsufficientDetails] = useState(null);
-    const [pendingItems, setPendingItems] = useState([]);
     const isCheckingResumeRef = useRef(false);
 
     // آیا این سفارش به دلیل تخفیف ۱۰۰٪ یا اقلام رایگان، صفر تومان است؟
@@ -189,7 +186,6 @@ export default function PaymentStep({ onPrevious }) {
                         const topUpRes = await createTopUpRequestWithByeMoney({
                             amountInNoor: result.insufficientDetails.shortfallInNoor,
                             pendingItems: receivedPendingItems,
-                            pendingPurchaseItem: receivedPendingItems[0] || null,
                             jwt: session.user.jwt,
                         });
                         if (topUpRes?.success && topUpRes?.data) {

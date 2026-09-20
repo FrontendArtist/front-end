@@ -259,7 +259,7 @@ export async function purchaseCourseWithByeMoney({ externalCourseId, externalCou
  * @param {string} params.jwt - توکن احراز هویت
  * @returns {Promise<{ success: boolean, data?: object, isMocked?: boolean, error?: string, unauthorized?: boolean }>}
  */
-export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingItems, pendingPurchaseItem, jwt }) {
+export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingItems, jwt }) {
   if (!jwt) {
     return {
       success: false,
@@ -269,32 +269,13 @@ export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingItem
   }
 
   const endpoint = `${BYEMONEY_API_URL}/api/topup/requests`;
-
   const conversionRate = 10000; // 1 نور = 10,000 ریال (1,000 تومان)
-  const priceInNoor = Number(pendingPurchaseItem?.priceInNoor || 0);
-  const pendingPriceRial = priceInNoor * conversionRate;
-
-  // تطابق ۱۰۰٪ با CreateTopUpApiRequest و قرارداد سبدی ByeMoney
-  const resolvedPendingItems = Array.isArray(pendingItems)
-    ? pendingItems
-    : (pendingPurchaseItem ? [pendingPurchaseItem] : []);
+  const resolvedPendingItems = Array.isArray(pendingItems) ? pendingItems : [];
 
   const requestBody = {
     amount: Number(amountInNoor),
     paymentMethod: 2, // PaymentMethod.CardToCard = 2
     pendingItems: resolvedPendingItems,
-    // حفظ فیلدهای تک‌آیتمی در صورت عدم ارسال pendingItems آرایه‌ای جهت سازگاری کامل
-    ...(pendingPurchaseItem && (!pendingItems || !Array.isArray(pendingItems)) ? {
-      pendingItemType: 1, // PendingItemType.Course = 1
-      pendingItemExternalId:
-        pendingPurchaseItem?.pendingItemExternalId ||
-        pendingPurchaseItem?.documentId ||
-        pendingPurchaseItem?.externalCourseId ||
-        pendingPurchaseItem?.courseId ||
-        null,
-      pendingPriceSnapshot: pendingPriceRial,
-      pendingRateSnapshot: conversionRate,
-    } : {}),
   };
 
   try {
@@ -326,7 +307,7 @@ export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingItem
       console.warn(
         `[ByeMoney TopUp API]: اندپوینت POST /api/topup/requests کد ${response.status} بازگرداند. ارائه پاسخ شبیه‌سازی‌شده (Mock).`
       );
-      return getMockTopUpResponse({ amountInNoor, pendingPurchaseItem });
+      return getMockTopUpResponse({ amountInNoor, pendingItems: resolvedPendingItems });
     }
 
     const errJson = await response.json().catch(() => ({}));
@@ -346,14 +327,14 @@ export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingItem
       '[ByeMoney TopUp API]: عدم امکان ارتباط با POST /api/topup/requests. ارائه پاسخ شبیه‌سازی‌شده (Mock).',
       netErr
     );
-    return getMockTopUpResponse({ amountInNoor, pendingPurchaseItem });
+    return getMockTopUpResponse({ amountInNoor, pendingItems: resolvedPendingItems });
   }
 }
 
 /**
  * پاسخ شبیه‌سازی‌شده برای درخواست شارژ کارت‌به‌کارت
  */
-function getMockTopUpResponse({ amountInNoor, pendingPurchaseItem }) {
+function getMockTopUpResponse({ amountInNoor, pendingItems }) {
   const amountRial = Number(amountInNoor) * 10000;
   return {
     success: true,
@@ -369,7 +350,7 @@ function getMockTopUpResponse({ amountInNoor, pendingPurchaseItem }) {
         cardNumber: '۶۰۳۷-۹۹۷۵-۱۲۳۴-۵۶۷۸',
         accountHolder: 'موسسه آموزشی خاک تا افلاک',
       },
-      pendingPurchaseItem,
+      pendingItems: pendingItems || [],
       status: 'PendingPayment',
       createdAt: new Date().toISOString(),
     },
@@ -447,9 +428,6 @@ export async function checkCoursesPurchaseStatusWithByeMoney({ externalCourseIds
     return { allEnrolled: false, enrolledIds: [], status: 'unconfirmed' };
   }
 }
-
-// نام مستعار جهت شفافیت و تطابق با قرارداد سبدی
-export { purchaseCourseWithByeMoney as purchaseCoursesWithByeMoney };
 
 /**
  * تأیید فیش واریزی و درخواست شارژ (TopUp) در پنل مدیریت ByeMoney
