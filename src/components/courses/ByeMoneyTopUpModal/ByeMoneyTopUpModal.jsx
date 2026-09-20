@@ -4,15 +4,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import { createTopUpRequestWithByeMoney } from '@/lib/byeMoneyApi';
-import { setPendingPurchase } from '@/lib/pendingPurchaseManager';
+import { setPendingPurchase, setPendingBasketPurchase } from '@/lib/pendingPurchaseManager';
 import styles from './ByeMoneyTopUpModal.module.scss';
 
 /**
- * مودال اختصاصی ثبت درخواست افزایش اعتبار (TopUp) در سامane ByeMoney
+ * مودال اختصاصی ثبت درخواست افزایش اعتبار (TopUp) در سامانه ByeMoney
  * 
  * ویژگی‌ها:
  * - پیش‌پر کردن کسری دقیق نور (shortfallInNoor) و معادل ریالی/تومانی
- * - پیوست اطلاعات دوره به عنوان آیتم معلق خرید (pendingPurchaseItem)
+ * - پیوست لیست دوره‌های معلق خرید (pendingItems) جهت تکمیل خودکار سبد پس از تایید واریز
  * - استقلال کامل از مسیر قدیمی /checkout/light و عدم ایجاد سفارش استراپی
  * - نمایش مشخصات کارت بانکی و نگهداری کانتکست جهت تکمیل خودکار پس از تایید
  * 
@@ -23,7 +23,9 @@ import styles from './ByeMoneyTopUpModal.module.scss';
  * @param {number} [props.shortfallInRial]
  * @param {number} [props.currentBalanceInNoor]
  * @param {number} [props.priceInNoor]
- * @param {object} props.course
+ * @param {object} [props.course]
+ * @param {any[]} [props.pendingItems]
+ * @param {any[]} [props.cartItems]
  * @param {function} [props.onRequestCreated]
  */
 export default function ByeMoneyTopUpModal({
@@ -34,6 +36,8 @@ export default function ByeMoneyTopUpModal({
   currentBalanceInNoor = 0,
   priceInNoor = 0,
   course,
+  pendingItems = [],
+  cartItems = [],
   onRequestCreated,
 }) {
   const { data: session } = useSession();
@@ -112,23 +116,50 @@ export default function ByeMoneyTopUpModal({
     setErrorMessage('');
 
     try {
-      const pendingItem = course ? {
-        externalCourseId: course.documentId || course.id,
-        courseTitle: course.title,
-        courseSlug: course.slug,
-        priceInNoor: priceInNoor || course.priceInNoor || 0,
-      } : null;
+      // تعیین آیتم‌های معلق: اگر pendingItems پاس داده شده باشد، ارسال می‌شود؛ در غیر اینصورت از course می‌سازیم
+      let resolvedPendingItems = [];
+      if (Array.isArray(pendingItems) && pendingItems.length > 0) {
+        resolvedPendingItems = pendingItems;
+      } else if (course) {
+        resolvedPendingItems = [{
+          externalCourseId: course.documentId || course.id,
+          courseTitle: course.title,
+          courseSlug: course.slug,
+          priceInNoor: priceInNoor || course.priceInNoor || 0,
+        }];
+      }
 
       const result = await createTopUpRequestWithByeMoney({
         amountInNoor: shortfallInNoor,
-        pendingPurchaseItem: pendingItem,
+        pendingItems: resolvedPendingItems,
+        pendingPurchaseItem: resolvedPendingItems[0] || null,
         jwt: session.user.jwt,
       });
 
       if (result.success && result.data) {
         setCreatedRequestData(result.data);
 
-        // ذخیره کانتکست خرید معلق در مرورگر با انقضای خودکار
+        // ۱. ذخیره کانتکست سبد چندآیتمی در sessionStorage
+        const extIds = Array.isArray(cartItems) && cartItems.length > 0
+          ? cartItems.map(c => c.documentId || c.externalCourseId || c.id)
+          : (course?.documentId ? [course.documentId] : []);
+
+        if (extIds.length > 0) {
+          setPendingBasketPurchase({
+            externalCourseIds: extIds,
+            pendingItems: resolvedPendingItems,
+            items: cartItems?.length > 0 ? cartItems : (course ? [course] : []),
+            priceInNoor,
+            shortfallInNoor,
+            shortfallInRial,
+            currentBalanceInNoor,
+            topUpRequested: true,
+            topUpRequestId: result.data.topUpRequestId,
+            clientReferenceId: result.data.clientReferenceId,
+          });
+        }
+
+        // ۲. ذخیره کانتکست تک‌دوره برای سازگاری عقبگرد
         if (course?.documentId) {
           setPendingPurchase(course.documentId, {
             courseSlug: course.slug,
@@ -201,8 +232,21 @@ export default function ByeMoneyTopUpModal({
         </div>
 
         <div className={styles.body}>
-          {/* بنر اتصال به دوره معلق */}
-          {course && (
+          {/* بنر اتصال به دوره معلق یا سبد دوره‌های معلق */}
+          {cartItems && cartItems.length > 0 ? (
+            <div className={styles.courseNotice}>
+              <div className={styles.noticeIcon}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+              </div>
+              <div className={styles.noticeText}>
+                این شارژ جهت تکمیل خودکار خرید <strong>{cartItems.length} دوره آموزشی</strong> با قیمت قفل‌شده <strong>{formatNumber(priceInNoor)} نور</strong> تنظیم شده است.
+              </div>
+            </div>
+          ) : course ? (
             <div className={styles.courseNotice}>
               <div className={styles.noticeIcon}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -215,7 +259,7 @@ export default function ByeMoneyTopUpModal({
                 این شارژ جهت تکمیل خودکار خرید دوره <strong>«{course.title}»</strong> با قیمت قفل‌شده <strong>{formatNumber(priceInNoor)} نور</strong> تنظیم شده است.
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* حالت ۱: قبل از ثبت درخواست (خلاصه ارقام و تایید) */}
           {!createdRequestData && (
@@ -226,7 +270,7 @@ export default function ByeMoneyTopUpModal({
                   <span className={styles.summaryValue}>{formatNumber(currentBalanceInNoor)} نور</span>
                 </div>
                 <div className={styles.summaryRow}>
-                  <span>قیمت نهایی دوره:</span>
+                  <span>{cartItems?.length > 1 ? 'مجموع قیمت دوره‌ها:' : 'قیمت نهایی دوره:'}</span>
                   <span className={styles.summaryValue}>{formatNumber(priceInNoor)} نور</span>
                 </div>
                 <div className={styles.summaryRow}>
@@ -238,7 +282,7 @@ export default function ByeMoneyTopUpModal({
               </div>
 
               <p className={styles.instructionsNote}>
-                پس از کلیک روی دکمه زیر، مشخصات حساب بانکی جهت واریز کارت‌به‌کارت نمایش داده می‌شود و این دوره به عنوان خرید در صف شما قفل خواهد شد.
+                پس از کلیک روی دکمه زیر، مشخصات حساب بانکی جهت واریز کارت‌به‌کارت نمایش داده می‌شود و این سبد به عنوان خرید در صف شما قفل خواهد شد.
               </p>
 
               {errorMessage && (
@@ -338,7 +382,7 @@ export default function ByeMoneyTopUpModal({
                   <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
                 <span>
-                  درخواست شما با کد پیگیری <strong>{createdRequestData.clientReferenceId || createdRequestData.topUpRequestId}</strong> ثبت شد. به محض تایید واریز کارت‌به‌کارت، دوره قفل‌شده به صورت خودکار برای شما خریداری خواهد شد.
+                  درخواست شما با کد پیگیری <strong>{createdRequestData.clientReferenceId || createdRequestData.topUpRequestId}</strong> ثبت شد. به محض تایید واریز کارت‌به‌کارت توسط ادمین، {cartItems?.length > 1 ? 'سبد دوره‌های قفل‌شده' : 'دوره قفل‌شده'} به صورت خودکار برای شما خریداری و فعال خواهد شد.
                 </span>
               </div>
 
@@ -348,7 +392,7 @@ export default function ByeMoneyTopUpModal({
                   className={styles.primaryBtn}
                   onClick={onClose}
                 >
-                  متوجه شدم و بازگشت به دوره
+                  {cartItems?.length > 1 ? 'متوجه شدم و بازگشت به تسویه‌حساب' : 'متوجه شدم و بازگشت'}
                 </button>
               </div>
             </>

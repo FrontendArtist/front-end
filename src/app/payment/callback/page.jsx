@@ -93,11 +93,12 @@ function PaymentCallbackContent() {
     // ─── حالت موفقیت ──────────────────────────────────────────────────────────
     if (status === 'success') {
         const isFree = source === 'free';
+        const isByemoney = source === 'byemoney';
         const isCardToCard = source === 'card_to_card';
         const isLightTopup = source === 'light_topup';
         const isLightCardToCard = isCardToCard && orderType === 'light_topup';
-        const primaryHref = isFree
-            ? '/profile/purchases'
+        const primaryHref = (isFree || isByemoney)
+            ? '/profile/courses'
             : isCardToCard && orderId
                 ? `/profile/orders/${orderId}`
                 : isLightTopup ? '/profile'
@@ -300,7 +301,7 @@ function PaymentCallbackContent() {
                     {/* ── دکمه‌های عملیات ─────────────────────────────────────── */}
                     <div className={styles.actions}>
                         <Link href={primaryHref} className={styles.primaryButton}>
-                            {isFree ? 'مشاهده دوره‌ها و محصولات من'
+                            {(isFree || isByemoney) ? 'مشاهده دوره‌های من'
                                 : isCardToCard ? 'ارسال فیش واریزی'
                                     : isLightTopup ? 'مشاهده پروفایل'
                                         : 'مشاهده سفارش‌ها'}

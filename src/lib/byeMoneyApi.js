@@ -23,7 +23,7 @@ import { BYEMONEY_API_URL } from './byeMoneySync.js';
  *   notFound?: boolean
  * }>}
  */
-export async function purchaseCourseWithByeMoney({ externalCourseId, jwt }) {
+export async function purchaseCourseWithByeMoney({ externalCourseId, externalCourseIds, jwt }) {
   if (!jwt) {
     return {
       success: false,
@@ -32,11 +32,20 @@ export async function purchaseCourseWithByeMoney({ externalCourseId, jwt }) {
     };
   }
 
-  // شناسه ارسالی حتماً و منحصراً باید documentId دوره باشد
-  if (!externalCourseId || typeof externalCourseId !== 'string' || !externalCourseId.trim()) {
+  // پشتیبانی همزمان از آرایه شناسه‌ها و شناسه تکی جهت سازگاری کامل به عقب
+  let ids = [];
+  if (Array.isArray(externalCourseIds)) {
+    ids = externalCourseIds
+      .map(id => (typeof id === 'string' ? id.trim() : String(id || '')))
+      .filter(Boolean);
+  } else if (externalCourseId && typeof externalCourseId === 'string' && externalCourseId.trim()) {
+    ids = [externalCourseId.trim()];
+  }
+
+  if (ids.length === 0) {
     return {
       success: false,
-      error: 'شناسه یکتای دوره (documentId) معتبر نیست.',
+      error: 'شناسه یکتای دوره‌ها (documentId) معتبر نیست.',
     };
   }
 
@@ -50,7 +59,7 @@ export async function purchaseCourseWithByeMoney({ externalCourseId, jwt }) {
         Authorization: `Bearer ${jwt}`,
       },
       body: JSON.stringify({
-        externalCourseId: externalCourseId.trim(),
+        externalCourseIds: ids,
       }),
     });
 
@@ -195,9 +204,19 @@ export async function purchaseCourseWithByeMoney({ externalCourseId, jwt }) {
         0
       );
 
+      const rawPendingItems =
+        insufficientObj.pendingItems ??
+        insufficientObj.PendingItems ??
+        errorJson?.pendingItems ??
+        errorJson?.PendingItems ??
+        [];
+
+      const pendingItems = Array.isArray(rawPendingItems) ? rawPendingItems : [];
+
       return {
         success: false,
         insufficientBalance: true,
+        pendingItems,
         insufficientDetails: {
           currentBalanceInNoor,
           priceInNoor,
@@ -209,7 +228,7 @@ export async function purchaseCourseWithByeMoney({ externalCourseId, jwt }) {
           insufficientObj.message ||
           insufficientObj.errorMessage ||
           (errorJson.title && errorJson.title !== 'خطای اعتبارسنجی' ? errorJson.title : '') ||
-          'موجودی کیف پول برای خرید این دوره کافی نیست.',
+          'موجودی کیف پول برای خرید این دوره‌ها کافی نیست.',
       };
     }
 
@@ -240,7 +259,7 @@ export async function purchaseCourseWithByeMoney({ externalCourseId, jwt }) {
  * @param {string} params.jwt - توکن احراز هویت
  * @returns {Promise<{ success: boolean, data?: object, isMocked?: boolean, error?: string, unauthorized?: boolean }>}
  */
-export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingPurchaseItem, jwt }) {
+export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingItems, pendingPurchaseItem, jwt }) {
   if (!jwt) {
     return {
       success: false,
@@ -255,19 +274,27 @@ export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingPurc
   const priceInNoor = Number(pendingPurchaseItem?.priceInNoor || 0);
   const pendingPriceRial = priceInNoor * conversionRate;
 
-  // تطابق ۱۰۰٪ با CreateTopUpApiRequest در بک‌اند دات‌نت ByeMoney
+  // تطابق ۱۰۰٪ با CreateTopUpApiRequest و قرارداد سبدی ByeMoney
+  const resolvedPendingItems = Array.isArray(pendingItems)
+    ? pendingItems
+    : (pendingPurchaseItem ? [pendingPurchaseItem] : []);
+
   const requestBody = {
     amount: Number(amountInNoor),
     paymentMethod: 2, // PaymentMethod.CardToCard = 2
-    pendingItemType: pendingPurchaseItem ? 1 : null, // PendingItemType.Course = 1
-    pendingItemExternalId:
-      pendingPurchaseItem?.pendingItemExternalId ||
-      pendingPurchaseItem?.documentId ||
-      pendingPurchaseItem?.externalCourseId ||
-      pendingPurchaseItem?.courseId ||
-      null,
-    pendingPriceSnapshot: pendingPurchaseItem ? pendingPriceRial : null,
-    pendingRateSnapshot: pendingPurchaseItem ? conversionRate : null,
+    pendingItems: resolvedPendingItems,
+    // حفظ فیلدهای تک‌آیتمی در صورت عدم ارسال pendingItems آرایه‌ای جهت سازگاری کامل
+    ...(pendingPurchaseItem && (!pendingItems || !Array.isArray(pendingItems)) ? {
+      pendingItemType: 1, // PendingItemType.Course = 1
+      pendingItemExternalId:
+        pendingPurchaseItem?.pendingItemExternalId ||
+        pendingPurchaseItem?.documentId ||
+        pendingPurchaseItem?.externalCourseId ||
+        pendingPurchaseItem?.courseId ||
+        null,
+      pendingPriceSnapshot: pendingPriceRial,
+      pendingRateSnapshot: conversionRate,
+    } : {}),
   };
 
   try {
@@ -385,6 +412,44 @@ export async function checkCoursePurchaseStatusWithByeMoney({ externalCourseId, 
     return { isEnrolled: false, status: 'unconfirmed' };
   }
 }
+
+/**
+ * استعلام وضعیت دسترسی/خرید چند دوره در ByeMoney جهت بازاعتبارسنجی سبد
+ * 
+ * @param {object} params
+ * @param {string[]} params.externalCourseIds
+ * @param {string} params.jwt
+ * @returns {Promise<{ allEnrolled: boolean, enrolledIds: string[], status: string }>}
+ */
+export async function checkCoursesPurchaseStatusWithByeMoney({ externalCourseIds, jwt }) {
+  if (!jwt || !Array.isArray(externalCourseIds) || externalCourseIds.length === 0) {
+    return { allEnrolled: false, enrolledIds: [], status: 'unknown' };
+  }
+
+  try {
+    const results = await Promise.all(
+      externalCourseIds.map(async (id) => {
+        const res = await checkCoursePurchaseStatusWithByeMoney({ externalCourseId: id, jwt });
+        return { id, isEnrolled: Boolean(res.isEnrolled), status: res.status };
+      })
+    );
+
+    const enrolledIds = results.filter(r => r.isEnrolled).map(r => r.id);
+    const allEnrolled = enrolledIds.length === externalCourseIds.length;
+
+    return {
+      allEnrolled,
+      enrolledIds,
+      status: allEnrolled ? 'Completed' : (enrolledIds.length > 0 ? 'PartiallyCompleted' : 'Pending'),
+    };
+  } catch (err) {
+    console.warn('[ByeMoney checkCoursesPurchaseStatus error]:', err);
+    return { allEnrolled: false, enrolledIds: [], status: 'unconfirmed' };
+  }
+}
+
+// نام مستعار جهت شفافیت و تطابق با قرارداد سبدی
+export { purchaseCourseWithByeMoney as purchaseCoursesWithByeMoney };
 
 /**
  * تأیید فیش واریزی و درخواست شارژ (TopUp) در پنل مدیریت ByeMoney

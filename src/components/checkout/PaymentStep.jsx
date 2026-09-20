@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import {
     useCartStore,
     selectTotalPrice,
@@ -12,23 +13,36 @@ import {
 } from '@/store/useCartStore';
 import { formatPrice } from '@/lib/formatters';
 import { PAYMENT_METHOD, PAYMENT_STATUS } from '@/lib/constants/orderConstants';
+import {
+    purchaseCourseWithByeMoney,
+    checkCoursesPurchaseStatusWithByeMoney,
+    createTopUpRequestWithByeMoney,
+} from '@/lib/byeMoneyApi';
+import {
+    getPendingBasketPurchase,
+    setPendingBasketPurchase,
+    clearPendingBasketPurchase,
+} from '@/lib/pendingPurchaseManager';
 import styles from './PaymentStep.module.scss';
 
 /**
  * مرحله 4: روش پرداخت
- * انتخاب روش پرداخت (آنلاین یا کارت‌به‌کارت) و تکمیل خرید همراه با اعمال کوپن تخفیف.
+ * انتخاب روش پرداخت و تکمیل خرید.
  *
- * جریان کارت‌به‌کارت:
- *  1. کاربر گزینه «کارت به کارت» را انتخاب می‌کند.
- *  2. دکمه «ثبت نهایی سفارش» را می‌زند.
- *  3. سفارش با paymentMethod: 'card_to_card' و paymentStatus: 'pending_payment' ثبت می‌شود.
- *  4. سبد خرید (Zustand CartStore) پاک می‌شود.
- *  5. کاربر به /profile/orders/[documentId] هدایت می‌شود تا فیش آپلود کند.
+ * در صورت سبد دوره‌ای خالص (فقط دوره بدون محصول فیزیکی یا فصل):
+ *  - ارسال به قرارداد خرید سبدی ByeMoney با externalCourseIds
+ *  - در صورت موفقیت: پاکسازی سبد و هدایت مستقیم به کتابخانه دوره‌ها
+ *  - در صورت کسری موجودی: باز شدن خودکار مودال تاپ‌آپ و ارسال pendingItems
+ *  - بازاعتبارسنجی خودکار وضعیت سبد جهت تکمیل Zero-Click
+ *
+ * در غیر این صورت:
+ *  - حفظ ۱۰۰٪ جریان قبلی ثبت سفارش استراپی بدون کوچک‌ترین تغییر
  *
  * @param {function} onPrevious - callback برای برگشت به مرحله قبل
  */
 export default function PaymentStep({ onPrevious }) {
     const router = useRouter();
+    const { data: session, status: sessionStatus } = useSession();
     const items = useCartStore((state) => state.items);
     const appliedCoupon = useCartStore((state) => state.appliedCoupon);
     const totalPrice = useCartStore(selectTotalPrice);
@@ -37,13 +51,88 @@ export default function PaymentStep({ onPrevious }) {
     const itemLevelDiscount = useCartStore(selectItemLevelDiscount);
     const itemsCount = useCartStore(selectItemsCount);
 
-    // مقدار پیش‌فرض: کارت به کارت (چون آنلاین فعلاً غیرفعال است)
+    // تشخیص سبد دوره‌ای خالص (منحصراً دوره آموزشی بدون کالای فیزیکی یا فصل)
+    const isPureCoursesOnly = items.length > 0 && items.every((item) => item.type === 'course');
+
+    // مقدار پیش‌فرض: کارت به کارت (برای سفارش‌های غیراز دوره‌ای خالص)
     const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.CARD_TO_CARD);
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
 
+    // وضعیت‌های سبد معلق ByeMoney
+    const [insufficientDetails, setInsufficientDetails] = useState(null);
+    const [pendingItems, setPendingItems] = useState([]);
+    const isCheckingResumeRef = useRef(false);
+
     // آیا این سفارش به دلیل تخفیف ۱۰۰٪ یا اقلام رایگان، صفر تومان است؟
     const isFreeOrder = finalTotalPrice === 0;
+
+    /**
+     * بازاعتبارسنجی و بررسی وضعیت خرید خودکار سبد پس از تأیید واریز تاپ‌آپ (Zero-Click)
+     */
+    const revalidatePendingBasket = useCallback(async () => {
+        if (!session?.user?.jwt || isCheckingResumeRef.current) return;
+
+        const pendingBasket = getPendingBasketPurchase();
+        if (!pendingBasket || !pendingBasket.topUpRequested) return;
+
+        const courseIds = pendingBasket.externalCourseIds;
+        if (!Array.isArray(courseIds) || courseIds.length === 0) return;
+
+        isCheckingResumeRef.current = true;
+
+        try {
+            const statusRes = await checkCoursesPurchaseStatusWithByeMoney({
+                externalCourseIds: courseIds,
+                jwt: session.user.jwt,
+            });
+
+            if (statusRes.allEnrolled) {
+                // خرید در بک‌اند کامل شده است!
+                clearPendingBasketPurchase();
+                useCartStore.getState().clearCart();
+                router.push('/payment/callback?status=success&source=byemoney');
+            }
+        } catch (err) {
+            console.warn('[PaymentStep Pending Basket Revalidation Error]:', err);
+        } finally {
+            isCheckingResumeRef.current = false;
+        }
+    }, [session?.user?.jwt, router]);
+
+    // لیسنرهای رویداد بازگشت به پنجره و پولینگ سبک دوره‌ای ۷ ثانیه‌ای
+    useEffect(() => {
+        if (!isPureCoursesOnly) return;
+
+        // بررسی در لود اولیه
+        revalidatePendingBasket();
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                revalidatePendingBasket();
+            }
+        };
+
+        const handleWindowFocus = () => {
+            revalidatePendingBasket();
+        };
+
+        window.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleWindowFocus);
+
+        const pollTimer = setInterval(() => {
+            const pending = getPendingBasketPurchase();
+            if (pending && pending.topUpRequested) {
+                revalidatePendingBasket();
+            }
+        }, 7000);
+
+        return () => {
+            window.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleWindowFocus);
+            clearInterval(pollTimer);
+        };
+    }, [isPureCoursesOnly, revalidatePendingBasket]);
 
     /**
      * ثبت سفارش — در صورت صفر بودن مبلغ، مستقیماً تایید و فعال می‌شود.
@@ -53,7 +142,141 @@ export default function PaymentStep({ onPrevious }) {
         setIsProcessing(true);
         setErrorMessage(null);
 
-        // تعیین وضعیت اولیه پرداخت بر اساس روش انتخاب‌شده
+        // ۱. در صورتی که سبد خرید منحصراً دوره باشد، از قرارداد خرید بای‌مانی استفاده می‌کنیم
+        if (isPureCoursesOnly && !isFreeOrder) {
+            if (sessionStatus !== 'authenticated' || !session?.user?.jwt) {
+                setErrorMessage('نشست کاربری شما منقضی شده است. لطفاً ابتدا وارد حساب کاربری خود شوید.');
+                setIsProcessing(false);
+                return;
+            }
+
+            const externalCourseIds = items
+                .map(item => item.documentId || item.externalCourseId || item.id)
+                .filter(Boolean);
+
+            if (externalCourseIds.length === 0) {
+                setErrorMessage('شناسه یکتای دوره‌های سبد خرید معتبر نیست.');
+                setIsProcessing(false);
+                return;
+            }
+
+            try {
+                const result = await purchaseCourseWithByeMoney({
+                    externalCourseIds,
+                    jwt: session.user.jwt,
+                });
+
+                if (result.success) {
+                    useCartStore.getState().clearCart();
+                    clearPendingBasketPurchase();
+                    router.push('/payment/callback?status=success&source=byemoney');
+                    return;
+                }
+
+                if (result.conflict) {
+                    setErrorMessage(result.error || 'یک یا چند دوره از دوره‌های موجود در سبد خرید قبلاً توسط شما خریداری شده‌اند.');
+                    setIsProcessing(false);
+                    return;
+                }
+
+                if (result.insufficientBalance && result.insufficientDetails) {
+                    const receivedPendingItems = result.pendingItems || [];
+
+                    // ۱. پیش‌ثبت درخواست TopUp در سامانه ByeMoney جهت پیوست دوره‌های معلق
+                    let topUpRequestId = null;
+                    let clientReferenceId = null;
+                    try {
+                        const topUpRes = await createTopUpRequestWithByeMoney({
+                            amountInNoor: result.insufficientDetails.shortfallInNoor,
+                            pendingItems: receivedPendingItems,
+                            pendingPurchaseItem: receivedPendingItems[0] || null,
+                            jwt: session.user.jwt,
+                        });
+                        if (topUpRes?.success && topUpRes?.data) {
+                            topUpRequestId = topUpRes.data.topUpRequestId;
+                            clientReferenceId = topUpRes.data.clientReferenceId;
+                        }
+                    } catch (topUpErr) {
+                        console.warn('[PaymentStep] TopUp request creation warning:', topUpErr);
+                    }
+
+                    // ۲. ثبت سفارش کارت‌به‌کارت در استراپی (جریان استاندارد کارت به کارت)
+                    const shortfallInToman = result.insufficientDetails.shortfallInToman ||
+                        (result.insufficientDetails.shortfallInRial
+                            ? Math.round(result.insufficientDetails.shortfallInRial / 10)
+                            : result.insufficientDetails.shortfallInNoor * 1000);
+
+                    const orderResponse = await fetch('/api/orders', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            cartItems: items,
+                            totalPrice: shortfallInToman || finalTotalPrice,
+                            shippingAddress: null,
+                            couponCode: appliedCoupon?.code || null,
+                            couponDiscount: couponDiscount,
+                            paymentMethod: PAYMENT_METHOD.CARD_TO_CARD,
+                            paymentStatus: PAYMENT_STATUS.PENDING_PAYMENT,
+                            lightAmount: result.insufficientDetails.shortfallInNoor,
+                            orderType: 'course',
+                            topUpRequestId: topUpRequestId,
+                        }),
+                    });
+
+                    if (!orderResponse.ok) {
+                        const errData = await orderResponse.json();
+                        throw new Error(errData.message || 'خطا در ثبت سفارش کارت‌به‌کارت');
+                    }
+
+                    const newOrder = await orderResponse.json();
+                    const documentId = newOrder?.data?.documentId;
+
+                    // ۳. ذخیره کانتکست سبد خرید معلق
+                    setPendingBasketPurchase({
+                        orderId: documentId,
+                        externalCourseIds,
+                        pendingItems: receivedPendingItems,
+                        items,
+                        shortfallInNoor: result.insufficientDetails.shortfallInNoor,
+                        shortfallInRial: result.insufficientDetails.shortfallInRial,
+                        shortfallInToman,
+                        currentBalanceInNoor: result.insufficientDetails.currentBalanceInNoor,
+                        priceInNoor: result.insufficientDetails.priceInNoor,
+                        topUpRequested: true,
+                        topUpRequestId,
+                        clientReferenceId,
+                    });
+
+                    // ۴. هدایت به صفحه در انتظار پرداخت (فلوی قبلی سبد خرید)
+                    let redirectUrl = '/payment/callback?status=success&source=card_to_card';
+                    if (documentId) {
+                        redirectUrl += `&orderId=${encodeURIComponent(documentId)}`;
+                    }
+                    if (result.insufficientDetails.shortfallInNoor) {
+                        redirectUrl += `&lightAmount=${encodeURIComponent(result.insufficientDetails.shortfallInNoor)}`;
+                    }
+                    router.push(redirectUrl);
+                    return;
+                }
+
+                if (result.unauthorized) {
+                    setErrorMessage(result.error || 'نشست کاربری شما نامعتبر است.');
+                    setIsProcessing(false);
+                    return;
+                }
+
+                setErrorMessage(result.error || 'خطا در ثبت سفارش دوره‌ها.');
+                setIsProcessing(false);
+                return;
+            } catch (err) {
+                console.error('[ByeMoney Cart Purchase Error]:', err);
+                setErrorMessage('خطای غیرمنتظره در برقراری ارتباط با سامانه پرداخت ByeMoney.');
+                setIsProcessing(false);
+                return;
+            }
+        }
+
+        // ۲. برای سفارش‌های رایگان یا سبدهای حاوی محصول فیزیکی/فصل‌ها: جریان قبلی سفارشات
         const isCardToCard = !isFreeOrder && paymentMethod === PAYMENT_METHOD.CARD_TO_CARD;
         const paymentMethodToSend = isFreeOrder ? PAYMENT_METHOD.FREE : paymentMethod;
         const initialPaymentStatus = isCardToCard ? PAYMENT_STATUS.PENDING_PAYMENT : PAYMENT_STATUS.PAID;

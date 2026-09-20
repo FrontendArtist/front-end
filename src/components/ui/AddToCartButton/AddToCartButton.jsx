@@ -92,8 +92,12 @@ export default function AddToCartButton({ course }) {
       ? image
       : (image?.url || course.media?.url || '/images/forempties2.png');
 
+    const docId = course.documentId || course.id || id;
+
     addItem({
       id,
+      documentId: docId,
+      externalCourseId: docId,
       slug,
       title,
       price: formattedPrice,
