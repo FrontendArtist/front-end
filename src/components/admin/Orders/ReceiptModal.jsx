@@ -38,6 +38,18 @@ function extractTopUpId(order) {
     return null;
 }
 
+function extractLightAmount(order) {
+    if (!order) return 0;
+    if (order.lightAmount) return Number(order.lightAmount);
+    const notes = order.notes || '';
+    const match = notes.match(/\[LIGHT_AMOUNT:(\d+)\]/i);
+    if (match) return parseInt(match[1], 10);
+    const textMatch = notes.match(/(\d+)\s*نور/);
+    if (textMatch) return parseInt(textMatch[1], 10);
+    if (order.totalPrice) return Math.round(Number(order.totalPrice) / 1000);
+    return 0;
+}
+
 export default function ReceiptModal({ order, onClose, onUpdate }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -45,6 +57,7 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
     const [rejectionReason, setRejectionReason] = useState(order.rejectionReason || '');
 
     const topUpId = extractTopUpId(order);
+    const lightAmount = extractLightAmount(order);
 
     /**
      * ارسال درخواست PUT به API Route ادمین
@@ -64,7 +77,7 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
                 documentId: order.documentId,
                 paymentStatus: isFailed ? 'rejected' : newStatus,
                 topUpId: topUpId || undefined,
-                confirmedAmount: order.lightAmount || undefined,
+                confirmedAmount: lightAmount || undefined,
                 rejectionReason: isFailed ? finalReason : null,
                 ...(isPaid ? { orderStatus: 'paid', rejectionReason: null } : {}),
                 ...(isFailed ? { orderStatus: 'canceled', rejectionReason: finalReason } : {}),

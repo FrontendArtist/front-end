@@ -302,14 +302,6 @@ export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingItem
       };
     }
 
-    // فال‌بک شبیه‌سازی در صورت در دسترس نبودن موقت اندپوینت بک‌اند
-    if (response.status === 404 || response.status === 501) {
-      console.warn(
-        `[ByeMoney TopUp API]: اندپوینت POST /api/topup/requests کد ${response.status} بازگرداند. ارائه پاسخ شبیه‌سازی‌شده (Mock).`
-      );
-      return getMockTopUpResponse({ amountInNoor, pendingItems: resolvedPendingItems });
-    }
-
     const errJson = await response.json().catch(() => ({}));
     let topUpErrMsg = '';
     if (Array.isArray(errJson.errors)) {
@@ -323,38 +315,79 @@ export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingItem
       error: topUpErrMsg || errJson.message || errJson.error || (errJson.title !== 'خطای اعتبارسنجی' ? errJson.title : '') || `خطا در ثبت درخواست شارژ (کد ${response.status})`,
     };
   } catch (netErr) {
-    console.warn(
-      '[ByeMoney TopUp API]: عدم امکان ارتباط با POST /api/topup/requests. ارائه پاسخ شبیه‌سازی‌شده (Mock).',
-      netErr
-    );
-    return getMockTopUpResponse({ amountInNoor, pendingItems: resolvedPendingItems });
+    console.error('[ByeMoney TopUp API Error]:', netErr);
+    return {
+      success: false,
+      error: 'خطا در برقراری ارتباط با سامانه پرداخت ByeMoney. لطفاً اتصال اینترنت خود را بررسی نمایید.',
+    };
   }
 }
 
 /**
- * پاسخ شبیه‌سازی‌شده برای درخواست شارژ کارت‌به‌کارت
+ * دریافت موجودی واقعی کیف پول نور کاربر از سامانه ByeMoney
+ * اندپوینت: GET /api/wallet/balance
+ * 
+ * @param {object} params
+ * @param {string} params.jwt - توکن احراز هویت
+ * @returns {Promise<{ success: boolean, balance: number, currency: string, error?: string, unauthorized?: boolean }>}
  */
-function getMockTopUpResponse({ amountInNoor, pendingItems }) {
-  const amountRial = Number(amountInNoor) * 10000;
-  return {
-    success: true,
-    isMocked: true,
-    data: {
-      topUpRequestId: `mock-${Date.now()}`,
-      clientReferenceId: `CR-${Math.floor(100000 + Math.random() * 900000)}`,
-      amountInNoor: Number(amountInNoor),
-      amountInRial: amountRial,
-      amountInToman: Math.round(amountRial / 10),
-      bankInfo: {
-        bankName: 'بانک ملی ایران',
-        cardNumber: '۶۰۳۷-۹۹۷۵-۱۲۳۴-۵۶۷۸',
-        accountHolder: 'موسسه آموزشی خاک تا افلاک',
+export async function getWalletBalanceWithByeMoney({ jwt }) {
+  if (!jwt) {
+    return {
+      success: false,
+      unauthorized: true,
+      balance: 0,
+      currency: 'Noor',
+      error: 'نشست کاربری نامعتبر است. لطفاً مجدداً وارد شوید.',
+    };
+  }
+
+  const endpoint = `${BYEMONEY_API_URL}/api/wallet/balance`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
       },
-      pendingItems: pendingItems || [],
-      status: 'PendingPayment',
-      createdAt: new Date().toISOString(),
-    },
-  };
+      cache: 'no-store',
+    });
+
+    if (response.status === 401) {
+      return {
+        success: false,
+        unauthorized: true,
+        balance: 0,
+        currency: 'Noor',
+        error: 'نشست کاربری منقضی شده است.',
+      };
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        success: true,
+        balance: Number(data.balance ?? 0),
+        currency: data.currency || 'Noor',
+      };
+    }
+
+    const errJson = await response.json().catch(() => ({}));
+    return {
+      success: false,
+      balance: 0,
+      currency: 'Noor',
+      error: errJson.message || errJson.error || `خطا در دریافت موجودی (کد ${response.status})`,
+    };
+  } catch (err) {
+    console.error('[ByeMoney Get Wallet Balance Error]:', err);
+    return {
+      success: false,
+      balance: 0,
+      currency: 'Noor',
+      error: 'خطا در برقراری ارتباط با سامانه پرداخت ByeMoney.',
+    };
+  }
 }
 
 /**

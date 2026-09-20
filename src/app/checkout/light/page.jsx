@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { LIGHT_TO_TOMAN_RATE } from '@/lib/constants';
+import { createTopUpRequestWithByeMoney } from '@/lib/byeMoneyApi';
 import styles from './page.module.scss';
 
 /**
@@ -68,7 +69,24 @@ function LightCheckoutContent() {
         const isCardToCard = paymentMethod === 'card_to_card';
 
         try {
-            // ثبت سفارش نور از طریق همان API سفارشات
+            if (!session?.user?.jwt) {
+                throw new Error('نشست کاربری نامعتبر است. لطفاً مجدداً وارد حساب کاربری خود شوید.');
+            }
+
+            // ۱. پیش‌ثبت رسمی درخواست شارژ در سامانه مالی ByeMoney
+            const topUpRes = await createTopUpRequestWithByeMoney({
+                amountInNoor: lightAmount,
+                pendingItems: [], // در شارژ مستقیم اقلام معلق وجود ندارد
+                jwt: session.user.jwt,
+            });
+
+            if (!topUpRes.success || !topUpRes.data) {
+                throw new Error(topUpRes.error || 'خطا در ثبت درخواست شارژ در سامانه ByeMoney.');
+            }
+
+            const { topUpRequestId, clientReferenceId } = topUpRes.data;
+
+            // ۲. ثبت سفارش کارت‌به‌کارت در سامانه سفارشات (استراپی) با شناسه شارژ متصل
             const response = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -87,9 +105,11 @@ function LightCheckoutContent() {
                     shippingAddress: null,
                     paymentMethod: paymentMethod,
                     paymentStatus: isCardToCard ? 'pending_payment' : 'paid',
-                    // داده اضافی برای مدیریت نور
+                    // داده اضافی برای مدیریت نور و شناسه ByeMoney
                     lightAmount: lightAmount,
                     orderType: 'light_topup',
+                    topUpRequestId: topUpRequestId,
+                    clientReferenceId: clientReferenceId,
                 }),
             });
 
@@ -104,9 +124,9 @@ function LightCheckoutContent() {
             if (isCardToCard) {
                 let redirectUrl = `/payment/callback?status=success&source=card_to_card&orderType=light_topup&lightAmount=${lightAmount}`;
                 if (documentId) redirectUrl += `&orderId=${encodeURIComponent(documentId)}`;
+                if (topUpRequestId) redirectUrl += `&topUpId=${encodeURIComponent(topUpRequestId)}`;
                 router.push(redirectUrl);
             } else {
-                // پرداخت آنلاین: نور بلافاصله اضافه می‌شود
                 router.push(`/payment/callback?status=success&source=light_topup&lightAmount=${lightAmount}`);
             }
 

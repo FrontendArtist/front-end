@@ -64,13 +64,13 @@ export default function UserStatus() {
     }, []);
 
     // ── fetch موجودی نور هنگام hover / باز شدن دراپ‌داون ──────────────────
-    const fetchLightBalance = useCallback(async () => {
-        if (lightBalance !== null) return; // یک بار fetch می‌کنیم
+    const fetchLightBalance = useCallback(async (force = false) => {
+        if (!force && lightBalance !== null) return;
         try {
             const res = await fetch('/api/payment-light', { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
-                setLightBalance(data.light ?? 0);
+                setLightBalance(data.light ?? data.balance ?? 0);
             }
         } catch {
             // بی‌صدا fail می‌شه
@@ -136,9 +136,10 @@ export default function UserStatus() {
     // آپدیت موجودی نور بعد از بستن مدال (در صورت پرداخت موفق)
     const handleLightModalClose = useCallback(() => {
         setIsLightModalOpen(false);
-        // ریست می‌کنیم تا دفعه بعد دوباره fetch بشه
+        // ریست و استعلام مجدد
         setLightBalance(null);
-    }, []);
+        fetchLightBalance(true);
+    }, [fetchLightBalance]);
 
     const formatNumber = (n) => new Intl.NumberFormat('fa-IR').format(n);
 
@@ -288,7 +289,7 @@ export default function UserStatus() {
                     )}
 
                     {/* ── آیتم افزایش نور ──────────────────────────────── */}
-                    {/* <button
+                    <button
                         className={`${styles.dropdownItem} ${styles.dropdownItemLight}`}
                         onClick={() => {
                             setIsDropdownOpen(false);
@@ -300,7 +301,7 @@ export default function UserStatus() {
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                         </svg>
                         <span>افزایش نور</span>
-                    </button> */}
+                    </button>
 
                     {/* ── آیتم خروج ────────────────────────────────────── */}
                     <button

@@ -180,21 +180,20 @@ export default function PaymentStep({ onPrevious }) {
                     const receivedPendingItems = result.pendingItems || [];
 
                     // ۱. پیش‌ثبت درخواست TopUp در سامانه ByeMoney جهت پیوست دوره‌های معلق
-                    let topUpRequestId = null;
-                    let clientReferenceId = null;
-                    try {
-                        const topUpRes = await createTopUpRequestWithByeMoney({
-                            amountInNoor: result.insufficientDetails.shortfallInNoor,
-                            pendingItems: receivedPendingItems,
-                            jwt: session.user.jwt,
-                        });
-                        if (topUpRes?.success && topUpRes?.data) {
-                            topUpRequestId = topUpRes.data.topUpRequestId;
-                            clientReferenceId = topUpRes.data.clientReferenceId;
-                        }
-                    } catch (topUpErr) {
-                        console.warn('[PaymentStep] TopUp request creation warning:', topUpErr);
+                    const topUpRes = await createTopUpRequestWithByeMoney({
+                        amountInNoor: result.insufficientDetails.shortfallInNoor,
+                        pendingItems: receivedPendingItems,
+                        jwt: session.user.jwt,
+                    });
+
+                    if (!topUpRes?.success || !topUpRes?.data) {
+                        setErrorMessage(topUpRes?.error || 'خطا در ایجاد درخواست شارژ کسری موجودی در سامانه ByeMoney.');
+                        setIsProcessing(false);
+                        return;
                     }
+
+                    const topUpRequestId = topUpRes.data.topUpRequestId;
+                    const clientReferenceId = topUpRes.data.clientReferenceId;
 
                     // ۲. ثبت سفارش کارت‌به‌کارت در استراپی (جریان استاندارد کارت به کارت)
                     const shortfallInToman = result.insufficientDetails.shortfallInToman ||

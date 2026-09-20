@@ -361,23 +361,10 @@ export async function POST(request) {
             console.error("User update failed:", await userUpdateRes.text());
         }
 
-        // ── اضافه کردن فوری نور برای پرداخت آنلاین ─────────────────────────
-        const orderType = body.orderType;
-        const lightAmount = Number(body.lightAmount);
-        if (orderType === 'light_topup' && lightAmount > 0 && resolvedPaymentMethod === 'online') {
-            const currentLight = userData.light ?? 0;
-            const lightUpdateRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${STRAPI_TOKEN}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ light: currentLight + lightAmount })
-            });
-            if (!lightUpdateRes.ok) {
-                console.error("Light update failed:", await lightUpdateRes.text());
-            }
-        }
+        // ── عدم تغییر مستقیم user.light در استراپی ──────────────────────────
+        // بر اساس تصمیمات معماری ByeMoney (D05/D06/I12)، موجودی نور منحصراً در
+        // Ledger سامانه مالی ByeMoney ثبت و مدیریت می‌شود و هیچ سیستمی نباید
+        // فیلد user.light را مستقیماً تغییر دهد.
 
         try {
             revalidatePath('/products', 'layout');
