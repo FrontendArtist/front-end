@@ -4,8 +4,6 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { setPendingPurchase } from '@/lib/pendingPurchaseManager';
-import { createTopUpRequestWithByeMoney } from '@/lib/byeMoneyApi';
 import { LIGHT_TO_TOMAN_RATE } from '@/lib/constants';
 import styles from './page.module.scss';
 
@@ -19,15 +17,6 @@ function LightCheckoutContent() {
     const { data: session, status: sessionStatus } = useSession();
 
     const rawAmount = Number(searchParams.get('amount') || '0');
-    const paramDocId = searchParams.get('documentId') || searchParams.get('courseDocumentId') || searchParams.get('externalCourseId');
-    const paramCourseId = searchParams.get('courseId');
-    const courseTitle = searchParams.get('courseTitle');
-    const courseSlug = searchParams.get('courseSlug');
-
-    // استخراج documentId دوره (رشته‌های غیرعددی در استراپی v5 نشان‌دهنده documentId هستند)
-    const initialDocId = paramDocId || (paramCourseId && !/^\d+$/.test(paramCourseId) ? paramCourseId : null);
-    const [resolvedCourseDocId, setResolvedCourseDocId] = useState(initialDocId);
-
     const lightAmount = Number.isFinite(rawAmount) && rawAmount > 0 ? rawAmount : 0;
     const totalPrice = lightAmount * LIGHT_TO_TOMAN_RATE;
 
@@ -36,68 +25,6 @@ function LightCheckoutContent() {
     const [errorMessage, setErrorMessage] = useState(null);
 
     const formatPrice = (n) => new Intl.NumberFormat('fa-IR').format(n);
-
-    // جستجوی تکمیلی در صورت عدم وجود documentId مستقیم در URL
-    useEffect(() => {
-        if (resolvedCourseDocId) return;
-
-        // بررسی sessionStorage خریدهای معلق
-        if (typeof window !== 'undefined') {
-            try {
-                for (let i = 0; i < window.sessionStorage.length; i++) {
-                    const key = window.sessionStorage.key(i);
-                    if (key && key.startsWith('byemoney_pending_purchase_')) {
-                        const raw = window.sessionStorage.getItem(key);
-                        if (raw) {
-                            const data = JSON.parse(raw);
-                            if (
-                                (courseSlug && data.courseSlug === courseSlug) ||
-                                (paramCourseId && (data.courseId === paramCourseId || String(data.orderId) === paramCourseId))
-                            ) {
-                                const docId = data.courseId || key.replace('byemoney_pending_purchase_', '');
-                                if (docId) {
-                                    setResolvedCourseDocId(docId);
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch {
-                // ignore
-            }
-        }
-
-        // در صورت نیاز استعلام از API استراپی
-        let isMounted = true;
-        async function fetchCourseDocId() {
-            try {
-                let query = '';
-                if (courseSlug) {
-                    query = `filters[slug][$eq]=${encodeURIComponent(courseSlug)}`;
-                } else if (paramCourseId) {
-                    query = `filters[id][$eq]=${encodeURIComponent(paramCourseId)}`;
-                }
-                if (!query) return;
-
-                const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-                const res = await fetch(`${strapiUrl}/api/courses?${query}&fields[0]=documentId&fields[1]=id`);
-                if (res.ok) {
-                    const json = await res.json();
-                    const item = json?.data?.[0];
-                    const docId = item?.documentId || item?.attributes?.documentId;
-                    if (isMounted && docId) {
-                        setResolvedCourseDocId(docId);
-                    }
-                }
-            } catch (err) {
-                console.warn('[LightCheckout] Failed to resolve course documentId:', err);
-            }
-        }
-
-        fetchCourseDocId();
-        return () => { isMounted = false; };
-    }, [paramDocId, paramCourseId, courseSlug, resolvedCourseDocId]);
 
     // اگر کاربر لاگین نیست به صفحه ورود بفرستیم
     useEffect(() => {
@@ -139,34 +66,8 @@ function LightCheckoutContent() {
         setErrorMessage(null);
 
         const isCardToCard = paymentMethod === 'card_to_card';
-        const finalCourseDocumentId = resolvedCourseDocId || initialDocId || paramCourseId;
 
         try {
-            // پیش‌ثبت درخواست شارژ در ByeMoney برای سفارش‌های کارت‌به‌کارت
-            let byeMoneyTopUpId = null;
-            if (isCardToCard && session?.user?.jwt) {
-                try {
-                    const topUpRes = await createTopUpRequestWithByeMoney({
-                        amountInNoor: lightAmount,
-                        pendingPurchaseItem: finalCourseDocumentId ? {
-                            pendingItemExternalId: finalCourseDocumentId,
-                            externalCourseId: finalCourseDocumentId,
-                            documentId: finalCourseDocumentId,
-                            courseId: finalCourseDocumentId,
-                            courseTitle: courseTitle || '',
-                            courseSlug: courseSlug || '',
-                            priceInNoor: lightAmount,
-                        } : null,
-                        jwt: session.user.jwt,
-                    });
-                    if (topUpRes?.success && topUpRes?.data?.topUpRequestId) {
-                        byeMoneyTopUpId = topUpRes.data.topUpRequestId;
-                    }
-                } catch (topUpErr) {
-                    console.warn('[LightCheckout] Pre-registration with ByeMoney skipped or failed:', topUpErr);
-                }
-            }
-
             // ثبت سفارش نور از طریق همان API سفارشات
             const response = await fetch('/api/orders', {
                 method: 'POST',
@@ -174,17 +75,12 @@ function LightCheckoutContent() {
                 body: JSON.stringify({
                     cartItems: [
                         {
-                            id: finalCourseDocumentId ? `course-${finalCourseDocumentId}` : `light-${lightAmount}`,
-                            type: finalCourseDocumentId ? 'course' : 'light_topup',
-                            title: courseTitle
-                                ? `شارژ ${formatPrice(lightAmount)} نور جهت ثبت‌نام در ${courseTitle}`
-                                : `شارژ ${formatPrice(lightAmount)} نور`,
+                            id: `light-${lightAmount}`,
+                            type: 'light_topup',
+                            title: `شارژ ${formatPrice(lightAmount)} نور`,
                             price: totalPrice,
                             quantity: 1,
                             lightAmount: lightAmount,
-                            courseId: finalCourseDocumentId || null,
-                            documentId: finalCourseDocumentId || null,
-                            slug: courseSlug || null,
                         },
                     ],
                     totalPrice: totalPrice,
@@ -193,8 +89,7 @@ function LightCheckoutContent() {
                     paymentStatus: isCardToCard ? 'pending_payment' : 'paid',
                     // داده اضافی برای مدیریت نور
                     lightAmount: lightAmount,
-                    orderType: finalCourseDocumentId ? 'course' : 'light_topup',
-                    topUpRequestId: byeMoneyTopUpId,
+                    orderType: 'light_topup',
                 }),
             });
 
@@ -207,18 +102,7 @@ function LightCheckoutContent() {
             const documentId = newOrder?.data?.documentId;
 
             if (isCardToCard) {
-                if (finalCourseDocumentId && documentId) {
-                    setPendingPurchase(finalCourseDocumentId, {
-                        orderId: documentId,
-                        courseSlug: courseSlug || '',
-                        courseTitle: courseTitle || '',
-                        shortfallInNoor: lightAmount,
-                        priceInNoor: lightAmount,
-                        topUpRequested: true,
-                        topUpRequestId: byeMoneyTopUpId,
-                    });
-                }
-                let redirectUrl = `/payment/callback?status=success&source=card_to_card&orderType=${finalCourseDocumentId ? 'course' : 'light_topup'}&lightAmount=${lightAmount}`;
+                let redirectUrl = `/payment/callback?status=success&source=card_to_card&orderType=light_topup&lightAmount=${lightAmount}`;
                 if (documentId) redirectUrl += `&orderId=${encodeURIComponent(documentId)}`;
                 router.push(redirectUrl);
             } else {
@@ -235,9 +119,7 @@ function LightCheckoutContent() {
 
     return (
         <div className={`${styles.page} container`}>
-            <h1 className={styles.pageTitle}>
-                {courseTitle ? `تکمیل خرید: ${courseTitle}` : 'شارژ نور'}
-            </h1>
+            <h1 className={styles.pageTitle}>شارژ نور</h1>
 
             <div className={styles.paymentStep}>
                 <div>
@@ -258,9 +140,7 @@ function LightCheckoutContent() {
                                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                                     </svg>
                                 </span>
-                                {courseTitle
-                                    ? `شارژ ${formatPrice(lightAmount)} نور جهت ثبت‌نام در ${courseTitle}`
-                                    : `شارژ ${formatPrice(lightAmount)} نور`}
+                                شارژ {formatPrice(lightAmount)} نور
                             </span>
                             <span className={styles.itemPrice}>
                                 {formatPrice(totalPrice)} تومان
