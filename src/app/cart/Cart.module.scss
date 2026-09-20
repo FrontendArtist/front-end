@@ -128,11 +128,10 @@
     gap: 20px;
     align-items: center;
     padding: 18px 22px;
-    background: var(--gradient-card-vertical);
+    background: var(--gradient-card-horizontal-rtl);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: var(--radius-card);
-    border: 1px solid fade(var(--color-primary), 20%);
     box-shadow: var(--shadow-card-strong);
     @include hover-transition;
 

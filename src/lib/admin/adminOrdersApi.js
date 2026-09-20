@@ -48,6 +48,10 @@ export async function getOrdersStats(jwt) {
             return ['paid', 'shipped', 'delivered'].includes(s) || ps === 'paid';
         }).length;
         const canceledCount = list.filter(o => (o.attributes?.orderStatus || o.orderStatus || '').trim().toLowerCase() === 'canceled').length;
+        const onlineCount = list.filter(o => {
+            const pm = (o.attributes?.paymentMethod || o.paymentMethod || '').trim().toLowerCase();
+            return pm === 'online';
+        }).length;
 
         return {
             totalOrders: list.length,
@@ -56,13 +60,14 @@ export async function getOrdersStats(jwt) {
                 pending: pendingCount,
                 paid: paidCount,
                 canceled: canceledCount,
+                online: onlineCount,
             },
         };
     }
 
     try {
         const pageSize = 100;
-        const fieldsParams = 'fields[0]=totalPrice&fields[1]=orderStatus&fields[2]=paymentStatus&fields[3]=discountAmount&fields[4]=originalTotalPrice&fields[5]=settledAt';
+        const fieldsParams = 'fields[0]=totalPrice&fields[1]=orderStatus&fields[2]=paymentStatus&fields[3]=discountAmount&fields[4]=originalTotalPrice&fields[5]=settledAt&fields[6]=paymentMethod';
         const endpoint = `/api/orders?${fieldsParams}&pagination[page]=1&pagination[pageSize]=${pageSize}`;
         const firstPageData = await adminFetch(endpoint, jwt);
 
@@ -182,6 +187,8 @@ export async function getOrders(jwt, { page, pageSize = 50, start, limit, status
             params.set('filters[orderStatus][$in][2]', 'delivered');
         } else if (status === 'canceled') {
             params.set('filters[orderStatus][$eq]', 'canceled');
+        } else if (status === 'online') {
+            params.set('filters[paymentMethod][$eq]', 'online');
         }
     }
 
@@ -295,6 +302,13 @@ export async function getOrders(jwt, { page, pageSize = 50, start, limit, status
             ? `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
             : null;
 
+        const extractFromNotes = (notes, label) => {
+            if (!notes || typeof notes !== 'string') return null;
+            const regex = new RegExp(`${label}\\s*([^\\n\\r]+)`, 'i');
+            const match = notes.match(regex);
+            return match ? match[1].trim() : null;
+        };
+
         return {
             id: item.id,
             documentId: item.documentId || String(item.id),
@@ -311,6 +325,13 @@ export async function getOrders(jwt, { page, pageSize = 50, start, limit, status
             phone: attrs.phone || null,
             email: attrs.email || null,
             notes: attrs.notes || null,
+            // فیلدهای اختصاصی پرداخت آنلاین (سپ)
+            refNum: attrs.refNum || extractFromNotes(attrs.notes, 'رسید دیجیتال \\(RefNum\\):') || null,
+            traceNo: attrs.traceNo || extractFromNotes(attrs.notes, 'کد رهگیری:') || attrs.trackingNumber || null,
+            rrn: attrs.rrn || extractFromNotes(attrs.notes, 'شماره مرجع \\(RRN\\):') || null,
+            securePan: attrs.securePan || extractFromNotes(attrs.notes, 'شماره کارت:') || null,
+            hashedCardNumber: attrs.hashedCardNumber || null,
+            paymentDate: attrs.paymentDate || null,
             createdAt: attrs.createdAt,
             settledAt: attrs.settledAt || null,
             settlement: settlement ? {

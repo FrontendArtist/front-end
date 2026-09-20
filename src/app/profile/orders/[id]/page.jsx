@@ -20,7 +20,40 @@ import Link from 'next/link';
 import OrderReceiptUpload from '@/components/profile/OrderReceiptUpload';
 import styles from './orderDetail.module.scss';
 
-// ─── فرمت‌کننده‌ها ────────────────────────────────────────────────────────────
+// ─── فرمت‌کننده‌ها و ابزارها ──────────────────────────────────────────
+const extractFromNotes = (notes, label) => {
+    if (!notes || typeof notes !== 'string') return null;
+    const regex = new RegExp(`${label}\\s*([^\\n\\r]+)`, 'i');
+    const match = notes.match(regex);
+    return match ? match[1].trim() : null;
+};
+
+function CopyBtn({ text, label = 'کپی' }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        if (!text) return;
+        try {
+            navigator.clipboard.writeText(String(text));
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // fallback
+        }
+    };
+
+    return (
+        <button
+            type="button"
+            className={`${styles.copyBtn} ${copied ? styles.copyBtnSuccess : ''}`}
+            onClick={handleCopy}
+            title={copied ? 'کپی شد!' : `کپی ${label}`}
+        >
+            {copied ? '✓ کپی شد' : 'کپی'}
+        </button>
+    );
+}
+
 const formatPrice = (price) =>
     Number(price || 0).toLocaleString('fa-IR');
 
@@ -136,6 +169,8 @@ export default function OrderDetailPage() {
 
     const items = Array.isArray(order.items) ? order.items : [];
     const isCardToCard = order.paymentMethod === 'card_to_card';
+    const isOnline = order.paymentMethod === 'online';
+    const isPaid = ['paid', 'shipped', 'delivered'].includes(order.orderStatus?.trim()) || order.paymentStatus === 'paid';
     const isRejected = 
         order.paymentStatus === 'failed' || 
         order.paymentStatus === 'rejected' ||
@@ -143,6 +178,13 @@ export default function OrderDetailPage() {
         order.orderStatus === 'cancelled' ||
         order.orderStatus === 'rejected';
     const needsReceiptUpload = isCardToCard && order.paymentStatus === 'pending_payment' && !isRejected;
+
+    // استخراج فیلدهای پرداخت آنلاین با fallback از notes
+    const onlineRefNum = order.refNum || extractFromNotes(order.notes, 'رسید دیجیتال \\(RefNum\\):');
+    const onlineTraceNo = order.traceNo || extractFromNotes(order.notes, 'کد رهگیری:') || order.trackingNumber;
+    const onlineRrn = order.rrn || extractFromNotes(order.notes, 'شماره مرجع \\(RRN\\):');
+    const onlineSecurePan = order.securePan || extractFromNotes(order.notes, 'شماره کارت:');
+    const onlinePaymentDate = order.paymentDate || (isPaid ? order.createdAt : null);
 
     return (
         <div className={styles.page}>
@@ -175,7 +217,7 @@ export default function OrderDetailPage() {
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>روش پرداخت:</span>
                         <span className={styles.metaValue}>
-                            {isCardToCard ? 'کارت به کارت' : (order.paymentMethod === 'free' ? 'رایگان' : 'پرداخت آنلاین')}
+                            {isCardToCard ? 'کارت به کارت' : (order.paymentMethod === 'free' ? 'رایگان' : 'پرداخت آنلاین (درگاه سامان)')}
                         </span>
                     </span>
                     <span className={styles.metaItem}>
@@ -187,8 +229,13 @@ export default function OrderDetailPage() {
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>وضعیت سفارش:</span>
                         <span className={styles.metaValue} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <OrderStatusBadge status={order.orderStatus} />
+                            <OrderStatusBadge status={isOnline && isPaid ? 'paid' : order.orderStatus} />
                             {isCardToCard && <PaymentStatusBadge status={order.paymentStatus} />}
+                            {isOnline && isPaid && (
+                                <span className={`${styles.badge} ${styles.badgeSuccess}`}>
+                                    پرداخت آنلاین موفق
+                                </span>
+                            )}
                         </span>
                     </span>
                     {(order.orderStatus?.trim() === 'shipped' || order.trackingNumber) && (
@@ -201,6 +248,78 @@ export default function OrderDetailPage() {
                     )}
                 </div>
             </div>
+
+            {/* ─── مشخصات رسید پرداخت آنلاین (درگاه سامان کیش - سپ) ────── */}
+            {isOnline && (
+                <div className={styles.onlineReceiptCard}>
+                    <div className={styles.onlineReceiptHeader}>
+                        <div className={styles.onlineReceiptTitleWrap}>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="2" y="5" width="20" height="14" rx="2" />
+                                <line x1="2" y1="10" x2="22" y2="10" />
+                            </svg>
+                            <h2 className={styles.onlineReceiptTitle}>
+                                مشخصات پرداخت اینترنتی (درگاه پرداخت الکترونیک سامان)
+                            </h2>
+                        </div>
+                        <span className={isPaid ? styles.receiptStatusSuccess : styles.receiptStatusPending}>
+                            {isPaid ? '✓ پرداخت تایید شده توسط درگاه سپ' : '⏳ در انتظار پرداخت آنلاین'}
+                        </span>
+                    </div>
+
+                    <div className={styles.onlineReceiptGrid}>
+                        {onlineSecurePan && (
+                            <div className={styles.receiptField}>
+                                <span className={styles.receiptFieldLabel}>شماره کارت واریزکننده</span>
+                                <span className={styles.receiptFieldValue} dir="ltr">💳 {onlineSecurePan}</span>
+                            </div>
+                        )}
+
+                        {onlineRefNum && (
+                            <div className={styles.receiptField}>
+                                <span className={styles.receiptFieldLabel}>رسید دیجیتال بانک (RefNum)</span>
+                                <div className={styles.copyableWrapper}>
+                                    <span className={styles.receiptFieldValue} dir="ltr">{onlineRefNum}</span>
+                                    <CopyBtn text={onlineRefNum} label="رسید دیجیتال" />
+                                </div>
+                            </div>
+                        )}
+
+                        {onlineTraceNo && (
+                            <div className={styles.receiptField}>
+                                <span className={styles.receiptFieldLabel}>کد پیگیری تراکنش (TraceNo)</span>
+                                <div className={styles.copyableWrapper}>
+                                    <span className={styles.receiptFieldValue} dir="ltr">{onlineTraceNo}</span>
+                                    <CopyBtn text={onlineTraceNo} label="کد پیگیری" />
+                                </div>
+                            </div>
+                        )}
+
+                        {onlineRrn && (
+                            <div className={styles.receiptField}>
+                                <span className={styles.receiptFieldLabel}>شماره مرجع شاپرک (RRN)</span>
+                                <span className={styles.receiptFieldValue} dir="ltr">{onlineRrn}</span>
+                            </div>
+                        )}
+
+                        <div className={styles.receiptField}>
+                            <span className={styles.receiptFieldLabel}>تاریخ و زمان پرداخت</span>
+                            <span className={styles.receiptFieldValue}>{formatDate(onlinePaymentDate)}</span>
+                        </div>
+
+                        <div className={styles.receiptField}>
+                            <span className={styles.receiptFieldLabel}>مبلغ پرداختی</span>
+                            <span className={styles.receiptFieldValue}>
+                                {formatPrice(order.totalPrice)} تومان
+                                <span className={styles.rialNote}>
+                                    ({new Intl.NumberFormat('fa-IR').format(Math.round(Number(order.totalPrice || 0) * 10))} ریال)
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ─── اقلام سفارش ────────────────────────────────────────────── */}
             {items.length > 0 && (

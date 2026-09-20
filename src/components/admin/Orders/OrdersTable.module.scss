@@ -1462,4 +1462,94 @@ $transition: 0.2s ease;
     }
 }
 
+/* ─── مشخصات پرداخت آنلاین در پنل ادمین ──────────────────────── */
+.expanded_section_online {
+    background: fade(var(--color-black), 20%) !important;
+    border: 1px solid fade(var(--color-primary), 8%) !important;
+    box-shadow: none !important;
+}
+
+.onlinePayDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.onlinePayStatusRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid fade(var(--color-primary), 8%);
+}
+
+.onlinePayBadgeSuccess {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-bold);
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.onlinePayBadgePending {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-bold);
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.copyableField {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.copyBtn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--color-text-secondary);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.18);
+        color: var(--color-text-primary);
+    }
+
+    &Success {
+        background: rgba(16, 185, 129, 0.25) !important;
+        border-color: rgba(16, 185, 129, 0.5) !important;
+        color: #34d399 !important;
+    }
+}
+
+.rialEquivalent {
+    font-size: var(--font-xs);
+    color: var(--color-text-secondary);
+    margin-right: 6px;
+    opacity: 0.8;
+}
+
+
 

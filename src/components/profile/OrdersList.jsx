@@ -60,6 +60,13 @@ export default function OrdersList({ limit }) {
         if (['shipped', 'delivered', 'canceled'].includes(oStatus)) {
             return <StatusBadge status={order.orderStatus} />;
         }
+        if (order.paymentMethod === 'online') {
+            const isPaid = ['paid', 'shipped', 'delivered'].includes(oStatus) || order.paymentStatus === 'paid';
+            if (isPaid) {
+                return <span className={`${styles.orders__badge} ${styles.orders__badgeSuccess}`}>پرداخت آنلاین موفق</span>;
+            }
+            return <span className={`${styles.orders__badge} ${styles.orders__badgeWarning}`}>در انتظار پرداخت آنلاین</span>;
+        }
         if (order.paymentMethod === 'card_to_card') {
             return <PaymentStatusBadge status={order.paymentStatus} />;
         }
@@ -138,6 +145,14 @@ export default function OrdersList({ limit }) {
                                     <span className={styles.orders__label}>تعداد اقلام:</span>
                                     <span className={styles.orders__value}>{items.length} آیتم</span>
                                 </div>
+                                {(order.traceNo || order.trackingNumber || order.refNum) && (
+                                    <div className={styles.orders__detailItem}>
+                                        <span className={styles.orders__label}>کد پیگیری:</span>
+                                        <span className={styles.orders__value} dir="ltr" style={{ fontWeight: 'bold' }}>
+                                            {order.traceNo || order.trackingNumber || order.refNum}
+                                        </span>
+                                    </div>
+                                )}
 
                                 <Link
                                     href={`/profile/orders/${orderData.documentId}`}

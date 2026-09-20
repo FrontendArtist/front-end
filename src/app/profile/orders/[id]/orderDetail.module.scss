@@ -529,3 +529,155 @@
         opacity: 0.5;
     }
 }
+
+// ─── کارت رسید پرداخت آنلاین (سپ) ──────────────────────────────────────────────
+.onlineReceiptCard {
+    background: var(--gradient-card-horizontal-rtl);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card-strong);
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: slideIn 0.3s ease;
+
+    @include respond(md) {
+        padding: 18px 16px;
+        gap: 16px;
+    }
+}
+
+.onlineReceiptHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-bottom: 14px;
+    border-bottom: 1px solid fade(var(--color-primary), 15%);
+
+    @include respond(md) {
+        padding-bottom: 12px;
+    }
+}
+
+.onlineReceiptTitleWrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    svg {
+        color: var(--color-title-hover);
+        flex-shrink: 0;
+    }
+}
+
+.onlineReceiptTitle {
+    font-family: var(--font-lalezar);
+    font-size: var(--font-lg);
+    color: var(--color-text-primary);
+    margin: 0;
+
+    @include respond(md) {
+        font-size: var(--font-md);
+    }
+}
+
+.receiptStatusSuccess {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-medium);
+    background: fade(var(--color-success), 15%);
+    border: 1px solid fade(var(--color-success), 35%);
+    color: var(--color-success);
+}
+
+.receiptStatusPending {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-medium);
+    background: fade(var(--color-warning), 15%);
+    border: 1px solid fade(var(--color-warning), 35%);
+    color: var(--color-warning);
+}
+
+.onlineReceiptGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px 24px;
+
+    @include respond(sm) {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+.receiptField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.receiptFieldLabel {
+    font-size: var(--font-xs);
+    color: var(--color-card-text);
+    opacity: 0.75;
+}
+
+.receiptFieldValue {
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.copyableWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: fade(var(--color-bg-primary-overlay), 50%);
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid fade(var(--color-primary), 15%);
+}
+
+.copyBtn {
+    background: fade(var(--color-primary), 10%);
+    border: 1px solid fade(var(--color-primary), 25%);
+    color: var(--color-text-primary);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: var(--font-xs);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    &:hover {
+        background: fade(var(--color-primary), 20%);
+        color: var(--color-title-hover);
+        border-color: var(--color-title-hover);
+    }
+
+    &Success {
+        background: fade(var(--color-success), 25%) !important;
+        border-color: fade(var(--color-success), 50%) !important;
+        color: var(--color-success) !important;
+    }
+}
+
+.rialNote {
+    font-size: var(--font-xs);
+    color: var(--color-card-text);
+    opacity: 0.75;
+    margin-right: 6px;
+}
