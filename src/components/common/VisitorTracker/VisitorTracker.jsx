@@ -1,12 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
-/**
- * کلید ذخیره‌سازی شناسه ناشناس در localStorage
- */
-const STORAGE_KEY = 'tarhelahi_vid';
+const VID_STORAGE_KEY = 'tarhelahi_vid';
+const LAST_DATE_STORAGE_KEY = 'tarhelahi_last_visit_date';
 
 /**
  * تولید یا بازیابی شناسه یکتای ناشناس برای مرورگر کلاینت
@@ -14,130 +12,99 @@ const STORAGE_KEY = 'tarhelahi_vid';
 function getOrCreateVisitorId() {
     if (typeof window === 'undefined') return '';
     try {
-        let vid = localStorage.getItem(STORAGE_KEY);
+        let vid = localStorage.getItem(VID_STORAGE_KEY);
         if (!vid) {
             vid = 'v_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
-            localStorage.setItem(STORAGE_KEY, vid);
+            localStorage.setItem(VID_STORAGE_KEY, vid);
         }
         return vid;
     } catch {
-        return 'v_anonymous_' + Math.random().toString(36).substring(2, 8);
+        return 'v_anon_' + Math.random().toString(36).substring(2, 8);
     }
 }
 
 /**
- * تشخیص نوع دستگاه کاربر به صورت سبک
+ * دریافت تاریخ امروز به فرمت YYYY-MM-DD
  */
-function getDeviceType() {
-    if (typeof window === 'undefined') return 'desktop';
-    const width = window.innerWidth;
-    const ua = navigator.userAgent || '';
-    if (/tablet|ipad|playbook|silk/i.test(ua) || (width >= 768 && width <= 1024)) {
-        return 'tablet';
-    }
-    if (/mobile|iphone|ipod|android|blackberry|opera mini|iemobile/i.test(ua) || width < 768) {
-        return 'mobile';
-    }
-    return 'desktop';
+function getTodayDateString() {
+    return new Date().toISOString().split('T')[0];
 }
 
 /**
- * ارسال رویداد رهگیری به API Next.js با روش‌های بدون انسداد (keepalive / beacon)
+ * ارسال رویداد سبک به سرور
  */
-function sendTrackingEvent(payload) {
+function sendTrackingEvent(type) {
     if (typeof window === 'undefined') return;
 
     try {
-        const bodyStr = JSON.stringify(payload);
+        const visitorId = getOrCreateVisitorId();
+        const bodyStr = JSON.stringify({ visitorId, type });
+
         fetch('/api/analytics/track', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: bodyStr,
             keepalive: true,
-        }).catch(() => {
-            // نادیده گرفتن خطای شبکه کلاینت تا کاربر متوجه هیچ مشکلی نشود
-        });
-    } catch {
-        // نادیده گرفتن خطا
-    }
+        }).catch(() => {});
+    } catch {}
 }
 
 /**
  * VisitorTracker Component
- * کامپوننت کلاینتی بسیار سبک جهت ثبت بازدیدها و ضربان قلب کاربران آنلاین
+ * فقط ورود اولیه روزانه به سایت و ضربان قلب آنلاین را ثبت می‌کند.
+ * هیچ درخواست یا سطری به ازای تغییر صفحات یا کلیک‌ها ثبت نمی‌شود.
  */
 export default function VisitorTracker() {
     const pathname = usePathname();
-    const lastTrackedPath = useRef('');
 
-    // ۱. ثبت بازدید هنگام ورود یا تغییر مسیر صفحه
     useEffect(() => {
-        // نادیده گرفتن مسیرهای پنل مدیریت ادمین تا آمار واقعی کاربران سایت مخدوش نشود
-        if (!pathname || pathname.startsWith('/admin')) {
+        // نادیده گرفتن مسیرهای ادمین
+        if (pathname && pathname.startsWith('/admin')) {
             return;
         }
 
-        // جلوگیری از ثبت تکراری در همان رندر
-        if (lastTrackedPath.current === pathname) {
-            return;
+        const today = getTodayDateString();
+        let lastVisitDate = '';
+        try {
+            lastVisitDate = localStorage.getItem(LAST_DATE_STORAGE_KEY) || '';
+        } catch {}
+
+        // اگر امروز قبلاً وارد سایت نشده، به عنوان ورودی روزانه ثبت شود
+        if (lastVisitDate !== today) {
+            try {
+                localStorage.setItem(LAST_DATE_STORAGE_KEY, today);
+            } catch {}
+            sendTrackingEvent('enter');
+        } else {
+            // اگر امروز قبلاً شمرده شده، فقط ضربان قلب آنلاین ارسال شود (بدون افزایش آمار روزانه)
+            sendTrackingEvent('heartbeat');
         }
-        lastTrackedPath.current = pathname;
 
-        const visitorId = getOrCreateVisitorId();
-        const device = getDeviceType();
-
-        sendTrackingEvent({
-            visitorId,
-            path: pathname,
-            device,
-            type: 'pageview',
-        });
-    }, [pathname]);
-
-    // ۲. ارسال ضربان قلب دوره‌ای (Heartbeat) برای محاسبه دقیق افراد آنلاین
-    useEffect(() => {
+        // ضربان قلب دوره‌ای فقط برای محاسبه تعداد آنلاین‌ها (هر ۶۰ ثانیه)
         const intervalId = setInterval(() => {
             if (typeof document !== 'undefined' && document.hidden) {
-                // اگر تب مرورگر در پس‌زمینه باشد، پینگ ارسال نکن
                 return;
             }
-
-            if (pathname && pathname.startsWith('/admin')) {
+            if (window.location.pathname.startsWith('/admin')) {
                 return;
             }
+            sendTrackingEvent('heartbeat');
+        }, 60 * 1000);
 
-            const visitorId = getOrCreateVisitorId();
-            const device = getDeviceType();
-
-            sendTrackingEvent({
-                visitorId,
-                path: pathname || '/',
-                device,
-                type: 'heartbeat',
-            });
-        }, 60 * 1000); // هر ۶۰ ثانیه
-
-        // پینگ مجدد هنگام برگشتن کاربر به تب فعال
-        const handleVisibilityChange = () => {
-            if (!document.hidden && (!pathname || !pathname.startsWith('/admin'))) {
-                const visitorId = getOrCreateVisitorId();
-                const device = getDeviceType();
-                sendTrackingEvent({
-                    visitorId,
-                    path: pathname || '/',
-                    device,
-                    type: 'heartbeat',
-                });
+        // پینگ مجدد هنگام فعال شدن تب
+        const handleVisibility = () => {
+            if (!document.hidden && !window.location.pathname.startsWith('/admin')) {
+                sendTrackingEvent('heartbeat');
             }
         };
 
-        document.addEventListener('visibilitychange', handleVisibilityChange);
+        document.addEventListener('visibilitychange', handleVisibility);
 
         return () => {
             clearInterval(intervalId);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            document.removeEventListener('visibilitychange', handleVisibility);
         };
-    }, [pathname]);
+    }, []); // فقط یک‌بار هنگام لود سایت اجرا می‌شود
 
     return null;
 }

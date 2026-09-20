@@ -634,13 +634,13 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                         <div className={styles.settlementPanel__body}>
                             <div className={styles.settlementPanel__numbers}>
                                 <div className={styles.settlementStatItem}>
-                                    <span className={styles.settlementStatItem__label}>مبلغ قابل تسویه:</span>
+                                    <span className={styles.settlementStatItem__label}>میزان درآمد:</span>
                                     <strong className={styles.settlementStatItem__valueSuccess}>
                                         {new Intl.NumberFormat('fa-IR').format(currentPeriodRevenue)} تومان
                                     </strong>
                                 </div>
                                 <div className={styles.settlementStatItem}>
-                                    <span className={styles.settlementStatItem__label}>سفارش‌های آماده تسویه:</span>
+                                    <span className={styles.settlementStatItem__label}>تعداد سفارش ها :</span>
                                     <strong className={styles.settlementStatItem__value}>
                                         {new Intl.NumberFormat('fa-IR').format(currentEligibleOrdersCount)} سفارش
                                     </strong>

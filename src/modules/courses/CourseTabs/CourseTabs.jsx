@@ -28,7 +28,7 @@ export default function CourseTabs({ course, parsedContent, customStyles, isPurc
     if (status === 'authenticated' && typeof fetchOrders === 'function') {
       fetchOrders();
     }
-  }, [status, fetchOrders]);
+  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // بررسی وضعیت خرید دوره توسط کاربر
   const isPurchased = useMemo(() => {
@@ -183,7 +183,7 @@ export default function CourseTabs({ course, parsedContent, customStyles, isPurc
   ) : null;
 
   return (
-    <section className={styles.tabsWrapper} aria-label="بخش‌های دوره">
+    <section id="course-tabs-wrapper" className={styles.tabsWrapper} aria-label="بخش‌های دوره">
       {/* نوار جابجایی بین تب‌ها: در صورت خریداری دوره، تب سرفصل‌ها اول قرار می‌گیرد */}
       <div className={styles.tabsNav} role="tablist">
         {isPurchased ? (

@@ -11,9 +11,12 @@ import React, { useEffect, useRef } from 'react';
  * @param {string} props.courseId - شناسه دوره (برای ذخیره پیشرفت)
  * @param {string} props.lessonId - شناسه جلسه (برای ذخیره پیشرفت)
  */
-export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
+export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autoplay = false }) {
   const audioRef = useRef(null);
   const playerRef = useRef(null);
+  // نگه‌داری اشاره‌گر به handlers جهت دسترسی در cleanup خارج از async scope
+  const beforeUnloadRef = useRef(null);
+  const visibilityRef = useRef(null);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -172,39 +175,44 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
       const storageKey = `media_progress_c${courseId}_l${cleanLessonId}`;
 
       // --- سیستم بازیابی پیشرفت پخش صوتی ---
+      // hasRestored: true وقتی restore انجام شد (چه زمانی وجود داشت چه نه)
       let hasRestored = false;
+
+      const doAutoplay = () => {
+        if (autoplay) {
+          player.play().catch(() => {
+            // برخی مرورگرها autoplay را block می‌کنند - بی‌صدا بگذریم
+          });
+        }
+      };
+
       const restoreProgress = () => {
         if (hasRestored) return;
 
+        const mediaEl = audioRef.current;
+        // صبر می‌کنیم تا metadata مدیا کاملاً لود شود
+        if (!mediaEl || mediaEl.readyState < 1) return;
+
         const savedTime = localStorage.getItem(storageKey);
         if (!savedTime || isNaN(savedTime)) {
+          // هیچ پیشرفتی ذخیره نشده - مستقیم autoplay
           hasRestored = true;
+          doAutoplay();
           return;
         }
 
         const time = parseFloat(savedTime);
-        if (time <= 0) {
-          hasRestored = true;
-          return;
+        if (time > 0 && (!mediaEl.duration || time < mediaEl.duration)) {
+          player.currentTime = time;
         }
-
-        const mediaEl = audioRef.current;
-        if (mediaEl && mediaEl.readyState >= 1) {
-          if (!mediaEl.duration || time < mediaEl.duration) {
-            player.currentTime = time;
-          }
-          hasRestored = true;
-        }
+        hasRestored = true;
+        // autoplay را پس از set کردن currentTime شروع می‌کنیم
+        doAutoplay();
       };
 
       // گوش دادن به رویدادهای مختلف آمادگی مدیا برای بازیابی قطعی زمان
       player.on('loadedmetadata', restoreProgress);
       player.on('canplay', restoreProgress);
-      player.on('play', () => {
-        if (!hasRestored) {
-          restoreProgress();
-        }
-      });
       player.on('ready', () => {
         restoreProgress();
       });
@@ -217,6 +225,8 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
       // ذخیره پیشرفت هر ۵ ثانیه (0, 5, 10, 15, ...)
       let lastSavedSecond = -1;
       player.on('timeupdate', () => {
+        // اگر هنوز restore نشده، timeupdate را نادیده می‌گیریم
+        // تا مانع از overwrite شدن localStorage با مقدار ۰ نشویم
         if (!hasRestored) return;
 
         const currentTime = player.currentTime;
@@ -245,9 +255,34 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
         }
       });
 
+      // ذخیره‌سازی هنگام بستن/رفرش صفحه (مهم برای گوشی)
+      const handleBeforeUnload = () => {
+        if (!hasRestored) return;
+        const ct = player.currentTime;
+        if (ct > 0) localStorage.setItem(storageKey, ct.toString());
+      };
+      // visibilitychange برای زمانی که تب مرورگر یا اپ گوشی به پس‌زمینه می‌رود
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden' && hasRestored) {
+          const ct = player.currentTime;
+          if (ct > 0) localStorage.setItem(storageKey, ct.toString());
+        }
+      };
+
+      // ذخیره ref ها جهت دسترسی در cleanup خارج از این async scope
+      beforeUnloadRef.current = handleBeforeUnload;
+      visibilityRef.current = handleVisibilityChange;
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
       // پاکسازی لوکال استوریج در صورت اتمام کامل صوت
       player.on('ended', () => {
         localStorage.removeItem(storageKey);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        beforeUnloadRef.current = null;
+        visibilityRef.current = null;
       });
     };
 
@@ -255,7 +290,24 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
 
     // Cleanup
     return () => {
+      // حذف event listeners با استفاده از ref (چون handlers داخل async scope بودند)
+      if (beforeUnloadRef.current) {
+        window.removeEventListener('beforeunload', beforeUnloadRef.current);
+        beforeUnloadRef.current = null;
+      }
+      if (visibilityRef.current) {
+        document.removeEventListener('visibilitychange', visibilityRef.current);
+        visibilityRef.current = null;
+      }
       if (playerRef.current) {
+        // ذخیره آخرین زمان قبل از destroy
+        try {
+          const ct = playerRef.current.currentTime;
+          if (ct > 0 && courseId && lessonId) {
+            const cleanId = String(lessonId).replace('-video', '').replace('-audio', '');
+            localStorage.setItem(`media_progress_c${courseId}_l${cleanId}`, ct.toString());
+          }
+        } catch (e) {}
         playerRef.current.destroy();
         playerRef.current = null;
       }
@@ -279,22 +331,7 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user }) {
       >
         <source src={src} type={src?.includes('.m3u8') ? 'application/x-mpegURL' : 'audio/mp3'} />
       </audio>
-      {userIdentifier && (
-        <div
-          aria-hidden="true"
-          style={{
-            textAlign: 'center',
-            marginTop: '8px',
-            fontSize: '11px',
-            color: 'color-mix(in srgb, var(--color-primary, #F6D982) 45%, transparent)',
-            direction: 'ltr',
-            letterSpacing: '0.8px',
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
-        >
-        </div>
-      )}
+      
     </div>
   );
 }

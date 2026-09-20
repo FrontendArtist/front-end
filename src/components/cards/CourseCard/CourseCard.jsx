@@ -18,7 +18,7 @@ const CourseCard = ({ course }) => {
   if (!course) return null;
 
   const { data: session, status } = useSession();
-  const { fetchOrders } = useOrdersStore();
+  const fetchOrders = useOrdersStore((state) => state.fetchOrders);
 
   const {
     id,
@@ -100,7 +100,7 @@ const CourseCard = ({ course }) => {
     if (status === 'authenticated') {
       fetchOrders();
     }
-  }, [status, fetchOrders]);
+  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <GradientBorderCard

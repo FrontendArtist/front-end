@@ -197,17 +197,7 @@
     }
 }
 
-/* ── Chart & Secondary Analytics Row ── */
-.analytics_details {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px;
-
-    @media (max-width: 1024px) {
-        grid-template-columns: 1fr;
-    }
-}
-
+/* ── Chart Card ── */
 .chart_card {
     background: rgba(0, 43, 32, 0.35);
     border: 1px solid rgba(246, 217, 130, 0.12);
@@ -236,38 +226,12 @@
         gap: 8px;
     }
 
-    &__tabs {
-        display: flex;
-        gap: 6px;
-        background: rgba(0, 0, 0, 0.25);
-        padding: 4px;
-        border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    &__tab {
-        padding: 4px 12px;
-        font-size: var(--font-xs);
-        border: none;
-        border-radius: 8px;
-        background: transparent;
-        color: rgba(255, 250, 234, 0.6);
-        cursor: pointer;
-        transition: all 0.2s ease;
-
-        &--active {
-            background: rgba(246, 217, 130, 0.2);
-            color: var(--color-text-primary);
-            font-weight: 600;
-        }
-    }
-
     &__body {
         display: flex;
         align-items: flex-end;
         justify-content: space-between;
         gap: 12px;
-        height: 220px;
+        height: 200px;
         padding-top: 30px;
         position: relative;
     }
@@ -291,7 +255,7 @@
 
     &__bar_container {
         width: 100%;
-        max-width: 36px;
+        max-width: 42px;
         background: rgba(255, 255, 255, 0.04);
         border-radius: 8px 8px 0 0;
         height: 100%;
@@ -306,24 +270,21 @@
         border-radius: 8px 8px 0 0;
         transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
 
-        &--uniques {
-            background: linear-gradient(180deg, #34d399 0%, #059669 100%);
-        }
-
         &:hover {
-            filter: brightness(1.2);
+            filter: brightness(1.25);
         }
     }
 
     &__label_day {
-        font-size: 11px;
-        color: rgba(255, 250, 234, 0.7);
+        font-size: 12px;
+        font-weight: 500;
+        color: rgba(255, 250, 234, 0.75);
         text-align: center;
         white-space: nowrap;
     }
 
     &__label_date {
-        font-size: 10px;
+        font-size: 11px;
         color: rgba(255, 250, 234, 0.4);
     }
 }
@@ -348,103 +309,6 @@
     flex-direction: column;
     gap: 4px;
     text-align: center;
-}
-
-/* ── Secondary Widgets ── */
-.widgets_card {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    background: rgba(0, 43, 32, 0.35);
-    border: 1px solid rgba(246, 217, 130, 0.12);
-    border-radius: 20px;
-    padding: 24px;
-    backdrop-filter: blur(10px);
-
-    &__title {
-        font-size: var(--font-md);
-        font-weight: var(--font-weight-bold);
-        color: var(--color-card-text);
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    &__group {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    &__group_header {
-        font-size: var(--font-xs);
-        color: rgba(255, 250, 234, 0.55);
-        font-weight: var(--font-weight-medium);
-        margin: 0;
-    }
-}
-
-.device_item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-
-    &__row {
-        display: flex;
-        justify-content: space-between;
-        font-size: var(--font-xs);
-        color: rgba(255, 250, 234, 0.85);
-    }
-
-    &__bar_bg {
-        height: 6px;
-        border-radius: 3px;
-        background: rgba(255, 255, 255, 0.08);
-        overflow: hidden;
-    }
-
-    &__bar_fill {
-        height: 100%;
-        border-radius: 3px;
-        transition: width 0.5s ease;
-    }
-}
-
-.pages_list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.page_item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    font-size: var(--font-xs);
-
-    &__path {
-        color: var(--color-text-primary);
-        direction: ltr;
-        text-align: right;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 180px;
-    }
-
-    &__badge {
-        font-size: 11px;
-        color: rgba(255, 250, 234, 0.6);
-        background: rgba(255, 255, 255, 0.06);
-        padding: 2px 8px;
-        border-radius: 6px;
-        white-space: nowrap;
-    }
 }
 
 @keyframes ripple {

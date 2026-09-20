@@ -1,3 +1,42 @@
+[2026-09-14] - Zero-Bloat Daily Visitor Aggregation: Unique Daily Entrances & RAM-Based Online Counter
+
+── Zero-Bloat Architecture & Database Optimization ──────────────────────────
+- Single-Row Daily Bucketing (`backend/src/api/visitor-stat/content-types/visitor-stat/schema.json`):
+  • Replaced raw individual pageview log insertion (`visitor_stats`) with clean daily aggregated counters (`daily_visitor_stats`).
+  • Guaranteed strict upper bound of exactly 1 row per day in the database (365 records/year, < 50 KB annual footprint).
+  • Dropped obsolete bloated raw logs table and pruned dead tracking attributes (`path`, `ip`, `userAgent`, etc.).
+- High-Performance Server Controller (`backend/src/api/visitor-stat/controllers/visitor-stat.js`):
+  • In-Memory `activeSessions` Map: Tracks real-time online visitors (last 3 minutes) with O(1) lookups and zero database I/O.
+  • In-Memory `todayVisitorsSet`: Tracks unique daily visitor IDs in server RAM with automatic midnight reset, preventing duplicate daily entrance counts even across multiple tabs.
+  • Atomic daily counter increment: Only new unique daily entries increment the single record for the current Tehran date.
+  • Ultra-fast stats aggregation: Sums pre-aggregated daily counts across 1-day, 7-day, 30-day, 365-day, and all-time intervals.
+
+── Client-Side Tracker & Admin Dashboard Streamlining ───────────────────────
+- Lightweight Single-Entry Client Tracker (`src/components/common/VisitorTracker/VisitorTracker.jsx`):
+  • Removed all route-change and sub-page tracking listeners (`usePathname` removed).
+  • Evaluates `tarhelahi_last_visit_date` in `localStorage`; sends single `enter` event on the first visit of the day.
+  • Subsequent navigations, clicks, and refreshes generate zero database writes.
+  • Emits lightweight periodic heartbeats (every 60s while active) exclusively to maintain the live online counter in server RAM.
+- Clean Admin Analytics Section (`src/components/admin/VisitorAnalytics/VisitorAnalyticsSection.jsx` & `.module.scss`):
+  • Streamlined to 6 core metrics: Live Online Users, Today's Unique Entrances, This Week (7 days), This Month (30 days), This Year (365 days), and All-Time total.
+  • 7-day interactive bar chart rendered using pure SVG/CSS based directly on the daily entrance counts.
+  • Removed legacy page-level breakdown and device widgets for an uncluttered, focused executive view.
+
+[2026-09-13] - Custom React Video Player: Component-Based Architecture & Modular Controls
+
+── Custom React Video Player Architecture ───────────────────────────────────────
+- Custom Video Player Component (`src/modules/courses/VideoJSPlayer.jsx` & `.module.scss`):
+  • Replaced imperative Video.js global DOM overrides with a clean, fully-modular React Custom Video Player.
+  • Implemented modern Two-Row Control Bar:
+    - Top Row: Formatted current time & duration (`00:00 / 00:00`) on the left, right-aligned controls for 10s backward, play/pause, 10s forward, and fullscreen toggle.
+    - Bottom Row: Smooth seekable progress bar with buffer/played status and permanently open horizontal volume slider with mute toggle.
+  • Added center play button overlay when paused and click/double-click gesture triggers.
+  • Added comprehensive keyboard shortcuts (Space/K for play-pause, ArrowLeft/ArrowRight for 10s skip, M for mute, F for fullscreen).
+  • Preserved DRM & anti-download measures (`controlsList="nodownload"`, right-click blocker, save shortcuts blocker).
+  • Preserved automatic user progress persistence and restoration via `localStorage`.
+- Style Isolation & Cleanup (`src/modules/courses/CourseContentManager.module.scss`):
+  • Removed legacy `:global(.video-js)` CSS rules and complex grid overrides, eliminating style coupling.
+
 [2026-09-11] - Real-Time Website Visitor Analytics & Live Online Users: Admin Dashboard & Tracking
 
 ── Live Online Users Counter & Client Heartbeat ─────────────────────────────

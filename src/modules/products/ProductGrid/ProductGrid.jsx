@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import ProductCard from '@/components/cards/ProductCard/ProductCard';
 import CardSkeletonVertical from '@/components/ui/Skeleton/CardSkeletonVertical';
 import SortControls from '@/components/ui/SortControls/SortControls';
@@ -31,6 +31,7 @@ const ProductGrid = ({
   const [hasMore, setHasMore] = useState(
     (initialMeta?.pagination?.page || 1) < (initialMeta?.pagination?.pageCount || 1)
   );
+  const isInitialMount = useRef(true);
 
   const queryBase = useMemo(() => {
     const params = new URLSearchParams();
@@ -39,8 +40,22 @@ const ProductGrid = ({
     return params;
   }, [activeCategory, activeSubCategory]);
 
+  // همگام‌سازی با داده‌های ورودی سرور هنگام تغییر فیلترهای URL
+  useEffect(() => {
+    setProducts(initialProducts || []);
+    const p = initialMeta?.pagination;
+    setPage(p?.page || 1);
+    setHasMore((p?.page || 1) < (p?.pageCount || 1));
+  }, [initialProducts, activeCategory, activeSubCategory, initialMeta]);
+
   // Refetch on sort/category/sub change → reset to page 1 and replace products
   useEffect(() => {
+    // جلوگیری از اجرای تکراری در بارگذاری اولیه (mount)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     const refetch = async () => {
       setIsLoading(true);
       setProducts([]); // Clear old products to show skeletons

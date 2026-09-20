@@ -7,19 +7,39 @@ import { useUserMessagesStore } from '@/store/useUserMessagesStore';
 
 const STORAGE_PREFIX = 'khak_read_notifications_';
 
+// مدیریت پولینگ سراسری به صورت Singleton برای جلوگیری از تکرار درخواست‌ها هنگام استفاده چند کامپوننت از این هوک
+let globalPollTimer = null;
+let globalSubscribersCount = 0;
+let lastPollTimestamp = 0;
+const POLL_INTERVAL_MS = 45000;
+const VISIBILITY_THROTTLE_MS = 30000; // حداقل ۳۰ ثانیه فاصله بین رفرش‌های ناشی از سوئیچ تب
+
+const triggerPoll = (token, userId) => {
+    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+    lastPollTimestamp = Date.now();
+    useUserMessagesStore.getState().fetchMessages(token, userId, true);
+    useOrdersStore.getState().fetchOrders(true);
+};
+
 export function useOrderNotifications() {
     const { data: session, status } = useSession();
     const userId = session?.user?.id;
     const token = session?.user?.jwt;
 
-    const { orders, isLoading: isOrdersLoading, fetchOrders, hasFetched: hasOrdersFetched } = useOrdersStore();
-    const { messages, isLoading: isMessagesLoading, fetchMessages, hasFetched: hasMessagesFetched } = useUserMessagesStore();
+    const orders = useOrdersStore((state) => state.orders);
+    const isOrdersLoading = useOrdersStore((state) => state.isLoading);
+    const hasOrdersFetched = useOrdersStore((state) => state.hasFetched);
+    const fetchOrders = useOrdersStore((state) => state.fetchOrders);
+
+    const messages = useUserMessagesStore((state) => state.messages);
+    const isMessagesLoading = useUserMessagesStore((state) => state.isLoading);
+    const hasMessagesFetched = useUserMessagesStore((state) => state.hasFetched);
+    const fetchMessages = useUserMessagesStore((state) => state.fetchMessages);
 
     const [readIds, setReadIds] = useState([]);
     const [isInitialized, setIsInitialized] = useState(false);
-    const pollTimerRef = useRef(null);
 
-    // واکشی اولیه سفارش‌ها و پیام‌ها هنگام احراز هویت
+    // واکشی اولیه سفارش‌ها و پیام‌ها هنگام احراز هویت (بدون force تا در صورت وجود کش دوباره فچ نشود)
     useEffect(() => {
         if (status === 'authenticated' && userId) {
             fetchOrders();
@@ -27,37 +47,48 @@ export function useOrderNotifications() {
                 fetchMessages(token, userId);
             }
         }
-    }, [status, userId, token, fetchOrders, fetchMessages]);
+    }, [status, userId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // پولینگ منظم (هر ۴۵ ثانیه) در زمان فعال بودن صفحه برای دریافت اعلان‌های جدید پیام و سفارش
+    // پولینگ منظم سراسری (Singleton) در زمان فعال بودن صفحه برای دریافت اعلان‌های جدید پیام و سفارش
     useEffect(() => {
         if (status !== 'authenticated' || !userId || !token) {
-            if (pollTimerRef.current) clearInterval(pollTimerRef.current);
             return;
         }
 
-        const runPoll = () => {
-            if (document.visibilityState === 'visible') {
-                fetchMessages(token, userId, true);
-                fetchOrders(true);
-            }
-        };
-
-        pollTimerRef.current = setInterval(runPoll, 45000);
+        globalSubscribersCount++;
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
-                runPoll();
+                const now = Date.now();
+                if (now - lastPollTimestamp >= VISIBILITY_THROTTLE_MS) {
+                    triggerPoll(token, userId);
+                }
             }
         };
 
-        document.addEventListener('visibilitychange', handleVisibilityChange);
+        // فعال‌سازی تایمر و لیسنر فقط برای اولین کامپوننت مشترک در برنامه
+        if (globalSubscribersCount === 1) {
+            lastPollTimestamp = Date.now();
+            globalPollTimer = setInterval(() => {
+                triggerPoll(token, userId);
+            }, POLL_INTERVAL_MS);
+
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+        }
 
         return () => {
-            if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            globalSubscribersCount--;
+            // اگر همه کامپوننت‌ها unmount شدند، تایمر و لیسنر را متوقف کن
+            if (globalSubscribersCount <= 0) {
+                globalSubscribersCount = 0;
+                if (globalPollTimer) {
+                    clearInterval(globalPollTimer);
+                    globalPollTimer = null;
+                }
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
+            }
         };
-    }, [status, userId, token, fetchMessages, fetchOrders]);
+    }, [status, userId, token]);
 
     // بارگذاری شناسه‌های خوانده شده از localStorage
     useEffect(() => {
