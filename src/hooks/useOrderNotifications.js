@@ -1,25 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useOrdersStore } from '@/store/useOrdersStore';
 import { useUserMessagesStore } from '@/store/useUserMessagesStore';
 
 const STORAGE_PREFIX = 'khak_read_notifications_';
-
-// مدیریت پولینگ سراسری به صورت Singleton برای جلوگیری از تکرار درخواست‌ها هنگام استفاده چند کامپوننت از این هوک
-let globalPollTimer = null;
-let globalSubscribersCount = 0;
-let lastPollTimestamp = 0;
-const POLL_INTERVAL_MS = 45000;
-const VISIBILITY_THROTTLE_MS = 30000; // حداقل ۳۰ ثانیه فاصله بین رفرش‌های ناشی از سوئیچ تب
-
-const triggerPoll = (token, userId) => {
-    if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
-    lastPollTimestamp = Date.now();
-    useUserMessagesStore.getState().fetchMessages(token, userId, true);
-    useOrdersStore.getState().fetchOrders(true);
-};
 
 export function useOrderNotifications() {
     const { data: session, status } = useSession();
@@ -48,47 +34,6 @@ export function useOrderNotifications() {
             }
         }
     }, [status, userId, token]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // پولینگ منظم سراسری (Singleton) در زمان فعال بودن صفحه برای دریافت اعلان‌های جدید پیام و سفارش
-    useEffect(() => {
-        if (status !== 'authenticated' || !userId || !token) {
-            return;
-        }
-
-        globalSubscribersCount++;
-
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                const now = Date.now();
-                if (now - lastPollTimestamp >= VISIBILITY_THROTTLE_MS) {
-                    triggerPoll(token, userId);
-                }
-            }
-        };
-
-        // فعال‌سازی تایمر و لیسنر فقط برای اولین کامپوننت مشترک در برنامه
-        if (globalSubscribersCount === 1) {
-            lastPollTimestamp = Date.now();
-            globalPollTimer = setInterval(() => {
-                triggerPoll(token, userId);
-            }, POLL_INTERVAL_MS);
-
-            document.addEventListener('visibilitychange', handleVisibilityChange);
-        }
-
-        return () => {
-            globalSubscribersCount--;
-            // اگر همه کامپوننت‌ها unmount شدند، تایمر و لیسنر را متوقف کن
-            if (globalSubscribersCount <= 0) {
-                globalSubscribersCount = 0;
-                if (globalPollTimer) {
-                    clearInterval(globalPollTimer);
-                    globalPollTimer = null;
-                }
-                document.removeEventListener('visibilitychange', handleVisibilityChange);
-            }
-        };
-    }, [status, userId, token]);
 
     // بارگذاری شناسه‌های خوانده شده از localStorage
     useEffect(() => {
