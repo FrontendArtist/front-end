@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
 import { useOrdersStore } from '@/store/useOrdersStore';
+import { triggerLightUpdate } from '@/store/useLightStore';
 import styles from './page.module.scss';
 
 /**
@@ -21,13 +22,14 @@ function PaymentCallbackContent() {
 
     useEffect(() => {
         setMounted(true);
-        // پاکسازی سبد خرید وقتی status=success است
+        // پاکسازی سبد خرید و بروزرسانی بلادرنگ موجودی نور وقتی status=success است
         const statusParam = searchParams.get('status');
         const sourceParam = searchParams.get('source');
 
         if (statusParam === 'success') {
             useCartStore.getState().clearCart();
             useOrdersStore.setState({ hasFetched: false, orders: [] });
+            triggerLightUpdate();
         }
 
         // دریافت اطلاعات بانکی برای سفارش‌های کارت‌به‌کارت

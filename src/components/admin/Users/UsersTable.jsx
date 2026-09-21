@@ -10,6 +10,7 @@ import AdminButton from '../Shared/AdminButton';
 import AdminLazyLoad from '../Shared/AdminLazyLoad';
 import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
 import { fetchAdminUsers } from '@/lib/client/admin/usersClient';
+import { triggerLightUpdate } from '@/store/useLightStore';
 import styles from './Users.module.scss';
 
 /**
@@ -83,6 +84,7 @@ function LightCell({ user, onLightUpdated }) {
             const data = await res.json();
             setLocalLight(data.newLight);
             if (onLightUpdated) onLightUpdated(user.id, data.newLight);
+            triggerLightUpdate();
             setInputVal('');
             setOpen(false);
         } catch (e) {
@@ -217,6 +219,7 @@ function BulkLightHeader({ onBulkAdded }) {
             if (onBulkAdded) {
                 onBulkAdded(amount);
             }
+            triggerLightUpdate();
             setInputVal('');
             setOpen(false);
         } catch (e) {

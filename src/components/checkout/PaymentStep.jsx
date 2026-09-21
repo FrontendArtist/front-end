@@ -23,6 +23,7 @@ import {
     setPendingBasketPurchase,
     clearPendingBasketPurchase,
 } from '@/lib/pendingPurchaseManager';
+import { triggerLightUpdate } from '@/store/useLightStore';
 import styles from './PaymentStep.module.scss';
 
 /**
@@ -88,6 +89,7 @@ export default function PaymentStep({ onPrevious }) {
                 // خرید در بک‌اند کامل شده است!
                 clearPendingBasketPurchase();
                 useCartStore.getState().clearCart();
+                triggerLightUpdate();
                 router.push('/payment/callback?status=success&source=byemoney');
             }
         } catch (err) {
@@ -166,6 +168,7 @@ export default function PaymentStep({ onPrevious }) {
                 if (result.success) {
                     useCartStore.getState().clearCart();
                     clearPendingBasketPurchase();
+                    triggerLightUpdate();
                     router.push('/payment/callback?status=success&source=byemoney');
                     return;
                 }

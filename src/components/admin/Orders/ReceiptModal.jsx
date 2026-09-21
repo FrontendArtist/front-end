@@ -19,6 +19,7 @@
 import { useState } from 'react';
 import styles from './OrdersTable.module.scss';
 import { updateOrderStatus } from '@/lib/client/admin/ordersClient';
+import { triggerLightUpdate } from '@/store/useLightStore';
 
 /**
  * استخراج شناسه یکتای تاپ‌آپ بای‌مانی (GUID) از فیلدها یا توضیحات سفارش
@@ -84,6 +85,10 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
             };
 
             await updateOrderStatus(order.id, updatePayload);
+
+            if (isPaid) {
+                triggerLightUpdate();
+            }
 
             // callback به OrdersTable برای آپدیت state محلی
             onUpdate(order.id, {

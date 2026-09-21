@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import useAuthStore from '@/store/authStore';
+import { useLightStore } from '@/store/useLightStore';
 import styles from './UserStatus.module.scss';
 import LightTopUpModal from '@/components/ui/LightTopUpModal/LightTopUpModal';
 import Link from 'next/link';
@@ -16,7 +17,11 @@ export default function UserStatus() {
     const openAuthModal = useAuthStore((state) => state.openAuthModal);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isLightModalOpen, setIsLightModalOpen] = useState(false);
-    const [lightBalance, setLightBalance] = useState(null); // null = هنوز fetch نشده
+    
+    // موجودی نور از استور سراسری Zustand
+    const lightBalance = useLightStore((state) => state.lightBalance);
+    const fetchLightBalance = useLightStore((state) => state.fetchLightBalance);
+    
     const containerRef = useRef(null);
     const closeTimerRef = useRef(null);
 
@@ -63,25 +68,29 @@ export default function UserStatus() {
         };
     }, []);
 
-    // ── fetch موجودی نور هنگام hover / باز شدن دراپ‌داون ──────────────────
-    const fetchLightBalance = useCallback(async (force = false) => {
-        if (!force && lightBalance !== null) return;
-        try {
-            const res = await fetch('/api/payment-light', { cache: 'no-store' });
-            if (res.ok) {
-                const data = await res.json();
-                setLightBalance(data.light ?? data.balance ?? 0);
-            }
-        } catch {
-            // بی‌صدا fail می‌شه
+    // ── همگام‌سازی موجودی نور در لود اولیه و هنگام تغییر واقعی موجودی ─────────
+    useEffect(() => {
+        if (status !== 'authenticated') {
+            useLightStore.getState().reset();
+            return;
         }
-    }, [lightBalance]);
+
+        // دریافت موجودی در لود اولیه (در صورت عدم وجود در استور)
+        fetchLightBalance();
+
+        // شنونده رویداد به‌روزرسانی صریح نور (تنها زمانی که خرید، پرداخت یا شارژ انجام شود)
+        const handleLightUpdated = () => fetchLightBalance(true);
+        window.addEventListener('light-updated', handleLightUpdated);
+
+        return () => {
+            window.removeEventListener('light-updated', handleLightUpdated);
+        };
+    }, [status, fetchLightBalance]);
 
     const handleMouseEnter = () => {
         if (isMobile) return;
         if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
         setIsDropdownOpen(true);
-        fetchLightBalance();
     };
 
     const handleMouseLeave = () => {
@@ -95,13 +104,7 @@ export default function UserStatus() {
         e.preventDefault();
         if (isMobile) {
             // در موبایل و لمسی: فقط toggle کردن مدال/دراپ‌داون بدون رفتن به صفحه
-            setIsDropdownOpen((prev) => {
-                const next = !prev;
-                if (next) {
-                    fetchLightBalance();
-                }
-                return next;
-            });
+            setIsDropdownOpen((prev) => !prev);
         } else {
             // در دسکتاپ: کلیک روی آیکون به صفحه /profile می‌رود
             setIsDropdownOpen(false);
@@ -133,13 +136,10 @@ export default function UserStatus() {
         return () => window.removeEventListener('profile-updated', loadProfile);
     }, [status]);
 
-    // آپدیت موجودی نور بعد از بستن مدال (در صورت پرداخت موفق)
+    // بستن مدال نور
     const handleLightModalClose = useCallback(() => {
         setIsLightModalOpen(false);
-        // ریست و استعلام مجدد
-        setLightBalance(null);
-        fetchLightBalance(true);
-    }, [fetchLightBalance]);
+    }, []);
 
     const formatNumber = (n) => new Intl.NumberFormat('fa-IR').format(n);
 
@@ -307,6 +307,7 @@ export default function UserStatus() {
                     <button
                         onClick={() => {
                             useCartStore.getState().clearCart();
+                            useLightStore.getState().reset();
                             signOut({ callbackUrl: '/' });
                         }}
                         className={styles.dropdownItem}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { LIGHT_TO_TOMAN_RATE } from '@/lib/constants';
+import { useLightStore } from '@/store/useLightStore';
 import styles from './LightTopUpModal.module.scss';
 
 /**
@@ -21,6 +22,8 @@ import styles from './LightTopUpModal.module.scss';
  */
 export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
     const router = useRouter();
+    const storeBalance = useLightStore((state) => state.lightBalance);
+    const effectiveLight = storeBalance !== null ? storeBalance : currentLight;
     const [lightAmount, setLightAmount] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
@@ -112,7 +115,7 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
                             fill="currentColor" strokeWidth="0">
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                         </svg>
-                        {formatNumber(currentLight)} نور
+                        {formatNumber(effectiveLight)} نور
                     </span>
                 </div>
 

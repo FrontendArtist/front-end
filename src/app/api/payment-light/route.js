@@ -4,6 +4,9 @@ import { NextResponse } from 'next/server';
 import { LIGHT_TO_TOMAN_RATE } from '@/lib/constants';
 import { getWalletBalanceWithByeMoney } from '@/lib/byeMoneyApi';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // --------------------------------------------------------------------------
 // GET /api/payment-light — دریافت موجودی واقعی کیف پول نور کاربر از ByeMoney
 // --------------------------------------------------------------------------
