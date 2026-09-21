@@ -416,7 +416,6 @@
     color: var(--color-text-primary);
     margin: 0;
     padding-bottom: 10px;
-    border-bottom: 1px solid fade(var(--color-primary), 15%);
 
     @include respond(md) {
         font-size: var(--font-lg);
@@ -477,8 +476,8 @@
     display: inline-block;
     width: 100%;
     padding: 13px 24px;
-    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
-    color: var(--card-text);
+    background: linear-gradient(135deg, #ffd166e6, #f59e0be6);
+    color: var(--color-overlay);
     border: none;
     border-radius: var(--border-radius);
     font-size: var(--font-md);
