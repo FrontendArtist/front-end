@@ -330,8 +330,8 @@
 }
 
 .nextButton {
-    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
-    color: var(--color-card-text);
+    background: linear-gradient(135deg, #ffd166e6, #f59e0be6);
+    color: var(--color-overlay);
     box-shadow: 0 4px 14px fade(var(--color-primary), 30%);
 
     &:hover:not(:disabled) {

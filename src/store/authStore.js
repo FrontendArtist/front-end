@@ -6,8 +6,10 @@ const useAuthStore = create((set) => ({
     authStep: 'phone', // 'phone' | 'otp'
     phoneNumber: '',
 
-    openAuthModal: () => set({ isAuthModalOpen: true, authStep: 'phone' }),
-    closeAuthModal: () => set({ isAuthModalOpen: false, authStep: 'phone', phoneNumber: '' }),
+    onAuthSuccess: null,
+
+    openAuthModal: (callback = null) => set({ isAuthModalOpen: true, authStep: 'phone', onAuthSuccess: typeof callback === 'function' ? callback : null }),
+    closeAuthModal: () => set({ isAuthModalOpen: false, authStep: 'phone', phoneNumber: '', onAuthSuccess: null }),
     setAuthStep: (step) => set({ authStep: step }),
     setPhoneNumber: (phone) => set({ phoneNumber: phone }),
 }));
