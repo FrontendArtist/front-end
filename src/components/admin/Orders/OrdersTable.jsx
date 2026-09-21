@@ -115,11 +115,56 @@ function getBuyerDisplayName(order) {
     return order.fullName || order.user?.username || '—';
 }
 
+// ── توابع کمکی برای تشخیص وضعیت سفارش ───────────────────────────────────────
+const isWaitingReceipt = (o) =>
+    (o.paymentMethod === 'card_to_card' && o.paymentStatus === 'pending_verification') ||
+    (Boolean(o.receiptImageUrl) && o.orderStatus === 'pending');
+
+const isPendingNoReceipt = (o) =>
+    o.orderStatus === 'pending' && !o.receiptImageUrl && o.paymentStatus !== 'pending_verification';
+
+const isPaidOrder = (o) =>
+    ['paid', 'shipped', 'delivered'].includes(o.orderStatus) || o.paymentStatus === 'paid';
+
+const isCanceledOrder = (o) =>
+    o.orderStatus === 'canceled';
+
+/**
+ * دکمه کپی متن با فیدبک بصری
+ */
+function CopyButton({ text, label = 'کپی' }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = (e) => {
+        e.stopPropagation();
+        if (!text) return;
+        try {
+            navigator.clipboard.writeText(String(text));
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // fallback
+        }
+    };
+
+    return (
+        <button
+            type="button"
+            className={`${styles.copyBtn} ${copied ? styles.copyBtnSuccess : ''}`}
+            onClick={handleCopy}
+            title={copied ? 'کپی شد!' : `کپی ${label}`}
+        >
+            {copied ? '✓ کپی شد' : 'کپی'}
+        </button>
+    );
+}
+
 /**
  * OrderExpandedRow – ردیف کشویی با تمام جزئیات سفارش
  */
 function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
     const buyerName = getBuyerDisplayName(order);
+    const isPaid = isPaidOrder(order);
 
     return (
         <tr className={styles.expanded_row}>
@@ -183,7 +228,77 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
                         </div>
                     </div>
 
-                    {/* ── ستون ۲: آدرس ارسال ──────────────────────────────── */}
+                    {/* ── ستون ۲: مشخصات اختصاصی پرداخت آنلاین (سپ / سامان) ── */}
+                    {order.paymentMethod === 'online' && (
+                        <div className={`${styles.expanded_section} ${styles.expanded_section_online}`}>
+                            <h4 className={styles.expanded_section__title}>
+                                💳 جزئیات پرداخت آنلاین (سپ - شاپرک)
+                            </h4>
+                            <div className={styles.onlinePayDetails}>
+                                <div className={styles.onlinePayStatusRow}>
+                                    <span className={styles.expanded_field__label}>نتیجه تراکنش:</span>
+                                    <span className={isPaid ? styles.onlinePayBadgeSuccess : styles.onlinePayBadgePending}>
+                                        {isPaid ? '✅ پرداخت موفق و تایید شده' : '⏳ در انتظار پرداخت آنلاین'}
+                                    </span>
+                                </div>
+
+                                <div className={styles.expanded_field}>
+                                    <span className={styles.expanded_field__label}>شماره کارت واریزکننده</span>
+                                    <span className={styles.expanded_field__value} dir="ltr">
+                                        {order.securePan ? `💳 ${order.securePan}` : '—'}
+                                    </span>
+                                </div>
+
+                                <div className={styles.expanded_field}>
+                                    <span className={styles.expanded_field__label}>رسید دیجیتال بانک (RefNum)</span>
+                                    <div className={styles.copyableField}>
+                                        <span className={styles.expanded_field__value} dir="ltr">
+                                            {order.refNum || '—'}
+                                        </span>
+                                        {order.refNum && <CopyButton text={order.refNum} label="رسید دیجیتال" />}
+                                    </div>
+                                </div>
+
+                                <div className={styles.expanded_field}>
+                                    <span className={styles.expanded_field__label}>کد پیگیری تراکنش (TraceNo)</span>
+                                    <div className={styles.copyableField}>
+                                        <span className={styles.expanded_field__value} dir="ltr">
+                                            {order.traceNo || order.trackingNumber || '—'}
+                                        </span>
+                                        {(order.traceNo || order.trackingNumber) && (
+                                            <CopyButton text={order.traceNo || order.trackingNumber} label="کد پیگیری" />
+                                        )}
+                                    </div>
+                                </div>
+
+                                {order.rrn && (
+                                    <div className={styles.expanded_field}>
+                                        <span className={styles.expanded_field__label}>شماره مرجع شاپرک (RRN)</span>
+                                        <span className={styles.expanded_field__value} dir="ltr">{order.rrn}</span>
+                                    </div>
+                                )}
+
+                                <div className={styles.expanded_field}>
+                                    <span className={styles.expanded_field__label}>تاریخ و ساعت پرداخت</span>
+                                    <span className={styles.expanded_field__value}>
+                                        {formatDate(order.paymentDate || (isPaid ? order.createdAt : null))}
+                                    </span>
+                                </div>
+
+                                <div className={styles.expanded_field}>
+                                    <span className={styles.expanded_field__label}>مبلغ تراکنش</span>
+                                    <span className={styles.expanded_field__value}>
+                                        {formatPrice(order.totalPrice)}
+                                        <span className={styles.rialEquivalent}>
+                                            ({new Intl.NumberFormat('fa-IR').format(Math.round(Number(order.totalPrice || 0) * 10))} ریال)
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── ستون ۳: آدرس ارسال ──────────────────────────────── */}
                     {(order.address || order.postalCode) && (
                         <div className={styles.expanded_section}>
                             <h4 className={styles.expanded_section__title}>📍 آدرس ارسال</h4>
@@ -202,7 +317,7 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
                         </div>
                     )}
 
-                    {/* ── ستون ۳: اقلام سفارش ─────────────────────────────── */}
+                    {/* ── ستون ۴: اقلام سفارش ─────────────────────────────── */}
                     <div className={styles.expanded_section}>
                         <h4 className={styles.expanded_section__title}>🛒 اقلام سفارش</h4>
                         {order.items && order.items.length > 0 ? (
@@ -249,20 +364,6 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
         </tr>
     );
 }
-
-// ── توابع کمکی برای تشخیص وضعیت سفارش ───────────────────────────────────────
-const isWaitingReceipt = (o) =>
-    (o.paymentMethod === 'card_to_card' && o.paymentStatus === 'pending_verification') ||
-    (Boolean(o.receiptImageUrl) && o.orderStatus === 'pending');
-
-const isPendingNoReceipt = (o) =>
-    o.orderStatus === 'pending' && !o.receiptImageUrl && o.paymentStatus !== 'pending_verification';
-
-const isPaidOrder = (o) =>
-    ['paid', 'shipped', 'delivered'].includes(o.orderStatus) || o.paymentStatus === 'paid';
-
-const isCanceledOrder = (o) =>
-    o.orderStatus === 'canceled';
 
 // ── OrdersTable ──────────────────────────────────────────────────────────────
 
@@ -429,12 +530,14 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                 pending: initialStats.pending ?? 0,
                 paid: initialStats.paid ?? 0,
                 canceled: initialStats.canceled ?? 0,
+                online: initialStats.online ?? orders.filter((o) => o.paymentMethod === 'online').length,
             };
         }
         return {
             pending: orders.filter((o) => o.orderStatus === 'pending').length,
             paid: orders.filter(isPaidOrder).length,
             canceled: orders.filter(isCanceledOrder).length,
+            online: orders.filter((o) => o.paymentMethod === 'online').length,
         };
     }, [initialStats, orders, periodFilter, activeSettlement]);
 
@@ -719,6 +822,12 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                         پرداخت شده ({new Intl.NumberFormat('fa-IR').format(counts.paid)})
                     </AdminButton>
                     <AdminButton
+                        variant={filterType === 'online' ? 'edit' : 'default'}
+                        onClick={() => setFilterType('online')}
+                    >
+                        پرداخت آنلاین ({new Intl.NumberFormat('fa-IR').format(counts.online)})
+                    </AdminButton>
+                    <AdminButton
                         variant={filterType === 'canceled' ? 'edit' : 'default'}
                         onClick={() => setFilterType('canceled')}
                     >
@@ -798,7 +907,16 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
             ) : (
                 <AdminTable headers={headers}>
                     {orders.map((order) => {
-                        const ordConf = ORDER_STATUS_CONFIG[order.orderStatus?.trim()] || ORDER_STATUS_CONFIG[order.orderStatus] || ORDER_STATUS_CONFIG.pending;
+                        const isOnline = order.paymentMethod === 'online';
+                        let ordConf = ORDER_STATUS_CONFIG[order.orderStatus?.trim()] || ORDER_STATUS_CONFIG[order.orderStatus] || ORDER_STATUS_CONFIG.pending;
+                        if (isOnline) {
+                            if (isPaidOrder(order)) {
+                                ordConf = { label: 'پرداخت آنلاین موفق', variant: 'success' };
+                            } else if (order.orderStatus === 'pending') {
+                                ordConf = { label: 'در انتظار پرداخت آنلاین', variant: 'warning' };
+                            }
+                        }
+
                         const isCardToCard = order.paymentMethod === 'card_to_card';
                         const needsReceiptApproval =
                             isCardToCard && order.paymentStatus === 'pending_verification';

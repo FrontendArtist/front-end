@@ -3,8 +3,9 @@ import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { ORDER_STATUS, PAYMENT_STATUS, PAYMENT_METHOD } from "@/lib/constants/orderConstants";
+import { STRAPI_API_URL } from "@/lib/api";
 
-const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
 // --------------------------------------------------------------------------
@@ -201,19 +202,17 @@ export async function POST(request) {
 
         // ── وضعیت پرداخت و سفارش ─────────────────────────────────────────────
         // سفارش رایگان (قیمت ۰ تومان یا تخفیف ۱۰۰٪) → مستقیماً paid
-        // کارت‌به‌کارت → orderStatus: 'pending', paymentStatus: 'pending_payment'
-        // آنلاین → orderStatus: 'paid', paymentStatus: 'paid'
+        // کارت‌به‌کارت و پرداخت آنلاین → orderStatus: 'pending', paymentStatus: 'pending_payment'
+        // (پرداخت آنلاین پس از تایید کال‌بک درگاه در /api/payment/verify به paid تبدیل می‌شود)
         const isFreeOrder = finalPayablePrice <= 0 || paymentMethod === PAYMENT_METHOD.FREE;
         const resolvedPaymentMethod = isFreeOrder ? PAYMENT_METHOD.FREE : (paymentMethod || PAYMENT_METHOD.ONLINE);
         const resolvedOrderStatus = isFreeOrder
             ? ORDER_STATUS.PAID
-            : (resolvedPaymentMethod === PAYMENT_METHOD.CARD_TO_CARD ? ORDER_STATUS.PENDING : ORDER_STATUS.PAID);
+            : ORDER_STATUS.PENDING;
         const resolvedPaymentStatus = isFreeOrder
             ? PAYMENT_STATUS.PAID
-            : (resolvedPaymentMethod === PAYMENT_METHOD.CARD_TO_CARD
-                ? PAYMENT_STATUS.PENDING_PAYMENT
-                : (paymentStatus && paymentStatus !== PAYMENT_STATUS.PENDING_PAYMENT ? paymentStatus : PAYMENT_STATUS.PAID));
-        const isOrderPaid = resolvedOrderStatus === ORDER_STATUS.PAID || resolvedPaymentStatus === PAYMENT_STATUS.PAID;
+            : PAYMENT_STATUS.PENDING_PAYMENT;
+        const isOrderPaid = resolvedOrderStatus === ORDER_STATUS.PAID && resolvedPaymentStatus === PAYMENT_STATUS.PAID;
 
         // ── 1. هوشمندسازی نام خریدار (fullName) ───────────────────────────────────
         // اولویت 1: نام و نام‌خانوادگی در پروفایل کاربر

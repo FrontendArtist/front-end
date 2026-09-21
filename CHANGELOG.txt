@@ -1,3 +1,44 @@
+[2026-09-20] - Saman Electronic Payment (SEP) Integration, Online Order Automation & Unified Order UI
+
+── SEP Online Gateway Integration & Automated Order Fulfillment ────────────────
+- Backend Order Schema Expansion (`backend/src/api/order/content-types/order/schema.json`):
+  • Added dedicated transactional attributes to Strapi Order content-type: `refNum`, `traceNo`, `rrn`, `securePan`, `hashedCardNumber`, and `paymentDate`.
+  • Regenerated backend TypeScript definitions (`types/generated/components.d.ts` & `contentTypes.d.ts`).
+- Saman Electronic Payment (SEP) Core Module (`src/lib/sepPayment.js` & `src/lib/__tests__/sepPayment.test.js`):
+  • Implemented `requestSepToken` targeting official SEP API with Terminal ID `15785408` via `SEP_TERMINAL_ID`.
+  • Implemented `verifySepTransaction` utilizing `verifyTxnRandomSessionkey` with full response code handling.
+  • Implemented `reverseSepTransaction` for automated transaction reversal in case of verification failures.
+  • Built Persian error mapping (`getSepErrorMessage`) translating all bank error codes into user-friendly messages.
+  • Added comprehensive Jest unit tests covering all gateway operations and failure scenarios (11/11 tests passing).
+- Payment Request & Verify Route Handlers (`src/app/api/payment/request/route.js` & `src/app/api/payment/verify/route.js`):
+  • Token request endpoint generating auto-submitting gateway redirection payload.
+  • Gateway POST callback handler accepting `application/x-www-form-urlencoded` / `multipart/form-data`.
+  • Automatic order status transition to `orderStatus: 'paid'` and `paymentStatus: 'paid'` in Strapi upon successful verification.
+  • Resilient documentId and numeric ID resolution using centralized `STRAPI_API_URL`.
+  • Server-side cache revalidation (`revalidatePath`) for `/admin/orders`, `/profile/orders`, and `/profile/orders/[id]`.
+  • Clean redirect to `/checkout/result` with transaction status and digital receipt code.
+- Dedicated Checkout Result Screen (`src/app/checkout/result/page.jsx`):
+  • Displays transaction status, digital receipt (`RefNum`), and tracking number with instant copy buttons and navigation actions.
+
+── Admin Orders Management Dashboard (`/admin/orders`) ─────────────────────────
+- Dedicated Online Payment Information Card (`src/components/admin/Orders/OrdersTable.jsx` & `.module.scss`):
+  • Added dedicated card in expanded order row (`OrderExpandedRow`) displaying bank receipt (`RefNum`), tracking code (`TraceNo`), Shaparak RRN, masked card (`SecurePan`), payment date/time, and Tomans/Rials conversion.
+  • Added interactive `CopyButton` for single-click copying of RefNum and TraceNo.
+  • Synchronized card background (`fade(var(--color-black), 20%)`) and border (`fade(var(--color-primary), 8%)`) to match existing section styles.
+- Online Payment Filter & Badge Status (`src/lib/admin/adminOrdersApi.js` & `src/components/admin/Shared/AdminBadge.jsx`):
+  • Added "پرداخت آنلاین" tab with real-time order counter in AdminToolbar.
+  • Added status badge mappings for "پرداخت آنلاین موفق" (success) and "در انتظار پرداخت آنلاین" (warning).
+  • Implemented resilient regex fallback extraction from `notes` for legacy orders.
+
+── User Profile & Order Details Synchronization (`/profile/orders`) ─────────────
+- User Profile Order Details (`src/app/profile/orders/[id]/page.jsx` & `orderDetail.module.scss`):
+  • Added dedicated online receipt card with bank receipt, tracking number, card number, RRN, and date.
+  • Fully synchronized `.onlineReceiptCard` styling with `src/styles/variables.css` (`var(--gradient-card-horizontal-rtl)`, `var(--radius-card)`, `var(--shadow-card-strong)`, `var(--color-primary)`).
+  • Removed custom emerald/green RGBA gradients and borders, ensuring 100% visual harmony with `orderHeader` and `orderItemsSection`.
+- User Profile Order History (`src/components/profile/OrdersList.jsx`):
+  • Updated `CombinedStatusBadge` to display "پرداخت آنلاین موفق" for paid online orders.
+  • Added direct tracking number display on order cards in the history list.
+
 [2026-09-14] - Zero-Bloat Daily Visitor Aggregation: Unique Daily Entrances & RAM-Based Online Counter
 
 ── Zero-Bloat Architecture & Database Optimization ──────────────────────────

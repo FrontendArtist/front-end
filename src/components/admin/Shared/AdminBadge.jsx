@@ -8,9 +8,9 @@ export default function AdminBadge({ status, text, label, children, variant = 'd
     let finalVariant = variant;
     if (variant === 'default') {
         const lowerStatus = String(displayText).toLowerCase();
-        if (['available', 'published', 'success', 'user', 'green', 'completed', 'delivered', 'paid', 'پرداخت شده', 'تحویل شده'].includes(lowerStatus)) finalVariant = 'success';
+        if (['available', 'published', 'success', 'user', 'green', 'completed', 'delivered', 'paid', 'پرداخت شده', 'تحویل شده', 'پرداخت آنلاین موفق'].includes(lowerStatus)) finalVariant = 'success';
         else if (['unavailable', 'error', 'admin', 'red', 'cancelled', 'canceled', 'failed', 'رد شده', 'ناموفق'].includes(lowerStatus)) finalVariant = 'error';
-        else if (['draft', 'warning', 'yellow', 'processing', 'pending', 'در حال پردازش', 'در انتظار پرداخت', 'انتظار تأیید رسید'].includes(lowerStatus)) finalVariant = 'warning';
+        else if (['draft', 'warning', 'yellow', 'processing', 'pending', 'در حال پردازش', 'در انتظار پرداخت', 'انتظار تأیید رسید', 'در انتظار پرداخت آنلاین'].includes(lowerStatus)) finalVariant = 'warning';
         else if (['info', 'blue', 'shipped', 'ارسال شده'].includes(lowerStatus)) finalVariant = 'info';
     }
 

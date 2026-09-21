@@ -55,8 +55,8 @@ export default function PaymentStep({ onPrevious }) {
     // تشخیص سبد دوره‌ای خالص (منحصراً دوره آموزشی بدون کالای فیزیکی یا فصل)
     const isPureCoursesOnly = items.length > 0 && items.every((item) => item.type === 'course');
 
-    // مقدار پیش‌فرض: کارت به کارت (برای سفارش‌های غیراز دوره‌ای خالص)
-    const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.CARD_TO_CARD);
+    // مقدار پیش‌فرض: پرداخت آنلاین با درگاه سامان
+    const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.ONLINE);
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
 
@@ -277,7 +277,7 @@ export default function PaymentStep({ onPrevious }) {
         // ۲. برای سفارش‌های رایگان یا سبدهای حاوی محصول فیزیکی/فصل‌ها: جریان قبلی سفارشات
         const isCardToCard = !isFreeOrder && paymentMethod === PAYMENT_METHOD.CARD_TO_CARD;
         const paymentMethodToSend = isFreeOrder ? PAYMENT_METHOD.FREE : paymentMethod;
-        const initialPaymentStatus = isCardToCard ? PAYMENT_STATUS.PENDING_PAYMENT : PAYMENT_STATUS.PAID;
+        const initialPaymentStatus = PAYMENT_STATUS.PENDING_PAYMENT;
 
         try {
             const response = await fetch('/api/orders', {
@@ -302,9 +302,8 @@ export default function PaymentStep({ onPrevious }) {
 
             const newOrder = await response.json();
 
-            // توجه: پاکسازی سبد خرید به صورت امن و قطعی در صفحه callback پس از تایید موفقیت (status=success) انجام می‌شود.
             if (isFreeOrder) {
-                router.push('/payment/callback?status=success&source=free');
+                router.push('/checkout/result?status=success&source=free');
             } else if (isCardToCard) {
                 const documentId = newOrder?.data?.documentId;
                 let redirectUrl = '/payment/callback?status=success&source=card_to_card';
@@ -313,14 +312,45 @@ export default function PaymentStep({ onPrevious }) {
                 }
                 router.push(redirectUrl);
             } else {
-                // شبیه‌سازی پرداخت آنلاین: هدایت با کد پیگیری و شناسه سفارش به صفحه تایید
+                // پرداخت آنلاین از طریق درگاه پرداخت الکترونیک سامان (سپ)
                 const documentId = newOrder?.data?.documentId;
-                const simulatedTraceNo = Math.floor(100000 + Math.random() * 900000).toString();
-                let redirectUrl = `/payment/callback?status=success&source=online&refNum=${simulatedTraceNo}`;
-                if (documentId) {
-                    redirectUrl += `&orderId=${encodeURIComponent(documentId)}`;
+                if (!documentId) {
+                    throw new Error('شناسه سفارش ایجادشده یافت نشد.');
                 }
-                router.push(redirectUrl);
+
+                // درخواست توکن از اندپوینت اختصاصی سرور
+                const tokenResponse = await fetch('/api/payment/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId: documentId }),
+                });
+
+                const tokenData = await tokenResponse.json();
+
+                if (!tokenResponse.ok || !tokenData.success || !tokenData.token) {
+                    throw new Error(tokenData.message || 'خطا در دریافت توکن پرداخت از درگاه سامان');
+                }
+
+                // ایجاد و سابمیت داینامیک فرم POST به درگاه شاپرک جهت ارسال خودکار هدر Referrer
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = tokenData.gatewayUrl || 'https://sep.shaparak.ir/OnlinePG/OnlinePG';
+                form.style.display = 'none';
+
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'Token';
+                tokenInput.value = tokenData.token;
+                form.appendChild(tokenInput);
+
+                const getMethodInput = document.createElement('input');
+                getMethodInput.type = 'hidden';
+                getMethodInput.name = 'GetMethod';
+                getMethodInput.value = '';
+                form.appendChild(getMethodInput);
+
+                document.body.appendChild(form);
+                form.submit();
             }
 
         } catch (error) {
@@ -430,9 +460,9 @@ export default function PaymentStep({ onPrevious }) {
                 <div className={styles.paymentMethods}>
                     <div className={styles.methodsList}>
 
-                        {/* گزینه ۱: پرداخت آنلاین — فعلاً غیرفعال */}
+                        {/* گزینه ۱: پرداخت آنلاین با درگاه سامان */}
                         <label
-                            className={`${styles.method} ${styles.disabled}`}
+                            className={`${styles.method} ${paymentMethod === 'online' ? styles.selected : ''}`}
                             htmlFor="method-online"
                         >
                             <input
@@ -440,7 +470,8 @@ export default function PaymentStep({ onPrevious }) {
                                 type="radio"
                                 name="paymentMethod"
                                 value="online"
-                                disabled
+                                checked={paymentMethod === 'online'}
+                                onChange={(e) => setPaymentMethod(e.target.value)}
                             />
                             <div className={styles.methodContent}>
                                 <div className={styles.methodIcon}>
@@ -451,7 +482,7 @@ export default function PaymentStep({ onPrevious }) {
                                 </div>
                                 <div className={styles.methodInfo}>
                                     <span className={styles.methodName}>پرداخت آنلاین</span>
-                                    <span className={styles.methodDesc}>در حال فعال‌سازی</span>
+                                    <span className={styles.methodDesc}>کلیه کارت‌های عضو شتاب (درگاه پرداخت الکترونیک سامان)</span>
                                 </div>
                             </div>
                         </label>
@@ -569,8 +600,8 @@ export default function PaymentStep({ onPrevious }) {
                                 {isFreeOrder
                                     ? 'تأیید و دریافت سفارش (رایگان)'
                                     : (paymentMethod === 'card_to_card'
-                                        ? 'ثبت نهایی سفارش'
-                                        : 'پرداخت و تکمیل خرید')}
+                                        ? 'ثبت نهایی سفارش و دریافت شماره کارت'
+                                        : 'پرداخت آنلاین و اتصال به درگاه سامان')}
                             </span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 {isFreeOrder || paymentMethod === 'card_to_card' ? (

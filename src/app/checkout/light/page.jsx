@@ -21,7 +21,7 @@ function LightCheckoutContent() {
     const lightAmount = Number.isFinite(rawAmount) && rawAmount > 0 ? rawAmount : 0;
     const totalPrice = lightAmount * LIGHT_TO_TOMAN_RATE;
 
-    const [paymentMethod, setPaymentMethod] = useState('card_to_card');
+    const [paymentMethod, setPaymentMethod] = useState('online');
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
 
@@ -104,7 +104,7 @@ function LightCheckoutContent() {
                     totalPrice: totalPrice,
                     shippingAddress: null,
                     paymentMethod: paymentMethod,
-                    paymentStatus: isCardToCard ? 'pending_payment' : 'paid',
+                    paymentStatus: 'pending_payment',
                     // داده اضافی برای مدیریت نور و شناسه ByeMoney
                     lightAmount: lightAmount,
                     orderType: 'light_topup',
@@ -127,7 +127,39 @@ function LightCheckoutContent() {
                 if (topUpRequestId) redirectUrl += `&topUpId=${encodeURIComponent(topUpRequestId)}`;
                 router.push(redirectUrl);
             } else {
-                router.push(`/payment/callback?status=success&source=light_topup&lightAmount=${lightAmount}`);
+                // پرداخت آنلاین از طریق درگاه سپ
+                if (!documentId) throw new Error('شناسه سفارش ایجاد نشد.');
+
+                const tokenRes = await fetch('/api/payment/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId: documentId }),
+                });
+
+                const tokenData = await tokenRes.json();
+                if (!tokenRes.ok || !tokenData.success || !tokenData.token) {
+                    throw new Error(tokenData.message || 'خطا در دریافت توکن پرداخت از درگاه سامان');
+                }
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = tokenData.gatewayUrl || 'https://sep.shaparak.ir/OnlinePG/OnlinePG';
+                form.style.display = 'none';
+
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'Token';
+                tokenInput.value = tokenData.token;
+                form.appendChild(tokenInput);
+
+                const getMethodInput = document.createElement('input');
+                getMethodInput.type = 'hidden';
+                getMethodInput.name = 'GetMethod';
+                getMethodInput.value = '';
+                form.appendChild(getMethodInput);
+
+                document.body.appendChild(form);
+                form.submit();
             }
 
         } catch (error) {
@@ -180,9 +212,9 @@ function LightCheckoutContent() {
                 <div className={styles.paymentMethods}>
                     <div className={styles.methodsList}>
 
-                        {/* پرداخت آنلاین — فعلاً غیرفعال */}
+                        {/* پرداخت آنلاین با درگاه سامان */}
                         <label
-                            className={`${styles.method} ${styles.disabled}`}
+                            className={`${styles.method} ${paymentMethod === 'online' ? styles.selected : ''}`}
                             htmlFor="light-method-online"
                         >
                             <input
@@ -190,7 +222,9 @@ function LightCheckoutContent() {
                                 type="radio"
                                 name="lightPaymentMethod"
                                 value="online"
-                                disabled
+                                checked={paymentMethod === 'online'}
+                                onChange={() => setPaymentMethod('online')}
+                                disabled={isProcessing}
                             />
                             <div className={styles.methodContent}>
                                 <div className={styles.methodIcon}>
@@ -201,7 +235,7 @@ function LightCheckoutContent() {
                                 </div>
                                 <div className={styles.methodInfo}>
                                     <span className={styles.methodName}>پرداخت آنلاین</span>
-                                    <span className={styles.methodDesc}>در حال فعال‌سازی</span>
+                                    <span className={styles.methodDesc}>کلیه کارت‌های عضو شتاب (درگاه پرداخت الکترونیک سامان)</span>
                                 </div>
                             </div>
                         </label>
