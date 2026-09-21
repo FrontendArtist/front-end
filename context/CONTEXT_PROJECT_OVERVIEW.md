@@ -90,6 +90,7 @@ All dynamic data (Products, Services, Articles, and Courses) are fetched from **
 * `AI_WORKFLOWS.md` → Standardized AI-driven development workflows.
 * `styles.md` → Visual and design token specifications.
 * `PROJECT_PROGRESS.md` → Single source of truth for the current project state.
+* `CONTEXT_BYEMONEY_INTEGRATION.md` → AI cheat-sheet & core architectural/API guide for ByeMoney financial integration.
 
 ---
 
