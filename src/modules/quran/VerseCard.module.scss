@@ -1,0 +1,414 @@
+/**
+ * @file src/modules/quran/VerseCard.module.scss
+ * @description استایل‌های BEM برای کامپوننت VerseCard
+ *
+ * ساختار BEM:
+ *   Block:    .verseCard
+ *   Elements: __header, __number, __controls, __audioBtn, __body,
+ *             __arabicText, __translation, __tafsir, __tafsirHeader, __tafsirText
+ *   Modifiers: --arabic, --tafsir, --active
+ *
+ * طراحی:
+ * - استفاده از متغیرهای رنگی پروژه (--color-*)
+ * - فونت عربی جداگانه برای خوانایی بهتر
+ * - Responsive: در موبایل دکمه‌ها زیر متن قرار می‌گیرند
+ */
+
+@use '../../styles/base/mixins' as *;
+
+// =============================================================================
+// Block: .verseCard — کارت اصلی هر آیه
+// =============================================================================
+
+.verseCard {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 43, 32, 0.6) 0%,
+    rgba(6, 24, 24, 0.8) 100%
+  );
+  border: 1px solid rgba(246, 217, 130, 0.12);
+  border-radius: var(--radius-card);
+  padding: 2rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+
+  // خط درخشان سمت راست (تزیینی)
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(246, 217, 130, 0.5),
+      transparent
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover {
+    border-color: rgba(246, 217, 130, 0.25);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(246, 217, 130, 0.05);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  // وضعیت فعال در پخش پیوسته
+  &--active {
+    border-color: rgba(246, 217, 130, 0.6) !important;
+    box-shadow: 0 0 28px rgba(246, 217, 130, 0.2), 0 0 0 1px rgba(246, 217, 130, 0.3) !important;
+    background: linear-gradient(
+      135deg,
+      rgba(0, 52, 39, 0.75) 0%,
+      rgba(8, 32, 32, 0.9) 100%
+    );
+
+    &::before {
+      opacity: 1;
+      width: 4px;
+      background: linear-gradient(
+        to bottom,
+        #10b981,
+        #f6d982,
+        #10b981
+      );
+    }
+  }
+
+  @include respond(md) {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+
+  @include respond(sm) {
+    padding: 1.25rem 1rem;
+    border-radius: 12px;
+  }
+}
+
+// =============================================================================
+// Element: __header — هدر کارت (شماره آیه + دکمه‌های صوت)
+// =============================================================================
+
+.verseCard__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  @include respond(md) {
+    margin-bottom: 1.25rem;
+  }
+}
+
+// =============================================================================
+// Element: __number — شماره آیه (h2)
+// =============================================================================
+
+.verseCard__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: linear-gradient(135deg, rgba(246, 217, 130, 0.15), rgba(246, 217, 130, 0.05));
+  border: 1px solid rgba(246, 217, 130, 0.3);
+  border-radius: 50%;
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+  flex-shrink: 0;
+  transition: background 0.2s ease, border-color 0.2s ease;
+
+  .verseCard:hover & {
+    background: linear-gradient(135deg, rgba(246, 217, 130, 0.25), rgba(246, 217, 130, 0.1));
+    border-color: rgba(246, 217, 130, 0.5);
+  }
+}
+
+// =============================================================================
+// Element: __controls — گروه دکمه‌های کنترل صوت
+// =============================================================================
+
+.verseCard__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+// =============================================================================
+// Element: __audioBtn — دکمه پخش صوت
+// Modifier: --arabic, --tafsir, --active
+// =============================================================================
+
+.verseCard__audioBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  white-space: nowrap;
+
+  // وضعیت focus برای دسترس‌پذیری
+  &:focus-visible {
+    outline: 2px solid rgba(246, 217, 130, 0.6);
+    outline-offset: 2px;
+  }
+
+  // Modifier: دکمه صوت عربی
+  &--arabic {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #a5b4fc;
+
+    &:hover {
+      background: rgba(99, 102, 241, 0.22);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #c4b5fd;
+    }
+
+    // وضعیت فعال — در حال پخش
+    &#{&}--active {
+      background: rgba(99, 102, 241, 0.3);
+      border-color: #6366f1;
+      color: #e0e7ff;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+
+      // انیمیشن ضربان برای نشان دادن پخش
+      animation: pulseArabic 2s ease-in-out infinite;
+    }
+  }
+
+  // Modifier: دکمه صوت ترجمه گویای فارسی (بهروز رضوی)
+  &--persian {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #6ee7b7;
+
+    &:hover {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: #a7f3d0;
+    }
+
+    // وضعیت فعال — در حال پخش
+    &#{&}--active {
+      background: rgba(16, 185, 129, 0.28);
+      border-color: #10b981;
+      color: #ecfdf5;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+
+      animation: pulsePersian 2s ease-in-out infinite;
+    }
+  }
+
+  // Modifier: دکمه صوت تفسیر اختصاصی (Strapi)
+  &--tafsir {
+    background: rgba(246, 217, 130, 0.08);
+    border-color: rgba(246, 217, 130, 0.25);
+    color: var(--color-text-primary);
+
+    &:hover {
+      background: rgba(246, 217, 130, 0.15);
+      border-color: rgba(246, 217, 130, 0.45);
+    }
+
+    // وضعیت فعال — در حال پخش
+    &#{&}--active {
+      background: rgba(246, 217, 130, 0.2);
+      border-color: var(--color-gold);
+      color: var(--color-title-hover);
+      box-shadow: 0 0 12px rgba(246, 217, 130, 0.2);
+
+      animation: pulseTafsir 2s ease-in-out infinite;
+    }
+  }
+}
+
+.verseCard__audioBtnLabel {
+  line-height: 1;
+}
+
+// =============================================================================
+// Element: __body — بدنه کارت (متون)
+// =============================================================================
+
+.verseCard__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  @include respond(md) {
+    gap: 1rem;
+  }
+}
+
+// =============================================================================
+// Element: __arabicText — متن عربی آیه
+// فونت عربی بزرگ‌تر برای خوانایی بهتر
+// =============================================================================
+
+.verseCard__arabicText {
+  font-family: 'Amiri', 'Traditional Arabic', 'Scheherazade New', 'Arial', serif;
+  font-size: clamp(1.7rem, 3.2vw, 1.9rem);
+  line-height: 1.8;
+  color: var(--color-card-text);
+  direction: rtl;
+  text-align: right;
+  margin: 0;
+  letter-spacing: 0.02em;
+
+  // اندکی درخشش برای متن عربی
+  text-shadow: 0 0 20px rgba(255, 250, 234, 0.08);
+
+  @include respond(md) {
+    line-height: 1.8;
+  }
+
+  @include respond(sm) {
+    font-size: clamp(1.7rem, 5vw, 1.5rem);
+    line-height: 1.8;
+    letter-spacing: 0.03em;
+  }
+}
+
+// =============================================================================
+// Element: __translationBox — جعبه ترجمه فارسی به همراه دکمه صوت
+// =============================================================================
+
+.verseCard__translationBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(246, 217, 130, 0.1);
+  direction: rtl;
+  text-align: right;
+}
+
+.verseCard__translationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.verseCard__translationLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--font-xs);
+  color: rgba(246, 217, 130, 0.75);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.01em;
+}
+
+.verseCard__translationText {
+  font-size: var(--font-sm);
+  line-height: var(--line-height-lg);
+  color: rgba(255, 250, 234, 0.85);
+  margin: 0;
+  text-align: justify;
+  text-justify: inter-word;
+
+  @include respond(sm) {
+    font-size: var(--font-sm);
+    line-height: 1.8;
+  }
+}
+
+// =============================================================================
+// Element: __tafsir — بلوک تفسیر اختصاصی
+// =============================================================================
+
+.verseCard__tafsir {
+  background: rgba(0, 43, 32, 0.4);
+  border: 1px solid rgba(246, 217, 130, 0.1);
+  border-right: 3px solid rgba(246, 217, 130, 0.4); // خط تزیینی سمت راست
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  direction: rtl;
+
+  @include respond(sm) {
+    padding: 0.875rem 1rem;
+  }
+}
+
+// هدر بخش تفسیر (شامل عنوان + دکمه صوت تفسیر)
+.verseCard__tafsirHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.verseCard__tafsirTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-primary);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+  opacity: 0.85;
+}
+
+// متن تفسیر
+.verseCard__tafsirText {
+  font-size: var(--font-sm);
+  line-height: var(--line-height-lg);
+  color: rgba(255, 250, 234, 0.8);
+  text-align: right;
+  margin: 0;
+}
+
+// =============================================================================
+// انیمیشن‌های ضربان برای وضعیت پخش
+// =============================================================================
+
+@keyframes pulseArabic {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(99, 102, 241, 0.55);
+  }
+}
+
+@keyframes pulsePersian {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(16, 185, 129, 0.5);
+  }
+}
+
+@keyframes pulseTafsir {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(246, 217, 130, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(246, 217, 130, 0.4);
+  }
+}

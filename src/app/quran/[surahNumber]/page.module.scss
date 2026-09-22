@@ -1,0 +1,97 @@
+/**
+ * @file src/app/quran/[surahNumber]/page.module.scss
+ * @description استایل‌های صفحه تفسیر سوره — BEM naming, Responsive
+ */
+
+@use '../../../styles/base/mixins' as *;
+
+// =============================================================================
+// صفحه اصلی تفسیر
+// =============================================================================
+
+.tafsirPage {
+  padding-top: var(--space-section-top-desktop);
+  padding-bottom: var(--space-section-bottom-desktop);
+  min-height: 100vh;
+
+  @include respond(md) {
+    padding-top: 90px;
+    padding-bottom: 40px;
+  }
+}
+
+// =============================================================================
+// هدر سوره
+// =============================================================================
+
+.surahHeader {
+  text-align: center;
+  margin-bottom: var(--space-title-content-desktop);
+  padding: 2rem 1rem;
+  border-bottom: 1px solid rgba(246, 217, 130, 0.15);
+
+  @include respond(md) {
+    margin-bottom: 2rem;
+    padding: 1.5rem 0.5rem;
+  }
+}
+
+// نام عربی سوره — فونت بزرگ و خوانا
+.surahNameArabic {
+  font-family: 'Amiri', 'Traditional Arabic', 'Arial', serif;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  margin: 0 0 1rem;
+  direction: rtl;
+  text-shadow: 0 0 30px rgba(246, 217, 130, 0.2);
+}
+
+// اطلاعات متا سوره (شماره، نام انگلیسی، تعداد آیات)
+.surahMeta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0 0 1.5rem;
+  color: var(--color-card-text);
+  font-size: var(--font-sm);
+  opacity: 0.8;
+}
+
+.surahNumber,
+.surahEnglishName,
+.verseCount {
+  padding: 0.25rem 0.75rem;
+  background: rgba(246, 217, 130, 0.08);
+  border: 1px solid rgba(246, 217, 130, 0.15);
+  border-radius: 20px;
+  color: var(--color-text-primary);
+  font-size: var(--font-xs);
+}
+
+// بسم‌الله الرحمن الرحیم
+.basmala {
+  font-family: 'Amiri', 'Traditional Arabic', 'Arial', serif;
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  color: var(--color-text-primary);
+  direction: rtl;
+  margin: 0;
+  opacity: 0.9;
+  line-height: 2;
+}
+
+// =============================================================================
+// بخش آیات
+// =============================================================================
+
+.versesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  @include respond(md) {
+    gap: 1rem;
+  }
+}
