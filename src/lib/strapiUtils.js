@@ -84,6 +84,56 @@ export function formatSingleImage(imgData) {
 }
 
 /**
+ * Formats a single audio media object from Strapi into a standardized audio object or null.
+ *
+ * @param {object|string|null} audioData - Audio data from Strapi API
+ * @returns {{ url: string, name?: string, mime?: string } | null}
+ */
+export function formatSingleAudio(audioData) {
+  if (!audioData) return null;
+
+  // Handle string URL
+  if (typeof audioData === 'string') {
+    const trimmed = audioData.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return { url: trimmed, name: '', mime: '' };
+    }
+    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return { url: `${API_BASE_URL}${cleanPath}`, name: '', mime: '' };
+  }
+
+  // Unwrap nested Strapi structures ({ data: ... })
+  let target = audioData;
+  if (target.data) {
+    if (Array.isArray(target.data)) {
+      target = target.data[0] || {};
+    } else if (typeof target.data === 'object' && target.data !== null) {
+      target = target.data;
+    }
+  }
+
+  const attrs = target.attributes || target;
+  let rawUrl = attrs?.url || null;
+  if (!rawUrl && typeof attrs === 'string') {
+    rawUrl = attrs;
+  }
+  if (!rawUrl) return null;
+
+  let fullUrl = rawUrl;
+  if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+    const cleanPath = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
+    fullUrl = `${API_BASE_URL}${cleanPath}`;
+  }
+
+  return {
+    url: fullUrl,
+    name: attrs.name || attrs.caption || attrs.alternativeText || '',
+    mime: attrs.mime || '',
+  };
+}
+
+/**
  * Formats your specific Strapi API response for SERVICES.
  */
 export function formatStrapiServices(apiResponse) {
@@ -115,6 +165,7 @@ export function formatStrapiServices(apiResponse) {
         content: rawContent || (item.content ? String(item.content) : null),
         // Services have a single 'image' object
         image: formatSingleImage(item.image),
+        audio: formatSingleAudio(item.audio),
         link: item.link || null,
       };
     });
