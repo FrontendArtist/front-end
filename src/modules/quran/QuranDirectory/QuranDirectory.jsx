@@ -5,7 +5,7 @@
  * @description فهرست جامع و اسلامی سوره‌های قرآن کریم با عنوان «کلام نور»
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Search, X, BookOpen, ChevronLeft, Sparkles } from 'lucide-react';
 import { SURAHS_DATA } from '@/utils/quranSurahsData';
@@ -93,6 +93,42 @@ export default function QuranDirectory({ tafsirSurahs = [] }) {
     });
   }, [searchQuery, tafsirSurahsList]);
 
+  // تعداد آیتم‌ها در هر بار بارگذاری (Lazy Load)
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef(null);
+
+  // ریست تعداد آیتم‌ها با تغییر عبارت جستجو
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery]);
+
+  // بارگذاری خودکار با اسکرول (Infinite Scroll / Lazy Load)
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => {
+            if (prev < filteredSurahs.length) {
+              return prev + PAGE_SIZE;
+            }
+            return prev;
+          });
+        }
+      },
+      { rootMargin: '250px' }
+    );
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [filteredSurahs.length]);
+
+  // لیست برش‌خورده بر اساس تعداد سوره‌های قابل مشاهده
+  const visibleSurahs = useMemo(() => {
+    return filteredSurahs.slice(0, visibleCount);
+  }, [filteredSurahs, visibleCount]);
+
   return (
     <div className={styles.directory} dir="rtl">
         {/* ===== بخش Hero: خوشنویسی و عنوان اسلامی ===== */}
@@ -116,8 +152,7 @@ export default function QuranDirectory({ tafsirSurahs = [] }) {
         </header>
 
         {/* ===== کنترل‌ها: باکس جستجو ===== */}
-        <section className={styles.controlsSection} aria-label="جستجوی سوره‌ها">
-          {/* نوار جستجوی زنده */}
+
           <div className={styles.searchBox}>
             <Search size={18} className={styles.searchIcon} aria-hidden="true" />
             <input
@@ -140,12 +175,11 @@ export default function QuranDirectory({ tafsirSurahs = [] }) {
               </button>
             )}
           </div>
-        </section>
 
         {/* ===== گرید کارت‌های سوره‌ها ===== */}
         <main className={styles.surahGrid} aria-label="فهرست سوره‌ها">
-          {filteredSurahs.length > 0 ? (
-            filteredSurahs.map((surah) => {
+          {visibleSurahs.length > 0 ? (
+            visibleSurahs.map((surah) => {
               const strapiInfo = tafsirMap.get(surah.number);
               const hasTafsir = Boolean(strapiInfo?.hasTafsir);
 
@@ -200,23 +234,41 @@ export default function QuranDirectory({ tafsirSurahs = [] }) {
                 </Link>
               );
             })
-          ) : (
+          ) : searchQuery.trim() ? (
             <div className={styles.emptyState}>
               <BookOpen size={48} aria-hidden="true" color="var(--color-text-primary)" />
               <h3>سوره‌ای با این مشخصات یافت نشد</h3>
               <p>لطفاً عبارت دیگری را جستجو نمایید یا جستجو را پاک کنید.</p>
-              {searchQuery && (
-                <button
-                  type="button"
-                  className={styles.resetBtn}
-                  onClick={() => setSearchQuery('')}
-                >
-                  پاک کردن جستجو
-                </button>
-              )}
+              <button
+                type="button"
+                className={styles.resetBtn}
+                onClick={() => setSearchQuery('')}
+              >
+                پاک کردن جستجو
+              </button>
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              <BookOpen size={48} aria-hidden="true" color="var(--color-text-primary)" />
+              <h3>هنوز سوره‌ای ثبت نشده است</h3>
+              <p>در حال حاضر هیچ سوره‌ای از دیتابیس دریافت نشد.</p>
             </div>
           )}
         </main>
+
+        {/* دکمه بارگذاری بیشتر و نشانگر اسکرول لیزی‌لود */}
+        {visibleCount < filteredSurahs.length && (
+          <div className={styles.loadMoreContainer}>
+            <button
+              type="button"
+              onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+              className={styles.loadMoreButton}
+            >
+              بارگذاری بیشتر
+            </button>
+            <div ref={sentinelRef} className={styles.sentinel} aria-hidden="true" />
+          </div>
+        )}
     </div>
   );
 }
