@@ -23,32 +23,11 @@
     @include container;
 }
 
-// عنوان صفحه
-.pageTitle {
-    font-family: var(--font-lalezar);
-    font-size: var(--font-3xl);
-    color: var(--color-text-primary);
-    margin: 16px 0 24px;
-    text-align: center;
-    padding-bottom: 12px;
-    border-bottom: 1px solid fade(var(--color-primary), 15%);
-
-    @include respond(xl) {
-        font-size: var(--font-2xl);
-        margin-bottom: 20px;
-    }
-
-    @include respond(md) {
-        font-size: var(--font-xl);
-        margin-bottom: 16px;
-    }
-}
-
-// Container مرحله فعلی (با عرض بهینه و متمرکز)
+// Container متمرکز فرم آدرس و پرداخت
 .stepContainer {
     max-width: 780px;
     width: 100%;
-    margin: 0 auto;
+    margin: 24px auto 0;
 }
 
 // Empty State

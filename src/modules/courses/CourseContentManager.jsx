@@ -162,11 +162,6 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const handleAddChapterToCart = (chapter, event) => {
     event?.stopPropagation();
 
-    if (!isAuthenticated) {
-      openAuthModal();
-      return;
-    }
-
     const chapterPrice = chapter.price?.toman ?? chapter.price ?? 0;
 
     addItem({

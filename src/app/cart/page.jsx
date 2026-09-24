@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
 import DiscountCouponInput from '@/components/cart/DiscountCouponInput/DiscountCouponInput';
@@ -16,6 +18,8 @@ import {
     selectItemsCount,
     selectItemLevelDiscount,
 } from '@/store/useCartStore';
+import useAuthStore from '@/store/authStore';
+import { executeOnlinePayment } from '@/lib/checkoutService';
 import styles from './Cart.module.scss';
 
 /**
@@ -43,6 +47,13 @@ export default function CartPage() {
         setIsHydrated(true);
     }, []);
 
+    const router = useRouter();
+    const { status } = useSession();
+    const openAuthModal = useAuthStore((state) => state.openAuthModal);
+
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
+
     // دریافت داده‌ها و توابع از Store
     const items = useCartStore((state) => state.items);
     const updateQuantity = useCartStore((state) => state.updateQuantity);
@@ -53,6 +64,56 @@ export default function CartPage() {
     const itemLevelDiscount = useCartStore(selectItemLevelDiscount);
     const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
+
+    // آیا محصول فیزیکی نیازمند آدرس پستی در سبد وجود دارد؟
+    const hasPhysicalProducts = items.some((item) => item.type === 'product');
+
+    /**
+     * شروع پرداخت آنلاین برای دوره‌های آموزشی
+     */
+    const handleStartPayment = async () => {
+        setIsProcessing(true);
+        setErrorMessage(null);
+        try {
+            await executeOnlinePayment({
+                items,
+                finalTotalPrice,
+                appliedCoupon,
+                couponDiscount,
+                shippingAddress: null,
+                router,
+            });
+        } catch (err) {
+            console.error('Payment Error:', err);
+            setErrorMessage(err.message || 'خطا در ارتباط با درگاه پرداخت. لطفاً مجدداً تلاش کنید.');
+            setIsProcessing(false);
+        }
+    };
+
+    /**
+     * هندلر اصلی دکمه ادامه خرید / پرداخت
+     */
+    const handleProceed = () => {
+        if (hasPhysicalProducts) {
+            // برای محصول فیزیکی نیاز به آدرس در /checkout داریم
+            if (status === 'authenticated') {
+                router.push('/checkout');
+            } else {
+                openAuthModal(() => {
+                    router.push('/checkout');
+                });
+            }
+        } else {
+            // برای دوره‌های آموزشی، مستقیماً پرداخت آنلاین انجام می‌شود
+            if (status === 'authenticated') {
+                handleStartPayment();
+            } else {
+                openAuthModal(() => {
+                    handleStartPayment();
+                });
+            }
+        }
+    };
 
     /**
      * هندلر افزایش تعداد محصول
@@ -367,10 +428,39 @@ export default function CartPage() {
                             </strong>
                         </div>
 
-                        {/* دکمه تسویه حساب */}
-                        <Link href="/checkout" className={styles.checkoutButton}>
-                            ادامه فرآیند خرید
-                        </Link>
+                        {errorMessage && (
+                            <div style={{
+                                padding: '10px 14px',
+                                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                                border: '1px solid #ef4444',
+                                borderRadius: '8px',
+                                color: '#fca5a5',
+                                fontSize: '0.85rem',
+                                marginTop: '10px',
+                                textAlign: 'center',
+                                lineHeight: '1.5'
+                            }}>
+                                {errorMessage}
+                            </div>
+                        )}
+
+                        {/* دکمه پرداخت یا ادامه تسویه حساب */}
+                        <button
+                            type="button"
+                            onClick={handleProceed}
+                            disabled={isProcessing}
+                            className={styles.checkoutButton}
+                        >
+                            {isProcessing ? (
+                                'در حال اتصال به درگاه پرداخت...'
+                            ) : hasPhysicalProducts ? (
+                                'ثبت آدرس و ادامه خرید '
+                            ) : finalTotalPrice === 0 ? (
+                                'ثبت‌نام و دسترسی رایگان '
+                            ) : (
+                                'پرداخت آنلاین شتاب '
+                            )}
+                        </button>
 
                         {/* پیام امنیت */}
                         <p className={styles.securityNote}>

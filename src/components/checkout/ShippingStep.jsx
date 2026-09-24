@@ -2,20 +2,39 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import {
+    useCartStore,
+    selectFinalTotalPrice,
+    selectTotalPrice,
+    selectCouponDiscount,
+    selectItemsCount,
+} from '@/store/useCartStore';
+import { formatPrice } from '@/lib/formatters';
+import { executeOnlinePayment } from '@/lib/checkoutService';
 import styles from './ShippingStep.module.scss';
 
 /**
- * مرحله 3: اطلاعات ارسال
- * نمایش و ویرایش آدرس به صورت inline
+ * مرحله اطلاعات ارسال و پرداخت آنلاین مستقیم
+ * نمایش و ویرایش آدرس همراه با اتصال مستقیم به درگاه پرداخت شاپرک بدون مرحله اضافی
  * 
- * @param {function} onNext - callback برای رفتن به مرحله بعد
- * @param {function} onPrevious - callback برای برگشت به مرحله قبل
+ * @param {function} onPrevious - callback برای بازگشت به سبد خرید
  */
-export default function ShippingStep({ onNext, onPrevious }) {
+export default function ShippingStep({ onPrevious }) {
     const { data: session } = useSession();
+    const router = useRouter();
+
+    const items = useCartStore((state) => state.items);
+    const appliedCoupon = useCartStore((state) => state.appliedCoupon);
+    const totalPrice = useCartStore(selectTotalPrice);
+    const couponDiscount = useCartStore(selectCouponDiscount);
+    const finalTotalPrice = useCartStore(selectFinalTotalPrice);
+    const itemsCount = useCartStore(selectItemsCount);
+
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState('');
 
     const [addressData, setAddressData] = useState({
@@ -27,7 +46,7 @@ export default function ShippingStep({ onNext, onPrevious }) {
         postalCode: '',
     });
 
-    // دریافت اطلاعات آدرس
+    // دریافت اطلاعات آدرس ذخیره‌شده در پروفایل
     useEffect(() => {
         const fetchAddress = async () => {
             try {
@@ -45,7 +64,7 @@ export default function ShippingStep({ onNext, onPrevious }) {
                         postalCode: data.address.postalCode || '',
                     });
                 } else {
-                    // اگر آدرس ندارد، به حالت ویرایش برود
+                    // اگر آدرسی ذخیره نشده، مستقیماً فرم ویرایش باز شود
                     setIsEditing(true);
                 }
             } catch (err) {
@@ -66,7 +85,6 @@ export default function ShippingStep({ onNext, onPrevious }) {
     const handleSave = async () => {
         setError('');
 
-        // Validation
         if (!addressData.fullAddress || !addressData.recipientName) {
             setError('لطفاً آدرس کامل و نام گیرنده را وارد کنید');
             return;
@@ -82,7 +100,7 @@ export default function ShippingStep({ onNext, onPrevious }) {
                     data: {
                         title: 'آدرس اصلی',
                         ...addressData,
-                        user: session.user.id,
+                        user: session?.user?.id,
                     },
                 }),
             });
@@ -97,12 +115,62 @@ export default function ShippingStep({ onNext, onPrevious }) {
         }
     };
 
-    const handleContinue = () => {
+    /**
+     * تأیید آدرس و اتصال مستقیم به درگاه پرداخت شاپرک
+     */
+    const handlePayAndSubmit = async () => {
+        setError('');
+
         if (!addressData.fullAddress || !addressData.recipientName) {
-            setError('لطفاً ابتدا آدرس خود را تکمیل کنید');
+            setError('لطفاً ابتدا نام گیرنده و آدرس پستی کامل را تکمیل کنید');
             return;
         }
-        onNext();
+
+        // اگر کاربر در حال ویرایش آدرس بود، ابتدا ذخیره می‌کنیم
+        if (isEditing) {
+            setSaving(true);
+            try {
+                await fetch('/api/addresses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        data: {
+                            title: 'آدرس اصلی',
+                            ...addressData,
+                            user: session?.user?.id,
+                        },
+                    }),
+                });
+                setIsEditing(false);
+            } catch (err) {
+                console.error('Error saving address:', err);
+            } finally {
+                setSaving(false);
+            }
+        }
+
+        const formattedAddress = [
+            addressData.province,
+            addressData.city,
+            addressData.fullAddress
+        ].filter(Boolean).join(' - ') +
+        ` (گیرنده: ${addressData.recipientName}${addressData.recipientPhone ? ` - تلفن: ${addressData.recipientPhone}` : ''}${addressData.postalCode ? ` - کدپستی: ${addressData.postalCode}` : ''})`;
+
+        setIsProcessing(true);
+        try {
+            await executeOnlinePayment({
+                items,
+                finalTotalPrice,
+                appliedCoupon,
+                couponDiscount,
+                shippingAddress: formattedAddress,
+                router,
+            });
+        } catch (err) {
+            console.error('Payment Error:', err);
+            setError(err.message || 'خطا در اتصال به درگاه پرداخت شاپرک. لطفاً مجدداً تلاش کنید.');
+            setIsProcessing(false);
+        }
     };
 
     if (loading) {
@@ -110,7 +178,7 @@ export default function ShippingStep({ onNext, onPrevious }) {
             <div className={styles.shippingStep}>
                 <div className={styles.loadingState}>
                     <div className={styles.spinner}></div>
-                    <p>در حال بارگذاری...</p>
+                    <p>در حال بارگذاری اطلاعات آدرس...</p>
                 </div>
             </div>
         );
@@ -118,11 +186,11 @@ export default function ShippingStep({ onNext, onPrevious }) {
 
     return (
         <div className={styles.shippingStep}>
-            <h2 className={styles.title}>اطلاعات ارسال</h2>
-            <p className={styles.subtitle}>آدرس تحویل سفارش خود را مشخص کنید</p>
+            <h2 className={styles.title}>اطلاعات ارسال و پرداخت</h2>
+            <p className={styles.subtitle}>آدرس تحویل سفارش فیزیکی خود را تأیید کرده و مستقیماً پرداخت نمایید</p>
 
             {!isEditing ? (
-                // نمایش آدرس
+                // نمایش آدرس ذخیره‌شده
                 <div className={styles.addressDisplay}>
                     <div className={styles.addressCard}>
                         <div className={styles.addressRow}>
@@ -164,7 +232,7 @@ export default function ShippingStep({ onNext, onPrevious }) {
                     </button>
                 </div>
             ) : (
-                // فرم ویرایش
+                // فرم ورود و ویرایش آدرس
                 <div className={styles.addressForm}>
                     <div className={styles.row}>
                         <div className={styles.inputGroup}>
@@ -174,8 +242,8 @@ export default function ShippingStep({ onNext, onPrevious }) {
                                 name="recipientName"
                                 value={addressData.recipientName}
                                 onChange={handleChange}
-                                placeholder="نام و نام خانوادگی"
-                                disabled={saving}
+                                placeholder="نام و نام خانوادگی تحویل‌گیرنده"
+                                disabled={saving || isProcessing}
                             />
                         </div>
                         <div className={styles.inputGroup}>
@@ -187,7 +255,7 @@ export default function ShippingStep({ onNext, onPrevious }) {
                                 onChange={handleChange}
                                 placeholder="09123456789"
                                 dir="ltr"
-                                disabled={saving}
+                                disabled={saving || isProcessing}
                             />
                         </div>
                     </div>
@@ -201,7 +269,7 @@ export default function ShippingStep({ onNext, onPrevious }) {
                                 value={addressData.province}
                                 onChange={handleChange}
                                 placeholder="استان"
-                                disabled={saving}
+                                disabled={saving || isProcessing}
                             />
                         </div>
                         <div className={styles.inputGroup}>
@@ -212,7 +280,7 @@ export default function ShippingStep({ onNext, onPrevious }) {
                                 value={addressData.city}
                                 onChange={handleChange}
                                 placeholder="شهر"
-                                disabled={saving}
+                                disabled={saving || isProcessing}
                             />
                         </div>
                     </div>
@@ -225,7 +293,7 @@ export default function ShippingStep({ onNext, onPrevious }) {
                             onChange={handleChange}
                             placeholder="خیابان، کوچه، پلاک، واحد"
                             rows="3"
-                            disabled={saving}
+                            disabled={saving || isProcessing}
                         />
                     </div>
 
@@ -239,11 +307,9 @@ export default function ShippingStep({ onNext, onPrevious }) {
                             placeholder="۱۰ رقمی"
                             dir="ltr"
                             maxLength="10"
-                            disabled={saving}
+                            disabled={saving || isProcessing}
                         />
                     </div>
-
-                    {error && <div className={styles.error}>{error}</div>}
 
                     <div className={styles.formActions}>
                         {!loading && Object.values(addressData).some(v => v) && (
@@ -251,15 +317,16 @@ export default function ShippingStep({ onNext, onPrevious }) {
                                 type="button"
                                 onClick={() => setIsEditing(false)}
                                 className={styles.cancelButton}
-                                disabled={saving}
+                                disabled={saving || isProcessing}
                             >
                                 انصراف
                             </button>
                         )}
                         <button
+                            type="button"
                             onClick={handleSave}
                             className={styles.saveButton}
-                            disabled={saving}
+                            disabled={saving || isProcessing}
                         >
                             {saving ? 'در حال ذخیره...' : 'ذخیره آدرس'}
                         </button>
@@ -267,24 +334,72 @@ export default function ShippingStep({ onNext, onPrevious }) {
                 </div>
             )}
 
-            {error && !isEditing && <div className={styles.error}>{error}</div>}
+            {/* خلاصه پرداخت شفاف */}
+            <div style={{
+                padding: '16px 20px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                marginTop: '10px'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--color-card-text)' }}>
+                    <span>تعداد اقلام سفارش:</span>
+                    <strong style={{ color: 'var(--color-text-primary)' }}>{itemsCount} مورد</strong>
+                </div>
+                {couponDiscount > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#86efac' }}>
+                        <span>تخفیف کوپن ({appliedCoupon?.code}):</span>
+                        <strong>-{formatPrice(couponDiscount)} تومان</strong>
+                    </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>مبلغ نهایی قابل پرداخت:</span>
+                    <strong style={{ color: finalTotalPrice === 0 ? '#4ade80' : '#ffd166', fontSize: '1.2rem' }}>
+                        {finalTotalPrice === 0 ? 'رایگان (۰ تومان)' : `${formatPrice(finalTotalPrice)} تومان`}
+                    </strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--color-card-text)', marginTop: '4px' }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <span>پرداخت امن شتاب از طریق درگاه پرداخت الکترونیک سامان (شاپرک)</span>
+                </div>
+            </div>
+
+            {error && <div className={styles.error}>{error}</div>}
 
             <div className={styles.actions}>
-                <button onClick={onPrevious} className={styles.previousButton}>
+                <button
+                    type="button"
+                    onClick={onPrevious || (() => router.push('/cart'))}
+                    className={styles.previousButton}
+                    disabled={isProcessing}
+                >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="9 18 15 12 9 6" />
                     </svg>
-                    <span>مرحله قبل</span>
+                    <span>بازگشت به سبد خرید</span>
                 </button>
                 <button
-                    onClick={handleContinue}
+                    type="button"
+                    onClick={handlePayAndSubmit}
                     className={styles.nextButton}
-                    disabled={isEditing}
+                    disabled={isProcessing}
                 >
-                    <span>ادامه</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="15 18 9 12 15 6" />
-                    </svg>
+                    {isProcessing ? (
+                        'در حال اتصال به درگاه سامان...'
+                    ) : (
+                        <>
+                            <span>تأیید آدرس و پرداخت آنلاین 💳</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="15 18 9 12 15 6" />
+                            </svg>
+                        </>
+                    )}
                 </button>
             </div>
         </div>

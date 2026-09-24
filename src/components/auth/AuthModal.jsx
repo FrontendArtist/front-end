@@ -5,9 +5,19 @@ import AuthForm from './AuthForm';
 import styles from './AuthModal.module.scss';
 
 export default function AuthModal() {
-    const { isAuthModalOpen, closeAuthModal } = useAuthStore();
+    const { isAuthModalOpen, closeAuthModal, onAuthSuccess } = useAuthStore();
 
     if (!isAuthModalOpen) return null;
+
+    const handleSuccess = () => {
+        closeAuthModal();
+        if (typeof onAuthSuccess === 'function') {
+            // تاخیر کوتاه برای اجازه به بسته شدن مودال و به‌روزرسانی سشن
+            setTimeout(() => {
+                onAuthSuccess();
+            }, 100);
+        }
+    };
 
     return (
         <div className={styles.overlay} onClick={closeAuthModal}>
@@ -25,7 +35,7 @@ export default function AuthModal() {
                 <AuthForm
                     title="ورود / ثبت‌نام"
                     subtitle="شماره موبایل خود را وارد کنید"
-                    onSuccess={closeAuthModal}
+                    onSuccess={handleSuccess}
                 />
             </div>
         </div>
