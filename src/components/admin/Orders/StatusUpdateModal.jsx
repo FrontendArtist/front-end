@@ -25,7 +25,7 @@ const ORDER_STATUSES = [
     { value: 'paid', label: 'پرداخت شده' },
     { value: 'shipped', label: 'ارسال شده' },
     { value: 'delivered', label: 'تحویل داده شده' },
-    { value: 'canceled', label: 'رد شده' },
+    { value: 'canceled', label: 'لفو شده' },
 ];
 
 export default function StatusUpdateModal({ order, onClose, onUpdate }) {

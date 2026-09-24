@@ -12,12 +12,7 @@ function CartSessionSync() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      const currentUserId = useCartStore.getState().userId;
-      if (currentUserId) {
-        useCartStore.getState().clearCart();
-      }
-    } else if (status === 'authenticated' && session?.user?.id) {
+    if (status === 'authenticated' && session?.user?.id) {
       useCartStore.getState().setCartUser(session.user.id);
     }
   }, [session?.user?.id, status]);

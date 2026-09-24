@@ -57,21 +57,34 @@ export default function OrdersList({ limit }) {
     };
 
     const CombinedStatusBadge = ({ order }) => {
-        const oStatus = order.orderStatus?.trim();
-        // در صورت ارسال، تحویل یا لغو، این وضعیت اولویت دارد
-        if (['shipped', 'delivered', 'canceled'].includes(oStatus)) {
-            return <StatusBadge status={order.orderStatus} />;
+        const oStatus = order.orderStatus?.trim()?.toLowerCase();
+        const pStatus = order.paymentStatus?.trim()?.toLowerCase();
+        const isOnline = order.paymentMethod === 'online';
+        const isCardToCard = order.paymentMethod === 'card_to_card';
+        const isPaid = ['paid', 'shipped', 'delivered'].includes(oStatus) || pStatus === 'paid';
+        const isFailedOrCanceled = (oStatus === 'canceled' || oStatus === 'cancelled' || pStatus === 'failed');
+
+        // پرداخت آنلاین موفق
+        if (isOnline && isPaid) {
+            return <span className={`${styles.orders__badge} ${styles.orders__badgeSuccess}`}>پرداخت آنلاین موفق ✓</span>;
         }
-        if (order.paymentMethod === 'online') {
-            const isPaid = ['paid', 'shipped', 'delivered'].includes(oStatus) || order.paymentStatus === 'paid';
-            if (isPaid) {
-                return <span className={`${styles.orders__badge} ${styles.orders__badgeSuccess}`}>پرداخت آنلاین موفق</span>;
-            }
-            return <span className={`${styles.orders__badge} ${styles.orders__badgeWarning}`}>در انتظار پرداخت آنلاین</span>;
+
+        // پرداخت آنلاین ناموفق یا لغوشده — نه «رد شده» بلکه «ناموفق»
+        if (isOnline && isFailedOrCanceled) {
+            return <span className={`${styles.orders__badge} ${styles.orders__badgePaymentFailed}`}>پرداخت ناموفق ⚠️</span>;
         }
-        if (order.paymentMethod === 'card_to_card') {
-            return <PaymentStatusBadge status={order.paymentStatus} />;
+
+        // پرداخت آنلاین در انتظار
+        if (isOnline) {
+            return <span className={`${styles.orders__badge} ${styles.orders__badgeWarning}`}>در انتظار پرداخت</span>;
         }
+
+        // کارت‌به‌کارت
+        if (isCardToCard) {
+            return <PaymentStatusBadge status={pStatus} />;
+        }
+
+        // سایر حالات
         return <StatusBadge status={order.orderStatus} />;
     };
 

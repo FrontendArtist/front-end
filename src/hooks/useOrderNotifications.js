@@ -106,7 +106,7 @@ export function useOrderNotifications() {
 
         const itemsList = [];
 
-        // ۱. اعلان‌های سفارشات (تایید شده / رد شده)
+        // ۱. اعلان‌های سفارشات (پرداخت موفق / لغو یا ناموفق آنلاین / در حال بررسی / لغو شده مدیریت)
         if (orders && Array.isArray(orders)) {
             for (const orderData of orders) {
                 const order = orderData.attributes || orderData;
@@ -116,23 +116,50 @@ export function useOrderNotifications() {
 
                 const oStatus = String(order.orderStatus || '').trim().toLowerCase();
                 const pStatus = String(order.paymentStatus || '').trim().toLowerCase();
+                const paymentMethod = String(order.paymentMethod || '').trim().toLowerCase();
                 const rejectionReason = (order.rejectionReason || '').trim();
 
-                const isRejected = 
-                    oStatus === 'canceled' || 
-                    oStatus === 'cancelled' || 
-                    oStatus === 'rejected' || 
-                    oStatus === 'رد شده' ||
-                    pStatus === 'failed' || 
-                    pStatus === 'rejected' ||
-                    Boolean(rejectionReason && oStatus !== 'paid' && pStatus !== 'paid');
-                const isConfirmed = !isRejected && (oStatus === 'paid' || pStatus === 'paid');
-
-                if (!isConfirmed && !isRejected) {
+                // سفارش‌هایی که به دلیل شروع فرآیند خرید جدید از سبد خرید خودکار لغو شده‌اند، اعلان اسپم ایجاد نمی‌کنند
+                if (rejectionReason.includes('لغو خودکار به دلیل ثبت فرآیند خرید جدید')) {
                     continue;
                 }
 
-                const type = isRejected ? 'rejected' : 'confirmed';
+                const isOnlinePayment = paymentMethod === 'online';
+                const isPaid = oStatus === 'paid' || pStatus === 'paid';
+                const isPendingVerification = !isPaid && (pStatus === 'pending_verification' || (isOnlinePayment && pStatus === 'processing'));
+
+                const isOnlineFailedOrCanceled = !isPaid && isOnlinePayment && (
+                    oStatus === 'canceled' ||
+                    oStatus === 'cancelled' ||
+                    pStatus === 'failed' ||
+                    (rejectionReason && !isPendingVerification)
+                );
+
+                const isCardRejected = !isPaid && !isOnlinePayment && (
+                    oStatus === 'canceled' ||
+                    oStatus === 'cancelled' ||
+                    oStatus === 'rejected' ||
+                    oStatus === 'رد شده' ||
+                    pStatus === 'failed' ||
+                    pStatus === 'rejected' ||
+                    Boolean(rejectionReason)
+                );
+
+                if (!isPaid && !isOnlineFailedOrCanceled && !isPendingVerification && !isCardRejected) {
+                    continue;
+                }
+
+                let type = 'confirmed';
+                if (isPaid) {
+                    type = 'confirmed';
+                } else if (isPendingVerification) {
+                    type = 'pending_verification';
+                } else if (isOnlineFailedOrCanceled) {
+                    type = 'payment_failed';
+                } else if (isCardRejected) {
+                    type = 'rejected';
+                }
+
                 const notifId = `${rawId}_${type}`;
                 const isRead = readIds.includes(notifId) || (type === 'confirmed' && readIds.includes(rawId));
 
@@ -143,9 +170,10 @@ export function useOrderNotifications() {
                 let title = '';
                 let message = '';
                 let link = '';
+                let hint = null;
 
-                if (isConfirmed) {
-                    title = 'سفارش شما تایید شد 🎉';
+                if (type === 'confirmed') {
+                    title = isOnlinePayment ? 'پرداخت با موفقیت انجام شد 🎉' : 'سفارش شما تایید شد 🎉';
                     link = '/profile/purchases';
                     if (firstItemTitle) {
                         if (itemsCount > 1) {
@@ -156,8 +184,40 @@ export function useOrderNotifications() {
                     } else {
                         message = `سفارش شماره #${numId} با موفقیت تایید شد و دسترسی شما فعال گردید.`;
                     }
-                } else {
-                    title = 'سفارش شما رد شد ❌';
+                } else if (type === 'payment_failed') {
+                    const isCanceledByUser = rejectionReason.includes('کاربر لغو') || rejectionReason.toLowerCase().includes('cancel');
+                    const isVpnIssue = rejectionReason.includes('فیلترشکن') || rejectionReason.toLowerCase().includes('vpn');
+
+                    if (isCanceledByUser) {
+                        title = 'پرداخت آنلاین لغو شد ⚠️';
+                    } else if (isVpnIssue) {
+                        title = 'خطای اتصال به درگاه (VPN) ⚠️';
+                    } else {
+                        title = 'پرداخت آنلاین ناموفق بود ⚠️';
+                    }
+
+                    link = `/cart`;
+
+                    if (firstItemTitle) {
+                        if (itemsCount > 1) {
+                            message = `پرداخت آنلاین «${firstItemTitle}» و ${itemsCount - 1} مورد دیگر تکمیل نشد. اقلام در سبد خرید شما محفوظ است.`;
+                        } else {
+                            message = `پرداخت آنلاین «${firstItemTitle}» تکمیل نشد. اقلام در سبد خرید شما محفوظ است.`;
+                        }
+                    } else if (rejectionReason) {
+                        message = `پرداخت سفارش شماره #${numId} انجام نشد (${rejectionReason}). اقلام در سبد خرید محفوظ است.`;
+                    } else {
+                        message = `پرداخت سفارش شماره #${numId} در درگاه انجام نشد. در سبد خرید می‌توانید خرید را تکمیل کنید.`;
+                    }
+
+                    // راهنمای اطمینان‌بخش در صورت کسر وجه
+                    hint = 'اگر مبلغ از حسابتان کسر شده ولی دسترسی فعال نشده، ظرف حداکثر ۷۲ ساعت توسط بانک عودت می‌گردد، یا با پشتیبانی تماس بگیرید.';
+                } else if (type === 'pending_verification') {
+                    title = 'پرداخت در حال بررسی است ⏳';
+                    link = `/profile/orders/${docId || numId}`;
+                    message = `تراکنش سفارش شماره #${numId} در حال استعلام بانکی است. به محض تایید نهایی، دسترسی شما فعال می‌شود.`;
+                } else if (type === 'rejected') {
+                    title = 'سفارش شما تایید نشد ❌';
                     link = `/profile/orders/${docId || numId}`;
                     const reasonText = rejectionReason ? ` (علت: ${rejectionReason})` : '';
 
@@ -170,7 +230,7 @@ export function useOrderNotifications() {
                     } else if (rejectionReason) {
                         message = `سفارش شماره #${numId} تایید نشد. علت: ${rejectionReason}`;
                     } else {
-                        message = `سفارش شماره #${numId} توسط مدیریت رد شد.`;
+                        message = `فیش واریزی سفارش شماره #${numId} توسط مدیریت تایید نشد.`;
                     }
                 }
 
@@ -180,6 +240,7 @@ export function useOrderNotifications() {
                     type,
                     title,
                     message,
+                    hint,
                     date: order.updatedAt || orderData.updatedAt || order.createdAt || orderData.createdAt,
                     isRead,
                     link,

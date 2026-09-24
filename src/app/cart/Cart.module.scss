@@ -472,6 +472,34 @@
     }
 }
 
+.vpnNotice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: var(--border-radius);
+    color: #fde68a;
+    font-size: var(--font-xs);
+    line-height: 1.5;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    text-align: right;
+
+    svg {
+        flex-shrink: 0;
+        color: #f59e0b;
+        width: 18px;
+        height: 18px;
+    }
+
+    strong {
+        color: #fbbf24;
+        font-weight: 700;
+    }
+}
+
 .checkoutButton {
     display: inline-block;
     width: 100%;

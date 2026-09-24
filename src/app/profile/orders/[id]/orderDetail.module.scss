@@ -399,9 +399,24 @@
     gap: 12px;
     padding: 22px 24px;
     border-radius: 14px;
+    // برای کارت‌به‌کارت لغو شده: قرمز (رد توسط مدیریت)
     background: fade(var(--color-error), 8%);
     border: 1px solid fade(var(--color-error), 30%);
     animation: slideIn 0.35s ease;
+
+    // برای پرداخت آنلاین ناموفق: نارنجی (ناموفق در درگاه — کاربر نباید احساس کند «رد» شده)
+    &.onlineFailure {
+        background: rgba(245, 158, 11, 0.08);
+        border-color: rgba(245, 158, 11, 0.3);
+
+        .rejectionHeader svg { color: #f59e0b; }
+        .rejectionHeader strong { color: #f59e0b; }
+        .rejectionReason {
+            background: rgba(245, 158, 11, 0.1);
+            border-right-color: #f59e0b;
+        }
+        .rejectionReasonLabel { color: #f59e0b; }
+    }
 
     @include respond(md) {
         padding: 18px;
@@ -454,6 +469,128 @@
     margin: 0;
     line-height: 1.6;
     opacity: 0.9;
+}
+
+// ─── راهنمای کسر وجه و پشتیبانی ───────────────────────────────────────────
+.deductionNotice {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 16px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px dashed rgba(245, 158, 11, 0.35);
+    border-radius: 10px;
+
+    p {
+        margin: 0;
+        font-size: var(--font-xs);
+        color: var(--color-card-text);
+        line-height: 1.6;
+        opacity: 0.9;
+    }
+}
+
+.deductionNoticeHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #f59e0b;
+
+    svg {
+        flex-shrink: 0;
+        color: #f59e0b;
+    }
+
+    strong {
+        font-size: var(--font-xs);
+        font-weight: 700;
+        color: #f59e0b;
+    }
+}
+
+// ─── باکس راهنمای سبد خرید (جایگزین دکمه «تلاش مجدد») ─────────────────────
+.cartRedirectBox {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 12px;
+    margin-top: 4px;
+    animation: slideIn 0.3s ease;
+
+    @include respond(md) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}
+
+.cartRedirectIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(99, 102, 241, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #818cf8;
+}
+
+.cartRedirectContent {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+
+    @include respond(md) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+    }
+}
+
+.cartRedirectText {
+    flex: 1;
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.cartRedirectBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    border-radius: 10px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.55);
+        filter: brightness(1.08);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    @include respond(md) {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 .trackingInfo {
@@ -680,4 +817,107 @@
     color: var(--color-card-text);
     opacity: 0.75;
     margin-right: 6px;
-}
+}
+
+.receiptStatusFailed {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-medium);
+    background: fade(var(--color-error), 15%);
+    border: 1px solid fade(var(--color-error), 35%);
+    color: var(--color-error);
+}
+
+.orderActionBtns {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.retryPaymentBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--gradient-primary);
+    color: #fff;
+    padding: 10px 22px;
+    border-radius: 10px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 12px fade(var(--color-primary), 25%);
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px fade(var(--color-primary), 40%);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+}
+
+.vpnNotice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 10px;
+    color: #fde68a;
+    font-size: var(--font-xs);
+    line-height: 1.5;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    width: 100%;
+    text-align: right;
+
+    svg {
+        flex-shrink: 0;
+        color: #f59e0b;
+        width: 18px;
+        height: 18px;
+    }
+
+    strong {
+        color: #fbbf24;
+        font-weight: 700;
+    }
+}
+
+.reorderBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: fade(var(--color-bg-primary-overlay), 60%);
+    color: var(--color-text-primary);
+    border: 1px solid fade(var(--color-primary), 30%);
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s ease;
+
+    &:hover {
+        background: fade(var(--color-primary), 15%);
+        border-color: var(--color-title-hover);
+        color: var(--color-title-hover);
+    }
+}
+

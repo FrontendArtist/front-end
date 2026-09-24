@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
 import { useOrdersStore } from '@/store/useOrdersStore';
+import { updateProfileCartData, invalidateProfileCache } from '@/lib/client/profileClientApi';
 import { 
     CheckCircle2, 
     XCircle, 
@@ -37,11 +38,14 @@ function CheckoutResultContent() {
     useEffect(() => {
         setMounted(true);
 
-        // در صورت پرداخت موفقیت‌آمیز، سبد خرید خالی می‌شود و کش سفارشات ریست می‌گردد
+        // در صورت پرداخت موفقیت‌آمیز، سبد خرید بلافاصله پاکسازی و با سرور همگام می‌شود
         if (status === 'success') {
             try {
+                invalidateProfileCache();
                 useCartStore.getState().clearCart();
+                updateProfileCartData(null).catch(() => {});
                 useOrdersStore.setState({ hasFetched: false, orders: [] });
+                useOrdersStore.getState().fetchOrders(true).catch(() => {});
             } catch (err) {
                 console.warn('[CheckoutResult] Cart clear warning:', err);
             }
@@ -157,8 +161,15 @@ function CheckoutResultContent() {
                             رسید پرداخت برای شما صادر شد. می‌توانید در پنل کاربری، سوابق سفارشات و محتوای دوره‌های خود را مشاهده و دریافت نمایید.
                         </div>
                     ) : (
-                        <div className={styles.notice}>
-                            اقلام سبد خرید شما جهت سهولت در تلاش مجدد حفظ شده‌اند و می‌توانید مجدداً اقدام به پرداخت نمایید.
+                        <div className={styles.deductionAlertBox}>
+                            <div className={styles.deductionAlertHeader}>
+                                <AlertTriangle size={18} />
+                                <strong>اگر مبلغ از حسابتان کسر شده ولی دسترسی فعال نشده است:</strong>
+                            </div>
+                            <p className={styles.deductionAlertText}>
+                                طبق قوانین بانکی شاپرک، در صورت کسر وجه و عدم تایید تراکنش، مبلغ حداکثر ظرف ۷۲ ساعت به صورت خودکار توسط بانک به حسابتان بازمی‌گردد.
+                                در صورت عدم بازگشت وجه یا نیاز به بررسی سریع‌تر، لطفاً با پشتیبانی تماس بگیرید یا کد پیگیری تراکنش را ارسال کنید.
+                            </p>
                         </div>
                     )}
 

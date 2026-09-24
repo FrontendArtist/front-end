@@ -188,15 +188,24 @@ export async function POST(request) {
                         originalTotalPrice = Number(couponValidationResult.originalTotalPrice) || calculatedCartTotal;
                         finalPayablePrice = Number(couponValidationResult.finalTotalPrice) || Math.max(0, originalTotalPrice - discountAmount);
                     } else {
-                        appliedCouponCode = null;
+                        return NextResponse.json(
+                            { message: couponValidationResult?.message || "کد تخفیف وارد شده معتبر نمی‌باشد." },
+                            { status: 400 }
+                        );
                     }
                 } else {
-                    console.warn("Coupon validation failed on server order creation");
-                    appliedCouponCode = null;
+                    const errData = await couponRes.json().catch(() => ({}));
+                    return NextResponse.json(
+                        { message: errData?.message || errData?.error?.message || "کد تخفیف وارد شده معتبر نمی‌باشد یا ظرفیت آن تکمیل شده است." },
+                        { status: 400 }
+                    );
                 }
             } catch (couponErr) {
                 console.error("Coupon verification error during order create:", couponErr);
-                appliedCouponCode = null;
+                return NextResponse.json(
+                    { message: "خطا در اعتبارسنجی کد تخفیف سمت سرور. لطفاً مجدداً تلاش کنید." },
+                    { status: 500 }
+                );
             }
         }
 
@@ -287,6 +296,58 @@ export async function POST(request) {
             }
         };
 
+        // ── ابطال خودکار سفارش‌های آنلاین معلق قبلی (Fire & Forget — بدون block کردن فرآیند پرداخت) ──
+        // این مرحله فقط برای سناریویی لازم است که درگاه پرداخت هرگز باز نشده باشد (VPN / قطعی اینترنت)
+        // و callback /api/payment/verify صدا زده نشده باشد — در آن صورت سفارش روی pending می‌ماند.
+        // با fire-and-forget این cleanup در پس‌زمینه انجام می‌شود و روی زمان پاسخ API تأثیر نمی‌گذارد.
+        if (resolvedPaymentMethod === PAYMENT_METHOD.ONLINE) {
+            (async () => {
+                try {
+                    const prevOrdersUrl = `${STRAPI_BASE_URL}/api/orders`
+                        + `?filters[user][id][$eq]=${session.user.id}`
+                        + `&filters[paymentMethod][$eq]=${PAYMENT_METHOD.ONLINE}`
+                        + `&filters[orderStatus][$eq]=${ORDER_STATUS.PENDING}`
+                        + `&filters[paymentStatus][$eq]=${PAYMENT_STATUS.PENDING_PAYMENT}`
+                        + `&pagination[pageSize]=20`;
+
+                    const prevOrdersRes = await fetch(prevOrdersUrl, {
+                        headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
+                        cache: 'no-store'
+                    });
+
+                    if (prevOrdersRes.ok) {
+                        const prevOrdersData = await prevOrdersRes.json();
+                        const pendingOrders = prevOrdersData?.data || [];
+
+                        for (const prevOrder of pendingOrders) {
+                            const targetId = prevOrder.documentId || prevOrder.id;
+                            if (!targetId) continue;
+
+                            const existingNotes = prevOrder.notes || prevOrder.attributes?.notes || '';
+                            await fetch(`${STRAPI_BASE_URL}/api/orders/${targetId}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Authorization': `Bearer ${STRAPI_TOKEN}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    data: {
+                                        orderStatus: ORDER_STATUS.CANCELLED,
+                                        paymentStatus: PAYMENT_STATUS.FAILED,
+                                        rejectionReason: 'لغو خودکار به دلیل ثبت فرآیند خرید جدید از سبد خرید',
+                                        notes: (existingNotes ? `${existingNotes.trim()}\n\n` : '') +
+                                               '❌ لغو خودکار: این سفارش به دلیل شروع مجدد فرآیند خرید جدید از سبد خرید لغو گردید.',
+                                    }
+                                })
+                            }).catch((err) => console.warn('[Auto-Cancel Prev Order Warning]:', err));
+                        }
+                    }
+                } catch (prevErr) {
+                    console.warn('[Auto-Cancel Prev Orders Check Error]:', prevErr);
+                }
+            })();
+        }
+
         // ارسال درخواست ساخت اردر به استراپی
         const orderRes = await fetch(`${STRAPI_BASE_URL}/api/orders`, {
             method: 'POST',
@@ -305,8 +366,9 @@ export async function POST(request) {
 
         const newOrder = await orderRes.json();
 
-        // ── مصرف اتومیک کوپن در استراپی (جلوگیری قطعی از Race Condition) ───────
-        if (appliedCouponCode && couponValidationResult?.valid) {
+        // ── مصرف کوپن در استراپی (فقط برای سفارش‌های رایگان یا ۱۰۰٪ تخفیف) ───────
+        // سفارش‌های آنلاین پس از تأیید نهایی پرداخت در /api/payment/verify مصرف خواهند شد
+        if (appliedCouponCode && couponValidationResult?.valid && isFreeOrder) {
             try {
                 const consumeRes = await fetch(`${STRAPI_BASE_URL}/api/coupons/consume`, {
                     method: 'POST',
@@ -322,16 +384,17 @@ export async function POST(request) {
                     console.warn("Coupon consume rejected (limit reached or invalid):", consumeErr);
                 }
             } catch (incErr) {
-                console.error("Failed to atomically consume coupon:", incErr);
+                console.error("Failed to atomically consume coupon for free order:", incErr);
             }
         }
 
-        // آپدیت cartData کاربر به null برای خالی شدن سبد خرید در دیتابیس
-        // دوره‌ها و فصل‌ها فقط و فقط در صورتی اضافه می‌شوند که سفارش پرداخت شده باشد (پرداخت آنلاین یا سفارش رایگان)
-        // در سفارشات کارت‌به‌کارت که وضعیت pending است، پس از تأیید پرداخت توسط ادمین فعال خواهند شد.
-        let userUpdatePayload = { cartData: null };
+        // دوره‌ها، فصل‌ها و پاکسازی cartData کاربر فقط و فقط در صورتی اعمال می‌شوند که سفارش پرداخت شده باشد (مانند سفارش رایگان)
+        // در سفارشات آنلاین و کارت‌به‌کارت که وضعیت pending است، سبد خرید تا زمان تایید نهایی پرداخت در /api/payment/verify حفظ می‌شود.
+        let userUpdatePayload = {};
 
         if (isOrderPaid) {
+            userUpdatePayload.cartData = null;
+
             if (courseIds.length > 0) {
                 const existingCourses = userData.courses ? userData.courses.map(c => c.id) : [];
                 const mergedCourses = [...new Set([...existingCourses, ...courseIds])];
@@ -346,17 +409,19 @@ export async function POST(request) {
             }
         }
 
-        const userUpdateRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${STRAPI_TOKEN}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(userUpdatePayload)
-        });
+        if (Object.keys(userUpdatePayload).length > 0) {
+            const userUpdateRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${STRAPI_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userUpdatePayload)
+            });
 
-        if (!userUpdateRes.ok) {
-            console.error("User update failed:", await userUpdateRes.text());
+            if (!userUpdateRes.ok) {
+                console.error("User update failed:", await userUpdateRes.text());
+            }
         }
 
         // ── اضافه کردن فوری نور برای پرداخت آنلاین ─────────────────────────

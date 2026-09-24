@@ -190,6 +190,42 @@
     text-align: right;
 }
 
+.deductionAlertBox {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.deductionAlertHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #f59e0b;
+    font-size: 0.9rem;
+
+    svg {
+        flex-shrink: 0;
+        color: #f59e0b;
+    }
+
+    strong {
+        font-weight: 700;
+    }
+}
+
+.deductionAlertText {
+    font-size: 0.82rem;
+    color: rgba(255, 250, 234, 0.8);
+    line-height: 1.65;
+    margin: 0;
+}
+
 .actions {
     display: flex;
     gap: 12px;

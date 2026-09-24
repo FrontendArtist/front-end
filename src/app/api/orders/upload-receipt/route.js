@@ -137,7 +137,7 @@ export async function POST(request) {
             const pStatus = String(existingOrder?.paymentStatus || '').trim().toLowerCase();
             if (oStatus === 'canceled' || oStatus === 'cancelled' || oStatus === 'rejected' || pStatus === 'failed' || pStatus === 'rejected') {
                 return NextResponse.json(
-                    { message: "این سفارش رد شده است و امکان ارسال مجدد فیش برای آن وجود ندارد." },
+                    { message: "این سفارش لغو شده است و امکان ارسال مجدد فیش برای آن وجود ندارد." },
                     { status: 400 }
                 );
             }

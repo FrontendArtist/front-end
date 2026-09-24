@@ -209,6 +209,20 @@
         }
     }
 
+    &.paymentFailedItem {
+        &.unread {
+            background: rgba(245, 158, 11, 0.09);
+            border-color: rgba(245, 158, 11, 0.28);
+        }
+    }
+
+    &.pendingItem {
+        &.unread {
+            background: rgba(234, 179, 8, 0.09);
+            border-color: rgba(234, 179, 8, 0.28);
+        }
+    }
+
     &.mentorItem {
         &.unread {
             background: rgba(245, 158, 11, 0.09);
@@ -240,6 +254,16 @@
         color: #ef4444;
     }
 
+    &.paymentFailedIcon {
+        background: rgba(245, 158, 11, 0.16);
+        color: #f59e0b;
+    }
+
+    &.pendingIcon {
+        background: rgba(234, 179, 8, 0.16);
+        color: #eab308;
+    }
+
     &.mentorIcon {
         background: rgba(245, 158, 11, 0.16);
         color: #f59e0b;
@@ -254,6 +278,16 @@
 .rejectedDot {
     background: #ef4444 !important;
     box-shadow: 0 0 8px #ef4444 !important;
+}
+
+.paymentFailedDot {
+    background: #f59e0b !important;
+    box-shadow: 0 0 8px #f59e0b !important;
+}
+
+.pendingDot {
+    background: #eab308 !important;
+    box-shadow: 0 0 8px #eab308 !important;
 }
 
 .mentorDot {
@@ -312,6 +346,26 @@
     color: var(--color-text-secondary, #94a3b8);
     margin: 0 0 6px 0;
     line-height: 1.45;
+}
+
+.itemHint {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 6px 0 8px 0;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.73rem;
+    line-height: 1.5;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.22);
+    color: #fcd34d;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: 2px;
+        color: #f59e0b;
+    }
 }
 
 .itemTime {

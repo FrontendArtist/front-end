@@ -2,7 +2,7 @@
 
 /**
  * @file src/components/admin/Orders/BulkDeleteModal.jsx
- * @description مودال تایید حذف دسته‌جمعی سفارش‌های رد شده یا در انتظار پرداخت
+ * @description مودال تایید حذف دسته‌جمعی سفارش‌های لغو شده یا در انتظار پرداخت
  */
 
 import { useState, useEffect } from 'react';

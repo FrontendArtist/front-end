@@ -42,6 +42,11 @@ export function invalidateProfileCache() {
 }
 
 export async function updateProfileCartData(cartDataPayload) {
+    if (cachedProfileData) {
+        cachedProfileData = { ...cachedProfileData, cartData: cartDataPayload };
+        cacheTimestamp = Date.now();
+    }
+
     const response = await fetch('/api/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -51,5 +56,10 @@ export async function updateProfileCartData(cartDataPayload) {
     if (!response.ok) {
         throw new Error('خطا در همگام‌سازی سبد خرید با سرور');
     }
-    return response.json();
+    const data = await response.json();
+    if (data) {
+        cachedProfileData = data;
+        cacheTimestamp = Date.now();
+    }
+    return data;
 }

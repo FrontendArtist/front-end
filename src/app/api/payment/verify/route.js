@@ -171,10 +171,11 @@ async function handlePaymentVerification(params, request) {
         const errorDesc = getSepErrorMessage(state) || 'پرداخت در درگاه لغو شد یا با خطا مواجه گردید.';
         console.warn('[SEP Callback State Not OK]:', { state, errorDesc, resNum });
 
-        // ثبت وضعیت ناموفق در سفارش
+        // ثبت وضعیت ناموفق در سفارش همراه با دلیل مشخص
         await updateOrderInStrapi(orderDocId, {
             paymentStatus: PAYMENT_STATUS.FAILED,
             orderStatus: ORDER_STATUS.CANCELLED,
+            rejectionReason: errorDesc,
             notes: appendOrderNote(order.notes, `❌ پرداخت ناموفق در درگاه: ${errorDesc} (کد وضعیت: ${state})`),
         });
 
@@ -202,6 +203,8 @@ async function handlePaymentVerification(params, request) {
 
         await updateOrderInStrapi(orderDocId, {
             paymentStatus: PAYMENT_STATUS.FAILED,
+            orderStatus: ORDER_STATUS.CANCELLED,
+            rejectionReason: errorMsg,
             notes: appendOrderNote(order.notes, `❌ عدم تایید تراکنش توسط بانک: ${errorMsg} (کد: ${verifyResult.resultCode})`),
         });
 
@@ -231,6 +234,8 @@ async function handlePaymentVerification(params, request) {
 
         await updateOrderInStrapi(orderDocId, {
             paymentStatus: PAYMENT_STATUS.FAILED,
+            orderStatus: ORDER_STATUS.CANCELLED,
+            rejectionReason: 'مغایرت مبلغ پرداختی با مبلغ فاکتور',
             notes: appendOrderNote(order.notes, `🚨 هشدار مغایرت مبلغ: مبلغ پرداخت‌شده (${paidRialAmount} ریال) با مبلغ سفارش (${expectedRialPrice} ریال) مطابقت ندارد. دستور برگشت وجه صادر شد.`),
         });
 
@@ -285,7 +290,25 @@ async function handlePaymentVerification(params, request) {
         await grantUserAccessAndCredits(orderUserId, order);
     }
 
-    // 10. هدایت نهایی کاربر با کد وضعیت 303 (See Other) به صفحه نمایش نتیجه پرداخت
+    // 10. مصرف اتومیک کوپن تخفیف در استراپی پس از تأیید نهایی پرداخت
+    const orderCouponCode = order.couponCode || order.attributes?.couponCode;
+    if (updateSuccess && orderCouponCode) {
+        try {
+            await fetch(`${STRAPI_BASE_URL}/api/coupons/consume`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${STRAPI_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code: orderCouponCode })
+            });
+            console.log(`[SEP Callback] ✅ Successfully consumed coupon "${orderCouponCode}" for order ${orderDocId}`);
+        } catch (couponConsumeErr) {
+            console.error('[SEP Callback] Error consuming coupon:', couponConsumeErr);
+        }
+    }
+
+    // 11. هدایت نهایی کاربر با کد وضعیت 303 (See Other) به صفحه نمایش نتیجه پرداخت
     return redirectToResult({
         status: 'success',
         orderId: orderDocId,
@@ -354,10 +377,15 @@ async function grantUserAccessAndCredits(userId, order) {
     try {
         const items = order.items || order.attributes?.items || [];
 
-        // استخراج آیدی دوره‌ها و فصل‌ها
+        // استخراج آیدی و اسلاگ دوره‌ها و فصل‌ها
         const courseIds = items
             .filter((i) => i.__component === 'order.course-order-item' || i.type === 'course')
             .map((i) => Number(i.courseId || i.id))
+            .filter(Boolean);
+
+        const courseSlugs = items
+            .filter((i) => i.__component === 'order.course-order-item' || i.type === 'course')
+            .map((i) => i.slug)
             .filter(Boolean);
 
         const chapterIds = items
@@ -397,6 +425,43 @@ async function grantUserAccessAndCredits(userId, order) {
             }
         }
 
+        // ── حذف خودکار دوره‌ها و فصل‌های پرداخت‌شده از cartData کاربر در استراپی ──
+        if (userData.cartData && userData.cartData.state && Array.isArray(userData.cartData.state.items)) {
+            const currentCartItems = userData.cartData.state.items;
+            const remainingCartItems = currentCartItems.filter((cartItem) => {
+                if (cartItem.type === 'course') {
+                    const isPaidCourse = courseIds.includes(Number(cartItem.id)) ||
+                                         courseIds.includes(Number(cartItem.courseId)) ||
+                                         (cartItem.slug && courseSlugs.includes(cartItem.slug));
+                    return !isPaidCourse;
+                }
+                if (cartItem.type === 'chapter') {
+                    const rawChapId = Number(cartItem.chapterId || (typeof cartItem.id === 'string' ? cartItem.id.replace('chapter-', '') : cartItem.id));
+                    const isPaidChap = chapterIds.includes(rawChapId);
+                    const isParentCoursePaid = cartItem.courseId && courseIds.includes(Number(cartItem.courseId));
+                    return !isPaidChap && !isParentCoursePaid;
+                }
+                return true;
+            });
+
+            if (remainingCartItems.length === 0) {
+                updatePayload.cartData = null;
+            } else if (remainingCartItems.length !== currentCartItems.length) {
+                updatePayload.cartData = {
+                    ...userData.cartData,
+                    state: {
+                        ...userData.cartData.state,
+                        items: remainingCartItems,
+                        itemsCount: remainingCartItems.length,
+                        totalPrice: remainingCartItems.reduce((acc, it) => acc + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0),
+                    },
+                    updatedAt: new Date().toISOString(),
+                };
+            }
+        } else if (userData.cartData) {
+            updatePayload.cartData = null;
+        }
+
         if (Object.keys(updatePayload).length > 0) {
             await fetch(`${STRAPI_BASE_URL}/api/users/${userId}`, {
                 method: 'PUT',
@@ -406,7 +471,7 @@ async function grantUserAccessAndCredits(userId, order) {
                 },
                 body: JSON.stringify(updatePayload),
             });
-            console.log(`[SEP Callback] Successfully granted courses/credits to user ${userId}`);
+            console.log(`[SEP Callback] Successfully granted courses/credits and cleaned cartData for user ${userId}`);
         }
     } catch (grantErr) {
         console.error('[grantUserAccessAndCredits Error]:', grantErr);
