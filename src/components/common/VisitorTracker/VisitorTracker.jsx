@@ -69,18 +69,22 @@ export default function VisitorTracker() {
             lastVisitDate = localStorage.getItem(LAST_DATE_STORAGE_KEY) || '';
         } catch {}
 
+        let lastHeartbeatTime = Date.now();
+
         // اگر امروز قبلاً وارد سایت نشده، به عنوان ورودی روزانه ثبت شود
         if (lastVisitDate !== today) {
             try {
                 localStorage.setItem(LAST_DATE_STORAGE_KEY, today);
             } catch {}
             sendTrackingEvent('enter');
+            lastHeartbeatTime = Date.now();
         } else {
             // اگر امروز قبلاً شمرده شده، فقط ضربان قلب آنلاین ارسال شود (بدون افزایش آمار روزانه)
             sendTrackingEvent('heartbeat');
+            lastHeartbeatTime = Date.now();
         }
 
-        // ضربان قلب دوره‌ای فقط برای محاسبه تعداد آنلاین‌ها (هر ۶۰ ثانیه)
+        // ضربان قلب دوره‌ای فقط برای محاسبه تعداد آنلاین‌ها (هر ۱۲۰ ثانیه)
         const intervalId = setInterval(() => {
             if (typeof document !== 'undefined' && document.hidden) {
                 return;
@@ -88,13 +92,18 @@ export default function VisitorTracker() {
             if (window.location.pathname.startsWith('/admin')) {
                 return;
             }
+            lastHeartbeatTime = Date.now();
             sendTrackingEvent('heartbeat');
-        }, 60 * 1000);
+        }, 120 * 1000);
 
-        // پینگ مجدد هنگام فعال شدن تب
+        // پینگ مجدد هنگام فعال شدن تب با تراتل حداقل ۶۰ ثانیه‌ای و هماهنگ با تایمر دوره‌ای
         const handleVisibility = () => {
             if (!document.hidden && !window.location.pathname.startsWith('/admin')) {
-                sendTrackingEvent('heartbeat');
+                const now = Date.now();
+                if (now - lastHeartbeatTime >= 60 * 1000) {
+                    lastHeartbeatTime = now;
+                    sendTrackingEvent('heartbeat');
+                }
             }
         };
 

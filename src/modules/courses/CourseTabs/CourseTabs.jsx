@@ -21,14 +21,6 @@ import styles from './CourseTabs.module.scss';
 export default function CourseTabs({ course, parsedContent, customStyles, isPurchased: propIsPurchased }) {
   const { data: session, status } = useSession();
   const orders = useOrdersStore((state) => state.orders);
-  const fetchOrders = useOrdersStore((state) => state.fetchOrders);
-
-  // هماهنگی دریافت سفارشات در صورت لاگین بودن
-  useEffect(() => {
-    if (status === 'authenticated' && typeof fetchOrders === 'function') {
-      fetchOrders();
-    }
-  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // بررسی وضعیت خرید دوره توسط کاربر
   const isPurchased = useMemo(() => {

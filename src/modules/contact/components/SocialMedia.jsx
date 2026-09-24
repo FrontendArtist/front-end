@@ -34,7 +34,7 @@ const defaultSocialLinks = [
 async function getSocials() {
     try {
         const res = await fetch(`${API_BASE_URL}/api/socials?populate=*`, {
-            next: { revalidate: 60 }
+            next: { revalidate: 86400 }
         });
         
         if (!res.ok) {

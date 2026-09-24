@@ -7,12 +7,10 @@ import { useUserMessagesStore } from '@/store/useUserMessagesStore';
 
 const STORAGE_PREFIX = 'khak_read_notifications_';
 
-// مدیریت پولینگ سراسری به صورت Singleton برای جلوگیری از تکرار درخواست‌ها هنگام استفاده چند کامپوننت از این هوک
-let globalPollTimer = null;
+// مدیریت هماهنگ‌سازی سراسری اعلان‌ها به صورت Singleton برای جلوگیری از تکرار درخواست‌ها
 let globalSubscribersCount = 0;
-let lastPollTimestamp = 0;
-const POLL_INTERVAL_MS = 45000;
-const VISIBILITY_THROTTLE_MS = 30000; // حداقل ۳۰ ثانیه فاصله بین رفرش‌های ناشی از سوئیچ تب
+let lastPollTimestamp = Date.now();
+const VISIBILITY_THROTTLE_MS = 60000; // حداقل ۶۰ ثانیه فاصله بین رفرش‌های ناشی از سوئیچ تب
 
 const triggerPoll = (token, userId) => {
     if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
@@ -49,7 +47,7 @@ export function useOrderNotifications() {
         }
     }, [status, userId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // پولینگ منظم سراسری (Singleton) در زمان فعال بودن صفحه برای دریافت اعلان‌های جدید پیام و سفارش
+    // هماهنگ‌سازی فقط در زمان سوئیچ تب با تراتل ۶۰ ثانیه (بدون هیچ تایمر تکرارشونده در حین حضور در صفحه)
     useEffect(() => {
         if (status !== 'authenticated' || !userId || !token) {
             return;
@@ -66,25 +64,17 @@ export function useOrderNotifications() {
             }
         };
 
-        // فعال‌سازی تایمر و لیسنر فقط برای اولین کامپوننت مشترک در برنامه
+        // فعال‌سازی لیسنر فقط برای اولین کامپوننت مشترک در برنامه
         if (globalSubscribersCount === 1) {
             lastPollTimestamp = Date.now();
-            globalPollTimer = setInterval(() => {
-                triggerPoll(token, userId);
-            }, POLL_INTERVAL_MS);
-
             document.addEventListener('visibilitychange', handleVisibilityChange);
         }
 
         return () => {
             globalSubscribersCount--;
-            // اگر همه کامپوننت‌ها unmount شدند، تایمر و لیسنر را متوقف کن
+            // اگر همه کامپوننت‌ها unmount شدند، لیسنر را متوقف کن
             if (globalSubscribersCount <= 0) {
                 globalSubscribersCount = 0;
-                if (globalPollTimer) {
-                    clearInterval(globalPollTimer);
-                    globalPollTimer = null;
-                }
                 document.removeEventListener('visibilitychange', handleVisibilityChange);
             }
         };

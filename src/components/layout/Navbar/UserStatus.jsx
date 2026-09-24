@@ -9,6 +9,7 @@ import LightTopUpModal from '@/components/ui/LightTopUpModal/LightTopUpModal';
 import Link from 'next/link';
 import { isUserAdmin, isUserMentor } from '@/lib/auth';
 import { useCartStore } from '@/store/useCartStore';
+import { fetchProfileCartData, invalidateProfileCache } from '@/lib/client/profileClientApi';
 
 export default function UserStatus() {
     const router = useRouter();
@@ -111,15 +112,15 @@ export default function UserStatus() {
 
     const [profileData, setProfileData] = useState(null);
 
-    // ── fetch اطلاعات پروفایل (نام و شماره) برای همگام‌سازی همیشه دقیق ──────
+    // ── fetch اطلاعات پروفایل با کش مشترک برای جلوگیری از فچ‌های همزمان ──────
     useEffect(() => {
         if (status !== 'authenticated') return;
 
-        const loadProfile = async () => {
+        const loadProfile = async (force = false) => {
             try {
-                const res = await fetch('/api/profile', { cache: 'no-store' });
-                if (res.ok) {
-                    const data = await res.json();
+                if (force) invalidateProfileCache();
+                const data = await fetchProfileCartData(force);
+                if (data) {
                     setProfileData(data);
                 }
             } catch {
@@ -127,10 +128,11 @@ export default function UserStatus() {
             }
         };
 
-        loadProfile();
+        loadProfile(false);
 
-        window.addEventListener('profile-updated', loadProfile);
-        return () => window.removeEventListener('profile-updated', loadProfile);
+        const handleProfileUpdated = () => loadProfile(true);
+        window.addEventListener('profile-updated', handleProfileUpdated);
+        return () => window.removeEventListener('profile-updated', handleProfileUpdated);
     }, [status]);
 
     // آپدیت موجودی نور بعد از بستن مدال (در صورت پرداخت موفق)

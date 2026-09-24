@@ -44,9 +44,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const router = useRouter();
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
-  // دریافت سفارشات و تابع فچ از Zustand
+  // دریافت سفارشات از Zustand
   const orders = useOrdersStore((state) => state.orders);
-  const fetchOrders = useOrdersStore((state) => state.fetchOrders);
 
   // اکشن افزوده به سبد خرید و لیست آیتم‌ها از Zustand useCartStore
   const addItem = useCartStore((state) => state.addItem);
@@ -109,7 +108,6 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       setWasUnauthenticated(true);
     }
     if (status === 'authenticated') {
-      fetchOrders();
       if (wasUnauthenticated) {
         router.refresh();
         setWasUnauthenticated(false);
