@@ -128,25 +128,29 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
         });
     }, [messages, searchQuery]);
 
-    // ─── Polling 5 ثانیه‌ای فقط در زمان باز بودن صفحه و اکتیو بودن زبانه ───
+    // همگام‌سازی پیام‌های اولیه در صورت تغییر Props
     useEffect(() => {
-        if (!token) return;
+        if (initialMessages && initialMessages.length > 0) {
+            setMessages(initialMessages);
+        }
+    }, [initialMessages]);
 
-        const fetchLatest = async () => {
-            if (document.visibilityState !== 'visible') return;
-            try {
-                const res = await getInstructorMessages(token);
-                if (res?.data) {
-                    setMessages(res.data);
-                }
-            } catch {
-                // silent fail on background poll
+    // تابع رفرش دستی برای زمانی که استاد تمایل به بررسی پیام‌های جدید دارد
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const handleRefresh = async () => {
+        if (!token || isRefreshing) return;
+        setIsRefreshing(true);
+        try {
+            const res = await getInstructorMessages(token);
+            if (res?.data) {
+                setMessages(res.data);
             }
-        };
-
-        const intervalId = setInterval(fetchLatest, 5000);
-        return () => clearInterval(intervalId);
-    }, [token]);
+        } catch {
+            // silent fail
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
 
     function handleSelectThread(id) {
         setSelectedId(id);
@@ -442,14 +446,28 @@ export default function InstructorChatPanel({ initialMessages = [], currentUser 
                     </div>
                 </div>
 
-                {/* ── دکمه ویرایش فرم ── */}
-                <div className={styles.sidebar__editFormBtn}>
+                {/* ── دکمه‌های کنترل سایدبار (بروزرسانی دستی و ویرایش فرم) ── */}
+                <div className={styles.sidebar__editFormBtn} style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                        type="button"
+                        className={styles.editFormButton}
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        title="بروزرسانی لیست پیام‌ها"
+                        style={{ flex: 1 }}
+                    >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                        </svg>
+                        {isRefreshing ? 'در حال دریافت...' : 'بروزرسانی'}
+                    </button>
                     <button
                         type="button"
                         id="mentor-edit-form-btn"
                         className={styles.editFormButton}
                         onClick={() => setIsFormEditorOpen(true)}
                         title="ویرایش سوالات فرم پیش‌نیاز سالک"
+                        style={{ flex: 1.4 }}
                     >
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />

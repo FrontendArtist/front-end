@@ -9,11 +9,13 @@ import styles from './PurchasesList.module.scss';
 import cartStyles from '@/app/cart/Cart.module.scss'; // Reuse cart styles
 
 export default function PurchasesList() {
-    const { orders, isLoading, error, fetchOrders } = useOrdersStore();
+    const { orders, isLoading, error, fetchOrders, hasFetched } = useOrdersStore();
 
     useEffect(() => {
-        fetchOrders();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+        if (!hasFetched) {
+            fetchOrders();
+        }
+    }, [hasFetched, fetchOrders]);
 
     if (isLoading) {
         return (

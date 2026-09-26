@@ -1,0 +1,345 @@
+/**
+ * @file src/modules/quran/QuranAudioPlayer.module.scss
+ * @description استایل‌های نوار پلیر پیوسته و شناور قرآن کریم
+ */
+
+@use '../../styles/base/mixins' as *;
+
+.playerBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(4, 28, 22, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(246, 217, 130, 0.25);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5), 0 -1px 0 rgba(246, 217, 130, 0.1);
+  padding: 0.75rem 1.5rem;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @include respond(md) {
+    padding: 0.6rem 1rem;
+  }
+
+  @include respond(sm) {
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.playerInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+// =============================================================================
+// نوار تایم‌لاین و پیشرفت (Scrubber)
+// =============================================================================
+
+.progressContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.timeText {
+  font-size: 0.75rem;
+  color: rgba(255, 250, 234, 0.6);
+  font-variant-numeric: tabular-nums;
+  min-width: 2.2rem;
+  text-align: center;
+  user-select: none;
+}
+
+.progressBar {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: height 0.15s ease;
+
+  &:hover {
+    height: 8px;
+  }
+}
+
+.progressFill {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #f6d982);
+  border-radius: 3px;
+  transition: width 0.1s linear;
+}
+
+// =============================================================================
+// نوار اصلی کنترل‌ها و اطلاعات
+// =============================================================================
+
+.controlsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  @include respond(sm) {
+    gap: 0.5rem;
+  }
+}
+
+// سمت راست: اطلاعات آیه و مرحله در حال پخش
+.trackInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+
+  @include respond(sm) {
+    gap: 0.4rem;
+  }
+}
+
+.verseBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.6rem;
+  background: rgba(246, 217, 130, 0.12);
+  border: 1px solid rgba(246, 217, 130, 0.3);
+  border-radius: 12px;
+  color: var(--color-text-primary);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.trackTitles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.surahTitle {
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @include respond(sm) {
+    font-size: var(--font-xs);
+  }
+}
+
+.stageIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-medium);
+  margin-top: 0.1rem;
+
+  &--arabic {
+    color: #a5b4fc;
+  }
+
+  &--persian {
+    color: #6ee7b7;
+  }
+
+  &--tafsir {
+    color: #fcd34d;
+  }
+}
+
+.stageDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: pulseDot 1.5s infinite;
+
+  &--arabic {
+    background-color: #6366f1;
+    box-shadow: 0 0 6px #6366f1;
+  }
+
+  &--persian {
+    background-color: #10b981;
+    box-shadow: 0 0 6px #10b981;
+  }
+
+  &--tafsir {
+    background-color: #f59e0b;
+    box-shadow: 0 0 6px #f59e0b;
+  }
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+// مرکز: دکمه‌های ناوبری و پخش
+.playbackButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+
+  @include respond(sm) {
+    gap: 0.35rem;
+  }
+}
+
+.navBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 250, 234, 0.85);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: rgba(246, 217, 130, 0.15);
+    border-color: rgba(246, 217, 130, 0.4);
+    color: var(--color-text-primary);
+    transform: scale(1.05);
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  @include respond(sm) {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+}
+
+.playPauseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f6d982, #dfbb5a);
+  border: none;
+  color: #061818;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(246, 217, 130, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 18px rgba(246, 217, 130, 0.5);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  @include respond(sm) {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+}
+
+// سمت چپ: ابزارها (اسکرول خودکار، بستن)
+.extraTools {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+
+  @include respond(sm) {
+    gap: 0.25rem;
+  }
+}
+
+.toolBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 250, 234, 0.7);
+  font-size: var(--font-xs);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(246, 217, 130, 0.12);
+    border-color: rgba(246, 217, 130, 0.3);
+    color: var(--color-text-primary);
+  }
+
+  &--active {
+    background: rgba(16, 185, 129, 0.18);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #6ee7b7;
+  }
+
+  @include respond(sm) {
+    padding: 0.3rem 0.45rem;
+    font-size: 0.68rem;
+  }
+}
+
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: rgba(255, 250, 234, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+  }
+}

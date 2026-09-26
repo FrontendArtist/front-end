@@ -24,17 +24,10 @@ export default function AddToCartButton({ course }) {
 
   const [isHydrated, setIsHydrated] = useState(false);
   const { data: session, status } = useSession();
-  const fetchOrders = useOrdersStore((state) => state.fetchOrders);
 
   useEffect(() => {
     setIsHydrated(true);
   }, []);
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      fetchOrders();
-    }
-  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pendingOrder = useOrdersStore((state) => {
     return state.orders.find((order) => {

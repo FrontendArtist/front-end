@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import PlyrAudioPlayer from '@/modules/courses/PlyrAudioPlayer';
 import styles from './ServiceSingle.module.scss';
 
 /**
@@ -18,6 +19,7 @@ import styles from './ServiceSingle.module.scss';
  * @param {string} service.title - Service title
  * @param {string} service.description - Full service description
  * @param {Object} service.image - Service image object with url and alt
+ * @param {Object|string} service.audio - Service audio object or URL string
  * @param {string} service.link - External or internal link for CTA
  */
 const ServiceSingle = ({ service }) => {
@@ -30,7 +32,8 @@ const ServiceSingle = ({ service }) => {
     return null;
   }
 
-  const { title, description, image, link } = service;
+  const { title, description, image, link, audio } = service;
+  const audioUrl = audio?.url || (typeof audio === 'string' ? audio : null);
 
   return (
     <section className={styles.serviceSingle}>
@@ -67,6 +70,21 @@ const ServiceSingle = ({ service }) => {
             >
               درخواست خدمت
             </Link>
+          )}
+
+          {/* Audio Player Section - Rendered if service has audio */}
+          {audioUrl && (
+            <div className={styles.serviceSingle__audioPlayer}>
+              <div className={styles.serviceSingle__audioHeader}>
+
+                <span className={styles.serviceSingle__audioTitle}>توضیحات صوتی</span>
+              </div>
+              <PlyrAudioPlayer
+                src={audioUrl}
+                padding="12px 0"
+                storageKey={service.slug || service.id ? `service_audio_${service.slug || service.id}` : null}
+              />
+            </div>
           )}
         </div>
       </div>

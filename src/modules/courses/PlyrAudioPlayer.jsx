@@ -11,7 +11,16 @@ import React, { useEffect, useRef } from 'react';
  * @param {string} props.courseId - شناسه دوره (برای ذخیره پیشرفت)
  * @param {string} props.lessonId - شناسه جلسه (برای ذخیره پیشرفت)
  */
-export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autoplay = false }) {
+export default function PlyrAudioPlayer({
+  src,
+  courseId,
+  lessonId,
+  user,
+  autoplay = false,
+  storageKey: customStorageKey = null,
+  className = '',
+  padding = '16px',
+}) {
   const audioRef = useRef(null);
   const playerRef = useRef(null);
   // نگه‌داری اشاره‌گر به handlers جهت دسترسی در cleanup خارج از async scope
@@ -171,8 +180,8 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
       playerRef.current = player;
 
       // --- کلید یکتا و یکپارچه ذخیره‌سازی پیشرفت پخش ---
-      const cleanLessonId = String(lessonId).replace('-video', '').replace('-audio', '');
-      const storageKey = `media_progress_c${courseId}_l${cleanLessonId}`;
+      const cleanLessonId = lessonId ? String(lessonId).replace('-video', '').replace('-audio', '') : null;
+      const storageKey = customStorageKey || (courseId && cleanLessonId ? `media_progress_c${courseId}_l${cleanLessonId}` : null);
 
       // --- سیستم بازیابی پیشرفت پخش صوتی ---
       // hasRestored: true وقتی restore انجام شد (چه زمانی وجود داشت چه نه)
@@ -193,7 +202,7 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
         // صبر می‌کنیم تا metadata مدیا کاملاً لود شود
         if (!mediaEl || mediaEl.readyState < 1) return;
 
-        const savedTime = localStorage.getItem(storageKey);
+        const savedTime = storageKey ? localStorage.getItem(storageKey) : null;
         if (!savedTime || isNaN(savedTime)) {
           // هیچ پیشرفتی ذخیره نشده - مستقیم autoplay
           hasRestored = true;
@@ -233,7 +242,7 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
         const currentSecond = Math.floor(currentTime);
 
         // فقط زمانی ذخیره کن که به مضرب 5 جدیدی رسیده باشیم
-        if (currentSecond > 0 && currentSecond % 5 === 0 && currentSecond !== lastSavedSecond) {
+        if (storageKey && currentSecond > 0 && currentSecond % 5 === 0 && currentSecond !== lastSavedSecond) {
           localStorage.setItem(storageKey, currentTime.toString());
           lastSavedSecond = currentSecond;
         }
@@ -242,7 +251,7 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
       // ذخیره‌سازی هنگام جلو/عقب زدن کاربر (seeked)
       player.on('seeked', () => {
         if (!hasRestored) return;
-        if (player.currentTime > 0) {
+        if (storageKey && player.currentTime > 0) {
           localStorage.setItem(storageKey, player.currentTime.toString());
         }
       });
@@ -250,7 +259,7 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
       // ذخیره‌سازی فوری هنگام توقف (pause/stop)
       player.on('pause', () => {
         if (!hasRestored) return;
-        if (player.currentTime > 0) {
+        if (storageKey && player.currentTime > 0) {
           localStorage.setItem(storageKey, player.currentTime.toString());
         }
       });
@@ -259,13 +268,13 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
       const handleBeforeUnload = () => {
         if (!hasRestored) return;
         const ct = player.currentTime;
-        if (ct > 0) localStorage.setItem(storageKey, ct.toString());
+        if (storageKey && ct > 0) localStorage.setItem(storageKey, ct.toString());
       };
       // visibilitychange برای زمانی که تب مرورگر یا اپ گوشی به پس‌زمینه می‌رود
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'hidden' && hasRestored) {
           const ct = player.currentTime;
-          if (ct > 0) localStorage.setItem(storageKey, ct.toString());
+          if (storageKey && ct > 0) localStorage.setItem(storageKey, ct.toString());
         }
       };
 
@@ -278,7 +287,9 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
 
       // پاکسازی لوکال استوریج در صورت اتمام کامل صوت
       player.on('ended', () => {
-        localStorage.removeItem(storageKey);
+        if (storageKey) {
+          localStorage.removeItem(storageKey);
+        }
         window.removeEventListener('beforeunload', handleBeforeUnload);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
         beforeUnloadRef.current = null;
@@ -303,16 +314,17 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
         // ذخیره آخرین زمان قبل از destroy
         try {
           const ct = playerRef.current.currentTime;
-          if (ct > 0 && courseId && lessonId) {
-            const cleanId = String(lessonId).replace('-video', '').replace('-audio', '');
-            localStorage.setItem(`media_progress_c${courseId}_l${cleanId}`, ct.toString());
+          const cleanLessonId = lessonId ? String(lessonId).replace('-video', '').replace('-audio', '') : null;
+          const activeStorageKey = customStorageKey || (courseId && cleanLessonId ? `media_progress_c${courseId}_l${cleanLessonId}` : null);
+          if (ct > 0 && activeStorageKey) {
+            localStorage.setItem(activeStorageKey, ct.toString());
           }
         } catch (e) {}
         playerRef.current.destroy();
         playerRef.current = null;
       }
     };
-  }, [src, courseId, lessonId]);
+  }, [src, courseId, lessonId, customStorageKey, autoplay]);
 
   const phone = user?.phoneNumber || user?.phone || '';
   const name = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || '';
@@ -320,7 +332,8 @@ export default function PlyrAudioPlayer({ src, courseId, lessonId, user, autopla
 
   return (
     <div
-      style={{ width: '100%', padding: '16px', position: 'relative', userSelect: 'none' }}
+      className={`audioKipper ${className}`.trim()}
+      style={{ width: '100%', padding, position: 'relative', userSelect: 'none' }}
       onContextMenu={(e) => e.preventDefault()}
     >
       <audio
