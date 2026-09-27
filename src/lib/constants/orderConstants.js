@@ -10,7 +10,7 @@ export const ORDER_STATUS = {
     PAID: 'paid',
     SHIPPED: 'shipped',
     DELIVERED: 'delivered',
-    CANCELLED: 'cancelled',
+    CANCELLED: 'canceled',
 };
 
 export const PAYMENT_STATUS = {
@@ -37,7 +37,7 @@ export function isOrderPaid(order) {
     const oStatus = String(order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
     const pStatus = String(order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
 
-    // سفارش‌های لغو شده، رد شده یا مرجوعی تحت هیچ شرایطی معتبر نیستند
+    // سفارش‌های لغو شده، لغو شده یا مرجوعی تحت هیچ شرایطی معتبر نیستند
     const invalidStatuses = [ORDER_STATUS.CANCELLED, PAYMENT_STATUS.FAILED, PAYMENT_STATUS.REFUNDED];
     if (invalidStatuses.includes(oStatus) || invalidStatuses.includes(pStatus)) {
         return false;

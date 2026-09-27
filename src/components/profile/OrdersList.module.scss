@@ -121,6 +121,13 @@
             color: var(--color-error);
         }
 
+        // پرداخت آنلاین ناموفق — نارنجی/امبر به جای قرمز (متمایز از رد توسط مدیریت)
+        &PaymentFailed {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: #f59e0b;
+        }
+
         &Pending {
             background: fade(var(--color-indigo), 15%);
             border: 1px solid fade(var(--color-indigo), 40%);

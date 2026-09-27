@@ -1510,6 +1510,47 @@ $transition: 0.2s ease;
     border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
+.onlinePayBadgeFailed {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-bold);
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.expanded_address_block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed fade(var(--color-primary), 15%);
+}
+
+.expanded_address_title {
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-title-hover);
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.expanded_notes_card {
+    background: fade(var(--color-black), 20%);
+    border: 1px solid fade(var(--color-primary), 8%);
+    border-radius: 8px;
+    padding: 10px 12px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
 .copyableField {
     display: flex;
     align-items: center;

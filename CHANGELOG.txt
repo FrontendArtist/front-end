@@ -1,3 +1,22 @@
+[2026-09-24] - اصلاح چرخه پرداخت آنلاین ناموفق، حذف دکمه‌های پرخطر پرداخت مجدد، راهنمای کسر وجه و بهینه‌سازی اعلان‌ها
+
+── اصلاح فرآیند سفارش‌های ناموفق و هدایت به سبد خرید (Failed Payment Lifecycle) ──────
+- صفحه جزئیات فاکتور (`src/app/profile/orders/[id]/page.jsx` و `orderDetail.module.scss`):
+  • حذف متد و دکمه پرداخت مجدد (`handleRetryPayment`) برای سفارش‌های آنلاین معلق/لغو شده جهت جلوگیری از پرداخت چندباره، مغایرت قیمت یا تخفیف‌های منقضی‌شده.
+  • ایجاد کادر راهنمای خرید مجدد (`cartRedirectBox`) با دکمه انتقال مستقیم به سبد خرید (`/cart`) با حفظ کامل اقلام سفارش.
+  • اصلاح استایل وضعیت پرداخت ناموفق آنلاین به رنگ کهربایی/نارنجی جهت تمایز کامل از سفارش‌های رد شده توسط مدیریت.
+- بهینه‌سازی سرعت ثبت سفارش و اتصال به درگاه شاپرک (`src/app/api/orders/route.js`):
+  • تبدیل ابطال خودکار سفارش‌های معلق قبلی (Auto-cancel) به الگوی غیر مسدودکننده (Fire-and-forget) جهت از بین بردن تأخیر اتصال به درگاه سامان.
+
+── سیستم اطلاع‌رسانی کسر وجه و پشتیبانی (Deduction & Support Guidance) ──────────────
+- نمایش پیام شفاف و اطمینان‌بخش در ۳ جایگاه اصلی:
+  • صفحه نتیجه تراکنش درگاه (`src/app/checkout/result/page.jsx` و `page.module.scss`): نمایش باکس هشدار کسر وجه، توضیح عودت ۷۲ ساعته شاپرک و دکمه‌های تماس با پشتیبانی.
+  • صفحه فاکتور کاربر (`src/app/profile/orders/[id]/page.jsx`): باکس راهنمای پیگیری کسر وجه و ارسال کد رهگیری.
+  • زنگوله اعلان‌های سایت (`src/components/layout/Navbar/NotificationBell.jsx` و `.module.scss`): افزودن یادداشت راهنمای اختصاصی (`hint`) زیر اعلان‌های خطای پرداخت آنلاین.
+- هوک اعلان سفارشات (`src/hooks/useOrderNotifications.js`):
+  • فیلتر خودکار سفارش‌هایی که در پس‌زمینه بر اثر خرید جدید لغو شده‌اند تا اعلان اسپم به کاربر نشان داده نشود.
+  • به‌روزرسانی لینک اعلان‌های پرداخت ناموفق مستقیماً به سبد خرید (`/cart`).
+
 [2026-09-21] - بهینه‌سازی و بازطراحی جامع فرآیند خرید، پرداخت مستقیم یک‌کلیکی و حذف مراحل و کدهای زائد (Checkout Modernization)
 
 ── بهینه‌سازی فرآیند سبد خرید و پرداخت مستقیم یک‌کلیکی (Streamlined 1-Click Payment) ──────
@@ -289,7 +308,7 @@
 ── Order Rejection Notifications & Red Banner UI ───────────────────────────
 - Order Notifications Hook (`src/hooks/useOrderNotifications.js`):
   • Added detection for rejected orders ('canceled', 'cancelled', 'rejected', paymentStatus 'failed', or presence of rejectionReason).
-  • Generates "سفارش شما رد شد ❌" notifications with reason and direct link to profile order details page.
+  • Generates "سفارش شما لغو شد ❌" notifications with reason and direct link to profile order details page.
   • Updated notification sorting by timestamp (descending) and deduplicated read status tracking.
 - Navigation Notification Bell (`src/components/layout/Navbar/NotificationBell.jsx` & SCSS):
   • Displayed red danger icon, red unread indicator dot, and crimson highlighted card background for rejected order notifications.

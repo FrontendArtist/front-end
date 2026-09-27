@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
 import { useOrdersStore } from '@/store/useOrdersStore';
 import { triggerLightUpdate } from '@/store/useLightStore';
+import { updateProfileCartData, invalidateProfileCache } from '@/lib/client/profileClientApi';
 import styles from './page.module.scss';
 
 /**
@@ -27,9 +28,12 @@ function PaymentCallbackContent() {
         const sourceParam = searchParams.get('source');
 
         if (statusParam === 'success') {
+            invalidateProfileCache();
             useCartStore.getState().clearCart();
+            updateProfileCartData(null).catch(() => {});
             useOrdersStore.setState({ hasFetched: false, orders: [] });
             triggerLightUpdate();
+            useOrdersStore.getState().fetchOrders(true).catch(() => {});
         }
 
         // دریافت اطلاعات بانکی برای سفارش‌های کارت‌به‌کارت

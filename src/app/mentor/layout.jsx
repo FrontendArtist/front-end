@@ -30,7 +30,7 @@ export default async function MentorLayout({ children }) {
     const session = await getServerSession(authOptions);
 
     // ─── STEP 2: Auth Gate ───────────────────────────────────────────────────
-    // شرایط رد شدن:
+    // شرایط لغو شدن:
     //   • !session          → کاربر اصلاً لاگین نکرده
     //   • !session.user     → سشن موجود است اما آبجکت user ندارد (edge case)
     //   • !isUserMentor(session.user) → کاربر نقش mentor (استاد) یا administrator ندارد

@@ -83,7 +83,7 @@ export default async function AdminDashboardPage() {
         getVisitorStats(jwt),
     ]);
 
-    // استخراج مقادیر – اگر Promise رد شد یا null برگشت، null نگه می‌داریم
+    // استخراج مقادیر – اگر Promise لغو شد یا null برگشت، null نگه می‌داریم
     const totalProducts =
         productsResult.status === 'fulfilled' ? productsResult.value : null;
 

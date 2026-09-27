@@ -81,14 +81,23 @@ const PaymentStatusBadge = ({ status }) => {
 };
 
 // ─── بج وضعیت سفارش ──────────────────────────────────────────────────────────
-const OrderStatusBadge = ({ status }) => {
-    const normalized = status?.trim();
+const OrderStatusBadge = ({ status, paymentStatus, paymentMethod }) => {
+    const normalized = status?.trim()?.toLowerCase();
+    const pStatus = paymentStatus?.trim()?.toLowerCase();
+    const isOnline = paymentMethod === 'online';
+
+    if (normalized === 'canceled' || normalized === 'cancelled' || pStatus === 'failed') {
+        return (
+            <span className={`${styles.badge} ${styles.badgeDanger}`}>
+                {isOnline ? 'پرداخت ناموفق / لغو شده' : 'لغو شده'}
+            </span>
+        );
+    }
     const map = {
         paid: { label: 'پرداخت شده', cls: styles.badgeSuccess },
-        pending: { label: 'در انتظار', cls: styles.badgeWarning },
+        pending: { label: 'در انتظار پرداخت', cls: styles.badgeWarning },
         shipped: { label: 'ارسال شده', cls: styles.badgeInfo },
         delivered: { label: 'تحویل داده شد', cls: styles.badgeSuccess },
-        canceled: { label: 'رد شده', cls: styles.badgeDanger },
     };
     const entry = map[normalized] ?? { label: status || 'نامشخص', cls: styles.badgeDefault };
     return <span className={`${styles.badge} ${entry.cls}`}>{entry.label}</span>;
@@ -102,6 +111,7 @@ export default function OrderDetailPage() {
     const [order, setOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+
 
     // ── دریافت سفارش از API Proxy ─────────────────────────────────────────────
     const fetchOrder = useCallback(async () => {
@@ -170,14 +180,22 @@ export default function OrderDetailPage() {
     const items = Array.isArray(order.items) ? order.items : [];
     const isCardToCard = order.paymentMethod === 'card_to_card';
     const isOnline = order.paymentMethod === 'online';
-    const isPaid = ['paid', 'shipped', 'delivered'].includes(order.orderStatus?.trim()) || order.paymentStatus === 'paid';
-    const isRejected = 
+    const isPaid = ['paid', 'shipped', 'delivered'].includes(order.orderStatus?.trim()?.toLowerCase()) || order.paymentStatus === 'paid';
+    const isFailedOrCanceled = 
         order.paymentStatus === 'failed' || 
         order.paymentStatus === 'rejected' ||
         order.orderStatus === 'canceled' ||
-        order.orderStatus === 'cancelled' ||
-        order.orderStatus === 'rejected';
+        order.orderStatus === 'cancelled';
+    const isRejected = isCardToCard && isFailedOrCanceled;
     const needsReceiptUpload = isCardToCard && order.paymentStatus === 'pending_payment' && !isRejected;
+
+    const failureReason = order.rejectionReason 
+        || extractFromNotes(order.notes, '❌ پرداخت ناموفق در درگاه:') 
+        || extractFromNotes(order.notes, '❌ عدم تایید تراکنش توسط بانک:');
+
+    // سفارش‌های آنلاین ناموفق دیگر قابل پرداخت مجدد از صفحه فاکتور نیستند.
+    // کاربر باید از سبد خرید (که اقلام همچنان در آن موجود است) خرید جدید انجام دهد.
+    // این رویکرد امن‌تر است چون قیمت و تخفیف‌ها همیشه به‌روز می‌مانند.
 
     // استخراج فیلدهای پرداخت آنلاین با fallback از notes
     const onlineRefNum = order.refNum || extractFromNotes(order.notes, 'رسید دیجیتال \\(RefNum\\):');
@@ -229,7 +247,7 @@ export default function OrderDetailPage() {
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>وضعیت سفارش:</span>
                         <span className={styles.metaValue} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <OrderStatusBadge status={isOnline && isPaid ? 'paid' : order.orderStatus} />
+                            <OrderStatusBadge status={isOnline && isPaid ? 'paid' : order.orderStatus} paymentStatus={order.paymentStatus} paymentMethod={order.paymentMethod} />
                             {isCardToCard && <PaymentStatusBadge status={order.paymentStatus} />}
                             {isOnline && isPaid && (
                                 <span className={`${styles.badge} ${styles.badgeSuccess}`}>
@@ -263,9 +281,19 @@ export default function OrderDetailPage() {
                                 مشخصات پرداخت اینترنتی (درگاه پرداخت الکترونیک سامان)
                             </h2>
                         </div>
-                        <span className={isPaid ? styles.receiptStatusSuccess : styles.receiptStatusPending}>
-                            {isPaid ? '✓ پرداخت تایید شده توسط درگاه سپ' : '⏳ در انتظار پرداخت آنلاین'}
-                        </span>
+                        {isPaid ? (
+                            <span className={styles.receiptStatusSuccess}>
+                                ✓ پرداخت تایید شده توسط درگاه سپ
+                            </span>
+                        ) : isFailedOrCanceled ? (
+                            <span className={styles.receiptStatusFailed}>
+                                ✕ پرداخت لغو شده / ناموفق
+                            </span>
+                        ) : (
+                            <span className={styles.receiptStatusPending}>
+                                ⏳ در انتظار پرداخت آنلاین
+                            </span>
+                        )}
                     </div>
 
                     <div className={styles.onlineReceiptGrid}>
@@ -375,8 +403,73 @@ export default function OrderDetailPage() {
                 </div>
             )}
 
-            {/* ─── پیام رد یا لغو پرداخت به همراه دلیل ──────────────────── */}
-            {isRejected && (
+            {/* ─── پیام لغو یا عدم موفقیت پرداخت آنلاین ─────────────────── */}
+            {isOnline && isFailedOrCanceled && (
+                <div className={`${styles.rejectionNoticeBox} ${styles.onlineFailure}`}>
+                    <div className={styles.rejectionHeader}>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="15" y1="9" x2="9" y2="15" />
+                            <line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
+                        <strong>پرداخت این سفارش انجام نشد یا لغو گردید</strong>
+                    </div>
+                    <div className={styles.rejectionReason}>
+                        <span className={styles.rejectionReasonLabel}>علت عدم موفقیت / لغو پرداخت:</span>
+                        <p className={styles.rejectionReasonValue}>
+                            {failureReason || 'پرداخت در درگاه بانکی تکمیل نشد یا توسط کاربر لغو شد.'}
+                        </p>
+                    </div>
+
+                    {/* پیام راهنمای کسر وجه و پشتیبانی */}
+                    <div className={styles.deductionNotice}>
+                        <div className={styles.deductionNoticeHeader}>
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                            <strong>اگر مبلغ از حسابتان کسر شده ولی دسترسی فعال نشده است:</strong>
+                        </div>
+                        <p>
+                            طبق قوانین بانکی شاپرک، مبالغ تراکنش‌های تاییدنشده حداکثر ظرف ۷۲ ساعت توسط بانک به حساب شما عودت داده می‌شود.
+                            در صورتی که پس از این مدت واریز نشد، لطفاً با پشتیبانی تماس بگیرید یا کد پیگیری را ارسال نمایید.
+                        </p>
+                    </div>
+
+                    {/* راهنمای خرید مجدد از سبد خرید */}
+                    <div className={styles.cartRedirectBox}>
+                        <div className={styles.cartRedirectIcon}>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="9" cy="21" r="1" />
+                                <circle cx="20" cy="21" r="1" />
+                                <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
+                            </svg>
+                        </div>
+                        <div className={styles.cartRedirectContent}>
+                            <p className={styles.cartRedirectText}>
+                                نگران نباشید! اقلام این سفارش در سبد خرید شما باقی مانده‌اند.
+                                برای خرید مجدد کافی است وارد سبد خرید شوید.
+                            </p>
+                            <Link href="/cart" className={styles.cartRedirectBtn}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="21" r="1" />
+                                    <circle cx="20" cy="21" r="1" />
+                                    <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
+                                </svg>
+                                مشاهده سبد خرید و تکمیل خرید
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── پیام رد توسط مدیریت (کارت‌به‌کارت) ──────────────────── */}
+            {isCardToCard && isRejected && (
                 <div className={styles.rejectionNoticeBox}>
                     <div className={styles.rejectionHeader}>
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -385,7 +478,7 @@ export default function OrderDetailPage() {
                             <line x1="15" y1="9" x2="9" y2="15" />
                             <line x1="9" y1="9" x2="15" y2="15" />
                         </svg>
-                        <strong>این سفارش توسط مدیریت رد شده است</strong>
+                        <strong>این سفارش توسط مدیریت لغو شده است</strong>
                     </div>
                     {order.rejectionReason && (
                         <div className={styles.rejectionReason}>

@@ -36,7 +36,7 @@ const ORDER_STATUS_CONFIG = {
     'paid': { label: 'پرداخت شده', variant: 'success' },
     'shipped': { label: 'ارسال شده', variant: 'info' },
     'delivered': { label: 'تحویل شده', variant: 'success' },
-    'canceled': { label: 'رد شده', variant: 'error' },
+    'canceled': { label: 'لغو شده', variant: 'error' },
 };
 
 /** برچسب‌های روش پرداخت */
@@ -165,15 +165,31 @@ function CopyButton({ text, label = 'کپی' }) {
 function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
     const buyerName = getBuyerDisplayName(order);
     const isPaid = isPaidOrder(order);
+    const isCanceled = isCanceledOrder(order);
+
+    // تشخیص وجود محصول فیزیکی در سبد خرید (دوره‌ها و شارژ نور نیاز به آدرس ارسال ندارند)
+    const hasPhysicalProduct = Boolean(
+        order.items &&
+        Array.isArray(order.items) &&
+        order.items.some((item) => {
+            if (item.slug === 'light-topup' || item.type === 'light_topup') return false;
+            if (item.__component === 'order.product-order-item') return true;
+            if (item.productId && Number(item.productId) > 0 && !item.courseId && !item.chapterId) return true;
+            if (item.type === 'product') return true;
+            return false;
+        })
+    );
 
     return (
         <tr className={styles.expanded_row}>
             <td colSpan={colSpan} className={styles.expanded_cell}>
                 <div className={styles.expanded_content}>
 
-                    {/* ── ستون ۱: اطلاعات خریدار ──────────────────────────── */}
+                    {/* ── ستون ۱: اطلاعات خریدار و در صورت وجود محصول فیزیکی، آدرس ارسال ── */}
                     <div className={styles.expanded_section}>
-                        <h4 className={styles.expanded_section__title}>👤 اطلاعات خریدار</h4>
+                        <h4 className={styles.expanded_section__title}>
+                            👤 اطلاعات خریدار {hasPhysicalProduct && (order.address || order.postalCode) ? 'و آدرس ارسال' : ''}
+                        </h4>
                         <div className={styles.expanded_grid}>
                             <div className={styles.expanded_field}>
                                 <span className={styles.expanded_field__label}>نام و نام‌خانوادگی</span>
@@ -226,96 +242,157 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
                                 </div>
                             )}
                         </div>
+
+                        {/* آدرس ارسال: فقط در صورتی که سفارش شامل محصول فیزیکی باشد زیر اطلاعات خریدار قرار می‌گیرد */}
+                        {hasPhysicalProduct && (order.address || order.postalCode) && (
+                            <div className={styles.expanded_address_block}>
+                                <div className={styles.expanded_address_title}>
+                                    <span>📍 آدرس ارسال مرسوله</span>
+                                </div>
+                                <div className={styles.expanded_grid}>
+                                    <div className={`${styles.expanded_field} ${styles['expanded_field--full']}`}>
+                                        <span className={styles.expanded_field__label}>آدرس کامل</span>
+                                        <span className={styles.expanded_field__value}>{order.address || '—'}</span>
+                                    </div>
+                                    {order.postalCode && order.postalCode !== '0000000000' && (
+                                        <div className={styles.expanded_field}>
+                                            <span className={styles.expanded_field__label}>کد پستی</span>
+                                            <span className={styles.expanded_field__value} dir="ltr">{order.postalCode}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* ── ستون ۲: مشخصات اختصاصی پرداخت آنلاین (سپ / سامان) ── */}
-                    {order.paymentMethod === 'online' && (
-                        <div className={`${styles.expanded_section} ${styles.expanded_section_online}`}>
-                            <h4 className={styles.expanded_section__title}>
-                                💳 جزئیات پرداخت آنلاین (سپ - شاپرک)
-                            </h4>
-                            <div className={styles.onlinePayDetails}>
-                                <div className={styles.onlinePayStatusRow}>
-                                    <span className={styles.expanded_field__label}>نتیجه تراکنش:</span>
-                                    <span className={isPaid ? styles.onlinePayBadgeSuccess : styles.onlinePayBadgePending}>
-                                        {isPaid ? '✅ پرداخت موفق و تایید شده' : '⏳ در انتظار پرداخت آنلاین'}
+                    {/* ── ستون ۲: جزئیات پرداخت (آنلاین / کارت‌به‌کارت / رایگان) ── */}
+                    <div className={`${styles.expanded_section} ${styles.expanded_section_online}`}>
+                        <h4 className={styles.expanded_section__title}>
+                            💳 جزئیات پرداخت
+                        </h4>
+                        <div className={styles.onlinePayDetails}>
+                            <div className={styles.onlinePayStatusRow}>
+                                <span className={styles.expanded_field__label}>نتیجه تراکنش:</span>
+                                {isPaid ? (
+                                    <span className={styles.onlinePayBadgeSuccess}>
+                                        ✅ پرداخت موفق و تایید شده
                                     </span>
-                                </div>
-
-                                <div className={styles.expanded_field}>
-                                    <span className={styles.expanded_field__label}>شماره کارت واریزکننده</span>
-                                    <span className={styles.expanded_field__value} dir="ltr">
-                                        {order.securePan ? `💳 ${order.securePan}` : '—'}
+                                ) : isCanceled ? (
+                                    <span className={styles.onlinePayBadgeFailed}>
+                                        ❌ سفارش لغو شده
                                     </span>
-                                </div>
-
-                                <div className={styles.expanded_field}>
-                                    <span className={styles.expanded_field__label}>رسید دیجیتال بانک (RefNum)</span>
-                                    <div className={styles.copyableField}>
-                                        <span className={styles.expanded_field__value} dir="ltr">
-                                            {order.refNum || '—'}
-                                        </span>
-                                        {order.refNum && <CopyButton text={order.refNum} label="رسید دیجیتال" />}
-                                    </div>
-                                </div>
-
-                                <div className={styles.expanded_field}>
-                                    <span className={styles.expanded_field__label}>کد پیگیری تراکنش (TraceNo)</span>
-                                    <div className={styles.copyableField}>
-                                        <span className={styles.expanded_field__value} dir="ltr">
-                                            {order.traceNo || order.trackingNumber || '—'}
-                                        </span>
-                                        {(order.traceNo || order.trackingNumber) && (
-                                            <CopyButton text={order.traceNo || order.trackingNumber} label="کد پیگیری" />
-                                        )}
-                                    </div>
-                                </div>
-
-                                {order.rrn && (
-                                    <div className={styles.expanded_field}>
-                                        <span className={styles.expanded_field__label}>شماره مرجع شاپرک (RRN)</span>
-                                        <span className={styles.expanded_field__value} dir="ltr">{order.rrn}</span>
-                                    </div>
+                                ) : isWaitingReceipt(order) ? (
+                                    <span className={styles.onlinePayBadgePending}>
+                                        ⏳ در انتظار تایید فیش
+                                    </span>
+                                ) : (
+                                    <span className={styles.onlinePayBadgePending}>
+                                        ⏳ در انتظار پرداخت
+                                    </span>
                                 )}
+                            </div>
 
-                                <div className={styles.expanded_field}>
-                                    <span className={styles.expanded_field__label}>تاریخ و ساعت پرداخت</span>
-                                    <span className={styles.expanded_field__value}>
-                                        {formatDate(order.paymentDate || (isPaid ? order.createdAt : null))}
-                                    </span>
-                                </div>
+                            {order.paymentMethod === 'online' && (
+                                <>
+                                    <div className={styles.expanded_field}>
+                                        <span className={styles.expanded_field__label}>شماره کارت واریزکننده</span>
+                                        <span className={styles.expanded_field__value} dir="ltr">
+                                            {order.securePan ? `💳 ${order.securePan}` : '—'}
+                                        </span>
+                                    </div>
 
-                                <div className={styles.expanded_field}>
-                                    <span className={styles.expanded_field__label}>مبلغ تراکنش</span>
-                                    <span className={styles.expanded_field__value}>
-                                        {formatPrice(order.totalPrice)}
+                                    <div className={styles.expanded_field}>
+                                        <span className={styles.expanded_field__label}>رسید دیجیتال بانک (RefNum)</span>
+                                        <div className={styles.copyableField}>
+                                            <span className={styles.expanded_field__value} dir="ltr">
+                                                {order.refNum || '—'}
+                                            </span>
+                                            {order.refNum && <CopyButton text={order.refNum} label="رسید دیجیتال" />}
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.expanded_field}>
+                                        <span className={styles.expanded_field__label}>کد پیگیری تراکنش (TraceNo)</span>
+                                        <div className={styles.copyableField}>
+                                            <span className={styles.expanded_field__value} dir="ltr">
+                                                {order.traceNo || order.trackingNumber || '—'}
+                                            </span>
+                                            {(order.traceNo || order.trackingNumber) && (
+                                                <CopyButton text={order.traceNo || order.trackingNumber} label="کد پیگیری" />
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {order.rrn && (
+                                        <div className={styles.expanded_field}>
+                                            <span className={styles.expanded_field__label}>شماره مرجع شاپرک (RRN)</span>
+                                            <span className={styles.expanded_field__value} dir="ltr">{order.rrn}</span>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {order.paymentMethod === 'card_to_card' && (
+                                <>
+                                    {order.cardHolderName && (
+                                        <div className={styles.expanded_field}>
+                                            <span className={styles.expanded_field__label}>نام صاحب کارت</span>
+                                            <span className={styles.expanded_field__value}>💳 {order.cardHolderName}</span>
+                                        </div>
+                                    )}
+                                    {order.receiptImageUrl && (
+                                        <div className={styles.expanded_field}>
+                                            <span className={styles.expanded_field__label}>تصویر فیش</span>
+                                            <span className={styles.expanded_field__value}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.receipt_link}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (onOpenReceipt) onOpenReceipt(order);
+                                                    }}
+                                                    title="مشاهده تصویر رسید پرداخت"
+                                                >
+                                                    🧾 مشاهده فیش واریز
+                                                </button>
+                                            </span>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            <div className={styles.expanded_field}>
+                                <span className={styles.expanded_field__label}>تاریخ و ساعت پرداخت</span>
+                                <span className={styles.expanded_field__value}>
+                                    {formatDate(order.paymentDate || (isPaid ? order.createdAt : null))}
+                                </span>
+                            </div>
+
+                            <div className={styles.expanded_field}>
+                                <span className={styles.expanded_field__label}>مبلغ تراکنش</span>
+                                <span className={styles.expanded_field__value}>
+                                    {formatPrice(order.totalPrice)}
+                                    {Number(order.totalPrice) > 0 && (
                                         <span className={styles.rialEquivalent}>
                                             ({new Intl.NumberFormat('fa-IR').format(Math.round(Number(order.totalPrice || 0) * 10))} ریال)
                                         </span>
-                                    </span>
-                                </div>
+                                    )}
+                                </span>
                             </div>
                         </div>
-                    )}
+                    </div>
 
-                    {/* ── ستون ۳: آدرس ارسال ──────────────────────────────── */}
-                    {(order.address || order.postalCode) && (
-                        <div className={styles.expanded_section}>
-                            <h4 className={styles.expanded_section__title}>📍 آدرس ارسال</h4>
-                            <div className={styles.expanded_grid}>
-                                <div className={`${styles.expanded_field} ${styles['expanded_field--full']}`}>
-                                    <span className={styles.expanded_field__label}>آدرس کامل</span>
-                                    <span className={styles.expanded_field__value}>{order.address || '—'}</span>
-                                </div>
-                                {order.postalCode && order.postalCode !== '0000000000' && (
-                                    <div className={styles.expanded_field}>
-                                        <span className={styles.expanded_field__label}>کد پستی</span>
-                                        <span className={styles.expanded_field__value} dir="ltr">{order.postalCode}</span>
-                                    </div>
-                                )}
+                    {/* ── ستون ۳: یادداشت سفارش ──────────────────────────────── */}
+                    <div className={styles.expanded_section}>
+                        <h4 className={styles.expanded_section__title}>📝 یادداشت</h4>
+                        {order.notes ? (
+                            <div className={styles.expanded_notes_card}>
+                                <pre className={styles.expanded_notes__text}>{order.notes}</pre>
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <p className={styles.expanded_empty}>بدون یادداشت</p>
+                        )}
+                    </div>
 
                     {/* ── ستون ۴: اقلام سفارش ─────────────────────────────── */}
                     <div className={styles.expanded_section}>
@@ -348,14 +425,6 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
                             </div>
                         ) : (
                             <p className={styles.expanded_empty}>اطلاعات اقلام در دسترس نیست.</p>
-                        )}
-
-                        {/* notes اگر وجود داشت */}
-                        {order.notes && (
-                            <div className={styles.expanded_notes}>
-                                <span className={styles.expanded_field__label}>یادداشت:</span>
-                                <pre className={styles.expanded_notes__text}>{order.notes}</pre>
-                            </div>
                         )}
                     </div>
 
@@ -840,10 +909,10 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                             type="button"
                             className={styles.bulkDeleteBtn}
                             onClick={() => setBulkDeleteTarget('canceled')}
-                            title="حذف دائمی تمام سفارش‌های رد شده"
+                            title="حذف دائمی تمام سفارش‌های لغو شده"
                         >
                             <Trash2 size={13} />
-                            <span>حذف ردشده‌ها ({new Intl.NumberFormat('fa-IR').format(counts.canceled)})</span>
+                            <span>حذف لغو شده‌ها ({new Intl.NumberFormat('fa-IR').format(counts.canceled)})</span>
                         </button>
                     )}
 

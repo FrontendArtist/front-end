@@ -1,6 +1,6 @@
 /**
  * @file src/app/api/admin/orders/bulk-delete/route.js
- * @description حذف دسته‌جمعی سفارش‌های رد شده (canceled) یا در انتظار پرداخت (pending)
+ * @description حذف دسته‌جمعی سفارش‌های لغو شده (canceled) یا در انتظار پرداخت (pending)
  *
  * 🔐 امنیت: فقط مدیران ارشد سیستم (administrator) مجاز به انجام این عملیات هستند.
  */
@@ -45,7 +45,7 @@ export async function POST(request) {
     const { status } = body;
     if (status !== 'canceled' && status !== 'pending') {
         return NextResponse.json(
-            { error: 'تنها سفارش‌های رد شده (canceled) یا در انتظار پرداخت (pending) قابل حذف گروهی هستند.' },
+            { error: 'تنها سفارش‌های لغو شده (canceled) یا در انتظار پرداخت (pending) قابل حذف گروهی هستند.' },
             { status: 400 }
         );
     }

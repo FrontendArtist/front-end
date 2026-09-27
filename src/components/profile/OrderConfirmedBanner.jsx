@@ -8,7 +8,7 @@ import styles from './OrderConfirmedBanner.module.scss';
 export default function OrderConfirmedBanner() {
     const { notifications, markAsRead } = useOrderNotifications();
 
-    // پیدا کردن اولین اعلان سفارش خوانده‌نشده (تایید یا رد شده)
+    // پیدا کردن اولین اعلان سفارش خوانده‌نشده (تایید یا لغو شده)
     const unreadNotification = useMemo(() => {
         return notifications.find((n) => !n.isRead && (n.type === 'confirmed' || n.type === 'rejected'));
     }, [notifications]);

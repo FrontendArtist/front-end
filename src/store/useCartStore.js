@@ -201,6 +201,46 @@ export const useCartStore = create(
             },
 
             /**
+             * حذف دوره‌ها و فصل‌های پرداخت‌شده از سبد خرید
+             * @param {Object} params
+             * @param {Array<number>} [params.courseIds] - شناسه‌های دوره‌های خریداری شده
+             * @param {Array<string>} [params.courseSlugs] - اسلاگ‌های دوره‌های خریداری شده
+             * @param {Array<number>} [params.chapterIds] - شناسه‌های فصل‌های خریداری شده
+             * @returns {boolean} آیا آیتمی حذف شد یا خیر
+             */
+            removePaidCoursesAndChapters: ({ courseIds = [], courseSlugs = [], chapterIds = [] } = {}) => {
+                const numCourseIds = (courseIds || []).map(Number).filter(Boolean);
+                const strCourseSlugs = (courseSlugs || []).filter(Boolean);
+                const numChapterIds = (chapterIds || []).map(Number).filter(Boolean);
+
+                if (numCourseIds.length === 0 && strCourseSlugs.length === 0 && numChapterIds.length === 0) {
+                    return false;
+                }
+
+                const currentItems = get().items;
+                const filtered = currentItems.filter((item) => {
+                    if (item.type === 'course') {
+                        const idMatches = numCourseIds.includes(Number(item.id)) || numCourseIds.includes(Number(item.courseId));
+                        const slugMatches = item.slug && strCourseSlugs.includes(item.slug);
+                        return !idMatches && !slugMatches;
+                    }
+                    if (item.type === 'chapter') {
+                        const rawChapId = Number(item.chapterId || (typeof item.id === 'string' ? item.id.replace('chapter-', '') : item.id));
+                        const isChapPaid = numChapterIds.includes(rawChapId);
+                        const isParentPaid = item.courseId && numCourseIds.includes(Number(item.courseId));
+                        return !isChapPaid && !isParentPaid;
+                    }
+                    return true;
+                });
+
+                if (filtered.length !== currentItems.length) {
+                    set({ items: filtered });
+                    return true;
+                }
+                return false;
+            },
+
+            /**
              * پاکسازی کامل سبد خرید
              * تمام آیتم‌ها (محصولات و دوره‌ها) و کوپن تخفیف حذف می‌شوند
              */

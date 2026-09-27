@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { STRAPI_API_URL } from "@/lib/api";
 
-const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
 export async function POST(request) {
