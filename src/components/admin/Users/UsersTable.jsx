@@ -11,6 +11,9 @@ import AdminLazyLoad from '../Shared/AdminLazyLoad';
 import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
 import { fetchAdminUsers } from '@/lib/client/admin/usersClient';
 import { triggerLightUpdate } from '@/store/useLightStore';
+import { useSession } from 'next-auth/react';
+import { checkAdminTopUpPermissionWithByeMoney, getConversionRateWithByeMoney } from '@/lib/byeMoneyApi';
+import AdminAssistedTopUpModal from './AdminAssistedTopUpModal/AdminAssistedTopUpModal';
 import styles from './Users.module.scss';
 
 /**
@@ -304,8 +307,40 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
         idKey: 'id',
     });
 
+    const { data: session } = useSession();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUserId, setSelectedUserId] = useState(null);
+    const [canAssistTopUp, setCanAssistTopUp] = useState(false);
+    const [assistedTopUpUser, setAssistedTopUpUser] = useState(null);
+    const [conversionRate, setConversionRate] = useState(null);
+
+    // بررسی مجوز مالی ادمین و پیش‌بارگذاری نرخ رسمی تبدیل از دیتابیس بای‌مانی
+    useEffect(() => {
+        const jwt = session?.user?.jwt;
+        if (!jwt) return;
+
+        let isMounted = true;
+
+        checkAdminTopUpPermissionWithByeMoney({ jwt })
+            .then((res) => {
+                if (isMounted && res.hasPermission) {
+                    setCanAssistTopUp(true);
+                }
+            })
+            .catch(() => {});
+
+        getConversionRateWithByeMoney({ jwt })
+            .then((res) => {
+                if (isMounted && res.success && res.rialPerNoor > 0) {
+                    setConversionRate(res.rialPerNoor);
+                }
+            })
+            .catch(() => {});
+
+        return () => {
+            isMounted = false;
+        };
+    }, [session?.user?.jwt]);
 
     const handleSingleLightUpdated = (userId, newLight) => {
         setUsersList(prev => prev.map(u => u.id === userId ? { ...u, light: newLight } : u));
@@ -373,12 +408,23 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                             </td>
                             <td>{new Intl.DateTimeFormat('fa-IR').format(new Date(user.createdAt))}</td>
                             <td>
-                                <AdminButton
-                                    onClick={() => setSelectedUserId(user.id)}
-                                    variant="default"
-                                >
-                                    مشاهده پروفایل
-                                </AdminButton>
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <AdminButton
+                                        onClick={() => setSelectedUserId(user.id)}
+                                        variant="default"
+                                    >
+                                        مشاهده پروفایل
+                                    </AdminButton>
+                                    {canAssistTopUp && (
+                                        <AdminButton
+                                            onClick={() => setAssistedTopUpUser(user)}
+                                            variant="edit"
+                                            title="ثبت شارژ کارت‌به‌کارت به‌نیابت از کاربر"
+                                        >
+                                            افزایش شارژ کارت به کارت
+                                        </AdminButton>
+                                    )}
+                                </div>
                             </td>
                         </tr>
                     ))
@@ -407,6 +453,20 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                 <UserDetailsDrawer
                     userId={selectedUserId}
                     onClose={() => setSelectedUserId(null)}
+                />
+            )}
+
+            {assistedTopUpUser && (
+                <AdminAssistedTopUpModal
+                    user={assistedTopUpUser}
+                    conversionRate={conversionRate}
+                    onClose={() => setAssistedTopUpUser(null)}
+                    onSuccess={({ user: targetUser, amountNoor }) => {
+                        const currentLight = Number(targetUser.light ?? 0);
+                        const added = Number(amountNoor);
+                        handleSingleLightUpdated(targetUser.id, currentLight + added);
+                        triggerLightUpdate();
+                    }}
                 />
             )}
         </AdminTableContainer>

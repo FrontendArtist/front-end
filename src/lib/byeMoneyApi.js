@@ -562,3 +562,195 @@ export async function rejectTopUpWithByeMoney({ topUpId, reason, jwt }) {
     return { success: false, error: 'خطا در برقراری ارتباط با سرور بای‌مانی.' };
   }
 }
+
+/**
+ * دریافت مستقیم نرخ تبدیل ریال به نور از پایگاه داده سامانه ByeMoney (جدول SystemSettings)
+ * اندپوینت: GET /api/settings/conversion-rate
+ *
+ * ⚠️ تضمین دقت مالی: هیچ نرخ پیش‌فرض یا حدسیاتی (Fallback) وجود ندارد.
+ * نرخ منحصراً از دیتابیس سامانه مالی خوانده می‌شود.
+ *
+ * @param {object} [params]
+ * @param {string} [params.jwt] - توکن احراز هویت اختیاری
+ * @returns {Promise<{ success: boolean, rialPerNoor?: number, tomanPerNoor?: number, error?: string }>}
+ */
+export async function getConversionRateWithByeMoney({ jwt } = {}) {
+  const endpoint = `${BYEMONEY_API_URL}/api/settings/conversion-rate`;
+  try {
+    const headers = {};
+    if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
+
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers,
+      cache: 'no-store',
+    });
+
+    if (response.ok) {
+      const data = await response.json().catch(() => ({}));
+      const rialPerNoor = Number(data.rialPerNoor);
+      const tomanPerNoor = Number(data.tomanPerNoor ?? (rialPerNoor ? rialPerNoor / 10 : 0));
+
+      if (rialPerNoor > 0) {
+        return {
+          success: true,
+          rialPerNoor,
+          tomanPerNoor,
+        };
+      }
+    }
+
+    const errJson = await response.json().catch(() => ({}));
+    return {
+      success: false,
+      error: errJson.error || errJson.message || `خطا در واکشی نرخ تبدیل از دیتابیس بای‌مانی (کد ${response.status})`,
+    };
+  } catch (err) {
+    console.error('[ByeMoney getConversionRate error]:', err);
+    return {
+      success: false,
+      error: 'خطا در ارتباط با سرور بای‌مانی جهت دریافت نرخ رسمی تبدیل.',
+    };
+  }
+}
+
+/**
+ * بررسی مجوز مالی ادمین در سامانه ByeMoney جهت ثبت شارژ کارت‌به‌کارت
+ * اندپوینت: GET /api/admin/topups/permissions
+ * 
+ * @param {object} params
+ * @param {string} params.jwt - توکن احراز هویت ادمین
+ * @returns {Promise<{ hasPermission: boolean, canReviewTopUps?: boolean, error?: string }>}
+ */
+export async function checkAdminTopUpPermissionWithByeMoney({ jwt }) {
+  if (!jwt) {
+    return { hasPermission: false, error: 'نشست کاربری نامعتبر است.' };
+  }
+
+  const endpoint = `${BYEMONEY_API_URL}/api/admin/topups/permissions`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (response.ok) {
+      const data = await response.json().catch(() => ({}));
+      const canReview = data.canReviewTopUps ?? data.canAssistTopUp ?? false;
+
+      return {
+        hasPermission: Boolean(canReview),
+        canReviewTopUps: Boolean(canReview),
+      };
+    }
+
+    return { hasPermission: false, status: response.status };
+  } catch (err) {
+    console.error('[ByeMoney checkAdminTopUpPermission error]:', err);
+    return { hasPermission: false };
+  }
+}
+
+/**
+ * ثبت شارژ کارت‌به‌کارت ادمین به‌نیابت از کاربر ناتوان در سامانه ByeMoney
+ * اندپوینت: POST /api/admin/topups/assisted
+ * 
+ * @param {object} params
+ * @param {string} params.beneficiaryExternalUserId - شناسه پایدار کاربر ذینفع در استرپی (documentId یا id)
+ * @param {number} params.amountRial - مبلغ تراکنش به ریال
+ * @param {File|Blob} params.receipt - تصویر فیش واریزی (اجباری)
+ * @param {string} [params.externalTransactionId] - شناسه/کد پیگیری تراکنش خارجی (اختیاری)
+ * @param {string} [params.idempotencyKey] - شناسه یکتا جهت جلوگیری از تراکنش تکراری (اختیاری)
+ * @param {string} params.jwt - توکن احراز هویت ادمین
+ * @returns {Promise<{ success: boolean, data?: { topUpRequestId: string, clientReferenceId: string, amountNoor: number, rialPerNoor: number }, error?: string, status?: number }>}
+ */
+export async function createAdminAssistedTopUpWithByeMoney({
+  beneficiaryExternalUserId,
+  amountRial,
+  receipt,
+  externalTransactionId,
+  idempotencyKey,
+  jwt,
+}) {
+  if (!jwt) {
+    return { success: false, error: 'نشست کاربری نامعتبر است. لطفاً مجدداً وارد شوید.' };
+  }
+
+  if (!beneficiaryExternalUserId) {
+    return { success: false, error: 'شناسه کاربر ذینفع نامعتبر است.' };
+  }
+
+  const numericAmount = Number(amountRial);
+  if (!numericAmount || numericAmount <= 0) {
+    return { success: false, error: 'مبلغ ریالی وارد شده نامعتبر است.' };
+  }
+
+  if (!receipt) {
+    return { success: false, error: 'آپلود تصویر رسید/فیش واریزی الزامی است.' };
+  }
+
+  const key = idempotencyKey || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
+  const endpoint = `${BYEMONEY_API_URL}/api/admin/topups/assisted`;
+
+  const formData = new FormData();
+  formData.append('beneficiaryExternalUserId', String(beneficiaryExternalUserId));
+  formData.append('amountRial', String(numericAmount));
+  formData.append('receipt', receipt);
+  if (externalTransactionId && typeof externalTransactionId === 'string' && externalTransactionId.trim()) {
+    formData.append('externalTransactionId', externalTransactionId.trim());
+  }
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        'Idempotency-Key': key,
+      },
+      body: formData,
+    });
+
+    if (response.ok) {
+      const data = await response.json().catch(() => ({}));
+      return {
+        success: true,
+        data: {
+          topUpRequestId: data.topUpRequestId || data.TopUpRequestId,
+          clientReferenceId: data.clientReferenceId || data.ClientReferenceId,
+          amountNoor: Number(data.amountNoor ?? data.AmountNoor ?? 0),
+          rialPerNoor: Number(data.rialPerNoor ?? data.RialPerNoor ?? 0),
+        },
+      };
+    }
+
+    if (response.status === 403) {
+      return {
+        success: false,
+        status: 403,
+        error: 'شما مجوز مالی لازم جهت ثبت شارژ برای کاربر را در سامانه مالی بای‌مانی ندارید.',
+      };
+    }
+
+    const errJson = await response.json().catch(() => ({}));
+    let errMsg = '';
+    if (errJson.error) errMsg = errJson.error;
+    else if (errJson.message) errMsg = errJson.message;
+    else if (Array.isArray(errJson.errors)) errMsg = errJson.errors.join(' - ');
+
+    return {
+      success: false,
+      status: response.status,
+      error: errMsg || `خطا در پردازش شارژ کارت‌به‌کارت (کد خطا: ${response.status})`,
+    };
+  } catch (err) {
+    console.error('[ByeMoney createAdminAssistedTopUp Error]:', err);
+    return {
+      success: false,
+      error: 'خطا در برقراری ارتباط مستقیم با سامانه بای‌مانی. لطفاً اتصال اینترنت خود را بررسی کنید.',
+    };
+  }
+}
