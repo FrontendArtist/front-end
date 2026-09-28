@@ -45,10 +45,12 @@ export async function createAdminSettlement(payload = {}) {
     return data;
 }
 
-export async function createManualOrder(formData) {
+export async function createManualOrder(payload) {
+    const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
     const res = await fetch('/api/admin/orders/manual', {
         method: 'POST',
-        body: formData,
+        headers: isFormData ? undefined : { 'Content-Type': 'application/json' },
+        body: isFormData ? payload : JSON.stringify(payload),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {

@@ -132,6 +132,8 @@ export async function POST(request) {
         let selectedCourses = [];
         let totalPrice = 0;
         let notes = '';
+        let isFree = false;
+        let freeReason = '';
 
         const contentType = request.headers.get('content-type') || '';
 
@@ -143,6 +145,8 @@ export async function POST(request) {
             firstName = formData.get('firstName') || '';
             lastName = formData.get('lastName') || '';
             email = formData.get('email') || '';
+            isFree = formData.get('isFree') === 'true' || formData.get('isFree') === true;
+            freeReason = (formData.get('freeReason') || '').trim();
             
             const rawCourses = formData.get('courses');
             if (rawCourses) {
@@ -156,7 +160,12 @@ export async function POST(request) {
             totalPrice = Number(formData.get('totalPrice')) || 0;
             notes = (formData.get('notes') || '').trim();
         } else {
-            const body = await request.json();
+            let body = {};
+            try {
+                body = await request.json();
+            } catch {
+                return NextResponse.json({ error: 'فرمت داده‌های ارسالی نامعتبر است (JSON نامعتبر).' }, { status: 400 });
+            }
             userMode = body.userMode || 'new';
             userId = body.userId;
             phoneNumber = body.phoneNumber || '';
@@ -166,6 +175,8 @@ export async function POST(request) {
             selectedCourses = body.courses || [];
             totalPrice = Number(body.totalPrice) || 0;
             notes = (body.notes || '').trim();
+            isFree = Boolean(body.isFree);
+            freeReason = (body.freeReason || '').trim();
         }
 
         // ── 1. اعتبارسنجی دوره‌های انتخاب شده ────────────────────────────────
@@ -268,7 +279,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'خطا در بازیابی اطلاعات کاربر' }, { status: 500 });
         }
 
-        // ── 3. بررسی موجودی نور کاربر در سامانه ByeMoney ──────────────────────
+        // ── 3. بررسی موجودی نور کاربر در سامانه مالی ─────────────────────────
         const conversionRes = await getConversionRateWithByeMoney({ jwt: session.user.jwt }).catch(() => null);
         const tomanPerNoor = conversionRes?.tomanPerNoor || (conversionRes?.rialPerNoor ? conversionRes.rialPerNoor / 10 : 1000);
         const requiredNoor = totalPrice > 0 ? Math.ceil(totalPrice / tomanPerNoor) : 0;
@@ -284,13 +295,14 @@ export async function POST(request) {
                 userBalance = Number(docBal !== undefined ? docBal : (idBal !== undefined ? idBal : 0));
             }
         } catch (balErr) {
-            console.warn('[ManualOrderAPI] Error checking user balance from ByeMoney:', balErr.message || balErr);
+            console.warn('[ManualOrderAPI] Error checking user balance:', balErr.message || balErr);
         }
 
-        if (requiredNoor > 0 && userBalance < requiredNoor) {
+        // بررسی موجودی تنها در صورتی که سفارش رایگان نباشد الزامی است
+        if (!isFree && requiredNoor > 0 && userBalance < requiredNoor) {
             const shortfall = requiredNoor - userBalance;
             return NextResponse.json({
-                error: `موجودی نور کاربر برای خرید این دوره‌ها کافی نیست. موجودی فعلی: ${userBalance.toLocaleString('fa-IR')} نور، مبلغ مورد نیاز: ${requiredNoor.toLocaleString('fa-IR')} نور (کسری: ${shortfall.toLocaleString('fa-IR')} نور). لطفاً ابتدا حساب کاربر را شارژ کنید.`,
+                error: `موجودی نور کاربر برای خرید این دوره‌ها کافی نیست. موجودی فعلی: ${userBalance.toLocaleString('fa-IR')} نور، مبلغ مورد نیاز: ${requiredNoor.toLocaleString('fa-IR')} نور (کسری: ${shortfall.toLocaleString('fa-IR')} نور). لطفاً ابتدا حساب کاربر را شارژ کنید یا گزینه ثبت رایگان را فعال فرمایید.`,
                 insufficientBalance: true,
                 userBalance,
                 requiredNoor,
@@ -299,8 +311,8 @@ export async function POST(request) {
             }, { status: 400 });
         }
 
-        // ── 4. خرید دوره‌ها و کسر از کیف پول نور در ByeMoney ──────────────────
-        // استخراج شناسه‌های یکتای دوره‌ها (documentId) جهت ارسال به سامانه مالی ByeMoney
+        // ── 4. خرید دوره‌ها و ثبت در سامانه مالی ──────────────────────────────
+        // استخراج شناسه‌های یکتای دوره‌ها (documentId)
         const externalCourseIds = Array.from(new Set(
             selectedCourses
                 .map(c => c.documentId || c.courseDocumentId || (c.slug ? c.slug : String(c.courseId || c.id)))
@@ -309,16 +321,18 @@ export async function POST(request) {
 
         let byeMoneyTransaction = null;
 
-        // اگر سفارش دارای هزینه به نور است، درخواست رسمی خرید به‌نیابت از کاربر به ByeMoney ارسال می‌شود
-        if (requiredNoor > 0 && externalCourseIds.length > 0) {
+        // ارسال درخواست خرید (عادی یا رایگان) به سامانه مالی
+        if (externalCourseIds.length > 0) {
             const byeMoneyRes = await purchaseCoursesAsAdminWithByeMoney({
                 beneficiaryExternalUserId: userExternalId,
                 externalCourseIds,
+                isFree,
+                freeReason: isFree ? freeReason : null,
                 jwt: session.user.jwt,
             });
 
             if (!byeMoneyRes.success) {
-                if (byeMoneyRes.insufficientBalance) {
+                if (byeMoneyRes.insufficientBalance && !isFree) {
                     const shortfall = Math.max(0, requiredNoor - userBalance);
                     return NextResponse.json({
                         error: byeMoneyRes.error || `موجودی نور کاربر برای خرید این دوره‌ها کافی نیست. لطفاً ابتدا حساب کاربر را شارژ کنید.`,
@@ -331,7 +345,7 @@ export async function POST(request) {
                 }
 
                 return NextResponse.json({
-                    error: byeMoneyRes.error || 'خطا در ثبت تراکنش خرید از کیف پول نور.',
+                    error: byeMoneyRes.error || 'خطا در ثبت تراکنش در سامانه مالی.',
                     conflict: byeMoneyRes.conflict || false,
                 }, { status: byeMoneyRes.conflict ? 409 : 400 });
             }
@@ -374,9 +388,13 @@ export async function POST(request) {
 
         const adminAuthor = session.user.name || session.user.email || 'مدیر سیستم';
         const formattedNotes = [
-            `📌 [ثبت دستی با پرداخت نور از کیف پول توسط ادمین: ${adminAuthor}]`,
+            isFree
+                ? `🎁 [ثبت رایگان توسط ادمین: ${adminAuthor}${freeReason ? ` | علت: ${freeReason}` : ''}]`
+                : `📌 [ثبت دستی با پرداخت نور از کیف پول توسط ادمین: ${adminAuthor}]`,
             byeMoneyTransaction?.transactionId ? `کد تراکنش مالی: ${byeMoneyTransaction.transactionId}` : null,
-            `موجودی نور پیش از سفارش: ${userBalance.toLocaleString('fa-IR')} نور | مبلغ سفارش: ${requiredNoor.toLocaleString('fa-IR')} نور (${Number(totalPrice).toLocaleString('fa-IR')} تومان)`,
+            isFree
+                ? `وضعیت مالی: ثبت رایگان (ارزش پایه دوره‌ها: ${Number(totalPrice).toLocaleString('fa-IR')} تومان)`
+                : `موجودی نور پیش از سفارش: ${userBalance.toLocaleString('fa-IR')} نور | مبلغ سفارش: ${requiredNoor.toLocaleString('fa-IR')} نور (${Number(totalPrice).toLocaleString('fa-IR')} تومان)`,
             notes ? `توضیحات: ${notes}` : null,
             `اقلام فعال‌شده: ${selectedCourses.map(c => c.chapterTitle ? `${c.title} (${c.chapterTitle})` : c.title).join('، ')}`
         ].filter(Boolean).join('\n');
@@ -385,15 +403,15 @@ export async function POST(request) {
         const orderPayload = {
             data: {
                 fullName: userFullName,
-                address: 'ثبت دستی با تسویه از کیف پول نور',
+                address: isFree ? 'ثبت رایگان توسط مدیر سیستم' : 'ثبت دستی با تسویه از کیف پول نور',
                 postalCode: '0000000000',
                 phone: targetUser.phoneNumber || '00000000000',
                 email: targetUser.email || `${targetUser.phoneNumber || targetUser.id}@tarhelahi.com`,
-                totalPrice: Number(totalPrice) || 0,
+                totalPrice: isFree ? 0 : (Number(totalPrice) || 0),
                 originalTotalPrice: Number(totalPrice) || 0,
                 orderStatus: 'paid',
                 paymentStatus: 'paid',
-                paymentMethod: 'byemoney_noor',
+                paymentMethod: isFree ? 'free_grant' : 'byemoney_noor',
                 receiptImage: null,
                 trackingNumber: byeMoneyTransaction?.transactionId ? String(byeMoneyTransaction.transactionId) : null,
                 cardHolderName: null,
