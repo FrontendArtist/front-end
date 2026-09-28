@@ -131,9 +131,9 @@ export async function POST(request) {
         let email = '';
         let selectedCourses = [];
         let totalPrice = 0;
-        let notes = '';
         let isFree = false;
         let freeReason = '';
+        let notes = '';
 
         const contentType = request.headers.get('content-type') || '';
 
@@ -145,8 +145,6 @@ export async function POST(request) {
             firstName = formData.get('firstName') || '';
             lastName = formData.get('lastName') || '';
             email = formData.get('email') || '';
-            isFree = formData.get('isFree') === 'true' || formData.get('isFree') === true;
-            freeReason = (formData.get('freeReason') || '').trim();
             
             const rawCourses = formData.get('courses');
             if (rawCourses) {
@@ -158,25 +156,33 @@ export async function POST(request) {
             }
 
             totalPrice = Number(formData.get('totalPrice')) || 0;
+            isFree = formData.get('isFree') === 'true' || formData.get('isFree') === true;
+            freeReason = (formData.get('freeReason') || '').trim();
             notes = (formData.get('notes') || '').trim();
         } else {
             let body = {};
             try {
                 body = await request.json();
             } catch {
-                return NextResponse.json({ error: 'فرمت داده‌های ارسالی نامعتبر است (JSON نامعتبر).' }, { status: 400 });
+                try {
+                    const rawText = await request.text();
+                    body = rawText ? JSON.parse(rawText) : {};
+                } catch {
+                    return NextResponse.json({ error: 'قالب داده‌های ارسالی معتبر نیست.' }, { status: 400 });
+                }
             }
+
             userMode = body.userMode || 'new';
             userId = body.userId;
             phoneNumber = body.phoneNumber || '';
             firstName = body.firstName || '';
             lastName = body.lastName || '';
             email = body.email || '';
-            selectedCourses = body.courses || [];
+            selectedCourses = Array.isArray(body.courses) ? body.courses : [];
             totalPrice = Number(body.totalPrice) || 0;
-            notes = (body.notes || '').trim();
             isFree = Boolean(body.isFree);
-            freeReason = (body.freeReason || '').trim();
+            freeReason = body.freeReason ? String(body.freeReason).trim() : '';
+            notes = (body.notes || '').trim();
         }
 
         // ── 1. اعتبارسنجی دوره‌های انتخاب شده ────────────────────────────────
@@ -279,10 +285,10 @@ export async function POST(request) {
             return NextResponse.json({ error: 'خطا در بازیابی اطلاعات کاربر' }, { status: 500 });
         }
 
-        // ── 3. بررسی موجودی نور کاربر در سامانه مالی ─────────────────────────
+        // ── 3. بررسی موجودی نور کاربر در سامانه ByeMoney ──────────────────────
         const conversionRes = await getConversionRateWithByeMoney({ jwt: session.user.jwt }).catch(() => null);
         const tomanPerNoor = conversionRes?.tomanPerNoor || (conversionRes?.rialPerNoor ? conversionRes.rialPerNoor / 10 : 1000);
-        const requiredNoor = totalPrice > 0 ? Math.ceil(totalPrice / tomanPerNoor) : 0;
+        const requiredNoor = (!isFree && totalPrice > 0) ? Math.ceil(totalPrice / tomanPerNoor) : 0;
 
         const userExternalId = targetUser.documentId || String(targetUser.id);
         let userBalance = 0;
@@ -295,10 +301,9 @@ export async function POST(request) {
                 userBalance = Number(docBal !== undefined ? docBal : (idBal !== undefined ? idBal : 0));
             }
         } catch (balErr) {
-            console.warn('[ManualOrderAPI] Error checking user balance:', balErr.message || balErr);
+            console.warn('[ManualOrderAPI] Error checking user balance from ByeMoney:', balErr.message || balErr);
         }
 
-        // بررسی موجودی تنها در صورتی که سفارش رایگان نباشد الزامی است
         if (!isFree && requiredNoor > 0 && userBalance < requiredNoor) {
             const shortfall = requiredNoor - userBalance;
             return NextResponse.json({
@@ -311,52 +316,51 @@ export async function POST(request) {
             }, { status: 400 });
         }
 
-        // ── 4. خرید دوره‌ها و ثبت در سامانه مالی ──────────────────────────────
-        // استخراج شناسه‌های یکتای دوره‌ها (documentId)
+        // ── 4. خرید دوره‌ها در سامانه ByeMoney (کسر نور یا ثبت رایگان) ──────────
+        // استخراج شناسه‌های یکتای دوره‌ها (documentId) جهت ارسال به سامانه مالی ByeMoney
         const externalCourseIds = Array.from(new Set(
             selectedCourses
                 .map(c => c.documentId || c.courseDocumentId || (c.slug ? c.slug : String(c.courseId || c.id)))
                 .filter(Boolean)
         ));
 
-        let byeMoneyTransaction = null;
-
-        // ارسال درخواست خرید (عادی یا رایگان) به سامانه مالی
-        if (externalCourseIds.length > 0) {
-            const byeMoneyRes = await purchaseCoursesAsAdminWithByeMoney({
-                beneficiaryExternalUserId: userExternalId,
-                externalCourseIds,
-                isFree,
-                freeReason: isFree ? freeReason : null,
-                jwt: session.user.jwt,
-            });
-
-            if (!byeMoneyRes.success) {
-                if (byeMoneyRes.insufficientBalance && !isFree) {
-                    const shortfall = Math.max(0, requiredNoor - userBalance);
-                    return NextResponse.json({
-                        error: byeMoneyRes.error || `موجودی نور کاربر برای خرید این دوره‌ها کافی نیست. لطفاً ابتدا حساب کاربر را شارژ کنید.`,
-                        insufficientBalance: true,
-                        userBalance,
-                        requiredNoor,
-                        shortfallNoor: shortfall,
-                        shortfallToman: shortfall * tomanPerNoor,
-                    }, { status: 400 });
-                }
-
-                return NextResponse.json({
-                    error: byeMoneyRes.error || 'خطا در ثبت تراکنش در سامانه مالی.',
-                    conflict: byeMoneyRes.conflict || false,
-                }, { status: byeMoneyRes.conflict ? 409 : 400 });
-            }
-
-            byeMoneyTransaction = byeMoneyRes.data;
+        if (externalCourseIds.length === 0) {
+            return NextResponse.json({ error: 'شناسه معتبر دوره‌ها برای ثبت در سامانه مالی یافت نشد.' }, { status: 400 });
         }
 
-        // ── 5. آماده‌سازی اقلام سفارش (Items) ──────────────────────────────────
-        const courseIdsToActivate = new Set();
-        const chapterIdsToActivate = new Set();
+        let byeMoneyTransaction = null;
 
+        // تمام تراکنش‌ها (چه با کسر نور و چه ثبت رایگان) مستقیماً به اندپوینت رسمی خرید بای‌مانی ارسال می‌شوند
+        const byeMoneyRes = await purchaseCoursesAsAdminWithByeMoney({
+            beneficiaryExternalUserId: userExternalId,
+            externalCourseIds,
+            isFree,
+            freeReason: isFree ? freeReason : null,
+            jwt: session.user.jwt,
+        });
+
+        if (!byeMoneyRes.success) {
+            if (byeMoneyRes.insufficientBalance && !isFree) {
+                const shortfall = Math.max(0, requiredNoor - userBalance);
+                return NextResponse.json({
+                    error: byeMoneyRes.error || `موجودی نور کاربر برای خرید این دوره‌ها کافی نیست. لطفاً ابتدا حساب کاربر را شارژ کنید.`,
+                    insufficientBalance: true,
+                    userBalance,
+                    requiredNoor,
+                    shortfallNoor: shortfall,
+                    shortfallToman: shortfall * tomanPerNoor,
+                }, { status: 400 });
+            }
+
+            return NextResponse.json({
+                error: byeMoneyRes.error || 'خطا در ثبت تراکنش در سامانه ByeMoney.',
+                conflict: byeMoneyRes.conflict || false,
+            }, { status: byeMoneyRes.conflict ? 409 : 400 });
+        }
+
+        byeMoneyTransaction = byeMoneyRes.data;
+
+        // ── 5. آماده‌سازی اقلام سفارش (Items) ──────────────────────────────────
         const itemsPayload = selectedCourses.map((c) => {
             const courseId = Number(c.courseId || c.id);
             const chapterId = c.chapterId ? Number(c.chapterId) : null;
@@ -364,16 +368,10 @@ export async function POST(request) {
             const slug = c.slug || '';
             const itemSlug = chapterId ? `${slug}-chapter-${chapterId}` : slug;
 
-            if (chapterId) {
-                chapterIdsToActivate.add(chapterId);
-            } else if (courseId) {
-                courseIdsToActivate.add(courseId);
-            }
-
             return {
                 __component: 'order.course-order-item',
                 title: c.chapterTitle ? `${c.title} - ${c.chapterTitle}` : c.title,
-                price,
+                price: isFree ? 0 : price,
                 courseId,
                 chapterId,
                 slug: itemSlug,
@@ -396,10 +394,10 @@ export async function POST(request) {
                 ? `وضعیت مالی: ثبت رایگان (ارزش پایه دوره‌ها: ${Number(totalPrice).toLocaleString('fa-IR')} تومان)`
                 : `موجودی نور پیش از سفارش: ${userBalance.toLocaleString('fa-IR')} نور | مبلغ سفارش: ${requiredNoor.toLocaleString('fa-IR')} نور (${Number(totalPrice).toLocaleString('fa-IR')} تومان)`,
             notes ? `توضیحات: ${notes}` : null,
-            `اقلام فعال‌شده: ${selectedCourses.map(c => c.chapterTitle ? `${c.title} (${c.chapterTitle})` : c.title).join('، ')}`
+            `اقلام ثبت‌شده: ${selectedCourses.map(c => c.chapterTitle ? `${c.title} (${c.chapterTitle})` : c.title).join('، ')}`
         ].filter(Boolean).join('\n');
 
-        // ── 7. ساخت سفارش در Strapi ──────────────────────────────────────────
+        // ── 7. ثبت لاگ سفارش در Strapi ────────────────────────────────────────
         const orderPayload = {
             data: {
                 fullName: userFullName,
@@ -441,73 +439,19 @@ export async function POST(request) {
         const newOrder = await orderRes.json();
         const orderId = newOrder.data?.id || newOrder.id;
 
-        // ── 8. فعال‌سازی مستقیم و قطعی دوره‌ها در پروفایل کاربر در Strapi ───────
-        try {
-            // به‌روزرسانی سرفصل‌های خریداری‌شده کاربر
-            const existingChapters = Array.isArray(targetUser.enrolledChapters)
-                ? targetUser.enrolledChapters.map(Number)
-                : [];
-            const mergedChapters = [...new Set([...existingChapters, ...Array.from(chapterIdsToActivate)])];
-
-            const userUpdateData = {
-                enrolledChapters: mergedChapters,
-            };
-
-            // فقط در صورتی که خرید کامل دوره انتخاب شده باشد، دوره به لیست دوره‌های کلی اضافه می‌شود
-            if (courseIdsToActivate.size > 0) {
-                const existingCourses = Array.isArray(targetUser.courses)
-                    ? targetUser.courses.map(c => typeof c === 'object' ? c.id : Number(c))
-                    : [];
-                userUpdateData.courses = [...new Set([...existingCourses, ...Array.from(courseIdsToActivate)])];
-            }
-
-            await fetch(`${STRAPI_BASE_URL}/api/users/${targetUser.id}`, {
-                method: 'PUT',
-                headers: {
-                    Authorization: `Bearer ${tokenToUse}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userUpdateData),
-            });
-
-            // به‌روزرسانی رابطه دوطرفه در سمت Courseها جهت نمایش در Strapi Admin UI
-            for (const cId of courseIdsToActivate) {
-                try {
-                    const courseRes = await fetch(`${STRAPI_BASE_URL}/api/courses/${cId}?populate[users_permissions_users][fields][0]=id`, {
-                        headers: { Authorization: `Bearer ${tokenToUse}` },
-                    });
-                    if (courseRes.ok) {
-                        const cData = await courseRes.json();
-                        const courseUsers = cData.data?.users_permissions_users || [];
-                        const userIds = courseUsers.map(u => u.id).filter(Boolean);
-                        if (!userIds.includes(targetUser.id)) {
-                            userIds.push(targetUser.id);
-                            await fetch(`${STRAPI_BASE_URL}/api/courses/${cId}`, {
-                                method: 'PUT',
-                                headers: {
-                                    Authorization: `Bearer ${tokenToUse}`,
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    data: { users_permissions_users: userIds }
-                                }),
-                            });
-                        }
-                    }
-                } catch (cSyncErr) {
-                    console.warn(`[ManualOrderAPI] Could not sync course ${cId} users:`, cSyncErr);
-                }
-            }
-        } catch (syncErr) {
-            console.error('[ManualOrderAPI] User enrollment sync error:', syncErr);
-        }
+        // ── 8. فعال‌سازی دسترسی دوره ────────────────────────────────────────────
+        // توجه: فعال‌سازی دوره در استراپی منحصراً توسط وب‌هوک سرور-به-سرور ByeMoney
+        // (به مسیر /api/integrations/byemoney/v1/purchases/confirm) انجام می‌گیرد
+        // و فرانت‌اند هرگز اقدام به دستکاری مستقیم رابطه کاربری در استراپی نمی‌کند.
 
         return NextResponse.json({
             success: true,
             orderId,
             orderNumber: newOrder.data?.orderNumber || `#${orderId}`,
             transactionId: byeMoneyTransaction?.transactionId || null,
-            message: 'سفارش دستی با موفقیت ثبت شد و مبلغ از کیف پول نور کاربر کسر گردید.',
+            message: isFree
+                ? 'سفارش رایگان با موفقیت ثبت شد و فرآیند فعال‌سازی دوره آغاز گردید.'
+                : 'سفارش دستی با موفقیت ثبت شد و مبلغ از کیف پول نور کاربر کسر گردید.',
         }, { status: 201 });
 
     } catch (error) {
