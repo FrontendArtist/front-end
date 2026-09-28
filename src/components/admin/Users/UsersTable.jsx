@@ -14,6 +14,8 @@ import { triggerLightUpdate } from '@/store/useLightStore';
 import { useSession } from 'next-auth/react';
 import { checkAdminTopUpPermissionWithByeMoney, getConversionRateWithByeMoney } from '@/lib/byeMoneyApi';
 import AdminAssistedTopUpModal from './AdminAssistedTopUpModal/AdminAssistedTopUpModal';
+import CreateUserModal from './CreateUserModal/CreateUserModal';
+import { UserPlus } from 'lucide-react';
 import styles from './Users.module.scss';
 
 /**
@@ -313,6 +315,7 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
     const [canAssistTopUp, setCanAssistTopUp] = useState(false);
     const [assistedTopUpUser, setAssistedTopUpUser] = useState(null);
     const [conversionRate, setConversionRate] = useState(null);
+    const [showCreateUserModal, setShowCreateUserModal] = useState(false);
 
     // بررسی مجوز مالی ادمین و پیش‌بارگذاری نرخ رسمی تبدیل از دیتابیس بای‌مانی
     useEffect(() => {
@@ -381,6 +384,14 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                 <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)', marginRight: 'auto' }}>
                     نمایش {new Intl.NumberFormat('fa-IR').format(filteredUsers.length)} از {new Intl.NumberFormat('fa-IR').format(totalUsers || filteredUsers.length)} کاربر
                 </span>
+                <AdminButton
+                    variant="primary"
+                    onClick={() => setShowCreateUserModal(true)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                    <UserPlus size={16} />
+                    افزودن کاربر جدید
+                </AdminButton>
             </AdminToolbar>
 
             <AdminTable headers={headers}>
@@ -466,6 +477,15 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                         const added = Number(amountNoor);
                         handleSingleLightUpdated(targetUser.id, currentLight + added);
                         triggerLightUpdate();
+                    }}
+                />
+            )}
+
+            {showCreateUserModal && (
+                <CreateUserModal
+                    onClose={() => setShowCreateUserModal(false)}
+                    onSuccess={(newUser) => {
+                        setUsersList(prev => [newUser, ...prev]);
                     }}
                 />
             )}

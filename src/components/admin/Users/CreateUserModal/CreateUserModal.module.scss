@@ -1,0 +1,224 @@
+@use '@/styles/base/mixins' as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  direction: rtl;
+}
+
+.modal {
+  background: var(--color-bg-primary);
+  border: 1px solid fade(var(--color-primary), 25%);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid fade(var(--color-primary), 15%);
+  background: fade(var(--color-black), 10%);
+
+  &__titleWrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: fade(var(--color-title-hover), 15%);
+    color: var(--color-title-hover);
+  }
+
+  &__title {
+    font-size: var(--font-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-card-text);
+    margin: 0;
+  }
+
+  &__closeBtn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 0.4rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: fade(var(--color-primary), 12%);
+      color: var(--color-title-hover);
+    }
+  }
+}
+
+.body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  &__label {
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-card-text);
+
+    .required {
+      color: var(--color-error);
+      margin-right: 2px;
+    }
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+  }
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid fade(var(--color-primary), 20%);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: var(--color-title-hover);
+    box-shadow: 0 0 0 2px fade(var(--color-title-hover), 15%);
+  }
+
+  &::placeholder {
+    color: var(--color-text-secondary);
+    opacity: 0.7;
+  }
+}
+
+.alertBox {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: var(--font-xs);
+
+  &--error {
+    background: fade(var(--color-error), 12%);
+    border: 1px solid fade(var(--color-error), 30%);
+    color: var(--color-error);
+  }
+
+  &--success {
+    background: fade(var(--color-success), 12%);
+    border: 1px solid fade(var(--color-success), 30%);
+    color: var(--color-success);
+  }
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid fade(var(--color-primary), 15%);
+  background: fade(var(--color-black), 5%);
+}
+
+.cancelBtn {
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid fade(var(--color-primary), 25%);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: fade(var(--color-primary), 10%);
+    color: var(--color-card-text);
+  }
+}
+
+.submitBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 8px;
+  border: none;
+  background: var(--color-title-hover);
+  color: #fff;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

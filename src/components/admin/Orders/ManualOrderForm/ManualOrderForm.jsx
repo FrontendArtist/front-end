@@ -2,30 +2,33 @@
 
 /**
  * @file src/components/admin/Orders/ManualOrderForm/ManualOrderForm.jsx
- * @description فرم ثبت سفارش دستی، ایجاد کاربر، فعال‌سازی دوره و پیوست فیش در پنل ادمین
+ * @description فرم ثبت سفارش دستی و فعال‌سازی دوره بر مبنای بررسی موجودی کیف پول نور در پنل ادمین
  */
 
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import {
     UserPlus,
     Users,
     Search,
     BookOpen,
-    UploadCloud,
-    CreditCard,
     CheckCircle2,
     ArrowRight,
-    Trash2,
-    Check,
     ChevronDown,
     ChevronUp,
-    AlertCircle,
     Layers,
-    FileText,
+    Coins,
+    Sparkles,
+    AlertTriangle,
+    RefreshCw,
+    Receipt,
+    Gift,
 } from 'lucide-react';
 import { createManualOrder, searchAdminUsers } from '@/lib/client/admin/ordersClient';
+import { getConversionRateWithByeMoney, getBatchBalancesWithByeMoney } from '@/lib/byeMoneyApi';
+import AdminAssistedTopUpModal from '@/components/admin/Users/AdminAssistedTopUpModal/AdminAssistedTopUpModal';
 import styles from './ManualOrderForm.module.scss';
 
 // ── Toast Hook ─────────────────────────────────────────────────────────────
@@ -45,19 +48,10 @@ const formatPrice = (p) =>
 
 export default function ManualOrderForm({ initialCourses = [] }) {
     const router = useRouter();
+    const { data: session } = useSession();
     const { toasts, addToast } = useToast();
-    const fileInputRef = useRef(null);
 
-    // ── حالت کاربر: 'new' (کاربر جدید) یا 'existing' (کاربر موجود) ───────────
-    const [userMode, setUserMode] = useState('new');
-
-    // ── فیلدهای کاربر جدید ──────────────────────────────────────────────────
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [email, setEmail] = useState('');
-
-    // ── فیلدهای کاربر موجود ─────────────────────────────────────────────────
+    // ── فیلدهای انتخاب کاربر ─────────────────────────────────────────────────
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -65,28 +59,87 @@ export default function ManualOrderForm({ initialCourses = [] }) {
 
     // ── دوره‌های انتخاب شده ────────────────────────────────────────────────
     // کلید: 'course-{id}' یا 'chapter-{id}'
-    // مقدار: { key, id, title, slug, price, courseId, chapterId, chapterTitle }
+    // مقدار: { key, id, title, slug, price, courseId, chapterId, chapterTitle, documentId }
     const [selectedItems, setSelectedItems] = useState({});
     const [courseSearch, setCourseSearch] = useState('');
     const [openChapters, setOpenChapters] = useState({}); // { [courseId]: boolean }
 
-    // ── فیلدهای پرداخت و فیش ───────────────────────────────────────────────
-    const [receiptFile, setReceiptFile] = useState(null);
-    const [receiptPreview, setReceiptPreview] = useState(null);
-    const [cardHolderName, setCardHolderName] = useState('');
-    const [trackingNumber, setTrackingNumber] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState('card_to_card');
-    const [paymentStatus, setPaymentStatus] = useState('paid');
-    const [orderStatus, setOrderStatus] = useState('paid');
-    const [customTotalPrice, setCustomTotalPrice] = useState('');
+    // ── وضعیت‌های کیف پول نور و اتصال به سامانه ByeMoney ────────────────────
+    const [conversionRate, setConversionRate] = useState(null);
+    const [rateLoading, setRateLoading] = useState(false);
+    const [userBalance, setUserBalance] = useState(null);
+    const [balanceLoading, setBalanceLoading] = useState(false);
+    const [showTopUpModal, setShowTopUpModal] = useState(false);
     const [notes, setNotes] = useState('');
+    const [isFreeOrder, setIsFreeOrder] = useState(false);
+    const [freeReason, setFreeReason] = useState('');
 
     // ── وضعیت لودینگ ارسال ────────────────────────────────────────────────
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // ── جستجوی کاربران موجود با دی‌بانس ────────────────────────────────────
+    // ── دریافت نرخ رسمی تبدیل ریال به نور از بای‌مانی ──────────────────
     useEffect(() => {
-        if (userMode !== 'existing') return;
+        let isMounted = true;
+        setRateLoading(true);
+        getConversionRateWithByeMoney({ jwt: session?.user?.jwt })
+            .then(res => {
+                if (!isMounted) return;
+                if (res.success && res.rialPerNoor > 0) {
+                    setConversionRate(res);
+                }
+            })
+            .catch(err => {
+                console.warn('[ManualOrderForm] Conversion rate fetch error:', err);
+            })
+            .finally(() => {
+                if (isMounted) setRateLoading(false);
+            });
+
+        return () => { isMounted = false; };
+    }, [session?.user?.jwt]);
+
+    // ── تابع استعلام موجودی زنده نور کاربر از ByeMoney ──────────────────
+    const fetchUserBalance = useCallback(async (userObj) => {
+        if (!userObj) {
+            setUserBalance(null);
+            return;
+        }
+        const userExternalId = userObj.documentId || String(userObj.id);
+        if (!userExternalId) return;
+
+        setBalanceLoading(true);
+        try {
+            const batchRes = await getBatchBalancesWithByeMoney({
+                userIds: [userExternalId],
+                jwt: session?.user?.jwt,
+            });
+            if (batchRes && batchRes.success && batchRes.balances) {
+                const docBal = batchRes.balances[userExternalId];
+                const idBal = batchRes.balances[String(userObj.id)];
+                const liveBal = Number(docBal !== undefined ? docBal : (idBal !== undefined ? idBal : 0));
+                setUserBalance(liveBal);
+            } else {
+                setUserBalance(Number(userObj.light ?? 0));
+            }
+        } catch (err) {
+            console.warn('[ManualOrderForm] Error fetching balance:', err);
+            setUserBalance(Number(userObj.light ?? 0));
+        } finally {
+            setBalanceLoading(false);
+        }
+    }, [session?.user?.jwt]);
+
+    // به‌روزرسانی موجودی هنگام تغییر یا انتخاب کاربر
+    useEffect(() => {
+        if (selectedUser) {
+            fetchUserBalance(selectedUser);
+        } else {
+            setUserBalance(null);
+        }
+    }, [selectedUser, fetchUserBalance]);
+
+    // ── جستجوی کاربران با دی‌بانس ──────────────────────────────────────────
+    useEffect(() => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
             return;
@@ -105,7 +158,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
         }, 350);
 
         return () => clearTimeout(timer);
-    }, [searchQuery, userMode]);
+    }, [searchQuery]);
 
     // ── مدیریت انتخاب / عدم انتخاب دوره کامل ───────────────────────────────
     const handleToggleCourse = (course) => {
@@ -125,6 +178,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                     key,
                     id: course.id,
                     courseId: course.id,
+                    documentId: course.documentId || String(course.id),
                     title: course.title,
                     slug: course.slug,
                     price: Number(course.price) || 0,
@@ -153,6 +207,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                     key: chapterKey,
                     id: course.id,
                     courseId: course.id,
+                    documentId: course.documentId || String(course.id),
                     chapterId: chapter.id,
                     title: course.title,
                     chapterTitle: chapter.title,
@@ -164,13 +219,32 @@ export default function ManualOrderForm({ initialCourses = [] }) {
         });
     };
 
-    // ── محاسبه خودکار مجموع مبلغ ──────────────────────────────────────────
+    // ── محاسبه خودکار مجموع مبلغ و نور مورد نیاز ──────────────────────────
     const calculatedSum = useMemo(() => {
         return Object.values(selectedItems).reduce((sum, item) => sum + (Number(item.price) || 0), 0);
     }, [selectedItems]);
 
-    // مبلغ نهایی سفارش: اگر کاربر دستی تغییر داده بود از آن استفاده می‌شود، در غیر این صورت مجموع
-    const effectiveTotalPrice = customTotalPrice !== '' ? Number(customTotalPrice) : calculatedSum;
+    const tomanPerNoor = useMemo(() => {
+        if (conversionRate?.tomanPerNoor && conversionRate.tomanPerNoor > 0) {
+            return conversionRate.tomanPerNoor;
+        }
+        if (conversionRate?.rialPerNoor && conversionRate.rialPerNoor > 0) {
+            return conversionRate.rialPerNoor / 10;
+        }
+        return 1000;
+    }, [conversionRate]);
+
+    const requiredNoor = useMemo(() => {
+        if (isFreeOrder) return 0;
+        if (calculatedSum <= 0) return 0;
+        return Math.ceil(calculatedSum / tomanPerNoor);
+    }, [isFreeOrder, calculatedSum, tomanPerNoor]);
+
+    const hasSelectedUser = Boolean(selectedUser);
+    const hasEnoughBalance = isFreeOrder || (userBalance !== null && userBalance !== undefined && userBalance >= requiredNoor);
+    const shortfallNoor = isFreeOrder ? 0 : Math.max(0, requiredNoor - (userBalance || 0));
+    const shortfallToman = shortfallNoor * tomanPerNoor;
+    const remainingBalance = userBalance !== null ? (isFreeOrder ? userBalance : userBalance - requiredNoor) : 0;
 
     // ── فیلتر دوره‌ها ──────────────────────────────────────────────────────
     const filteredCourses = useMemo(() => {
@@ -182,53 +256,23 @@ export default function ManualOrderForm({ initialCourses = [] }) {
         );
     }, [initialCourses, courseSearch]);
 
-    // ── مدیریت آپلود فایل فیش ─────────────────────────────────────────────
-    const handleFileChange = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (!file.type.startsWith('image/')) {
-            addToast('لطفاً یک فایل تصویری (JPG, PNG, WebP) انتخاب کنید.', 'error');
-            return;
-        }
-
-        if (file.size > 10 * 1024 * 1024) {
-            addToast('حجم تصویر فیش نباید بیشتر از ۱۰ مگابایت باشد.', 'error');
-            return;
-        }
-
-        setReceiptFile(file);
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            setReceiptPreview(ev.target.result);
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const handleRemoveReceipt = () => {
-        setReceiptFile(null);
-        setReceiptPreview(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+    // ── بازخورد موفقیت شارژ کاربر ─────────────────────────────────────────
+    const handleTopUpSuccess = () => {
+        setShowTopUpModal(false);
+        addToast('کیف پول کاربر با موفقیت شارژ شد.', 'success');
+        if (selectedUser) {
+            fetchUserBalance(selectedUser);
         }
     };
 
-    // ── اعتبارسنجی و ثبت سفارش ────────────────────────────────────────────
+    // ── اعتبارسنجی و ثبت نهایی سفارش ──────────────────────────────────────
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // 1. بررسی کاربر
-        if (userMode === 'new') {
-            const cleanPhone = phoneNumber.trim().replace(/\s+/g, '');
-            if (!cleanPhone || cleanPhone.length < 10) {
-                addToast('شماره موبایل کاربر الزامی و باید حداقل ۱۰ رقم باشد.', 'error');
-                return;
-            }
-        } else {
-            if (!selectedUser) {
-                addToast('لطفاً یک کاربر از لیست جستجو انتخاب کنید.', 'error');
-                return;
-            }
+        // 1. بررسی انتخاب کاربر
+        if (!selectedUser) {
+            addToast('لطفاً یک کاربر از لیست جستجو انتخاب کنید.', 'error');
+            return;
         }
 
         // 2. بررسی دوره‌های انتخاب شده
@@ -238,39 +282,30 @@ export default function ManualOrderForm({ initialCourses = [] }) {
             return;
         }
 
+        // 3. بررسی کفایت موجودی نور (در صورت غیررایگان بودن)
+        if (!isFreeOrder && requiredNoor > 0 && !hasEnoughBalance) {
+            addToast(`موجودی نور کاربر کافی نیست. کسری: ${shortfallNoor.toLocaleString('fa-IR')} نور. لطفاً ابتدا حساب کاربر را شارژ کنید یا گزینه ثبت رایگان را فعال نمایید.`, 'error');
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
-            const formData = new FormData();
-            formData.append('userMode', userMode);
+            const payload = {
+                userMode: 'existing',
+                userId: String(selectedUser.id),
+                courses: selectedList,
+                totalPrice: calculatedSum,
+                isFree: isFreeOrder,
+                freeReason: isFreeOrder ? freeReason.trim() : '',
+                notes: notes.trim(),
+            };
 
-            if (userMode === 'new') {
-                formData.append('phoneNumber', phoneNumber.trim());
-                formData.append('firstName', firstName.trim());
-                formData.append('lastName', lastName.trim());
-                formData.append('email', email.trim());
-            } else {
-                formData.append('userId', String(selectedUser.id));
-            }
+            const result = await createManualOrder(payload);
 
-            formData.append('courses', JSON.stringify(selectedList));
-            formData.append('totalPrice', String(effectiveTotalPrice));
-            formData.append('paymentMethod', paymentMethod);
-            formData.append('paymentStatus', paymentStatus);
-            formData.append('orderStatus', orderStatus);
-            formData.append('trackingNumber', trackingNumber.trim());
-            formData.append('cardHolderName', cardHolderName.trim());
-            formData.append('notes', notes.trim());
+            addToast(result.message || (isFreeOrder ? 'سفارش رایگان با موفقیت ثبت شد و دوره‌ها برای کاربر فعال گردیدند.' : 'سفارش با موفقیت ثبت شد و دوره‌ها برای کاربر فعال گردیدند.'), 'success');
 
-            if (receiptFile) {
-                formData.append('receiptImage', receiptFile);
-            }
-
-            const result = await createManualOrder(formData);
-
-            addToast(result.message || 'سفارش با موفقیت ثبت شد.', 'success');
-
-            // انتقال به صفحه سفارشات پس از ۱.۵ ثانیه
+            // انتقال به صفحه سفارشات پس از ۱.۲ ثانیه
             setTimeout(() => {
                 router.push('/admin/orders');
                 router.refresh();
@@ -302,7 +337,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                         ثبت دستی سفارش و فعال‌سازی دوره
                     </h1>
                     <p className={styles.header__subtitle}>
-                        ایجاد یا انتخاب کاربر، تخصیص دوره‌های آموزشی و ضمیمه کردن فیش پرداختی به لیست سفارشات
+                        انتخاب کاربر خریدار، تخصیص دوره‌های آموزشی و پرداخت مستقیم با موجودی کیف پول نور
                     </p>
                 </div>
                 <Link href="/admin/orders" className={styles.header__backBtn}>
@@ -315,172 +350,106 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                 {/* ── ستون اصلی ─────────────────────────────────────── */}
                 <div className={styles.mainColumn}>
 
-                    {/* ── بخش ۱: انتخاب یا ایجاد کاربر ──────────────── */}
+                    {/* ── بخش ۱: انتخاب کاربر خریدار ──────────────── */}
                     <section className={styles.card}>
                         <div className={styles.card__header}>
                             <h2 className={styles.card__title}>
                                 <Users size={20} />
-                                ۱. مشخصات کاربر
+                                ۱. انتخاب کاربر خریدار
                             </h2>
                             <span className={styles.card__badge}>
-                                {userMode === 'new' ? 'کاربر جدید' : 'کاربر موجود'}
+                                {selectedUser ? 'کاربر انتخاب‌شده' : 'در انتظار انتخاب'}
                             </span>
                         </div>
 
-                        {/* سوئیچر تب‌ها */}
-                        <div className={styles.tabSwitch}>
-                            <button
-                                type="button"
-                                className={`${styles.tabSwitch__tab} ${userMode === 'new' ? styles['tabSwitch__tab--active'] : ''}`}
-                                onClick={() => setUserMode('new')}
-                            >
-                                <UserPlus size={18} />
-                                ایجاد کاربر جدید
-                            </button>
-                            <button
-                                type="button"
-                                className={`${styles.tabSwitch__tab} ${userMode === 'existing' ? styles['tabSwitch__tab--active'] : ''}`}
-                                onClick={() => setUserMode('existing')}
-                            >
-                                <Users size={18} />
-                                انتخاب از کاربران موجود
-                            </button>
-                        </div>
-
-                        {/* فرم کاربر جدید */}
-                        {userMode === 'new' && (
-                            <div>
-                                <div className={styles.formRow}>
-                                    <div className={styles.field}>
-                                        <label className={styles.field__label}>
-                                            شماره موبایل <span className={styles.required}>*</span>
-                                        </label>
-                                        <input
-                                            type="tel"
-                                            className={styles.input}
-                                            value={phoneNumber}
-                                            onChange={(e) => setPhoneNumber(e.target.value)}
-                                            placeholder="مثال: 09123456789"
-                                            dir="ltr"
-                                            required
-                                        />
-                                        <span className={styles.field__hint}>
-                                            در صورت وجود شماره در سیستم، دوره به همین کاربر متصل می‌گردد.
+                        {selectedUser ? (
+                            <div className={styles.selectedUserCard}>
+                                <div className={styles.selectedUserCard__details}>
+                                    <div className={styles.selectedUserCard__avatar}>
+                                        {selectedUser.firstName ? selectedUser.firstName[0] : (selectedUser.fullName ? selectedUser.fullName[0] : 'U')}
+                                    </div>
+                                    <div className={styles.selectedUserCard__meta}>
+                                        <span className={styles.selectedUserCard__title}>
+                                            {selectedUser.fullName || selectedUser.username}
                                         </span>
-                                    </div>
-                                    <div className={styles.field}>
-                                        <label className={styles.field__label}>ایمیل (اختیاری)</label>
-                                        <input
-                                            type="email"
-                                            className={styles.input}
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            placeholder="example@mail.com"
-                                            dir="ltr"
-                                        />
-                                    </div>
-                                </div>
-                                <div className={styles.formRow}>
-                                    <div className={styles.field}>
-                                        <label className={styles.field__label}>نام</label>
-                                        <input
-                                            type="text"
-                                            className={styles.input}
-                                            value={firstName}
-                                            onChange={(e) => setFirstName(e.target.value)}
-                                            placeholder="مثال: علی"
-                                        />
-                                    </div>
-                                    <div className={styles.field}>
-                                        <label className={styles.field__label}>نام خانوادگی</label>
-                                        <input
-                                            type="text"
-                                            className={styles.input}
-                                            value={lastName}
-                                            onChange={(e) => setLastName(e.target.value)}
-                                            placeholder="مثال: محمدی"
-                                        />
+                                        <span className={styles.selectedUserCard__sub}>
+                                            شماره تماس: {selectedUser.phoneNumber || 'ثبت نشده'} | ایمیل: {selectedUser.email || 'ثبت نشده'}
+                                            {userBalance !== null && (
+                                                <span style={{ marginRight: '8px', color: 'var(--color-title-hover)', fontWeight: 'bold' }}>
+                                                    | موجودی: {new Intl.NumberFormat('fa-IR').format(userBalance)} نور
+                                                </span>
+                                            )}
+                                        </span>
+                                        {selectedUser.courses && selectedUser.courses.length > 0 && (
+                                            <span className={styles.selectedUserCard__courses}>
+                                                دوره‌های فعال: {selectedUser.courses.map(c => c.title).join('، ')}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
+                                <button
+                                    type="button"
+                                    className={styles.selectedUserCard__clearBtn}
+                                    onClick={() => setSelectedUser(null)}
+                                >
+                                    تغییر کاربر
+                                </button>
                             </div>
-                        )}
-
-                        {/* انتخاب کاربر موجود */}
-                        {userMode === 'existing' && (
+                        ) : (
                             <div>
-                                {selectedUser ? (
-                                    <div className={styles.selectedUserCard}>
-                                        <div className={styles.selectedUserCard__details}>
-                                            <div className={styles.selectedUserCard__avatar}>
-                                                {selectedUser.firstName ? selectedUser.firstName[0] : 'U'}
-                                            </div>
-                                            <div className={styles.selectedUserCard__meta}>
-                                                <span className={styles.selectedUserCard__title}>
-                                                    {selectedUser.fullName || selectedUser.username}
-                                                </span>
-                                                <span className={styles.selectedUserCard__sub}>
-                                                    شماره تماس: {selectedUser.phoneNumber || 'ثبت نشده'} | ایمیل: {selectedUser.email || 'ثبت نشده'}
-                                                </span>
-                                                {selectedUser.courses && selectedUser.courses.length > 0 && (
-                                                    <span className={styles.selectedUserCard__courses}>
-                                                        دوره‌های فعال: {selectedUser.courses.map(c => c.title).join('، ')}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            className={styles.selectedUserCard__clearBtn}
-                                            onClick={() => setSelectedUser(null)}
-                                        >
-                                            تغییر کاربر
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <div className={styles.searchBox}>
-                                            <Search className={styles.searchBox__icon} size={18} />
-                                            <input
-                                                type="text"
-                                                className={`${styles.input} ${styles.searchBox__input}`}
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                placeholder="جستجو با نام، نام خانوادگی، شماره موبایل یا ایمیل..."
-                                            />
-                                            {isSearching && <div className={styles.searchBox__spinner} />}
-                                        </div>
+                                <div className={styles.searchBox}>
+                                    <Search className={styles.searchBox__icon} size={18} />
+                                    <input
+                                        type="text"
+                                        className={`${styles.input} ${styles.searchBox__input}`}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="جستجو با نام، نام خانوادگی، شماره موبایل یا ایمیل..."
+                                        autoFocus
+                                    />
+                                    {isSearching && <div className={styles.searchBox__spinner} />}
+                                </div>
 
-                                        {searchResults.length > 0 ? (
-                                            <div className={styles.userResults}>
-                                                {searchResults.map((u) => (
-                                                    <div
-                                                        key={u.id}
-                                                        className={styles.userResults__item}
-                                                        onClick={() => {
-                                                            setSelectedUser(u);
-                                                            setSearchQuery('');
-                                                        }}
-                                                    >
-                                                        <div className={styles.userResults__info}>
-                                                            <span className={styles.userResults__name}>{u.fullName}</span>
-                                                            <span className={styles.userResults__phone}>{u.phoneNumber}</span>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            className={styles.userResults__selectBtn}
-                                                        >
-                                                            انتخاب
-                                                        </button>
-                                                    </div>
-                                                ))}
+                                {searchResults.length > 0 ? (
+                                    <div className={styles.userResults}>
+                                        {searchResults.map((u) => (
+                                            <div
+                                                key={u.id}
+                                                className={styles.userResults__item}
+                                                onClick={() => {
+                                                    setSelectedUser(u);
+                                                    setSearchQuery('');
+                                                }}
+                                            >
+                                                <div className={styles.userResults__info}>
+                                                    <span className={styles.userResults__name}>{u.fullName}</span>
+                                                    <span className={styles.userResults__phone}>{u.phoneNumber}</span>
+                                                    {u.light !== undefined && (
+                                                        <span style={{ fontSize: '0.78rem', color: 'var(--color-title-hover)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                            <Coins size={12} /> {new Intl.NumberFormat('fa-IR').format(u.light)} نور
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    className={styles.userResults__selectBtn}
+                                                >
+                                                    انتخاب
+                                                </button>
                                             </div>
-                                        ) : searchQuery.trim() && !isSearching ? (
-                                            <div className={styles.userResults__empty}>
-                                                کاربری با این مشخصات یافت نشد.
-                                            </div>
-                                        ) : null}
+                                        ))}
                                     </div>
-                                )}
+                                ) : searchQuery.trim() && !isSearching ? (
+                                    <div className={styles.userResults__empty}>
+                                        کاربری با این مشخصات یافت نشد.
+                                        <div style={{ marginTop: '0.6rem' }}>
+                                            <Link href="/admin/users" target="_blank" className={styles.addUserPromptLink}>
+                                                <UserPlus size={14} />
+                                                افزودن کاربر جدید در صفحه مدیریت کاربران
+                                            </Link>
+                                        </div>
+                                    </div>
+                                ) : null}
                             </div>
                         )}
                     </section>
@@ -500,24 +469,28 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                         <div className={styles.coursesHeader}>
                             <input
                                 type="text"
-                                className={styles.input}
+                                className={`${styles.input} ${styles.coursesHeader__search}`}
                                 value={courseSearch}
                                 onChange={(e) => setCourseSearch(e.target.value)}
-                                placeholder="جستجو در لیست دوره‌ها..."
-                                style={{ maxWidth: '320px' }}
+                                placeholder="فیلتر در دوره‌های موجود..."
                             />
                         </div>
 
                         <div className={styles.coursesList}>
                             {filteredCourses.length === 0 ? (
-                                <p style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-                                    دوره‌ای یافت نشد.
-                                </p>
+                                <div className={styles.coursesList__empty}>
+                                    دوره‌ای با این عنوان یافت نشد.
+                                </div>
                             ) : (
                                 filteredCourses.map((course) => {
                                     const isCourseSelected = !!selectedItems[`course-${course.id}`];
-                                    const hasChapters = course.isChaptered && Array.isArray(course.chapters) && course.chapters.length > 0;
-                                    const isOpen = openChapters[course.id];
+                                    const hasChapters = Array.isArray(course.chapters) && course.chapters.length > 0;
+                                    const isOpen = !!openChapters[course.id];
+
+                                    // تعداد فصول انتخاب‌شده از این دوره
+                                    const selectedChaptersCount = Object.values(selectedItems).filter(
+                                        it => it.courseId === course.id && it.chapterId
+                                    ).length;
 
                                     return (
                                         <div
@@ -594,203 +567,215 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                         </div>
                     </section>
 
-                    {/* ── بخش ۳: اطلاعات پرداخت و فیش واریزی ──────── */}
-                    <section className={styles.card}>
-                        <div className={styles.card__header}>
-                            <h2 className={styles.card__title}>
-                                <CreditCard size={20} />
-                                ۳. اطلاعات پرداخت و پیوست فیش
-                            </h2>
-                        </div>
-
-                        {/* آپلود فیش */}
-                        <div className={styles.field} style={{ marginBottom: '1.25rem' }}>
-                            <label className={styles.field__label}>
-                                تصویر فیش واریزی (اختیاری)
+                    {/* ── تنظیمات ثبت رایگان و یادداشت سفارش ── */}
+                    <div className={styles.card} style={{ padding: '1.25rem 1.75rem' }}>
+                        <div className={styles.freeOrderBlock}>
+                            <label className={styles.freeOrderCheckbox}>
+                                <input
+                                    type="checkbox"
+                                    checked={isFreeOrder}
+                                    onChange={(e) => setIsFreeOrder(e.target.checked)}
+                                    className={styles.freeOrderCheckbox__input}
+                                />
+                                <div className={styles.freeOrderCheckbox__content}>
+                                    <span className={styles.freeOrderCheckbox__title}>
+                                        <Gift size={18} />
+                                        ثبت به‌صورت رایگان (بدون کسر از کیف پول نور)
+                                    </span>
+                                    <span className={styles.freeOrderCheckbox__subtitle}>
+                                        در صورت فعال‌سازی، هزینه دوره صفر منظور شده و بدون کسر نور، دسترسی کاربر بلافاصله فعال می‌شود.
+                                    </span>
+                                </div>
                             </label>
 
-                            {receiptPreview ? (
-                                <div className={styles.previewBox}>
-                                    <img src={receiptPreview} alt="Receipt preview" className={styles.previewBox__img} />
-                                    <div className={styles.previewBox__overlay}>
-                                        <button
-                                            type="button"
-                                            className={styles.previewBox__deleteBtn}
-                                            onClick={handleRemoveReceipt}
-                                            title="حذف فیش"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div
-                                    className={styles.uploadDropzone}
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    <div className={styles.uploadDropzone__icon}>
-                                        <UploadCloud size={24} />
-                                    </div>
-                                    <span className={styles.uploadDropzone__text}>
-                                        کلیک کنید یا تصویر فیش را اینجا رها نمایید
-                                    </span>
-                                    <span className={styles.uploadDropzone__subtext}>
-                                        فرمت‌های مجاز: JPG, PNG, WebP (حداکثر ۱۰ مگابایت)
-                                    </span>
+                            {isFreeOrder && (
+                                <div className={styles.freeReasonWrap}>
+                                    <label className={styles.field__label}>علت ثبت رایگان (اختیاری)</label>
+                                    <input
+                                        type="text"
+                                        className={styles.input}
+                                        value={freeReason}
+                                        onChange={(e) => setFreeReason(e.target.value)}
+                                        placeholder="مثال: هدیه به کاربر، بورسیه، جبران نقص فنی، مسابقه..."
+                                    />
                                 </div>
                             )}
+                        </div>
 
+                        <div className={styles.field} style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed fade(var(--color-primary), 15%)' }}>
+                            <label className={styles.field__label}>یادداشت برای سفارش (اختیاری)</label>
                             <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                style={{ display: 'none' }}
-                                onChange={handleFileChange}
+                                type="text"
+                                className={styles.input}
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                placeholder="توضیحات تکمیلی یا علت ثبت دستی توسط ادمین..."
                             />
                         </div>
-
-                        <div className={styles.formRow}>
-                            <div className={styles.field}>
-                                <label className={styles.field__label}>نام صاحب کارت / واریزکننده</label>
-                                <input
-                                    type="text"
-                                    className={styles.input}
-                                    value={cardHolderName}
-                                    onChange={(e) => setCardHolderName(e.target.value)}
-                                    placeholder="مثال: علی محمدی"
-                                />
-                            </div>
-                            <div className={styles.field}>
-                                <label className={styles.field__label}>شماره پیگیری / ارجاع</label>
-                                <input
-                                    type="text"
-                                    className={styles.input}
-                                    value={trackingNumber}
-                                    onChange={(e) => setTrackingNumber(e.target.value)}
-                                    placeholder="مثال: 849204859"
-                                    dir="ltr"
-                                />
-                            </div>
-                        </div>
-
-                        <div className={styles.formRow}>
-                            <div className={styles.field}>
-                                <label className={styles.field__label}>روش پرداخت</label>
-                                <select
-                                    className={styles.select}
-                                    value={paymentMethod}
-                                    onChange={(e) => setPaymentMethod(e.target.value)}
-                                >
-                                    <option value="card_to_card">کارت به کارت</option>
-                                    <option value="online">آنلاین (درگاه)</option>
-                                    <option value="free">رایگان (هدیه / بورسیه)</option>
-                                </select>
-                            </div>
-                            <div className={styles.field}>
-                                <label className={styles.field__label}>وضعیت پرداخت و سفارش</label>
-                                <select
-                                    className={styles.select}
-                                    value={paymentStatus}
-                                    onChange={(e) => {
-                                        setPaymentStatus(e.target.value);
-                                        setOrderStatus(e.target.value === 'paid' ? 'paid' : 'pending');
-                                    }}
-                                >
-                                    <option value="paid">پرداخت شده (فعال‌سازی آنی دوره)</option>
-                                    <option value="pending_payment">در انتظار پرداخت</option>
-                                    <option value="pending_verification">در انتظار بررسی و تأیید</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className={styles.formRow}>
-                            <div className={styles.field}>
-                                <label className={styles.field__label}>مبلغ کل سفارش (تومان)</label>
-                                <input
-                                    type="number"
-                                    className={styles.input}
-                                    value={effectiveTotalPrice}
-                                    onChange={(e) => setCustomTotalPrice(e.target.value)}
-                                    placeholder="مبلغ دلخواه"
-                                />
-                                <span className={styles.field__hint}>
-                                    پیش‌فرض: {formatPrice(calculatedSum)} (محاسبه خودکار بر اساس اقلام)
-                                </span>
-                            </div>
-                            <div className={styles.field}>
-                                <label className={styles.field__label}>یادداشت برای سفارش</label>
-                                <input
-                                    type="text"
-                                    className={styles.input}
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    placeholder="توضیحات و جزئیات ثبت سفارش..."
-                                />
-                            </div>
-                        </div>
-                    </section>
+                    </div>
                 </div>
 
-                {/* ── ستون کناری: خلاصه و دکمه ثبت ───────────────────── */}
+                {/* ── ستون کناری (چپ): خلاصه فاکتور و ثبت نهایی ─────────── */}
                 <aside className={styles.sideColumn}>
                     <div className={styles.summaryCard}>
-                        <h3 className={styles.summaryCard__title}>
-                            <FileText size={20} />
-                            خلاصه ثبت سفارش
-                        </h3>
+                        <div className={styles.summaryCard__header}>
+                            <h3 className={styles.summaryCard__title}>
+                                <Receipt size={20} />
+                                خلاصه فاکتور سفارش
+                            </h3>
+                            {conversionRate && (
+                                <span className={styles.summaryCard__ratePill}>
+                                    هر ۱ نور = {new Intl.NumberFormat('fa-IR').format(tomanPerNoor)} تومان
+                                </span>
+                            )}
+                        </div>
 
                         <div className={styles.summaryCard__list}>
                             <div className={styles.summaryCard__row}>
-                                <span>کاربر:</span>
-                                <span>
-                                    {userMode === 'new'
-                                        ? (phoneNumber ? `${firstName || ''} ${lastName || ''}`.trim() || phoneNumber : 'مشخص نشده')
-                                        : (selectedUser ? selectedUser.fullName || selectedUser.username : 'انتخاب نشده')}
+                                <span>کاربر خریدار:</span>
+                                <span className={styles.summaryCard__userValue} title={selectedUser ? (selectedUser.fullName || selectedUser.username) : ''}>
+                                    {selectedUser ? (selectedUser.fullName || selectedUser.username) : 'انتخاب نشده'}
                                 </span>
                             </div>
 
                             <div className={styles.summaryCard__row}>
                                 <span>تعداد اقلام:</span>
-                                <span>{Object.keys(selectedItems).length} مورد</span>
+                                <span>{new Intl.NumberFormat('fa-IR').format(Object.keys(selectedItems).length)} مورد</span>
                             </div>
 
                             <div className={styles.summaryCard__row}>
                                 <span>روش پرداخت:</span>
-                                <span>
-                                    {paymentMethod === 'card_to_card' ? 'کارت به کارت' : paymentMethod === 'free' ? 'رایگان' : 'آنلاین'}
+                                <span className={styles.noorHighlight}>
+                                    <Coins size={14} />
+                                    {isFreeOrder ? 'ثبت رایگان (بدون کسر)' : 'کیف پول نور'}
                                 </span>
                             </div>
 
                             <div className={styles.summaryCard__row}>
-                                <span>وضعیت فعال‌سازی:</span>
-                                <span style={{ color: paymentStatus === 'paid' ? 'var(--color-success)' : 'var(--color-warning-amber)' }}>
-                                    {paymentStatus === 'paid' ? 'فعال‌سازی فوری' : 'در انتظار تأیید'}
-                                </span>
-                            </div>
-
-                            <div className={styles.summaryCard__row}>
-                                <span>فیش پیوست:</span>
-                                <span>{receiptFile ? 'دارد (آپلود می‌شود)' : 'ندارد'}</span>
+                                <span>موجودی کیف پول:</span>
+                                <div className={styles.summaryCard__balanceValue}>
+                                    {balanceLoading ? (
+                                        <span className={styles.loadingText}>در حال استعلام...</span>
+                                    ) : userBalance !== null ? (
+                                        <span className={userBalance > 0 ? styles.balancePositive : ''}>
+                                            {new Intl.NumberFormat('fa-IR').format(userBalance)} نور
+                                        </span>
+                                    ) : (
+                                        '—'
+                                    )}
+                                    {selectedUser && !balanceLoading && (
+                                        <button
+                                            type="button"
+                                            className={styles.refreshBtn}
+                                            onClick={() => fetchUserBalance(selectedUser)}
+                                            title="به‌روزرسانی موجودی کیف پول"
+                                        >
+                                            <RefreshCw size={13} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             <div className={styles.summaryCard__totalRow}>
-                                <span>مبلغ نهایی:</span>
-                                <span className={styles.totalPrice}>
-                                    {formatPrice(effectiveTotalPrice)}
+                                <span>{isFreeOrder ? 'ارزش دوره (تومان):' : 'مبلغ نهایی (تومان):'}</span>
+                                <span className={styles.totalPrice} style={isFreeOrder ? { textDecoration: 'line-through', opacity: 0.65, fontSize: '0.95rem' } : undefined}>
+                                    {formatPrice(calculatedSum)}
+                                </span>
+                            </div>
+
+                            <div className={styles.summaryCard__totalNoorRow} style={isFreeOrder ? { backgroundColor: 'fade(var(--color-title-hover), 14%)', borderColor: 'var(--color-title-hover)' } : undefined}>
+                                <span>مبلغ قابل پرداخت:</span>
+                                <span className={styles.totalNoorPrice}>
+                                    {isFreeOrder ? (
+                                        <>
+                                            <Gift size={18} />
+                                            رایگان (۰ نور)
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Coins size={18} />
+                                            {new Intl.NumberFormat('fa-IR').format(requiredNoor)} نور
+                                        </>
+                                    )}
                                 </span>
                             </div>
                         </div>
 
+                        {/* وضعیت موجودی و امکان شارژ در صورت کسری */}
+                        {hasSelectedUser && Object.keys(selectedItems).length > 0 && (
+                            <div className={styles.balanceStatusBlock}>
+                                {isFreeOrder ? (
+                                    <div className={`${styles.statusBanner} ${styles['statusBanner--free']}`}>
+                                        <div className={styles.statusBanner__content}>
+                                            <Gift size={18} className={styles.statusBanner__icon} />
+                                            <div>
+                                                <h4 className={styles.statusBanner__title}>ثبت به‌صورت رایگان</h4>
+                                                <p className={styles.statusBanner__desc}>
+                                                    این سفارش بدون کسر نور ثبت و دوره بلافاصله فعال می‌شود.
+                                                    {freeReason && <><br /><strong>علت: </strong>{freeReason}</>}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : hasEnoughBalance ? (
+                                    <div className={`${styles.statusBanner} ${styles['statusBanner--success']}`}>
+                                        <div className={styles.statusBanner__content}>
+                                            <CheckCircle2 size={18} className={styles.statusBanner__icon} />
+                                            <div>
+                                                <h4 className={styles.statusBanner__title}>موجودی نور کاربر کافی است</h4>
+                                                <p className={styles.statusBanner__desc}>
+                                                    مانده پس از خرید: <strong>{new Intl.NumberFormat('fa-IR').format(remainingBalance)} نور</strong>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className={`${styles.statusBanner} ${styles['statusBanner--warning']}`}>
+                                        <div className={styles.statusBanner__content}>
+                                            <AlertTriangle size={18} className={styles.statusBanner__icon} />
+                                            <div>
+                                                <h4 className={styles.statusBanner__title}>کسری موجودی نور کاربر!</h4>
+                                                <p className={styles.statusBanner__desc}>
+                                                    کسری: <strong>{new Intl.NumberFormat('fa-IR').format(shortfallNoor)} نور</strong> ({formatPrice(shortfallToman)})
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {selectedUser && (
+                                            <button
+                                                type="button"
+                                                className={styles.chargeBtn}
+                                                onClick={() => setShowTopUpModal(true)}
+                                            >
+                                                <Sparkles size={16} />
+                                                شارژ کارت به کارت کاربر
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         <button
                             type="submit"
                             className={styles.summaryCard__submitBtn}
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || !selectedUser || Object.keys(selectedItems).length === 0 || (!isFreeOrder && requiredNoor > 0 && !hasEnoughBalance)}
                         >
                             {isSubmitting ? (
                                 'در حال ثبت سفارش و فعال‌سازی...'
+                            ) : !selectedUser ? (
+                                'ابتدا کاربر را انتخاب کنید'
+                            ) : Object.keys(selectedItems).length === 0 ? (
+                                'دوره یا سرفصلی انتخاب نشده'
+                            ) : isFreeOrder ? (
+                                <>
+                                    <Gift size={19} />
+                                    ثبت نهایی سفارش رایگان
+                                </>
+                            ) : requiredNoor > 0 && !hasEnoughBalance ? (
+                                'موجودی نور کاربر کافی نیست'
                             ) : (
                                 <>
-                                    <CheckCircle2 size={20} />
+                                    <CheckCircle2 size={19} />
                                     ثبت نهایی و فعال‌سازی دوره
                                 </>
                             )}
@@ -798,6 +783,16 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                     </div>
                 </aside>
             </form>
+
+            {/* ── مودال شارژ کارت به کارت ادمین به‌نیابت از کاربر ──────── */}
+            {showTopUpModal && selectedUser && (
+                <AdminAssistedTopUpModal
+                    user={selectedUser}
+                    conversionRate={conversionRate?.rialPerNoor}
+                    onClose={() => setShowTopUpModal(false)}
+                    onSuccess={handleTopUpSuccess}
+                />
+            )}
         </div>
     );
 }

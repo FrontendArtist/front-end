@@ -146,7 +146,7 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
                         marginTop: '8px',
                         direction: 'rtl'
                     }}>
-                        <span>⚡ <strong>متصل به شارژ بای‌مانی:</strong></span>
+                        <span>⚡ <strong>شناسه پیگیری شارژ کیف پول:</strong></span>
                         <code style={{ fontFamily: 'monospace', letterSpacing: '0.5px', direction: 'ltr' }}>{topUpId}</code>
                     </div>
                 )}

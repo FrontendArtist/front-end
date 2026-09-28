@@ -8,6 +8,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions, isUserAdmin } from '@/lib/auth';
 import { NextResponse } from 'next/server';
+import { getBatchBalancesWithByeMoney, getConversionRateWithByeMoney, purchaseCoursesAsAdminWithByeMoney } from '@/lib/byeMoneyApi';
 
 const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -72,16 +73,38 @@ export async function GET(request) {
                 : (u.username || 'کاربر');
             return {
                 id: u.id,
+                documentId: u.documentId || String(u.id),
                 username: u.username,
                 phoneNumber: u.phoneNumber || '',
                 firstName: u.firstName || '',
                 lastName: u.lastName || '',
                 fullName,
                 email: u.email || '',
+                light: u.light ?? 0,
                 courses: (u.courses || []).map(c => ({ id: c.id, title: c.title })),
                 enrolledChapters: Array.isArray(u.enrolledChapters) ? u.enrolledChapters : [],
             };
         });
+
+        // ── دریافت دسته‌جمعی موجودی زنده نور از سامانه ByeMoney ────────────
+        const userIds = users.map(u => u.documentId || String(u.id)).filter(Boolean);
+        if (userIds.length > 0) {
+            try {
+                const batchRes = await getBatchBalancesWithByeMoney({ userIds, jwt: session.user.jwt });
+                if (batchRes.success && batchRes.balances) {
+                    users.forEach(u => {
+                        const docBalance = batchRes.balances[u.documentId];
+                        const idBalance = batchRes.balances[String(u.id)];
+                        const liveBalance = docBalance !== undefined ? docBalance : idBalance;
+                        if (liveBalance !== undefined && liveBalance !== null) {
+                            u.light = Number(liveBalance);
+                        }
+                    });
+                }
+            } catch (err) {
+                console.warn('[ManualOrderAPI GET] ByeMoney balances enrichment failed:', err.message || err);
+            }
+        }
 
         return NextResponse.json({ users });
     } catch (err) {
@@ -108,13 +131,7 @@ export async function POST(request) {
         let email = '';
         let selectedCourses = [];
         let totalPrice = 0;
-        let paymentMethod = 'card_to_card';
-        let paymentStatus = 'paid';
-        let orderStatus = 'paid';
-        let trackingNumber = '';
-        let cardHolderName = '';
         let notes = '';
-        let receiptFile = null;
 
         const contentType = request.headers.get('content-type') || '';
 
@@ -137,17 +154,7 @@ export async function POST(request) {
             }
 
             totalPrice = Number(formData.get('totalPrice')) || 0;
-            paymentMethod = formData.get('paymentMethod') || 'card_to_card';
-            paymentStatus = formData.get('paymentStatus') || 'paid';
-            orderStatus = formData.get('orderStatus') || 'paid';
-            trackingNumber = (formData.get('trackingNumber') || '').trim();
-            cardHolderName = (formData.get('cardHolderName') || '').trim();
             notes = (formData.get('notes') || '').trim();
-
-            const fileEntry = formData.get('receiptImage');
-            if (fileEntry && typeof fileEntry.arrayBuffer === 'function' && fileEntry.size > 0) {
-                receiptFile = fileEntry;
-            }
         } else {
             const body = await request.json();
             userMode = body.userMode || 'new';
@@ -158,11 +165,6 @@ export async function POST(request) {
             email = body.email || '';
             selectedCourses = body.courses || [];
             totalPrice = Number(body.totalPrice) || 0;
-            paymentMethod = body.paymentMethod || 'card_to_card';
-            paymentStatus = body.paymentStatus || 'paid';
-            orderStatus = body.orderStatus || 'paid';
-            trackingNumber = (body.trackingNumber || '').trim();
-            cardHolderName = (body.cardHolderName || '').trim();
             notes = (body.notes || '').trim();
         }
 
@@ -171,43 +173,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'حداقل یک دوره باید برای فعال‌سازی انتخاب شود.' }, { status: 400 });
         }
 
-        // ── 2. بارگذاری فیش واریزی در صورت وجود ──────────────────────────────
-        let uploadedMediaId = null;
-        if (receiptFile) {
-            try {
-                const uploadForm = new FormData();
-                const fileExt = (receiptFile.name || 'receipt.jpg').split('.').pop() || 'jpg';
-                const uniqueFileName = `manual-receipt-${Date.now()}.${fileExt}`;
-
-                uploadForm.append('files', receiptFile, uniqueFileName);
-                uploadForm.append('path', 'receipts');
-                uploadForm.append(
-                    'fileInfo',
-                    JSON.stringify({
-                        name: uniqueFileName,
-                        caption: `Manual order receipt for ${cardHolderName || phoneNumber || 'customer'}`,
-                        alternativeText: 'Payment receipt',
-                    })
-                );
-
-                const uploadRes = await fetch(`${STRAPI_BASE_URL}/api/upload`, {
-                    method: 'POST',
-                    headers: { Authorization: `Bearer ${tokenToUse}` },
-                    body: uploadForm,
-                });
-
-                if (uploadRes.ok) {
-                    const uploadData = await uploadRes.json();
-                    uploadedMediaId = uploadData?.[0]?.id || null;
-                } else {
-                    console.error('[ManualOrderAPI] Upload failed:', await uploadRes.text());
-                }
-            } catch (upErr) {
-                console.error('[ManualOrderAPI] Receipt upload exception:', upErr);
-            }
-        }
-
-        // ── 3. تعیین و ساخت/واکشی کاربر ─────────────────────────────────────
+        // ── 2. تعیین و ساخت/واکشی کاربر ─────────────────────────────────────
         let targetUser = null;
 
         if (userMode === 'new') {
@@ -302,7 +268,78 @@ export async function POST(request) {
             return NextResponse.json({ error: 'خطا در بازیابی اطلاعات کاربر' }, { status: 500 });
         }
 
-        // ── 4. آماده‌سازی اقلام سفارش (Items) ──────────────────────────────────
+        // ── 3. بررسی موجودی نور کاربر در سامانه ByeMoney ──────────────────────
+        const conversionRes = await getConversionRateWithByeMoney({ jwt: session.user.jwt }).catch(() => null);
+        const tomanPerNoor = conversionRes?.tomanPerNoor || (conversionRes?.rialPerNoor ? conversionRes.rialPerNoor / 10 : 1000);
+        const requiredNoor = totalPrice > 0 ? Math.ceil(totalPrice / tomanPerNoor) : 0;
+
+        const userExternalId = targetUser.documentId || String(targetUser.id);
+        let userBalance = 0;
+
+        try {
+            const batchRes = await getBatchBalancesWithByeMoney({ userIds: [userExternalId], jwt: session.user.jwt });
+            if (batchRes && batchRes.success && batchRes.balances) {
+                const docBal = batchRes.balances[userExternalId];
+                const idBal = batchRes.balances[String(targetUser.id)];
+                userBalance = Number(docBal !== undefined ? docBal : (idBal !== undefined ? idBal : 0));
+            }
+        } catch (balErr) {
+            console.warn('[ManualOrderAPI] Error checking user balance from ByeMoney:', balErr.message || balErr);
+        }
+
+        if (requiredNoor > 0 && userBalance < requiredNoor) {
+            const shortfall = requiredNoor - userBalance;
+            return NextResponse.json({
+                error: `موجودی نور کاربر برای خرید این دوره‌ها کافی نیست. موجودی فعلی: ${userBalance.toLocaleString('fa-IR')} نور، مبلغ مورد نیاز: ${requiredNoor.toLocaleString('fa-IR')} نور (کسری: ${shortfall.toLocaleString('fa-IR')} نور). لطفاً ابتدا حساب کاربر را شارژ کنید.`,
+                insufficientBalance: true,
+                userBalance,
+                requiredNoor,
+                shortfallNoor: shortfall,
+                shortfallToman: shortfall * tomanPerNoor,
+            }, { status: 400 });
+        }
+
+        // ── 4. خرید دوره‌ها و کسر از کیف پول نور در ByeMoney ──────────────────
+        // استخراج شناسه‌های یکتای دوره‌ها (documentId) جهت ارسال به سامانه مالی ByeMoney
+        const externalCourseIds = Array.from(new Set(
+            selectedCourses
+                .map(c => c.documentId || c.courseDocumentId || (c.slug ? c.slug : String(c.courseId || c.id)))
+                .filter(Boolean)
+        ));
+
+        let byeMoneyTransaction = null;
+
+        // اگر سفارش دارای هزینه به نور است، درخواست رسمی خرید به‌نیابت از کاربر به ByeMoney ارسال می‌شود
+        if (requiredNoor > 0 && externalCourseIds.length > 0) {
+            const byeMoneyRes = await purchaseCoursesAsAdminWithByeMoney({
+                beneficiaryExternalUserId: userExternalId,
+                externalCourseIds,
+                jwt: session.user.jwt,
+            });
+
+            if (!byeMoneyRes.success) {
+                if (byeMoneyRes.insufficientBalance) {
+                    const shortfall = Math.max(0, requiredNoor - userBalance);
+                    return NextResponse.json({
+                        error: byeMoneyRes.error || `موجودی نور کاربر برای خرید این دوره‌ها کافی نیست. لطفاً ابتدا حساب کاربر را شارژ کنید.`,
+                        insufficientBalance: true,
+                        userBalance,
+                        requiredNoor,
+                        shortfallNoor: shortfall,
+                        shortfallToman: shortfall * tomanPerNoor,
+                    }, { status: 400 });
+                }
+
+                return NextResponse.json({
+                    error: byeMoneyRes.error || 'خطا در ثبت تراکنش خرید از کیف پول نور.',
+                    conflict: byeMoneyRes.conflict || false,
+                }, { status: byeMoneyRes.conflict ? 409 : 400 });
+            }
+
+            byeMoneyTransaction = byeMoneyRes.data;
+        }
+
+        // ── 5. آماده‌سازی اقلام سفارش (Items) ──────────────────────────────────
         const courseIdsToActivate = new Set();
         const chapterIdsToActivate = new Set();
 
@@ -330,36 +367,36 @@ export async function POST(request) {
             };
         });
 
-        // ── 5. نام خریدار و یادداشت‌ها ─────────────────────────────────────────
+        // ── 6. نام خریدار و یادداشت‌ها ─────────────────────────────────────────
         const userFullName = (targetUser.firstName || targetUser.lastName)
             ? `${targetUser.firstName || ''} ${targetUser.lastName || ''}`.trim()
-            : (cardHolderName || targetUser.username || `کاربر (${targetUser.phoneNumber})`);
+            : (targetUser.username || `کاربر (${targetUser.phoneNumber})`);
 
         const adminAuthor = session.user.name || session.user.email || 'مدیر سیستم';
         const formattedNotes = [
-            `📌 [ثبت دستی توسط ادمین: ${adminAuthor}]`,
+            `📌 [ثبت دستی با پرداخت نور از کیف پول توسط ادمین: ${adminAuthor}]`,
+            byeMoneyTransaction?.transactionId ? `کد تراکنش مالی: ${byeMoneyTransaction.transactionId}` : null,
+            `موجودی نور پیش از سفارش: ${userBalance.toLocaleString('fa-IR')} نور | مبلغ سفارش: ${requiredNoor.toLocaleString('fa-IR')} نور (${Number(totalPrice).toLocaleString('fa-IR')} تومان)`,
             notes ? `توضیحات: ${notes}` : null,
-            trackingNumber ? `شماره پیگیری: ${trackingNumber}` : null,
-            cardHolderName ? `نام واریزکننده: ${cardHolderName}` : null,
             `اقلام فعال‌شده: ${selectedCourses.map(c => c.chapterTitle ? `${c.title} (${c.chapterTitle})` : c.title).join('، ')}`
         ].filter(Boolean).join('\n');
 
-        // ── 6. ساخت سفارش در Strapi ──────────────────────────────────────────
+        // ── 7. ساخت سفارش در Strapi ──────────────────────────────────────────
         const orderPayload = {
             data: {
                 fullName: userFullName,
-                address: 'ثبت دستی توسط مدیریت سیستم',
+                address: 'ثبت دستی با تسویه از کیف پول نور',
                 postalCode: '0000000000',
                 phone: targetUser.phoneNumber || '00000000000',
                 email: targetUser.email || `${targetUser.phoneNumber || targetUser.id}@tarhelahi.com`,
                 totalPrice: Number(totalPrice) || 0,
                 originalTotalPrice: Number(totalPrice) || 0,
-                orderStatus: orderStatus || 'paid',
-                paymentStatus: paymentStatus || 'paid',
-                paymentMethod: paymentMethod || 'card_to_card',
-                receiptImage: uploadedMediaId,
-                trackingNumber: trackingNumber || null,
-                cardHolderName: cardHolderName || null,
+                orderStatus: 'paid',
+                paymentStatus: 'paid',
+                paymentMethod: 'byemoney_noor',
+                receiptImage: null,
+                trackingNumber: byeMoneyTransaction?.transactionId ? String(byeMoneyTransaction.transactionId) : null,
+                cardHolderName: null,
                 user: targetUser.id,
                 items: itemsPayload,
                 notes: formattedNotes,
@@ -386,75 +423,73 @@ export async function POST(request) {
         const newOrder = await orderRes.json();
         const orderId = newOrder.data?.id || newOrder.id;
 
-        // ── 7. فعال‌سازی مستقیم و قطعی دوره‌ها در پروفایل کاربر ────────────────
-        const isPaid = orderStatus === 'paid' || paymentStatus === 'paid';
-        if (isPaid) {
-            try {
-                // به‌روزرسانی سرفصل‌های خریداری‌شده کاربر
-                const existingChapters = Array.isArray(targetUser.enrolledChapters)
-                    ? targetUser.enrolledChapters.map(Number)
+        // ── 8. فعال‌سازی مستقیم و قطعی دوره‌ها در پروفایل کاربر در Strapi ───────
+        try {
+            // به‌روزرسانی سرفصل‌های خریداری‌شده کاربر
+            const existingChapters = Array.isArray(targetUser.enrolledChapters)
+                ? targetUser.enrolledChapters.map(Number)
+                : [];
+            const mergedChapters = [...new Set([...existingChapters, ...Array.from(chapterIdsToActivate)])];
+
+            const userUpdateData = {
+                enrolledChapters: mergedChapters,
+            };
+
+            // فقط در صورتی که خرید کامل دوره انتخاب شده باشد، دوره به لیست دوره‌های کلی اضافه می‌شود
+            if (courseIdsToActivate.size > 0) {
+                const existingCourses = Array.isArray(targetUser.courses)
+                    ? targetUser.courses.map(c => typeof c === 'object' ? c.id : Number(c))
                     : [];
-                const mergedChapters = [...new Set([...existingChapters, ...Array.from(chapterIdsToActivate)])];
-
-                const userUpdateData = {
-                    enrolledChapters: mergedChapters,
-                };
-
-                // فقط در صورتی که خرید کامل دوره انتخاب شده باشد، دوره به لیست دوره‌های کلی اضافه می‌شود
-                if (courseIdsToActivate.size > 0) {
-                    const existingCourses = Array.isArray(targetUser.courses)
-                        ? targetUser.courses.map(c => typeof c === 'object' ? c.id : Number(c))
-                        : [];
-                    userUpdateData.courses = [...new Set([...existingCourses, ...Array.from(courseIdsToActivate)])];
-                }
-
-                await fetch(`${STRAPI_BASE_URL}/api/users/${targetUser.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        Authorization: `Bearer ${tokenToUse}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(userUpdateData),
-                });
-
-                // ج) به‌روزرسانی رابطه دوطرفه در سمت Courseها جهت نمایش در Strapi Admin UI
-                for (const cId of courseIdsToActivate) {
-                    try {
-                        const courseRes = await fetch(`${STRAPI_BASE_URL}/api/courses/${cId}?populate[users_permissions_users][fields][0]=id`, {
-                            headers: { Authorization: `Bearer ${tokenToUse}` },
-                        });
-                        if (courseRes.ok) {
-                            const cData = await courseRes.json();
-                            const courseUsers = cData.data?.users_permissions_users || [];
-                            const userIds = courseUsers.map(u => u.id).filter(Boolean);
-                            if (!userIds.includes(targetUser.id)) {
-                                userIds.push(targetUser.id);
-                                await fetch(`${STRAPI_BASE_URL}/api/courses/${cId}`, {
-                                    method: 'PUT',
-                                    headers: {
-                                        Authorization: `Bearer ${tokenToUse}`,
-                                        'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                        data: { users_permissions_users: userIds }
-                                    }),
-                                });
-                            }
-                        }
-                    } catch (cSyncErr) {
-                        console.warn(`[ManualOrderAPI] Could not sync course ${cId} users:`, cSyncErr);
-                    }
-                }
-            } catch (syncErr) {
-                console.error('[ManualOrderAPI] User enrollment sync error:', syncErr);
+                userUpdateData.courses = [...new Set([...existingCourses, ...Array.from(courseIdsToActivate)])];
             }
+
+            await fetch(`${STRAPI_BASE_URL}/api/users/${targetUser.id}`, {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${tokenToUse}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userUpdateData),
+            });
+
+            // به‌روزرسانی رابطه دوطرفه در سمت Courseها جهت نمایش در Strapi Admin UI
+            for (const cId of courseIdsToActivate) {
+                try {
+                    const courseRes = await fetch(`${STRAPI_BASE_URL}/api/courses/${cId}?populate[users_permissions_users][fields][0]=id`, {
+                        headers: { Authorization: `Bearer ${tokenToUse}` },
+                    });
+                    if (courseRes.ok) {
+                        const cData = await courseRes.json();
+                        const courseUsers = cData.data?.users_permissions_users || [];
+                        const userIds = courseUsers.map(u => u.id).filter(Boolean);
+                        if (!userIds.includes(targetUser.id)) {
+                            userIds.push(targetUser.id);
+                            await fetch(`${STRAPI_BASE_URL}/api/courses/${cId}`, {
+                                method: 'PUT',
+                                headers: {
+                                    Authorization: `Bearer ${tokenToUse}`,
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    data: { users_permissions_users: userIds }
+                                }),
+                            });
+                        }
+                    }
+                } catch (cSyncErr) {
+                    console.warn(`[ManualOrderAPI] Could not sync course ${cId} users:`, cSyncErr);
+                }
+            }
+        } catch (syncErr) {
+            console.error('[ManualOrderAPI] User enrollment sync error:', syncErr);
         }
 
         return NextResponse.json({
             success: true,
             orderId,
             orderNumber: newOrder.data?.orderNumber || `#${orderId}`,
-            message: 'سفارش دستی با موفقیت ثبت شد و دوره‌ها برای کاربر فعال گردیدند.',
+            transactionId: byeMoneyTransaction?.transactionId || null,
+            message: 'سفارش دستی با موفقیت ثبت شد و مبلغ از کیف پول نور کاربر کسر گردید.',
         }, { status: 201 });
 
     } catch (error) {
