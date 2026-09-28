@@ -409,7 +409,7 @@ export async function POST(request) {
                 originalTotalPrice: Number(totalPrice) || 0,
                 orderStatus: 'paid',
                 paymentStatus: 'paid',
-                paymentMethod: isFree ? 'free_grant' : 'byemoney_noor',
+                paymentMethod: isFree ? 'free' : 'card_to_card',
                 receiptImage: null,
                 trackingNumber: byeMoneyTransaction?.transactionId ? String(byeMoneyTransaction.transactionId) : null,
                 cardHolderName: null,
