@@ -19,8 +19,8 @@ export async function GET(request) {
         return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
     }
 
-    // مسیر Strapi: دریافت یوزر به همراه آدرس
-    const url = `${STRAPI_URL}/api/users/${session.user.id}?populate=address`;
+    // مسیر Strapi: دریافت یوزر به همراه آدرس و دوره‌ها
+    const url = `${STRAPI_URL}/api/users/${session.user.id}?populate[0]=address&populate[1]=courses`;
 
     try {
         const response = await fetch(url, {

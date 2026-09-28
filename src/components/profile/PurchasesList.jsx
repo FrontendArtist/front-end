@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useOrdersStore } from '@/store/useOrdersStore';
+import { fetchProfileCartData } from '@/lib/client/profileClientApi';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
 import styles from './PurchasesList.module.scss';
@@ -10,6 +12,8 @@ import cartStyles from '@/app/cart/Cart.module.scss'; // Reuse cart styles
 
 export default function PurchasesList() {
     const { orders, isLoading, error, fetchOrders, hasFetched } = useOrdersStore();
+    const { data: session, status: sessionStatus } = useSession();
+    const [profileCourses, setProfileCourses] = useState([]);
 
     useEffect(() => {
         if (!hasFetched) {
@@ -17,7 +21,22 @@ export default function PurchasesList() {
         }
     }, [hasFetched, fetchOrders]);
 
-    if (isLoading) {
+    // واکشی پروفایل برای اطمینان از دریافت تازه‌ترین لیست دوره‌ها (شامل خریدهای انجام‌شده با نور)
+    useEffect(() => {
+        let isMounted = true;
+        fetchProfileCartData(true)
+            .then(data => {
+                if (isMounted && Array.isArray(data?.courses)) {
+                    setProfileCourses(data.courses);
+                }
+            })
+            .catch(() => {});
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    if (isLoading || (sessionStatus === 'loading' && !hasFetched)) {
         return (
             <div className={styles.purchases__loading}>
                 <CardSkeletonHorizontal />
@@ -48,24 +67,79 @@ export default function PurchasesList() {
     const products = [];
 
     // Deduplicate items by slug or ID so if they bought the same course twice, we only show it once
-    const seenSlugs = new Set();
+    const seenOrderKeys = new Set();
     allItems.forEach(item => {
-        const slug = item.slug || item.id;
-        // if item is not physical product and they bought it multiple times, we might still want to show quantity,
-        // but for courses it's usually just 1. For products, we group them if they have the same slug.
-        if (!seenSlugs.has(slug)) {
-            seenSlugs.add(slug);
-            if (item.__component === 'order.course-order-item' || item.type === 'course') {
+        const isCourseItem = item.__component === 'order.course-order-item' || item.type === 'course' || item.type === 'chapter';
+        const key = item.slug || item.id;
+
+        if (!seenOrderKeys.has(key)) {
+            seenOrderKeys.add(key);
+            if (isCourseItem) {
                 courses.push({ ...item });
             } else {
                 products.push({ ...item });
             }
         } else if (item.__component === 'order.product-order-item' || item.type === 'product') {
             // Aggregate quantity for physical products across multiple orders
-            const existingProduct = products.find(p => (p.slug || p.id) === slug);
+            const existingProduct = products.find(p => (p.slug || p.id) === key);
             if (existingProduct) {
                 existingProduct.quantity = (existingProduct.quantity || 1) + (item.quantity || 1);
             }
+        }
+    });
+
+    // دوره‌های کاربر از سشن و پروفایل (شامل خریدهای انجام‌شده با نور که فاقد سفارش استرپی هستند)
+    const rawUserCourses = [
+        ...(Array.isArray(session?.user?.courses) ? session.user.courses : []),
+        ...(Array.isArray(profileCourses) ? profileCourses : [])
+    ];
+
+    // ادغام دوره‌های user.courses بدون تکرار
+    const seenUserCourseIdentifiers = new Set();
+    rawUserCourses.forEach(uc => {
+        if (!uc) return;
+        const ucId = String(uc.id || uc.documentId || '');
+        if (ucId && seenUserCourseIdentifiers.has(ucId)) return;
+        if (ucId) seenUserCourseIdentifiers.add(ucId);
+
+        const isAlreadyAdded = courses.some(existing => {
+            const isExistingChapter = Boolean(
+                existing.type === 'chapter' ||
+                existing.chapterId ||
+                existing.slug?.includes('-chapter-')
+            );
+            // اگر قلم قبلی فقط یک فصل باشد، مانع از نمایش خود دوره کامل نیست
+            if (isExistingChapter) return false;
+
+            const existingSlug = String(existing.slug || '').toLowerCase();
+            const targetSlug = String(uc.slug || '').toLowerCase();
+            if (existingSlug && targetSlug && existingSlug === targetSlug) return true;
+
+            const existingCourseId = String(existing.courseId || (!isExistingChapter ? existing.id : '') || '');
+            const targetId = String(uc.id || '');
+            if (existingCourseId && targetId && existingCourseId === targetId) return true;
+
+            const existingDocId = String(existing.courseDocumentId || existing.documentId || '');
+            const targetDocId = String(uc.documentId || '');
+            if (existingDocId && targetDocId && existingDocId === targetDocId) return true;
+
+            return false;
+        });
+
+        if (!isAlreadyAdded) {
+            const courseSlug = uc.slug || uc.documentId || uc.id;
+            courses.push({
+                id: uc.id,
+                documentId: uc.documentId,
+                courseId: uc.id,
+                title: uc.title,
+                slug: uc.slug,
+                price: uc.price,
+                isFree: uc.isFree,
+                type: 'course',
+                __component: 'order.course-order-item',
+                itemUrl: `/courses/${courseSlug}`
+            });
         }
     });
 
@@ -75,15 +149,18 @@ export default function PurchasesList() {
 
     const renderItem = (item, isCourse) => {
         // استخراج slug اصلی دوره (مثلاً mohajerat-chapter-7 -> mohajerat)
-        const courseSlug = item.slug ? item.slug.split('-chapter-')[0] : '';
-        const isChapter = item.type === 'chapter' || item.chapterId || item.slug?.includes('-chapter-');
+        const isChapter = item.type === 'chapter' || Boolean(item.chapterId) || Boolean(item.slug?.includes('-chapter-'));
+        const rawSlug = item.slug || item.courseSlug || item.documentId || '';
+        const courseSlug = rawSlug ? String(rawSlug).split('-chapter-')[0] : '';
 
         const itemUrl = isCourse
-            ? `/courses/${courseSlug}`
+            ? (item.itemUrl || (courseSlug ? `/courses/${courseSlug}` : '#'))
             : (item.itemUrl || (item.slug ? `/product/${item.slug}` : '#'));
 
+        const isFreeItem = item.isFree || item.price === 0;
+
         return (
-            <div key={item.id || item.slug} className={cartStyles.cartItem}>
+            <div key={item.documentId || item.id || item.slug} className={cartStyles.cartItem}>
                 {/* 1. تصویر/آیکون */}
                 <Link
                     href={itemUrl}
@@ -114,7 +191,7 @@ export default function PurchasesList() {
                 <Link href={itemUrl} className={cartStyles.itemInfo}>
                     <h3 className={cartStyles.itemTitle}>{item.title ?? '—'}</h3>
                     <p className={cartStyles.itemPrice}>
-                        {formatPrice(item.price)} تومان
+                        {isFreeItem ? 'رایگان' : `${formatPrice(item.price)} تومان`}
                     </p>
                     <span className={cartStyles.courseLabel}>
                         {isChapter ? 'فصل آموزشی' : isCourse ? 'دوره آموزشی' : 'محصول فیزیکی'}
