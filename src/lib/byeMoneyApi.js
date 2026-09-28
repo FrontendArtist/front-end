@@ -754,3 +754,98 @@ export async function createAdminAssistedTopUpWithByeMoney({
     };
   }
 }
+
+/**
+ * استعلام دسته‌جمعی موجودی کیف‌پول کاربران از سامانه ByeMoney (مخصوص ادمین)
+ * اندپوینت: POST /api/admin/wallets/batch-balances
+ * 
+ * @param {object} params
+ * @param {string[]} params.userIds - آرایه‌ای از شناسه‌های یکتای کاربران (documentId یا id)
+ * @param {string} params.jwt - توکن احراز هویت ادمین
+ * @returns {Promise<{ success: boolean, balances: Record<string, number>, error?: string, status?: number }>}
+ */
+export async function getBatchBalancesWithByeMoney({ userIds, jwt }) {
+  if (!jwt) {
+    return {
+      success: false,
+      balances: {},
+      error: 'نشست کاربری نامعتبر است. لطفاً مجدداً وارد شوید.',
+    };
+  }
+
+  const cleanUserIds = Array.isArray(userIds)
+    ? userIds.map(id => (typeof id === 'string' ? id.trim() : String(id || ''))).filter(Boolean)
+    : [];
+
+  if (cleanUserIds.length === 0) {
+    return {
+      success: true,
+      balances: {},
+    };
+  }
+
+  // طبق اعتبارسنجی سامانه ByeMoney، حداکثر ۵۰۰ شناسه در هر درخواست مجاز است
+  const distinctIds = Array.from(new Set(cleanUserIds)).slice(0, 500);
+  const endpoint = `${BYEMONEY_API_URL}/api/admin/wallets/batch-balances`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${jwt}`,
+      },
+      body: JSON.stringify({
+        userIds: distinctIds,
+      }),
+      cache: 'no-store',
+    });
+
+    if (response.ok) {
+      const data = await response.json().catch(() => ({}));
+      const rawBalances = data.balances || data.Balances || {};
+      const normalizedBalances = {};
+
+      for (const [key, value] of Object.entries(rawBalances)) {
+        normalizedBalances[key] = Number(value ?? 0);
+      }
+
+      return {
+        success: true,
+        balances: normalizedBalances,
+      };
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      return {
+        success: false,
+        status: response.status,
+        balances: {},
+        error: response.status === 401
+          ? 'نشست کاربری شما منقضی شده است.'
+          : 'شما دسترسی لازم برای استعلام دسته‌جمعی موجودی کاربران را ندارید.',
+      };
+    }
+
+    const errJson = await response.json().catch(() => ({}));
+    let errMsg = '';
+    if (errJson.error) errMsg = errJson.error;
+    else if (errJson.message) errMsg = errJson.message;
+    else if (Array.isArray(errJson.errors)) errMsg = errJson.errors.join(' - ');
+
+    return {
+      success: false,
+      status: response.status,
+      balances: {},
+      error: errMsg || `خطا در دریافت موجودی دسته‌جمعی کاربران (کد خطا: ${response.status})`,
+    };
+  } catch (err) {
+    console.error('[ByeMoney getBatchBalances Error]:', err);
+    return {
+      success: false,
+      balances: {},
+      error: 'خطا در برقراری ارتباط با سامانه بای‌مانی.',
+    };
+  }
+}
+

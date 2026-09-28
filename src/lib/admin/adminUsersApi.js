@@ -1,4 +1,5 @@
 import { adminFetch } from './adminFetch';
+import { getBatchBalancesWithByeMoney } from '@/lib/byeMoneyApi';
 
 export async function getTotalUsersCount(jwt) {
     try {
@@ -64,6 +65,26 @@ export async function getUsers(jwt, { page, pageSize, start, limit = 20 } = {}) 
                 createdAt: attrs.createdAt
             };
         });
+
+        // ── دریافت دسته‌جمعی موجودی زنده نور از سامانه ByeMoney ────────────
+        const userIds = users.map(u => u.documentId || String(u.id)).filter(Boolean);
+        if (userIds.length > 0) {
+            try {
+                const batchRes = await getBatchBalancesWithByeMoney({ userIds, jwt });
+                if (batchRes.success && batchRes.balances) {
+                    users.forEach(u => {
+                        const docBalance = batchRes.balances[u.documentId];
+                        const idBalance = batchRes.balances[String(u.id)];
+                        const liveBalance = docBalance !== undefined ? docBalance : idBalance;
+                        if (liveBalance !== undefined && liveBalance !== null) {
+                            u.light = Number(liveBalance);
+                        }
+                    });
+                }
+            } catch (err) {
+                console.warn('[getUsers] ByeMoney balances enrichment failed, keeping default light:', err.message || err);
+            }
+        }
 
         const total = totalCount ?? (res.meta?.pagination?.total ?? usersList.length);
 
@@ -140,12 +161,25 @@ export async function getUserDetails(userId, jwt) {
             };
         });
 
+        const targetExternalId = dataWrap.documentId || String(dataWrap.id);
+        let liveLight = attrs.light ?? 0;
+        try {
+            const batchRes = await getBatchBalancesWithByeMoney({ userIds: [targetExternalId], jwt });
+            if (batchRes.success && batchRes.balances) {
+                const b = batchRes.balances[targetExternalId] ?? batchRes.balances[String(dataWrap.id)];
+                if (b !== undefined && b !== null) {
+                    liveLight = Number(b);
+                }
+            }
+        } catch (_) {}
+
         const user = {
             id: dataWrap.id,
-            documentId: dataWrap.documentId || String(dataWrap.id),
+            documentId: targetExternalId,
             username: attrs.username || '—',
             email: attrs.email || '—',
             phoneNumber: attrs.phoneNumber || '—',
+            light: liveLight,
             createdAt: attrs.createdAt,
             orders: (attrs.orders?.data || attrs.orders || []).map(o => ({
                 id: o.id,
