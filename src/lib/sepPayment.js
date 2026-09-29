@@ -11,6 +11,7 @@ export const SEP_TOKEN_URL = process.env.SEP_TOKEN_URL || 'https://sep.shaparak.
 export const SEP_GATEWAY_ACTION_URL = 'https://sep.shaparak.ir/OnlinePG/OnlinePG';
 export const SEP_VERIFY_URL = process.env.SEP_VERIFY_URL || 'https://sep.shaparak.ir/verifyTxnRandomSessionkey/ipg/VerifyTransaction';
 export const SEP_REVERSE_URL = 'https://sep.shaparak.ir/verifyTxnRandomSessionkey/ipg/ReverseTransaction';
+export const SEP_TOKEN_REDIRECT_FIELD = 'RedirectUrl';
 
 /**
  * جدول ترجمه وضعیت‌های بازگشتی از درگاه سپ (پارامتر State)
@@ -78,7 +79,7 @@ export async function requestSepToken({ amount, resNum, redirectUrl, cellNumber 
         TerminalId: SEP_TERMINAL_ID,
         Amount: Math.round(Number(amount)),
         ResNum: String(resNum),
-        RedirectUrl: redirectUrl,
+        [SEP_TOKEN_REDIRECT_FIELD]: redirectUrl,
     };
 
     if (cellNumber) {

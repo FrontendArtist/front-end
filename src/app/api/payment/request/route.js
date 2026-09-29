@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { requestSepToken, SEP_GATEWAY_ACTION_URL } from '@/lib/sepPayment';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import { STRAPI_API_URL } from '@/lib/api';
+import { createGatewayTopUp, createAttempt, updateAttempt } from '@/lib/gatewayTopUp';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -26,6 +27,37 @@ export async function POST(request) {
 
     try {
         const body = await request.json();
+        if (body.paymentType === 'light_topup') {
+            if (!session.user.jwt || !Number.isSafeInteger(body.amountNoor) || body.amountNoor <= 0) {
+                return NextResponse.json({ success: false, message: 'مقدار نور معتبر نیست.' }, { status: 400 });
+            }
+            const topUp = await createGatewayTopUp(body.amountNoor, session.user.jwt);
+            let attempt = await createAttempt(topUp);
+            let redirectUrl = process.env.SEP_REDIRECT_URL;
+            if (!redirectUrl || redirectUrl.includes('yourdomain.com')) {
+                const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'tarhelahi.ir';
+                const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+                redirectUrl = `${proto}://${host}/api/payment/verify`;
+            }
+            const tokenResult = await requestSepToken({
+                amount: topUp.amountRial,
+                resNum: topUp.clientReferenceId,
+                redirectUrl,
+                cellNumber: session.user.phoneNumber || null,
+            });
+            if (!tokenResult.success) {
+                await updateAttempt(attempt, { status: 'failed', lastError: tokenResult.errorCode || 'TOKEN_FAILED' });
+                return NextResponse.json({ success: false, message: tokenResult.errorDesc || 'دریافت توکن انجام نشد.' }, { status: 502 });
+            }
+            attempt = await updateAttempt(attempt, { status: 'token_issued', tokenIssuedAtUtc: new Date().toISOString() });
+            return NextResponse.json({
+                success: true,
+                token: tokenResult.token,
+                gatewayUrl: tokenResult.gatewayUrl || SEP_GATEWAY_ACTION_URL,
+                resNum: attempt.resNum,
+                amount: topUp.amountRial,
+            });
+        }
         const { orderId } = body;
 
         if (!orderId) {

@@ -73,6 +73,30 @@ function LightCheckoutContent() {
                 throw new Error('نشست کاربری نامعتبر است. لطفاً مجدداً وارد حساب کاربری خود شوید.');
             }
 
+            if (!isCardToCard) {
+                const tokenRes = await fetch('/api/payment/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentType: 'light_topup', amountNoor: lightAmount }),
+                });
+                const tokenData = await tokenRes.json();
+                if (!tokenRes.ok || !tokenData.success || !tokenData.token) {
+                    throw new Error(tokenData.message || 'خطا در دریافت توکن پرداخت از درگاه سامان');
+                }
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = tokenData.gatewayUrl || 'https://sep.shaparak.ir/OnlinePG/OnlinePG';
+                form.style.display = 'none';
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'Token';
+                tokenInput.value = tokenData.token;
+                form.appendChild(tokenInput);
+                document.body.appendChild(form);
+                form.submit();
+                return;
+            }
+
             // ۱. پیش‌ثبت رسمی درخواست شارژ در سامانه مالی ByeMoney
             const topUpRes = await createTopUpRequestWithByeMoney({
                 amountInNoor: lightAmount,
@@ -121,46 +145,10 @@ function LightCheckoutContent() {
             const newOrder = await response.json();
             const documentId = newOrder?.data?.documentId;
 
-            if (isCardToCard) {
-                let redirectUrl = `/payment/callback?status=success&source=card_to_card&orderType=light_topup&lightAmount=${lightAmount}`;
-                if (documentId) redirectUrl += `&orderId=${encodeURIComponent(documentId)}`;
-                if (topUpRequestId) redirectUrl += `&topUpId=${encodeURIComponent(topUpRequestId)}`;
-                router.push(redirectUrl);
-            } else {
-                // پرداخت آنلاین از طریق درگاه سپ
-                if (!documentId) throw new Error('شناسه سفارش ایجاد نشد.');
-
-                const tokenRes = await fetch('/api/payment/request', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId: documentId }),
-                });
-
-                const tokenData = await tokenRes.json();
-                if (!tokenRes.ok || !tokenData.success || !tokenData.token) {
-                    throw new Error(tokenData.message || 'خطا در دریافت توکن پرداخت از درگاه سامان');
-                }
-
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = tokenData.gatewayUrl || 'https://sep.shaparak.ir/OnlinePG/OnlinePG';
-                form.style.display = 'none';
-
-                const tokenInput = document.createElement('input');
-                tokenInput.type = 'hidden';
-                tokenInput.name = 'Token';
-                tokenInput.value = tokenData.token;
-                form.appendChild(tokenInput);
-
-                const getMethodInput = document.createElement('input');
-                getMethodInput.type = 'hidden';
-                getMethodInput.name = 'GetMethod';
-                getMethodInput.value = '';
-                form.appendChild(getMethodInput);
-
-                document.body.appendChild(form);
-                form.submit();
-            }
+            let redirectUrl = `/payment/callback?status=success&source=card_to_card&orderType=light_topup&lightAmount=${lightAmount}`;
+            if (documentId) redirectUrl += `&orderId=${encodeURIComponent(documentId)}`;
+            if (topUpRequestId) redirectUrl += `&topUpId=${encodeURIComponent(topUpRequestId)}`;
+            router.push(redirectUrl);
 
         } catch (error) {
             console.error('[LightCheckout] Payment Error:', error);
