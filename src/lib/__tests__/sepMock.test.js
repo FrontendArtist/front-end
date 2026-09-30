@@ -56,7 +56,7 @@ describe('local SEP mock', () => {
         expect(failed.resultCode).toBe(-2);
 
         const mismatchRef = createMockCallback(token, 'amount_mismatch').fields.RefNum;
-        expect(mismatchRef.length).toBeLessThan(255);
+        expect(mismatchRef.length).toBeLessThanOrEqual(100);
         const mismatch = await verifySepTransaction({ refNum: mismatchRef });
         expect(mismatch.transactionDetail.OrginalAmount).toBe(params.amount + 1);
         expect((await reverseSepTransaction({ refNum: mismatchRef })).success).toBe(true);
@@ -74,6 +74,7 @@ describe('local SEP mock', () => {
         expect((await verifySepTransaction({ refNum: `${ref}x` })).success).toBe(false);
         jest.spyOn(Date, 'now').mockReturnValue(Date.now() + 61 * 60 * 1000);
         expect(readMockToken(token)).toBeNull();
+        expect(readMockRef(ref)).toBeNull();
     });
 
     it('never enables the mock outside development', () => {

@@ -2,7 +2,7 @@ import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
 const MOCK_GATEWAY_URL = '/api/payment/mock';
 const TOKEN_LIFETIME_MS = 60 * 60 * 1000;
-const SCENARIOS = new Set(['success', 'cancel', 'verify_failed', 'amount_mismatch']);
+const SCENARIOS = ['success', 'cancel', 'verify_failed', 'amount_mismatch'];
 
 export function isSepMockEnabled() {
     return process.env.NODE_ENV === 'development' && process.env.SEP_MOCK_ENABLED === 'true';
@@ -81,11 +81,10 @@ export function readMockToken(token) {
 
 export function createMockCallback(token, scenario) {
     const data = readMockToken(token);
-    if (!data || !SCENARIOS.has(scenario)) return null;
+    if (!data || !SCENARIOS.includes(scenario)) return null;
     const traceNo = String(parseInt(data.nonce.slice(0, 10).replaceAll('-', ''), 16)).padStart(12, '0').slice(-12);
     const paidAmount = scenario === 'amount_mismatch' ? data.amount + 1 : data.amount;
-    const refNum = scenario === 'cancel' ? '' : `mock.${sign({ kind: 'ref', amount: paidAmount,
-        scenario, nonce: data.nonce, issuedAt: data.issuedAt })}`;
+    const refNum = scenario === 'cancel' ? '' : createMockRef({ ...data, amount: paidAmount, scenario });
     return {
         redirectUrl: data.redirectUrl,
         fields: {
@@ -101,11 +100,38 @@ export function createMockCallback(token, scenario) {
     };
 }
 
+function createMockRef({ amount, scenario, nonce, issuedAt }) {
+    const payload = Buffer.alloc(29);
+    payload.writeUInt8(SCENARIOS.indexOf(scenario), 0);
+    payload.writeBigUInt64BE(BigInt(amount), 1);
+    payload.writeUInt32BE(Math.floor(issuedAt / 1000), 9);
+    Buffer.from(nonce.replaceAll('-', ''), 'hex').copy(payload, 13);
+    const body = payload.toString('base64url');
+    const signature = createHmac('sha256', secret()).update(payload).digest().subarray(0, 16).toString('base64url');
+    return `mock.${body}.${signature}`;
+}
+
 export function readMockRef(refNum) {
     if (typeof refNum !== 'string' || !refNum.startsWith('mock.')) return null;
-    const data = readSigned(refNum.slice(5), 'ref');
-    return data && Number.isSafeInteger(data.amount) && data.amount > 0 &&
-        typeof data.nonce === 'string' && SCENARIOS.has(data.scenario) ? data : null;
+    const [body, signature, extra] = refNum.slice(5).split('.');
+    if (!body || !signature || extra) return null;
+    let payload;
+    let provided;
+    try {
+        payload = Buffer.from(body, 'base64url');
+        provided = Buffer.from(signature, 'base64url');
+    } catch { return null; }
+    if (payload.length !== 29 || provided.length !== 16) return null;
+    const expected = createHmac('sha256', secret()).update(payload).digest().subarray(0, 16);
+    if (!timingSafeEqual(provided, expected)) return null;
+    const scenario = SCENARIOS[payload.readUInt8(0)];
+    const amount = Number(payload.readBigUInt64BE(1));
+    const issuedAt = payload.readUInt32BE(9) * 1000;
+    if (!scenario || !Number.isSafeInteger(amount) || amount <= 0 ||
+        issuedAt > Date.now() || Date.now() - issuedAt > TOKEN_LIFETIME_MS) return null;
+    const hex = payload.subarray(13).toString('hex');
+    const nonce = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+    return { amount, scenario, nonce, issuedAt };
 }
 
 export function verifyMockTransaction(refNum) {
