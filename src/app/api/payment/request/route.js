@@ -5,9 +5,21 @@ import { requestSepToken, SEP_GATEWAY_ACTION_URL } from '@/lib/sepPayment';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import { STRAPI_API_URL } from '@/lib/api';
 import { createGatewayTopUp, createAttempt, updateAttempt } from '@/lib/gatewayTopUp';
+import { getSepMockEnvironmentError, isSepMockEnabled } from '@/lib/sepMock';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+
+function getPaymentRedirectUrl(request) {
+    if (isSepMockEnabled()) return new URL('/api/payment/verify', request.url).toString();
+    let redirectUrl = process.env.SEP_REDIRECT_URL;
+    if (!redirectUrl || redirectUrl.includes('yourdomain.com')) {
+        const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'tarhelahi.ir';
+        const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+        redirectUrl = `${proto}://${host}/api/payment/verify`;
+    }
+    return redirectUrl;
+}
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -16,6 +28,10 @@ const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
  * ─────────────────────────────────────────────────────────────────────────────
  */
 export async function POST(request) {
+    const mockEnvironmentError = getSepMockEnvironmentError();
+    if (mockEnvironmentError) {
+        return NextResponse.json({ success: false, message: mockEnvironmentError }, { status: 400 });
+    }
     // 1. بررسی سشن و هویت کاربر
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -33,12 +49,7 @@ export async function POST(request) {
             }
             const topUp = await createGatewayTopUp(body.amountNoor, session.user.jwt);
             let attempt = await createAttempt(topUp);
-            let redirectUrl = process.env.SEP_REDIRECT_URL;
-            if (!redirectUrl || redirectUrl.includes('yourdomain.com')) {
-                const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'tarhelahi.ir';
-                const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-                redirectUrl = `${proto}://${host}/api/payment/verify`;
-            }
+            const redirectUrl = getPaymentRedirectUrl(request);
             const tokenResult = await requestSepToken({
                 amount: topUp.amountRial,
                 resNum: topUp.clientReferenceId,
@@ -133,12 +144,7 @@ export async function POST(request) {
 
         // 6. تعیین آدرس بازگشت (RedirectUrl برای شاپرک)
         // اولویت با SEP_REDIRECT_URL در فایل env، در غیر این صورت ساخت خودکار بر اساس هاست درخواست
-        let redirectUrl = process.env.SEP_REDIRECT_URL;
-        if (!redirectUrl || redirectUrl.includes('yourdomain.com')) {
-            const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'tarhelahi.ir';
-            const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-            redirectUrl = `${proto}://${host}/api/payment/verify`;
-        }
+        const redirectUrl = getPaymentRedirectUrl(request);
 
         const userPhone = order.phone || order.attributes?.phone || session.user.phoneNumber || null;
 

@@ -6,6 +6,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import { createMockToken, isSepMockEnabled, reverseMockTransaction, verifyMockTransaction } from './sepMock';
+
 export const SEP_TERMINAL_ID = process.env.SEP_TERMINAL_ID || '15785408';
 export const SEP_TOKEN_URL = process.env.SEP_TOKEN_URL || 'https://sep.shaparak.ir/onlinepg/onlinepg';
 export const SEP_GATEWAY_ACTION_URL = 'https://sep.shaparak.ir/OnlinePG/OnlinePG';
@@ -73,6 +75,8 @@ export async function requestSepToken({ amount, resNum, redirectUrl, cellNumber 
     if (!redirectUrl) {
         throw new Error('آدرس بازگشت (RedirectUrl) الزامی است.');
     }
+
+    if (isSepMockEnabled()) return createMockToken({ amount, resNum, redirectUrl });
 
     const payload = {
         Action: 'Token',
@@ -159,6 +163,10 @@ export async function verifySepTransaction({ refNum, terminalNumber }) {
         throw new Error('شماره رسید دیجیتالی (RefNum) جهت تایید تراکنش الزامی است.');
     }
 
+    if (isSepMockEnabled()) return verifyMockTransaction(refNum);
+    if (String(refNum).startsWith('mock.')) return { success: false, resultCode: -2,
+        resultDescription: 'رسید شبیه‌ساز در حالت درگاه واقعی قابل تأیید نیست.', rawData: {} };
+
     const payload = {
         RefNum: String(refNum),
         TerminalNumber: Number(terminalNumber || SEP_TERMINAL_ID),
@@ -219,6 +227,10 @@ export async function verifySepTransaction({ refNum, terminalNumber }) {
  */
 export async function reverseSepTransaction({ refNum, terminalNumber }) {
     if (!refNum) return { success: false, message: 'RefNum الزامی است.' };
+
+    if (isSepMockEnabled()) return reverseMockTransaction(refNum);
+    if (String(refNum).startsWith('mock.')) return { success: false, resultCode: -2,
+        resultDescription: 'رسید شبیه‌ساز در حالت درگاه واقعی قابل برگشت نیست.' };
 
     const payload = {
         RefNum: String(refNum),

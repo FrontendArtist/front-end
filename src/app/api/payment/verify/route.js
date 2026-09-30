@@ -9,6 +9,7 @@ import {
 import { ORDER_STATUS, PAYMENT_STATUS, isOrderPaid } from '@/lib/constants/orderConstants';
 import { STRAPI_API_URL } from '@/lib/api';
 import { findAttempt, claimAttempt, updateAttempt, getTopUpConfirmation, confirmGatewayTopUp } from '@/lib/gatewayTopUp';
+import { getSepMockEnvironmentError, isSepMockEnabled } from '@/lib/sepMock';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -84,6 +85,8 @@ export async function GET(request) {
  * پردازش و اعتبارسنجی تراکنش، استعلام از دیتابیس، تایید بانکی و فعال‌سازی سفارش
  */
 async function handlePaymentVerification(params, request) {
+    const mockEnvironmentError = getSepMockEnvironmentError();
+    if (mockEnvironmentError) return redirectToResult({ status: 'failed', message: mockEnvironmentError }, request);
     // 1. استخراج فیلدهای ارسالی سپ
     const state = (params.State || params.state || '').trim();
     const status = (params.Status || params.status || '').trim();
@@ -601,7 +604,7 @@ async function grantUserAccessAndCredits(userId, order) {
 function redirectToResult(query, request) {
     const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'tarhelahi.ir';
     const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-    const baseUrl = `${proto}://${host}`;
+    const baseUrl = isSepMockEnabled() ? new URL(request.url).origin : `${proto}://${host}`;
 
     const redirectUrl = new URL('/checkout/result', baseUrl);
 
