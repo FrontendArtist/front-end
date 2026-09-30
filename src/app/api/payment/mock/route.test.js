@@ -35,6 +35,8 @@ describe('local SEP payment page', () => {
         expect(bankPage.status).toBe(200);
         const firstHtml = await bankPage.text();
         expect(firstHtml).toContain('پرداخت موفق');
+        expect(firstHtml).toContain('این پرداخت جدولی در بای‌مانی تغییر نمی‌دهد');
+        expect(firstHtml).toContain('/checkout/light?amount=10');
         expect(firstHtml).not.toContain('ارسال callback به برنامه');
 
         const callbackPage = await POST(request({ MockToken: token, Scenario: 'success' }));
@@ -49,5 +51,12 @@ describe('local SEP payment page', () => {
         process.env.SEP_MOCK_ENABLED = 'false';
         const response = await POST(request({ Token: 'anything' }));
         expect(response.status).toBe(404);
+    });
+
+    it('identifies top-up payments as the ByeMoney flow', async () => {
+        const { token } = createMockToken({ amount: 10000, resNum: 'TR-12345678',
+            redirectUrl: 'http://localhost:3000/api/payment/verify' });
+        const response = await POST(request({ Token: token }));
+        expect(await response.text()).toContain('مسیر: شارژ نور در بای‌مانی');
     });
 });
