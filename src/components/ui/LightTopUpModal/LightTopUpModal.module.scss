@@ -136,6 +136,7 @@
 // ═══════════════════════════════════════════════════════════════
 // BALANCE BOX — نمایش موجودی فعلی
 // ═══════════════════════════════════════════════════════════════
+.currentBalance,
 .balanceBox {
     display: flex;
     align-items: center;
@@ -170,6 +171,7 @@
 // ═══════════════════════════════════════════════════════════════
 // INPUT GROUP — ورودی مقدار
 // ═══════════════════════════════════════════════════════════════
+.inputSection,
 .inputGroup {
     display: flex;
     flex-direction: column;
@@ -186,9 +188,10 @@
     position: relative;
 }
 
+.input,
 .amountInput {
     width: 100%;
-    padding: 12px 48px 12px 16px;
+    padding: 12px 16px 12px 75px;
     background: fade(var(--color-text-primary), 5%);
     border: 1.5px solid fade(var(--color-text-primary), 20%);
     border-radius: var(--border-radius);
@@ -214,7 +217,13 @@
     }
 }
 
+.inputSuffix,
 .inputIcon {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
     position: absolute;
     left: 14px;
     top: 50%;

@@ -12,6 +12,7 @@ import { authOptions } from '@/lib/auth';
 import { marked } from 'marked';
 import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import CourseTelegramLink from '@/components/courses/CourseTelegramLink/CourseTelegramLink';
 import CourseTeaserPlayer from '@/components/courses/CourseTeaserPlayer';
 import styles from './page.module.scss';
@@ -93,8 +94,12 @@ export default async function CoursePage({ params }) {
 
   // محاسبه قیمت بر اساس وضعیت کاربر (خارجی یا ایرانی)
   const hasIntlPrice = isForeign && rawCourse.internationalPrice && Number(rawCourse.internationalPrice) > 0;
-  const effectivePriceToman = hasIntlPrice ? Number(rawCourse.internationalPrice) : (rawCourse.price?.toman || rawCourse.price || 0);
-  const effectiveOriginalPrice = hasIntlPrice ? Number(rawCourse.internationalPrice) : (rawCourse.originalPrice || effectivePriceToman);
+  const effectivePriceNoor = hasIntlPrice
+    ? Number(rawCourse.internationalPrice)
+    : (rawCourse.priceNoor ?? (typeof rawCourse.price === 'object' ? (rawCourse.price?.noor ?? rawCourse.price?.toman) : rawCourse.price) ?? 0);
+  const effectiveOriginalPrice = hasIntlPrice
+    ? Number(rawCourse.internationalPrice)
+    : (rawCourse.originalPriceNoor ?? rawCourse.originalPrice ?? (typeof rawCourse.price === 'object' ? (rawCourse.price?.originalNoor ?? rawCourse.price?.original) : effectivePriceNoor));
   const effectiveDiscountPercent = hasIntlPrice ? 0 : (rawCourse.discountPercent || 0);
 
   // Fetch comments for this course
@@ -107,7 +112,10 @@ export default async function CoursePage({ params }) {
     slug: rawCourse.slug,
     title: rawCourse.title,
     description: rawCourse.shortDescription,
-    price: { toman: effectivePriceToman, original: effectiveOriginalPrice },
+    price: { noor: effectivePriceNoor, toman: effectivePriceNoor, original: effectiveOriginalPrice },
+    priceNoor: effectivePriceNoor,
+    originalPrice: effectiveOriginalPrice,
+    originalPriceNoor: effectiveOriginalPrice,
     originalPrice: effectiveOriginalPrice,
     internationalPrice: rawCourse.internationalPrice || null,
     isInternationalPrice: hasIntlPrice,
@@ -161,7 +169,7 @@ export default async function CoursePage({ params }) {
     }),
   };
 
-  const hasDiscount = !hasIntlPrice && (course.discountPercent > 0) && (course.originalPrice > (course.price?.toman || 0));
+  const hasDiscount = !hasIntlPrice && (course.discountPercent > 0) && (course.originalPrice > course.priceNoor);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -283,29 +291,27 @@ export default async function CoursePage({ params }) {
                 </span>
               ) : isFreeCourse ? (
                 'رایگان'
-              ) : hasDiscount ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <del style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.85rem' }}>
-                    {course.originalPrice?.toLocaleString('fa-IR')} تومان
-                  </del>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className={styles.price}>{`${course.price?.toman?.toLocaleString('fa-IR')}`} تومان</span>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <PriceWithHint
+                    price={course.priceNoor}
+                    originalPrice={hasDiscount ? course.originalPriceNoor : null}
+                    size="lg"
+                  />
+                  {hasDiscount && (
                     <span style={{
                       background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
                       color: '#fff',
-                      padding: '2px 8px',
+                      padding: '3px 8px',
                       borderRadius: '6px',
                       fontSize: '0.75rem',
                       fontWeight: 800
                     }}>
                       ٪{course.discountPercent} تخفیف
                     </span>
-                  </div>
+                  )}
                 </div>
-              ) : (
-                <span className={styles.price}>{`${course.price?.toman?.toLocaleString('fa-IR')}`} تومان</span>
               )}
-
             </div>
 
             {/* لینک گروه تلگرام دوره (نمایش فقط برای خریداران با وضعیت پرداخت شده) */}

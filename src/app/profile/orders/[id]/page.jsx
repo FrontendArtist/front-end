@@ -18,6 +18,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import OrderReceiptUpload from '@/components/profile/OrderReceiptUpload';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import styles from './orderDetail.module.scss';
 
 // ─── فرمت‌کننده‌ها و ابزارها ──────────────────────────────────────────
@@ -241,7 +242,7 @@ export default function OrderDetailPage() {
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>مبلغ کل:</span>
                         <span className={`${styles.metaValue} ${styles.metaPrice}`}>
-                            {Number(order.totalPrice) === 0 ? 'رایگان' : `${formatPrice(order.totalPrice)} تومان`}
+                            <PriceWithHint price={order.totalPrice} size="sm" />
                         </span>
                     </span>
                     <span className={styles.metaItem}>
@@ -339,10 +340,7 @@ export default function OrderDetailPage() {
                         <div className={styles.receiptField}>
                             <span className={styles.receiptFieldLabel}>مبلغ پرداختی</span>
                             <span className={styles.receiptFieldValue}>
-                                {formatPrice(order.totalPrice)} تومان
-                                <span className={styles.rialNote}>
-                                    ({new Intl.NumberFormat('fa-IR').format(Math.round(Number(order.totalPrice || 0) * 10))} ریال)
-                                </span>
+                                <PriceWithHint price={order.totalPrice} size="sm" />
                             </span>
                         </div>
                     </div>
@@ -393,7 +391,7 @@ export default function OrderDetailPage() {
                                             <span className={styles.itemQty}>× {item.quantity}</span>
                                         )}
                                         <span className={styles.itemPrice}>
-                                            {formatPrice((item.price ?? 0) * (item.quantity ?? 1))} تومان
+                                            <PriceWithHint price={(item.price ?? 0) * (item.quantity ?? 1)} size="sm" />
                                         </span>
                                     </div>
                                 </li>

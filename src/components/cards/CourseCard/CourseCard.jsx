@@ -9,6 +9,7 @@ import { isOrderPaid } from '@/lib/constants/orderConstants';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import styles from './CourseCard.module.scss';
 
 /**
@@ -39,8 +40,8 @@ const CourseCard = ({ course }) => {
   const intlPrice = course.internationalPrice ? Number(course.internationalPrice) : null;
   const hasIntl = isForeign && intlPrice && intlPrice > 0;
 
-  const formattedPrice = hasIntl ? intlPrice : ((typeof price === "object" ? price?.toman : price) || 0);
-  const originalPrice = hasIntl ? intlPrice : (rawOriginalPrice ?? (typeof price === "object" && price?.original ? price.original : formattedPrice));
+  const formattedPrice = hasIntl ? intlPrice : (course.priceNoor ?? (typeof price === "object" ? (price?.noor ?? price?.toman) : price) ?? 0);
+  const originalPrice = hasIntl ? intlPrice : (course.originalPriceNoor ?? rawOriginalPrice ?? (typeof price === "object" ? (price?.originalNoor ?? price?.original) : formattedPrice));
   const hasDiscount = !hasIntl && discountPercent > 0 && originalPrice > formattedPrice;
 
   const [isHydrated, setIsHydrated] = useState(false);

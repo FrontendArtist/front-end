@@ -7,6 +7,7 @@ import { useOrdersStore } from '@/store/useOrdersStore';
 import { fetchProfileCartData } from '@/lib/client/profileClientApi';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import styles from './PurchasesList.module.scss';
 import cartStyles from '@/app/cart/Cart.module.scss'; // Reuse cart styles
 
@@ -190,9 +191,9 @@ export default function PurchasesList() {
                 {/* 2. اطلاعات آیتم */}
                 <Link href={itemUrl} className={cartStyles.itemInfo}>
                     <h3 className={cartStyles.itemTitle}>{item.title ?? '—'}</h3>
-                    <p className={cartStyles.itemPrice}>
-                        {isFreeItem ? 'رایگان' : `${formatPrice(item.price)} تومان`}
-                    </p>
+                    <div className={cartStyles.itemPrice}>
+                        {isFreeItem ? 'رایگان' : <PriceWithHint price={item.price} size="sm" />}
+                    </div>
                     <span className={cartStyles.courseLabel}>
                         {isChapter ? 'فصل آموزشی' : isCourse ? 'دوره آموزشی' : 'محصول فیزیکی'}
                     </span>
