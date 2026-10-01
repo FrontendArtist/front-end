@@ -17,6 +17,7 @@ import ProductGallery from '@/components/products/ProductGallery/ProductGallery'
 import ProductAddToCart from '@/components/products/ProductAddToCart/ProductAddToCart';
 import ProductSpecs from '@/modules/products/ProductSpecs/ProductSpecs';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import styles from './ProductDetails.module.scss';
 
 // ── تابع کمکی: محاسبه حالت FOMO موجودی ─────────────────────────────────────
@@ -55,9 +56,9 @@ export default function ProductDetails({ product, breadcrumbItems }) {
   // وضعیت موجودی
   const stockStatus = getStockStatus(stock, isAvailable);
 
-  const finalToman = typeof product.price === 'object' ? product.price?.toman : product.price;
-  const numOriginal = originalPrice ?? (typeof product.price === 'object' && product.price?.original ? product.price.original : finalToman);
-  const hasDiscount = discountPercent > 0 && numOriginal > finalToman;
+  const finalNoor = product.priceNoor ?? (typeof product.price === 'object' ? (product.price?.noor ?? product.price?.toman) : product.price);
+  const numOriginal = product.originalPriceNoor ?? originalPrice ?? (typeof product.price === 'object' ? (product.price?.original ?? product.price?.originalNoor) : finalNoor);
+  const hasDiscount = discountPercent > 0 && numOriginal > finalNoor;
 
   return (
     <main className={styles.productPage}>
@@ -93,17 +94,16 @@ export default function ProductDetails({ product, breadcrumbItems }) {
 
             {/* ── بخش قیمت ────────────────────────────────────────────────── */}
             <div className={styles.priceBox}>
-              {hasDiscount ? (
-                <div className={styles.discountRow}>
-                  <del className={styles.priceOriginal}>{formatPrice(numOriginal)} تومان</del>
-                  <div className={styles.finalPriceWrap}>
-                    <span className={styles.priceDiscount}>{formatPrice(finalToman)} تومان</span>
-                    <span className={styles.discountBadge}>٪{discountPercent} تخفیف</span>
-                  </div>
-                </div>
-              ) : (
-                <span className={styles.price}>{formatPrice(finalToman)} تومان</span>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <PriceWithHint
+                  price={finalNoor}
+                  originalPrice={hasDiscount ? numOriginal : null}
+                  size="lg"
+                />
+                {hasDiscount && (
+                  <span className={styles.discountBadge}>٪{discountPercent} تخفیف</span>
+                )}
+              </div>
             </div>
 
             {/* ── شمارش معکوس تخفیف ────────────────────────────────────────── */}

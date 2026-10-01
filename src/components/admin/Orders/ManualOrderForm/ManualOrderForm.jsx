@@ -231,19 +231,19 @@ export default function ManualOrderForm({ initialCourses = [] }) {
         if (conversionRate?.rialPerNoor && conversionRate.rialPerNoor > 0) {
             return conversionRate.rialPerNoor / 10;
         }
-        return 1000;
+        return null;
     }, [conversionRate]);
 
     const requiredNoor = useMemo(() => {
         if (isFreeOrder) return 0;
         if (calculatedSum <= 0) return 0;
-        return Math.ceil(calculatedSum / tomanPerNoor);
-    }, [isFreeOrder, calculatedSum, tomanPerNoor]);
+        return Number(Number(calculatedSum).toFixed(4));
+    }, [isFreeOrder, calculatedSum]);
 
     const hasSelectedUser = Boolean(selectedUser);
     const hasEnoughBalance = isFreeOrder || (userBalance !== null && userBalance !== undefined && userBalance >= requiredNoor);
     const shortfallNoor = isFreeOrder ? 0 : Math.max(0, requiredNoor - (userBalance || 0));
-    const shortfallToman = shortfallNoor * tomanPerNoor;
+    const shortfallToman = (tomanPerNoor && tomanPerNoor > 0) ? Math.round(shortfallNoor * tomanPerNoor) : null;
     const remainingBalance = userBalance !== null ? (isFreeOrder ? userBalance : userBalance - requiredNoor) : 0;
 
     // ── فیلتر دوره‌ها ──────────────────────────────────────────────────────

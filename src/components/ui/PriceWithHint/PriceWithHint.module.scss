@@ -1,0 +1,56 @@
+.priceContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.originalPrice {
+  color: var(--color-text-secondary, #94a3b8);
+  font-size: 0.85rem;
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+.currentPrice {
+  color: var(--color-primary-light, #fbbf24);
+  font-weight: 700;
+  font-size: 1.15rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.unit {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
+.tomanHint {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #94a3b8);
+  opacity: 0.85;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+
+/* Size variants */
+.sizeSm {
+  .currentPrice { font-size: 0.95rem; }
+  .unit { font-size: 0.75rem; }
+  .tomanHint { font-size: 0.7rem; }
+}
+
+.sizeLg {
+  .currentPrice { font-size: 1.4rem; }
+  .unit { font-size: 0.95rem; }
+  .tomanHint { font-size: 0.85rem; }
+}

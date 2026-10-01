@@ -13,6 +13,7 @@ import Modal from '@/components/ui/Modal/Modal';
 import VideoJSPlayer from './VideoJSPlayer';
 import PlyrAudioPlayer from './PlyrAudioPlayer';
 import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import moduleStyles from './CourseContentManager.module.scss';
 
 /**
@@ -70,7 +71,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const mediaToggleRef = useRef(null);
 
   // بررسی رایگان بودن کل دوره
-  const isFreeCourse = course.price?.toman === 0 || course.price === 0;
+  const isFreeCourse = course.priceNoor === 0 || (typeof course.price === 'object' ? (course.price?.noor === 0 || course.price?.toman === 0) : course.price === 0);
 
   // بررسی خرید از طریق سفارشات با useMemo جهت داشتن مرجع پایدار (جلوگیری از حلقه بی‌نهایت رندر)
   // ⚠️ فقط سفارش‌های پرداخت‌شده و تأییدشده دسترسی ایجاد می‌کنند (سفارش‌های کارت‌به‌کارت pending تا زمان تأیید ادمین دسترسی نمی‌دهند)
@@ -149,7 +150,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
    */
   const checkChapterAccess = (chapter) => {
     if (hasFullCourseAccess) return true;
-    const chapterPrice = chapter.price?.toman ?? chapter.price ?? 0;
+    const chapterPrice = chapter.priceNoor ?? (typeof chapter.price === 'object' ? (chapter.price?.noor ?? chapter.price?.toman) : chapter.price) ?? 0;
     if (chapterPrice === 0 || chapter.isFree) return true;
 
     const chapterIdStr = String(chapter.id);
@@ -162,7 +163,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const handleAddChapterToCart = (chapter, event) => {
     event?.stopPropagation();
 
-    const chapterPrice = chapter.price?.toman ?? chapter.price ?? 0;
+    const chapterPrice = chapter.priceNoor ?? (typeof chapter.price === 'object' ? (chapter.price?.noor ?? chapter.price?.toman) : chapter.price) ?? 0;
 
     addItem({
       id: `chapter-${chapter.id}`,
@@ -171,6 +172,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       slug: `${course.slug}-chapter-${chapter.id}`,
       title: `${course.title} - ${chapter.title}`,
       price: chapterPrice,
+      priceNoor: chapterPrice,
       image: course.media?.url || '/images/forempties2.png',
       type: 'chapter',
     });
@@ -421,7 +423,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
               const isUnlocked = checkChapterAccess(chapter);
               const isOpen = openChapterId === chapter.id;
               const chapterLessons = chapter.lessons || chapter.curriculum || [];
-              const chapterPrice = chapter.price?.toman ?? chapter.price ?? 0;
+              const chapterPrice = chapter.priceNoor ?? (typeof chapter.price === 'object' ? (chapter.price?.noor ?? chapter.price?.toman) : chapter.price) ?? 0;
 
               return (
                 <div
@@ -449,9 +451,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                       {/* نمایش قیمت و دکمه خرید فصل مستقیماً روی هدر فصل */}
                       {!isUnlocked && chapterPrice > 0 ? (
                         <div className={styles.chapterBuyAction}>
-                          <span className={styles.chapterPrice}>
-                            {chapterPrice.toLocaleString('fa-IR')} تومان
-                          </span>
+                          <PriceWithHint price={chapterPrice} size="sm" />
                           {isChapterInCart(chapter.id) ? (
                             <button
                               type="button"

@@ -27,8 +27,10 @@ export const useCartStore = create(
                 let rawPrice = rawItem.price;
                 let finalPrice = 0;
                 
-                if (typeof rawPrice === 'object' && rawPrice !== null) {
-                    finalPrice = Number(rawPrice.toman) || 0;
+                if (rawItem.priceNoor !== undefined && rawItem.priceNoor !== null) {
+                    finalPrice = Number(rawItem.priceNoor) || 0;
+                } else if (typeof rawPrice === 'object' && rawPrice !== null) {
+                    finalPrice = Number(rawPrice.noor ?? rawPrice.toman) || 0;
                 } else {
                     finalPrice = Number(rawPrice) || 0;
                 }
@@ -45,10 +47,16 @@ export const useCartStore = create(
                     imageUrl = rawImg.url;
                 }
 
+                const rawNormal = rawItem.normalPrice || rawItem.originalPriceNoor || (typeof rawItem.price === 'object' ? (rawItem.price?.original ?? rawItem.price?.originalNoor) : finalPrice);
+                const normalPrice = Number(rawNormal) || finalPrice;
+
                 const item = { 
                     ...rawItem, 
                     price: finalPrice,
-                    normalPrice: rawItem.normalPrice || (typeof rawItem.price === 'object' ? rawItem.price?.original : finalPrice),
+                    priceNoor: finalPrice,
+                    normalPrice: normalPrice,
+                    originalPrice: normalPrice,
+                    originalPriceNoor: normalPrice,
                     internationalPrice: rawItem.internationalPrice ? Number(rawItem.internationalPrice) : null,
                     image: imageUrl 
                 };
@@ -253,19 +261,19 @@ export const useCartStore = create(
             name: 'cart-storage',
 
             // نسخه استور برای مایگریشن تغییرات استیت در کاربرانی که از قبل دیتا دارند
-            version: 1,
+            version: 2,
             migrate: (persistedState, version) => {
-                if (version === 0) {
-                    if (persistedState.items) {
+                if (version < 2) {
+                    if (persistedState?.items) {
                         persistedState.items = persistedState.items.map(item => {
-                            let rawPrice = item.price;
+                            let rawPrice = item.priceNoor ?? item.price;
                             let finalPrice = 0;
                             if (typeof rawPrice === 'object' && rawPrice !== null) {
-                                finalPrice = Number(rawPrice.toman) || 0;
+                                finalPrice = Number(rawPrice.noor ?? rawPrice.toman) || 0;
                             } else {
                                 finalPrice = Number(rawPrice) || 0;
                             }
-                            return { ...item, price: finalPrice };
+                            return { ...item, price: finalPrice, priceNoor: finalPrice };
                         });
                     }
                 }
@@ -291,37 +299,41 @@ export const useCartStore = create(
  */
 
 /**
- * محاسبه قیمت ناخالص کل سبد خرید (بدون احتساب کد تخفیف)
+ * محاسبه قیمت ناخالص کل سبد خرید بر مبنای واحد نور
  * @param {Object} state - state کامل استور
- * @returns {number} - مجموع قیمت تمام آیتم‌های سبد (price * quantity)
+ * @returns {number} - مجموع قیمت تمام آیتم‌های سبد به نور
  */
-export const selectTotalPrice = (state) =>
-    (state.items || []).reduce((total, item) => total + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
+export const selectTotalPrice = (state) => {
+    const sum = (state.items || []).reduce((total, item) => total + (Number(item.priceNoor ?? item.price) || 0) * (Number(item.quantity) || 1), 0);
+    return Number(sum.toFixed(4));
+};
 
 /**
- * محاسبه مجموع تخفیف‌های مستقیم اعمال‌شده روی تک‌تک آیتم‌ها (تفاوت originalPrice و price)
+ * محاسبه مجموع تخفیف‌های مستقیم اعمال‌شده روی تک‌تک آیتم‌ها به واحد نور
  */
-export const selectItemLevelDiscount = (state) =>
-    (state.items || []).reduce((sum, item) => {
-        const orig = Number(item.originalPrice) || 0;
-        const current = Number(item.price) || 0;
+export const selectItemLevelDiscount = (state) => {
+    const sum = (state.items || []).reduce((total, item) => {
+        const orig = Number(item.originalPriceNoor ?? item.originalPrice ?? item.normalPrice) || 0;
+        const current = Number(item.priceNoor ?? item.price) || 0;
         const qty = Number(item.quantity) || 1;
-        return sum + (orig > current ? (orig - current) * qty : 0);
+        return total + (orig > current ? (orig - current) * qty : 0);
     }, 0);
+    return Number(sum.toFixed(4));
+};
 
 /**
  * محاسبه مبلغ تخفیف کد تخفیف
  */
 export const selectCouponDiscount = (state) =>
-    Number(state.appliedCoupon?.discountAmount) || 0;
+    Number(Number(state.appliedCoupon?.discountAmount || 0).toFixed(4));
 
 /**
- * محاسبه مبلغ نهایی قابل پرداخت (پس از کسر تخفیف کوپن)
+ * محاسبه مبلغ نهایی قابل پرداخت به واحد نور (پس از کسر تخفیف کوپن)
  */
 export const selectFinalTotalPrice = (state) => {
     const rawTotal = selectTotalPrice(state);
     const couponDiscount = selectCouponDiscount(state);
-    return Math.max(0, rawTotal - couponDiscount);
+    return Number(Math.max(0, rawTotal - couponDiscount).toFixed(4));
 };
 
 /**
