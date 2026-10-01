@@ -8,6 +8,7 @@ import {
 } from '@/lib/sepPayment';
 import { ORDER_STATUS, PAYMENT_STATUS, isOrderPaid } from '@/lib/constants/orderConstants';
 import { STRAPI_API_URL } from '@/lib/api';
+import { findAttempt, claimAttempt, updateAttempt, getTopUpConfirmation, confirmGatewayTopUp } from '@/lib/gatewayTopUp';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -110,6 +111,19 @@ async function handlePaymentVerification(params, request) {
             status: 'failed',
             message: 'شناسه سفارش (ResNum) در اطلاعات دریافتی از بانک یافت نشد.',
         }, request);
+    }
+
+    let topUpAttempt = null;
+    try {
+        topUpAttempt = await findAttempt(resNum);
+    } catch (error) {
+        if (resNum.startsWith('TR-')) {
+            console.error('[SEP TopUp Attempt Lookup Error]:', error);
+            return redirectToResult({ status: 'failed', message: 'وضعیت شارژ در حال بررسی است.' }, request);
+        }
+    }
+    if (topUpAttempt) {
+        return handleTopUpCallback({ attempt: topUpAttempt, state, status, refNum, request, terminalId });
     }
 
     // 2. واکشی سفارش از استراپی با توکن سیستمی STRAPI_TOKEN
@@ -317,6 +331,118 @@ async function handlePaymentVerification(params, request) {
     }, request);
 }
 
+async function handleTopUpCallback({ attempt, state, status, refNum, request, terminalId }) {
+    const result = (query) => redirectToResult({ orderType: 'light_topup', ...query }, request);
+    const termId = terminalId || SEP_TERMINAL_ID;
+
+    if (attempt.status === 'confirmed')
+        return result({ status: 'success', refNum: attempt.refNum, topUpId: attempt.topUpRequestId });
+
+    // تفکیک انصراف صریح کاربر از درگاه سپ
+    if (state === 'CanceledByUser') {
+        await updateAttempt(attempt, { status: 'cancelled', lastError: 'CANCELED_BY_USER' }).catch(() => {});
+        return result({ status: 'cancel', message: 'فرایند پرداخت در درگاه بانکی سامان لغو شد.' });
+    }
+
+    if (request.method !== 'POST' || status !== '2' || state !== 'OK' || !refNum) {
+        const errorDesc = getSepErrorMessage(state) || 'پرداخت درگاه تأیید نشده است.';
+        await updateAttempt(attempt, { status: 'failed', lastError: state || 'GATEWAY_UNCONFIRMED' }).catch(() => {});
+        return result({ status: 'failed', message: errorDesc });
+    }
+
+    try {
+        if (attempt.status === 'verified' && attempt.refNum !== refNum) {
+            await updateAttempt(attempt, { status: 'review', lastError: 'REFNUM_CONFLICT' });
+            return result({ status: 'failed', message: 'شناسهٔ بانکی با تلاش پرداخت ثبت‌شده سازگار نیست.' });
+        }
+        let verified = attempt.status === 'verified' && attempt.refNum === refNum ? attempt : null;
+        if (!verified) {
+            if (attempt.status !== 'token_issued' || !await claimAttempt(attempt.resNum))
+                return result({ status: 'failed', message: 'پرداخت در حال بررسی است.' });
+            const bank = await verifySepTransaction({ refNum, terminalNumber: termId });
+            if (bank.resultCode === 2) {
+                const saved = await getTopUpConfirmation(attempt.resNum);
+                if (saved.status === 2 && saved.externalTransactionId === refNum &&
+                    Number(saved.amountRial) === Number(attempt.amountRial)) {
+                    await updateAttempt(attempt, { status: 'confirmed', refNum });
+                    return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
+                }
+                await updateAttempt(attempt, { status: 'review', refNum, lastError: 'VERIFY_DUPLICATE_UNCONFIRMED' });
+                return result({ status: 'failed', message: 'پرداخت برای بررسی مالی ثبت شد.' });
+            }
+            if (!bank.success || bank.resultCode !== 0) {
+                await updateAttempt(attempt, { status: 'review', refNum, lastError: `VERIFY_${bank.resultCode}` });
+                return result({ status: 'failed', message: 'تأیید بانکی انجام نشد؛ وضعیت پرداخت بررسی می‌شود.' });
+            }
+            const detail = bank.transactionDetail || {};
+            const original = detail.OrginalAmount;
+            const affective = detail.AffectiveAmount;
+            if (detail.RefNum !== refNum || !detail.RRN || !Number.isSafeInteger(original) ||
+                !Number.isSafeInteger(affective) || original <= 0 || affective <= 0) {
+                await updateAttempt(attempt, { status: 'reverse_required', refNum, lastError: 'INVALID_VERIFY_DETAIL' });
+                const reversed = await reverseSepTransaction({ refNum, terminalNumber: termId });
+                await updateAttempt(attempt, { status: reversed.success && reversed.resultCode === 0 ? 'reversed' : 'review',
+                    lastError: `REVERSE_${reversed.resultCode}` });
+                return result({ status: 'failed', message: 'پاسخ بانک نیازمند بررسی مالی است.' });
+            }
+
+            try {
+                verified = await updateAttempt(attempt, {
+                    status: 'verified', refNum: detail.RefNum, rrn: detail.RRN,
+                    originalAmountRial: original, affectiveAmountRial: affective,
+                    verifiedAtUtc: new Date().toISOString(),
+                });
+            } catch (persistenceError) {
+                const reversed = await reverseSepTransaction({ refNum, terminalNumber: termId });
+                console.error('[SEP TopUp Verify Persistence Failure]:', { resNum: attempt.resNum,
+                    reverseResultCode: reversed.resultCode, error: persistenceError });
+                try {
+                    await updateAttempt(attempt, {
+                        status: reversed.success && reversed.resultCode === 0 ? 'reversed' : 'review',
+                        refNum,
+                        lastError: `VERIFY_PERSISTENCE_REVERSE_${reversed.resultCode}`,
+                    });
+                } catch (statusError) {
+                    console.error('[SEP TopUp Reverse Status Persistence Failure]:', { resNum: attempt.resNum, error: statusError });
+                }
+                return result({ status: 'failed', message: 'ثبت نتیجهٔ بانک انجام نشد و پرداخت برای برگشت یا بررسی مالی ارجاع شد.' });
+            }
+        }
+
+        const expected = Number(verified.amountRial);
+        if (!Number.isSafeInteger(expected) || Number(verified.originalAmountRial) !== expected ||
+            Number(verified.affectiveAmountRial) !== expected) {
+            await updateAttempt(verified, { status: 'reverse_required', lastError: 'TOPUP_AMOUNT_MISMATCH' });
+            const reversed = await reverseSepTransaction({ refNum, terminalNumber: termId });
+            await updateAttempt(verified, { status: reversed.success && reversed.resultCode === 0 ? 'reversed' : 'review',
+                lastError: `REVERSE_${reversed.resultCode}` });
+            return result({ status: 'failed', message: 'مبلغ پرداخت با درخواست شارژ مطابقت ندارد و برای برگشت وجه بررسی می‌شود.' });
+        }
+
+        const confirmation = await confirmGatewayTopUp(verified);
+        if (confirmation.ok) {
+            await updateAttempt(verified, { status: 'confirmed', lastAttemptAtUtc: new Date().toISOString() });
+            return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
+        }
+        if (confirmation.data.code === 'TOPUP_AMOUNT_MISMATCH') {
+            await updateAttempt(verified, { status: 'reverse_required', lastError: confirmation.data.code });
+            const reversed = await reverseSepTransaction({ refNum, terminalNumber: termId });
+            await updateAttempt(verified, { status: reversed.success && reversed.resultCode === 0 ? 'reversed' : 'review',
+                lastError: `REVERSE_${reversed.resultCode}` });
+        } else {
+            await updateAttempt(verified, {
+                status: confirmation.data.code === 'TOPUP_REQUIRES_REVIEW' ? 'review' : 'verified',
+                lastError: confirmation.data.code || `BYEMONEY_${confirmation.status}`,
+                lastAttemptAtUtc: new Date().toISOString(), retryCount: (verified.retryCount || 0) + 1,
+            });
+        }
+        return result({ status: 'failed', message: 'پرداخت بانکی ثبت شد و شارژ در حال بررسی است.' });
+    } catch (error) {
+        console.error('[SEP TopUp Callback Error]:', error);
+        return result({ status: 'failed', message: 'پرداخت بانکی در حال بررسی است.' });
+    }
+}
+
 /**
  * آپدیت سفارش در Strapi v5 با استفاده از documentId و شناسه عددی به عنوان fallback
  */
@@ -416,15 +542,6 @@ async function grantUserAccessAndCredits(userId, order) {
         }
 
         // بررسی آیتم شارژ نور
-        const lightItem = items.find((i) => i.slug === 'light-topup' || i.type === 'light_topup');
-        if (lightItem) {
-            const match = String(order.notes || '').match(/\[LIGHT_AMOUNT:(\d+)\]/);
-            const lightAmount = match ? Number(match[1]) : Number(lightItem.lightAmount || 0);
-            if (lightAmount > 0) {
-                updatePayload.light = (userData.light ?? 0) + lightAmount;
-            }
-        }
-
         // ── حذف خودکار دوره‌ها و فصل‌های پرداخت‌شده از cartData کاربر در استراپی ──
         if (userData.cartData && userData.cartData.state && Array.isArray(userData.cartData.state.items)) {
             const currentCartItems = userData.cartData.state.items;
