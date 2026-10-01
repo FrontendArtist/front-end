@@ -285,6 +285,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: center;
+    white-space: nowrap;
 
     &:hover:not(:disabled) {
         background: fade(var(--color-text-primary), 12%);

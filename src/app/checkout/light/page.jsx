@@ -16,12 +16,11 @@ function LightCheckoutContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { data: session, status: sessionStatus } = useSession();
-    const { tomanPerNoor } = useDisplayRate();
+    const { tomanPerNoor, isLoading: isRateLoading } = useDisplayRate();
 
     const rawAmount = Number(searchParams.get('amount') || '0');
     const lightAmount = Number.isFinite(rawAmount) && rawAmount > 0 ? rawAmount : 0;
-    const effectiveRate = (tomanPerNoor && tomanPerNoor > 0) ? tomanPerNoor : 1000;
-    const totalPrice = Math.round(lightAmount * effectiveRate);
+    const totalPrice = (tomanPerNoor && tomanPerNoor > 0) ? Math.round(lightAmount * tomanPerNoor) : null;
 
     const [paymentMethod, setPaymentMethod] = useState('online');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -55,7 +54,7 @@ function LightCheckoutContent() {
         );
     }
 
-    if (sessionStatus === 'loading' || sessionStatus === 'unauthenticated') {
+    if (sessionStatus === 'loading' || sessionStatus === 'unauthenticated' || isRateLoading || totalPrice === null) {
         return (
             <div className={styles.loadingState}>
                 <div className={styles.spinner} />

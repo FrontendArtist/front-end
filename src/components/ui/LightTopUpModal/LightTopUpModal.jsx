@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useDisplayRate } from '@/context/DisplayRateContext';
 import { useLightStore } from '@/store/useLightStore';
-import { createTopUpRequestWithByeMoney } from '@/lib/byeMoneyApi';
 import styles from './LightTopUpModal.module.scss';
 
 /**
@@ -14,9 +13,10 @@ import styles from './LightTopUpModal.module.scss';
  *
  * جریان:
  * 1. کاربر مقدار نور را وارد می‌کند (معادل تومانی بر مبنای نرخ لحظه‌ای بای‌مانی نمایش داده می‌شود)
- * 2. دکمه «ثبت درخواست شارژ» را می‌زند
- * 3. ثبت رسمی درخواست در سامانه ByeMoney (POST /api/topup/requests)
- * 4. هدایت به صفحه نتیجه و پیگیری واریز کارت به کارت
+ * 2. دکمه «پرداخت آنلاین» را می‌زند
+ * 3. دریافت توکن پرداخت درگاه سامان کیش (POST /api/payment/request با paymentType: 'light_topup')
+ *    که مستقیماً در بای‌مانی ثبت و آماده پرداخت شتابی می‌شود (مستقل از orders استراپی)
+ * 4. هدایت خودکار به درگاه پرداخت شاپرک (SEP)
  *
  * @param {boolean}  isOpen       - وضعیت باز/بسته بودن مدال
  * @param {function} onClose      - callback برای بستن مدال
@@ -63,7 +63,7 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
         ? Math.round(parsedAmount * tomanPerNoor)
         : null;
 
-    const quickAmounts = [10, 50, 100, 500, 1000, 5000];
+    const quickAmounts = [100000, 500000, 1000000, 5000000, 10000000, 50000000];
 
     const handleQuickSelect = (amount) => {
         setLightAmount(String(amount));
@@ -76,46 +76,16 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
         setErrorMessage(null);
     };
 
-    // کلیک ثبت درخواست شارژ → فراخوانی رسمی بای‌مانی
-    const handleContinue = useCallback(async () => {
+    // کلیک «ادامه» → redirect به صفحه پرداخت نور
+    const handleContinue = useCallback(() => {
         if (!isValidAmount) {
             setErrorMessage('لطفاً مقدار نور را وارد کنید');
             return;
         }
-
-        if (authStatus === 'unauthenticated' || !session?.user?.jwt) {
-            onClose();
-            router.push('/auth/login?callbackUrl=' + encodeURIComponent(window.location.href));
-            return;
-        }
-
         setIsProcessing(true);
-        setErrorMessage(null);
-
-        try {
-            const topUpRes = await createTopUpRequestWithByeMoney({
-                amountInNoor: parsedAmount,
-                pendingItems: [],
-                jwt: session.user.jwt,
-            });
-
-            if (!topUpRes.success || !topUpRes.data) {
-                throw new Error(topUpRes.error || 'خطا در ثبت درخواست شارژ در سامانه مالی.');
-            }
-
-            const { topUpRequestId, clientReferenceId } = topUpRes.data;
-            onClose();
-
-            let redirectUrl = `/payment/callback?status=success&source=card_to_card&orderType=light_topup&lightAmount=${parsedAmount}`;
-            if (topUpRequestId) redirectUrl += `&topUpId=${encodeURIComponent(topUpRequestId)}`;
-            if (clientReferenceId) redirectUrl += `&refNum=${encodeURIComponent(clientReferenceId)}`;
-            router.push(redirectUrl);
-        } catch (err) {
-            console.error('[LightTopUp Error]:', err);
-            setErrorMessage(err.message || 'خطا در برقراری ارتباط با سامانه مالی.');
-            setIsProcessing(false);
-        }
-    }, [isValidAmount, parsedAmount, authStatus, session, router, onClose]);
+        onClose();
+        router.push(`/checkout/light?amount=${parsedAmount}`);
+    }, [isValidAmount, parsedAmount, router, onClose]);
 
     if (!isOpen) return null;
 
@@ -171,7 +141,7 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
                             type="text"
                             inputMode="numeric"
                             className={styles.input}
-                            placeholder="مثلاً ۱۰۰"
+                            placeholder="مثلاً ۱۰۰,۰۰۰"
                             value={lightAmount}
                             onChange={handleAmountChange}
                             disabled={isProcessing}
@@ -225,8 +195,8 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
                     </svg>
                     <p>
                         {tomanPerNoor
-                            ? `هر نور در حال حاضر معادل ${formatNumber(tomanPerNoor)} تومان است. ثبت درخواست شارژ مستقیماً در سامانه مالی بای‌مانی ثبت می‌شود.`
-                            : 'ثبت درخواست شارژ مستقیماً در سامانه مالی بای‌مانی ثبت می‌شود.'}
+                            ? `هر نور در حال حاضر معادل ${formatNumber(tomanPerNoor)} تومان است. پس از پرداخت، نور به حساب شما اضافه می‌شود.`
+                            : 'پس از پرداخت، نور به حساب شما اضافه می‌شود.'}
                     </p>
                 </div>
 
@@ -264,22 +234,18 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
                         disabled={isProcessing || !isValidAmount}
                         id="light-modal-continue"
                     >
-                        {isProcessing ? (
-                            <span>در حال ثبت درخواست...</span>
-                        ) : (
-                            <>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" strokeWidth="2">
-                                    <polyline points="9 18 15 12 9 6" />
-                                </svg>
-                                <span>ثبت درخواست شارژ</span>
-                                {tomanEquivalent !== null && (
-                                    <span className={styles.payAmount}>
-                                        ({formatNumber(tomanEquivalent)} تومان)
-                                    </span>
-                                )}
-                            </>
-                        )}
+                        <>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                            <span>ادامه و پرداخت</span>
+                            {isValidAmount && (
+                                <span className={styles.payAmount}>
+                                    {formatNumber(tomanEquivalent)} تومان
+                                </span>
+                            )}
+                        </>
                     </button>
                 </div>
             </div>
