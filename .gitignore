@@ -52,7 +52,9 @@ node_modules
 .vscode
 .env
 .env.local
-/context/
+/context/*
+!/context/README.md
+!/context/CONTEXT_BYEMONEY_INTEGRATION.md
 !src/context/
 
 
