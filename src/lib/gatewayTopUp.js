@@ -111,3 +111,23 @@ export async function confirmGatewayTopUp(attempt) {
   const data = await response.json().catch(() => ({}));
   return { ok: response.ok, status: response.status, data };
 }
+
+export function isConfirmedTopUp(topUpOrStatus) {
+  const status = typeof topUpOrStatus === 'object' ? topUpOrStatus?.status : topUpOrStatus;
+  return String(status || '').trim().toLowerCase() === 'confirmed';
+}
+
+export async function cancelGatewayTopUp(resNum) {
+  if (!resNum) throw new Error('شناسه فاکتور الزامی است.');
+  const response = await fetch(`${BYEMONEY_API_URL}/api/integrations/topups/gateway-cancellations`, {
+    method: 'POST',
+    headers: byeMoneyHeaders(),
+    cache: 'no-store',
+    body: JSON.stringify({
+      clientReferenceCode: String(resNum),
+      gateway: 'SEP',
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
+  return { ok: response.ok, status: response.status, data };
+}

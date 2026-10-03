@@ -8,7 +8,7 @@ import {
 } from '@/lib/sepPayment';
 import { ORDER_STATUS, PAYMENT_STATUS, isOrderPaid } from '@/lib/constants/orderConstants';
 import { STRAPI_API_URL } from '@/lib/api';
-import { findAttempt, claimAttempt, updateAttempt, getTopUpConfirmation, confirmGatewayTopUp } from '@/lib/gatewayTopUp';
+import { findAttempt, claimAttempt, updateAttempt, getTopUpConfirmation, confirmGatewayTopUp, cancelGatewayTopUp, isConfirmedTopUp } from '@/lib/gatewayTopUp';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -59,12 +59,51 @@ export async function POST(request) {
     }
 }
 
-/**
- * متد GET برای پشتیبانی از تست‌های دستی یا موارد هدایت مستقیم
- */
 export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
+        const resNum = (searchParams.get('ResNum') || searchParams.get('resNum') || '').trim();
+
+        if (resNum) {
+            let topUpAttempt = null;
+            try {
+                topUpAttempt = await findAttempt(resNum);
+            } catch (error) {
+                console.error('[SEP GET TopUp Lookup Error]:', error);
+            }
+
+            if (topUpAttempt) {
+                // درخواست‌های GET مستقیم مرورگر نباید وضعیت مالی یا دیتابیس را تغییر دهند
+                if (topUpAttempt.status === 'confirmed') {
+                    return redirectToResult({
+                        orderType: 'light_topup',
+                        status: 'success',
+                        refNum: topUpAttempt.refNum,
+                        topUpId: topUpAttempt.topUpRequestId,
+                    }, request);
+                }
+                if (topUpAttempt.status === 'cancelled') {
+                    return redirectToResult({
+                        orderType: 'light_topup',
+                        status: 'cancel',
+                        message: 'فرایند پرداخت در درگاه بانکی سامان لغو شد.',
+                    }, request);
+                }
+                if (topUpAttempt.status === 'reversed') {
+                    return redirectToResult({
+                        orderType: 'light_topup',
+                        status: 'failed',
+                        message: 'مبلغ پرداختی به حساب شما برگشت داده شد.',
+                    }, request);
+                }
+                return redirectToResult({
+                    orderType: 'light_topup',
+                    status: 'failed',
+                    message: 'وضعیت پرداخت در حال بررسی است.',
+                }, request);
+            }
+        }
+
         const params = {};
         for (const [key, value] of searchParams.entries()) {
             params[key] = value;
@@ -340,13 +379,39 @@ async function handleTopUpCallback({ attempt, state, status, refNum, request, te
 
     // تفکیک انصراف صریح کاربر از درگاه سپ
     if (state === 'CanceledByUser') {
-        await updateAttempt(attempt, { status: 'cancelled', lastError: 'CANCELED_BY_USER' }).catch(() => {});
+        if (request.method !== 'POST') {
+            return result({ status: 'failed', message: 'درخواست انصراف نامعتبر است.' });
+        }
+        if (refNum) {
+            await updateAttempt(attempt, { status: 'review', refNum, lastError: 'CANCEL_WITH_REFNUM' });
+            return result({ status: 'failed', message: 'اطلاعات بازگشتی بانک متناقض است و برای بررسی مالی ثبت شد.' });
+        }
+
+        let saved = null;
+        try {
+            saved = await getTopUpConfirmation(attempt.resNum);
+        } catch (err) {
+            console.warn('[SEP Callback] ByeMoney lookup error during cancellation:', err.message);
+        }
+
+        if (isConfirmedTopUp(saved)) {
+            await updateAttempt(attempt, { status: 'confirmed', refNum: saved.externalTransactionId || attempt.refNum });
+            return result({ status: 'success', refNum: attempt.refNum, topUpId: attempt.topUpRequestId });
+        }
+
+        try {
+            await cancelGatewayTopUp(attempt.resNum);
+        } catch (cancelErr) {
+            console.error('[SEP Callback] ByeMoney cancelGatewayTopUp error:', cancelErr);
+        }
+
+        await updateAttempt(attempt, { status: 'cancelled', lastError: 'CANCELED_BY_USER' });
         return result({ status: 'cancel', message: 'فرایند پرداخت در درگاه بانکی سامان لغو شد.' });
     }
 
     if (request.method !== 'POST' || status !== '2' || state !== 'OK' || !refNum) {
         const errorDesc = getSepErrorMessage(state) || 'پرداخت درگاه تأیید نشده است.';
-        await updateAttempt(attempt, { status: 'failed', lastError: state || 'GATEWAY_UNCONFIRMED' }).catch(() => {});
+        await updateAttempt(attempt, { status: 'failed', lastError: state || 'GATEWAY_UNCONFIRMED' });
         return result({ status: 'failed', message: errorDesc });
     }
 
@@ -361,8 +426,8 @@ async function handleTopUpCallback({ attempt, state, status, refNum, request, te
                 return result({ status: 'failed', message: 'پرداخت در حال بررسی است.' });
             const bank = await verifySepTransaction({ refNum, terminalNumber: termId });
             if (bank.resultCode === 2) {
-                const saved = await getTopUpConfirmation(attempt.resNum);
-                if (saved.status === 2 && saved.externalTransactionId === refNum &&
+                const saved = await getTopUpConfirmation(attempt.resNum).catch(() => null);
+                if (isConfirmedTopUp(saved) && saved.externalTransactionId === refNum &&
                     Number(saved.amountRial) === Number(attempt.amountRial)) {
                     await updateAttempt(attempt, { status: 'confirmed', refNum });
                     return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
@@ -379,6 +444,11 @@ async function handleTopUpCallback({ attempt, state, status, refNum, request, te
             const affective = detail.AffectiveAmount;
             if (detail.RefNum !== refNum || !detail.RRN || !Number.isSafeInteger(original) ||
                 !Number.isSafeInteger(affective) || original <= 0 || affective <= 0) {
+                const saved = await getTopUpConfirmation(attempt.resNum).catch(() => null);
+                if (isConfirmedTopUp(saved)) {
+                    await updateAttempt(attempt, { status: 'confirmed', refNum });
+                    return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
+                }
                 await updateAttempt(attempt, { status: 'reverse_required', refNum, lastError: 'INVALID_VERIFY_DETAIL' });
                 const reversed = await reverseSepTransaction({ refNum, terminalNumber: termId });
                 await updateAttempt(attempt, { status: reversed.success && reversed.resultCode === 0 ? 'reversed' : 'review',
@@ -393,9 +463,13 @@ async function handleTopUpCallback({ attempt, state, status, refNum, request, te
                     verifiedAtUtc: new Date().toISOString(),
                 });
             } catch (persistenceError) {
+                console.error('[SEP TopUp Verify Persistence Failure]:', { resNum: attempt.resNum, error: persistenceError });
+                const saved = await getTopUpConfirmation(attempt.resNum).catch(() => null);
+                if (isConfirmedTopUp(saved)) {
+                    await updateAttempt(attempt, { status: 'confirmed', refNum: detail.RefNum }).catch(() => {});
+                    return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
+                }
                 const reversed = await reverseSepTransaction({ refNum, terminalNumber: termId });
-                console.error('[SEP TopUp Verify Persistence Failure]:', { resNum: attempt.resNum,
-                    reverseResultCode: reversed.resultCode, error: persistenceError });
                 try {
                     await updateAttempt(attempt, {
                         status: reversed.success && reversed.resultCode === 0 ? 'reversed' : 'review',
@@ -412,6 +486,12 @@ async function handleTopUpCallback({ attempt, state, status, refNum, request, te
         const expected = Number(verified.amountRial);
         if (!Number.isSafeInteger(expected) || Number(verified.originalAmountRial) !== expected ||
             Number(verified.affectiveAmountRial) !== expected) {
+            const saved = await getTopUpConfirmation(verified.resNum).catch(() => null);
+            if (isConfirmedTopUp(saved)) {
+                await updateAttempt(verified, { status: 'confirmed', refNum: verified.refNum });
+                return result({ status: 'success', refNum, topUpId: verified.topUpRequestId });
+            }
+
             await updateAttempt(verified, { status: 'reverse_required', lastError: 'TOPUP_AMOUNT_MISMATCH' });
             const reversed = await reverseSepTransaction({ refNum, terminalNumber: termId });
             await updateAttempt(verified, { status: reversed.success && reversed.resultCode === 0 ? 'reversed' : 'review',
@@ -425,11 +505,25 @@ async function handleTopUpCallback({ attempt, state, status, refNum, request, te
             return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
         }
         if (confirmation.data.code === 'TOPUP_AMOUNT_MISMATCH') {
+            const saved = await getTopUpConfirmation(verified.resNum).catch(() => null);
+            if (isConfirmedTopUp(saved)) {
+                await updateAttempt(verified, { status: 'confirmed', lastAttemptAtUtc: new Date().toISOString() });
+                return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
+            }
             await updateAttempt(verified, { status: 'reverse_required', lastError: confirmation.data.code });
             const reversed = await reverseSepTransaction({ refNum, terminalNumber: termId });
             await updateAttempt(verified, { status: reversed.success && reversed.resultCode === 0 ? 'reversed' : 'review',
                 lastError: `REVERSE_${reversed.resultCode}` });
+        } else if (confirmation.data.code === 'TOPUP_ALREADY_CONFIRMED') {
+            await updateAttempt(verified, { status: 'confirmed', lastAttemptAtUtc: new Date().toISOString() });
+            return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
         } else {
+            const saved = await getTopUpConfirmation(verified.resNum).catch(() => null);
+            if (isConfirmedTopUp(saved) && saved.externalTransactionId === refNum) {
+                await updateAttempt(verified, { status: 'confirmed', lastAttemptAtUtc: new Date().toISOString() });
+                return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
+            }
+
             await updateAttempt(verified, {
                 status: confirmation.data.code === 'TOPUP_REQUIRES_REVIEW' ? 'review' : 'verified',
                 lastError: confirmation.data.code || `BYEMONEY_${confirmation.status}`,
