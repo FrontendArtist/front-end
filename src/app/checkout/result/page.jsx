@@ -221,9 +221,9 @@ function CheckoutResultContent() {
                         ) : (
                             isTopUp ? (
                                 <>
-                                    <Link href="/checkout/light" className={styles.primaryButton}>
-                                        <RotateCcw size={18} />
-                                        تلاش مجدد شارژ
+                                    <Link href="/profile" className={styles.primaryButton}>
+                                        <Wallet size={18} />
+                                        بازگشت به پروفایل
                                     </Link>
                                     <Link href="/profile" className={styles.secondaryButton}>
                                         <Wallet size={18} />

@@ -9,6 +9,7 @@ import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
 import DiscountCouponInput from '@/components/cart/DiscountCouponInput/DiscountCouponInput';
 import EmptyCartState from '@/components/cart/EmptyCartState/EmptyCartState';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import { formatPrice } from '@/lib/formatters';
 import {
     useCartStore,
@@ -265,9 +266,9 @@ export default function CartPage() {
                                         {/* اطلاعات محصول - لینک به صفحه جزئیات */}
                                         <Link href={constructProductUrl(item)} className={styles.itemInfo}>
                                             <h3 className={styles.itemTitle}>{item.title}</h3>
-                                            <p className={styles.itemPrice}>
-                                                {formatPrice(item.price)} تومان
-                                            </p>
+                                            <div className={styles.itemPrice}>
+                                                <PriceWithHint price={item.price} size="sm" />
+                                            </div>
                                         </Link>
 
                                         {/* کنترلر تعداد */}
@@ -293,7 +294,7 @@ export default function CartPage() {
 
                                         {/* قیمت کل (قیمت × تعداد) */}
                                         <div className={styles.itemTotal}>
-                                            {formatPrice(item.price * item.quantity)} تومان
+                                            <PriceWithHint price={(Number(item.price) || 0) * (Number(item.quantity) || 1)} size="sm" />
                                         </div>
 
                                         {/* دکمه حذف */}
@@ -353,7 +354,7 @@ export default function CartPage() {
 
                                             {/* قیمت */}
                                             <div className={styles.itemTotal}>
-                                                {formatPrice(item.price)} تومان
+                                                <PriceWithHint price={item.price} size="sm" />
                                             </div>
 
                                             {/* دکمه حذف */}
@@ -389,16 +390,14 @@ export default function CartPage() {
                         {/* جمع کل خرید */}
                         <div className={styles.summaryRow}>
                             <span>جمع جزء سبد خرید:</span>
-                            <strong>{formatPrice(totalPrice)} تومان</strong>
+                            <PriceWithHint price={totalPrice} size="sm" />
                         </div>
 
                         {/* سود تخفیف خود محصولات در صورت وجود */}
                         {itemLevelDiscount > 0 && (
                             <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
                                 <span>تخفیف شگفت‌انگیز:</span>
-                                <strong>
-                                    {formatPrice(itemLevelDiscount)} تومان
-                                </strong>
+                                <PriceWithHint price={itemLevelDiscount} size="sm" />
                             </div>
                         )}
 
@@ -414,7 +413,9 @@ export default function CartPage() {
                         {couponDiscount > 0 && (
                             <div className={styles.summaryRow} style={{ color: '#86efac' }}>
                                 <span>تخفیف کوپن ({appliedCoupon?.code}):</span>
-                                <strong>-{formatPrice(couponDiscount)} تومان</strong>
+                                <span style={{ direction: 'ltr', display: 'inline-flex' }}>
+                                    - <PriceWithHint price={couponDiscount} size="sm" hideHint={true} />
+                                </span>
                             </div>
                         )}
 
@@ -423,9 +424,7 @@ export default function CartPage() {
                         {/* مجموع نهایی قابل پرداخت */}
                         <div className={styles.summaryTotal}>
                             <span>مبلغ قابل پرداخت:</span>
-                            <strong style={{ color: '#ffd166', fontSize: '1.15rem' }}>
-                                {formatPrice(finalTotalPrice)} تومان
-                            </strong>
+                            <PriceWithHint price={finalTotalPrice} size="md" />
                         </div>
 
                         {errorMessage && (

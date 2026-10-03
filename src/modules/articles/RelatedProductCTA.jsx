@@ -18,6 +18,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { GraduationCap, ShoppingBag, ArrowLeft, Sparkles } from 'lucide-react';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import styles from './RelatedProductCTA.module.scss';
 
 export default function RelatedProductCTA({ enableCta = true, items, ctaItems, item, course, product, ctaData }) {
@@ -120,21 +121,11 @@ export default function RelatedProductCTA({ enableCta = true, items, ctaItems, i
 
                 <div className={styles.footerRow}>
                   <div className={styles.priceContainer}>
-                    {formattedFinalPrice ? (
-                      <div className={styles.priceGroup}>
-                        {formattedStrikethroughPrice && (
-                          <span className={styles.originalPrice}>
-                            {formattedStrikethroughPrice} تومان
-                          </span>
-                        )}
-                        <div className={styles.currentPrice}>
-                          <span className={styles.amount}>{formattedFinalPrice}</span>
-                          <span className={styles.unit}>تومان</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className={styles.freePrice}>رایگان</div>
-                    )}
+                    <PriceWithHint
+                      price={finalPrice}
+                      originalPrice={strikethroughPrice}
+                      size="md"
+                    />
                   </div>
 
                   <Link href={targetLink} className={styles.ctaButton}>

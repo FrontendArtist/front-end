@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { getSession } from 'next-auth/react';
+import { getWalletBalanceWithByeMoney } from '@/lib/byeMoneyApi';
 
 export const useLightStore = create((set, get) => ({
     lightBalance: null,
@@ -7,7 +9,7 @@ export const useLightStore = create((set, get) => ({
 
     setLightBalance: (balance) => set({ lightBalance: Number(balance) }),
 
-    fetchLightBalance: async (force = false) => {
+    fetchLightBalance: async (force = false, explicitJwt = null) => {
         const state = get();
         // جلوگیری از ارسال درخواست‌های موازی همزمان
         if (state.isLoading) return state.lightBalance;
@@ -19,14 +21,24 @@ export const useLightStore = create((set, get) => ({
 
         set({ isLoading: true });
         try {
-            const res = await fetch('/api/payment-light', { cache: 'no-store' });
-            if (res.status === 401) {
+            let jwt = explicitJwt;
+            if (!jwt) {
+                const session = await getSession();
+                jwt = session?.user?.jwt;
+            }
+
+            if (!jwt) {
                 set({ lightBalance: null, isLoading: false });
                 return null;
             }
-            if (res.ok) {
-                const data = await res.json();
-                const balance = Number(data.light ?? data.balance ?? 0);
+
+            const res = await getWalletBalanceWithByeMoney({ jwt });
+            if (res.unauthorized) {
+                set({ lightBalance: null, isLoading: false });
+                return null;
+            }
+            if (res.success) {
+                const balance = Number(res.balance ?? 0);
                 set({
                     lightBalance: balance,
                     isLoading: false,
@@ -42,7 +54,7 @@ export const useLightStore = create((set, get) => ({
         return get().lightBalance;
     },
 
-    refreshLightBalance: () => get().fetchLightBalance(true),
+    refreshLightBalance: (explicitJwt = null) => get().fetchLightBalance(true, explicitJwt),
 
     reset: () => set({ lightBalance: null, isLoading: false, lastFetched: null }),
 }));

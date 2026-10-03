@@ -11,6 +11,7 @@ import {
     selectItemsCount,
 } from '@/store/useCartStore';
 import { formatPrice } from '@/lib/formatters';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import { executeOnlinePayment } from '@/lib/checkoutService';
 import styles from './ShippingStep.module.scss';
 
@@ -352,14 +353,14 @@ export default function ShippingStep({ onPrevious }) {
                 {couponDiscount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#86efac' }}>
                         <span>تخفیف کوپن ({appliedCoupon?.code}):</span>
-                        <strong>-{formatPrice(couponDiscount)} تومان</strong>
+                        <span style={{ direction: 'ltr', display: 'inline-flex' }}>
+                            - <PriceWithHint price={couponDiscount} size="sm" hideHint={true} />
+                        </span>
                     </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px' }}>
                     <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>مبلغ نهایی قابل پرداخت:</span>
-                    <strong style={{ color: finalTotalPrice === 0 ? '#4ade80' : '#ffd166', fontSize: '1.2rem' }}>
-                        {finalTotalPrice === 0 ? 'رایگان (۰ تومان)' : `${formatPrice(finalTotalPrice)} تومان`}
-                    </strong>
+                    <PriceWithHint price={finalTotalPrice} size="md" />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--color-card-text)', marginTop: '4px' }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5">

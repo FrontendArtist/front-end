@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore, selectTotalPrice, selectItemsCount } from '@/store/useCartStore';
 import { formatPrice } from '@/lib/formatters';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import styles from './CartIcon.module.scss';
 
 /**
@@ -291,18 +292,11 @@ export default function CartIcon() {
 
                                 {/* قیمت آیتم */}
                                 <div className={styles.itemPrice}>
-                                    {item.originalPrice && item.originalPrice > item.price ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px' }}>
-                                            <del style={{ fontSize: '0.7rem', opacity: 0.5, color: '#f87171' }}>
-                                                {formatPrice(item.originalPrice * item.quantity)}
-                                            </del>
-                                            <span style={{ color: '#ffd166', fontWeight: 'bold' }}>
-                                                {formatPrice(item.price * item.quantity)} تومان
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        `${formatPrice(item.price * item.quantity)} تومان`
-                                    )}
+                                    <PriceWithHint
+                                        price={item.price * item.quantity}
+                                        originalPrice={item.originalPrice && item.originalPrice > item.price ? item.originalPrice * item.quantity : null}
+                                        size="sm"
+                                    />
                                 </div>
                             </Link>
                         ))}
@@ -319,7 +313,7 @@ export default function CartIcon() {
                     <div className={styles.dropdownFooter}>
                         <div className={styles.totalPrice}>
                             <span>جمع کل:</span>
-                            <strong>{formatPrice(totalPrice)} تومان</strong>
+                            <PriceWithHint price={totalPrice} size="sm" />
                         </div>
                         <Link
                             href="/cart"

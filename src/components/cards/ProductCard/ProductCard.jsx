@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useCartStore } from '@/store/useCartStore';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import styles from './ProductCard.module.scss';
 
 /**
@@ -187,16 +188,11 @@ const ProductCard = ({ product }) => {
         <h3 className={`${styles.cardTitle} card-title`}>{title}</h3>
 
         <div className={styles.footer}>
-          {hasDiscount ? (
-            <div className={styles.priceContainer}>
-              <del className={styles.originalPrice}>{originalPrice.toLocaleString()} تومان</del>
-              <span className={styles.discountPrice}>{formattedPrice.toLocaleString()} تومان</span>
-            </div>
-          ) : (
-            formattedPrice > 0 && (
-              <span className={styles.price}>{formattedPrice.toLocaleString()}<br/> تومان</span>
-            )
-          )}
+          <PriceWithHint
+            price={formattedPrice}
+            originalPrice={hasDiscount ? originalPrice : null}
+            size="sm"
+          />
 
           {isOutOfStock ? (
             <button
