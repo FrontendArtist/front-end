@@ -76,16 +76,79 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
         setErrorMessage(null);
     };
 
-    // کلیک «ادامه» → redirect به صفحه پرداخت نور
-    const handleContinue = useCallback(() => {
+    // کلیک «پرداخت آنلاین» → دریافت توکن و هدایت مستقیم به درگاه پرداخت شاپرک
+    const handlePayOnline = useCallback(async () => {
         if (!isValidAmount) {
             setErrorMessage('لطفاً مقدار نور را وارد کنید');
             return;
         }
+
+        if (authStatus !== 'authenticated' || !session?.user?.jwt) {
+            onClose();
+            router.push('/auth/login?callbackUrl=' + encodeURIComponent(window.location.href));
+            return;
+        }
+
         setIsProcessing(true);
-        onClose();
-        router.push(`/checkout/light?amount=${parsedAmount}`);
-    }, [isValidAmount, parsedAmount, router, onClose]);
+        setErrorMessage(null);
+
+        try {
+            // بررسی اتصال فیلترشکن (VPN) جهت جلوگیری از خطای درگاه شاپرک
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 800);
+                const vpnRes = await fetch('/api/check-vpn', { cache: 'no-store', signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (vpnRes.ok) {
+                    const vpnData = await vpnRes.json();
+                    if (vpnData?.success && vpnData?.isVpn) {
+                        throw new Error('فیلترشکن (VPN) شما روشن است! درگاه‌های پرداخت اینترنتی شاپرک دسترسی با فیلترشکن را مسدود می‌کنند. لطفاً فیلترشکن خود را خاموش کرده و مجدداً دکمه پرداخت را بزنید.');
+                    }
+                }
+            } catch (vpnErr) {
+                if (vpnErr.message?.includes('فیلترشکن')) {
+                    throw vpnErr;
+                }
+            }
+
+            const tokenRes = await fetch('/api/payment/request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paymentType: 'light_topup', amountNoor: parsedAmount }),
+            });
+
+            const tokenData = await tokenRes.json().catch(() => ({}));
+            if (!tokenRes.ok || !tokenData.success || !tokenData.token) {
+                const message = tokenData.message || tokenData.error;
+                if (tokenRes.status === 401) {
+                    throw new Error('نشست شما منقضی شده است. لطفاً دوباره وارد حساب کاربری شوید.');
+                }
+                if (tokenRes.status === 400 || tokenRes.status === 422) {
+                    throw new Error(message || 'درخواست شارژ آنلاین معتبر نیست. مبلغ را بررسی کنید و دوباره تلاش کنید.');
+                }
+                throw new Error(message || 'در حال حاضر دریافت درگاه پرداخت ممکن نیست. لطفاً کمی بعد دوباره تلاش کنید.');
+            }
+
+            // هدایت خودکار به فرم پرداخت شاپرک
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = tokenData.gatewayUrl || 'https://sep.shaparak.ir/OnlinePG/OnlinePG';
+            form.style.display = 'none';
+
+            const tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = 'Token';
+            tokenInput.value = tokenData.token;
+            form.appendChild(tokenInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        } catch (error) {
+            console.error('[LightTopUpModal] Payment Error:', error);
+            setErrorMessage(error.message || 'ارتباط با درگاه پرداخت برقرار نشد. اتصال اینترنت را بررسی و دوباره تلاش کنید.');
+            setIsProcessing(false);
+        }
+    }, [isValidAmount, parsedAmount, authStatus, session, router, onClose]);
 
     if (!isOpen) return null;
 
@@ -230,22 +293,30 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
                     </button>
                     <button
                         className={styles.payBtn}
-                        onClick={handleContinue}
+                        onClick={handlePayOnline}
                         disabled={isProcessing || !isValidAmount}
-                        id="light-modal-continue"
+                        id="light-modal-pay-online"
                     >
-                        <>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="9 18 15 12 9 6" />
-                            </svg>
-                            <span>ادامه و پرداخت</span>
-                            {isValidAmount && (
-                                <span className={styles.payAmount}>
-                                    {formatNumber(tomanEquivalent)} تومان
-                                </span>
-                            )}
-                        </>
+                        {isProcessing ? (
+                            <>
+                                <span className={styles.spinner} />
+                                <span>در حال انتقال به درگاه بانکی...</span>
+                            </>
+                        ) : (
+                            <>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                                    <line x1="1" y1="10" x2="23" y2="10" />
+                                </svg>
+                                <span>پرداخت آنلاین</span>
+                                {isValidAmount && (
+                                    <span className={styles.payAmount}>
+                                        {formatNumber(tomanEquivalent)} تومان
+                                    </span>
+                                )}
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
