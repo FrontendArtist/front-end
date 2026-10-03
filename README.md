@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# فرانت‌اند طرح الهی
 
-## Getting Started
+رابط کاربری Next.js طرح الهی که به Strapi و بای‌مانی متصل می‌شود.
 
-First, run the development server:
+## اجرای محلی
+
+پس از تنظیم متغیرهای محیطی متناسب با محیط خود، وابستگی‌ها را نصب و برنامه را اجرا کنید:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+اسکریپت‌های دقیق اجرا و آزمون در `package.json` هستند.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## راهنمای اسناد
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- [راهنمای یادداشت‌های فرانت‌اند](context/README.md)
+- [قرارداد اتصال طرح الهی و بای‌مانی](../../ByeMoney/docs/integration/ByeMoney-Strapi-Integration.md)
+- [تصمیم‌های کسب‌وکار بای‌مانی](../../ByeMoney/docs/architecture/ByeMoney-Decisions.md)
+- [موارد پیگیری مشترک سه پروژه](../../ByeMoney/TASKS.md)
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+یادداشت‌های `context/` پیشینهٔ طراحی و پیاده‌سازی‌اند. پیش از استفاده از جزئیات مالی، هویت یا API آن‌ها، قرارداد اتصال و کد فعلی را بررسی کنید.

@@ -1,5 +1,7 @@
 # Feature Context: Global SCSS Setup
 
+> بایگانی: این نمونهٔ اولیهٔ پیاده‌سازی استایل است. برای ساختار و توکن‌های فعلی، [راهنمای اسناد فرانت‌اند](../README.md) و فایل‌های `src/styles/` را بررسی کنید.
+
 ## Overall Goal
 To establish the project's foundational styling structure by creating all necessary global SCSS files, including variables, mixins, and base styles, within the `src/styles/` directory.
 
