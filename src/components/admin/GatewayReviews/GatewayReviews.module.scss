@@ -324,6 +324,23 @@
     }
 }
 
+.reviewFields {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1rem;
+}
+
+.reviewAudit {
+    padding: 1rem;
+    margin-block: 0.75rem;
+    border-inline-start: 3px solid #94a3b8;
+    background: #f8fafc;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
 .resolutionSection {
     background: #f8fafc;
     border: 2px solid #cbd5e1;
@@ -608,4 +625,3 @@
         margin-top: 0.5rem;
     }
 }
-

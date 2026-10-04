@@ -1,12 +1,11 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions, isUserAdmin } from '@/lib/auth';
+import { getGatewayReviewAccess } from '@/lib/admin/gatewayReviewAccess';
 import { NextResponse } from 'next/server';
 import { getGatewayReviewByReference } from '@/lib/admin/gatewayReviewsApi';
 
 export async function GET(request, context) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.jwt || !isUserAdmin(session.user)) {
-        return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+    const { session, status: accessStatus } = await getGatewayReviewAccess();
+    if (accessStatus !== 200) {
+        return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: accessStatus });
     }
 
     try {
@@ -15,7 +14,7 @@ export async function GET(request, context) {
             return NextResponse.json({ error: 'کد ارجاع مشتری الزامی است' }, { status: 400 });
         }
 
-        const result = await getGatewayReviewByReference(session.user.jwt, clientReferenceCode);
+        const result = await getGatewayReviewByReference(session.user.jwt, clientReferenceCode, Number(new URL(request.url).searchParams.get('historyPage')) || 1);
         if (!result?.data) {
             return NextResponse.json({ error: 'پرونده مورد نظر یافت نشد' }, { status: 404 });
         }

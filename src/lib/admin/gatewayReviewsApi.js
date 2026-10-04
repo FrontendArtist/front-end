@@ -62,10 +62,10 @@ export async function getGatewayReviews(jwt, { page = 1, pageSize = 25, status, 
  * @param {string} clientReferenceCode - شناسه ارجاع مشتری
  * @returns {Promise<{ data: object }>}
  */
-export async function getGatewayReviewByReference(jwt, clientReferenceCode) {
+export async function getGatewayReviewByReference(jwt, clientReferenceCode, historyPage = 1) {
     const cleanBase = getCleanBaseUrl();
     const encoded = encodeURIComponent(String(clientReferenceCode || '').trim());
-    const url = `${cleanBase}/api/admin/gateway-reviews/${encoded}`;
+    const url = `${cleanBase}/api/admin/gateway-reviews/${encoded}?historyPage=${historyPage}`;
 
     const res = await fetch(url, {
         method: 'GET',
@@ -177,18 +177,12 @@ export async function updateGatewayReviewSettings(jwt, noCallbackMinutes) {
  * @param {{ outcomeCode: string, resolutionFinancialReferenceId?: string|null }} payload
  * @returns {Promise<object>}
  */
-export async function resolveGatewayReview(jwt, clientReferenceCode, { outcomeCode, resolutionFinancialReferenceId }) {
+export async function resolveGatewayReview(jwt, clientReferenceCode, payload) {
     const cleanBase = getCleanBaseUrl();
     const encoded = encodeURIComponent(String(clientReferenceCode || '').trim());
     const url = `${cleanBase}/api/admin/gateway-reviews/${encoded}/resolve`;
 
-    const formattedPayload = {
-        outcomeCode: String(outcomeCode || '').trim(),
-        resolutionFinancialReferenceId:
-            outcomeCode === 'UNPAID_REJECTED'
-                ? null
-                : (resolutionFinancialReferenceId ? String(resolutionFinancialReferenceId).trim() : null),
-    };
+    const formattedPayload = payload;
 
     const res = await fetch(url, {
         method: 'POST',
@@ -212,3 +206,11 @@ export async function resolveGatewayReview(jwt, clientReferenceCode, { outcomeCo
     return data;
 }
 
+
+export async function reopenGatewayReview(jwt, clientReferenceCode, payload) {
+ const url = `${getCleanBaseUrl()}/api/admin/gateway-reviews/${encodeURIComponent(clientReferenceCode)}/reopen`;
+ const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` }, body: JSON.stringify(payload) });
+ const data = await response.json().catch(() => ({}));
+ if (!response.ok) throw Object.assign(new Error(data.code || "REVIEW_REOPEN_FAILED"), { status: response.status, code: data.code });
+ return data;
+}

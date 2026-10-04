@@ -10,7 +10,6 @@ import { ORDER_STATUS, PAYMENT_STATUS, isOrderPaid } from '@/lib/constants/order
 import { STRAPI_API_URL } from '@/lib/api';
 import { findAttempt } from '@/lib/gatewayTopUp';
 
-import { getSepMockEnvironmentError, isSepMockEnabled } from '@/lib/sepMock';
 import { processGatewayTopUpCallback } from '@/lib/processGatewayTopUpCallback';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;

@@ -344,5 +344,30 @@ describe('SEP TopUp Verification Flow', () => {
     expect(verifySepTransaction).not.toHaveBeenCalled();
     expect(confirmGatewayTopUp).not.toHaveBeenCalled();
   });
+
+  test('verified payment after manual refund does not auto-credit and routes back to financial review', async () => {
+    verifySepTransaction.mockResolvedValue({
+      success: true,
+      resultCode: 0,
+      transactionDetail: { RefNum: 'BANK-REF', RRN: 'BANK-RRN', TerminalNumber: 'test-terminal', OrginalAmount: 10000, AffectiveAmount: 10000 },
+    });
+    getTopUpConfirmation.mockResolvedValue({
+      status: 'Pending',
+      amountRial: 10000,
+      externalTransactionId: null,
+      hasManualRefund: true,
+    });
+
+    const response = await callback();
+
+    expect(new URL(response.url).searchParams.get('status')).toBe('failed');
+    expect(confirmGatewayTopUp).not.toHaveBeenCalled();
+    expect(reverseSepTransaction).not.toHaveBeenCalled();
+    expect(updateAttempt).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ status: 'financial_review', lastError: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' })
+    );
+  });
 });
+
 

@@ -88,7 +88,7 @@ describe('gatewayReviewsApi (Server-side Strapi Client)', () => {
 
             const result = await getGatewayReviewByReference(mockJwt, 'REF-202');
             expect(global.fetch).toHaveBeenCalledWith(
-                expect.stringContaining('/api/admin/gateway-reviews/REF-202'),
+                expect.stringContaining('/api/admin/gateway-reviews/REF-202?historyPage=1'),
                 expect.objectContaining({
                     headers: expect.objectContaining({
                         Authorization: `Bearer ${mockJwt}`,
@@ -175,7 +175,7 @@ describe('gatewayReviewsApi (Server-side Strapi Client)', () => {
 
             const result = await resolveGatewayReview(mockJwt, 'REF-300', {
                 outcomeCode: 'UNPAID_REJECTED',
-                resolutionFinancialReferenceId: 'should-be-ignored',
+                resolutionFinancialReferenceId: null,
             });
 
             expect(global.fetch).toHaveBeenCalledWith(
@@ -207,7 +207,7 @@ describe('gatewayReviewsApi (Server-side Strapi Client)', () => {
 
             const result = await resolveGatewayReview(mockJwt, 'REF-301', {
                 outcomeCode: 'PAID_AND_CONFIRMED',
-                resolutionFinancialReferenceId: '  REF-BANK-999  ',
+                resolutionFinancialReferenceId: 'REF-BANK-999',
             });
 
             expect(global.fetch).toHaveBeenCalledWith(

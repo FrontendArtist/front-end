@@ -1,12 +1,11 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions, isUserAdmin } from '@/lib/auth';
+import { getGatewayReviewAccess } from '@/lib/admin/gatewayReviewAccess';
 import { NextResponse } from 'next/server';
 import { getGatewayReviews } from '@/lib/admin/gatewayReviewsApi';
 
 export async function GET(request) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.jwt || !isUserAdmin(session.user)) {
-        return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+    const { session, status: accessStatus } = await getGatewayReviewAccess();
+    if (accessStatus !== 200) {
+        return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: accessStatus });
     }
 
     try {

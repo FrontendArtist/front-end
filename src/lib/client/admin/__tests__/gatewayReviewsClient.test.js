@@ -41,7 +41,7 @@ describe('gatewayReviewsClient', () => {
             const err = { status: 422, code: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' };
             const formatted = formatGatewayReviewError(err);
             expect(formatted.code).toBe('REVIEW_MANUAL_REFUND_NOT_SUPPORTED');
-            expect(formatted.message).toContain('بازپرداخت دستی یا استرداد وجه در این سامانه پشتیبانی نمی‌شود');
+            expect(formatted.message).toContain('ثبت بازپرداخت دستی برای شارژ تأییدشده پشتیبانی نمی‌شود');
             expect(formatted.isUnknownOutcome).toBe(false);
         });
 
@@ -88,7 +88,7 @@ describe('gatewayReviewsClient', () => {
             });
 
             const result = await fetchGatewayReview('REF-001');
-            expect(global.fetch).toHaveBeenCalledWith('/api/admin/gateway-reviews/REF-001');
+            expect(global.fetch).toHaveBeenCalledWith('/api/admin/gateway-reviews/REF-001?historyPage=1');
             expect(result).toEqual(mockCase);
         });
     });
@@ -126,65 +126,22 @@ describe('gatewayReviewsClient', () => {
     });
 
     describe('resolveGatewayReview', () => {
-        it('rejects MANUAL_REFUND on client with 422', async () => {
-            await expect(
-                resolveGatewayReview('REF-1', { outcomeCode: 'MANUAL_REFUND' })
-            ).rejects.toMatchObject({
-                status: 422,
-                code: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED',
-            });
+        const payload = { outcomeCode: 'NO_MATCHING_DEPOSIT', resolutionFinancialReferenceId: null, evidence: {
+            operationId: '12345678-1234-1234-1234-123456789abc', expectedRevision: 1, checkedReportDate: '2026-09-30', matchingDepositFound: false,
+        } };
+        it('rejects a missing report', async () => {
+            await expect(resolveGatewayReview('TR-1', { outcomeCode: 'NO_MATCHING_DEPOSIT' })).rejects.toMatchObject({ status: 400 });
             expect(global.fetch).not.toHaveBeenCalled();
         });
-
-        it('rejects UNPAID_REJECTED if financial reference is provided', async () => {
-            await expect(
-                resolveGatewayReview('REF-1', {
-                    outcomeCode: 'UNPAID_REJECTED',
-                    resolutionFinancialReferenceId: 'SOME-REF',
-                })
-            ).rejects.toMatchObject({
-                status: 400,
-                code: 'REVIEW_INVALID_RESOLUTION',
-            });
-            expect(global.fetch).not.toHaveBeenCalled();
+        it('sends report and operation identity intact', async () => {
+            global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'resolved' }) });
+            await resolveGatewayReview('TR-1', payload);
+            expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual(payload);
         });
-
-        it('rejects PAID_AND_CONFIRMED if financial reference is missing', async () => {
-            await expect(
-                resolveGatewayReview('REF-1', {
-                    outcomeCode: 'PAID_AND_CONFIRMED',
-                    resolutionFinancialReferenceId: '',
-                })
-            ).rejects.toMatchObject({
-                status: 400,
-                code: 'REVIEW_INVALID_RESOLUTION',
-            });
-            expect(global.fetch).not.toHaveBeenCalled();
-        });
-
-        it('sends null as financial reference for valid UNPAID_REJECTED', async () => {
-            global.fetch.mockResolvedValueOnce({
-                ok: true,
-                status: 200,
-                json: async () => ({ caseId: 'c1', status: 'resolved' }),
-            });
-
-            await resolveGatewayReview('REF-1', {
-                outcomeCode: 'UNPAID_REJECTED',
-                resolutionFinancialReferenceId: null,
-            });
-
-            expect(global.fetch).toHaveBeenCalledWith(
-                '/api/admin/gateway-reviews/REF-1/resolve',
-                expect.objectContaining({
-                    method: 'POST',
-                    body: JSON.stringify({
-                        outcomeCode: 'UNPAID_REJECTED',
-                        resolutionFinancialReferenceId: null,
-                    }),
-                })
-            );
+        it('allows manual refund with a reference for server-side status validation', async () => {
+            global.fetch.mockResolvedValueOnce({ ok: false, status: 422, json: async () => ({ code: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' }) });
+            await expect(resolveGatewayReview('TR-1', { ...payload, outcomeCode: 'MANUAL_REFUND', evidence: { ...payload.evidence, manualRefundReference: 'bank-refund' } }))
+                .rejects.toMatchObject({ status: 422, code: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' });
         });
     });
 });
-

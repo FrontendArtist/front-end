@@ -1,471 +1,206 @@
 'use client';
 
-/**
- * @file src/components/admin/GatewayReviews/GatewayReviewDetail.jsx
- * @description نمای جزئیات پرونده رسیدگی به پرداخت، تاریخچه شواهد و فرم ارسال نتیجه رسیدگی
- */
-
-import React, { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
-import {
-    resolveGatewayReview,
-    REASON_CONFIG,
-    CASE_STATUS_CONFIG,
-    TOPUP_STATUS_CONFIG,
-    OUTCOME_CONFIG,
-    EVIDENCE_STAGE_LABELS,
-    formatGatewayReviewError,
-} from '@/lib/client/admin/gatewayReviewsClient';
+import { fetchGatewayReview, resolveGatewayReview, reopenGatewayReview, formatGatewayReviewError,
+    OUTCOME_CONFIG, REASON_CONFIG, TOPUP_STATUS_CONFIG, CASE_STATUS_CONFIG } from '@/lib/client/admin/gatewayReviewsClient';
+import { validateGatewayReviewResolution } from '@/lib/gatewayReviewResolution';
 import styles from './GatewayReviews.module.scss';
 
-function formatDate(isoString) {
-    if (!isoString) return '—';
-    try {
-        const date = new Date(isoString);
-        return new Intl.DateTimeFormat('fa-IR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-        }).format(date);
-    } catch {
-        return isoString;
-    }
+const dateTime = value => value ? new Intl.DateTimeFormat('fa-IR', {
+    dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Tehran',
+}).format(new Date(value)) : '—';
+const reportDate = value => value ? new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(value)) : '—';
+const rial = value => value == null ? '—' : new Intl.NumberFormat('fa-IR').format(value) + ' ریال';
+const eventLabels = { opened: 'ایجاد پرونده', bank_event: 'رویداد درگاه', manual_evidence: 'مدرک جدید کارمند',
+    delivery_unknown: 'تحویل نامعلوم', delivery_failed: 'تحویل ناموفق', open_delivered: 'ثبت پرونده در سرویس مالی',
+    event_conflict: 'تعارض مدرک', resolution_rejected: 'رد درخواست بستن', resolution_delivery_unknown: 'نتیجه بستن نامعلوم' };
+const stageLabels = { callback: 'بازگشت از درگاه', verify: 'بررسی بانک', reverse: 'برگشت بانک', reverse_intent: 'درخواست برگشت', manual: 'بررسی دستی' };
+
+function Field({ label, children }) {
+    return <label className={styles.resolutionSection__field}><span className={styles.resolutionSection__label}>{label}</span>{children}</label>;
 }
 
-export default function GatewayReviewDetail({ initialCase }) {
-    const [caseData, setCaseData] = useState(initialCase);
-    const [outcomeCode, setOutcomeCode] = useState('');
-    const [financialRef, setFinancialRef] = useState('');
-    const [validationError, setValidationError] = useState(null);
+export default function GatewayReviewDetail({ initialCase, initialError }) {
+    const [data, setData] = useState(initialCase);
+    const [outcome, setOutcome] = useState('');
+    const [checkedDate, setCheckedDate] = useState('');
+    const [matched, setMatched] = useState('');
+    const [depositRef, setDepositRef] = useState('');
+    const [depositDate, setDepositDate] = useState('');
+    const [depositAmount, setDepositAmount] = useState('');
+    const [refundRef, setRefundRef] = useState('');
+    const [note, setNote] = useState('');
+    const [newEvidence, setNewEvidence] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState(initialError || '');
+    const [message, setMessage] = useState('');
+    const operation = useRef(null);
+    const reopening = useRef(null);
+    const inFlight = useRef(false);
+    const [uncertain, setUncertain] = useState(false);
 
-    // وضعیت ارسال و نتیجه
-    const [submitting, setSubmitting] = useState(false);
-    const [serverError, setServerError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState(null);
-
-    // مودال تأیید
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
-
-    if (!caseData) {
-        return (
-            <div className={styles.page}>
-                <div className={`${styles.alert} ${styles['alert--error']}`}>
-                    <span>⚠️</span>
-                    <span>پرونده مورد نظر یافت نشد.</span>
-                </div>
-                <Link href="/admin/gateway-reviews" className={`${styles.btn} ${styles['btn--secondary']}`}>
-                    ← بازگشت به فهرست پرونده‌ها
-                </Link>
-            </div>
-        );
+    async function run(action) {
+        if (inFlight.current) return;
+        inFlight.current = true; setBusy(true); setError(''); setMessage('');
+        try { await action(); }
+        catch (err) {
+            const parsed = formatGatewayReviewError(err);
+            setError(parsed.message);
+            setUncertain(parsed.isUnknownOutcome);
+            if (!parsed.isUnknownOutcome) operation.current = null;
+        } finally { inFlight.current = false; setBusy(false); }
     }
 
-    const isOpen = caseData.status === 'open';
-    const reasonMeta = REASON_CONFIG[caseData.reasonCode] || { label: caseData.reasonCode, variant: 'default' };
-    const statusMeta = CASE_STATUS_CONFIG[caseData.status] || { label: caseData.status, variant: 'default' };
-    const topUpKey = caseData.topUpStatus === null ? 'null' : caseData.topUpStatus;
-    const topUpMeta = TOPUP_STATUS_CONFIG[topUpKey] || { label: caseData.topUpStatus || 'نامعلوم', variant: 'default' };
-
-    // باز کردن مودال تأیید با اعتبارسنجی اولیه
-    const handleInitiateResolution = (e) => {
-        e.preventDefault();
-        setValidationError(null);
-        setServerError(null);
-
-        if (!isOpen) {
-            setValidationError('این پرونده در وضعیت باز قرار ندارد و امکان رسیدگی مجدد ندارد.');
-            return;
+    const refresh = (page = 1) => run(async () => {
+        const current = await fetchGatewayReview(data.clientReferenceCode, page);
+        setData(current);
+        if (current?.status === 'resolved' || current?.revision !== data.revision) {
+            operation.current = null; setUncertain(false);
         }
+    });
 
-        if (!outcomeCode) {
-            setValidationError('لطفاً نتیجه رسیدگی را انتخاب کنید.');
-            return;
-        }
+    async function submit(event) {
+        event.preventDefault();
+        const pending = data.pendingOperation?.payload;
+        const payload = pending || operation.current || {
+            outcomeCode: outcome,
+            resolutionFinancialReferenceId: ['PAID_AND_CONFIRMED', 'REVERSED_REJECTED'].includes(outcome) ? data.refNum : null,
+            evidence: {
+                operationId: crypto.randomUUID(), expectedRevision: data.revision, checkedReportDate: checkedDate,
+                matchingDepositFound: matched === '' ? null : matched === 'yes', note: note.trim() || null,
+                depositReference: matched === 'yes' ? depositRef.trim() : null,
+                depositDate: matched === 'yes' ? depositDate : null,
+                depositAmountRial: matched === 'yes' ? Number(depositAmount) : null,
+                manualRefundReference: outcome === 'MANUAL_REFUND' ? refundRef.trim() : null,
+            },
+        };
+        const validation = validateGatewayReviewResolution(payload);
+        if (validation) { setError(validation); return; }
+        operation.current = payload;
+        await run(async () => {
+            const current = await resolveGatewayReview(data.clientReferenceCode, payload);
+            setData(current); operation.current = null; setUncertain(false);
+            setMessage(current.status === 'resolved' ? 'نتیجه بررسی ثبت و پرونده بسته شد.' :
+                'نتیجه ثبت شد؛ مدرک تازه رسیده و پرونده برای بررسی دوباره باز است.');
+        });
+    }
 
-        if (outcomeCode === 'UNPAID_REJECTED') {
-            if (financialRef && financialRef.trim() !== '') {
-                setValidationError('برای رد شارژ پرداخت‌نشده، شناسه مرجع مالی باید خالی باشد.');
-                return;
-            }
-        } else {
-            if (!financialRef || !financialRef.trim()) {
-                setValidationError('برای این نتیجه، وارد کردن شناسه مرجع مالی بانکی الزامی است.');
-                return;
-            }
-        }
+    async function reopen(event) {
+        event.preventDefault();
+        if (!newEvidence.trim() && !reopening.current) return;
+        reopening.current ||= { evidenceId: crypto.randomUUID(), note: newEvidence.trim() };
+        await run(async () => {
+            setData(await reopenGatewayReview(data.clientReferenceCode, reopening.current));
+            reopening.current = null; operation.current = null; setNewEvidence(''); setUncertain(false);
+            setMessage('مدرک جدید ثبت شد و پرونده برای بررسی دوباره باز شد.');
+        });
+    }
 
-        setShowConfirmModal(true);
-    };
+    if (!data) return <div className={styles.page}><p role="alert">{error || 'پرونده در دسترس نیست.'}</p>
+        <Link href="/admin/gateway-reviews">بازگشت به فهرست پرونده‌ها</Link></div>;
 
-    // ارسال نهایی بعد از تأیید کاربر
-    const handleConfirmResolution = async () => {
-        setShowConfirmModal(false);
-        setSubmitting(true);
-        setServerError(null);
-        setSuccessMessage(null);
+    const isConfirmed = data.topUpStatus === 'Confirmed';
+    const editable = !busy && !uncertain && !data.pendingOperation;
+    const outcomeDisabled = value => value === 'PAID_AND_CONFIRMED' ? !data.canClosePaid :
+        value === 'REVERSED_REJECTED' ? !data.canCloseReversed : isConfirmed;
+    const latest = [...(data.audit || [])].reverse().find(x => x.eventType === 'resolved');
+    const details = [
+        ['نام کاربر', data.userName || 'ثبت نشده'], ['تلفن', data.userPhone || 'ثبت نشده'],
+        ['زمان درخواست، به وقت تهران', dateTime(data.requestedAtUtc)], ['مبلغ درخواست', rial(data.amountRial)],
+        ['شماره درخواست درگاه (ResNum)', data.clientReferenceCode], ['شناسه شارژ (TopUp)', data.topUpRequestId],
+        ['دلیل ایجاد پرونده', REASON_CONFIG[data.reasonCode]?.label || data.reasonCode],
+        ['وضعیت شارژ', TOPUP_STATUS_CONFIG[data.topUpStatus]?.label || data.topUpStatus],
+        ['وضعیت پرونده', CASE_STATUS_CONFIG[data.status]?.label || data.status],
+        ['زمان ایجاد پرونده', dateTime(data.openedAtUtc)],
+    ];
+    const inputClass = styles.resolutionSection__input;
 
-        try {
-            const updatedCase = await resolveGatewayReview(caseData.clientReferenceCode, {
-                outcomeCode,
-                resolutionFinancialReferenceId: outcomeCode === 'UNPAID_REJECTED' ? null : financialRef.trim(),
-            });
-
-            // پاسخ موفق خود شیء پرونده است
-            if (updatedCase) {
-                setCaseData(updatedCase);
-            }
-            setSuccessMessage('نتیجه رسیدگی با موفقیت ثبت شد و وضعیت پرونده به‌روزرسانی گردید.');
-        } catch (err) {
-            const formatted = formatGatewayReviewError(err);
-            setServerError(formatted);
-            // توجه: پرونده را خودکار حل‌شده فرض نمی‌کنیم
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    return (
-        <div className={styles.page}>
-            {/* سرصفحه با دکمه بازگشت */}
-            <div className={styles.header}>
-                <div className={styles.header__titleArea}>
-                    <Link
-                        href="/admin/gateway-reviews"
-                        className={`${styles.btn} ${styles['btn--secondary']}`}
-                        style={{ fontSize: '0.8rem', padding: '0.35rem 0.65rem' }}
-                    >
-                        ← بازگشت به فهرست
-                    </Link>
-                    <h1 className={styles.header__title}>
-                        رسیدگی به پرونده: {caseData.clientReferenceCode}
-                    </h1>
-                </div>
-                <div className={styles.header__actions}>
-                    <span className={`${styles.badge} ${styles[`badge--${statusMeta.variant}`]}`}>
-                        {statusMeta.label}
-                    </span>
-                    <span className={`${styles.badge} ${styles[`badge--${reasonMeta.variant}`]}`}>
-                        علت: {reasonMeta.label}
-                    </span>
-                </div>
-            </div>
-
-            {/* کارت مشخصات پرونده */}
-            <div className={styles.detailCard}>
-                <h2 className={styles.detailCard__title}>📌 مشخصات و وضعیت پرونده</h2>
-                <div className={styles.detailCard__grid}>
-                    <div className={styles.detailCard__item}>
-                        <span className={styles.detailCard__label}>شماره ارجاع مشتری (ResNum)</span>
-                        <span className={styles.codeCell}>{caseData.clientReferenceCode}</span>
-                    </div>
-
-                    <div className={styles.detailCard__item}>
-                        <span className={styles.detailCard__label}>شناسه سیستمی پرونده (Case ID)</span>
-                        <span className={styles.detailCard__value}>{caseData.caseId}</span>
-                    </div>
-
-                    <div className={styles.detailCard__item}>
-                        <span className={styles.detailCard__label}>شناسه درخواست شارژ (TopUp Request ID)</span>
-                        <span className={styles.detailCard__value}>{caseData.topUpRequestId || '—'}</span>
-                    </div>
-
-                    <div className={styles.detailCard__item}>
-                        <span className={styles.detailCard__label}>وضعیت شارژ کاربر</span>
-                        <span className={`${styles.badge} ${styles[`badge--${topUpMeta.variant}`]}`}>
-                            {topUpMeta.label}
-                        </span>
-                    </div>
-
-                    <div className={styles.detailCard__item}>
-                        <span className={styles.detailCard__label}>زمان بازشدن پرونده</span>
-                        <span className={styles.detailCard__value}>{formatDate(caseData.openedAtUtc)}</span>
-                    </div>
-
-                    <div className={styles.detailCard__item}>
-                        <span className={styles.detailCard__label}>زمان رسیدگی / بسته شدن</span>
-                        <span className={styles.detailCard__value}>
-                            {caseData.resolvedAtUtc ? formatDate(caseData.resolvedAtUtc) : 'هنوز رسیدگی نشده'}
-                        </span>
-                    </div>
-
-                    <div className={styles.detailCard__item}>
-                        <span className={styles.detailCard__label}>نتیجه نهایی رسیدگی (Outcome)</span>
-                        <span className={styles.detailCard__value}>
-                            {caseData.outcomeCode ? (
-                                <span className={`${styles.badge} ${styles[`badge--${OUTCOME_CONFIG[caseData.outcomeCode]?.variant || 'info'}`]}`}>
-                                    {OUTCOME_CONFIG[caseData.outcomeCode]?.label || caseData.outcomeCode}
-                                </span>
-                            ) : (
-                                '—'
-                            )}
-                        </span>
-                    </div>
-
-                    <div className={styles.detailCard__item}>
-                        <span className={styles.detailCard__label}>شناسه مرجع مالی نهایی (RRN / Ref ID)</span>
-                        <span className={styles.codeCell}>
-                            {caseData.resolutionFinancialReferenceId || '—'}
-                        </span>
-                    </div>
-
-                    <div className={styles.detailCard__item}>
-                        <span className={styles.detailCard__label}>وضعیت تحویل اعلان به سیستم مالی</span>
-                        <span className={styles.detailCard__value}>
-                            {caseData.deliveryStatus ? (
-                                <span
-                                    className={`${styles.badge} ${
-                                        caseData.deliveryStatus === 'delivered'
-                                            ? styles['badge--success']
-                                            : caseData.deliveryStatus === 'failed'
-                                            ? styles['badge--error']
-                                            : styles['badge--warning']
-                                    }`}
-                                >
-                                    {caseData.deliveryStatus === 'delivered'
-                                        ? 'تحویل داده شده'
-                                        : caseData.deliveryStatus === 'failed'
-                                        ? 'ناموفق'
-                                        : caseData.deliveryStatus}
-                                </span>
-                            ) : (
-                                '—'
-                            )}
-                        </span>
-                    </div>
-
-                    {caseData.deliveryError && (
-                        <div className={styles.detailCard__item} style={{ gridColumn: '1 / -1' }}>
-                            <span className={styles.detailCard__label} style={{ color: '#dc2626' }}>خطای تحویل</span>
-                            <span className={styles.detailCard__value} style={{ color: '#dc2626' }}>
-                                {caseData.deliveryError}
-                            </span>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* بخش ارسال نتیجه رسیدگی (فقط برای پرونده باز) */}
-            {isOpen ? (
-                <div className={styles.resolutionSection}>
-                    <div className={styles.resolutionSection__header}>
-                        <h2 className={styles.resolutionSection__title}>⚖️ ثبت نتیجه رسیدگی به پرونده</h2>
-                        <span className={`${styles.badge} ${styles['badge--warning']}`}>
-                            پرونده باز است و نیاز به تعیین تکلیف دارد
-                        </span>
-                    </div>
-
-                    <p style={{ fontSize: '0.85rem', color: '#4b5563', margin: 0 }}>
-                        پس از بررسی مدارک و پنل درگاه، یکی از نتایج زیر را انتخاب کنید. پس از ثبت قطعی، وضعیت برای سرویس مالی ارسال و پرونده بسته خواهد شد.
-                    </p>
-
-                    <form onSubmit={handleInitiateResolution} className={styles.resolutionSection__form}>
-                        <div className={styles.resolutionSection__field}>
-                            <label htmlFor="outcome-select" className={styles.resolutionSection__label}>
-                                نتیجه رسیدگی:
-                            </label>
-                            <select
-                                id="outcome-select"
-                                value={outcomeCode}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    setOutcomeCode(val);
-                                    if (val === 'UNPAID_REJECTED') {
-                                        setFinancialRef('');
-                                    }
-                                }}
-                                className={styles.resolutionSection__select}
-                                disabled={submitting}
-                            >
-                                <option value="">-- لطفاً نتیجه را مشخص کنید --</option>
-                                <option value="PAID_AND_CONFIRMED">
-                                    پرداخت موفق و تأیید شارژ (PAID_AND_CONFIRMED)
-                                </option>
-                                <option value="UNPAID_REJECTED">
-                                    پرداخت‌نشده و رد شارژ (UNPAID_REJECTED)
-                                </option>
-                                <option value="REVERSED_REJECTED">
-                                    برگشت‌خورده و رد شارژ (REVERSED_REJECTED)
-                                </option>
-                            </select>
-                            {outcomeCode && (
-                                <span className={styles.resolutionSection__hint}>
-                                    💡 {OUTCOME_CONFIG[outcomeCode]?.description}
-                                </span>
-                            )}
-                        </div>
-
-                        <div className={styles.resolutionSection__field}>
-                            <label htmlFor="financial-ref-input" className={styles.resolutionSection__label}>
-                                شناسه مرجع مالی درگاه (RRN / RefNum / شناسه پیگیری برگشت):
-                            </label>
-                            <input
-                                id="financial-ref-input"
-                                type="text"
-                                value={financialRef}
-                                onChange={(e) => setFinancialRef(e.target.value)}
-                                placeholder={
-                                    outcomeCode === 'UNPAID_REJECTED'
-                                        ? 'برای پرداخت‌نشده مرجع مالی ارسال نمی‌شود (خالی بماند)'
-                                        : 'مثال: 123456789012'
-                                }
-                                disabled={submitting || outcomeCode === 'UNPAID_REJECTED'}
-                                className={styles.resolutionSection__input}
-                            />
-                            <span className={styles.resolutionSection__hint}>
-                                {outcomeCode === 'UNPAID_REJECTED'
-                                    ? 'برای نتیجه "پرداخت‌نشده و رد شارژ"، مقدار مرجع به عنوان null فرستاده می‌شود.'
-                                    : 'شناسه مرجع برای تایید واریز یا رهگیری برگشت بانکی ضروری است.'}
-                            </span>
-                        </div>
-
-                        {validationError && (
-                            <div className={`${styles.alert} ${styles['alert--warning']}`}>
-                                <span>⚠️</span>
-                                <span>{validationError}</span>
-                            </div>
-                        )}
-
-                        {serverError && (
-                            <div
-                                className={`${styles.alert} ${
-                                    serverError.isUnknownOutcome
-                                        ? styles['alert--warning']
-                                        : styles['alert--error']
-                                }`}
-                            >
-                                <span>{serverError.isUnknownOutcome ? '❓' : '❌'}</span>
-                                <div>
-                                    <strong>{serverError.isUnknownOutcome ? 'نتیجه نامعلوم:' : 'خطا در ثبت نتیجه:'}</strong>{' '}
-                                    {serverError.message}
-                                </div>
-                            </div>
-                        )}
-
-                        <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '0.5rem' }}>
-                            <button
-                                type="submit"
-                                disabled={submitting || !outcomeCode}
-                                className={`${styles.btn} ${styles['btn--primary']}`}
-                            >
-                                {submitting ? 'در حال ثبت رسیدگی...' : 'ثبت نتیجه رسیدگی'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            ) : (
-                <div className={`${styles.alert} ${styles['alert--success']}`}>
-                    <span>✅</span>
-                    <div>
-                        <strong>این پرونده قبلاً رسیدگی و بسته شده است.</strong>
-                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem' }}>
-                            نتیجه ثبت‌شده: {OUTCOME_CONFIG[caseData.outcomeCode]?.label || caseData.outcomeCode} |
-                            مرجع مالی: {caseData.resolutionFinancialReferenceId || 'ندارد (رد پرداخت‌نشده)'}
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            {successMessage && (
-                <div className={`${styles.alert} ${styles['alert--success']}`}>
-                    <span>✅</span>
-                    <span>{successMessage}</span>
-                </div>
-            )}
-
-            {/* بخش تاریخچه شواهد و رویدادها */}
-            <div className={styles.detailCard}>
-                <h2 className={styles.detailCard__title}>📜 تاریخچه شواهد و وقایع ثبت‌شده (Evidence History)</h2>
-                {caseData.history && caseData.history.length > 0 ? (
-                    <div className={styles.historyTimeline}>
-                        {caseData.history.map((h, idx) => (
-                            <div key={h.eventId || `${h.eventType}-${idx}`} className={styles.historyTimeline__item}>
-                                <div className={styles.historyTimeline__header}>
-                                    <div className={styles.historyTimeline__title}>
-                                        <span>🔹 {h.eventType}</span>
-                                        {h.evidenceStage && (
-                                            <span className={`${styles.badge} ${styles['badge--info']}`}>
-                                                مرحله: {EVIDENCE_STAGE_LABELS[h.evidenceStage] || h.evidenceStage}
-                                            </span>
-                                        )}
-                                        {h.evidenceKind && (
-                                            <span className={`${styles.badge} ${styles['badge--default']}`}>
-                                                نوع: {h.evidenceKind}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <span className={styles.historyTimeline__time}>
-                                        {formatDate(h.occurredAtUtc)}
-                                    </span>
-                                </div>
-
-                                {h.eventId && (
-                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                        شناسه رویداد: <span className={styles.codeCell}>{h.eventId}</span>
-                                    </div>
-                                )}
-
-                                {h.details && Object.keys(h.details).length > 0 && (
-                                    <div>
-                                        <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: '0.25rem' }}>
-                                            جزئیات ثبت‌شده:
-                                        </div>
-                                        <pre className={styles.historyTimeline__details}>
-                                            {JSON.stringify(h.details, null, 2)}
-                                        </pre>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div style={{ color: '#6b7280', fontSize: '0.875rem', padding: '1rem 0' }}>
-                        هیچ رویدادی در تاریخچه این پرونده ثبت نشده است.
-                    </div>
+    return <div className={styles.page} dir="rtl">
+        <div className={styles.header}><div>
+            <Link href="/admin/gateway-reviews">بازگشت به فهرست پرونده‌ها</Link>
+            <h1 className={styles.header__title}>بررسی پرداخت {data.clientReferenceCode}</h1>
+        </div><button className={styles.btn} disabled={busy} onClick={() => refresh()}>دریافت آخرین وضعیت</button></div>
+        {error && <div role="alert" className={styles.alert}>{error}</div>}
+        {message && <p role="status">{message}</p>}
+        <section className={styles.detailCard}><h2>مشخصات درخواست</h2>
+            <dl className={styles.detailCard__grid}>{details.map(([label, value]) => <div key={label} className={styles.detailCard__item}>
+                <dt className={styles.detailCard__label}>{label}</dt><dd className={styles.detailCard__value}>{value}</dd>
+            </div>)}</dl>
+        </section>
+        {data.status === 'resolved' ? <section className={styles.detailCard}>
+            <h2>نتیجه رسیدگی</h2><p>{OUTCOME_CONFIG[data.outcomeCode]?.label || data.outcomeCode}</p>
+            <p>بسته‌شده توسط {latest?.actorName || latest?.actorUserId || 'اطلاعات پرونده قدیمی موجود نیست'} — {dateTime(data.resolvedAtUtc)}</p>
+            {data.outcomeCode === 'NO_MATCHING_DEPOSIT' && <p>رسیدگی بسته شده است؛ وضعیت پرداخت همچنان نامعلوم است (این نتیجه وضعیت مالی شارژ را تغییر نمی‌دهد).</p>}
+            <form onSubmit={reopen}><Field label="مدرک جدید برای بازگشایی">
+                <textarea className={inputClass} required maxLength={2000} value={newEvidence} disabled={busy || Boolean(reopening.current)}
+                    onChange={e => setNewEvidence(e.target.value)} />
+            </Field><button className={styles.btn} disabled={busy} type="submit">ثبت مدرک و بازگشایی</button></form>
+        </section> : data.syncPending ? <p role="status">مدرک جدید در حال همگام‌سازی است؛ پس از دریافت آخرین وضعیت می‌توانید رسیدگی کنید.</p> :
+        <section className={styles.resolutionSection}>
+            <h2>ثبت بررسی گزارش بانک</h2>
+            <p>گزارش بانک را با تاریخ درخواست و مبلغ ریالی تطبیق دهید. رسیدگی به پرونده‌های قدیمی به شکایت کاربر نیاز ندارد.</p>
+            {!data.canClosePaid && <p>تطبیق تاریخ، مبلغ و شناسه واریز به‌تنهایی نور شارژ نمی‌کند. بستن با نتیجه «نور شارژ شده» به تأیید معتبر پرداخت در سرویس مالی نیاز دارد.</p>}
+            {isConfirmed && <p>برای شارژ تأییدشده، ثبت بازپرداخت دستی یا «واریز پیدا نشد» مجاز نیست.</p>}
+            {data.manualRefundReference && <p>بازپرداخت دستی قبلاً ثبت شده است؛ ورود نتیجه بانکی تازه نیازمند رسیدگی مالی است.</p>}
+            {data.pendingOperation && <p role="status">نتیجه یک درخواست بستن در حال پیگیری است. {data.pendingOperation.canRetry ? 'می‌توانید همان درخواست را دوباره ارسال کنید.' : 'کارمند ثبت‌کننده باید همان درخواست را پیگیری کند.'}</p>}
+            <form onSubmit={submit} className={styles.resolutionSection__form} noValidate>
+                <fieldset disabled={!editable} className={styles.reviewFields}>
+                    <Field label="نتیجه رسیدگی"><select className={inputClass} value={outcome} onChange={e => setOutcome(e.target.value)}>
+                        <option value="">انتخاب کنید</option>
+                        {['PAID_AND_CONFIRMED', 'NO_MATCHING_DEPOSIT', 'REVERSED_REJECTED', 'MANUAL_REFUND'].map(value =>
+                            <option key={value} value={value} disabled={outcomeDisabled(value)}>{OUTCOME_CONFIG[value].label}</option>)}
+                    </select></Field>
+                    <Field label="تاریخ گزارش بررسی‌شده (میلادی)"><input className={inputClass} type="date" value={checkedDate} onChange={e => setCheckedDate(e.target.value)} /></Field>
+                    <Field label="واریز منطبق در گزارش پیدا شد؟"><select className={inputClass} value={matched} onChange={e => setMatched(e.target.value)}>
+                        <option value="">انتخاب کنید</option><option value="yes">بله</option><option value="no">خیر</option>
+                    </select></Field>
+                    {matched === 'yes' && <>
+                        <Field label="شناسه واریز درج‌شده در گزارش"><input className={inputClass} maxLength={100} value={depositRef} onChange={e => setDepositRef(e.target.value)} /></Field>
+                        <Field label="تاریخ واریز در گزارش (میلادی)"><input className={inputClass} type="date" value={depositDate} onChange={e => setDepositDate(e.target.value)} /></Field>
+                        <Field label="مبلغ واریز گزارش، به ریال"><input className={inputClass} type="number" min="1" step="1" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} /></Field>
+                    </>}
+                    {outcome === 'MANUAL_REFUND' && <Field label="مرجع بازپرداخت دستی"><input className={inputClass} maxLength={100} value={refundRef} onChange={e => setRefundRef(e.target.value)} /></Field>}
+                    <Field label="یادداشت بررسی"><textarea className={inputClass} maxLength={2000} value={note} onChange={e => setNote(e.target.value)} /></Field>
+                </fieldset>
+                <button className={styles.btn} type="submit" disabled={busy || data.pendingOperation && !data.pendingOperation.canRetry}>
+                    {busy ? 'در حال پیگیری…' : uncertain || data.pendingOperation ? 'ارسال مجدد همان درخواست' : 'ثبت بررسی و بستن پرونده'}
+                </button>
+            </form>
+        </section>}
+        <section className={styles.detailCard}><h2>سابقه رسیدگی</h2>
+            {!(data.audit?.length) && <p>هنوز نتیجه رسیدگی ثبت نشده است.</p>}
+            {[...(data.audit || [])].reverse().map(item => <article className={styles.reviewAudit} key={item.eventId}>
+                <strong>{item.eventType === 'resolved' ? OUTCOME_CONFIG[item.outcomeCode]?.label || item.outcomeCode : 'ثبت مدرک و شروع رسیدگی دوباره'}</strong>
+                <p>{dateTime(item.occurredAtUtc)} {item.actorName || item.actorUserId || ''}</p>
+                {item.evidence && <><p>گزارش بررسی‌شده: {reportDate(item.evidence.checkedReportDate)}؛ واریز منطبق: {item.evidence.matchingDepositFound ? 'پیدا شد' : 'پیدا نشد'}</p>
+                    {item.evidence.matchingDepositFound && <p>شناسه واریز: {item.evidence.depositReference}؛ تاریخ واریز: {reportDate(item.evidence.depositDate)}؛ مبلغ: {rial(item.evidence.depositAmountRial)}</p>}
+                    {item.evidence.manualRefundReference && <p>مرجع بازپرداخت دستی: {item.evidence.manualRefundReference}</p>}</>}
+                {item.note && <p>{item.note}</p>}
+            </article>)}
+        </section>
+        <section className={styles.detailCard}><h2>رویدادهای پرداخت و مدارک</h2>
+            {(data.history || []).map((item, index) => <article className={styles.reviewAudit} key={item.eventId || index}>
+                <strong>{eventLabels[item.eventType] || 'رویداد رسیدگی'} — {stageLabels[item.evidenceStage] || ''}</strong>
+                <p>زمان وقوع رویداد: {dateTime(item.details?.occurredAtUtc || item.occurredAtUtc)}</p>
+                {item.details?.occurredAtUtc && item.occurredAtUtc && item.details.occurredAtUtc !== item.occurredAtUtc && (
+                    <p>زمان ثبت مدرک: {dateTime(item.occurredAtUtc)}</p>
                 )}
-            </div>
-
-            {/* مودال تأیید ثبت رسیدگی */}
-            {showConfirmModal && (
-                <div className={styles.modalOverlay}>
-                    <div className={styles.modal}>
-                        <h3 className={styles.modal__title}>تأیید ثبت نتیجه رسیدگی</h3>
-                        <div className={styles.modal__body}>
-                            <p>آیا از ثبت این نتیجه برای پرونده ارجاع <strong>{caseData.clientReferenceCode}</strong> اطمینان دارید؟</p>
-                            <ul>
-                                <li>
-                                    <strong>نتیجه:</strong> {OUTCOME_CONFIG[outcomeCode]?.label}
-                                </li>
-                                <li>
-                                    <strong>مرجع مالی:</strong> {outcomeCode === 'UNPAID_REJECTED' ? 'بدون مرجع (null)' : financialRef}
-                                </li>
-                            </ul>
-                            <p style={{ color: '#dc2626', fontSize: '0.82rem' }}>
-                                ⚠️ پس از ثبت موفق، پرونده در وضعیت «رسیدگی‌شده» قرار خواهد گرفت و نتیجه به سیستم مالی گزارش می‌شود.
-                            </p>
-                        </div>
-                        <div className={styles.modal__actions}>
-                            <button
-                                type="button"
-                                onClick={() => setShowConfirmModal(false)}
-                                className={`${styles.btn} ${styles['btn--secondary']}`}
-                            >
-                                انصراف
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleConfirmResolution}
-                                className={`${styles.btn} ${styles['btn--primary']}`}
-                            >
-                                بله، ثبت قطعی شود
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+                {item.details?.bankTransactionId && <p>RefNum: {item.details.bankTransactionId}</p>}
+                {item.details?.bankReferenceNumber && <p>RRN: {item.details.bankReferenceNumber}</p>}
+                {item.details?.bankResultCode != null && <p>کد نتیجه بانک: {item.details.bankResultCode}</p>}
+                {item.details?.callbackState && <p>وضعیت بازگشت از درگاه: {item.details.callbackState} / {item.details.callbackStatus}</p>}
+                {item.details?.verifySuccess != null && <p>نتیجه بررسی بانک: {item.details.verifySuccess ? 'موفق' : 'ناموفق'}</p>}
+                {item.details?.originalAmountRial != null && <p>مبلغ اصلی: {rial(item.details.originalAmountRial)}؛ مبلغ مؤثر: {rial(item.details.affectiveAmountRial)}</p>}
+                {item.details?.note && <p>{item.details.note}</p>}
+                {item.details?.actorDocumentId && <p>شناسه ثبت‌کننده: {item.details.actorDocumentId}</p>}
+            </article>)}
+            {data.historyPagination && <div>
+                <button disabled={busy || data.historyPagination.page <= 1} onClick={() => refresh(data.historyPagination.page - 1)}>رویدادهای جدیدتر</button>
+                <span> صفحه {data.historyPagination.page} </span>
+                <button disabled={busy || data.historyPagination.page * data.historyPagination.pageSize >= data.historyPagination.total} onClick={() => refresh(data.historyPagination.page + 1)}>رویدادهای قدیمی‌تر</button>
+            </div>}
+        </section>
+    </div>;
 }
 

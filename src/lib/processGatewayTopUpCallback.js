@@ -190,10 +190,20 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
     return reverseVerified(verified, refNum, terminalNumber, 'TOPUP_AMOUNT_MISMATCH', result);
   }
 
+  const confirmation = await getTopUpConfirmation(attempt.resNum).catch(() => null);
+  if (confirmation?.hasManualRefund) {
+    await updateAttempt(verified, { status: 'financial_review', lastError: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' });
+    return result({ status: 'failed', message: 'بازپرداخت دستی ثبت شده و نتیجه تازه بانک نیازمند رسیدگی است.' });
+  }
+
   const delivery = await deliverGatewayOutcome(recorded).catch(() => ({ ok: false }));
   if (delivery.ok) {
     await updateAttempt(verified, { status: 'confirmed', lastAttemptAtUtc: new Date().toISOString() });
     return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
+  }
+  if (delivery.data?.code === 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED') {
+    await updateAttempt(verified, { status: 'financial_review', lastError: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' });
+    return result({ status: 'failed', message: 'بازپرداخت دستی ثبت شده و نتیجه تازه بانک نیازمند رسیدگی است.' });
   }
   if (delivery.data?.code === 'TOPUP_AMOUNT_MISMATCH' ||
       delivery.data?.code === 'TOPUP_REQUIRES_REVIEW')

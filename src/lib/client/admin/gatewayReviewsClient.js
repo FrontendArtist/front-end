@@ -1,3 +1,4 @@
+import { validateGatewayReviewResolution } from '@/lib/gatewayReviewResolution';
 /**
  * @file src/lib/client/admin/gatewayReviewsClient.js
  * @description کلاینت تعامل با APIهای رسیدگی به پرداخت در فرانت‌اند
@@ -14,6 +15,7 @@ export const REASON_CONFIG = {
 export const CASE_STATUS_CONFIG = {
     open: { label: 'باز (در انتظار رسیدگی)', variant: 'warning' },
     resolved: { label: 'رسیدگی‌شده', variant: 'success' },
+    reopening: { label: 'در حال بازگشایی', variant: 'warning' },
 };
 
 export const TOPUP_STATUS_CONFIG = {
@@ -24,9 +26,11 @@ export const TOPUP_STATUS_CONFIG = {
 };
 
 export const OUTCOME_CONFIG = {
+    NO_MATCHING_DEPOSIT: { label: 'واریز منطبق پیدا نشد', description: 'نتیجه بررسی گزارش ثبت می‌شود؛ وضعیت مالی شارژ تغییر نمی‌کند.', requiresRef: false, variant: 'warning' },
+    MANUAL_REFUND: { label: 'بازپرداخت دستی خارج از سامانه', description: 'بازپرداخت انجام‌شده را با مرجع آن ثبت کنید.', requiresRef: false, variant: 'info' },
     PAID_AND_CONFIRMED: {
-        label: 'پرداخت موفق و تأیید شارژ',
-        description: 'تراکنش پرداخت شده و حساب کاربر با ثبت مرجع مالی شارژ شود.',
+        label: 'پرداخت شده و نور شارژ شده',
+        description: 'شارژ باید قبلاً از مسیر معتبر درگاه تأیید شده باشد.',
         requiresRef: true,
         variant: 'success',
     },
@@ -37,7 +41,7 @@ export const OUTCOME_CONFIG = {
         variant: 'error',
     },
     REVERSED_REJECTED: {
-        label: 'برگشت‌خورده و رد شارژ',
+        label: 'برگشت‌خورده',
         description: 'مبلغ به حساب کاربر عودت داده شده و شارژ لغو می‌شود (شناسه مرجع مالی برگشت الزامی است).',
         requiresRef: true,
         variant: 'info',
@@ -61,6 +65,8 @@ export function formatGatewayReviewError(err) {
     const status = err?.status || err?.response?.status;
     const code = err?.code || err?.response?.data?.code || '';
     const rawMessage = err?.message || err?.response?.data?.error || '';
+    if (status === 401 || status === 403) return { code: code || 'REVIEW_PERMISSION_DENIED', message: 'نشست یا مجوز رسیدگی مالی معتبر نیست.', isUnknownOutcome: false };
+    if (code === 'REVIEW_RESOLUTION_IN_PROGRESS') return { code, message: 'عملیات دیگری در جریان است. وضعیت پرونده را دوباره دریافت کنید.', isUnknownOutcome: true };
 
     // بررسی خطاهای شبکه
     if (err?.name === 'TypeError' || err?.message?.includes('Failed to fetch') || err?.message?.includes('NetworkError')) {
@@ -86,10 +92,10 @@ export function formatGatewayReviewError(err) {
         };
     }
 
-    if (status === 422 || code === 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED') {
+    if (code === 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED') {
         return {
             code: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED',
-            message: 'بازپرداخت دستی یا استرداد وجه در این سامانه پشتیبانی نمی‌شود.',
+            message: 'ثبت بازپرداخت دستی برای شارژ تأییدشده پشتیبانی نمی‌شود.',
             isUnknownOutcome: false,
         };
     }
@@ -102,10 +108,10 @@ export function formatGatewayReviewError(err) {
         };
     }
 
-    if (status === 400 || code === 'REVIEW_INVALID_RESOLUTION') {
+    if (status === 400 || status === 422 || code === 'REVIEW_INVALID_RESOLUTION') {
         return {
             code: 'REVIEW_INVALID_RESOLUTION',
-            message: rawMessage || 'اطلاعات نتیجه رسیدگی نامعتبر است. برای پرداخت یا برگشت، شناسه مرجع مالی الزامی است و برای رد باید خالی باشد.',
+            message: 'اطلاعات گزارش یا نتیجه رسیدگی معتبر نیست. تاریخ، مبلغ و شناسه‌های واردشده را بررسی کنید.',
             isUnknownOutcome: false,
         };
     }
@@ -155,10 +161,10 @@ export async function fetchGatewayReviews({ page = 1, pageSize = 25, status, rea
 /**
  * دریافت جزئیات یک پرونده بر اساس clientReferenceCode
  */
-export async function fetchGatewayReview(clientReferenceCode) {
+export async function fetchGatewayReview(clientReferenceCode, historyPage = 1) {
     const encoded = encodeURIComponent(String(clientReferenceCode || '').trim());
     try {
-        const res = await fetch(`/api/admin/gateway-reviews/${encoded}`);
+        const res = await fetch(`/api/admin/gateway-reviews/${encoded}?historyPage=${historyPage}`);
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
@@ -231,64 +237,21 @@ export async function saveGatewayReviewSettings(noCallbackMinutes) {
 /**
  * ثبت نتیجه رسیدگی پرونده
  */
-export async function resolveGatewayReview(clientReferenceCode, { outcomeCode, resolutionFinancialReferenceId }) {
-    const trimmedOutcome = String(outcomeCode || '').trim();
-    if (trimmedOutcome === 'MANUAL_REFUND') {
-        const err = new Error('بازپرداخت دستی یا استرداد وجه در این سامانه پشتیبانی نمی‌شود.');
-        err.status = 422;
-        err.code = 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED';
-        throw err;
-    }
-
-    if (!['PAID_AND_CONFIRMED', 'UNPAID_REJECTED', 'REVERSED_REJECTED'].includes(trimmedOutcome)) {
-        const err = new Error('نتیجه انتخاب‌شده نامعتبر است.');
-        err.status = 400;
-        err.code = 'REVIEW_INVALID_RESOLUTION';
-        throw err;
-    }
-
-    let finalRef = null;
-    if (trimmedOutcome === 'UNPAID_REJECTED') {
-        if (resolutionFinancialReferenceId !== null && resolutionFinancialReferenceId !== undefined && String(resolutionFinancialReferenceId).trim() !== '') {
-            const err = new Error('برای نتیجه رد شارژ پرداخت‌نشده، شناسه مرجع مالی باید خالی (null) باشد.');
-            err.status = 400;
-            err.code = 'REVIEW_INVALID_RESOLUTION';
-            throw err;
-        }
-        finalRef = null;
-    } else {
-        if (!resolutionFinancialReferenceId || !String(resolutionFinancialReferenceId).trim()) {
-            const err = new Error('ثبت شناسه مرجع مالی برای این نتیجه الزامی است.');
-            err.status = 400;
-            err.code = 'REVIEW_INVALID_RESOLUTION';
-            throw err;
-        }
-        finalRef = String(resolutionFinancialReferenceId).trim();
-    }
-
-    const encoded = encodeURIComponent(String(clientReferenceCode || '').trim());
-    try {
-        const res = await fetch(`/api/admin/gateway-reviews/${encoded}/resolve`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                outcomeCode: trimmedOutcome,
-                resolutionFinancialReferenceId: finalRef,
-            }),
-        });
-        const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-            const err = new Error(data?.error || data?.message || 'خطا در ثبت نتیجه رسیدگی');
-            err.status = res.status;
-            err.code = data?.code;
-            err.details = data;
-            throw err;
-        }
-
-        return data; // شیء پرونده به‌روزشده
-    } catch (error) {
-        throw error;
-    }
+export async function resolveGatewayReview(clientReferenceCode, payload) {
+    const validation = validateGatewayReviewResolution(payload);
+    if (validation) throw Object.assign(new Error(validation), { status: 400, code: 'REVIEW_INVALID_RESOLUTION' });
+    return sendReviewAction(clientReferenceCode, 'resolve', payload);
 }
 
+export async function reopenGatewayReview(clientReferenceCode, payload) {
+    return sendReviewAction(clientReferenceCode, 'reopen', payload);
+}
+
+async function sendReviewAction(reference, action, payload) {
+    const response = await fetch('/api/admin/gateway-reviews/' + encodeURIComponent(reference) + '/' + action, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw Object.assign(new Error(data.error || data.code || 'REVIEW_REQUEST_FAILED'), { status: response.status, code: data.code });
+    return data;
+}

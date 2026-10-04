@@ -1,210 +1,72 @@
-/**
- * @jest-environment node
- */
-
-jest.mock('next-auth/next', () => ({
-    getServerSession: jest.fn(),
-}));
-
-jest.mock('@/lib/auth', () => ({
-    authOptions: {},
-    isUserAdmin: jest.fn(),
-}));
-
+/** @jest-environment node */
+jest.mock('@/lib/admin/gatewayReviewAccess', () => ({ getGatewayReviewAccess: jest.fn() }));
 jest.mock('@/lib/admin/gatewayReviewsApi');
+import { getGatewayReviewAccess } from '@/lib/admin/gatewayReviewAccess';
+import * as api from '@/lib/admin/gatewayReviewsApi';
+import { GET as list } from '../route';
+import { GET as detail } from '../[clientReferenceCode]/route';
+import { GET as settings, PUT as updateSettings } from '../settings/route';
+import { POST as resolve } from '../[clientReferenceCode]/resolve/route';
+import { POST as reopen } from '../[clientReferenceCode]/reopen/route';
 
-import { GET as listRoute } from '../route';
-import { GET as getSettingsRoute, PUT as putSettingsRoute } from '../settings/route';
-import { GET as getDetailRoute } from '../[clientReferenceCode]/route';
-import { POST as resolveRoute } from '../[clientReferenceCode]/resolve/route';
-import { getServerSession } from 'next-auth/next';
-import { isUserAdmin } from '@/lib/auth';
-import * as gatewayReviewsApi from '@/lib/admin/gatewayReviewsApi';
+const payload = () => ({ outcomeCode: 'NO_MATCHING_DEPOSIT', resolutionFinancialReferenceId: null, evidence: {
+    operationId: '12345678-1234-1234-1234-123456789abc', expectedRevision: 1, checkedReportDate: '2026-09-30',
+    matchingDepositFound: false, note: 'بررسی بانک', depositReference: null, depositDate: null, depositAmountRial: null, manualRefundReference: null,
+} });
+const context = { params: Promise.resolve({ clientReferenceCode: 'TR-1' }) };
+const request = body => new Request('http://localhost/api/admin/gateway-reviews/TR-1/resolve', { method: 'POST', body: JSON.stringify(body) });
 
-describe('Gateway Reviews Next.js API Routes', () => {
-    const adminSession = {
-        user: { id: 1, role: { type: 'administrator' }, jwt: 'admin-jwt-123' },
-    };
+beforeEach(() => {
+    jest.clearAllMocks();
+    getGatewayReviewAccess.mockResolvedValue({ status: 200, session: { user: { jwt: 'staff-jwt', role: { type: 'authenticated' } } } });
+});
 
-    beforeEach(() => {
-        jest.clearAllMocks();
-        getServerSession.mockResolvedValue(adminSession);
-        isUserAdmin.mockReturnValue(true);
-    });
+test.each([401, 403])('all read and write routes deny missing financial access (%i)', async status => {
+    getGatewayReviewAccess.mockResolvedValue({ status, session: null });
+    for (const route of [list, detail, settings, updateSettings, resolve, reopen]) {
+        const response = await route(request(payload()), context);
+        expect(response.status).toBe(status);
+    }
+    expect(api.resolveGatewayReview).not.toHaveBeenCalled();
+});
 
-    describe('GET /api/admin/gateway-reviews', () => {
-        it('blocks unauthorized access if user is not admin', async () => {
-            isUserAdmin.mockReturnValue(false);
-            const req = new Request('http://localhost:3000/api/admin/gateway-reviews');
-            const res = await listRoute(req);
-            expect(res.status).toBe(401);
-            const json = await res.json();
-            expect(json.error).toBe('دسترسی غیرمجاز');
-        });
-
-        it('forwards query parameters to getGatewayReviews and returns data', async () => {
-            const mockData = {
-                data: [{ caseId: 'c1' }],
-                pagination: { page: 1, pageSize: 25, total: 1 },
-            };
-            gatewayReviewsApi.getGatewayReviews.mockResolvedValueOnce(mockData);
-
-            const req = new Request('http://localhost:3000/api/admin/gateway-reviews?page=2&pageSize=10&status=open&reasonCode=NO_CALLBACK');
-            const res = await listRoute(req);
-
-            expect(res.status).toBe(200);
-            expect(gatewayReviewsApi.getGatewayReviews).toHaveBeenCalledWith('admin-jwt-123', {
-                page: 2,
-                pageSize: 10,
-                status: 'open',
-                reasonCode: 'NO_CALLBACK',
-            });
-            const json = await res.json();
-            expect(json).toEqual(mockData);
-        });
-    });
-
-    describe('Settings Routes (GET & PUT /api/admin/gateway-reviews/settings)', () => {
-        it('GET returns settings from Strapi', async () => {
-            gatewayReviewsApi.getGatewayReviewSettings.mockResolvedValueOnce({ noCallbackMinutes: 30 });
-            const res = await getSettingsRoute();
-            expect(res.status).toBe(200);
-            const json = await res.json();
-            expect(json.noCallbackMinutes).toBe(30);
-        });
-
-        it('PUT validates noCallbackMinutes is integer between 1 and 1440', async () => {
-            const reqInvalid = new Request('http://localhost:3000/api/admin/gateway-reviews/settings', {
-                method: 'PUT',
-                body: JSON.stringify({ noCallbackMinutes: 0 }),
-            });
-            const resInvalid = await putSettingsRoute(reqInvalid);
-            expect(resInvalid.status).toBe(400);
-            const jsonInvalid = await resInvalid.json();
-            expect(jsonInvalid.code).toBe('REVIEW_INVALID_THRESHOLD');
-
-            const reqValid = new Request('http://localhost:3000/api/admin/gateway-reviews/settings', {
-                method: 'PUT',
-                body: JSON.stringify({ noCallbackMinutes: 60 }),
-            });
-            gatewayReviewsApi.updateGatewayReviewSettings.mockResolvedValueOnce({ noCallbackMinutes: 60 });
-            const resValid = await putSettingsRoute(reqValid);
-            expect(resValid.status).toBe(200);
-            const jsonValid = await resValid.json();
-            expect(jsonValid.noCallbackMinutes).toBe(60);
-        });
-    });
-
-    describe('GET /api/admin/gateway-reviews/[clientReferenceCode]', () => {
-        it('returns 404 when case is not found', async () => {
-            gatewayReviewsApi.getGatewayReviewByReference.mockResolvedValueOnce({ data: null });
-            const req = new Request('http://localhost:3000/api/admin/gateway-reviews/UNKNOWN');
-            const res = await getDetailRoute(req, { params: { clientReferenceCode: 'UNKNOWN' } });
-            expect(res.status).toBe(404);
-        });
-
-        it('returns case data when found', async () => {
-            const mockCase = { caseId: 'c1', clientReferenceCode: 'REF-1' };
-            gatewayReviewsApi.getGatewayReviewByReference.mockResolvedValueOnce({ data: mockCase });
-            const req = new Request('http://localhost:3000/api/admin/gateway-reviews/REF-1');
-            const res = await getDetailRoute(req, { params: { clientReferenceCode: 'REF-1' } });
-            expect(res.status).toBe(200);
-            const json = await res.json();
-            expect(json.data).toEqual(mockCase);
-        });
-    });
-
-    describe('POST /api/admin/gateway-reviews/[clientReferenceCode]/resolve', () => {
-        it('returns 422 for MANUAL_REFUND', async () => {
-            const req = new Request('http://localhost:3000/api/admin/gateway-reviews/REF-1/resolve', {
-                method: 'POST',
-                body: JSON.stringify({ outcomeCode: 'MANUAL_REFUND' }),
-            });
-            const res = await resolveRoute(req, { params: { clientReferenceCode: 'REF-1' } });
-            expect(res.status).toBe(422);
-            const json = await res.json();
-            expect(json.code).toBe('REVIEW_MANUAL_REFUND_NOT_SUPPORTED');
-        });
-
-        it('returns 400 when outcome is invalid', async () => {
-            const req = new Request('http://localhost:3000/api/admin/gateway-reviews/REF-1/resolve', {
-                method: 'POST',
-                body: JSON.stringify({ outcomeCode: 'INVALID_CODE' }),
-            });
-            const res = await resolveRoute(req, { params: { clientReferenceCode: 'REF-1' } });
-            expect(res.status).toBe(400);
-            const json = await res.json();
-            expect(json.code).toBe('REVIEW_INVALID_RESOLUTION');
-        });
-
-        it('returns 400 when UNPAID_REJECTED has financial reference', async () => {
-            const req = new Request('http://localhost:3000/api/admin/gateway-reviews/REF-1/resolve', {
-                method: 'POST',
-                body: JSON.stringify({
-                    outcomeCode: 'UNPAID_REJECTED',
-                    resolutionFinancialReferenceId: 'SHOULD_NOT_BE_HERE',
-                }),
-            });
-            const res = await resolveRoute(req, { params: { clientReferenceCode: 'REF-1' } });
-            expect(res.status).toBe(400);
-            const json = await res.json();
-            expect(json.code).toBe('REVIEW_INVALID_RESOLUTION');
-        });
-
-        it('returns 400 when PAID_AND_CONFIRMED is missing financial reference', async () => {
-            const req = new Request('http://localhost:3000/api/admin/gateway-reviews/REF-1/resolve', {
-                method: 'POST',
-                body: JSON.stringify({
-                    outcomeCode: 'PAID_AND_CONFIRMED',
-                    resolutionFinancialReferenceId: '',
-                }),
-            });
-            const res = await resolveRoute(req, { params: { clientReferenceCode: 'REF-1' } });
-            expect(res.status).toBe(400);
-            const json = await res.json();
-            expect(json.code).toBe('REVIEW_INVALID_RESOLUTION');
-        });
-
-        it('successfully resolves UNPAID_REJECTED with null ref', async () => {
-            const mockResolved = { caseId: 'c1', status: 'resolved', outcomeCode: 'UNPAID_REJECTED' };
-            gatewayReviewsApi.resolveGatewayReview.mockResolvedValueOnce(mockResolved);
-
-            const req = new Request('http://localhost:3000/api/admin/gateway-reviews/REF-1/resolve', {
-                method: 'POST',
-                body: JSON.stringify({
-                    outcomeCode: 'UNPAID_REJECTED',
-                }),
-            });
-            const res = await resolveRoute(req, { params: { clientReferenceCode: 'REF-1' } });
-            expect(res.status).toBe(200);
-            expect(gatewayReviewsApi.resolveGatewayReview).toHaveBeenCalledWith('admin-jwt-123', 'REF-1', {
-                outcomeCode: 'UNPAID_REJECTED',
-                resolutionFinancialReferenceId: null,
-            });
-            const json = await res.json();
-            expect(json).toEqual(mockResolved);
-        });
-
-        it('successfully resolves PAID_AND_CONFIRMED with valid ref', async () => {
-            const mockResolved = { caseId: 'c1', status: 'resolved', outcomeCode: 'PAID_AND_CONFIRMED' };
-            gatewayReviewsApi.resolveGatewayReview.mockResolvedValueOnce(mockResolved);
-
-            const req = new Request('http://localhost:3000/api/admin/gateway-reviews/REF-1/resolve', {
-                method: 'POST',
-                body: JSON.stringify({
-                    outcomeCode: 'PAID_AND_CONFIRMED',
-                    resolutionFinancialReferenceId: 'RRN-999',
-                }),
-            });
-            const res = await resolveRoute(req, { params: { clientReferenceCode: 'REF-1' } });
-            expect(res.status).toBe(200);
-            expect(gatewayReviewsApi.resolveGatewayReview).toHaveBeenCalledWith('admin-jwt-123', 'REF-1', {
-                outcomeCode: 'PAID_AND_CONFIRMED',
-                resolutionFinancialReferenceId: 'RRN-999',
-            });
-            const json = await res.json();
-            expect(json).toEqual(mockResolved);
-        });
-    });
+test('list passes pagination and filters for financially authorized non-admin staff', async () => {
+    api.getGatewayReviews.mockResolvedValue({ data: [], pagination: { total: 0 } });
+    expect((await list(new Request('http://localhost/api/admin/gateway-reviews?page=2&status=open'))).status).toBe(200);
+    expect(api.getGatewayReviews).toHaveBeenCalledWith('staff-jwt', expect.objectContaining({ page: 2, status: 'open' }));
+});
+test('detail passes history pagination', async () => {
+    api.getGatewayReviewByReference.mockResolvedValue({ data: { caseId: 'case' } });
+    expect((await detail(new Request('http://localhost/api/admin/gateway-reviews/TR-1?historyPage=3'), context)).status).toBe(200);
+    expect(api.getGatewayReviewByReference).toHaveBeenCalledWith('staff-jwt', 'TR-1', 3);
+});
+test('missing case is 404', async () => {
+    api.getGatewayReviewByReference.mockResolvedValue({ data: null });
+    expect((await detail(new Request('http://localhost/api/admin/gateway-reviews/TR-1'), context)).status).toBe(404);
+});
+test('invalid threshold is rejected', async () => {
+    expect((await updateSettings(request({ noCallbackMinutes: 0 }))).status).toBe(400);
+    expect(api.updateGatewayReviewSettings).not.toHaveBeenCalled();
+});
+test('missing report is rejected before sending', async () => {
+    expect((await resolve(request({ outcomeCode: 'NO_MATCHING_DEPOSIT' }), context)).status).toBe(400);
+    expect(api.resolveGatewayReview).not.toHaveBeenCalled();
+});
+test('complete no-match closure passes exact operation and evidence', async () => {
+    api.resolveGatewayReview.mockResolvedValue({ status: 'resolved' });
+    const body = payload();
+    expect((await resolve(request(body), context)).status).toBe(200);
+    expect(api.resolveGatewayReview).toHaveBeenCalledWith('staff-jwt', 'TR-1', body);
+});
+test('manual refund is forwarded with reference; financial rejection remains 422', async () => {
+    const body = payload(); body.outcomeCode = 'MANUAL_REFUND'; body.evidence.manualRefundReference = 'refund-ref';
+    api.resolveGatewayReview.mockRejectedValue({ status: 422, code: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' });
+    const response = await resolve(request(body), context);
+    expect(response.status).toBe(422);
+    expect((await response.json()).code).toBe('REVIEW_MANUAL_REFUND_NOT_SUPPORTED');
+});
+test('unknown delivery does not report successful closure', async () => {
+    api.resolveGatewayReview.mockRejectedValue({ status: 503, code: 'REVIEW_RESOLUTION_DELIVERY_UNKNOWN' });
+    expect((await resolve(request(payload()), context)).status).toBe(503);
 });
 
