@@ -60,7 +60,7 @@ export async function POST(request) {
                     lastError: tokenResult.errorCode || 'TOKEN_FAILED' });
                 return NextResponse.json({ success: false, message: tokenResult.errorDesc || 'دریافت توکن انجام نشد.' }, { status: 502 });
             }
-            attempt = await updateAttempt(attempt, { status: 'token_issued', tokenIssuedAtUtc: new Date().toISOString() });
+            attempt = await updateAttempt(attempt, { status: 'token_issued' });
             return NextResponse.json({
                 success: true,
                 token: tokenResult.token,

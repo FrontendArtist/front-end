@@ -32,6 +32,7 @@ import {
     MessageSquare,    // Comments icon
     Ticket,           // Discount coupons icon
     Megaphone,        // Announcement top banner icon
+    ShieldAlert,      // Gateway reviews icon
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
@@ -49,6 +50,7 @@ const NAV_LINKS = [
     { href: '/admin', label: 'داشبورد', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'سفارش‌ها', icon: ShoppingCart },
     { href: '/admin/orders/new', label: 'ثبت دستی', icon: UserPlus },
+    { href: '/admin/gateway-reviews', label: 'رسیدگی پرداخت‌ها', icon: ShieldAlert },
     { href: '/admin/users', label: 'کاربران', icon: Users },
     { href: '/admin/products', label: 'محصولات', icon: Package },
     { href: '/admin/articles', label: 'مقالات', icon: FileText },
