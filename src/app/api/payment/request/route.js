@@ -6,7 +6,6 @@ import { isOrderPaid } from '@/lib/constants/orderConstants';
 import { STRAPI_API_URL } from '@/lib/api';
 import { createGatewayTopUp, createAttempt, updateAttempt, recordGatewayOutcome,
     deliverGatewayOutcome } from '@/lib/gatewayTopUp';
-import { getSepMockEnvironmentError, isSepMockEnabled } from '@/lib/sepMock';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -60,12 +59,26 @@ export async function POST(request) {
                     lastError: tokenResult.errorCode || 'TOKEN_FAILED' });
                 return NextResponse.json({ success: false, message: tokenResult.errorDesc || 'دریافت توکن انجام نشد.' }, { status: 502 });
             }
-            attempt = await updateAttempt(attempt, { status: 'token_issued' });
+            try {
+                attempt = await updateAttempt(attempt, { status: 'token_issued' });
+                if (!attempt || attempt.status !== 'token_issued') {
+                    throw new Error('ثبت وضعیت صدور توکن در سامانه انجام نشد.');
+                }
+            } catch (updateError) {
+                console.error('[SEP Token Issued Update Error]:', updateError);
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: 'ثبت وضعیت توکن پرداخت در سامانه با خطا مواجه شد.',
+                    },
+                    { status: 500 }
+                );
+            }
             return NextResponse.json({
                 success: true,
                 token: tokenResult.token,
                 gatewayUrl: tokenResult.gatewayUrl || SEP_GATEWAY_ACTION_URL,
-                resNum: attempt.resNum,
+                resNum: attempt.resNum || topUp.clientReferenceId,
                 amount: topUp.amountRial,
             });
         }
