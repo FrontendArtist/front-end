@@ -1,5 +1,6 @@
 import { BYEMONEY_API_URL } from '@/lib/byeMoneySync';
 import { STRAPI_API_URL } from '@/lib/api';
+import { createHash } from 'node:crypto';
 
 const attemptsUrl = `${STRAPI_API_URL}/api/gateway-payment-attempts`;
 const PAYMENT_METHOD_GATEWAY = 1;
@@ -52,19 +53,6 @@ export async function findAttempt(resNum) {
   return (await response.json()).data?.[0] || null;
 }
 
-export async function listRetryableAttempts() {
-  const query = new URLSearchParams({
-    'filters[$or][0][status][$eq]': 'verified',
-    'filters[$or][1][status][$eq]': 'reverse_required',
-    'filters[$or][2][status][$eq]': 'verifying',
-    'pagination[pageSize]': '100',
-    'sort[0]': 'verifiedAtUtc:asc',
-  });
-  const response = await fetch(`${attemptsUrl}?${query}`, { headers: strapiHeaders(), cache: 'no-store' });
-  if (!response.ok) throw new Error('فهرست پرداخت‌های در انتظار بازیابی دریافت نشد.');
-  return (await response.json()).data || [];
-}
-
 export async function claimAttempt(resNum) {
   const response = await fetch(`${attemptsUrl}/claim`, {
     method: 'POST', headers: strapiHeaders(), cache: 'no-store',
@@ -84,6 +72,39 @@ export async function updateAttempt(attempt, data) {
   return (await response.json()).data;
 }
 
+export async function recordGatewayOutcome(attempt, outcome) {
+  const eventId = createHash('sha256').update(JSON.stringify({
+    resNum: attempt.resNum, stage: outcome.stage, kind: outcome.kind,
+    bankTransactionId: outcome.bankTransactionId || null,
+    bankResultCode: outcome.bankResultCode == null ? null : String(outcome.bankResultCode),
+    rawPayload: outcome.rawPayload || {},
+  })).digest('hex');
+  const response = await fetch(`${attemptsUrl}/outcomes`, {
+    method: 'POST', headers: strapiHeaders(), cache: 'no-store',
+    body: JSON.stringify({ ...outcome, resNum: attempt.resNum, eventId }),
+  });
+  if (!response.ok) throw new Error(`ثبت نتیجهٔ بانک در Strapi انجام نشد (${response.status}).`);
+  return await response.json();
+}
+
+export async function deliverGatewayOutcome(recorded) {
+  const response = await fetch(`${BYEMONEY_API_URL}/api/integrations/topups/gateway-results`, {
+    method: 'POST', headers: byeMoneyHeaders(), cache: 'no-store',
+    body: JSON.stringify(recorded.result),
+  });
+  const data = await response.json().catch(() => ({}));
+  const accepted = response.ok || response.status === 422 && data.code === 'TOPUP_AMOUNT_MISMATCH' ||
+    response.status === 409 && data.code === 'TOPUP_REQUIRES_REVIEW';
+  if (accepted) {
+    const delivery = await fetch(`${attemptsUrl}/outcomes/delivered`, {
+      method: 'POST', headers: strapiHeaders(), cache: 'no-store',
+      body: JSON.stringify({ eventId: recorded.eventId }),
+    });
+    if (!delivery.ok) throw new Error('نتیجه در بای‌مانی ثبت شد اما تأیید تحویل در Strapi ثبت نشد.');
+  }
+  return { ok: response.ok, status: response.status, data, accepted };
+}
+
 export async function getTopUpConfirmation(resNum) {
   const response = await fetch(`${BYEMONEY_API_URL}/api/integrations/topups/by-reference/${encodeURIComponent(resNum)}/confirmation`, {
     headers: byeMoneyHeaders(), cache: 'no-store',
@@ -92,42 +113,7 @@ export async function getTopUpConfirmation(resNum) {
   return await response.json();
 }
 
-export async function confirmGatewayTopUp(attempt) {
-  const original = Number(attempt.originalAmountRial);
-  const affective = Number(attempt.affectiveAmountRial);
-  if (!Number.isSafeInteger(original) || !Number.isSafeInteger(affective))
-    throw new Error('مبلغ تأییدشدهٔ بانک معتبر نیست.');
-  const response = await fetch(`${BYEMONEY_API_URL}/api/integrations/topups/gateway-confirmations`, {
-    method: 'POST', headers: byeMoneyHeaders(), cache: 'no-store',
-    body: JSON.stringify({
-      clientReferenceCode: attempt.resNum,
-      gateway: 'SEP',
-      externalTransactionId: attempt.refNum,
-      bankReferenceNumber: attempt.rrn,
-      originalAmountRial: original,
-      affectiveAmountRial: affective,
-    }),
-  });
-  const data = await response.json().catch(() => ({}));
-  return { ok: response.ok, status: response.status, data };
-}
-
 export function isConfirmedTopUp(topUpOrStatus) {
   const status = typeof topUpOrStatus === 'object' ? topUpOrStatus?.status : topUpOrStatus;
   return String(status || '').trim().toLowerCase() === 'confirmed';
-}
-
-export async function cancelGatewayTopUp(resNum) {
-  if (!resNum) throw new Error('شناسه فاکتور الزامی است.');
-  const response = await fetch(`${BYEMONEY_API_URL}/api/integrations/topups/gateway-cancellations`, {
-    method: 'POST',
-    headers: byeMoneyHeaders(),
-    cache: 'no-store',
-    body: JSON.stringify({
-      clientReferenceCode: String(resNum),
-      gateway: 'SEP',
-    }),
-  });
-  const data = await response.json().catch(() => ({}));
-  return { ok: response.ok, status: response.status, data };
 }
