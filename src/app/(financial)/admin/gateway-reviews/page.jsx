@@ -5,7 +5,7 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getGatewayReviews, getGatewayReviewSettings } from '@/lib/admin/gatewayReviewsApi';
+import { getGatewayReviews } from '@/lib/admin/gatewayReviewsApi';
 import GatewayReviewsList from '@/components/admin/GatewayReviews/GatewayReviewsList';
 
 export const metadata = {
@@ -18,31 +18,15 @@ export default async function AdminGatewayReviewsPage() {
     const jwt = session?.user?.jwt;
 
     let initialData = null;
-    let initialSettings = 30;
 
     if (jwt) {
         try {
-            const [reviewsRes, settingsRes] = await Promise.allSettled([
-                getGatewayReviews(jwt, { page: 1, pageSize: 25 }),
-                getGatewayReviewSettings(jwt),
-            ]);
-
-            if (reviewsRes.status === 'fulfilled') {
-                initialData = reviewsRes.value;
-            }
-            if (settingsRes.status === 'fulfilled') {
-                initialSettings = settingsRes.value?.noCallbackMinutes ?? 30;
-            }
+            const reviewsRes = await getGatewayReviews(jwt, { page: 1, pageSize: 25 });
+            initialData = reviewsRes;
         } catch (e) {
             console.error('[AdminGatewayReviewsPage] Failed to fetch initial data:', e.message);
         }
     }
 
-    return (
-        <GatewayReviewsList
-            initialData={initialData}
-            initialSettings={initialSettings}
-        />
-    );
+    return <GatewayReviewsList initialData={initialData} />;
 }
-

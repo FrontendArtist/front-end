@@ -2,7 +2,7 @@
 
 /**
  * @file src/components/admin/GatewayReviews/GatewayReviewsList.jsx
- * @description فهرست پرونده‌های رسیدگی به پرداخت سپ همراه با فیلتر، صفحه‌بندی و تنظیم آستانه
+ * @description فهرست پرونده‌های رسیدگی به پرداخت سپ همراه با فیلتر و صفحه‌بندی
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -10,15 +10,11 @@ import Link from 'next/link';
 import {
     ShieldAlert,
     RotateCw,
-    Clock,
     SlidersHorizontal,
     AlertCircle,
-    CheckCircle2,
 } from 'lucide-react';
 import {
     fetchGatewayReviews,
-    fetchGatewayReviewSettings,
-    saveGatewayReviewSettings,
     REASON_CONFIG,
     CASE_STATUS_CONFIG,
     TOPUP_STATUS_CONFIG,
@@ -42,7 +38,7 @@ function formatDate(isoString) {
     }
 }
 
-export default function GatewayReviewsList({ initialData = null, initialSettings = 30 }) {
+export default function GatewayReviewsList({ initialData = null }) {
     const [cases, setCases] = useState(initialData?.data || []);
     const [pagination, setPagination] = useState(
         initialData?.pagination || { page: 1, pageSize: 25, total: 0 }
@@ -54,12 +50,6 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
 
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState(null);
-
-    // تنظیمات آستانه کال‌بک
-    const [thresholdInput, setThresholdInput] = useState(String(initialSettings || 30));
-    const [savingThreshold, setSavingThreshold] = useState(false);
-    const [thresholdSuccessMsg, setThresholdSuccessMsg] = useState(null);
-    const [thresholdErrorMsg, setThresholdErrorMsg] = useState(null);
 
     // بارگذاری داده‌های پرونده‌ها
     const loadCases = useCallback(async () => {
@@ -98,32 +88,6 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
         loadCases();
     }, [loadCases]);
 
-    // ذخیره آستانه
-    const handleSaveThreshold = async (e) => {
-        e.preventDefault();
-        setThresholdErrorMsg(null);
-        setThresholdSuccessMsg(null);
-
-        const val = Number(thresholdInput);
-        if (!Number.isInteger(val) || val < 1 || val > 1440) {
-            setThresholdErrorMsg('مقدار آستانه باید یک عدد صحیح بین ۱ تا ۱۴۴۰ دقیقه باشد.');
-            return;
-        }
-
-        setSavingThreshold(true);
-        try {
-            const updated = await saveGatewayReviewSettings(val);
-            setThresholdInput(String(updated));
-            setThresholdSuccessMsg(`آستانه عدم دریافت کال‌بک با موفقیت روی ${updated} دقیقه تنظیم شد.`);
-            setTimeout(() => setThresholdSuccessMsg(null), 4000);
-        } catch (err) {
-            const parsed = formatGatewayReviewError(err);
-            setThresholdErrorMsg(parsed.message);
-        } finally {
-            setSavingThreshold(false);
-        }
-    };
-
     const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / pageSize));
 
     return (
@@ -158,58 +122,6 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
                     </button>
                 </div>
             </div>
-
-            {/* بخش تنظیم آستانه کال‌بک */}
-            <div className={styles.thresholdCard}>
-                <div className={styles.thresholdCard__info}>
-                    <div className={styles.thresholdCard__icon}>
-                        <Clock size={20} />
-                    </div>
-                    <div className={styles.thresholdCard__textGroup}>
-                        <span className={styles.thresholdCard__title}>
-                            تنظیم آستانه بازگشایی خودکار پرونده (عدم دریافت کال‌بک)
-                        </span>
-                        <span className={styles.thresholdCard__desc}>
-                            اگر پس از صدور توکن پرداخت سپ تا این مدت کال‌بکی دریافت نشود، پرونده با علت NO_CALLBACK باز می‌شود (پیش‌فرض: ۳۰ دقیقه).
-                        </span>
-                    </div>
-                </div>
-                <form onSubmit={handleSaveThreshold} className={styles.thresholdCard__form}>
-                    <input
-                        type="number"
-                        min="1"
-                        max="1440"
-                        step="1"
-                        value={thresholdInput}
-                        onChange={(e) => setThresholdInput(e.target.value)}
-                        className={styles.thresholdCard__input}
-                        aria-label="آستانه زمانی کال‌بک به دقیقه"
-                        disabled={savingThreshold}
-                    />
-                    <span className={styles.thresholdCard__unit}>دقیقه</span>
-                    <button
-                        type="submit"
-                        disabled={savingThreshold}
-                        className={`${styles.btn} ${styles['btn--primary']}`}
-                    >
-                        {savingThreshold ? 'در حال ذخیره...' : 'ذخیره آستانه'}
-                    </button>
-                </form>
-            </div>
-
-            {thresholdSuccessMsg && (
-                <div className={`${styles.alert} ${styles['alert--success']}`}>
-                    <CheckCircle2 size={18} />
-                    <span>{thresholdSuccessMsg}</span>
-                </div>
-            )}
-
-            {thresholdErrorMsg && (
-                <div className={`${styles.alert} ${styles['alert--error']}`}>
-                    <AlertCircle size={18} />
-                    <span>{thresholdErrorMsg}</span>
-                </div>
-            )}
 
             {/* نوار فیلترها */}
             <div className={styles.filters}>
