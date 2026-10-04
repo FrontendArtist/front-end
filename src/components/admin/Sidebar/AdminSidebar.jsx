@@ -32,6 +32,7 @@ import {
     MessageSquare,    // Comments icon
     Ticket,           // Discount coupons icon
     Megaphone,        // Announcement top banner icon
+    ShieldAlert,      // Gateway reviews icon
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
@@ -49,6 +50,7 @@ const NAV_LINKS = [
     { href: '/admin', label: 'داشبورد', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'سفارش‌ها', icon: ShoppingCart },
     { href: '/admin/orders/new', label: 'ثبت دستی', icon: UserPlus },
+    { href: '/admin/gateway-reviews', label: 'رسیدگی پرداخت‌ها', icon: ShieldAlert },
     { href: '/admin/users', label: 'کاربران', icon: Users },
     { href: '/admin/products', label: 'محصولات', icon: Package },
     { href: '/admin/articles', label: 'مقالات', icon: FileText },
@@ -67,7 +69,7 @@ const NAV_LINKS = [
  *     It is safe to use here because layout.jsx already verified admin access
  *     before rendering this component.
  */
-export default function AdminSidebar({ user }) {
+export default function AdminSidebar({ user, financialOnly = false }) {
     /*
      * usePathname() returns the current URL's path (e.g. '/admin/orders').
      * We use this to determine which nav link should be styled as "active".
@@ -129,7 +131,7 @@ export default function AdminSidebar({ user }) {
             {/* ── Navigation Links ───────────────────────────────────────────── */}
             <nav className={styles.sidebar__nav} aria-label="Admin Navigation">
                 <ul className={styles.sidebar__nav_list}>
-                    {NAV_LINKS.map(({ href, label, icon: Icon }) => (
+                    {NAV_LINKS.filter(link => !financialOnly || link.href === '/admin/gateway-reviews').map(({ href, label, icon: Icon }) => (
                         <li key={href} className={styles.sidebar__nav_item}>
                             <Link
                                 href={href}

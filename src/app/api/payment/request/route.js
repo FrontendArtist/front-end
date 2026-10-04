@@ -4,7 +4,9 @@ import { NextResponse } from 'next/server';
 import { requestSepToken, SEP_GATEWAY_ACTION_URL } from '@/lib/sepPayment';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import { STRAPI_API_URL } from '@/lib/api';
-import { createGatewayTopUp, createAttempt, updateAttempt } from '@/lib/gatewayTopUp';
+import { createGatewayTopUp, createAttempt, updateAttempt, recordGatewayOutcome,
+    deliverGatewayOutcome } from '@/lib/gatewayTopUp';
+
 import { getSepMockEnvironmentError, isSepMockEnabled } from '@/lib/sepMock';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
@@ -57,15 +59,38 @@ export async function POST(request) {
                 cellNumber: session.user.phoneNumber || null,
             });
             if (!tokenResult.success) {
-                await updateAttempt(attempt, { status: 'failed', lastError: tokenResult.errorCode || 'TOKEN_FAILED' });
+                const recorded = await recordGatewayOutcome(attempt, {
+                    stage: 'callback', kind: 'Unpaid',
+                    bankResultCode: tokenResult.errorCode || 'TOKEN_FAILED',
+                    rawPayload: { tokenRequest: {
+                        success: false, errorCode: tokenResult.errorCode, errorDesc: tokenResult.errorDesc,
+                    } },
+                });
+                const delivery = await deliverGatewayOutcome(recorded).catch(() => ({ ok: false }));
+                await updateAttempt(attempt, { status: delivery.ok ? 'failed' : 'pending_sync',
+                    lastError: tokenResult.errorCode || 'TOKEN_FAILED' });
                 return NextResponse.json({ success: false, message: tokenResult.errorDesc || 'دریافت توکن انجام نشد.' }, { status: 502 });
             }
-            attempt = await updateAttempt(attempt, { status: 'token_issued', tokenIssuedAtUtc: new Date().toISOString() });
+            try {
+                attempt = await updateAttempt(attempt, { status: 'token_issued' });
+                if (!attempt || attempt.status !== 'token_issued') {
+                    throw new Error('ثبت وضعیت صدور توکن در سامانه انجام نشد.');
+                }
+            } catch (updateError) {
+                console.error('[SEP Token Issued Update Error]:', updateError);
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: 'ثبت وضعیت توکن پرداخت در سامانه با خطا مواجه شد.',
+                    },
+                    { status: 500 }
+                );
+            }
             return NextResponse.json({
                 success: true,
                 token: tokenResult.token,
                 gatewayUrl: tokenResult.gatewayUrl || SEP_GATEWAY_ACTION_URL,
-                resNum: attempt.resNum,
+                resNum: attempt.resNum || topUp.clientReferenceId,
                 amount: topUp.amountRial,
             });
         }

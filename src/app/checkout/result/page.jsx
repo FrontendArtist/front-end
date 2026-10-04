@@ -221,13 +221,9 @@ function CheckoutResultContent() {
                         ) : (
                             isTopUp ? (
                                 <>
-                                    <Link href="/profile" className={styles.primaryButton}>
-                                        <Wallet size={18} />
-                                        بازگشت به پروفایل
-                                    </Link>
-                                    <Link href="/profile" className={styles.secondaryButton}>
-                                        <Wallet size={18} />
-                                        بازگشت به پروفایل
+                                    <Link href="/" className={styles.secondaryButton}>
+                                        <Home size={18} />
+                                        صفحه اصلی
                                     </Link>
                                     <Link href="/contact" className={styles.secondaryButton}>
                                         پشتیبانی و تماس
