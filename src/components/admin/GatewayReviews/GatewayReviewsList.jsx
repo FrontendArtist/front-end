@@ -8,6 +8,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
+    ShieldAlert,
+    RotateCw,
+    Clock,
+    SlidersHorizontal,
+    AlertCircle,
+    CheckCircle2,
+} from 'lucide-react';
+import {
     fetchGatewayReviews,
     fetchGatewayReviewSettings,
     saveGatewayReviewSettings,
@@ -78,7 +86,13 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
 
     useEffect(() => {
         // اگر اولین رندر است و initialData داریم و هنوز فیلتر تغییر نکرده، مجدد فچ نکنیم
-        if (initialData && page === initialData.pagination?.page && pageSize === initialData.pagination?.pageSize && statusFilter === 'all' && reasonFilter === 'all') {
+        if (
+            initialData &&
+            page === initialData.pagination?.page &&
+            pageSize === initialData.pagination?.pageSize &&
+            statusFilter === 'all' &&
+            reasonFilter === 'all'
+        ) {
             return;
         }
         loadCases();
@@ -114,13 +128,23 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
 
     return (
         <div className={styles.page}>
-            {/* سرصفحه */}
+            {/* سرصفحه با استایل استاندارد ادمین */}
             <div className={styles.header}>
                 <div className={styles.header__titleArea}>
-                    <h1 className={styles.header__title}>رسیدگی به پرداخت‌های سپ</h1>
-                    <span className={styles.header__badge}>
-                        {new Intl.NumberFormat('fa-IR').format(pagination.total || 0)} پرونده
-                    </span>
+                    <div className={styles.header__icon}>
+                        <ShieldAlert size={22} />
+                    </div>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            <h1 className={styles.header__title}>رسیدگی به پرداخت‌های سپ</h1>
+                            <span className={styles.header__badge}>
+                                {new Intl.NumberFormat('fa-IR').format(pagination.total || 0)} پرونده
+                            </span>
+                        </div>
+                        <p className={styles.header__subtitle}>
+                            مدیریت، رهگیری و تعیین تکلیف تراکنش‌های معلق و مغایرت‌های درگاه پرداخت سامان‌کیش
+                        </p>
+                    </div>
                 </div>
                 <div className={styles.header__actions}>
                     <button
@@ -129,7 +153,8 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
                         disabled={loading}
                         className={`${styles.btn} ${styles['btn--secondary']}`}
                     >
-                        {loading ? 'در حال بارگذاری...' : '🔄 به‌روزرسانی'}
+                        <RotateCw size={15} style={{ animation: loading ? 'spin 0.8s linear infinite' : 'none' }} />
+                        {loading ? 'در حال بارگذاری...' : 'به‌روزرسانی'}
                     </button>
                 </div>
             </div>
@@ -137,10 +162,17 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
             {/* بخش تنظیم آستانه کال‌بک */}
             <div className={styles.thresholdCard}>
                 <div className={styles.thresholdCard__info}>
-                    <span className={styles.thresholdCard__title}>تنظیم آستانه بازگشایی خودکار پرونده (عدم دریافت کال‌بک)</span>
-                    <span className={styles.thresholdCard__desc}>
-                        اگر پس از صدور توکن پرداخت سپ تا این مدت کال‌بکی دریافت نشود، پرونده با علت NO_CALLBACK باز می‌شود (پیش‌فرض: ۳۰ دقیقه).
-                    </span>
+                    <div className={styles.thresholdCard__icon}>
+                        <Clock size={20} />
+                    </div>
+                    <div className={styles.thresholdCard__textGroup}>
+                        <span className={styles.thresholdCard__title}>
+                            تنظیم آستانه بازگشایی خودکار پرونده (عدم دریافت کال‌بک)
+                        </span>
+                        <span className={styles.thresholdCard__desc}>
+                            اگر پس از صدور توکن پرداخت سپ تا این مدت کال‌بکی دریافت نشود، پرونده با علت NO_CALLBACK باز می‌شود (پیش‌فرض: ۳۰ دقیقه).
+                        </span>
+                    </div>
                 </div>
                 <form onSubmit={handleSaveThreshold} className={styles.thresholdCard__form}>
                     <input
@@ -167,20 +199,25 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
 
             {thresholdSuccessMsg && (
                 <div className={`${styles.alert} ${styles['alert--success']}`}>
-                    <span>✅</span>
+                    <CheckCircle2 size={18} />
                     <span>{thresholdSuccessMsg}</span>
                 </div>
             )}
 
             {thresholdErrorMsg && (
                 <div className={`${styles.alert} ${styles['alert--error']}`}>
-                    <span>⚠️</span>
+                    <AlertCircle size={18} />
                     <span>{thresholdErrorMsg}</span>
                 </div>
             )}
 
             {/* نوار فیلترها */}
             <div className={styles.filters}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-title-hover)' }}>
+                    <SlidersHorizontal size={16} />
+                    <span style={{ fontSize: 'var(--font-sm)', fontWeight: 'bold' }}>فیلترها:</span>
+                </div>
+
                 <div className={styles.filters__group}>
                     <label htmlFor="status-filter" className={styles.filters__label}>
                         وضعیت پرونده:
@@ -244,7 +281,7 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
 
             {errorMsg && (
                 <div className={`${styles.alert} ${styles['alert--error']}`}>
-                    <span>⚠️</span>
+                    <AlertCircle size={18} />
                     <span>{errorMsg}</span>
                 </div>
             )}
@@ -267,13 +304,13 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
                     <tbody>
                         {loading && cases.length === 0 ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>
+                                <td colSpan={8} className={styles.emptyCell}>
                                     در حال دریافت پرونده‌ها...
                                 </td>
                             </tr>
                         ) : cases.length === 0 ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+                                <td colSpan={8} className={styles.emptyCell}>
                                     هیچ پرونده‌ای با شرایط انتخابی یافت نشد.
                                 </td>
                             </tr>
@@ -287,7 +324,7 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
                                 return (
                                     <tr key={c.caseId || c.clientReferenceCode}>
                                         <td className={styles.codeCell}>{c.clientReferenceCode}</td>
-                                        <td style={{ fontSize: '0.8rem', color: '#6b7280' }}>{c.caseId}</td>
+                                        <td className={styles.subText}>{c.caseId}</td>
                                         <td>
                                             <span className={`${styles.badge} ${styles[`badge--${reasonMeta.variant}`]}`}>
                                                 {reasonMeta.label}
@@ -303,7 +340,7 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
                                                 {topUpMeta.label}
                                             </span>
                                         </td>
-                                        <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                                        <td className={styles.subText} style={{ whiteSpace: 'nowrap' }}>
                                             {formatDate(c.openedAtUtc)}
                                         </td>
                                         <td>
@@ -324,10 +361,10 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
                                                         : c.deliveryStatus}
                                                 </span>
                                             ) : (
-                                                <span style={{ color: '#9ca3af' }}>—</span>
+                                                <span className={styles.subText}>—</span>
                                             )}
                                             {c.deliveryError && (
-                                                <div style={{ fontSize: '0.72rem', color: '#dc2626', marginTop: '2px' }}>
+                                                <div className={styles.deliveryError}>
                                                     {c.deliveryError}
                                                 </div>
                                             )}
@@ -385,7 +422,7 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
                         })}
                         <button
                             type="button"
-                            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                            onClick={() => setPage((prev) => Math.max(totalPages, prev + 1))}
                             disabled={page >= totalPages || loading}
                             className={styles.pagination__btn}
                         >
@@ -397,4 +434,3 @@ export default function GatewayReviewsList({ initialData = null, initialSettings
         </div>
     );
 }
-
