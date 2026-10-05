@@ -35,6 +35,8 @@ import {
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
+import { usePermissions } from '@/context/PermissionsContext';
+import { ROUTE_PERMISSIONS } from '@/config/adminPermissions';
 
 import styles from './AdminSidebar.module.scss';
 
@@ -62,37 +64,32 @@ const NAV_LINKS = [
 /**
  * AdminSidebar Component
  *
- * @param {{ user: { name?: string, email?: string, image?: string } }} props
+ * @param {{ user: { name?: string, email?: string, image?: string, role?: any } }} props
  *   - `user` is forwarded from the server-side session in layout.jsx.
- *     It is safe to use here because layout.jsx already verified admin access
- *     before rendering this component.
  */
 export default function AdminSidebar({ user }) {
-    /*
-     * usePathname() returns the current URL's path (e.g. '/admin/orders').
-     * We use this to determine which nav link should be styled as "active".
-     *
-     * Note: usePathname() re-renders this component on every client-side
-     * navigation, so active states update instantly without a page reload.
-     */
     const pathname = usePathname();
+    const { hasAllPermissions, roles } = usePermissions();
 
     /**
      * Determines whether a given href matches the current pathname.
-     *
-     * Special case for '/admin' (the dashboard root) and '/admin/orders':
-     *   - Exact match prevents them from falsely staying active on sub-routes.
-     *   - For all other links, we use startsWith() so that nested routes
-     *     (e.g. '/admin/orders/123') still highlight the parent nav item.
-     *
-     * @param {string} href – the nav link's target path
-     * @returns {boolean}
      */
     const isActive = (href) => {
         if (href === '/admin') return pathname === '/admin';
         if (href === '/admin/orders') return pathname === '/admin/orders';
         return pathname.startsWith(href);
     };
+
+    // فیلتر کردن هوشمند آیتم‌های منو بر اساس دسترسی‌های کاربر
+    const visibleNavLinks = NAV_LINKS.filter(({ href }) => {
+        const required = ROUTE_PERMISSIONS[href];
+        if (!required || required.length === 0) return true;
+        return hasAllPermissions(required);
+    });
+
+    const displayRole = roles && roles.length > 0
+        ? roles.join(', ')
+        : (typeof user?.role === 'string' ? user.role : user?.role?.name || user?.role?.type || 'مدیر سیستم');
 
     return (
         <aside className={styles.sidebar}>
@@ -105,10 +102,6 @@ export default function AdminSidebar({ user }) {
 
             {/* ── User Profile Mini-Card ─────────────────────────────────────── */}
             <div className={styles.sidebar__profile}>
-                {/*
-         * Show the user's avatar from Google OAuth if available,
-         * otherwise fall back to the generic UserCircle icon from Lucide.
-         */}
                 {user?.image ? (
                     <img
                         src={user.image}
@@ -122,14 +115,14 @@ export default function AdminSidebar({ user }) {
                     <span className={styles.sidebar__profile_name}>
                         {user?.name || 'مدیر سیستم'}
                     </span>
-                    <span className={styles.sidebar__profile_role}>Administrator</span>
+                    <span className={styles.sidebar__profile_role}>{displayRole}</span>
                 </div>
             </div>
 
             {/* ── Navigation Links ───────────────────────────────────────────── */}
             <nav className={styles.sidebar__nav} aria-label="Admin Navigation">
                 <ul className={styles.sidebar__nav_list}>
-                    {NAV_LINKS.map(({ href, label, icon: Icon }) => (
+                    {visibleNavLinks.map(({ href, label, icon: Icon }) => (
                         <li key={href} className={styles.sidebar__nav_item}>
                             <Link
                                 href={href}
@@ -137,7 +130,6 @@ export default function AdminSidebar({ user }) {
                                     }`}
                                 aria-current={isActive(href) ? 'page' : undefined}
                             >
-                                {/* Lucide icon – sized consistently via SCSS */}
                                 <Icon className={styles.sidebar__nav_icon} size={20} />
                                 <span className={styles.sidebar__nav_label}>{label}</span>
                             </Link>
