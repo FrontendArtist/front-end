@@ -20,6 +20,8 @@ import { useState } from 'react';
 import styles from './OrdersTable.module.scss';
 import { updateOrderStatus } from '@/lib/client/admin/ordersClient';
 import { triggerLightUpdate } from '@/store/useLightStore';
+import Can from '@/components/admin/Permissions/Can';
+import { ADMIN_PERMISSIONS } from '@/config/adminPermissions';
 
 /**
  * استخراج شناسه یکتای تاپ‌آپ بای‌مانی (GUID) از فیلدها یا توضیحات سفارش
@@ -256,7 +258,23 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
                                 </button>
                             </div>
                         ) : (
-                            <>
+                            <Can
+                                permission={ADMIN_PERMISSIONS.TOPUP_REVIEW}
+                                fallback={
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '8px' }}>
+                                        <span style={{ color: 'var(--color-card-text-muted, #94a3b8)', fontSize: 'var(--font-xs)' }}>
+                                            ⚠️ حساب شما مجوز مالی بررسی و تعیین وضعیت فیش‌ها (TopUp.Review) را ندارد.
+                                        </span>
+                                        <button
+                                            type="button"
+                                            className={`${styles.btn} ${styles['btn--ghost']}`}
+                                            onClick={onClose}
+                                        >
+                                            بستن
+                                        </button>
+                                    </div>
+                                }
+                            >
                                 <button
                                     type="button"
                                     className={`${styles.btn} ${styles['btn--danger']}`}
@@ -273,7 +291,7 @@ export default function ReceiptModal({ order, onClose, onUpdate }) {
                                 >
                                     {loading ? '...' : '✓ تأیید پرداخت'}
                                 </button>
-                            </>
+                            </Can>
                         )}
                     </div>
                 )}

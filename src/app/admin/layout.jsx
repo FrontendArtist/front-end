@@ -32,6 +32,11 @@ import { redirect } from 'next/navigation';
 // The interactive sidebar component (Client Component)
 import AdminSidebar from '@/components/admin/Sidebar/AdminSidebar';
 
+// گارد متمرکز مجوزها و کانتکست
+import { PermissionsProvider } from '@/context/PermissionsContext';
+import AdminRouteGuard from '@/components/admin/Permissions/AdminRouteGuard';
+import { getAdminCurrentUserPermissions } from '@/lib/byeMoneyApi';
+
 // Modular SCSS for the dashboard wrapper layout
 import styles from './admin.module.scss';
 
@@ -46,54 +51,41 @@ import styles from './admin.module.scss';
 export default async function AdminLayout({ children }) {
     // ─────────────────────────────────────────────────────────────────
     // STEP 1: Retrieve the current session from the server.
-    // `getServerSession` reads the encrypted JWT cookie and decodes it
-    // using the same `secret` defined in authOptions.
-    // This call is safe to make on every request; NextAuth caches it
-    // internally for the duration of the request.
     // ─────────────────────────────────────────────────────────────────
     const session = await getServerSession(authOptions);
 
     // ─────────────────────────────────────────────────────────────────
-    // STEP 2: Authorization Gate
-    //
-    // Condition breakdown:
-    //   • !session                    → User is not logged in at all.
-    //   • !session.user               → Session exists but user object is missing (edge case).
-    //   • !isUserAdmin(session.user)  → User is logged in but does NOT have the 'administrator' role.
-    //
-    // Any of these conditions → immediate server-side redirect to home page.
+    // STEP 2: Authorization Gate (Initial admin check)
     // ─────────────────────────────────────────────────────────────────
     if (!session || !session.user || !isUserAdmin(session.user)) {
-        /**
-         * `redirect('/')` from 'next/navigation' throws a special Next.js error
-         * that terminates rendering and issues a 307 Temporary Redirect response.
-         * Do NOT wrap this in a try/catch – it must propagate up.
-         */
         redirect('/');
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // STEP 3: Authorized – Render the Admin Dashboard Shell
-    //
-    // At this point we know the user is a verified administrator.
-    // We render a two-column layout:
-    //   • Left column  → AdminSidebar (fixed navigation)
-    //   • Right column → {children} (the actual admin page content)
+    // STEP 3: Fetch current admin permissions from ByeMoney
+    // ─────────────────────────────────────────────────────────────────
+    const permissionsData = await getAdminCurrentUserPermissions({ jwt: session.user.jwt });
+
+    // ─────────────────────────────────────────────────────────────────
+    // STEP 4: Authorized – Render the Admin Dashboard Shell with PermissionsProvider
     // ─────────────────────────────────────────────────────────────────
     return (
-        <div className={styles.dashboard}>
-            {/*
-       * AdminSidebar is a Client Component ('use client') to support:
-       *   - usePathname() for active link detection
-       *   - Hover / toggle animations
-       * We pass the user's name for the profile display section.
-       */}
-            <AdminSidebar user={session.user} />
+        <PermissionsProvider
+            initialPermissions={permissionsData.permissions}
+            initialRoles={permissionsData.roles}
+            isLoaded={permissionsData.isLoaded}
+        >
+            <div className={styles.dashboard}>
+                {/* AdminSidebar receives user and reads permissions from context */}
+                <AdminSidebar user={session.user} />
 
-            {/* Main content area – renders the matched /admin/[page] */}
-            <main className={styles.dashboard__main}>
-                {children}
-            </main>
-        </div>
+                {/* Main content area – guarded by AdminRouteGuard */}
+                <main className={styles.dashboard__main}>
+                    <AdminRouteGuard>
+                        {children}
+                    </AdminRouteGuard>
+                </main>
+            </div>
+        </PermissionsProvider>
     );
 }

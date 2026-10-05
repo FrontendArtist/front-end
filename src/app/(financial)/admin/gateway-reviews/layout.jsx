@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { getGatewayReviewAccess } from '@/lib/admin/gatewayReviewAccess';
 import { isUserAdmin } from '@/lib/auth';
 import AdminSidebar from '@/components/admin/Sidebar/AdminSidebar';
+import { PermissionsProvider } from '@/context/PermissionsContext';
+import { getAdminCurrentUserPermissions } from '@/lib/byeMoneyApi';
 import styles from '@/app/admin/admin.module.scss';
 import { ShieldAlert } from 'lucide-react';
 
@@ -78,10 +80,18 @@ export default async function FinancialReviewLayout({ children }) {
         );
     }
 
+    const permissionsData = await getAdminCurrentUserPermissions({ jwt: session.user.jwt });
+
     return (
-        <div className={styles.dashboard}>
-            <AdminSidebar user={session.user} financialOnly={!isUserAdmin(session.user)} />
-            <main className={styles.dashboard__main}>{children}</main>
-        </div>
+        <PermissionsProvider
+            initialPermissions={permissionsData.permissions}
+            initialRoles={permissionsData.roles}
+            isLoaded={permissionsData.isLoaded}
+        >
+            <div className={styles.dashboard}>
+                <AdminSidebar user={session.user} financialOnly={!isUserAdmin(session.user)} />
+                <main className={styles.dashboard__main}>{children}</main>
+            </div>
+        </PermissionsProvider>
     );
 }

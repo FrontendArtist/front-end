@@ -12,7 +12,9 @@ import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
 import { fetchAdminUsers } from '@/lib/client/admin/usersClient';
 import { triggerLightUpdate } from '@/store/useLightStore';
 import { useSession } from 'next-auth/react';
-import { checkAdminTopUpPermissionWithByeMoney, getConversionRateWithByeMoney } from '@/lib/byeMoneyApi';
+import { getConversionRateWithByeMoney } from '@/lib/byeMoneyApi';
+import Can from '@/components/admin/Permissions/Can';
+import { ADMIN_PERMISSIONS } from '@/config/adminPermissions';
 import AdminAssistedTopUpModal from './AdminAssistedTopUpModal/AdminAssistedTopUpModal';
 import CreateUserModal from './CreateUserModal/CreateUserModal';
 import { UserPlus } from 'lucide-react';
@@ -103,14 +105,16 @@ function LightCell({ user, onLightUpdated }) {
         <div className={styles.lightCellContainer}>
             <span className={styles.lightValue}>
                 {formatNum(localLight)}
-                <button
-                    ref={btnRef}
-                    title="افزایش نور کاربر"
-                    onClick={handleToggle}
-                    className={`${styles.lightAddBtn} ${open ? styles.open : ''}`}
-                >
-                    +
-                </button>
+                <Can permission={ADMIN_PERMISSIONS.NOOR_INJECT}>
+                    <button
+                        ref={btnRef}
+                        title="افزایش نور کاربر"
+                        onClick={handleToggle}
+                        className={`${styles.lightAddBtn} ${open ? styles.open : ''}`}
+                    >
+                        +
+                    </button>
+                </Can>
             </span>
 
             {open && typeof window !== 'undefined' && createPortal(
@@ -237,14 +241,16 @@ function BulkLightHeader({ onBulkAdded }) {
     return (
         <div className={styles.bulkHeaderContainer}>
             <span>نور ★</span>
-            <button
-                ref={btnRef}
-                title="اهدا نور به تمامی کاربران"
-                onClick={handleToggle}
-                className={`${styles.lightAddBtn} ${open ? styles.open : ''}`}
-            >
-                +
-            </button>
+            <Can permission={ADMIN_PERMISSIONS.NOOR_INJECT}>
+                <button
+                    ref={btnRef}
+                    title="اهدا نور به تمامی کاربران"
+                    onClick={handleToggle}
+                    className={`${styles.lightAddBtn} ${open ? styles.open : ''}`}
+                >
+                    +
+                </button>
+            </Can>
 
             {open && typeof window !== 'undefined' && createPortal(
                 <div
@@ -312,25 +318,16 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
     const { data: session } = useSession();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUserId, setSelectedUserId] = useState(null);
-    const [canAssistTopUp, setCanAssistTopUp] = useState(false);
     const [assistedTopUpUser, setAssistedTopUpUser] = useState(null);
     const [conversionRate, setConversionRate] = useState(null);
     const [showCreateUserModal, setShowCreateUserModal] = useState(false);
 
-    // بررسی مجوز مالی ادمین و پیش‌بارگذاری نرخ رسمی تبدیل از دیتابیس بای‌مانی
+    // پیش‌بارگذاری نرخ رسمی تبدیل از دیتابیس بای‌مانی جهت استفاده در مودال شارژ
     useEffect(() => {
         const jwt = session?.user?.jwt;
         if (!jwt) return;
 
         let isMounted = true;
-
-        checkAdminTopUpPermissionWithByeMoney({ jwt })
-            .then((res) => {
-                if (isMounted && res.hasPermission) {
-                    setCanAssistTopUp(true);
-                }
-            })
-            .catch(() => {});
 
         getConversionRateWithByeMoney({ jwt })
             .then((res) => {
@@ -426,7 +423,7 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                                     >
                                         مشاهده پروفایل
                                     </AdminButton>
-                                    {canAssistTopUp && (
+                                    <Can permission={ADMIN_PERMISSIONS.TOPUP_REVIEW}>
                                         <AdminButton
                                             onClick={() => setAssistedTopUpUser(user)}
                                             variant="edit"
@@ -434,7 +431,7 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                                         >
                                             افزایش شارژ کارت به کارت
                                         </AdminButton>
-                                    )}
+                                    </Can>
                                 </div>
                             </td>
                         </tr>
