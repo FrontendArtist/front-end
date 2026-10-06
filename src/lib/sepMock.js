@@ -172,6 +172,8 @@ export function verifyMockTransaction(refNum) {
         RefNum: refNum, RRN: traceNo, StraceNo: traceNo,
         OrginalAmount: data.amount, AffectiveAmount: data.amount,
         MaskedPan: '603799******1234',
+        TerminalNumber: process.env.SEP_TERMINAL_ID || '15785408',
+        StraceDate: new Date(data.issuedAt).toISOString(),
     };
     return { success: true, resultCode: 0, resultDescription: 'تراکنش شبیه‌سازی‌شده تأیید شد.',
         transactionDetail, rawData: { Success: true, ResultCode: 0, TransactionDetail: transactionDetail } };
@@ -189,5 +191,13 @@ export function reverseMockTransaction(refNum) {
             rawData: { ResultCode: -104, ResultDescription: 'ترمینال ارسالی در وضعیت غیرفعال می‌باشد.' },
         };
     }
-    return { success: true, resultCode: 0, resultDescription: 'برگشت شبیه‌سازی‌شده انجام شد.' };
+    const traceNo = String(parseInt(data.nonce.slice(0, 10).replaceAll('-', ''), 16)).padStart(12, '0').slice(-12);
+    const transactionDetail = {
+        RefNum: refNum, RRN: traceNo, StraceNo: traceNo,
+        OrginalAmount: data.amount, AffectiveAmount: data.amount,
+        TerminalNumber: process.env.SEP_TERMINAL_ID || '15785408',
+        StraceDate: new Date(data.issuedAt).toISOString(),
+    };
+    return { success: true, resultCode: 0, resultDescription: 'برگشت شبیه‌سازی‌شده انجام شد.',
+        rawData: { Success: true, ResultCode: 0, TransactionDetail: transactionDetail } };
 }
