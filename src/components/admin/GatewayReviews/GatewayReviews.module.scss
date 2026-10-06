@@ -163,42 +163,68 @@ $transition: 0.2s ease;
 .tableWrapper {
     width: 100%;
     overflow-x: auto;
-    border: 1px solid fade(var(--color-primary), 12%);
     border-radius: var(--border-radius);
-    background: fade(var(--color-black), 20%);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 0.25rem;
 }
 
 .table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0 10px;
     font-size: var(--font-sm);
     text-align: right;
     color: var(--color-card-text);
     min-width: 860px;
 
     th {
-        padding: 14px 16px;
-        background: fade(var(--color-black), 30%);
+        padding: 0.75rem 1rem;
+        background: transparent;
         color: var(--color-text-primary);
-        font-weight: var(--font-weight-medium);
-        border-bottom: 1px solid fade(var(--color-primary), 12%);
+        font-weight: var(--font-weight-bold);
+        border: none;
         white-space: nowrap;
+        font-size: var(--font-sm);
     }
 
     td {
-        padding: 14px 16px;
-        border-bottom: 1px solid fade(var(--color-primary), 6%);
+        padding: 1rem 1.15rem;
         vertical-align: middle;
         color: var(--color-card-text);
+        background: fade(var(--color-black), 22%);
+        border-top: 1px solid fade(var(--color-primary), 8%);
+        border-bottom: 1px solid fade(var(--color-primary), 8%);
+        transition: all 0.2s ease;
     }
 
-    tr:hover td {
-        background-color: fade(var(--color-primary), 5%);
+    tbody tr {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+
+            td {
+                background: fade(var(--color-black), 32%);
+            }
+
+            td:first-child {
+                border-right-color: var(--color-title-hover);
+            }
+        }
     }
 
-    tbody tr:last-child td {
-        border-bottom: none;
+    td:first-child {
+        border-right: 3px solid rgba(246, 217, 130, 0.4);
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+        border-left: none;
+    }
+
+    td:last-child {
+        border-left: 1px solid fade(var(--color-primary), 8%);
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+        border-right: none;
     }
 }
 
@@ -510,30 +536,121 @@ $transition: 0.2s ease;
 }
 
 .reviewAudit {
-    padding: 1rem 1.25rem;
-    margin-block: 0.5rem;
+    padding: 1.15rem 1.35rem;
+    margin-block: 0.65rem;
     border-inline-start: 3px solid var(--color-title-hover);
     background: fade(var(--color-black), 25%);
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 10px 10px 0;
     overflow-wrap: anywhere;
-    white-space: pre-wrap;
-    border-top: 1px solid fade(var(--color-primary), 8%);
-    border-bottom: 1px solid fade(var(--color-primary), 8%);
-    border-left: 1px solid fade(var(--color-primary), 8%);
+    border-top: 1px solid fade(var(--color-primary), 10%);
+    border-bottom: 1px solid fade(var(--color-primary), 10%);
+    border-left: 1px solid fade(var(--color-primary), 10%);
+    transition: all $transition;
+
+    &:hover {
+        background: fade(var(--color-black), 32%);
+        border-inline-start-color: var(--color-primary);
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin-bottom: 0.5rem;
+    }
+
+    &__title {
+        color: var(--color-text-primary);
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-bold);
+    }
+
+    &__date {
+        font-size: var(--font-xs);
+        color: rgba(255, 250, 234, 0.65);
+        direction: rtl;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+.shamsiDatePreview {
+    font-size: var(--font-xs);
+    color: var(--color-title-hover);
+    background: fade(var(--color-primary), 8%);
+    border: 1px solid fade(var(--color-primary), 18%);
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+    width: fit-content;
+}
+
+    &__evidence {
+        font-size: var(--font-xs);
+        color: rgba(255, 250, 234, 0.85);
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        background: fade(var(--color-black), 30%);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        border: 1px solid fade(var(--color-primary), 8%);
+        margin-top: 0.5rem;
+
+        p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        code {
+            font-family: monospace;
+            direction: ltr;
+            display: inline-block;
+            color: var(--color-blue-alt);
+            background: fade(var(--color-black), 40%);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+        }
+    }
+
+    &__note {
+        font-size: var(--font-xs);
+        color: var(--color-card-text);
+        background: fade(var(--color-black), 20%);
+        border-inline-start: 2px solid fade(var(--color-title-hover), 50%);
+        padding: 0.6rem 0.85rem;
+        border-radius: 0 6px 6px 0;
+        margin-top: 0.6rem !important;
+        line-height: 1.6;
+    }
 
     strong {
         color: var(--color-text-primary);
         font-size: var(--font-sm);
         display: block;
-        margin-bottom: 0.25rem;
     }
 
     p {
         color: var(--color-card-text);
-        opacity: 0.85;
+        opacity: 0.9;
         font-size: var(--font-xs);
         margin: 0.25rem 0 0;
         line-height: 1.6;
+    }
+
+    code {
+        font-family: monospace;
+        direction: ltr;
+        display: inline-block;
+        color: var(--color-blue-alt);
+        background: fade(var(--color-black), 40%);
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
     }
 }
 
@@ -578,11 +695,15 @@ $transition: 0.2s ease;
         font-size: var(--font-sm);
         font-weight: var(--font-weight-medium);
         color: var(--color-text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
     }
 
     &__hint {
         font-size: var(--font-xs);
-        color: rgba(255, 250, 234, 0.6);
+        color: rgba(255, 250, 234, 0.55);
+        font-weight: normal;
     }
 
     &__select,
@@ -614,6 +735,85 @@ $transition: 0.2s ease;
             cursor: not-allowed;
         }
     }
+}
+
+.subFormGroup {
+    background: fade(var(--color-primary), 5%);
+    border: 1px solid fade(var(--color-primary), 18%);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-top: 0.35rem;
+
+    &__title {
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-title-hover);
+        margin: 0 0 1rem;
+    }
+
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+}
+
+.advancedFieldsContainer {
+    margin-top: 0.5rem;
+    border-top: 1px dashed fade(var(--color-primary), 15%);
+    padding-top: 0.75rem;
+}
+
+.advancedFieldsToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: transparent;
+    border: none;
+    color: rgba(255, 250, 234, 0.6);
+    font-size: var(--font-xs);
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0.35rem 0;
+    transition: color $transition;
+
+    &:hover {
+        color: var(--color-title-hover);
+    }
+}
+
+.advancedFieldsContent {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 0.75rem;
+    padding: 1rem;
+    background: fade(var(--color-black), 20%);
+    border-radius: 8px;
+    border: 1px solid fade(var(--color-primary), 10%);
+}
+
+.reopenBox {
+    margin-top: 1.25rem;
+    padding: 1.25rem;
+    background: fade(var(--color-black), 25%);
+    border-radius: 10px;
+    border: 1px solid fade(var(--color-primary), 14%);
+}
+
+.emptyNote {
+    color: rgba(255, 250, 234, 0.55);
+    font-size: var(--font-sm);
+    padding: 0.75rem 0;
+    margin: 0;
+}
+
+.text--success {
+    color: var(--color-success);
+    font-weight: var(--font-weight-bold);
+}
+
+.text--muted {
+    color: rgba(255, 250, 234, 0.5);
 }
 
 .historyTimeline {

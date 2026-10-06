@@ -8,6 +8,12 @@ const DEFINITIVE_UNPAID_STATES = {
   TerminalNotFound: '12', MultisettlePolicyErrors: '21',
 };
 
+function reviewBlockCode(topUp) {
+  if (topUp?.hasManualRefund || topUp?.status === 'ManuallyRefunded')
+    return 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED';
+  return topUp?.status === 'Unresolved' ? 'TOPUP_REQUIRES_REVIEW' : null;
+}
+
 async function recordAndDeliver(attempt, outcome) {
   const recorded = await recordGatewayOutcome(attempt, outcome);
   const delivery = await deliverGatewayOutcome(recorded);
@@ -23,6 +29,11 @@ async function reverseVerified(attempt, refNum, terminalNumber, reason, result) 
   if (isConfirmedTopUp(saved)) {
     await updateAttempt(attempt, { status: 'financial_review', refNum, lastError: 'TOPUP_ALREADY_CONFIRMED' });
     return result({ status: 'failed', message: 'وضعیت پرداخت برای بررسی مالی ثبت شد.' });
+  }
+  const blockCode = reviewBlockCode(saved);
+  if (blockCode) {
+    await updateAttempt(attempt, { status: 'financial_review', refNum, lastError: blockCode });
+    return result({ status: 'failed', message: 'نتیجه تازه بانک نیازمند رسیدگی مالی است.' });
   }
 
   const now = new Date().toISOString();
@@ -191,9 +202,10 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
   }
 
   const confirmation = await getTopUpConfirmation(attempt.resNum).catch(() => null);
-  if (confirmation?.hasManualRefund) {
-    await updateAttempt(verified, { status: 'financial_review', lastError: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' });
-    return result({ status: 'failed', message: 'بازپرداخت دستی ثبت شده و نتیجه تازه بانک نیازمند رسیدگی است.' });
+  const blockCode = reviewBlockCode(confirmation);
+  if (blockCode) {
+    await updateAttempt(verified, { status: 'financial_review', lastError: blockCode });
+    return result({ status: 'failed', message: 'نتیجه تازه بانک نیازمند رسیدگی مالی است.' });
   }
 
   const delivery = await deliverGatewayOutcome(recorded).catch(() => ({ ok: false }));
