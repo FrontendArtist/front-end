@@ -2,9 +2,13 @@ import { createMockCallback, isSepMockEnabled, readMockToken } from '@/lib/sepMo
 
 const SCENARIOS = [
     ['success', 'پرداخت موفق'],
-    ['cancel', 'انصراف از پرداخت'],
-    ['verify_failed', 'خطا در تأیید بانک'],
-    ['amount_mismatch', 'مغایرت مبلغ'],
+    ['cancel', 'انصراف از پرداخت (کاربر)'],
+    ['bank_failed', 'پرداخت ناموفق در درگاه (خطای کارت / شاپرک)'],
+    ['session_expired', 'انقضای نشست کاربر در درگاه (SessionIsNull)'],
+    ['verify_failed', 'خطا در تأیید بانک (تراکنش یافت نشد - کد ۲-)'],
+    ['verify_expired', 'انقضای مهلت تأیید بانک (بیش از ۳۰ دقیقه - کد ۶-)'],
+    ['amount_mismatch', 'مغایرت مبلغ (برگشت موفق وجه به حساب)'],
+    ['reverse_failed', 'مغایرت مبلغ + شکست در برگشت وجه (ایجاد پرونده REVERSE_UNKNOWN)'],
 ];
 
 function escapeHtml(value) {

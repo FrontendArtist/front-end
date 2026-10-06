@@ -51,15 +51,37 @@ describe('local SEP mock', () => {
         expect(cancelled.fields.State).toBe('CanceledByUser');
         expect(cancelled.fields.RefNum).toBe('');
 
+        const bankFailed = createMockCallback(token, 'bank_failed');
+        expect(bankFailed.fields.State).toBe('Failed');
+        expect(bankFailed.fields.Status).toBe('3');
+        expect(bankFailed.fields.RefNum).toBe('');
+
+        const sessionExpired = createMockCallback(token, 'session_expired');
+        expect(sessionExpired.fields.State).toBe('SessionIsNull');
+        expect(sessionExpired.fields.Status).toBe('0');
+        expect(sessionExpired.fields.RefNum).toBe('');
+
         const failed = await verifySepTransaction({ refNum: createMockCallback(token, 'verify_failed').fields.RefNum });
         expect(failed.success).toBe(false);
         expect(failed.resultCode).toBe(-2);
+
+        const expired = await verifySepTransaction({ refNum: createMockCallback(token, 'verify_expired').fields.RefNum });
+        expect(expired.success).toBe(false);
+        expect(expired.resultCode).toBe(-6);
 
         const mismatchRef = createMockCallback(token, 'amount_mismatch').fields.RefNum;
         expect(mismatchRef.length).toBeLessThanOrEqual(100);
         const mismatch = await verifySepTransaction({ refNum: mismatchRef });
         expect(mismatch.transactionDetail.OrginalAmount).toBe(params.amount + 1);
         expect((await reverseSepTransaction({ refNum: mismatchRef })).success).toBe(true);
+
+        const revFailedRef = createMockCallback(token, 'reverse_failed').fields.RefNum;
+        const revFailedVerify = await verifySepTransaction({ refNum: revFailedRef });
+        expect(revFailedVerify.success).toBe(true);
+        const revResult = await reverseSepTransaction({ refNum: revFailedRef });
+        expect(revResult.success).toBe(false);
+        expect(revResult.resultCode).toBe(-104);
+
         expect(global.fetch).not.toHaveBeenCalled();
     });
 

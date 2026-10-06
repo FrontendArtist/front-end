@@ -2,7 +2,16 @@ import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
 const MOCK_GATEWAY_URL = '/api/payment/mock';
 const TOKEN_LIFETIME_MS = 60 * 60 * 1000;
-const SCENARIOS = ['success', 'cancel', 'verify_failed', 'amount_mismatch'];
+const SCENARIOS = [
+    'success',
+    'cancel',
+    'bank_failed',
+    'session_expired',
+    'verify_failed',
+    'verify_expired',
+    'amount_mismatch',
+    'reverse_failed',
+];
 
 export function isSepMockEnabled() {
     return process.env.NODE_ENV === 'development' && process.env.SEP_MOCK_ENABLED === 'true';
@@ -83,13 +92,29 @@ export function createMockCallback(token, scenario) {
     const data = readMockToken(token);
     if (!data || !SCENARIOS.includes(scenario)) return null;
     const traceNo = String(parseInt(data.nonce.slice(0, 10).replaceAll('-', ''), 16)).padStart(12, '0').slice(-12);
-    const paidAmount = scenario === 'amount_mismatch' ? data.amount + 1 : data.amount;
-    const refNum = scenario === 'cancel' ? '' : createMockRef({ ...data, amount: paidAmount, scenario });
+    const isMismatch = scenario === 'amount_mismatch' || scenario === 'reverse_failed';
+    const paidAmount = isMismatch ? data.amount + 1 : data.amount;
+
+    let state = 'OK';
+    let status = '2';
+    if (scenario === 'cancel') {
+        state = 'CanceledByUser';
+        status = '1';
+    } else if (scenario === 'bank_failed') {
+        state = 'Failed';
+        status = '3';
+    } else if (scenario === 'session_expired') {
+        state = 'SessionIsNull';
+        status = '0';
+    }
+
+    const isUnpaid = scenario === 'cancel' || scenario === 'bank_failed' || scenario === 'session_expired';
+    const refNum = isUnpaid ? '' : createMockRef({ ...data, amount: paidAmount, scenario });
     return {
         redirectUrl: data.redirectUrl,
         fields: {
-            State: scenario === 'cancel' ? 'CanceledByUser' : 'OK',
-            Status: scenario === 'cancel' ? '1' : '2',
+            State: state,
+            Status: status,
             ResNum: data.resNum,
             RefNum: refNum,
             TraceNo: traceNo,
@@ -140,6 +165,8 @@ export function verifyMockTransaction(refNum) {
         resultDescription: 'رسید شبیه‌ساز معتبر نیست یا منقضی شده است.', rawData: {} };
     if (data.scenario === 'verify_failed') return { success: false, resultCode: -2,
         resultDescription: 'تراکنش در شبیه‌ساز SEP یافت نشد.', rawData: {} };
+    if (data.scenario === 'verify_expired') return { success: false, resultCode: -6,
+        resultDescription: 'بیش از ۳۰ دقیقه از زمان اجرای تراکنش گذشته و منقضی شده است.', rawData: {} };
     const traceNo = String(parseInt(data.nonce.slice(0, 10).replaceAll('-', ''), 16)).padStart(12, '0').slice(-12);
     const transactionDetail = {
         RefNum: refNum, RRN: traceNo, StraceNo: traceNo,
@@ -151,7 +178,16 @@ export function verifyMockTransaction(refNum) {
 }
 
 export function reverseMockTransaction(refNum) {
-    if (!readMockRef(refNum)) return { success: false, resultCode: -2,
+    const data = readMockRef(refNum);
+    if (!data) return { success: false, resultCode: -2,
         resultDescription: 'رسید شبیه‌ساز معتبر نیست.' };
+    if (data.scenario === 'reverse_failed') {
+        return {
+            success: false,
+            resultCode: -104,
+            resultDescription: 'ترمینال ارسالی در وضعیت غیرفعال می‌باشد (خطا در برگشت وجه بانک).',
+            rawData: { ResultCode: -104, ResultDescription: 'ترمینال ارسالی در وضعیت غیرفعال می‌باشد.' },
+        };
+    }
     return { success: true, resultCode: 0, resultDescription: 'برگشت شبیه‌سازی‌شده انجام شد.' };
 }
