@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
     ArrowRight,
@@ -10,6 +10,8 @@ import {
     History,
     AlertTriangle,
     CheckCircle2,
+    Sliders,
+    ChevronDown,
 } from 'lucide-react';
 import {
     fetchGatewayReview,
@@ -24,22 +26,60 @@ import {
 import { validateGatewayReviewResolution } from '@/lib/gatewayReviewResolution';
 import styles from './GatewayReviews.module.scss';
 
-const dateTime = (value) =>
-    value
-        ? new Intl.DateTimeFormat('fa-IR', {
-              dateStyle: 'medium',
-              timeStyle: 'short',
-              timeZone: 'Asia/Tehran',
-          }).format(new Date(value))
-        : '—';
+// تاریخ و زمان با فرمت شمسی استاندارد (منطقه زمانی تهران)
+const dateTime = (value) => {
+    if (!value) return '—';
+    try {
+        const d = new Date(value);
+        if (isNaN(d.getTime())) return '—';
+        return new Intl.DateTimeFormat('fa-IR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Asia/Tehran',
+        }).format(d).replace(',', ' -');
+    } catch {
+        return '—';
+    }
+};
 
-const reportDate = (value) =>
-    value
-        ? new Intl.DateTimeFormat('fa-IR', {
-              dateStyle: 'medium',
-              timeZone: 'UTC',
-          }).format(new Date(value))
-        : '—';
+// تاریخ روز بدون ساعت با تقویم شمسی (بدون جابجایی منطقه زمانی)
+const reportDate = (value) => {
+    if (!value) return '—';
+    try {
+        const str = String(value);
+        const d = new Date(str.includes('T') ? str : `${str}T12:00:00Z`);
+        if (isNaN(d.getTime())) return '—';
+        return new Intl.DateTimeFormat('fa-IR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            timeZone: 'Asia/Tehran',
+        }).format(d);
+    } catch {
+        return '—';
+    }
+};
+
+// تبدیل تاریخ به نوشتار کامل شمسی (مثلاً: ۱۵ مهر ۱۴۰۵)
+const toShamsiLong = (value) => {
+    if (!value) return '';
+    try {
+        const str = String(value);
+        const d = new Date(str.includes('T') ? str : `${str}T12:00:00Z`);
+        if (isNaN(d.getTime())) return '';
+        return new Intl.DateTimeFormat('fa-IR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            timeZone: 'Asia/Tehran',
+        }).format(d);
+    } catch {
+        return '';
+    }
+};
 
 const rial = (value) =>
     value == null ? '—' : new Intl.NumberFormat('fa-IR').format(value) + ' ریال';
@@ -64,19 +104,41 @@ const stageLabels = {
     manual: 'بررسی دستی',
 };
 
-function Field({ label, children }) {
+function getAuditEventTitle(item) {
+    if (item.eventType === 'resolved') {
+        return OUTCOME_CONFIG[item.outcomeCode]?.label || 'تعیین تکلیف و مختومه شدن پرونده';
+    }
+    if (item.eventType === 'reopen' || item.eventType === 'reopened') {
+        return 'بازگشایی پرونده جهت رسیدگی مجدد';
+    }
+    if (item.actorName || item.actorUserId) {
+        return item.note ? 'ثبت مدرک تکمیلی توسط کارشناس' : 'بررسی و اقدام کارشناس';
+    }
+    if (item.note) {
+        return 'ثبت مدرک و توضیحات جدید';
+    }
+    return 'همگام‌سازی مدارک و رویدادهای درگاه';
+}
+
+function Field({ label, hint, id, children }) {
     return (
-        <label className={styles.resolutionSection__field}>
-            <span className={styles.resolutionSection__label}>{label}</span>
+        <div className={styles.resolutionSection__field}>
+            <label className={styles.resolutionSection__label} htmlFor={id}>
+                {label}
+            </label>
+            {hint && <span className={styles.resolutionSection__hint}>{hint}</span>}
             {children}
-        </label>
+        </div>
     );
 }
 
 export default function GatewayReviewDetail({ initialCase, initialError }) {
     const [data, setData] = useState(initialCase);
     const [outcome, setOutcome] = useState('');
-    const [checkedDate, setCheckedDate] = useState('');
+    
+    // تاریخ پیش‌فرض امروز به فرمت میلادی برای سازگاری با API
+    const todayIso = () => new Date().toISOString().slice(0, 10);
+    const [checkedDate, setCheckedDate] = useState(() => todayIso());
     const [matched, setMatched] = useState('');
     const [depositRef, setDepositRef] = useState('');
     const [depositDate, setDepositDate] = useState('');
@@ -84,6 +146,7 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
     const [refundRef, setRefundRef] = useState('');
     const [note, setNote] = useState('');
     const [newEvidence, setNewEvidence] = useState('');
+    const [showAdvancedFields, setShowAdvancedFields] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(initialError || '');
     const [message, setMessage] = useState('');
@@ -91,6 +154,31 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
     const reopening = useRef(null);
     const inFlight = useRef(false);
     const [uncertain, setUncertain] = useState(false);
+
+    // به‌روزرسانی هوشمند فیلدها هنگام انتخاب نتیجه رسیدگی
+    const handleOutcomeChange = (newOutcome) => {
+        setOutcome(newOutcome);
+        setError('');
+
+        if (!checkedDate) {
+            setCheckedDate(todayIso());
+        }
+
+        if (newOutcome === 'PAID_AND_CONFIRMED') {
+            setMatched('yes');
+            if (!depositRef && data) {
+                setDepositRef(data.refNum || data.clientReferenceCode || '');
+            }
+            if (!depositAmount && data?.amountRial) {
+                setDepositAmount(String(data.amountRial));
+            }
+            if (!depositDate) {
+                setDepositDate(data?.requestedAtUtc ? data.requestedAtUtc.slice(0, 10) : todayIso());
+            }
+        } else if (newOutcome === 'NO_MATCHING_DEPOSIT' || newOutcome === 'REVERSED_REJECTED' || newOutcome === 'MANUAL_REFUND') {
+            setMatched('no');
+        }
+    };
 
     async function run(action) {
         if (inFlight.current) return;
@@ -115,7 +203,7 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
         run(async () => {
             const current = await fetchGatewayReview(data.clientReferenceCode, page);
             setData(current);
-            if (current?.status === 'resolved' || current?.revision !== data.revision) {
+            if (current?.status === 'resolved' || current?.revision !== data?.revision) {
                 operation.current = null;
                 setUncertain(false);
             }
@@ -124,6 +212,9 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
     async function submit(event) {
         event.preventDefault();
         const pending = data.pendingOperation?.payload;
+        const effectiveCheckedDate = checkedDate || todayIso();
+        const effectiveMatched = matched !== '' ? matched : (outcome === 'PAID_AND_CONFIRMED' ? 'yes' : 'no');
+
         const payload =
             pending ||
             operation.current || {
@@ -134,12 +225,12 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                 evidence: {
                     operationId: crypto.randomUUID(),
                     expectedRevision: data.revision,
-                    checkedReportDate: checkedDate,
-                    matchingDepositFound: matched === '' ? null : matched === 'yes',
+                    checkedReportDate: effectiveCheckedDate,
+                    matchingDepositFound: effectiveMatched === '' ? null : effectiveMatched === 'yes',
                     note: note.trim() || null,
-                    depositReference: matched === 'yes' ? depositRef.trim() : null,
-                    depositDate: matched === 'yes' ? depositDate : null,
-                    depositAmountRial: matched === 'yes' ? Number(depositAmount) : null,
+                    depositReference: effectiveMatched === 'yes' ? depositRef.trim() : null,
+                    depositDate: effectiveMatched === 'yes' ? depositDate : null,
+                    depositAmountRial: effectiveMatched === 'yes' ? Number(depositAmount) : null,
                     manualRefundReference: outcome === 'MANUAL_REFUND' ? refundRef.trim() : null,
                 },
             };
@@ -156,7 +247,7 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
             setUncertain(false);
             setMessage(
                 current.status === 'resolved'
-                    ? 'نتیجه بررسی ثبت و پرونده بسته شد.'
+                    ? 'نتیجه بررسی با موفقیت ثبت و پرونده مختومه شد.'
                     : 'نتیجه ثبت شد؛ مدرک تازه رسیده و پرونده برای بررسی دوباره باز است.'
             );
         });
@@ -172,9 +263,49 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
             operation.current = null;
             setNewEvidence('');
             setUncertain(false);
-            setMessage('مدرک جدید ثبت شد و پرونده برای بررسی دوباره باز شد.');
+            setMessage('مدرک جدید ثبت شد و پرونده برای رسیدگی دوباره بازگشایی شد.');
         });
     }
+
+    // پالایش و حذف موارد تکراری از سابقه رسیدگی
+    const deduplicatedAudit = useMemo(() => {
+        if (!data?.audit || !Array.isArray(data.audit)) return [];
+        const seen = new Set();
+        const result = [];
+        const reversed = [...data.audit].reverse();
+        for (const item of reversed) {
+            // رکوردهای همگام‌سازی خودکار درگاه بدون یادداشت و بدون کاربر را در یک دسته ادغام می‌کنیم
+            const isSystemSync = !item.actorName && !item.actorUserId && !item.note && !item.evidence && item.eventType === 'evidence';
+            let key;
+            if (isSystemSync) {
+                const timeMinute = item.occurredAtUtc ? item.occurredAtUtc.slice(0, 16) : 'sync';
+                key = `system_sync_${timeMinute}`;
+            } else {
+                key = item.eventId || `${item.occurredAtUtc}_${item.eventType}_${item.outcomeCode || ''}_${item.note || ''}`;
+            }
+
+            if (!seen.has(key)) {
+                seen.add(key);
+                result.push(item);
+            }
+        }
+        return result;
+    }, [data?.audit]);
+
+    // پالایش و حذف موارد تکراری از رویدادها
+    const deduplicatedHistory = useMemo(() => {
+        if (!data?.history || !Array.isArray(data.history)) return [];
+        const seen = new Set();
+        const result = [];
+        for (const item of data.history) {
+            const key = item.eventId || `${item.occurredAtUtc}_${item.eventType}_${item.details?.bankTransactionId || ''}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                result.push(item);
+            }
+        }
+        return result;
+    }, [data?.history]);
 
     if (!data) {
         return (
@@ -200,29 +331,33 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
             ? !data.canCloseReversed
             : isConfirmed;
     const latest = [...(data.audit || [])].reverse().find((x) => x.eventType === 'resolved');
+
     const details = [
         ['نام کاربر', data.userName || 'ثبت نشده'],
         ['تلفن', data.userPhone || 'ثبت نشده'],
-        ['زمان درخواست، به وقت تهران', dateTime(data.requestedAtUtc)],
+        ['زمان درخواست (شمسی)', dateTime(data.requestedAtUtc)],
         ['مبلغ درخواست', rial(data.amountRial)],
         ['شماره درخواست درگاه (ResNum)', data.clientReferenceCode],
         ['شناسه شارژ (TopUp)', data.topUpRequestId],
         ['دلیل ایجاد پرونده', REASON_CONFIG[data.reasonCode]?.label || data.reasonCode],
         ['وضعیت شارژ', TOPUP_STATUS_CONFIG[data.topUpStatus]?.label || data.topUpStatus],
         ['وضعیت پرونده', CASE_STATUS_CONFIG[data.status]?.label || data.status],
-        ['زمان ایجاد پرونده', dateTime(data.openedAtUtc)],
+        ['زمان ایجاد پرونده (شمسی)', dateTime(data.openedAtUtc)],
     ];
     const inputClass = styles.resolutionSection__input;
 
     return (
         <div className={styles.page} dir="rtl">
+            {/* سرصفحه */}
             <div className={styles.header}>
                 <div>
                     <Link href="/admin/gateway-reviews" className={styles.backLink}>
                         <ArrowRight size={16} />
                         بازگشت به فهرست پرونده‌ها
                     </Link>
-                    <h1 className={styles.header__title}>بررسی پرداخت {data.clientReferenceCode}</h1>
+                    <h1 className={styles.header__title}>
+                        بررسی پرونده پرداخت <span className={styles.codeCell}>{data.clientReferenceCode}</span>
+                    </h1>
                 </div>
                 <div className={styles.header__actions}>
                     <button
@@ -231,7 +366,7 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                         onClick={() => refresh()}
                     >
                         <RotateCw size={15} style={{ animation: busy ? 'spin 0.8s linear infinite' : 'none' }} />
-                        دریافت آخرین وضعیت
+                        به‌روزرسانی وضعیت
                     </button>
                 </div>
             </div>
@@ -250,10 +385,11 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                 </div>
             )}
 
+            {/* کارت مشخصات اصلی درخواست */}
             <section className={styles.detailCard}>
                 <h2>
                     <FileText size={20} style={{ color: 'var(--color-title-hover)' }} />
-                    مشخصات درخواست
+                    مشخصات پرونده و تراکنش
                 </h2>
                 <dl className={styles.detailCard__grid}>
                     {details.map(([label, value]) => (
@@ -265,72 +401,93 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                 </dl>
             </section>
 
+            {/* بخش رسیدگی یا نمایش وضعیت نهایی */}
             {data.status === 'resolved' ? (
                 <section className={styles.detailCard}>
-                    <h2>نتیجه رسیدگی</h2>
-                    <p style={{ fontWeight: 'bold', color: 'var(--color-success)' }}>
-                        {OUTCOME_CONFIG[data.outcomeCode]?.label || data.outcomeCode}
-                    </p>
-                    <p>
-                        بسته‌شده توسط {latest?.actorName || latest?.actorUserId || 'اطلاعات پرونده قدیمی موجود نیست'} —{' '}
-                        {dateTime(data.resolvedAtUtc)}
-                    </p>
+                    <h2>
+                        <CheckCircle2 size={20} style={{ color: 'var(--color-success)' }} />
+                        نتیجه نهایی رسیدگی
+                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <span className={`${styles.badge} ${styles['badge--success']}`} style={{ fontSize: '0.95rem', padding: '0.45rem 1rem' }}>
+                            {OUTCOME_CONFIG[data.outcomeCode]?.label || data.outcomeCode}
+                        </span>
+                        <span className={styles.subText}>
+                            مختومه شده توسط {latest?.actorName || latest?.actorUserId || 'سیستم'} — {dateTime(data.resolvedAtUtc)}
+                        </span>
+                    </div>
+
                     {data.outcomeCode === 'NO_MATCHING_DEPOSIT' && (
                         <p style={{ color: 'var(--color-warning-amber)' }}>
                             رسیدگی بسته شده است؛ وضعیت پرداخت همچنان نامعلوم است (این نتیجه وضعیت مالی شارژ را تغییر نمی‌دهد).
                         </p>
                     )}
-                    <form onSubmit={reopen} style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <Field label="مدرک جدید برای بازگشایی">
-                            <textarea
-                                className={inputClass}
-                                required
-                                maxLength={2000}
-                                value={newEvidence}
-                                disabled={busy || Boolean(reopening.current)}
-                                onChange={(e) => setNewEvidence(e.target.value)}
-                                rows={3}
-                            />
-                        </Field>
-                        <div>
-                            <button className={`${styles.btn} ${styles['btn--primary']}`} disabled={busy} type="submit">
-                                ثبت مدرک و بازگشایی
-                            </button>
-                        </div>
-                    </form>
+
+                    {/* فرم ثبت مدرک و بازگشایی پرونده مختومه‌شده */}
+                    <div className={styles.reopenBox}>
+                        <h3 style={{ fontSize: 'var(--font-md)', color: 'var(--color-title-hover)', margin: '0 0 0.5rem' }}>
+                            بازگشایی پرونده با ارائه مدرک جدید
+                        </h3>
+                        <form onSubmit={reopen} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                            <Field label="مدرک جدید برای بازگشایی" id="review-reopen-evidence">
+                                <textarea
+                                    id="review-reopen-evidence"
+                                    className={inputClass}
+                                    required
+                                    maxLength={2000}
+                                    value={newEvidence}
+                                    disabled={busy || Boolean(reopening.current)}
+                                    onChange={(e) => setNewEvidence(e.target.value)}
+                                    placeholder="شرح مدرک جدید بانکی، شماره ارجاع یا علت بازگشایی پرونده..."
+                                    rows={3}
+                                />
+                            </Field>
+                            <div>
+                                <button className={`${styles.btn} ${styles['btn--primary']}`} disabled={busy} type="submit">
+                                    ثبت مدرک و بازگشایی
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </section>
             ) : data.syncPending ? (
                 <div role="status" className={`${styles.alert} ${styles['alert--info']}`}>
-                    مدرک جدید در حال همگام‌سازی است؛ پس از دریافت آخرین وضعیت می‌توانید رسیدگی کنید.
+                    مدارک جدید در حال همگام‌سازی است؛ پس از دریافت آخرین وضعیت می‌توانید رسیدگی فرمایید.
                 </div>
             ) : (
+                /* فرم تعیین تکلیف و رسیدگی پرونده */
                 <section className={styles.resolutionSection}>
-                    <h2>ثبت بررسی گزارش بانک</h2>
-                    <p>گزارش بانک را با تاریخ درخواست و مبلغ ریالی تطبیق دهید. رسیدگی به پرونده‌های قدیمی به شکایت کاربر نیاز ندارد.</p>
+                    <h2>تعیین تکلیف پرونده پرداخت</h2>
+                    <p>نتیجه بررسی گزارش درگاه بانکی را انتخاب و پرونده را مختومه کنید.</p>
+
                     {!data.canClosePaid && (
                         <p style={{ color: 'var(--color-warning-amber)' }}>
-                            تطبیق تاریخ، مبلغ و شناسه واریز به‌تنهایی نور شارژ نمی‌کند. بستن با نتیجه «نور شارژ شده» به تأیید معتبر پرداخت در سرویس مالی نیاز دارد.
+                            نکته: بستن با نتیجه «شارژ موفق» نیازمند تأیید معتبر پرداخت در سرویس مالی است.
                         </p>
                     )}
-                    {isConfirmed && <p>برای شارژ تأییدشده، ثبت بازپرداخت دستی یا «واریز پیدا نشد» مجاز نیست.</p>}
-                    {data.manualRefundReference && (
-                        <p>بازپرداخت دستی قبلاً ثبت شده است؛ ورود نتیجه بانکی تازه نیازمند رسیدگی مالی است.</p>
+                    {isConfirmed && (
+                        <p style={{ color: 'var(--color-warning-amber)' }}>
+                            برای شارژهای تأییدشده، بازپرداخت دستی یا نتیجه «عدم واریز» مجاز نیست.
+                        </p>
                     )}
                     {data.pendingOperation && (
                         <p role="status">
-                            نتیجه یک درخواست بستن در حال پیگیری است.{' '}
+                            یک درخواست بستن در حال پردازش است.{' '}
                             {data.pendingOperation.canRetry
                                 ? 'می‌توانید همان درخواست را دوباره ارسال کنید.'
-                                : 'کارمند ثبت‌کننده باید همان درخواست را پیگیری کند.'}
+                                : 'کارمند ثبت‌کننده می‌تواند همان درخواست را پیگیری کند.'}
                         </p>
                     )}
+
                     <form onSubmit={submit} className={styles.resolutionSection__form} noValidate>
                         <fieldset disabled={!editable} className={styles.reviewFields}>
-                            <Field label="نتیجه رسیدگی">
+                            {/* فیلد اصلی: نتیجه رسیدگی */}
+                            <Field label="نتیجه رسیدگی" id="review-outcome">
                                 <select
+                                    id="review-outcome"
                                     className={inputClass}
                                     value={outcome}
-                                    onChange={(e) => setOutcome(e.target.value)}
+                                    onChange={(e) => handleOutcomeChange(e.target.value)}
                                 >
                                     <option value="">انتخاب کنید</option>
                                     {['PAID_AND_CONFIRMED', 'NO_MATCHING_DEPOSIT', 'REVERSED_REJECTED', 'MANUAL_REFUND'].map(
@@ -343,78 +500,129 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                                 </select>
                             </Field>
 
-                            <Field label="تاریخ گزارش بررسی‌شده (میلادی)">
-                                <input
-                                    className={inputClass}
-                                    type="date"
-                                    value={checkedDate}
-                                    onChange={(e) => setCheckedDate(e.target.value)}
-                                />
-                            </Field>
-
-                            <Field label="واریز منطبق در گزارش پیدا شد؟">
-                                <select
-                                    className={inputClass}
-                                    value={matched}
-                                    onChange={(e) => setMatched(e.target.value)}
-                                >
-                                    <option value="">انتخاب کنید</option>
-                                    <option value="yes">بله</option>
-                                    <option value="no">خیر</option>
-                                </select>
-                            </Field>
-
+                            {/* فیلدهای اختصاصی هنگام وجود واریز منطبق */}
                             {matched === 'yes' && (
-                                <>
-                                    <Field label="شناسه واریز درج‌شده در گزارش">
-                                        <input
-                                            className={inputClass}
-                                            maxLength={100}
-                                            value={depositRef}
-                                            onChange={(e) => setDepositRef(e.target.value)}
-                                        />
-                                    </Field>
-                                    <Field label="تاریخ واریز در گزارش (میلادی)">
-                                        <input
-                                            className={inputClass}
-                                            type="date"
-                                            value={depositDate}
-                                            onChange={(e) => setDepositDate(e.target.value)}
-                                        />
-                                    </Field>
-                                    <Field label="مبلغ واریز گزارش، به ریال">
-                                        <input
-                                            className={inputClass}
-                                            type="number"
-                                            min="1"
-                                            step="1"
-                                            value={depositAmount}
-                                            onChange={(e) => setDepositAmount(e.target.value)}
-                                        />
-                                    </Field>
-                                </>
+                                <div className={styles.subFormGroup}>
+                                    <h3 className={styles.subFormGroup__title}>مشخصات واریز منطبق (تکمیل خودکار)</h3>
+                                    <div className={styles.subFormGroup__grid}>
+                                        <Field label="شناسه واریز درج‌شده در گزارش" id="review-deposit-ref">
+                                            <input
+                                                id="review-deposit-ref"
+                                                className={inputClass}
+                                                maxLength={100}
+                                                value={depositRef}
+                                                onChange={(e) => setDepositRef(e.target.value)}
+                                            />
+                                        </Field>
+                                        <Field label="تاریخ واریز در گزارش" id="review-deposit-date">
+                                            <input
+                                                id="review-deposit-date"
+                                                aria-label="تاریخ واریز در گزارش (میلادی)"
+                                                className={inputClass}
+                                                type="date"
+                                                value={depositDate}
+                                                onChange={(e) => setDepositDate(e.target.value)}
+                                            />
+                                            {depositDate && (
+                                                <span className={styles.shamsiDatePreview}>
+                                                    📅 معادل شمسی: {toShamsiLong(depositDate)}
+                                                </span>
+                                            )}
+                                        </Field>
+                                        <Field label="مبلغ واریز گزارش، به ریال" id="review-deposit-amount">
+                                            <input
+                                                id="review-deposit-amount"
+                                                className={inputClass}
+                                                type="number"
+                                                min="1"
+                                                step="1"
+                                                value={depositAmount}
+                                                onChange={(e) => setDepositAmount(e.target.value)}
+                                            />
+                                        </Field>
+                                    </div>
+                                </div>
                             )}
 
+                            {/* فیلد مرجع در صورت بازپرداخت دستی */}
                             {outcome === 'MANUAL_REFUND' && (
-                                <Field label="مرجع بازپرداخت دستی">
+                                <Field label="مرجع بازپرداخت دستی" id="review-refund-ref">
                                     <input
+                                        id="review-refund-ref"
                                         className={inputClass}
                                         maxLength={100}
                                         value={refundRef}
                                         onChange={(e) => setRefundRef(e.target.value)}
+                                        placeholder="شماره پیگیری واریز پایا، کارت‌به‌کارت و..."
                                     />
                                 </Field>
                             )}
 
-                            <Field label="یادداشت بررسی">
+                            {/* یادداشت اختیاری */}
+                            <Field label="یادداشت بررسی" id="review-note">
                                 <textarea
+                                    id="review-note"
                                     className={inputClass}
                                     maxLength={2000}
-                                    rows={3}
+                                    rows={2}
                                     value={note}
                                     onChange={(e) => setNote(e.target.value)}
+                                    placeholder="توضیحات تکمیلی یا علت تصمیم‌گیری (اختیاری)..."
                                 />
                             </Field>
+
+                            {/* بخش تنظیمات فنی گزارش (تکمیل خودکار و قابل باز شدن در صورت نیاز) */}
+                            <div className={styles.advancedFieldsContainer}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAdvancedFields((prev) => !prev)}
+                                    className={styles.advancedFieldsToggle}
+                                >
+                                    <Sliders size={14} />
+                                    <span>تنظیمات فنی گزارش بانک (تکمیل خودکار)</span>
+                                    <ChevronDown
+                                        size={14}
+                                        style={{
+                                            transform: showAdvancedFields ? 'rotate(180deg)' : 'none',
+                                            transition: 'transform 0.2s ease',
+                                        }}
+                                    />
+                                </button>
+
+                                <div
+                                    className={styles.advancedFieldsContent}
+                                    style={{ display: showAdvancedFields ? 'grid' : 'none' }}
+                                >
+                                    <Field label="تاریخ گزارش بررسی‌شده" id="review-checked-date">
+                                        <input
+                                            id="review-checked-date"
+                                            aria-label="تاریخ گزارش بررسی‌شده (میلادی)"
+                                            className={inputClass}
+                                            type="date"
+                                            value={checkedDate}
+                                            onChange={(e) => setCheckedDate(e.target.value)}
+                                        />
+                                        {checkedDate && (
+                                            <span className={styles.shamsiDatePreview}>
+                                                📅 معادل شمسی: {toShamsiLong(checkedDate)}
+                                            </span>
+                                        )}
+                                    </Field>
+
+                                    <Field label="واریز منطبق در گزارش پیدا شد؟" id="review-matched">
+                                        <select
+                                            id="review-matched"
+                                            className={inputClass}
+                                            value={matched}
+                                            onChange={(e) => setMatched(e.target.value)}
+                                        >
+                                            <option value="">انتخاب کنید</option>
+                                            <option value="yes">بله</option>
+                                            <option value="no">خیر</option>
+                                        </select>
+                                    </Field>
+                                </div>
+                            </div>
                         </fieldset>
 
                         <div>
@@ -434,83 +642,98 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                 </section>
             )}
 
+            {/* سابقه رسیدگی و وقایع پرونده بدون تکرار */}
             <section className={styles.detailCard}>
                 <h2>
                     <History size={20} style={{ color: 'var(--color-title-hover)' }} />
-                    سابقه رسیدگی
+                    سابقه رسیدگی به پرونده
                 </h2>
-                {!(data.audit?.length) && <p>هنوز نتیجه رسیدگی ثبت نشده است.</p>}
-                {[...(data.audit || [])].reverse().map((item) => (
-                    <article className={styles.reviewAudit} key={item.eventId}>
-                        <strong>
-                            {item.eventType === 'resolved'
-                                ? OUTCOME_CONFIG[item.outcomeCode]?.label || item.outcomeCode
-                                : 'ثبت مدرک و شروع رسیدگی دوباره'}
-                        </strong>
-                        <p>
-                            {dateTime(item.occurredAtUtc)} {item.actorName || item.actorUserId || ''}
-                        </p>
-                        {item.evidence && (
-                            <>
-                                <p>
-                                    گزارش بررسی‌شده: {reportDate(item.evidence.checkedReportDate)}؛ واریز منطبق:{' '}
-                                    {item.evidence.matchingDepositFound ? 'پیدا شد' : 'پیدا نشد'}
-                                </p>
-                                {item.evidence.matchingDepositFound && (
+                {deduplicatedAudit.length === 0 ? (
+                    <p className={styles.emptyNote}>هنوز نتیجه رسیدگی ثبت نشده است.</p>
+                ) : (
+                    deduplicatedAudit.map((item) => (
+                        <article className={styles.reviewAudit} key={item.eventId || `${item.occurredAtUtc}_${item.eventType}`}>
+                            <div className={styles.reviewAudit__header}>
+                                <strong className={styles.reviewAudit__title}>
+                                    {getAuditEventTitle(item)}
+                                </strong>
+                                <span className={styles.reviewAudit__date}>
+                                    {dateTime(item.occurredAtUtc)}
+                                    {item.actorName || item.actorUserId ? ` (${item.actorName || item.actorUserId})` : ''}
+                                </span>
+                            </div>
+
+                            {item.evidence && (
+                                <div className={styles.reviewAudit__evidence}>
                                     <p>
-                                        شناسه واریز: {item.evidence.depositReference}؛ تاریخ واریز:{' '}
-                                        {reportDate(item.evidence.depositDate)}؛ مبلغ:{' '}
-                                        {rial(item.evidence.depositAmountRial)}
+                                        تاریخ بررسی: <strong>{reportDate(item.evidence.checkedReportDate)}</strong> | نتیجه واریز:{' '}
+                                        <span className={item.evidence.matchingDepositFound ? styles['text--success'] : styles['text--muted']}>
+                                            {item.evidence.matchingDepositFound ? 'منطبق ✓' : 'نامنطبق ✗'}
+                                        </span>
                                     </p>
-                                )}
-                                {item.evidence.manualRefundReference && (
-                                    <p>مرجع بازپرداخت دستی: {item.evidence.manualRefundReference}</p>
-                                )}
-                            </>
-                        )}
-                        {item.note && <p>{item.note}</p>}
-                    </article>
-                ))}
+                                    {item.evidence.matchingDepositFound && (
+                                        <p>
+                                            شناسه واریز: <code>{item.evidence.depositReference}</code> | تاریخ واریز:{' '}
+                                            <strong>{reportDate(item.evidence.depositDate)}</strong> | مبلغ:{' '}
+                                            <strong>{rial(item.evidence.depositAmountRial)}</strong>
+                                        </p>
+                                    )}
+                                    {item.evidence.manualRefundReference && (
+                                        <p>مرجع بازپرداخت دستی: <code>{item.evidence.manualRefundReference}</code></p>
+                                    )}
+                                </div>
+                            )}
+
+                            {item.note && <p className={styles.reviewAudit__note}>{item.note}</p>}
+                        </article>
+                    ))
+                )}
             </section>
 
+            {/* رویدادهای پرداخت و مدارک درگاه */}
             <section className={styles.detailCard}>
                 <h2>
                     <ShieldAlert size={20} style={{ color: 'var(--color-title-hover)' }} />
-                    رویدادهای پرداخت و مدارک
+                    رویدادهای پرداخت و مدارک درگاه
                 </h2>
-                {(data.history || []).map((item, index) => (
-                    <article className={styles.reviewAudit} key={item.eventId || index}>
-                        <strong>
-                            {eventLabels[item.eventType] || 'رویداد رسیدگی'} — {stageLabels[item.evidenceStage] || ''}
-                        </strong>
-                        <p>زمان وقوع رویداد: {dateTime(item.details?.occurredAtUtc || item.occurredAtUtc)}</p>
-                        {item.details?.occurredAtUtc &&
-                            item.occurredAtUtc &&
-                            item.details.occurredAtUtc !== item.occurredAtUtc && (
-                                <p>زمان ثبت مدرک: {dateTime(item.occurredAtUtc)}</p>
+                {deduplicatedHistory.length === 0 ? (
+                    <p className={styles.emptyNote}>رویدادی ثبت نشده است.</p>
+                ) : (
+                    deduplicatedHistory.map((item, index) => (
+                        <article className={styles.reviewAudit} key={item.eventId || index}>
+                            <div className={styles.reviewAudit__header}>
+                                <strong className={styles.reviewAudit__title}>
+                                    {eventLabels[item.eventType] || 'رویداد رسیدگی'} — {stageLabels[item.evidenceStage] || ''}
+                                </strong>
+                                <span className={styles.reviewAudit__date}>
+                                    {dateTime(item.details?.occurredAtUtc || item.occurredAtUtc)}
+                                </span>
+                            </div>
+
+                            {item.details?.bankTransactionId && <p>شماره تراکنش بانک (RefNum): <code>{item.details.bankTransactionId}</code></p>}
+                            {item.details?.bankReferenceNumber && <p>شماره ارجاع بانک (RRN): <code>{item.details.bankReferenceNumber}</code></p>}
+                            {item.details?.bankResultCode != null && <p>کد نتیجه بانک: {item.details.bankResultCode}</p>}
+                            {item.details?.callbackState && (
+                                <p>
+                                    وضعیت بازگشت از درگاه: {item.details.callbackState} / {item.details.callbackStatus}
+                                </p>
                             )}
-                        {item.details?.bankTransactionId && <p>RefNum: {item.details.bankTransactionId}</p>}
-                        {item.details?.bankReferenceNumber && <p>RRN: {item.details.bankReferenceNumber}</p>}
-                        {item.details?.bankResultCode != null && <p>کد نتیجه بانک: {item.details.bankResultCode}</p>}
-                        {item.details?.callbackState && (
-                            <p>
-                                وضعیت بازگشت از درگاه: {item.details.callbackState} / {item.details.callbackStatus}
-                            </p>
-                        )}
-                        {item.details?.verifySuccess != null && (
-                            <p>نتیجه بررسی بانک: {item.details.verifySuccess ? 'موفق' : 'ناموفق'}</p>
-                        )}
-                        {item.details?.originalAmountRial != null && (
-                            <p>
-                                مبلغ اصلی: {rial(item.details.originalAmountRial)}؛ مبلغ مؤثر:{' '}
-                                {rial(item.details.affectiveAmountRial)}
-                            </p>
-                        )}
-                        {item.details?.note && <p>{item.details.note}</p>}
-                        {item.details?.actorDocumentId && <p>شناسه ثبت‌کننده: {item.details.actorDocumentId}</p>}
-                    </article>
-                ))}
-                {data.historyPagination && (
+                            {item.details?.verifySuccess != null && (
+                                <p>نتیجه بررسی بانک: {item.details.verifySuccess ? 'موفق ✓' : 'ناموفق ✗'}</p>
+                            )}
+                            {item.details?.originalAmountRial != null && (
+                                <p>
+                                    مبلغ اصلی: {rial(item.details.originalAmountRial)} | مبلغ مؤثر:{' '}
+                                    {rial(item.details.affectiveAmountRial)}
+                                </p>
+                            )}
+                            {item.details?.note && <p className={styles.reviewAudit__note}>{item.details.note}</p>}
+                            {item.details?.actorDocumentId && <p className={styles.subText}>شناسه ثبت‌کننده: {item.details.actorDocumentId}</p>}
+                        </article>
+                    ))
+                )}
+
+                {data.historyPagination && data.historyPagination.total > data.historyPagination.pageSize && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
                         <button
                             className={`${styles.btn} ${styles['btn--secondary']}`}
