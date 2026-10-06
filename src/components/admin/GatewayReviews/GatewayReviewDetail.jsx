@@ -329,7 +329,7 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
             ? !data.canClosePaid
             : value === 'REVERSED_REJECTED'
             ? !data.canCloseReversed
-            : isConfirmed;
+            : isConfirmed || (value === 'NO_MATCHING_DEPOSIT' && Boolean(data.manualRefundReference));
     const latest = [...(data.audit || [])].reverse().find((x) => x.eventType === 'resolved');
 
     const details = [
@@ -419,7 +419,7 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
 
                     {data.outcomeCode === 'NO_MATCHING_DEPOSIT' && (
                         <p style={{ color: 'var(--color-warning-amber)' }}>
-                            رسیدگی بسته شده است؛ وضعیت پرداخت همچنان نامعلوم است (این نتیجه وضعیت مالی شارژ را تغییر نمی‌دهد).
+                            رسیدگی بسته شده است؛ درخواست از انتظار خارج شده و وضعیت پرداخت نامشخص است. مدرک تازه نیازمند بازگشایی پرونده است.
                         </p>
                     )}
 

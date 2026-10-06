@@ -22,12 +22,14 @@ export const TOPUP_STATUS_CONFIG = {
     Pending: { label: 'در انتظار شارژ', variant: 'warning' },
     Confirmed: { label: 'شارژ موفق', variant: 'success' },
     Rejected: { label: 'شارژ ناموفق / رد شده', variant: 'error' },
+    ManuallyRefunded: { label: 'وجه خارج از سامانه به کاربر برگشت داده شد', variant: 'info' },
+    Unresolved: { label: 'رسیدگی بسته؛ پرداخت نامشخص', variant: 'warning' },
     null: { label: 'نامعلوم', variant: 'default' },
 };
 
 export const OUTCOME_CONFIG = {
-    NO_MATCHING_DEPOSIT: { label: 'واریز منطبق پیدا نشد', description: 'نتیجه بررسی گزارش ثبت می‌شود؛ وضعیت مالی شارژ تغییر نمی‌کند.', requiresRef: false, variant: 'warning' },
-    MANUAL_REFUND: { label: 'بازپرداخت دستی خارج از سامانه', description: 'بازپرداخت انجام‌شده را با مرجع آن ثبت کنید.', requiresRef: false, variant: 'info' },
+    NO_MATCHING_DEPOSIT: { label: 'واریز منطبق پیدا نشد', description: 'درخواست از انتظار خارج می‌شود و با وضعیت پرداخت نامشخص بسته می‌شود.', requiresRef: false, variant: 'warning' },
+    MANUAL_REFUND: { label: 'وجه خارج از سامانه به کاربر برگشت داده شد', description: 'مرجع برگشت وجه انجام‌شده را ثبت کنید؛ کیف پول شارژ نمی‌شود.', requiresRef: false, variant: 'info' },
     PAID_AND_CONFIRMED: {
         label: 'پرداخت شده و نور شارژ شده',
         description: 'شارژ باید قبلاً از مسیر معتبر درگاه تأیید شده باشد.',

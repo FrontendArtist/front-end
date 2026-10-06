@@ -63,7 +63,7 @@ test('timeout keeps the same payload and operation id for retry', async () => {
 });
 test('confirmed topup cannot select manual refund', () => {
     render(<GatewayReviewDetail initialCase={{ ...openCase, topUpStatus: 'Confirmed', canClosePaid: true }} />);
-    expect(screen.getByRole('option', { name: 'بازپرداخت دستی خارج از سامانه' })).toBeDisabled();
+    expect(screen.getByRole('option', { name: 'وجه خارج از سامانه به کاربر برگشت داده شد' })).toBeDisabled();
 });
 test('a found deposit requires report id, date and amount without inventing a RefNum', async () => {
     render(<GatewayReviewDetail initialCase={openCase} />);
