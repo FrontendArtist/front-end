@@ -22,3 +22,9 @@ test('missing session is unauthorized', async () => {
     expect((await getGatewayReviewAccess()).status).toBe(401);
     expect(checkAdminTopUpPermissionWithByeMoney).not.toHaveBeenCalled();
 });
+
+test.each([401, 403, 500, 503])('preserves permission service failure status (%i)', async status => {
+    getServerSession.mockResolvedValue({ user: { jwt: 'staff' } });
+    checkAdminTopUpPermissionWithByeMoney.mockResolvedValue({ hasPermission: false, status });
+    expect((await getGatewayReviewAccess()).status).toBe(status);
+});

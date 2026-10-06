@@ -21,7 +21,7 @@ beforeEach(() => {
     getGatewayReviewAccess.mockResolvedValue({ status: 200, session: { user: { jwt: 'staff-jwt', role: { type: 'authenticated' } } } });
 });
 
-test.each([401, 403])('all read and write routes deny missing financial access (%i)', async status => {
+test.each([401, 403, 500, 503])('all read and write routes preserve access failure status (%i)', async status => {
     getGatewayReviewAccess.mockResolvedValue({ status, session: null });
     for (const route of [list, detail, settings, updateSettings, resolve, reopen]) {
         const response = await route(request(payload()), context);

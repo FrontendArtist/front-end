@@ -29,6 +29,8 @@ import {
 import { createManualOrder, searchAdminUsers } from '@/lib/client/admin/ordersClient';
 import { getConversionRateWithByeMoney, getBatchBalancesWithByeMoney } from '@/lib/byeMoneyApi';
 import AdminAssistedTopUpModal from '@/components/admin/Users/AdminAssistedTopUpModal/AdminAssistedTopUpModal';
+import Can from '@/components/admin/Permissions/Can';
+import { ADMIN_PERMISSIONS } from '@/config/adminPermissions';
 import styles from './ManualOrderForm.module.scss';
 
 // ── Toast Hook ─────────────────────────────────────────────────────────────
@@ -741,14 +743,16 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                             </div>
                                         </div>
                                         {selectedUser && (
-                                            <button
-                                                type="button"
-                                                className={styles.chargeBtn}
-                                                onClick={() => setShowTopUpModal(true)}
-                                            >
-                                                <Sparkles size={16} />
-                                                شارژ کارت به کارت کاربر
-                                            </button>
+                                            <Can permission={ADMIN_PERMISSIONS.TOPUP_REVIEW}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.chargeBtn}
+                                                    onClick={() => setShowTopUpModal(true)}
+                                                >
+                                                    <Sparkles size={16} />
+                                                    شارژ کارت به کارت کاربر
+                                                </button>
+                                            </Can>
                                         )}
                                     </div>
                                 )}

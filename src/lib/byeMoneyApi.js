@@ -621,17 +621,33 @@ export async function getConversionRateWithByeMoney({ jwt } = {}) {
   }
 }
 
+// حافظه موقت (Cache) پرمیژن‌های ادمین جهت جلوگیری از درخواست‌های مکرر هنگام جابه‌جایی تب‌ها
+const adminPermissionsCache = new Map();
+const ADMIN_PERMISSIONS_CACHE_TTL_MS = 60 * 1000; // ۶۰ ثانیه
+
+export function clearAdminPermissionsCache(jwt) {
+  if (jwt) adminPermissionsCache.delete(jwt);
+  else adminPermissionsCache.clear();
+}
+
 /**
- * بررسی مجوز مالی ادمین در سامانه ByeMoney جهت ثبت شارژ کارت‌به‌کارت
- * اندپوینت: GET /api/admin/topups/permissions
+ * دریافت متمرکز کلیه مجوزها و نقش‌های ادمین در سامانه ByeMoney
+ * اندپوینت: GET /api/admin/topups/permissions (یا اندپوینت متمرکز پرمیژن‌ها در فاز ارتقا)
  * 
  * @param {object} params
  * @param {string} params.jwt - توکن احراز هویت ادمین
- * @returns {Promise<{ hasPermission: boolean, canReviewTopUps?: boolean, error?: string }>}
+ * @param {boolean} [params.force=false] - اجبار به فچ مجدد و نادیده گرفتن کش موقت
+ * @returns {Promise<{ roles: string[], permissions: string[], isLoaded: boolean, error?: string }>}
  */
-export async function checkAdminTopUpPermissionWithByeMoney({ jwt }) {
+export async function getAdminCurrentUserPermissions({ jwt, force = false }) {
   if (!jwt) {
-    return { hasPermission: false, error: 'نشست کاربری نامعتبر است.' };
+    return { roles: [], permissions: [], isLoaded: false, status: 401, error: 'نشست کاربری نامعتبر است.' };
+  }
+
+  // بررسی کش موقت ۶۰ ثانیه‌ای
+  const cached = adminPermissionsCache.get(jwt);
+  if (!force && cached && Date.now() - cached.timestamp < ADMIN_PERMISSIONS_CACHE_TTL_MS) {
+    return cached.data;
   }
 
   const endpoint = `${BYEMONEY_API_URL}/api/admin/topups/permissions`;
@@ -647,19 +663,59 @@ export async function checkAdminTopUpPermissionWithByeMoney({ jwt }) {
 
     if (response.ok) {
       const data = await response.json().catch(() => ({}));
-      const canReview = data.canReviewTopUps ?? data.canAssistTopUp ?? false;
+      
+      // اگر بک‌اند فرمت مدرن آرایه permissions را فرستاد
+      if (Array.isArray(data.permissions)) {
+        const result = {
+          roles: Array.isArray(data.roles) ? data.roles : [],
+          permissions: data.permissions,
+          isLoaded: true,
+        };
+        adminPermissionsCache.set(jwt, { timestamp: Date.now(), data: result });
+        return result;
+      }
 
-      return {
-        hasPermission: Boolean(canReview),
-        canReviewTopUps: Boolean(canReview),
+      // در صورت دریافت فرمت قبلی TopUp permissions از ByeMoney:
+      // فقط مجوز TopUp.Review در صورتی که فلگ canReviewTopUps یا canAssistTopUp باشد معتبر است
+      const permissions = [];
+      const canReview = data.canReviewTopUps ?? data.canAssistTopUp ?? false;
+      if (canReview) {
+        permissions.push('TopUp.Review');
+      }
+
+      const result = {
+        roles: Array.isArray(data.roles) ? data.roles : [],
+        permissions,
+        isLoaded: true,
       };
+      adminPermissionsCache.set(jwt, { timestamp: Date.now(), data: result });
+      return result;
     }
 
-    return { hasPermission: false, status: response.status };
+    return { roles: [], permissions: [], isLoaded: false, status: response.status, error: `خطا در دریافت مجوزها (وضعیت: ${response.status})` };
   } catch (err) {
-    console.error('[ByeMoney checkAdminTopUpPermission error]:', err);
-    return { hasPermission: false };
+    console.error('[ByeMoney getAdminCurrentUserPermissions error]:', err);
+    return { roles: [], permissions: [], isLoaded: false, status: 503, error: err.message };
   }
+}
+
+/**
+ * بررسی مجوز مالی ادمین در سامانه ByeMoney جهت ثبت شارژ کارت‌به‌کارت
+ * اندپوینت: GET /api/admin/topups/permissions
+ * 
+ * @param {object} params
+ * @param {string} params.jwt - توکن احراز هویت ادمین
+ * @returns {Promise<{ hasPermission: boolean, canReviewTopUps?: boolean, error?: string }>}
+ */
+export async function checkAdminTopUpPermissionWithByeMoney({ jwt }) {
+  const result = await getAdminCurrentUserPermissions({ jwt });
+  const hasPermission = result.permissions.includes('TopUp.Review');
+  return {
+    hasPermission,
+    canReviewTopUps: hasPermission,
+    status: hasPermission ? 200 : result.isLoaded ? 403 : result.status || 503,
+    error: result.error,
+  };
 }
 
 /**
