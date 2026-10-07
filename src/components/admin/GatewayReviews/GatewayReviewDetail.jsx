@@ -335,14 +335,14 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
     const details = [
         ['نام کاربر', data.userName || 'ثبت نشده'],
         ['تلفن', data.userPhone || 'ثبت نشده'],
-        ['زمان درخواست (شمسی)', dateTime(data.requestedAtUtc)],
+        ['زمان درخواست', dateTime(data.requestedAtUtc)],
         ['مبلغ درخواست', rial(data.amountRial)],
         ['شماره درخواست درگاه (ResNum)', data.clientReferenceCode],
         ['شناسه شارژ (TopUp)', data.topUpRequestId],
         ['دلیل ایجاد پرونده', REASON_CONFIG[data.reasonCode]?.label || data.reasonCode],
         ['وضعیت شارژ', TOPUP_STATUS_CONFIG[data.topUpStatus]?.label || data.topUpStatus],
         ['وضعیت پرونده', CASE_STATUS_CONFIG[data.status]?.label || data.status],
-        ['زمان ایجاد پرونده (شمسی)', dateTime(data.openedAtUtc)],
+        ['زمان ایجاد پرونده ', dateTime(data.openedAtUtc)],
     ];
     const inputClass = styles.resolutionSection__input;
 

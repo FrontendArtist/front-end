@@ -318,6 +318,7 @@ $transition: 0.2s ease;
     transition: all $transition;
     border: 1px solid transparent;
     text-decoration: none;
+    white-space: nowrap;
 
     &--primary {
         background: linear-gradient(135deg, #ffd166, #f59e0b);
