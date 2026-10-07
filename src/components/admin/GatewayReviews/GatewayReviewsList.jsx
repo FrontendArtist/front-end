@@ -33,7 +33,7 @@ function formatDate(isoString) {
             hour: '2-digit',
             minute: '2-digit',
             timeZone: 'Asia/Tehran',
-        }).format(date).replace(',', ' -');
+        }).format(date);
     } catch {
         return isoString;
     }
@@ -282,13 +282,13 @@ export default function GatewayReviewsList({ initialData = null }) {
                                                 </div>
                                             )}
                                         </td>
-                                        <td>
+                                        <td style={{ whiteSpace: 'nowrap' }}>
                                             <Link
                                                 href={`/admin/gateway-reviews/${encodeURIComponent(c.clientReferenceCode)}`}
                                                 className={`${styles.btn} ${styles['btn--secondary']}`}
-                                                style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                                                style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem', whiteSpace: 'nowrap' }}
                                             >
-                                                {c.status === 'open' ? 'رسیدگی و جزئیات 🔍' : 'مشاهده جزئیات 📄'}
+                                                {c.status === 'open' ? 'رسیدگی و جزئیات' : 'مشاهده جزئیات'}
                                             </Link>
                                         </td>
                                     </tr>
