@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { describe, it, expect } from '@jest/globals';
 import BaseSlider from './BaseSlider';
 
@@ -37,15 +38,15 @@ describe('BaseSlider Component', () => {
 
   it('should render a fallback message when no items are provided', () => {
     render(<BaseSlider items={[]} renderItem={renderItem} />);
-    
+
     expect(screen.getByText('No items to display.')).toBeInTheDocument();
   });
 
   it('should not render anything if items prop is null or undefined', () => {
     const { container } = render(<BaseSlider items={null} renderItem={renderItem} />);
-    
+
     // The component should render the fallback message
     expect(screen.getByText('No items to display.')).toBeInTheDocument();
   });
 
-}); 
+});

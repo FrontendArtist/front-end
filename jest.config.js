@@ -7,6 +7,7 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
+    '^swiper/css(?:/.*)?$': '<rootDir>/__mocks__/styleMock.js',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^.+\\.(css|less|scss|sass)$': '<rootDir>/__mocks__/styleMock.js',
   },
