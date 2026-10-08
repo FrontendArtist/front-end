@@ -65,9 +65,78 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const [openChapterId, setOpenChapterId] = useState(null); // مدیریت باز بودن آکوردئون فصل‌ها
   const [addedChapterModal, setAddedChapterModal] = useState(null); // مودال تایید اضافه شدن فصل به سبد
   const [wasUnauthenticated, setWasUnauthenticated] = useState(false);
+  const [lastListenedLessonId, setLastListenedLessonId] = useState(null); // ذخیره و نمایش آخرین جلسه گوش‌داده شده
   const listRef = useRef(null);
   const playerSectionRef = useRef(null);
   const mediaToggleRef = useRef(null);
+
+  // بازیابی آخرین جلسه گوش‌داده شده کاربر از LocalStorage در هنگام بارگذاری دوره
+  useEffect(() => {
+    try {
+      const cId = course?.id ? String(course.id) : null;
+      const docId = course?.documentId ? String(course.documentId) : null;
+      const slug = course?.slug ? String(course.slug) : null;
+
+      const savedLessonId =
+        (cId && localStorage.getItem(`last_listened_lesson_c${cId}`)) ||
+        (docId && localStorage.getItem(`last_listened_lesson_c${docId}`)) ||
+        (slug && localStorage.getItem(`last_listened_lesson_slug_${slug}`)) ||
+        null;
+
+      if (savedLessonId) {
+        const cleanId = String(savedLessonId).replace('-video', '').replace('-audio', '');
+        setLastListenedLessonId(cleanId);
+
+        // اگر دوره دارای فصل است، فصل مربوط به این جلسه را به طور خودکار باز می‌کنیم تا کاربر بلافاصله آن را ببیند
+        if (course?.isChaptered && Array.isArray(course?.chapters)) {
+          const parentChapter = course.chapters.find((ch) => {
+            const lessons = ch.lessons || ch.curriculum || [];
+            return lessons.some(
+              (l) => String(l.id).replace('-video', '').replace('-audio', '') === cleanId
+            );
+          });
+          if (parentChapter) {
+            setOpenChapterId(parentChapter.id);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading last listened lesson from localStorage:', e);
+    }
+  }, [course]);
+
+  // ذخیره آخرین جلسه گوش داده شده در LocalStorage
+  const saveLastListenedLesson = (lesson) => {
+    if (!lesson || !lesson.id) return;
+    const cleanId = String(lesson.id).replace('-video', '').replace('-audio', '');
+    setLastListenedLessonId(cleanId);
+
+    try {
+      const cId = course?.id ? String(course.id) : null;
+      const docId = course?.documentId ? String(course.documentId) : null;
+      const slug = course?.slug ? String(course.slug) : null;
+
+      if (cId) localStorage.setItem(`last_listened_lesson_c${cId}`, cleanId);
+      if (docId) localStorage.setItem(`last_listened_lesson_c${docId}`, cleanId);
+      if (slug) localStorage.setItem(`last_listened_lesson_slug_${slug}`, cleanId);
+
+      // ذخیره در تاریخچه سراسری آخرین دوره‌های گوش داده شده
+      const recent = JSON.parse(localStorage.getItem('recent_listened_courses') || '{}');
+      const courseKey = slug || docId || cId;
+      if (courseKey) {
+        recent[courseKey] = {
+          lessonId: cleanId,
+          lessonTitle: lesson.title,
+          courseTitle: course?.title,
+          courseSlug: slug,
+          updatedAt: Date.now(),
+        };
+        localStorage.setItem('recent_listened_courses', JSON.stringify(recent));
+      }
+    } catch (e) {
+      console.warn('Error saving last listened lesson to localStorage:', e);
+    }
+  };
 
   // بررسی رایگان بودن کل دوره
   const isFreeCourse = course.price?.toman === 0 || course.price === 0;
@@ -190,6 +259,9 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       }
       return;
     }
+
+    // ذخیره آخرین جلسه انتخاب‌شده در LocalStorage
+    saveLastListenedLesson(lesson);
 
     const hasVideo = Boolean(lesson.videoUrl);
     const hasAudio = Boolean(lesson.audioUrl);
@@ -521,6 +593,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                         {chapterLessons.map((lesson) => {
                           const isLessonActive = activeLesson?.id === lesson.id;
                           const isLessonLocked = !isUnlocked && !lesson.isFree;
+                          const cleanLessonId = String(lesson.id).replace('-video', '').replace('-audio', '');
+                          const isLastListened = Boolean(lastListenedLessonId && lastListenedLessonId === cleanLessonId);
 
                           return (
                             <li
@@ -528,6 +602,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                               className={clsx(styles.lessonItem, {
                                 [styles.active]: isLessonActive,
                                 [styles.lockedLesson]: isLessonLocked,
+                                [styles.locked]: isLessonLocked,
+                                [styles.lastListened]: isLastListened,
                               })}
                               onClick={(e) => handleLessonClick(lesson, !isLessonLocked, e)}
                             >
@@ -541,6 +617,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                                     ) : (
                                       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                                     )
+                                  ) : isLastListened ? (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.lastListenedIcon}><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
                                   ) : (
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
                                   )}
@@ -558,11 +636,22 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                                     {lesson.duration}
                                   </span>
                                 )}
-                                {isLessonActive && (
-                                  <span className={styles.playingBadge}>
-                                    {playMode === 'audio' ? '🎵 در حال پخش' : '🎥 در حال پخش'}
-                                  </span>
-                                )}
+                                <div className={styles.lessonBadges}>
+                                  {isLastListened && !isLessonActive && (
+                                    <span className={styles.lastListenedBadge}>
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                      </svg>
+                                      <span>آخرین جلسه گوش‌داده‌شده</span>
+                                    </span>
+                                  )}
+                                  {isLessonActive && (
+                                    <span className={styles.playingBadge}>
+                                      {playMode === 'audio' ? '🎵 در حال پخش' : '🎥 در حال پخش'}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </li>
                           );
@@ -580,6 +669,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
               {course.curriculum.map((lesson) => {
                 const isLessonLocked = !hasFullCourseAccess && !lesson.isFree;
                 const isLessonActive = activeLesson?.id === lesson.id;
+                const cleanLessonId = String(lesson.id).replace('-video', '').replace('-audio', '');
+                const isLastListened = Boolean(lastListenedLessonId && lastListenedLessonId === cleanLessonId);
 
                 return (
                   <li
@@ -587,6 +678,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                     className={clsx(styles.lessonItem, {
                       [styles.active]: isLessonActive,
                       [styles.lockedLesson]: isLessonLocked,
+                      [styles.locked]: isLessonLocked,
+                      [styles.lastListened]: isLastListened,
                     })}
                     onClick={(e) => handleLessonClick(lesson, !isLessonLocked, e)}
                   >
@@ -600,6 +693,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                           ) : (
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                           )
+                        ) : isLastListened ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.lastListenedIcon}><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
                         ) : (
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
                         )}
@@ -615,11 +710,22 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                           {lesson.duration}
                         </span>
                       )}
-                      {isLessonActive && (
-                        <span className={styles.playingBadge}>
-                          {playMode === 'audio' ? '🎵 در حال پخش' : '🎥 در حال پخش'}
-                        </span>
-                      )}
+                      <div className={styles.lessonBadges}>
+                        {isLastListened && !isLessonActive && (
+                          <span className={styles.lastListenedBadge}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>آخرین جلسه گوش‌داده‌شده</span>
+                          </span>
+                        )}
+                        {isLessonActive && (
+                          <span className={styles.playingBadge}>
+                            {playMode === 'audio' ? '🎵 در حال پخش' : '🎥 در حال پخش'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </li>
                 );
