@@ -12,12 +12,13 @@ import {
     RotateCw,
     SlidersHorizontal,
     AlertCircle,
+    Info,
 } from 'lucide-react';
 import {
     fetchGatewayReviews,
     REASON_CONFIG,
     CASE_STATUS_CONFIG,
-    TOPUP_STATUS_CONFIG,
+    EVIDENCE_STAGE_LABELS,
     formatGatewayReviewError,
 } from '@/lib/client/admin/gatewayReviewsClient';
 import styles from './GatewayReviews.module.scss';
@@ -26,14 +27,16 @@ function formatDate(isoString) {
     if (!isoString) return '—';
     try {
         const date = new Date(isoString);
-        return new Intl.DateTimeFormat('fa-IR', {
+        const dateText = new Intl.DateTimeFormat('fa-IR', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
             timeZone: 'Asia/Tehran',
         }).format(date);
+        const timeText = new Intl.DateTimeFormat('fa-IR', {
+            hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Asia/Tehran',
+        }).format(date);
+        return `${timeText} — ${dateText}`;
     } catch {
         return isoString;
     }
@@ -201,16 +204,16 @@ export default function GatewayReviewsList({ initialData = null }) {
 
             {/* جدول پرونده‌ها */}
             <div className={styles.tableWrapper}>
-                <table className={styles.table}>
+                <table className={`${styles.table} ${styles.listTable}`}>
                     <thead>
                         <tr>
-                            <th>شماره ارجاع مشتری (ResNum)</th>
+                            <th>شماره ارجاع مشتری </th>
                             <th>شناسه پرونده</th>
                             <th>علت ارجاع</th>
+                            <th>نتیجهٔ درگاه</th>
                             <th>وضعیت پرونده</th>
-                            <th>وضعیت شارژ</th>
-                            <th>زمان بازشدن</th>
-                            <th>وضعیت تحویل</th>
+                            <th>تاریخ ایجاد پرونده</th>
+                            <th>اعلان به سیستم مالی</th>
                             <th>عملیات</th>
                         </tr>
                     </thead>
@@ -231,8 +234,8 @@ export default function GatewayReviewsList({ initialData = null }) {
                             cases.map((c) => {
                                 const reasonMeta = REASON_CONFIG[c.reasonCode] || { label: c.reasonCode, variant: 'default' };
                                 const statusMeta = CASE_STATUS_CONFIG[c.status] || { label: c.status, variant: 'default' };
-                                const topUpKey = c.topUpStatus === null ? 'null' : c.topUpStatus;
-                                const topUpMeta = TOPUP_STATUS_CONFIG[topUpKey] || { label: c.topUpStatus || 'نامعلوم', variant: 'default' };
+                                const bankStage = EVIDENCE_STAGE_LABELS[c.bankResultStage?.toUpperCase()] || c.bankResultStage;
+                                const bankExplanation = [bankStage, c.bankResultDescription].filter(Boolean).join('؛ ');
 
                                 return (
                                     <tr key={c.caseId || c.clientReferenceCode}>
@@ -244,17 +247,31 @@ export default function GatewayReviewsList({ initialData = null }) {
                                             </span>
                                         </td>
                                         <td>
+                                            {c.bankResultCode != null ? (
+                                                <span className={styles.bankResult}>
+                                                    <bdi dir="ltr" className={styles.codeCell}>{c.bankResultCode}</bdi>
+                                                    {bankExplanation && (
+                                                        <button
+                                                            type="button"
+                                                            className={styles.bankResultInfo}
+                                                            title={bankExplanation}
+                                                            aria-label={bankExplanation}
+                                                        >
+                                                            <Info size={14} aria-hidden="true" />
+                                                        </button>
+                                                    )}
+                                                </span>
+                                            ) : (
+                                                <span className={styles.subText}>—</span>
+                                            )}
+                                        </td>
+                                        <td>
                                             <span className={`${styles.badge} ${styles[`badge--${statusMeta.variant}`]}`}>
                                                 {statusMeta.label}
                                             </span>
                                         </td>
-                                        <td>
-                                            <span className={`${styles.badge} ${styles[`badge--${topUpMeta.variant}`]}`}>
-                                                {topUpMeta.label}
-                                            </span>
-                                        </td>
                                         <td className={styles.subText} style={{ whiteSpace: 'nowrap' }}>
-                                            {formatDate(c.openedAtUtc)}
+                                            <bdi dir="ltr">{formatDate(c.openedAtUtc)}</bdi>
                                         </td>
                                         <td>
                                             {c.deliveryStatus ? (

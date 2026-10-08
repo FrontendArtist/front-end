@@ -8,7 +8,7 @@ export const REASON_CONFIG = {
     NO_CALLBACK: { label: 'عدم دریافت کال‌بک از درگاه', variant: 'warning', desc: 'مهلت بازگشت کاربر از درگاه سپ منقضی شده است' },
     VERIFY_UNKNOWN: { label: 'استعلام نامعلوم از درگاه', variant: 'error', desc: 'پاسخ استعلام تراکنش از درگاه بانکی نامشخص بوده است' },
     REVERSE_UNKNOWN: { label: 'برگشت نامعلوم در درگاه', variant: 'error', desc: 'عملیات برگشت وجه به حساب کاربر با نتیجه نامشخص مواجه شده است' },
-    DELIVERY_UNKNOWN: { label: 'تحویل نامعلوم به بایمانی', variant: 'warning', desc: 'تحویل اعلان نتیجه به سرویس مالی با خطا یا تایم‌اوت مواجه شده است' },
+    DELIVERY_UNKNOWN: { label: 'تحویل نامعلوم به بای مانی', variant: 'warning', desc: 'تحویل اعلان نتیجه به سرویس مالی با خطا یا تایم‌اوت مواجه شده است' },
     BANK_CONFLICT: { label: 'مغایرت بانکی', variant: 'error', desc: 'مغایرت در مبلغ، شماره پیگیری یا وضعیت بانکی مشاهده شده است' },
 };
 
@@ -22,7 +22,7 @@ export const TOPUP_STATUS_CONFIG = {
     Pending: { label: 'در انتظار شارژ', variant: 'warning' },
     Confirmed: { label: 'شارژ موفق', variant: 'success' },
     Rejected: { label: 'شارژ ناموفق / رد شده', variant: 'error' },
-    ManuallyRefunded: { label: 'وجه خارج از سامانه به کاربر برگشت داده شد', variant: 'info' },
+    ManuallyRefunded: { label: 'وجه خارج از سامانه به کاربر برگشت داده شد', listLabel: 'وجه خارج از سامانه\nبه کاربر برگشت داده شد', variant: 'info' },
     Unresolved: { label: 'رسیدگی بسته؛ پرداخت نامشخص', variant: 'warning' },
     null: { label: 'نامعلوم', variant: 'default' },
 };
