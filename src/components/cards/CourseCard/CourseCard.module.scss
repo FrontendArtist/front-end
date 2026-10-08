@@ -2,6 +2,16 @@
 
 .courseCard {
   @include base-card;
+
+  &:hover {
+    .courseImage {
+      transform: scale(1.05);
+    }
+
+    .cardTitle {
+      color: var(--color-title-hover);
+    }
+  }
 }
 
 .imageWrapper {
@@ -10,6 +20,10 @@
   @include respond(xl) {
     aspect-ratio: 16 / 9;
   }
+}
+
+.courseImage {
+  @include card-image;
 }
 
 .topBadges {
