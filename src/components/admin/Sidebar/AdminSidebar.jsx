@@ -32,6 +32,7 @@ import {
     MessageSquare,    // Comments icon
     Ticket,           // Discount coupons icon
     Megaphone,        // Announcement top banner icon
+    ShieldAlert,      // Gateway reviews icon
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
@@ -51,6 +52,7 @@ const NAV_LINKS = [
     { href: '/admin', label: 'داشبورد', icon: LayoutDashboard },
     { href: '/admin/orders', label: 'سفارش‌ها', icon: ShoppingCart },
     { href: '/admin/orders/new', label: 'ثبت دستی', icon: UserPlus },
+    { href: '/admin/gateway-reviews', label: 'رسیدگی پرداخت‌ها', icon: ShieldAlert },
     { href: '/admin/users', label: 'کاربران', icon: Users },
     { href: '/admin/products', label: 'محصولات', icon: Package },
     { href: '/admin/articles', label: 'مقالات', icon: FileText },
@@ -67,7 +69,14 @@ const NAV_LINKS = [
  * @param {{ user: { name?: string, email?: string, image?: string, role?: any } }} props
  *   - `user` is forwarded from the server-side session in layout.jsx.
  */
-export default function AdminSidebar({ user }) {
+export default function AdminSidebar({ user, financialOnly = false }) {
+    /*
+     * usePathname() returns the current URL's path (e.g. '/admin/orders').
+     * We use this to determine which nav link should be styled as "active".
+     *
+     * Note: usePathname() re-renders this component on every client-side
+     * navigation, so active states update instantly without a page reload.
+     */
     const pathname = usePathname();
     const { hasAllPermissions, roles } = usePermissions();
 
@@ -80,8 +89,11 @@ export default function AdminSidebar({ user }) {
         return pathname.startsWith(href);
     };
 
-    // فیلتر کردن هوشمند آیتم‌های منو بر اساس دسترسی‌های کاربر
+    // فیلتر کردن هوشمند آیتم‌های منو بر اساس دسترسی‌های کاربر و حالت مالی
     const visibleNavLinks = NAV_LINKS.filter(({ href }) => {
+        if (financialOnly) {
+            return href === '/admin/gateway-reviews';
+        }
         const required = ROUTE_PERMISSIONS[href];
         if (!required || required.length === 0) return true;
         return hasAllPermissions(required);

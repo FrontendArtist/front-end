@@ -76,17 +76,18 @@ export default function UserStatus() {
             return;
         }
 
+        const jwt = session?.user?.jwt;
         // دریافت موجودی در لود اولیه (در صورت عدم وجود در استور)
-        fetchLightBalance();
+        fetchLightBalance(false, jwt);
 
         // شنونده رویداد به‌روزرسانی صریح نور (تنها زمانی که خرید، پرداخت یا شارژ انجام شود)
-        const handleLightUpdated = () => fetchLightBalance(true);
+        const handleLightUpdated = () => fetchLightBalance(true, jwt);
         window.addEventListener('light-updated', handleLightUpdated);
 
         return () => {
             window.removeEventListener('light-updated', handleLightUpdated);
         };
-    }, [status, fetchLightBalance]);
+    }, [status, session?.user?.jwt, fetchLightBalance]);
 
     const handleMouseEnter = () => {
         if (isMobile) return;

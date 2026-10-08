@@ -8,9 +8,26 @@ import {
 } from '@/lib/sepPayment';
 import { ORDER_STATUS, PAYMENT_STATUS, isOrderPaid } from '@/lib/constants/orderConstants';
 import { STRAPI_API_URL } from '@/lib/api';
+import { findAttempt } from '@/lib/gatewayTopUp';
+
+import { processGatewayTopUpCallback } from '@/lib/processGatewayTopUpCallback';
+
+import { getSepMockEnvironmentError, isSepMockEnabled } from '@/lib/sepMock';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+
+function bankCallbackFields(params) {
+    const fields = ['Token', 'ResNum', 'RefNum', 'State', 'Status', 'TerminalId', 'MID',
+        'Rrn', 'RRN', 'TraceNo', 'Amount', 'Wage', 'AffectiveAmount', 'SecurePan', 'HashedCardNumber'];
+    const output = {};
+    for (const field of fields) {
+        if (params[field] == null) continue;
+        const value = String(params[field]);
+        output[field] = field === 'SecurePan' && !value.includes('*') ? '[REDACTED]' : value;
+    }
+    return output;
+}
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -58,12 +75,51 @@ export async function POST(request) {
     }
 }
 
-/**
- * متد GET برای پشتیبانی از تست‌های دستی یا موارد هدایت مستقیم
- */
 export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
+        const resNum = (searchParams.get('ResNum') || searchParams.get('resNum') || '').trim();
+
+        if (resNum) {
+            let topUpAttempt = null;
+            try {
+                topUpAttempt = await findAttempt(resNum);
+            } catch (error) {
+                console.error('[SEP GET TopUp Lookup Error]:', error);
+            }
+
+            if (topUpAttempt) {
+                // درخواست‌های GET مستقیم مرورگر نباید وضعیت مالی یا دیتابیس را تغییر دهند
+                if (topUpAttempt.status === 'confirmed') {
+                    return redirectToResult({
+                        orderType: 'light_topup',
+                        status: 'success',
+                        refNum: topUpAttempt.refNum,
+                        topUpId: topUpAttempt.topUpRequestId,
+                    }, request);
+                }
+                if (topUpAttempt.status === 'cancelled') {
+                    return redirectToResult({
+                        orderType: 'light_topup',
+                        status: 'cancel',
+                        message: 'فرایند پرداخت در درگاه بانکی سامان لغو شد.',
+                    }, request);
+                }
+                if (topUpAttempt.status === 'reversed') {
+                    return redirectToResult({
+                        orderType: 'light_topup',
+                        status: 'failed',
+                        message: 'مبلغ پرداختی به حساب شما برگشت داده شد.',
+                    }, request);
+                }
+                return redirectToResult({
+                    orderType: 'light_topup',
+                    status: 'failed',
+                    message: 'وضعیت پرداخت در حال بررسی است.',
+                }, request);
+            }
+        }
+
         const params = {};
         for (const [key, value] of searchParams.entries()) {
             params[key] = value;
@@ -83,13 +139,15 @@ export async function GET(request) {
  * پردازش و اعتبارسنجی تراکنش، استعلام از دیتابیس، تایید بانکی و فعال‌سازی سفارش
  */
 async function handlePaymentVerification(params, request) {
+    const mockEnvironmentError = getSepMockEnvironmentError();
+    if (mockEnvironmentError) return redirectToResult({ status: 'failed', message: mockEnvironmentError }, request);
     // 1. استخراج فیلدهای ارسالی سپ
     const state = (params.State || params.state || '').trim();
     const status = (params.Status || params.status || '').trim();
     const resNum = (params.ResNum || params.resNum || '').trim(); // شناسه سفارش ما
     const refNum = (params.RefNum || params.refNum || '').trim(); // رسید دیجیتالی سپ
     const traceNo = (params.TraceNo || params.traceNo || '').trim(); // شماره پیگیری
-    const terminalId = params.TerminalId || params.MID || SEP_TERMINAL_ID;
+    const terminalId = params.TerminalId || params.MID || '';
     const rrn = (params.RRN || params.rrn || '').trim();
     const securePan = (params.SecurePan || params.securePan || '').trim();
     const hashedCardNumber = (params.HashedCardNumber || params.hashedCardNumber || '').trim();
@@ -110,6 +168,21 @@ async function handlePaymentVerification(params, request) {
             status: 'failed',
             message: 'شناسه سفارش (ResNum) در اطلاعات دریافتی از بانک یافت نشد.',
         }, request);
+    }
+
+    let topUpAttempt = null;
+    try {
+        topUpAttempt = await findAttempt(resNum);
+    } catch (error) {
+        if (resNum.startsWith('TR-')) {
+            console.error('[SEP TopUp Attempt Lookup Error]:', error);
+            return redirectToResult({ status: 'failed', message: 'وضعیت شارژ در حال بررسی است.' }, request);
+        }
+    }
+    if (topUpAttempt) {
+        return processGatewayTopUpCallback({ attempt: topUpAttempt, state, status, refNum, request,
+            terminalId, callbackParams: bankCallbackFields(params),
+            result: (query) => redirectToResult({ orderType: 'light_topup', ...query }, request) });
     }
 
     // 2. واکشی سفارش از استراپی با توکن سیستمی STRAPI_TOKEN
@@ -416,15 +489,6 @@ async function grantUserAccessAndCredits(userId, order) {
         }
 
         // بررسی آیتم شارژ نور
-        const lightItem = items.find((i) => i.slug === 'light-topup' || i.type === 'light_topup');
-        if (lightItem) {
-            const match = String(order.notes || '').match(/\[LIGHT_AMOUNT:(\d+)\]/);
-            const lightAmount = match ? Number(match[1]) : Number(lightItem.lightAmount || 0);
-            if (lightAmount > 0) {
-                updatePayload.light = (userData.light ?? 0) + lightAmount;
-            }
-        }
-
         // ── حذف خودکار دوره‌ها و فصل‌های پرداخت‌شده از cartData کاربر در استراپی ──
         if (userData.cartData && userData.cartData.state && Array.isArray(userData.cartData.state.items)) {
             const currentCartItems = userData.cartData.state.items;
@@ -484,7 +548,7 @@ async function grantUserAccessAndCredits(userId, order) {
 function redirectToResult(query, request) {
     const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'tarhelahi.ir';
     const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-    const baseUrl = `${proto}://${host}`;
+    const baseUrl = isSepMockEnabled() ? new URL(request.url).origin : `${proto}://${host}`;
 
     const redirectUrl = new URL('/checkout/result', baseUrl);
 

@@ -1,5 +1,7 @@
 # 📗 CONTEXT_RULES_V3.md
 
+> بایگانی: این قواعد مربوط به نسخهٔ اولیه‌اند و الزام فعال برای کار جدید نیستند. [راهنمای اسناد فرانت‌اند](../README.md)، قرارداد اتصال و کد فعلی را مبنا قرار دهید.
+
 ## 🎯 Purpose
 
 This document defines the **core architectural, design, and implementation rules** that every component, API, and feature in the project must follow. It ensures that all generated code through Cursor AI remains consistent, modular, and aligned with the project's established structure.

@@ -14,7 +14,8 @@ export function formatStrapiProducts(apiResponse) {
     .filter(item => item && (item.title || item.attributes?.title))
     .map(item => {
       const attrs = item.attributes || item;
-      const priceVal = typeof attrs.price === 'object' ? attrs.price?.toman || 0 : (attrs.price || 0);
+      const rawPrice = attrs.priceNoor ?? (typeof attrs.price === 'object' ? (attrs.price?.noor ?? attrs.price?.toman) : attrs.price) ?? 0;
+      const priceVal = Number(rawPrice) || 0;
 
       const shortDescription =
         attrs.shortDescription ||
@@ -75,9 +76,9 @@ export function formatStrapiProducts(apiResponse) {
       }
 
       const originalPrice = priceVal;
-      const discountPrice = discountPercent > 0 ? Math.round(originalPrice * (1 - discountPercent / 100)) : null;
+      const discountPrice = discountPercent > 0 ? Number((originalPrice * (1 - discountPercent / 100)).toFixed(4)) : null;
       const finalPrice = discountPrice !== null ? discountPrice : originalPrice;
-      const priceObject = { toman: finalPrice, original: originalPrice };
+      const priceObject = { noor: finalPrice, toman: finalPrice, original: originalPrice };
 
       return {
         id: item.id,
@@ -85,7 +86,9 @@ export function formatStrapiProducts(apiResponse) {
         title: attrs.title || '',
         slug: attrs.slug || '',
         price: priceObject,
+        priceNoor: finalPrice,
         originalPrice: originalPrice,
+        originalPriceNoor: originalPrice,
         discountPercent: discountPercent,
         discountPrice: discountPrice,
         discountUntil: discountUntil,

@@ -52,7 +52,16 @@ node_modules
 .vscode
 .env
 .env.local
-context/
+/context/*
+!/context/README.md
+!/context/old/
+/context/old/*
+!/context/old/CONTEXT_PROJECT_OVERVIEW_V3.md
+!/context/old/CONTEXT_RULES_V3.md
+!/context/old/CONTEXT_BYEMONEY_INTEGRATION_2026-09.md
+!/context/old/styles_V3.md
+!/context/old/Context_global_styles.md
+!src/context/
 
 
 /IPG_Doc

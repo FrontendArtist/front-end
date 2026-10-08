@@ -222,7 +222,7 @@ export async function purchaseCourseWithByeMoney({ externalCourseId, externalCou
           priceInNoor,
           shortfallInNoor,
           shortfallInRial,
-          shortfallInToman: shortfallInRial ? Math.round(shortfallInRial / 10) : shortfallInNoor * 1000,
+          shortfallInToman: shortfallInRial ? Math.round(shortfallInRial / 10) : 0,
         },
         error:
           insufficientObj.message ||
@@ -250,12 +250,9 @@ export async function purchaseCourseWithByeMoney({ externalCourseId, externalCou
  * ایجاد درخواست افزایش اعتبار کارت‌به‌کارت (TopUp Request) در سامانه ByeMoney
  * با پیوست مشخصات دوره معلق جهت تکمیل خودکار خرید پس از تایید واریز
  * 
- * ⚠️ وابسته به تسک مجزای بک‌اند: POST /api/topup/requests
- * در صورت عدم سیم‌کشی اندپوینت، پاسخ شبیه‌سازی‌شده (Mock) بازگردانده می‌شود.
- * 
  * @param {object} params
  * @param {number} params.amountInNoor - مقدار نور درخواستی برای شارژ
- * @param {object} [params.pendingPurchaseItem] - آیتم دوره در انتظار خرید
+ * @param {object} [params.pendingItems] - اقلام در انتظار خرید
  * @param {string} params.jwt - توکن احراز هویت
  * @returns {Promise<{ success: boolean, data?: object, isMocked?: boolean, error?: string, unauthorized?: boolean }>}
  */
@@ -269,7 +266,6 @@ export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingItem
   }
 
   const endpoint = `${BYEMONEY_API_URL}/api/topup/requests`;
-  const conversionRate = 10000; // 1 نور = 10,000 ریال (1,000 تومان)
   const resolvedPendingItems = Array.isArray(pendingItems) ? pendingItems : [];
 
   const requestBody = {
@@ -290,14 +286,25 @@ export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingItem
 
     if (response.ok) {
       const data = await response.json();
+      
+      // باطل‌سازی خودکار کش نرخ نمایشی جهت همگام‌سازی بعد از ثبت شارژ
+      try {
+        const { invalidateConversionRateCache } = await import('@/context/DisplayRateContext');
+        invalidateConversionRateCache?.();
+      } catch {}
+
+      const respAmountRial = data.amountInRial ?? data.amountRial ?? (data.rialPerNoor ? Number(amountInNoor) * Number(data.rialPerNoor) : null);
+      const respAmountToman = data.amountInToman ?? (respAmountRial ? Math.round(respAmountRial / 10) : null);
+
       return {
         success: true,
         data: {
           topUpRequestId: data.topUpRequestId || data.TopUpRequestId,
           clientReferenceId: data.clientReferenceId || data.ClientReferenceId,
           amountInNoor: Number(amountInNoor),
-          amountInRial: Number(amountInNoor) * conversionRate,
-          amountInToman: (Number(amountInNoor) * conversionRate) / 10,
+          amountInRial: respAmountRial,
+          amountInToman: respAmountToman,
+          rialPerNoor: data.rialPerNoor ?? data.RialPerNoor ?? null,
         },
       };
     }
@@ -614,17 +621,33 @@ export async function getConversionRateWithByeMoney({ jwt } = {}) {
   }
 }
 
+// حافظه موقت (Cache) پرمیژن‌های ادمین جهت جلوگیری از درخواست‌های مکرر هنگام جابه‌جایی تب‌ها
+const adminPermissionsCache = new Map();
+const ADMIN_PERMISSIONS_CACHE_TTL_MS = 60 * 1000; // ۶۰ ثانیه
+
+export function clearAdminPermissionsCache(jwt) {
+  if (jwt) adminPermissionsCache.delete(jwt);
+  else adminPermissionsCache.clear();
+}
+
 /**
  * دریافت متمرکز کلیه مجوزها و نقش‌های ادمین در سامانه ByeMoney
  * اندپوینت: GET /api/admin/topups/permissions (یا اندپوینت متمرکز پرمیژن‌ها در فاز ارتقا)
  * 
  * @param {object} params
  * @param {string} params.jwt - توکن احراز هویت ادمین
+ * @param {boolean} [params.force=false] - اجبار به فچ مجدد و نادیده گرفتن کش موقت
  * @returns {Promise<{ roles: string[], permissions: string[], isLoaded: boolean, error?: string }>}
  */
-export async function getAdminCurrentUserPermissions({ jwt }) {
+export async function getAdminCurrentUserPermissions({ jwt, force = false }) {
   if (!jwt) {
-    return { roles: [], permissions: [], isLoaded: false, error: 'نشست کاربری نامعتبر است.' };
+    return { roles: [], permissions: [], isLoaded: false, status: 401, error: 'نشست کاربری نامعتبر است.' };
+  }
+
+  // بررسی کش موقت ۶۰ ثانیه‌ای
+  const cached = adminPermissionsCache.get(jwt);
+  if (!force && cached && Date.now() - cached.timestamp < ADMIN_PERMISSIONS_CACHE_TTL_MS) {
+    return cached.data;
   }
 
   const endpoint = `${BYEMONEY_API_URL}/api/admin/topups/permissions`;
@@ -643,11 +666,13 @@ export async function getAdminCurrentUserPermissions({ jwt }) {
       
       // اگر بک‌اند فرمت مدرن آرایه permissions را فرستاد
       if (Array.isArray(data.permissions)) {
-        return {
+        const result = {
           roles: Array.isArray(data.roles) ? data.roles : [],
           permissions: data.permissions,
           isLoaded: true,
         };
+        adminPermissionsCache.set(jwt, { timestamp: Date.now(), data: result });
+        return result;
       }
 
       // در صورت دریافت فرمت قبلی TopUp permissions از ByeMoney:
@@ -658,17 +683,19 @@ export async function getAdminCurrentUserPermissions({ jwt }) {
         permissions.push('TopUp.Review');
       }
 
-      return {
+      const result = {
         roles: Array.isArray(data.roles) ? data.roles : [],
         permissions,
         isLoaded: true,
       };
+      adminPermissionsCache.set(jwt, { timestamp: Date.now(), data: result });
+      return result;
     }
 
-    return { roles: [], permissions: [], isLoaded: false, error: `خطا در دریافت مجوزها (وضعیت: ${response.status})` };
+    return { roles: [], permissions: [], isLoaded: false, status: response.status, error: `خطا در دریافت مجوزها (وضعیت: ${response.status})` };
   } catch (err) {
     console.error('[ByeMoney getAdminCurrentUserPermissions error]:', err);
-    return { roles: [], permissions: [], isLoaded: false, error: err.message };
+    return { roles: [], permissions: [], isLoaded: false, status: 503, error: err.message };
   }
 }
 
@@ -686,6 +713,7 @@ export async function checkAdminTopUpPermissionWithByeMoney({ jwt }) {
   return {
     hasPermission,
     canReviewTopUps: hasPermission,
+    status: hasPermission ? 200 : result.isLoaded ? 403 : result.status || 503,
     error: result.error,
   };
 }
@@ -751,6 +779,11 @@ export async function createAdminAssistedTopUpWithByeMoney({
 
     if (response.ok) {
       const data = await response.json().catch(() => ({}));
+      try {
+        const { invalidateConversionRateCache } = await import('@/context/DisplayRateContext');
+        invalidateConversionRateCache?.();
+      } catch {}
+
       return {
         success: true,
         data: {

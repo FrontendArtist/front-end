@@ -16,7 +16,8 @@ import {
     RotateCcw, 
     Home,
     Copy,
-    Check
+    Check,
+    Wallet
 } from 'lucide-react';
 import styles from './page.module.scss';
 
@@ -30,6 +31,8 @@ function CheckoutResultContent() {
     const refNum = searchParams.get('refNum') || '';
     const traceNo = searchParams.get('traceNo') || '';
     const message = searchParams.get('message') || '';
+    const isTopUp = searchParams.get('orderType') === 'light_topup';
+    const topUpId = searchParams.get('topUpId') || '';
 
     const isSuccess = status === 'success';
     const isCancel = status === 'cancel';
@@ -39,7 +42,7 @@ function CheckoutResultContent() {
         setMounted(true);
 
         // در صورت پرداخت موفقیت‌آمیز، سبد خرید بلافاصله پاکسازی و با سرور همگام می‌شود
-        if (status === 'success') {
+        if (status === 'success' && !isTopUp) {
             try {
                 invalidateProfileCache();
                 useCartStore.getState().clearCart();
@@ -50,7 +53,7 @@ function CheckoutResultContent() {
                 console.warn('[CheckoutResult] Cart clear warning:', err);
             }
         }
-    }, [status]);
+    }, [status, isTopUp]);
 
     const handleCopy = (text) => {
         if (!text) return;
@@ -96,7 +99,9 @@ function CheckoutResultContent() {
                     {/* پیام توضیحی */}
                     <p className={styles.description}>
                         {isSuccess
-                            ? 'سفارش شما با موفقیت در سیستم ثبت شد و دسترسی به دوره‌ها و خدمات خریداری‌شده فوراً برای حساب کاربری شما فعال گردید.'
+                            ? isTopUp
+                                ? 'نور شارژشده به کیف پول شما اضافه شد.'
+                                : 'سفارش شما با موفقیت در سیستم ثبت شد و دسترسی به دوره‌ها و خدمات خریداری‌شده فوراً برای حساب کاربری شما فعال گردید.'
                             : isCancel
                             ? 'فرایند پرداخت در درگاه بانکی سامان لغو شد. در صورت تمایل می‌توانید سفارش خود را مجدداً تکمیل فرمایید.'
                             : message || 'مشکلی در تایید تراکنش یا اتصال به درگاه رخ داد. چنانچه مبلغی از حساب شما کسر شده باشد، حداکثر ظرف ۷۲ ساعت توسط شاپرک عودت داده می‌شود.'}
@@ -104,6 +109,12 @@ function CheckoutResultContent() {
 
                     {/* جدول مشخصات تراکنش */}
                     <div className={styles.detailsList}>
+                        {isTopUp && topUpId && (
+                            <div className={styles.detailRow}>
+                                <span className={styles.label}>شناسه شارژ:</span>
+                                <span className={styles.value}>{topUpId}</span>
+                            </div>
+                        )}
                         {orderId && (
                             <div className={styles.detailRow}>
                                 <span className={styles.label}>
@@ -158,7 +169,9 @@ function CheckoutResultContent() {
                     {/* راهنمای کاربر */}
                     {isSuccess ? (
                         <div className={styles.notice}>
-                            رسید پرداخت برای شما صادر شد. می‌توانید در پنل کاربری، سوابق سفارشات و محتوای دوره‌های خود را مشاهده و دریافت نمایید.
+                            {isTopUp
+                                ? 'نتیجهٔ شارژ در کیف پول شما ثبت شد.'
+                                : 'رسید پرداخت برای شما صادر شد. می‌توانید در پنل کاربری، سوابق سفارشات و محتوای دوره‌های خود را مشاهده و دریافت نمایید.'}
                         </div>
                     ) : (
                         <div className={styles.deductionAlertBox}>
@@ -176,36 +189,61 @@ function CheckoutResultContent() {
                     {/* دکمه‌های عملیاتی */}
                     <div className={styles.actions}>
                         {isSuccess ? (
-                            <>
-                                {orderId ? (
-                                    <Link href={`/profile/orders/${orderId}`} className={styles.primaryButton}>
-                                        مشاهده فاکتور سفارش
-                                        <ArrowRight size={18} />
+                            isTopUp ? (
+                                <>
+                                    <Link href="/profile" className={styles.primaryButton}>
+                                        <Wallet size={18} />
+                                        کیف پول و حساب کاربری
                                     </Link>
-                                ) : null}
-                                <Link href="/profile/purchases" className={styles.secondaryButton}>
-                                    <GraduationCap size={18} />
-                                    دوره‌های من
-                                </Link>
-                                <Link href="/" className={styles.secondaryButton}>
-                                    <Home size={18} />
-                                    صفحه اصلی
-                                </Link>
-                            </>
+                                    <Link href="/" className={styles.secondaryButton}>
+                                        <Home size={18} />
+                                        صفحه اصلی
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    {orderId ? (
+                                        <Link href={`/profile/orders/${orderId}`} className={styles.primaryButton}>
+                                            مشاهده فاکتور سفارش
+                                            <ArrowRight size={18} />
+                                        </Link>
+                                    ) : null}
+                                    <Link href="/profile/purchases" className={styles.secondaryButton}>
+                                        <GraduationCap size={18} />
+                                        دوره‌های من
+                                    </Link>
+                                    <Link href="/" className={styles.secondaryButton}>
+                                        <Home size={18} />
+                                        صفحه اصلی
+                                    </Link>
+                                </>
+                            )
                         ) : (
-                            <>
-                                <Link href="/checkout" className={styles.primaryButton}>
-                                    <RotateCcw size={18} />
-                                    تلاش مجدد پرداخت
-                                </Link>
-                                <Link href="/cart" className={styles.secondaryButton}>
-                                    <Receipt size={18} />
-                                    مشاهده سبد خرید
-                                </Link>
-                                <Link href="/contact" className={styles.secondaryButton}>
-                                    پشتیبانی و تماس
-                                </Link>
-                            </>
+                            isTopUp ? (
+                                <>
+                                    <Link href="/" className={styles.secondaryButton}>
+                                        <Home size={18} />
+                                        صفحه اصلی
+                                    </Link>
+                                    <Link href="/contact" className={styles.secondaryButton}>
+                                        پشتیبانی و تماس
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    <Link href="/checkout" className={styles.primaryButton}>
+                                        <RotateCcw size={18} />
+                                        تلاش مجدد پرداخت
+                                    </Link>
+                                    <Link href="/cart" className={styles.secondaryButton}>
+                                        <Receipt size={18} />
+                                        مشاهده سبد خرید
+                                    </Link>
+                                    <Link href="/contact" className={styles.secondaryButton}>
+                                        پشتیبانی و تماس
+                                    </Link>
+                                </>
+                            )
                         )}
                     </div>
 

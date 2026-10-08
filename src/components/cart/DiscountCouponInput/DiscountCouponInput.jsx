@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useCartStore, selectTotalPrice, selectCouponDiscount } from '@/store/useCartStore';
-import { formatPrice } from '@/lib/formatters';
+import { formatPrice, formatNoor } from '@/lib/formatters';
 import styles from './DiscountCouponInput.module.scss';
 
 export default function DiscountCouponInput() {
@@ -86,8 +86,8 @@ export default function DiscountCouponInput() {
                             <span className={styles.codeText}>کد تخفیف: <strong>{appliedCoupon.code}</strong></span>
                             <span className={styles.discountDesc}>
                                 {appliedCoupon.discountType === 'percentage'
-                                    ? `${appliedCoupon.discountValue}٪ تخفیف (${formatPrice(appliedCoupon.discountAmount)} تومان)`
-                                    : `${formatPrice(appliedCoupon.discountAmount)} تومان تخفیف`}
+                                    ? `${appliedCoupon.discountValue}٪ تخفیف (${formatNoor(appliedCoupon.discountAmount)} نور)`
+                                    : `${formatNoor(appliedCoupon.discountAmount)} نور تخفیف`}
                             </span>
                         </div>
                     </div>

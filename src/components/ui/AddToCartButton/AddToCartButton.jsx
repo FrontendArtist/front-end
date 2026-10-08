@@ -75,11 +75,11 @@ export default function AddToCartButton({ course }) {
     const intlPrice = course.internationalPrice ? Number(course.internationalPrice) : null;
     const formattedPrice = (isForeign && intlPrice && intlPrice > 0)
       ? intlPrice
-      : ((typeof price === 'object' ? price?.toman : price) || 0);
+      : (course.priceNoor ?? (typeof price === 'object' ? (price?.noor ?? price?.toman) : price) ?? 0);
 
     const numOriginal = (isForeign && intlPrice && intlPrice > 0)
       ? intlPrice
-      : (course.originalPrice ?? (typeof price === 'object' && price?.original ? price.original : formattedPrice));
+      : (course.originalPriceNoor ?? course.originalPrice ?? (typeof price === 'object' ? (price?.originalNoor ?? price?.original) : formattedPrice));
 
     const courseImageUrl = (typeof image === 'string' && image.trim() !== '')
       ? image

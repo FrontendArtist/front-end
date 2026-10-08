@@ -36,6 +36,8 @@ function ByeMoneySessionSync() {
   return null;
 }
 
+import { DisplayRateProvider } from '@/context/DisplayRateContext';
+
 export function Providers({ children }) {
   useEffect(() => {
     // جلوگیری از لاگ‌های شلوغ و نامفهوم NextAuth در کنسول هنگام بارگذاری اولیه
@@ -56,10 +58,12 @@ export function Providers({ children }) {
 
   return (
     <SessionProvider basePath="/api/auth" refetchOnWindowFocus={false}>
-      <CartSessionSync />
-      <ByeMoneySessionSync />
-      {children}
+      <DisplayRateProvider>
+        <CartSessionSync />
+        <ByeMoneySessionSync />
+        {children}
+      </DisplayRateProvider>
     </SessionProvider>
   );
 }
-
+

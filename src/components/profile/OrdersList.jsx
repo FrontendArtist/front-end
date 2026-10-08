@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
+import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import { useOrdersStore } from '@/store/useOrdersStore';
 import styles from './OrdersList.module.scss';
 
@@ -154,7 +155,9 @@ export default function OrdersList({ limit }) {
                             <div className={styles.orders__details}>
                                 <div className={styles.orders__detailItem}>
                                     <span className={styles.orders__label}>مبلغ کل:</span>
-                                    <span className={styles.orders__value}>{formatPrice(order.totalPrice)} تومان</span>
+                                    <span className={styles.orders__value}>
+                                        <PriceWithHint price={order.totalPrice} size="sm" />
+                                    </span>
                                 </div>
                                 <div className={styles.orders__detailItem}>
                                     <span className={styles.orders__label}>تعداد اقلام:</span>

@@ -5,7 +5,7 @@ import { isIranianPhoneNumber } from './phoneUtils';
  * بررسی و دریافت قیمت موثر دوره بر اساس کاربر (عادی یا خارجی)
  */
 export function getEffectiveCoursePrice(course, user) {
-  if (!course) return { toman: 0, original: 0, isInternational: false };
+  if (!course) return { noor: 0, originalNoor: 0, toman: 0, original: 0, isInternational: false };
 
   const isForeign = Boolean(
     user?.is_foreigner || 
@@ -16,18 +16,22 @@ export function getEffectiveCoursePrice(course, user) {
 
   if (isForeign && intlPrice && intlPrice > 0) {
     return {
+      noor: intlPrice,
+      originalNoor: intlPrice,
       toman: intlPrice,
       original: intlPrice,
       isInternational: true,
     };
   }
 
-  const rawToman = typeof course.price === 'object' ? course.price?.toman : course.price;
-  const toman = Number(rawToman) || 0;
-  const original = Number(course.originalPrice || (typeof course.price === 'object' ? course.price?.original : toman)) || toman;
+  const rawNoor = typeof course.price === 'object' ? (course.price?.noor ?? course.price?.toman) : (course.priceNoor ?? course.price);
+  const noor = Number(rawNoor) || 0;
+  const original = Number(course.originalPrice || (typeof course.price === 'object' ? (course.price?.original ?? course.price?.originalNoor) : noor)) || noor;
 
   return {
-    toman,
+    noor,
+    originalNoor: original,
+    toman: noor,
     original,
     isInternational: false,
   };
@@ -70,15 +74,19 @@ export function formatStrapiCourses(apiResponse) {
       };
 
       const chapters = Array.isArray(item.chapters)
-        ? item.chapters.map(ch => ({
-            id: ch.id,
-            title: ch.title || '',
-            price: { toman: ch.price || 0 },
-            duration: ch.duration || null,
-            lessons: Array.isArray(ch.lessons)
-              ? ch.lessons.map(formatLesson).filter(Boolean)
-              : [],
-          }))
+        ? item.chapters.map(ch => {
+            const chPrice = Number(ch.priceNoor ?? ch.price) || 0;
+            return {
+              id: ch.id,
+              title: ch.title || '',
+              price: { noor: chPrice, toman: chPrice, original: chPrice },
+              priceNoor: chPrice,
+              duration: ch.duration || null,
+              lessons: Array.isArray(ch.lessons)
+                ? ch.lessons.map(formatLesson).filter(Boolean)
+                : [],
+            };
+          })
         : [];
 
       const curriculum = Array.isArray(item.curriculum)
@@ -92,9 +100,10 @@ export function formatStrapiCourses(apiResponse) {
         discountPercent = 0;
       }
 
-      const originalPrice = Number(item.price) || 0;
+      const rawPrice = item.priceNoor ?? item.price;
+      const originalPrice = Number(rawPrice) || 0;
       const internationalPrice = item.internationalPrice ? Number(item.internationalPrice) : null;
-      const discountPrice = discountPercent > 0 ? Math.round(originalPrice * (1 - discountPercent / 100)) : null;
+      const discountPrice = discountPercent > 0 ? Number((originalPrice * (1 - discountPercent / 100)).toFixed(4)) : null;
       const finalPrice = discountPrice !== null ? discountPrice : originalPrice;
 
       return {
@@ -102,8 +111,10 @@ export function formatStrapiCourses(apiResponse) {
         documentId: item.documentId,
         slug: item.slug,
         title: item.title,
-        price: { toman: finalPrice, original: originalPrice },
+        price: { noor: finalPrice, toman: finalPrice, original: originalPrice },
+        priceNoor: finalPrice,
         originalPrice: originalPrice,
+        originalPriceNoor: originalPrice,
         internationalPrice,
         discountPercent: discountPercent,
         discountPrice: discountPrice,

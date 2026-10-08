@@ -1,5 +1,7 @@
 # 📘 CONTEXT_PROJECT_OVERVIEW_V3.md
 
+> بایگانی: تصویر اولیهٔ پروژه است. برای مسیر مراجعهٔ فعلی، [راهنمای اسناد فرانت‌اند](../README.md) را بخوانید. فازها، نسخهٔ ابزارها و مسیرهای ارجاع این متن ممکن است منسوخ باشند.
+
 ## 🎯 Purpose
 
 This document provides a comprehensive yet concise overview of the project’s purpose, architecture, and evolution path.
