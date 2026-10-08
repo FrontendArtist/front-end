@@ -12,8 +12,8 @@
 
 html,
 body {
+  width: 100%;
   max-width: 100%;
-  /* overflow-x: hidden breaks position:sticky — use clip instead */
   overflow-x: clip;
 }
 
