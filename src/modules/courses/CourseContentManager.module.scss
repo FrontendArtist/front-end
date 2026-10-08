@@ -476,7 +476,7 @@
     ) !important;
     box-shadow: 0 4px 18px color-mix(in srgb, var(--color-primary, #F6D982) 16%, transparent);
     overflow: hidden;
-
+    min-height: min-content;
     &::after {
       content: '';
       position: absolute;
