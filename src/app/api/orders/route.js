@@ -94,6 +94,13 @@ export async function POST(request) {
         if (!userRes.ok) throw new Error('اطلاعات حساب برای ثبت سفارش در دسترس نیست.');
         const user = await userRes.json();
         const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+        const recipientName = user.address?.recipientName?.trim();
+        const validRecipient = recipientName && recipientName.length > 1 && !/^\d+$/.test(recipientName);
+        const fullName = name || (validRecipient ? recipientName : null)
+            || (user.username && !/^\d+$/.test(user.username) ? user.username : null)
+            || (user.phoneNumber ? `کاربر (${user.phoneNumber})` : null)
+            || (session.user.phoneNumber ? `کاربر (${session.user.phoneNumber})` : null)
+            || session.user.name || 'کاربر فروشگاه';
         const orderRes = await fetch(STRAPI_BASE_URL + '/api/orders/checkout', {
             method: 'POST',
             headers: { Authorization: 'Bearer ' + STRAPI_TOKEN, 'Content-Type': 'application/json' },
@@ -105,7 +112,7 @@ export async function POST(request) {
                 paymentMethod: body.paymentMethod === PAYMENT_METHOD.CARD_TO_CARD ? PAYMENT_METHOD.CARD_TO_CARD : PAYMENT_METHOD.ONLINE,
                 pricingContext: { lightToTomanRate: LIGHT_TO_TOMAN_RATE,
                     isForeign: Boolean(user.is_foreigner || (user.phoneNumber && !isIranianPhoneNumber(user.phoneNumber))) },
-                fullName: name || user.address?.recipientName || user.username || session.user.name || 'کاربر فروشگاه',
+                fullName,
                 address: user.address ? [user.address.province, user.address.city, user.address.fullAddress].filter(Boolean).join(' - ') : (typeof body.shippingAddress === 'string' && body.shippingAddress.trim() ? body.shippingAddress.trim() : 'آدرس وارد نشده است'),
                 postalCode: user.address?.postalCode || '0000000000',
                 phone: user.address?.recipientPhone || user.phoneNumber || session.user.phoneNumber || '00000000000',

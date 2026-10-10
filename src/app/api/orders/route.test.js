@@ -1,4 +1,4 @@
-import { POST } from './route';
+import { GET, POST } from './route';
 import { getServerSession } from 'next-auth';
 
 jest.mock('next-auth', () => ({ getServerSession: jest.fn() }));
@@ -83,5 +83,37 @@ describe('ثبت سفارش با قیمت معتبر سرور', () => {
     getServerSession.mockResolvedValue(null);
     expect((await POST(request())).status).toBe(401);
     expect(fetch).not.toHaveBeenCalled();
+  });
+  it.each([
+    [{ firstName: 'نام', lastName: 'خریدار', address: { recipientName: 'گیرنده' } }, 'نام خریدار'],
+    [{ address: { recipientName: '  گیرنده  ' } }, 'گیرنده'],
+    [{ address: { recipientName: '1' }, username: '09123456789', phoneNumber: '09123456789' }, 'کاربر (09123456789)'],
+    [{ address: { recipientName: '1' }, username: 'customer' }, 'customer'],
+  ])('نام سفارش مطابق رفتار قبلی انتخاب می‌شود: %j', async (profile, expected) => {
+    fetch.mockImplementation(async url => url.endsWith('/api/orders/checkout') ? response(saved)
+      : url.includes('/api/orders?') ? response({ data: [] }) : response(profile));
+    await POST(request());
+    const [, init] = fetch.mock.calls.find(([url]) => url.endsWith('/api/orders/checkout'));
+    expect(JSON.parse(init.body).data.fullName).toBe(expected);
+  });
+  it('ثبت هویت خارجی از پروفایل سرور است؛ ادعای مرورگر نادیده گرفته می‌شود', async () => {
+    fetch.mockImplementation(async url => url.endsWith('/api/orders/checkout') ? response(saved)
+      : url.includes('/api/orders?') ? response({ data: [] }) : response({ is_foreigner: true }));
+    await POST(request({ is_foreigner: false }));
+    const [, init] = fetch.mock.calls.find(([url]) => url.endsWith('/api/orders/checkout'));
+    expect(JSON.parse(init.body).data.pricingContext.isForeign).toBe(true);
+  });
+  it('جزئیات سفارش همچنان به مالک نشست محدود است', async () => {
+    await GET({ url: 'http://site.test/api/orders?documentId=order-one' });
+    expect(fetch.mock.calls[0][0]).toContain('filters[documentId][$eq]=order-one');
+    expect(fetch.mock.calls[0][0]).toContain('filters[user][id][$eq]=5');
+  });
+  it('ثبت مجدد سفارش جدید را در پاک‌سازی سفارش‌های قبلی لغو نمی‌کند', async () => {
+    fetch.mockImplementation(async url => url.endsWith('/api/orders/checkout') ? response(saved)
+      : url.includes('/api/orders?') ? response({ data: [saved.data, { documentId: 'old-pending' }] }) : response({}));
+    await POST(request());
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const changes = fetch.mock.calls.filter(([, init]) => init?.method === 'PUT');
+    expect(changes.map(([url]) => url)).toEqual(['http://strapi.test/api/orders/old-pending']);
   });
 });
