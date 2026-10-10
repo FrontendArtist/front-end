@@ -194,10 +194,6 @@ export default function OrderDetailPage() {
         || extractFromNotes(order.notes, '❌ پرداخت ناموفق در درگاه:') 
         || extractFromNotes(order.notes, '❌ عدم تایید تراکنش توسط بانک:');
 
-    // سفارش‌های آنلاین ناموفق دیگر قابل پرداخت مجدد از صفحه فاکتور نیستند.
-    // کاربر باید از سبد خرید (که اقلام همچنان در آن موجود است) خرید جدید انجام دهد.
-    // این رویکرد امن‌تر است چون قیمت و تخفیف‌ها همیشه به‌روز می‌مانند.
-
     // استخراج فیلدهای پرداخت آنلاین با fallback از notes
     const onlineRefNum = order.refNum || extractFromNotes(order.notes, 'رسید دیجیتال \\(RefNum\\):');
     const onlineTraceNo = order.traceNo || extractFromNotes(order.notes, 'کد رهگیری:') || order.trackingNumber;
@@ -401,6 +397,7 @@ export default function OrderDetailPage() {
                 </div>
             )}
 
+
             {/* ─── پیام لغو یا عدم موفقیت پرداخت آنلاین ─────────────────── */}
             {isOnline && isFailedOrCanceled && (
                 <div className={`${styles.rejectionNoticeBox} ${styles.onlineFailure}`}>
@@ -437,32 +434,7 @@ export default function OrderDetailPage() {
                         </p>
                     </div>
 
-                    {/* راهنمای خرید مجدد از سبد خرید */}
-                    <div className={styles.cartRedirectBox}>
-                        <div className={styles.cartRedirectIcon}>
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="9" cy="21" r="1" />
-                                <circle cx="20" cy="21" r="1" />
-                                <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
-                            </svg>
-                        </div>
-                        <div className={styles.cartRedirectContent}>
-                            <p className={styles.cartRedirectText}>
-                                نگران نباشید! اقلام این سفارش در سبد خرید شما باقی مانده‌اند.
-                                برای خرید مجدد کافی است وارد سبد خرید شوید.
-                            </p>
-                            <Link href="/cart" className={styles.cartRedirectBtn}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="9" cy="21" r="1" />
-                                    <circle cx="20" cy="21" r="1" />
-                                    <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
-                                </svg>
-                                مشاهده سبد خرید و تکمیل خرید
-                            </Link>
-                        </div>
-                    </div>
+
                 </div>
             )}
 

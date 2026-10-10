@@ -101,12 +101,28 @@ export default function CourseTabs({ course, parsedContent, customStyles, isPurc
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false);
 
-  // هماهنگی تب فعال با وضعیت خرید (تا قبل از اینکه کاربر دستی تب را عوض کند)
+  // هماهنگی تب فعال با وضعیت خرید یا سابقه گوش دادن دوره توسط کاربر
   useEffect(() => {
     if (!hasUserSelectedTab) {
+      try {
+        const cId = course?.id ? String(course.id) : null;
+        const docId = course?.documentId ? String(course.documentId) : null;
+        const slug = course?.slug ? String(course.slug) : null;
+
+        const hasHistory =
+          (cId && localStorage.getItem(`last_listened_lesson_c${cId}`)) ||
+          (docId && localStorage.getItem(`last_listened_lesson_c${docId}`)) ||
+          (slug && localStorage.getItem(`last_listened_lesson_slug_${slug}`));
+
+        if (hasHistory) {
+          setActiveTab('curriculum');
+          return;
+        }
+      } catch (e) {}
+
       setActiveTab(defaultTab);
     }
-  }, [defaultTab, hasUserSelectedTab]);
+  }, [defaultTab, hasUserSelectedTab, course]);
 
   // محاسبه تعداد کل جلسات
   const totalLessons = course?.isChaptered

@@ -224,7 +224,7 @@ $breakpoint-sm: 440px;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: $lines;
   overflow: hidden;
-
+  height: stretch;
   @include respond(md) {
     font-size: var(--font-sm);
   }

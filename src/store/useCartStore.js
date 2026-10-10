@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { removeOrderItems } from '@/lib/cartRecovery';
+import { cancelOrdersAfterRemoval } from '@/lib/client/cartRemovalApi';
 
 /**
  * فروشگاه سبد خرید با استفاده از Zustand
@@ -14,6 +16,31 @@ export const useCartStore = create(
              * هر آیتم شامل: id, slug, title, price, image, quantity, type
              */
             items: [],
+            hydratedUserId: null,
+            processedOrders: {},
+            removalError: null,
+            removeItemManually: async (itemId) => {
+                const userId = get().userId;
+                const removed = get().items.find(item => item.id === itemId);
+                if (!removed) return;
+                const remaining = get().items.filter(item => item.id !== itemId);
+                set({ items: remaining, removalError: null });
+                if (!userId) return;
+                try {
+                    await cancelOrdersAfterRemoval(removed, remaining);
+                } catch (error) {
+                    if (get().userId !== userId) return;
+                    // شکست درخواست نباید کاربر را با سفارش معلق و حذف نهایی قلم تنها بگذارد.
+                    set({ items: get().items.some(item => item.id === itemId) ? get().items : [...get().items, removed], removalError: error.message });
+                }
+            },
+            completeOrder: (userId, orderId, purchased) => {
+                const key = `${userId}:${orderId}`;
+                if (get().processedOrders[key]) return false;
+                set({ items: removeOrderItems(get().items, purchased), appliedCoupon: null,
+                    processedOrders: { ...get().processedOrders, [key]: true } });
+                return true;
+            },
 
             /**
              * افزودن آیتم به سبد خرید
@@ -150,7 +177,7 @@ export const useCartStore = create(
                 }
 
                 if (newQuantity < 1) {
-                    get().removeItem(itemId);
+                    get().removeItemManually(itemId);
                     return;
                 }
 
@@ -288,6 +315,7 @@ export const useCartStore = create(
                 items: state.items,
                 appliedCoupon: state.appliedCoupon,
                 userId: state.userId,
+                processedOrders: state.processedOrders,
             }),
         }
     )

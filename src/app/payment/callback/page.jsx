@@ -3,10 +3,10 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useCartStore } from '@/store/useCartStore';
-import { useOrdersStore } from '@/store/useOrdersStore';
+import useCompletedOrderCart from '@/hooks/useCompletedOrderCart';
 import { triggerLightUpdate } from '@/store/useLightStore';
-import { updateProfileCartData, invalidateProfileCache } from '@/lib/client/profileClientApi';
+
+
 import styles from './page.module.scss';
 
 /**
@@ -15,6 +15,7 @@ import styles from './page.module.scss';
  */
 function PaymentCallbackContent() {
     const searchParams = useSearchParams();
+    useCompletedOrderCart(searchParams.get('status'), searchParams.get('orderId'));
     const [mounted, setMounted] = useState(false);
     const [bankInfo, setBankInfo] = useState(null);
     const [isBankLoading, setIsBankLoading] = useState(false);
@@ -23,18 +24,12 @@ function PaymentCallbackContent() {
 
     useEffect(() => {
         setMounted(true);
-        // پاکسازی سبد خرید و بروزرسانی بلادرنگ موجودی نور وقتی status=success است
+        // بازخوانی موجودی نور؛ حذف اقلام سبد فقط پس از تأیید سفارش توسط سرور انجام می‌شود.
         const statusParam = searchParams.get('status');
         const sourceParam = searchParams.get('source');
+        if (statusParam === 'success') triggerLightUpdate();
 
-        if (statusParam === 'success') {
-            invalidateProfileCache();
-            useCartStore.getState().clearCart();
-            updateProfileCartData(null).catch(() => {});
-            useOrdersStore.setState({ hasFetched: false, orders: [] });
-            triggerLightUpdate();
-            useOrdersStore.getState().fetchOrders(true).catch(() => {});
-        }
+
 
         // دریافت اطلاعات بانکی برای سفارش‌های کارت‌به‌کارت
         if (sourceParam === 'card_to_card') {

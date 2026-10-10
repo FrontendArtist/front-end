@@ -2,8 +2,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { ORDER_STATUS, PAYMENT_STATUS, PAYMENT_METHOD } from "@/lib/constants/orderConstants";
+import { PAYMENT_METHOD } from "@/lib/constants/orderConstants";
 import { STRAPI_API_URL } from "@/lib/api";
+
+import { getConversionRateWithByeMoney } from '@/lib/byeMoneyApi';
+import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -63,384 +66,84 @@ export async function GET(request) {
 // --------------------------------------------------------------------------
 // POST /api/orders : ایجاد سفارش جدید (اتصال مستقیم به کاربر و دوره‌ها)
 // --------------------------------------------------------------------------
+// قیمت و وضعیت مالی در Strapi تعیین می‌شوند؛ مرورگر فقط اقلام را انتخاب می‌کند.
 export async function POST(request) {
     const session = await getServerSession(authOptions);
-
-    if (!session || !session.user || !session.user.id) {
-        return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
+    if (!session?.user?.id) {
+        return NextResponse.json({ message: 'برای خرید وارد حساب خود شوید.' }, { status: 401 });
     }
-
+    if (!STRAPI_TOKEN) {
+        return NextResponse.json({ message: 'سرویس ثبت سفارش در دسترس نیست.' }, { status: 503 });
+    }
+    let body;
     try {
-        const body = await request.json();
-        const { cartItems, totalPrice, shippingAddress, paymentMethod, paymentStatus } = body;
-
-        if (!cartItems || !Array.isArray(cartItems)) {
-            return NextResponse.json({ message: "Invalid cartItems" }, { status: 400 });
-        }
-
-        // استخراج آیدی دوره‌ها و فصل‌ها از سبد خرید برای پرکردن پروفایل کاربر
-        const courseIds = cartItems
-          .filter(item => item.type === 'course')
-          .map(item => Number(item.id));
-
-        const chapterIds = cartItems
-          .filter(item => item.type === 'chapter')
-          .map(item => Number(item.chapterId || (typeof item.id === 'string' ? item.id.replace('chapter-', '') : item.id)));
-
-        // دریافت اطلاعات کامل کاربر از استراپی همراه با آدرس و دوره‌ها
-        const userRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}?populate[0]=address&populate[1]=courses`, {
-            headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` }
-        });
-
-        if (!userRes.ok) {
-            const errText = await userRes.text();
-            console.error("Strapi Fetch User for Order Error:", errText);
-            throw new Error("Failed to fetch user profiles from Strapi");
-        }
-        const userData = await userRes.json();
-
-        // ایجاد آرایه dynamic zone برای اتصال به فیلد items در سفارش
-        const itemsPayload = cartItems.map(item => {
-            if (item.type === 'course') {
-                return {
-                    __component: "order.course-order-item",
-                    title: item.title,
-                    price: Number(item.price) || 0,
-                    courseId: Number(item.id),
-                    slug: item.slug || "",
-                    itemUrl: item.slug ? `/courses/${item.slug}` : "#"
-                };
-            } else if (item.type === 'chapter') {
-                const cleanChapterId = item.chapterId || (typeof item.id === 'string' ? item.id.replace('chapter-', '') : item.id);
-                const courseSlug = item.slug ? item.slug.split('-chapter-')[0] : '';
-                return {
-                    __component: "order.course-order-item",
-                    title: item.title,
-                    price: Number(item.price) || 0,
-                    courseId: Number(item.courseId) || 0,
-                    chapterId: Number(cleanChapterId) || 0,
-                    slug: item.slug || "",
-                    itemUrl: `/courses/${courseSlug || item.slug}`
-                };
-            } else if (item.type === 'light_topup') {
-                // آیتم شارژ نور — به‌عنوان محصول ثبت می‌شود با توضیح مشخص
-                return {
-                    __component: "order.product-order-item",
-                    title: item.title || `شارژ نور`,
-                    price: Number(item.price) || 0,
-                    quantity: 1,
-                    productId: 0,
-                    slug: "light-topup",
-                    itemUrl: "/profile"
-                };
-            } else {
-                let productUrl = `/product/${item.slug || ''}`;
-                if (item.subcategorySlug && item.categorySlug) {
-                    productUrl = `/products/${item.categorySlug}/${item.subcategorySlug}/${item.slug}`;
-                } else if (item.categorySlug) {
-                    productUrl = `/products/${item.categorySlug}/${item.slug}`;
-                }
-
-                return {
-                    __component: "order.product-order-item",
-                    title: item.title,
-                    price: Number(item.price) || 0,
-                    quantity: Number(item.quantity) || 1,
-                    productId: Number(item.id),
-                    slug: item.slug || "",
-                    itemUrl: productUrl
-                };
+        body = await request.json();
+    } catch {
+        return NextResponse.json({ message: 'درخواست سفارش معتبر نیست.' }, { status: 400 });
+    }
+    if (!body || !Array.isArray(body.cartItems) || body.cartItems.length === 0 || body.cartItems.length > 100 ||
+        body.cartItems.some(item => !item || !['course', 'chapter', 'product', 'light_topup'].includes(item.type) ||
+            (item.type === 'course' && item.chapterId != null) || (item.type === 'chapter' && item.courseId == null) ||
+            (item.quantity != null && (!Number.isSafeInteger(Number(item.quantity)) || Number(item.quantity) <= 0 || (item.type !== 'product' && Number(item.quantity) !== 1))))) {
+        return NextResponse.json({ message: 'اقلام یا تعداد سبد معتبر نیست.' }, { status: 400 });
+    }
+    try {
+        const pricingContext = {};
+        if (body.cartItems.some(item => item.type === 'light_topup')) {
+            const rate = await getConversionRateWithByeMoney({ jwt: session.user.jwt });
+            if (!rate.success || !Number.isFinite(rate.tomanPerNoor) || rate.tomanPerNoor <= 0) {
+                return NextResponse.json({ message: 'نرخ رسمی شارژ نور در دسترس نیست.' }, { status: 503 });
             }
-        });
-
-        // ── 0. محاسبه امن و سروری قیمت اقلام و اعتبارسنجی کد تخفیف ──────────
-        const calculatedCartTotal = cartItems.reduce((sum, item) => {
-            const price = Number(item.price) || 0;
-            const qty = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
-            return sum + (price * qty);
-        }, 0);
-
-        let appliedCouponCode = body.couponCode || body.coupon?.code || null;
-        let discountAmount = 0;
-        let originalTotalPrice = calculatedCartTotal;
-        let finalPayablePrice = originalTotalPrice;
-        let couponValidationResult = null;
-
-        if (appliedCouponCode) {
-            try {
-                const couponRes = await fetch(`${STRAPI_BASE_URL}/api/coupons/validate`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${STRAPI_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        code: appliedCouponCode,
-                        cartItems: cartItems,
-                        currentTotal: calculatedCartTotal
-                    })
-                });
-
-                if (couponRes.ok) {
-                    couponValidationResult = await couponRes.json();
-                    if (couponValidationResult?.valid) {
-                        discountAmount = Number(couponValidationResult.discountAmount) || 0;
-                        originalTotalPrice = Number(couponValidationResult.originalTotalPrice) || calculatedCartTotal;
-                        finalPayablePrice = Number(couponValidationResult.finalTotalPrice) || Math.max(0, originalTotalPrice - discountAmount);
-                    } else {
-                        return NextResponse.json(
-                            { message: couponValidationResult?.message || "کد تخفیف وارد شده معتبر نمی‌باشد." },
-                            { status: 400 }
-                        );
-                    }
-                } else {
-                    const errData = await couponRes.json().catch(() => ({}));
-                    return NextResponse.json(
-                        { message: errData?.message || errData?.error?.message || "کد تخفیف وارد شده معتبر نمی‌باشد یا ظرفیت آن تکمیل شده است." },
-                        { status: 400 }
-                    );
-                }
-            } catch (couponErr) {
-                console.error("Coupon verification error during order create:", couponErr);
-                return NextResponse.json(
-                    { message: "خطا در اعتبارسنجی کد تخفیف سمت سرور. لطفاً مجدداً تلاش کنید." },
-                    { status: 500 }
-                );
-            }
+            pricingContext.lightToTomanRate = rate.tomanPerNoor;
         }
-
-        // ── وضعیت پرداخت و سفارش ─────────────────────────────────────────────
-        // سفارش رایگان (قیمت ۰ تومان یا تخفیف ۱۰۰٪) → مستقیماً paid
-        // کارت‌به‌کارت و پرداخت آنلاین → orderStatus: 'pending', paymentStatus: 'pending_payment'
-        // (پرداخت آنلاین پس از تایید کال‌بک درگاه در /api/payment/verify به paid تبدیل می‌شود)
-        const isFreeOrder = finalPayablePrice <= 0 || paymentMethod === PAYMENT_METHOD.FREE;
-        const resolvedPaymentMethod = isFreeOrder ? PAYMENT_METHOD.FREE : (paymentMethod || PAYMENT_METHOD.ONLINE);
-        const resolvedOrderStatus = isFreeOrder
-            ? ORDER_STATUS.PAID
-            : ORDER_STATUS.PENDING;
-        const resolvedPaymentStatus = isFreeOrder
-            ? PAYMENT_STATUS.PAID
-            : PAYMENT_STATUS.PENDING_PAYMENT;
-        const isOrderPaid = resolvedOrderStatus === ORDER_STATUS.PAID && resolvedPaymentStatus === PAYMENT_STATUS.PAID;
-
-        // ── 1. هوشمندسازی نام خریدار (fullName) ───────────────────────────────────
-        // اولویت 1: نام و نام‌خانوادگی در پروفایل کاربر
-        // اولویت 2: نام گیرنده در آدرس (در صورتی که معتبر باشد و تک‌رقمی مانند '1' نباشد)
-        // اولویت 3: نام کاربری یا شماره موبایل به صورت کاربر (09123456789)
-        const userFullName = (userData.firstName || userData.lastName)
-            ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
-            : "";
-        const recipientName = userData.address?.recipientName?.trim();
-        const isValidRecipient = recipientName && recipientName.length > 1 && !/^\d+$/.test(recipientName);
-
-        const resolvedFullName = userFullName
-            || (isValidRecipient ? recipientName : null)
-            || (userData.username && !/^\d+$/.test(userData.username) ? userData.username : null)
-            || (userData.phoneNumber ? `کاربر (${userData.phoneNumber})` : null)
+        const userRes = await fetch(STRAPI_BASE_URL + '/api/users/' + session.user.id + '?populate[0]=address', {
+            headers: { Authorization: 'Bearer ' + STRAPI_TOKEN }, cache: 'no-store',
+        });
+        if (!userRes.ok) throw new Error('اطلاعات حساب برای ثبت سفارش در دسترس نیست.');
+        const user = await userRes.json();
+        const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+        const recipientName = user.address?.recipientName?.trim();
+        const validRecipient = recipientName && recipientName.length > 1 && !/^\d+$/.test(recipientName);
+        const fullName = name || (validRecipient ? recipientName : null)
+            || (user.username && !/^\d+$/.test(user.username) ? user.username : null)
+            || (user.phoneNumber ? `کاربر (${user.phoneNumber})` : null)
             || (session.user.phoneNumber ? `کاربر (${session.user.phoneNumber})` : null)
-            || session.user.name
-            || "کاربر فروشگاه";
-
-        // ── 2. ساخت خلاصه کامل اقلام خریداری شده در فیلد notes ───────────────────
-        const itemSummaryList = cartItems.map((item, idx) => {
-            const num = idx + 1;
-            if (item.type === 'course') {
-                return `${num}. [دوره آموزشی] ${item.title}`;
-            } else if (item.type === 'chapter') {
-                return `${num}. [فصل آموزشی] ${item.title}`;
-            } else if (item.type === 'light_topup') {
-                const lightAmt = Number(item.lightAmount) || 0;
-                // ⚠️ عدد را ASCII نگه می‌داریم تا در admin route قابل parse باشد
-                return `${num}. [شارژ نور] ${lightAmt} نور [LIGHT_AMOUNT:${lightAmt}]`;
-            } else {
-                const qty = (item.quantity && Number(item.quantity) > 1) ? ` (${item.quantity} عدد)` : '';
-                return `${num}. [محصول فیزیکی] ${item.title}${qty}`;
-            }
-        });
-
-        const topUpTag = body.topUpRequestId ? `\n\n⚡ شناسه شارژ بای‌مانی: [TOPUP_ID:${body.topUpRequestId}]` : '';
-        const generatedNotes = `📋 اقلام این سفارش:\n${itemSummaryList.join('\n')}${topUpTag}${appliedCouponCode ? `\n\n🎟️ کد تخفیف اعمال شده: ${appliedCouponCode} (تخفیف: ${new Intl.NumberFormat('fa-IR').format(discountAmount)} تومان)` : ''}${isFreeOrder ? `\n\n🎁 این سفارش به صورت رایگان ثبت و تأیید شد.` : ''}`;
-        const resolvedNotes = body.notes ? `${body.notes.trim()}\n\n${generatedNotes}` : generatedNotes;
-
-        // استخراج آدرس کامل
-        let resolvedAddress = "آدرس وارد نشده است";
-        if (userData.address) {
-            const { province, city, fullAddress } = userData.address;
-            resolvedAddress = [province, city, fullAddress].filter(Boolean).join(" - ");
-        } else if (shippingAddress) {
-            resolvedAddress = shippingAddress;
-        }
-
-        // استخراج سایر اطلاعات پستی و تماس
-        const resolvedPostalCode = userData.address?.postalCode || "0000000000";
-        const resolvedPhone = userData.address?.recipientPhone || userData.phoneNumber || session.user.phoneNumber || "00000000000";
-        const resolvedEmail = userData.email || session.user.email || "no-email@tarhelahi.com";
-
-        // ساخت بدنه پِیلود بر اساس فیلدهای واقعی دیتابیس شما
-        const orderPayload = {
-            data: {
-                totalPrice: Number(finalPayablePrice) || 0,
-                orderStatus: resolvedOrderStatus,
-                fullName: resolvedFullName,
-                address: resolvedAddress,
-                postalCode: resolvedPostalCode,
-                phone: resolvedPhone,
-                email: resolvedEmail,
-                user: session.user.id,
-                items: itemsPayload,
-                paymentMethod: resolvedPaymentMethod,
-                paymentStatus: resolvedPaymentStatus,
-                notes: resolvedNotes,
-                couponCode: appliedCouponCode,
-                discountAmount: Number(discountAmount) || 0,
-                originalTotalPrice: Number(originalTotalPrice) || Number(finalPayablePrice) || 0,
-            }
-        };
-
-        // ── ابطال خودکار سفارش‌های آنلاین معلق قبلی (Fire & Forget — بدون block کردن فرآیند پرداخت) ──
-        // این مرحله فقط برای سناریویی لازم است که درگاه پرداخت هرگز باز نشده باشد (VPN / قطعی اینترنت)
-        // و callback /api/payment/verify صدا زده نشده باشد — در آن صورت سفارش روی pending می‌ماند.
-        // با fire-and-forget این cleanup در پس‌زمینه انجام می‌شود و روی زمان پاسخ API تأثیر نمی‌گذارد.
-        if (resolvedPaymentMethod === PAYMENT_METHOD.ONLINE) {
-            (async () => {
-                try {
-                    const prevOrdersUrl = `${STRAPI_BASE_URL}/api/orders`
-                        + `?filters[user][id][$eq]=${session.user.id}`
-                        + `&filters[paymentMethod][$eq]=${PAYMENT_METHOD.ONLINE}`
-                        + `&filters[orderStatus][$eq]=${ORDER_STATUS.PENDING}`
-                        + `&filters[paymentStatus][$eq]=${PAYMENT_STATUS.PENDING_PAYMENT}`
-                        + `&pagination[pageSize]=20`;
-
-                    const prevOrdersRes = await fetch(prevOrdersUrl, {
-                        headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
-                        cache: 'no-store'
-                    });
-
-                    if (prevOrdersRes.ok) {
-                        const prevOrdersData = await prevOrdersRes.json();
-                        const pendingOrders = prevOrdersData?.data || [];
-
-                        for (const prevOrder of pendingOrders) {
-                            const targetId = prevOrder.documentId || prevOrder.id;
-                            if (!targetId) continue;
-
-                            const existingNotes = prevOrder.notes || prevOrder.attributes?.notes || '';
-                            await fetch(`${STRAPI_BASE_URL}/api/orders/${targetId}`, {
-                                method: 'PUT',
-                                headers: {
-                                    'Authorization': `Bearer ${STRAPI_TOKEN}`,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    data: {
-                                        orderStatus: ORDER_STATUS.CANCELLED,
-                                        paymentStatus: PAYMENT_STATUS.FAILED,
-                                        rejectionReason: 'لغو خودکار به دلیل ثبت فرآیند خرید جدید از سبد خرید',
-                                        notes: (existingNotes ? `${existingNotes.trim()}\n\n` : '') +
-                                               '❌ لغو خودکار: این سفارش به دلیل شروع مجدد فرآیند خرید جدید از سبد خرید لغو گردید.',
-                                    }
-                                })
-                            }).catch((err) => console.warn('[Auto-Cancel Prev Order Warning]:', err));
-                        }
-                    }
-                } catch (prevErr) {
-                    console.warn('[Auto-Cancel Prev Orders Check Error]:', prevErr);
-                }
-            })();
-        }
-
-        // ارسال درخواست ساخت اردر به استراپی
-        const orderRes = await fetch(`${STRAPI_BASE_URL}/api/orders`, {
+            || session.user.name || 'کاربر فروشگاه';
+        const orderRes = await fetch(STRAPI_BASE_URL + '/api/orders/checkout', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${STRAPI_TOKEN}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(orderPayload)
+            headers: { Authorization: 'Bearer ' + STRAPI_TOKEN, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: {
+                user: session.user.id,
+                cartItems: body.cartItems.map(item => ({ type: item.type, id: item.id,
+                    documentId: item.documentId, courseId: item.courseId, chapterId: item.chapterId, lightAmount: item.lightAmount, quantity: item.quantity == null ? 1 : Number(item.quantity) })),
+                couponCode: body.couponCode ?? body.coupon?.code ?? null,
+                paymentMethod: body.paymentMethod === PAYMENT_METHOD.CARD_TO_CARD ? PAYMENT_METHOD.CARD_TO_CARD : PAYMENT_METHOD.ONLINE,
+                pricingContext: { ...pricingContext,
+                    isForeign: Boolean(user.is_foreigner || (user.phoneNumber && !isIranianPhoneNumber(user.phoneNumber))) },
+                fullName,
+                address: user.address ? [user.address.province, user.address.city, user.address.fullAddress].filter(Boolean).join(' - ') : (typeof body.shippingAddress === 'string' && body.shippingAddress.trim() ? body.shippingAddress.trim() : 'آدرس وارد نشده است'),
+                postalCode: user.address?.postalCode || '0000000000',
+                phone: user.address?.recipientPhone || user.phoneNumber || session.user.phoneNumber || '00000000000',
+                email: user.email || session.user.email || 'no-email@tarhelahi.com',
+                notes: typeof body.notes === 'string' ? body.notes.trim() : '',
+            } }),
         });
-
+        const result = await orderRes.json();
         if (!orderRes.ok) {
-            const errData = await orderRes.json();
-            console.error("Strapi Create Order Failed Details:", JSON.stringify(errData));
-            throw new Error(errData?.error?.message || "Failed to create order in Strapi");
+            return NextResponse.json({ message: result?.error?.message || 'ثبت سفارش انجام نشد.' },
+                { status: orderRes.status });
         }
-
-        const newOrder = await orderRes.json();
-
-        // ── مصرف کوپن در استراپی (فقط برای سفارش‌های رایگان یا ۱۰۰٪ تخفیف) ───────
-        // سفارش‌های آنلاین پس از تأیید نهایی پرداخت در /api/payment/verify مصرف خواهند شد
-        if (appliedCouponCode && couponValidationResult?.valid && isFreeOrder) {
-            try {
-                const consumeRes = await fetch(`${STRAPI_BASE_URL}/api/coupons/consume`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${STRAPI_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ code: appliedCouponCode })
-                });
-
-                if (!consumeRes.ok) {
-                    const consumeErr = await consumeRes.json().catch(() => ({}));
-                    console.warn("Coupon consume rejected (limit reached or invalid):", consumeErr);
-                }
-            } catch (incErr) {
-                console.error("Failed to atomically consume coupon for free order:", incErr);
-            }
-        }
-
-        // دوره‌ها، فصل‌ها و پاکسازی cartData کاربر فقط و فقط در صورتی اعمال می‌شوند که سفارش پرداخت شده باشد (مانند سفارش رایگان)
-        // در سفارشات آنلاین و کارت‌به‌کارت که وضعیت pending است، سبد خرید تا زمان تایید نهایی پرداخت در /api/payment/verify حفظ می‌شود.
-        let userUpdatePayload = {};
-
-        if (isOrderPaid) {
-            userUpdatePayload.cartData = null;
-
-            if (courseIds.length > 0) {
-                const existingCourses = userData.courses ? userData.courses.map(c => c.id) : [];
-                const mergedCourses = [...new Set([...existingCourses, ...courseIds])];
-                userUpdatePayload.courses = mergedCourses;
-            }
-
-            if (chapterIds.length > 0) {
-                const existingChapters = Array.isArray(userData.enrolledChapters)
-                    ? userData.enrolledChapters.map(Number)
-                    : [];
-                userUpdatePayload.enrolledChapters = [...new Set([...existingChapters, ...chapterIds])];
-            }
-        }
-
-        if (Object.keys(userUpdatePayload).length > 0) {
-            const userUpdateRes = await fetch(`${STRAPI_BASE_URL}/api/users/${session.user.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${STRAPI_TOKEN}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(userUpdatePayload)
-            });
-
-            if (!userUpdateRes.ok) {
-                console.error("User update failed:", await userUpdateRes.text());
-            }
-        }
-
-        // ── عدم تغییر مستقیم user.light در استراپی ──────────────────────────
-        // بر اساس تصمیمات معماری ByeMoney (D05/D06/I12)، موجودی نور منحصراً در
-        // Ledger سامانه مالی ByeMoney ثبت و مدیریت می‌شود و هیچ سیستمی نباید
-        // فیلد user.light را مستقیماً تغییر دهد.
-
+        // پاکسازی فقط اقلام سفارش پرداخت‌شده در صفحه نتیجه؛ لغو فقط پس از حذف دستی.
         try {
+            revalidatePath('/profile/orders');
             revalidatePath('/products', 'layout');
             revalidatePath('/product', 'layout');
-        } catch (revalErr) {
-            console.warn("Revalidation warning:", revalErr?.message);
+        } catch (error) {
+            console.warn('بازخوانی کش سفارش انجام نشد:', error.message);
         }
-
-        return NextResponse.json(newOrder, { status: 201 });
-
+        return NextResponse.json(result, { status: 201 });
     } catch (error) {
-        console.error("POST Orders Error:", error);
-        return NextResponse.json({ message: error.message }, { status: 500 });
+        console.error('POST Orders Error:', error);
+        return NextResponse.json({ message: 'ثبت سفارش موقتاً در دسترس نیست.' }, { status: 503 });
     }
 }

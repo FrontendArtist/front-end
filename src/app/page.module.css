@@ -168,6 +168,8 @@ a.secondary {
 
 .container {
   padding: 0;
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 .grid {

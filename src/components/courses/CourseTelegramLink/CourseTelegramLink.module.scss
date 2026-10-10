@@ -21,7 +21,7 @@
   border-radius: 12px;
   box-sizing: border-box;
   animation: fadeInBox 0.3s ease-out;
-
+  flex-wrap: wrap;
   @include respond(sm) {
     flex-direction: column;
     align-items: stretch;
