@@ -1,0 +1,11 @@
+@use "@/styles/base/mixins" as *;
+
+.main {
+  min-height: 80vh;
+  padding-top: var(--space-section-top-desktop);
+  padding-bottom: var(--space-section-bottom-desktop);
+
+  @include respond(sm) {
+    padding-top: var(--space-section-top-desktop);
+  }
+}

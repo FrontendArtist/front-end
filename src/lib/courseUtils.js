@@ -46,19 +46,16 @@ export function formatStrapiCourses(apiResponse) {
   return rawList
     .filter(item => item && item.title)
     .map(item => {
-      const formatLesson = (session) => {
+      const formatLesson = (session, courseDocumentId) => {
         if (!session) return null;
-        let audioUrl = session.audioUrl || null;
-        if (audioUrl) {
-          try {
-            const url = new URL(audioUrl);
-            if (url.pathname.startsWith('/uploads/')) {
-              audioUrl = `/api/media${url.pathname}`;
-            }
-          } catch {
-            // relative url
-          }
-        }
+
+        // آدرس واقعی صوت هرگز به client داده نمی‌شود
+        // به جای آن از endpoint امن /api/audio/[lessonId] استفاده می‌شود
+        const hasAudio = Boolean(session.audioUrl);
+        const audioUrl = hasAudio
+          ? `/api/audio/${session.id}${courseDocumentId ? `?cid=${courseDocumentId}` : ''}`
+          : null;
+
         return {
           id: session.id,
           title: session.title || '',
@@ -69,6 +66,8 @@ export function formatStrapiCourses(apiResponse) {
         };
       };
 
+      const courseDocId = item.documentId || item.slug || item.id || '';
+
       const chapters = Array.isArray(item.chapters)
         ? item.chapters.map(ch => ({
             id: ch.id,
@@ -76,13 +75,13 @@ export function formatStrapiCourses(apiResponse) {
             price: { toman: ch.price || 0 },
             duration: ch.duration || null,
             lessons: Array.isArray(ch.lessons)
-              ? ch.lessons.map(formatLesson).filter(Boolean)
+              ? ch.lessons.map(l => formatLesson(l, courseDocId)).filter(Boolean)
               : [],
           }))
         : [];
 
       const curriculum = Array.isArray(item.curriculum)
-        ? item.curriculum.map(formatLesson).filter(Boolean)
+        ? item.curriculum.map(l => formatLesson(l, courseDocId)).filter(Boolean)
         : [];
 
       let discountPercent = Number(item.discountPercent || 0);
