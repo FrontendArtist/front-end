@@ -97,6 +97,7 @@ export async function requestSepToken({ amount, resNum, redirectUrl, cellNumber 
                 'Accept': 'application/json',
             },
             body: JSON.stringify(payload),
+            signal: AbortSignal.timeout(15000),
             cache: 'no-store',
         });
 
@@ -134,10 +135,13 @@ export async function requestSepToken({ amount, resNum, redirectUrl, cellNumber 
         };
     } catch (err) {
         console.error('[SEP Token Exception]:', err);
+        const isTimeout = err?.name === 'TimeoutError' || err?.code === 23;
         return {
             success: false,
-            errorCode: 'NETWORK_ERROR',
-            errorDesc: 'عدم برقراری ارتباط با وب‌سرویس بانک سامان',
+            errorCode: isTimeout ? 'TIMEOUT_ERROR' : 'NETWORK_ERROR',
+            errorDesc: isTimeout
+                ? 'پاسخی از درگاه پرداخت شاپرک در زمان مقرر دریافت نشد. لطفاً مجدداً تلاش کنید.'
+                : 'عدم برقراری ارتباط با وب‌سرویس بانک سامان',
         };
     }
 }
