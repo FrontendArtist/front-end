@@ -17,7 +17,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import RecoverOrderCart from '@/components/profile/RecoverOrderCart';
 import OrderReceiptUpload from '@/components/profile/OrderReceiptUpload';
 import styles from './orderDetail.module.scss';
 
@@ -400,7 +399,6 @@ export default function OrderDetailPage() {
                 </div>
             )}
 
-            {isOnline && !isPaid && <RecoverOrderCart orderId={order.documentId || id} />}
 
             {/* ─── پیام لغو یا عدم موفقیت پرداخت آنلاین ─────────────────── */}
             {isOnline && isFailedOrCanceled && (

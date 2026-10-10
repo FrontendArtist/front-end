@@ -1,4 +1,5 @@
 import { checkCourseAccess } from '@/lib/ordersApi';
+import { useCartStore } from '@/store/useCartStore';
 
 jest.mock('@/lib/api', () => ({ API_BASE_URL: 'http://strapi.test' }));
 
@@ -50,4 +51,19 @@ test('سفارش لغوشده مانع خرید دوباره نمی‌شود', a
     const result = await loadOrders([pendingOrder({ orderStatus: 'canceled', paymentStatus: 'failed' })]);
     expect(result.hasAccess).toBe(false);
     expect(result.activeCourseOrder).toBeNull();
+});
+
+test('حذف دستی قلم پس از رهاکردن پرداخت، افزودن دوباره را مسدود نمی‌کند', async () => {
+    const item = { id: 42, type: 'course', slug: 'course-one', title: 'دوره', price: 100 };
+    useCartStore.setState({ items: [], appliedCoupon: null });
+    useCartStore.getState().addItem(item);
+    // سفارش در انتظار پرداخت باقی مانده، اما کاربر قلم را از سبد حذف کرده است.
+    useCartStore.getState().removeItem(42);
+    expect(useCartStore.getState().items).toEqual([]);
+    const access = await loadOrders([pendingOrder()]);
+    expect(access.hasAccess).toBe(false);
+    expect(access.activeCourseOrder).toBeNull();
+    // صفحهٔ دوره اکنون به‌جای پیام انتظار فیش، امکان افزودن را ارائه می‌کند.
+    useCartStore.getState().addItem(item);
+    expect(useCartStore.getState().items).toEqual([expect.objectContaining({ id: 42, quantity: 1 })]);
 });

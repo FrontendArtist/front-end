@@ -41,7 +41,7 @@ const ProductCard = ({ product }) => {
 
   const addItem = useCartStore((state) => state.addItem);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
-  const removeItem = useCartStore((state) => state.removeItem);
+  const removeItem = useCartStore((state) => state.removeItemManually);
 
   const cartItem = useCartStore((state) => state.items.find((item) => item.id === id));
   const isInCart = isHydrated && !!cartItem;

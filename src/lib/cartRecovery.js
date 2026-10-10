@@ -17,14 +17,3 @@ export function removeOrderItems(items, purchased) {
         return [];
     });
 }
-
-export function mergeRecoveredItems(items, recovered) {
-    const merged = [...items];
-    for (const item of recovered) {
-        const index = merged.findIndex((current) => itemKey(current) === itemKey(item));
-        if (index < 0) merged.push(item);
-        else merged[index] = { ...item, quantity: item.type === 'product'
-            ? Math.min(item.stock, Math.max(merged[index].quantity || 1, item.quantity)) : 1 };
-    }
-    return merged;
-}
