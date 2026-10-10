@@ -78,9 +78,9 @@ export async function executeOnlinePayment({
     // ۲. در صورت صفر بودن مبلغ (دوره رایگان یا کوپن ۱۰۰٪)
     if (isFreeOrder) {
         if (router) {
-            router.push('/checkout/result?status=success&source=free');
+            router.push(`/checkout/result?status=success&source=free&orderId=${encodeURIComponent(newOrder?.data?.documentId || '')}`);
         } else {
-            window.location.href = '/checkout/result?status=success&source=free';
+            window.location.href = `/checkout/result?status=success&source=free&orderId=${encodeURIComponent(newOrder?.data?.documentId || '')}`;
         }
         return { success: true, isFree: true };
     }

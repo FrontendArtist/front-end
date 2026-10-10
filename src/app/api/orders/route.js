@@ -393,7 +393,7 @@ export async function POST(request) {
         let userUpdatePayload = {};
 
         if (isOrderPaid) {
-            userUpdatePayload.cartData = null;
+            // پاک‌سازی اقلام همین سفارش پس از دریافت نتیجهٔ معتبر در سبد انجام می‌شود.
 
             if (courseIds.length > 0) {
                 const existingCourses = userData.courses ? userData.courses.map(c => c.id) : [];

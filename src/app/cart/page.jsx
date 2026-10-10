@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
 import DiscountCouponInput from '@/components/cart/DiscountCouponInput/DiscountCouponInput';
+import PendingOrdersNotice from '@/components/cart/PendingOrdersNotice';
 import EmptyCartState from '@/components/cart/EmptyCartState/EmptyCartState';
 import { formatPrice } from '@/lib/formatters';
 import {
@@ -20,6 +21,7 @@ import {
 } from '@/store/useCartStore';
 import useAuthStore from '@/store/authStore';
 import { executeOnlinePayment } from '@/lib/checkoutService';
+import usePaymentProcessing from '@/hooks/usePaymentProcessing';
 import styles from './Cart.module.scss';
 
 /**
@@ -51,7 +53,7 @@ export default function CartPage() {
     const { status } = useSession();
     const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isProcessing, setIsProcessing] = usePaymentProcessing();
     const [errorMessage, setErrorMessage] = useState(null);
 
     // دریافت داده‌ها و توابع از Store
@@ -220,6 +222,7 @@ export default function CartPage() {
             <div className={styles.cartPage}>
                 <div className={styles.container}>
                     <Breadcrumb items={breadcrumbItems} />
+                    <PendingOrdersNotice />
                     <EmptyCartState
                         title="سبد خرید شما خالی است"
                         description="هنوز محصول یا دوره‌ای به سبد خرید خود اضافه نکرده‌اید."

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { removeOrderItems } from '@/lib/cartRecovery';
 
 /**
  * فروشگاه سبد خرید با استفاده از Zustand
@@ -14,6 +15,15 @@ export const useCartStore = create(
              * هر آیتم شامل: id, slug, title, price, image, quantity, type
              */
             items: [],
+            hydratedUserId: null,
+            processedOrders: {},
+            completeOrder: (userId, orderId, purchased) => {
+                const key = `${userId}:${orderId}`;
+                if (get().processedOrders[key]) return false;
+                set({ items: removeOrderItems(get().items, purchased), appliedCoupon: null,
+                    processedOrders: { ...get().processedOrders, [key]: true } });
+                return true;
+            },
 
             /**
              * افزودن آیتم به سبد خرید
@@ -280,6 +290,7 @@ export const useCartStore = create(
                 items: state.items,
                 appliedCoupon: state.appliedCoupon,
                 userId: state.userId,
+                processedOrders: state.processedOrders,
             }),
         }
     )
