@@ -3,9 +3,9 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useCartStore } from '@/store/useCartStore';
-import { useOrdersStore } from '@/store/useOrdersStore';
-import { updateProfileCartData, invalidateProfileCache } from '@/lib/client/profileClientApi';
+import useCompletedOrderCart from '@/hooks/useCompletedOrderCart';
+
+
 import { 
     CheckCircle2, 
     XCircle, 
@@ -22,6 +22,7 @@ import styles from './page.module.scss';
 
 function CheckoutResultContent() {
     const searchParams = useSearchParams();
+    useCompletedOrderCart(searchParams.get('status'), searchParams.get('orderId'));
     const [mounted, setMounted] = useState(false);
     const [copiedRef, setCopiedRef] = useState(false);
 
@@ -38,18 +39,8 @@ function CheckoutResultContent() {
     useEffect(() => {
         setMounted(true);
 
-        // در صورت پرداخت موفقیت‌آمیز، سبد خرید بلافاصله پاکسازی و با سرور همگام می‌شود
-        if (status === 'success') {
-            try {
-                invalidateProfileCache();
-                useCartStore.getState().clearCart();
-                updateProfileCartData(null).catch(() => {});
-                useOrdersStore.setState({ hasFetched: false, orders: [] });
-                useOrdersStore.getState().fetchOrders(true).catch(() => {});
-            } catch (err) {
-                console.warn('[CheckoutResult] Cart clear warning:', err);
-            }
-        }
+
+
     }, [status]);
 
     const handleCopy = (text) => {

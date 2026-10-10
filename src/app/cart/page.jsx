@@ -20,6 +20,7 @@ import {
 } from '@/store/useCartStore';
 import useAuthStore from '@/store/authStore';
 import { executeOnlinePayment } from '@/lib/checkoutService';
+import usePaymentProcessing from '@/hooks/usePaymentProcessing';
 import styles from './Cart.module.scss';
 
 /**
@@ -51,19 +52,20 @@ export default function CartPage() {
     const { status } = useSession();
     const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isProcessing, setIsProcessing] = usePaymentProcessing();
     const [errorMessage, setErrorMessage] = useState(null);
 
     // دریافت داده‌ها و توابع از Store
     const items = useCartStore((state) => state.items);
     const updateQuantity = useCartStore((state) => state.updateQuantity);
-    const removeItem = useCartStore((state) => state.removeItem);
+    const removeItem = useCartStore((state) => state.removeItemManually);
     const appliedCoupon = useCartStore((state) => state.appliedCoupon);
     const totalPrice = useCartStore(selectTotalPrice);
     const couponDiscount = useCartStore(selectCouponDiscount);
     const itemLevelDiscount = useCartStore(selectItemLevelDiscount);
     const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
+    const removalError = useCartStore((state) => state.removalError);
 
     // آیا محصول فیزیکی نیازمند آدرس پستی در سبد وجود دارد؟
     const hasPhysicalProducts = items.some((item) => item.type === 'product');
@@ -220,6 +222,7 @@ export default function CartPage() {
             <div className={styles.cartPage}>
                 <div className={styles.container}>
                     <Breadcrumb items={breadcrumbItems} />
+                    {removalError && <p role="alert">{removalError}</p>}
                     <EmptyCartState
                         title="سبد خرید شما خالی است"
                         description="هنوز محصول یا دوره‌ای به سبد خرید خود اضافه نکرده‌اید."
@@ -238,6 +241,7 @@ export default function CartPage() {
     return (
         <div className={styles.cartPage}>
             <div className={styles.container}>
+                {removalError && <p role="alert">{removalError}</p>}
                 <Breadcrumb items={breadcrumbItems} />
 
                 <div className={styles.cartGrid}>
