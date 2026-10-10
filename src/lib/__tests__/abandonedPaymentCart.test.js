@@ -37,7 +37,9 @@ const mockCheckout = (tokenResponse) => {
 };
 
 test('سفارش رایگان شناسهٔ سفارش را برای پاک‌سازی محدود به نتیجه می‌فرستد', async () => {
-    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { documentId: 'free-one' } }) });
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ data: {
+        documentId: 'free-one', paymentMethod: 'free', paymentStatus: 'paid', totalPrice: 0,
+    } }) });
     const router = { push: jest.fn() };
     await executeOnlinePayment({ items: [item], finalTotalPrice: 0, router });
     expect(router.push).toHaveBeenCalledWith('/checkout/result?status=success&source=free&orderId=free-one');
