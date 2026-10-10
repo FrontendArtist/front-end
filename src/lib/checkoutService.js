@@ -76,7 +76,10 @@ export async function executeOnlinePayment({
     const newOrder = await response.json();
 
     // ۲. در صورت صفر بودن مبلغ (دوره رایگان یا کوپن ۱۰۰٪)
-    if (isFreeOrder) {
+    const order = newOrder?.data?.attributes || newOrder?.data;
+    const isServerFreeOrder = order?.paymentMethod === PAYMENT_METHOD.FREE &&
+        order?.paymentStatus === PAYMENT_STATUS.PAID && Number(order?.totalPrice) === 0;
+    if (isServerFreeOrder) {
         if (router) {
             router.push('/checkout/result?status=success&source=free');
         } else {
