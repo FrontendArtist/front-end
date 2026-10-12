@@ -3,7 +3,7 @@
  * مرجع اصلی و متمرکز بررسی دسترسی کاربران به دوره‌ها و فصل‌ها بر پایه سفارش‌های Paid
  */
 import { API_BASE_URL } from './api';
-import { ORDER_STATUS, PAYMENT_STATUS, isOrderPaid } from './constants/orderConstants';
+import { PAYMENT_METHOD, isOrderPaid } from './constants/orderConstants';
 
 /**
  * تابع واحد و استاندارد برای بررسی دسترسی کاربر به دوره و فصل‌ها
@@ -97,7 +97,9 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
           const pStatus = String(order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
           const isRejected = pStatus === 'failed' || pStatus === 'rejected' || oStatus === 'canceled' || oStatus === 'cancelled' || oStatus === 'rejected';
 
-          if (!isRejected) {
+          // انتظار فیش فقط مربوط به کارت‌به‌کارت است؛ سفارش آنلاین رهاشده نباید خرید دوباره را مسدود کند.
+          const paymentMethod = String(order.paymentMethod || order.attributes?.paymentMethod || '').trim().toLowerCase();
+          if (!isRejected && paymentMethod === PAYMENT_METHOD.CARD_TO_CARD) {
             activeCourseOrder = {
               orderId: order.id,
               documentId: order.documentId || String(order.id),

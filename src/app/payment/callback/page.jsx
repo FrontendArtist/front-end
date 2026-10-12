@@ -3,9 +3,9 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useCartStore } from '@/store/useCartStore';
-import { useOrdersStore } from '@/store/useOrdersStore';
-import { updateProfileCartData, invalidateProfileCache } from '@/lib/client/profileClientApi';
+import useCompletedOrderCart from '@/hooks/useCompletedOrderCart';
+
+
 import styles from './page.module.scss';
 
 /**
@@ -14,6 +14,7 @@ import styles from './page.module.scss';
  */
 function PaymentCallbackContent() {
     const searchParams = useSearchParams();
+    useCompletedOrderCart(searchParams.get('status'), searchParams.get('orderId'));
     const [mounted, setMounted] = useState(false);
     const [bankInfo, setBankInfo] = useState(null);
     const [isBankLoading, setIsBankLoading] = useState(false);
@@ -26,13 +27,7 @@ function PaymentCallbackContent() {
         const statusParam = searchParams.get('status');
         const sourceParam = searchParams.get('source');
 
-        if (statusParam === 'success') {
-            invalidateProfileCache();
-            useCartStore.getState().clearCart();
-            updateProfileCartData(null).catch(() => {});
-            useOrdersStore.setState({ hasFetched: false, orders: [] });
-            useOrdersStore.getState().fetchOrders(true).catch(() => {});
-        }
+
 
         // دریافت اطلاعات بانکی برای سفارش‌های کارت‌به‌کارت
         if (sourceParam === 'card_to_card') {

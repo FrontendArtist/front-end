@@ -12,6 +12,7 @@ import {
 } from '@/store/useCartStore';
 import { formatPrice } from '@/lib/formatters';
 import { executeOnlinePayment } from '@/lib/checkoutService';
+import usePaymentProcessing from '@/hooks/usePaymentProcessing';
 import styles from './ShippingStep.module.scss';
 
 /**
@@ -34,7 +35,7 @@ export default function ShippingStep({ onPrevious }) {
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isProcessing, setIsProcessing] = usePaymentProcessing();
     const [error, setError] = useState('');
 
     const [addressData, setAddressData] = useState({
