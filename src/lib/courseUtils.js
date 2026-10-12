@@ -72,7 +72,8 @@ export function formatStrapiCourses(apiResponse) {
         ? item.chapters.map(ch => ({
             id: ch.id,
             title: ch.title || '',
-            price: { toman: ch.price || 0 },
+            // قیمت decimal استراپی ممکن است رشته باشد؛ مقایسهٔ صفر در صفحه به عدد نیاز دارد.
+            price: { toman: Number(ch.price ?? 0) },
             duration: ch.duration || null,
             lessons: Array.isArray(ch.lessons)
               ? ch.lessons.map(l => formatLesson(l, courseDocId)).filter(Boolean)
