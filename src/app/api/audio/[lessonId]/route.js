@@ -3,7 +3,7 @@
  * 
  * جریان کار:
  * 1. واکشی اطلاعات جلسه و دوره از استراپی و استخراج audioUrl واقعی (آدرس CDN هرگز به کلاینت داده نمی‌شود)
- * 2. برای جلسات رایگان (isFree): پخش آزادانه بدون افشای آدرس اصلی CDN
+ * 2. برای جلسه رایگان یا جلسهٔ دوره/فصل صفرمبلغ: پخش آزادانه بدون افشای آدرس اصلی CDN
  * 3. برای جلسات غیررایگان:
  *    - احراز هویت سشن NextAuth (جلوگیری از دسترسی کاربران لاگین‌نشده: 401)
  *    - بررسی دسترسی خرید (کاربر باید کل دوره یا فصل مربوطه را خریده باشد: 403)
@@ -16,6 +16,13 @@ import { checkCourseAccess } from '@/lib/ordersApi';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+
+// مقدار خالی یا نامعتبر نباید به‌اشتباه قیمت صفر و مجوز پخش بسازد.
+function hasZeroPrice(price) {
+  if (typeof price !== 'number' && typeof price !== 'string') return false;
+  if (typeof price === 'string' && !price.trim()) return false;
+  return Number(price) === 0;
+}
 
 /**
  * جستجوی امن جلسه و دوره از دیتابیس استراپی (Server-side Only)
@@ -66,7 +73,7 @@ async function findLessonFromStrapi(lessonId, cid) {
           course: c,
           chapterId: null,
           audioUrl: l.audioUrl || null,
-          isFree: Boolean(l.isFree),
+          isFree: Boolean(l.isFree) || hasZeroPrice(c.price),
         };
       }
     }
@@ -80,7 +87,7 @@ async function findLessonFromStrapi(lessonId, cid) {
             course: c,
             chapterId: ch.id,
             audioUrl: l.audioUrl || null,
-            isFree: Boolean(l.isFree),
+            isFree: Boolean(l.isFree) || hasZeroPrice(c.price) || hasZeroPrice(ch.price),
           };
         }
       }
