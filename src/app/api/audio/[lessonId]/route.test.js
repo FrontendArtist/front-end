@@ -116,6 +116,84 @@ describe.each([['GET', GET], ['HEAD', HEAD]])('%s', (method, handler) => {
     expect((await run()).status).toBe(404);
     expect(cdnFetch).not.toHaveBeenCalled();
   });
+
+  test('جلسه گزارش‌شده با شکل واقعی کپی دیتابیس در فصل رایگان پخش می‌شود', async () => {
+    course = { id: 189, documentId: 'y94qk34ivual5iv0ngqf0mdr', slug: 'az-khak-ta-aflak', price: '1200000.00',
+      chapters: [{ id: 586, price: '0.00', lessons: [{ id: 7146, isFree: false, audioUrl }] }] };
+    session = null;
+    expect((await run()).status).toBe(200);
+  });
+
+  test.each([null, new Date(Date.now() + 86400000).toISOString()])('تخفیف ۱۰۰٪ فعال بدون خرید اجازه پخش می‌دهد (%p)', async expiry => {
+    course.discountPercent = 100;
+    course.discountUntil = expiry;
+    session = null;
+    expect((await run()).status).toBe(200);
+    expect(checkCourseAccess).not.toHaveBeenCalled();
+  });
+
+  test.each([new Date(Date.now() - 86400000).toISOString(), 'invalid'])('تخفیف با انقضای نامعتبر یا گذشته رایگان نمی‌سازد (%p)', async expiry => {
+    course.discountPercent = 100;
+    course.discountUntil = expiry;
+    expect((await run()).status).toBe(403);
+    expect(cdnFetch).not.toHaveBeenCalled();
+  });
+
+  test.each([-1, 101, 99.5, 'invalid'])('درصد تخفیف نامعتبر %p دسترسی نمی‌سازد', async percent => {
+    course.discountPercent = percent;
+    expect((await run()).status).toBe(403);
+  });
+
+  test('گردکردن مبلغ تخفیف مثل صفحه حفظ می‌شود', async () => {
+    course.price = '1';
+    course.discountPercent = 99;
+    session = null;
+    expect((await run()).status).toBe(200);
+  });
+
+  test.each([{ is_foreigner: true }, { phoneNumber: '+4915112345678' }])('قیمت بین‌المللی پولی از تخفیف محلی رایگان نمی‌شود (%p)', async user => {
+    course.discountPercent = 100;
+    course.internationalPrice = 500;
+    Object.assign(session.user, user);
+    expect((await run()).status).toBe(403);
+    expect(cdnFetch).not.toHaveBeenCalled();
+  });
+
+  test('خریدار خارجی با مالکیت معتبر همچنان پخش می‌کند', async () => {
+    course.discountPercent = 100;
+    course.internationalPrice = 500;
+    session.user.is_foreigner = true;
+    checkCourseAccess.mockResolvedValue({ hasAccess: true, purchasedChapterIds: [] });
+    expect((await run()).status).toBe(200);
+  });
+
+  test('کاربر ایرانی تخفیف محلی معتبر را می‌گیرد', async () => {
+    course.discountPercent = 100;
+    course.internationalPrice = 500;
+    session.user.phoneNumber = '09121234567';
+    expect((await run()).status).toBe(200);
+    expect(checkCourseAccess).not.toHaveBeenCalled();
+  });
+
+  test('جلسه رایگان برای کاربر خارجی هم رایگان می‌ماند', async () => {
+    course.internationalPrice = 500;
+    session.user.is_foreigner = true;
+    course.chapters[0].lessons[0].isFree = true;
+    expect((await run()).status).toBe(200);
+  });
+
+  test('شماره ردیف سفارش با اجرای واقعی بررسی خرید مجوز فصل دیگر نمی‌سازد', async () => {
+    checkCourseAccess.mockImplementation(jest.requireActual('@/lib/ordersApi').checkCourseAccess);
+    global.fetch.mockImplementation(async (url, options) => {
+      if (url === audioUrl) return cdnFetch(options);
+      if (url.includes('/api/orders?')) return new Response(JSON.stringify({ data: [{
+        orderStatus: 'paid', paymentStatus: 'paid', items: [{ id: 7, chapterId: 8, courseId: 42, slug: 'test-course-chapter-8' }],
+      }] }));
+      return new Response(JSON.stringify({ data: course }));
+    });
+    expect((await run()).status).toBe(403);
+    expect(cdnFetch).not.toHaveBeenCalled();
+  });
 });
 
 test('درخواست محدوده صوت رایگان به منبع منتقل می‌شود', async () => {

@@ -3,7 +3,7 @@
  * 
  * جریان کار:
  * 1. واکشی اطلاعات جلسه و دوره از استراپی و استخراج audioUrl واقعی (آدرس CDN هرگز به کلاینت داده نمی‌شود)
- * 2. برای جلسه رایگان یا جلسهٔ دوره/فصل صفرمبلغ: پخش آزادانه بدون افشای آدرس اصلی CDN
+ * 2. برای جلسه رایگان، فصل صفرمبلغ یا قیمت مؤثر صفر دوره: پخش بدون افشای آدرس اصلی CDN
  * 3. برای جلسات غیررایگان:
  *    - احراز هویت سشن NextAuth (جلوگیری از دسترسی کاربران لاگین‌نشده: 401)
  *    - بررسی دسترسی خرید (کاربر باید کل دوره یا فصل مربوطه را خریده باشد: 403)
@@ -13,6 +13,8 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { checkCourseAccess } from '@/lib/ordersApi';
+import { getDiscountedCoursePrice } from '@/lib/coursePricing';
+import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -73,7 +75,7 @@ async function findLessonFromStrapi(lessonId, cid) {
           course: c,
           chapterId: null,
           audioUrl: l.audioUrl || null,
-          isFree: Boolean(l.isFree) || hasZeroPrice(c.price),
+          isFree: Boolean(l.isFree),
         };
       }
     }
@@ -87,7 +89,7 @@ async function findLessonFromStrapi(lessonId, cid) {
             course: c,
             chapterId: ch.id,
             audioUrl: l.audioUrl || null,
-            isFree: Boolean(l.isFree) || hasZeroPrice(c.price) || hasZeroPrice(ch.price),
+            isFree: Boolean(l.isFree) || hasZeroPrice(ch.price),
           };
         }
       }
@@ -188,6 +190,25 @@ async function verifyAccess(session, lessonData) {
   return { allowed: false, error: 'شما این دوره یا فصل را خریداری نکرده‌اید.' };
 }
 
+// GET و HEAD باید در قیمت مؤثر، سشن و مالکیت دقیقاً یک تصمیم بگیرند.
+async function resolveAudioAccess(lessonData) {
+  if (lessonData.isFree) return { allowed: true };
+  const isFreeCourse = hasZeroPrice(getDiscountedCoursePrice(lessonData.course));
+  const hasInternationalPrice = Number(lessonData.course.internationalPrice) > 0;
+  if (isFreeCourse && !hasInternationalPrice) return { allowed: true };
+
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
+  const usesInternationalPrice = hasInternationalPrice && Boolean(user?.is_foreigner ||
+    (user?.phoneNumber && !isIranianPhoneNumber(user.phoneNumber)));
+  if (isFreeCourse && !usesInternationalPrice) return { allowed: true };
+  if (!user?.id) {
+    return { allowed: false, status: 401, error: 'برای دسترسی به این فایل باید ابتدا وارد حساب کاربری خود شوید.' };
+  }
+  const access = await verifyAccess(session, lessonData);
+  return { ...access, status: access.allowed ? 200 : 403 };
+}
+
 export async function GET(request, { params }) {
   const { lessonId } = await params;
   const { searchParams } = new URL(request.url);
@@ -202,23 +223,12 @@ export async function GET(request, { params }) {
     );
   }
 
-  // ۲. اگر جلسه رایگان نبود، احراز هویت و بررسی خرید انجام شود
-  if (!lessonData.isFree) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return new Response(
-        JSON.stringify({ error: 'برای دسترسی به این فایل باید ابتدا وارد حساب کاربری خود شوید.' }),
-        { status: 401, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
-      );
-    }
-
-    const access = await verifyAccess(session, lessonData);
-    if (!access.allowed) {
-      return new Response(
-        JSON.stringify({ error: access.error || 'دسترسی غیرمجاز.' }),
-        { status: 403, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
-      );
-    }
+  const access = await resolveAudioAccess(lessonData);
+  if (!access.allowed) {
+    return new Response(
+      JSON.stringify({ error: access.error || 'دسترسی غیرمجاز.' }),
+      { status: access.status, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+    );
   }
 
   // ۳. استریم امن با پشتیبانی از Range Header
@@ -274,17 +284,8 @@ export async function HEAD(request, { params }) {
     return new Response(null, { status: 404 });
   }
 
-  if (!lessonData.isFree) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return new Response(null, { status: 401 });
-    }
-
-    const access = await verifyAccess(session, lessonData);
-    if (!access.allowed) {
-      return new Response(null, { status: 403 });
-    }
-  }
+  const access = await resolveAudioAccess(lessonData);
+  if (!access.allowed) return new Response(null, { status: access.status });
 
   try {
     const cdnResponse = await fetch(lessonData.audioUrl, { method: 'HEAD' });
