@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { executeOnlinePayment } from '@/lib/checkoutService';
+import { invalidatePaymentConnection } from '@/lib/client/paymentConnection';
 import { useCartStore } from '@/store/useCartStore';
 import { useOrdersStore } from '@/store/useOrdersStore';
 import useCartSync from '@/hooks/useCartSync';
@@ -17,6 +18,7 @@ const item = { id: 42, courseId: 42, type: 'course', slug: 'course-one', title: 
 const originalFetch = global.fetch;
 
 beforeEach(() => {
+    invalidatePaymentConnection();
     useCartStore.setState({ items: [item], appliedCoupon: null, userId: 7, hydratedUserId: null });
     useOrdersStore.setState({ userId: '7', hasFetched: true, orders: [] });
     jest.clearAllMocks();

@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions, paymentAuthOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { PAYMENT_METHOD } from "@/lib/constants/orderConstants";
@@ -68,7 +68,7 @@ export async function GET(request) {
 // --------------------------------------------------------------------------
 // قیمت و وضعیت مالی در Strapi تعیین می‌شوند؛ مرورگر فقط اقلام را انتخاب می‌کند.
 export async function POST(request) {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(paymentAuthOptions);
     if (!session?.user?.id) {
         return NextResponse.json({ message: 'برای خرید وارد حساب خود شوید.' }, { status: 401 });
     }

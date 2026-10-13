@@ -266,4 +266,27 @@ export const authOptions = {
     },
 };
 
+// مسیرهای پرداخت فقط هویت امضاشده را لازم دارند؛ آدرس و مبلغ جداگانه از سرور خوانده می‌شوند.
+// سشن عمومی همچنان دوره‌ها و نقش به‌روز را برای پروفایل و کنترل دسترسی دریافت می‌کند.
+export const paymentAuthOptions = {
+    ...authOptions,
+    callbacks: {
+        ...authOptions.callbacks,
+        async session({ session, token }) {
+            if (session?.user && token) {
+                Object.assign(session.user, {
+                    id: token.id,
+                    jwt: token.jwt,
+                    phoneNumber: token.phoneNumber,
+                    role: token.role,
+                    firstName: token.firstName || '',
+                    lastName: token.lastName || '',
+                    is_foreigner: Boolean(token.is_foreigner),
+                });
+            }
+            return session;
+        },
+    },
+};
+
 

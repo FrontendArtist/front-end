@@ -47,7 +47,7 @@ export default function VpnModal() {
       let data = await response.json();
 
       // ۲. اگر محیط لوکال‌هوست بود (isLocal === true)، استعلام آی‌پی عمومی مرورگر برای تست روی لوکال
-      if (data?.success && data?.isLocal) {
+      if (data?.isLocal) {
         try {
           const clientPublicRes = await fetch('http://ip-api.com/json/?fields=query', { cache: 'no-store' });
           if (clientPublicRes.ok) {

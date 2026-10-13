@@ -1,7 +1,8 @@
 import { executeOnlinePayment } from '../checkoutService';
+import { invalidatePaymentConnection } from '../client/paymentConnection';
 
 describe('نتیجهٔ رایگان checkout از سرور تعیین می‌شود', () => {
-  beforeEach(() => { jest.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {}); });
+  beforeEach(() => { invalidatePaymentConnection(); jest.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {}); });
   afterEach(() => { jest.restoreAllMocks(); document.body.innerHTML = ''; });
   const server = order => {
     global.fetch = jest.fn(async url => ({ ok: true, json: async () =>

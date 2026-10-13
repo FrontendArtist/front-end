@@ -1,0 +1,31 @@
+.notice {
+    padding: 10px 14px;
+    margin-block: 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius);
+    color: var(--color-text-primary);
+    font-size: var(--font-xs);
+    line-height: 1.8;
+
+    p { margin: 0; }
+
+    button {
+        margin-top: 8px;
+        padding: 6px 12px;
+        font: inherit;
+        color: inherit;
+        background: transparent;
+        border: 1px solid rgba(245, 158, 11, 0.5);
+        border-radius: 6px;
+        cursor: pointer;
+
+        &:disabled { opacity: 0.6; cursor: wait; }
+        &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+    }
+}
+
+.blocked {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.35);
+}
