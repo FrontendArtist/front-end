@@ -1,10 +1,27 @@
 /** @jest-environment node */
-import { getPurchasedChapterId, getPurchasedChapterIds } from '../courseAccessUtils';
+import { isChapterOrderItem, getPurchasedChapterId, getPurchasedChapterIds } from '../courseAccessUtils';
 import { checkCourseAccess } from '../ordersApi';
 
 const course = { id: 189, slug: 'az-khak-ta-aflak' };
 const item = { id: 1824, courseId: 189, chapterId: 589, slug: 'az-khak-ta-aflak-chapter-589' };
 const paid = items => ({ orderStatus: 'paid', paymentStatus: 'paid', items });
+
+test.each([null, undefined, false, 'invalid', 42])('قلم نامعتبر %p مجوز نمی‌سازد', value => {
+  expect(isChapterOrderItem(value)).toBe(false);
+  expect(getPurchasedChapterId(value, course.id, course.slug)).toBeNull();
+});
+
+test.each([null, undefined, {}, 'invalid'])('فهرست نامعتبر %p متوقف نمی‌شود', orders => {
+  expect(getPurchasedChapterIds(orders, course)).toEqual([]);
+});
+
+test.each([null, undefined, {}])('دوره نامعتبر %p مجوز نمی‌سازد', value => {
+  expect(getPurchasedChapterIds([paid([item])], value)).toEqual([]);
+});
+
+test('اقلام خراب و سفارش خالی بدون خطا نادیده گرفته می‌شوند', () => {
+  expect(getPurchasedChapterIds([null, paid(null), paid({}), paid([null, item])], course)).toEqual(['589']);
+});
 
 test('قالب واقعی کپی دیتابیس فقط شناسه فصل را برمی‌گرداند', () => {
   expect(getPurchasedChapterIds([paid([item])], course)).toEqual(['589']);

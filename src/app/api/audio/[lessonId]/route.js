@@ -10,11 +10,7 @@
  * 4. استریم بایت به بایت فایل صوتی از هاست دانلود با پشتیبانی از Range Request (جهت عقب/جلو بردن در پلیر و دانلود)
  */
 
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { checkCourseAccess } from '@/lib/ordersApi';
-import { getDiscountedCoursePrice } from '@/lib/coursePricing';
-import { isIranianPhoneNumber } from '@/lib/phoneUtils';
+import { resolveAudioAccess } from '@/lib/lessonAccess';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -119,94 +115,6 @@ async function findLessonFromStrapi(lessonId, cid) {
   } catch {}
 
   return null;
-}
-
-/**
- * بررسی دسترسی خرید کاربر برای جلسات غیررایگان
- */
-async function verifyAccess(session, lessonData) {
-  if (lessonData.isFree) {
-    return { allowed: true };
-  }
-
-  const role = String(session.user?.role?.type || session.user?.role || '').toLowerCase();
-  const isAdmin = ['administrator', 'admin', 'mentor', 'استاد'].includes(role);
-  if (isAdmin) {
-    return { allowed: true };
-  }
-
-  const course = lessonData.course;
-  if (!course) {
-    return { allowed: false, error: 'دوره یافت نشد.' };
-  }
-
-  // بررسی وضعیت خرید از طریق تابع مرجع ordersApi
-  const courseId = course.id;
-  const courseSlug = course.slug;
-  const { hasAccess, purchasedChapterIds } = await checkCourseAccess(
-    session.user.id,
-    courseId,
-    courseSlug,
-    session.user
-  );
-
-  // ۱. اگر کل دوره خریداری شده باشد
-  if (hasAccess) {
-    return { allowed: true };
-  }
-
-  // ۲. اگر جلسه داخل یک فصل خاص باشد و آن فصل خریداری شده باشد
-  if (lessonData.chapterId) {
-    const hasChapter = (purchasedChapterIds || []).some(
-      (chId) => String(chId) === String(lessonData.chapterId)
-    );
-    if (hasChapter) {
-      return { allowed: true };
-    }
-  }
-
-  // ۳. فال‌بک به دوره‌های ثبت‌نام‌شده در سشن کاربر
-  const enrolledCourses = session.user?.enrolledCourses || [];
-  const enrolledSlugs = session.user?.enrolledSlugs || [];
-  const enrolledChapters = session.user?.enrolledChapters || [];
-
-  const isEnrolledInCourse =
-    enrolledCourses.some((c) => String(c) === String(courseId) || String(c) === String(course.documentId)) ||
-    enrolledSlugs.some((s) => String(s) === String(courseSlug));
-
-  if (isEnrolledInCourse) {
-    return { allowed: true };
-  }
-
-  if (lessonData.chapterId) {
-    const isEnrolledInChapter = enrolledChapters.some(
-      (ch) => String(ch) === String(lessonData.chapterId)
-    );
-    if (isEnrolledInChapter) {
-      return { allowed: true };
-    }
-  }
-
-  return { allowed: false, error: 'شما این دوره یا فصل را خریداری نکرده‌اید.' };
-}
-
-// GET و HEAD باید در قیمت مؤثر، سشن و مالکیت دقیقاً یک تصمیم بگیرند.
-async function resolveAudioAccess(lessonData) {
-  if (lessonData.isFree) return { allowed: true };
-  const isFreeCourse = hasZeroPrice(getDiscountedCoursePrice(lessonData.course));
-  const hasInternationalPrice = Number(lessonData.course.internationalPrice) > 0;
-  if (isFreeCourse && !hasInternationalPrice) return { allowed: true };
-
-  const session = await getServerSession(authOptions);
-  const user = session?.user;
-  const usesInternationalPrice = hasInternationalPrice && Boolean(user?.is_foreigner ||
-    (user?.phoneNumber && !isIranianPhoneNumber(user.phoneNumber)));
-  if (isFreeCourse && !usesInternationalPrice) return { allowed: true };
-  if (!user?.id) {
-    return { allowed: false, status: 401, error: 'برای دسترسی به این فایل باید ابتدا وارد حساب کاربری خود شوید.' };
-  }
-  const access = await verifyAccess(session, lessonData);
-  return { ...access, status: access.allowed ? 200 : 403 };
 }
 
 export async function GET(request, { params }) {
