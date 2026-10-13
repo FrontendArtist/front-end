@@ -110,18 +110,22 @@ export default function UserStatus() {
         }
     };
 
-    const [profileData, setProfileData] = useState(null);
+    const [profileResult, setProfileData] = useState(null);
+    const profileData = status === 'authenticated' && profileResult?.userId === String(session?.user?.id)
+        ? profileResult.data : null;
 
     // ── fetch اطلاعات پروفایل با کش مشترک برای جلوگیری از فچ‌های همزمان ──────
     useEffect(() => {
+        let active = true;
+        setProfileData(null);
         if (status !== 'authenticated') return;
 
         const loadProfile = async (force = false) => {
             try {
                 if (force) invalidateProfileCache();
-                const data = await fetchProfileCartData(force);
-                if (data) {
-                    setProfileData(data);
+                const data = await fetchProfileCartData(force, session?.user?.id);
+                if (active && data) {
+                    setProfileData({ userId: String(session?.user?.id), data });
                 }
             } catch {
                 // بی‌صدا رد می‌شویم
@@ -132,8 +136,8 @@ export default function UserStatus() {
 
         const handleProfileUpdated = () => loadProfile(true);
         window.addEventListener('profile-updated', handleProfileUpdated);
-        return () => window.removeEventListener('profile-updated', handleProfileUpdated);
-    }, [status]);
+        return () => { active = false; window.removeEventListener('profile-updated', handleProfileUpdated); };
+    }, [status, session?.user?.id]);
 
     // آپدیت موجودی نور بعد از بستن مدال (در صورت پرداخت موفق)
     const handleLightModalClose = useCallback(() => {

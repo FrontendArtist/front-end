@@ -3,11 +3,11 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
-import { useOrdersStore } from '@/store/useOrdersStore';
+import { useAccountOrders } from '@/hooks/useAccountOrders';
 import styles from './OrdersList.module.scss';
 
 export default function OrdersList({ limit }) {
-    const { orders, isLoading, error, fetchOrders, hasFetched } = useOrdersStore();
+    const { orders, isLoading, error, fetchOrders, hasFetched } = useAccountOrders();
 
     useEffect(() => {
         if (!hasFetched) {

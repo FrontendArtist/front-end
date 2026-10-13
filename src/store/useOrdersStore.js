@@ -1,51 +1,44 @@
 import { create } from 'zustand';
 import { fetchClientOrders } from '@/lib/client/ordersClientApi';
-
-let inFlightPromise = null;
-
+const EMPTY_ORDERS = [];
+let generation = 0;
+let inFlight = null;
+export const selectAccountOrders = (state, userId) =>
+    userId != null && state.userId === String(userId) ? state.orders : EMPTY_ORDERS;
 export const useOrdersStore = create((set, get) => ({
-    orders: [],
-    isLoading: false,
-    error: null,
-    hasFetched: false,
-
-    fetchOrders: async (force = false) => {
-        // اگر قبلاً فچ شده و نیازی به رفرش اجباری نیست، از دیتای موجود استفاده کن
+    userId: null, orders: [], isLoading: false, error: null, hasFetched: false,
+    setOrdersUser: (userId) => {
+        const nextId = userId == null ? null : String(userId);
+        if (get().userId === nextId) return;
+        generation++;
+        inFlight = null;
+        set({ userId: nextId, orders: [], isLoading: false, error: null, hasFetched: false });
+    },
+    fetchOrders: async (force = false, userId = get().userId) => {
+        if (userId == null || String(userId) !== get().userId) return [];
         if (get().hasFetched && !force) return get().orders;
-
-        // اگر درخواستی در حال ارسال به شبکه است، به همان متصل شو و درخواست جدید نساز
-        if (inFlightPromise) {
-            return inFlightPromise;
-        }
-
+        if (inFlight) return inFlight.promise;
+        const request = { generation };
+        const isCurrent = () => request.generation === generation;
         set({ isLoading: true, error: null });
-
-        inFlightPromise = (async () => {
+        request.promise = (async () => {
             try {
                 const result = await fetchClientOrders();
-                const ordersData = result.data || result || [];
-                
-                set({ 
-                    orders: ordersData, 
-                    hasFetched: true, 
-                    isLoading: false 
-                });
-                return ordersData;
+                if (!isCurrent()) return [];
+                const orders = result.data || result || [];
+                set({ orders, hasFetched: true, isLoading: false });
+                return orders;
             } catch (err) {
-                set({ 
-                    error: err.message, 
-                    isLoading: false 
-                });
+                if (!isCurrent()) return [];
+                set({ error: err.message, isLoading: false });
                 return get().orders;
             } finally {
-                inFlightPromise = null;
+                // پاسخ نشست قبلی نباید درخواست نشست فعلی را آزاد کند.
+                if (inFlight === request) inFlight = null;
             }
         })();
-
-        return inFlightPromise;
+        inFlight = request;
+        return request.promise;
     },
-
-    invalidateOrders: () => {
-        set({ hasFetched: false });
-    }
+    invalidateOrders: () => set({ hasFetched: false }),
 }));

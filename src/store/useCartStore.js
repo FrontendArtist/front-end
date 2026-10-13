@@ -220,10 +220,10 @@ export const useCartStore = create(
               */
             setCartUser: (newUserId) => {
                 const currentUserId = get().userId;
-                if (currentUserId && newUserId && String(currentUserId) !== String(newUserId)) {
-                    set({ items: [], appliedCoupon: null, userId: newUserId });
+                if (currentUserId != null && String(currentUserId) !== String(newUserId)) {
+                    set({ items: [], appliedCoupon: null, userId: newUserId, hydratedUserId: null });
                 } else {
-                    set({ userId: newUserId });
+                    set({ userId: newUserId, hydratedUserId: null });
                 }
             },
 

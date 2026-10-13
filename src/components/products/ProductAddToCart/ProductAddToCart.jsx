@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
-import { useOrdersStore } from '@/store/useOrdersStore';
+import { useAccountOrders } from '@/hooks/useAccountOrders';
 import styles from './ProductAddToCart.module.scss';
 
 /**
@@ -26,8 +26,9 @@ export default function ProductAddToCart({ product }) {
         setIsHydrated(true);
     }, []);
 
-    const pendingOrder = useOrdersStore((state) => {
-        return state.orders.find((order) => {
+    const { orders } = useAccountOrders();
+  const pendingOrder = (() => {
+        return orders.find((order) => {
             const oStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
             const pStatus = (order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
             const isPaid = oStatus === 'paid' || pStatus === 'paid' || ['shipped', 'delivered'].includes(oStatus);
@@ -46,7 +47,7 @@ export default function ProductAddToCart({ product }) {
                 String(item.productId) === String(id)
             );
         });
-    });
+    })();
 
     const addItem = useCartStore((state) => state.addItem);
     const updateQuantity = useCartStore((state) => state.updateQuantity);

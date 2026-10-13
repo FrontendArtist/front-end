@@ -1,9 +1,11 @@
 // src/app/providers.jsx
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { SessionProvider, useSession } from "next-auth/react";
 import { useCartStore } from '@/store/useCartStore';
+import { useOrdersStore } from '@/store/useOrdersStore';
+import { setProfileUser } from '@/lib/client/profileClientApi';
 
 /**
  * همگام‌ساز سبد خرید با نشست کاربر جهت جلوگیری از Session Fixation و نشت داده
@@ -11,10 +13,11 @@ import { useCartStore } from '@/store/useCartStore';
 function CartSessionSync() {
   const { data: session, status } = useSession();
 
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.id) {
-      useCartStore.getState().setCartUser(session.user.id);
-    }
+  useLayoutEffect(() => {
+    const userId = status === 'authenticated' ? session?.user?.id : null;
+    useOrdersStore.getState().setOrdersUser(userId);
+    setProfileUser(userId);
+    if (status !== 'loading') useCartStore.getState().setCartUser(userId);
   }, [session?.user?.id, status]);
 
   return null;
@@ -44,4 +47,4 @@ export function Providers({ children }) {
       {children}
     </SessionProvider>
   );
-}
+}

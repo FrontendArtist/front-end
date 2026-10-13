@@ -3,12 +3,12 @@ import { useSession } from "next-auth/react";
 import { useCartStore } from "@/store/useCartStore";
 import { fetchProfileCartData, updateProfileCartData } from "@/lib/client/profileClientApi";
 import { isIranianPhoneNumber } from "@/lib/phoneUtils";
-import { useOrdersStore } from "@/store/useOrdersStore";
+import { useAccountOrders } from '@/hooks/useAccountOrders';
 import { isOrderPaid } from "@/lib/constants/orderConstants";
 
 const useCartSync = () => {
   const { data: session, status } = useSession();
-  const orders = useOrdersStore((state) => state.orders);
+  const orders = useAccountOrders().orders;
 
   const cartState = useCartStore((state) => state);
   const items = cartState.items;
@@ -34,8 +34,8 @@ const useCartSync = () => {
       if (status !== 'authenticated' || !userId) return;
       const initialItems = useCartStore.getState().items;
       try {
-        const profile = await fetchProfileCartData(true);
-        if (!active) return;
+        const profile = await fetchProfileCartData(true, userId);
+        if (!active || !profile || String(useCartStore.getState().userId) !== String(userId)) return;
         const current = useCartStore.getState();
         if (initialItems.length === 0 && current.items === initialItems && Array.isArray(profile.cartData?.state?.items)) {
           useCartStore.setState({ items: profile.cartData.state.items, appliedCoupon: null });
@@ -56,7 +56,7 @@ const useCartSync = () => {
 
   // ۲. پاکسازی دائمی و آنی دوره‌ها و فصل‌های خریداری‌شده پس از پرداخت آنلاین یا تغییر وضعیت کاربر
   useEffect(() => {
-    if (status !== 'authenticated') return;
+    if (status !== 'authenticated' || String(useCartStore.getState().userId) !== String(userId)) return;
 
     const enrolledCourses = (session?.user?.enrolledCourses || []).map(Number);
     const enrolledSlugs = [...(session?.user?.enrolledSlugs || [])];
@@ -100,7 +100,7 @@ const useCartSync = () => {
         const currentItems = currentCart.items || [];
 
         if (currentItems.length === 0) {
-          await updateProfileCartData(null);
+          await updateProfileCartData(null, userId);
         } else {
           const cartDataPayload = {
             state: {
@@ -112,7 +112,7 @@ const useCartSync = () => {
             updatedAt: new Date().toISOString(),
           };
 
-          await updateProfileCartData(cartDataPayload);
+          await updateProfileCartData(cartDataPayload, userId);
         }
 
         console.log("💾 Cart synced to server successfully");
