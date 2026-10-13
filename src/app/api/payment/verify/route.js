@@ -257,6 +257,7 @@ async function handlePaymentVerification(params, request) {
     const orderUpdatePayload = {
         orderStatus: ORDER_STATUS.PAID,
         paymentStatus: PAYMENT_STATUS.PAID,
+        rejectionReason: null,
         trackingNumber: finalTraceNo,
         // فیلدهای اختصاصی ساختاریافته سپ
         refNum: refNum,

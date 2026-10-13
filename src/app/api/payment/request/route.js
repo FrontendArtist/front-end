@@ -87,6 +87,15 @@ export async function POST(request) {
             );
         }
 
+        const orderStatus = order.orderStatus || order.attributes?.orderStatus;
+        const paymentStatus = order.paymentStatus || order.attributes?.paymentStatus;
+        if (orderStatus !== 'pending' || paymentStatus !== 'pending_payment') {
+            return NextResponse.json(
+                { success: false, message: 'این سفارش دیگر قابل پرداخت نیست؛ پرداخت را از سبد خرید ادامه دهید.' },
+                { status: 400 }
+            );
+        }
+
         // 4. محاسبه مبلغ قابل پرداخت به ریال (تبدیل تومان به ریال: ضرب در 10)
         const tomanPrice = Number(order.totalPrice || order.attributes?.totalPrice || 0);
         if (tomanPrice <= 0) {
