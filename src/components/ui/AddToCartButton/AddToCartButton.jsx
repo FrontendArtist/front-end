@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
-import { useAccountOrders } from '@/hooks/useAccountOrders';
+import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 import styles from './AddToCartButton.module.scss';
 
@@ -29,7 +29,7 @@ export default function AddToCartButton({ course }) {
     setIsHydrated(true);
   }, []);
 
-  const { orders } = useAccountOrders();
+  const orders = useAccountOrderItems();
   const pendingOrder = (() => {
     return orders.find((order) => {
       const oStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();

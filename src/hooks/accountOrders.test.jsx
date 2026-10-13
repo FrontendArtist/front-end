@@ -1,5 +1,6 @@
 import React from 'react';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { useAccountOrders, useAccountOrderItems } from './useAccountOrders';
 import { Providers } from '@/app/providers';
 import OrdersList from '@/components/profile/OrdersList';
 import CourseCard from '@/components/cards/CourseCard/CourseCard';
@@ -77,4 +78,30 @@ test('پس از حذف یکی از مشترکان، رفرش تب فقط برا�
   expect(fetchClientOrders).toHaveBeenCalledTimes(count+1);
   expect(useOrdersStore.getState().userId).toBe('2');
  } finally {clock.mockRestore();visibility.mockRestore();}
+});
+
+test('مصرف‌کنندهٔ صرفاً سفارش با تغییر بارگذاری و خطا رندر مجدد نمی‌شود',()=>{
+ useOrdersStore.getState().setOrdersUser(1);
+ useOrdersStore.setState({orders:[paid(11,course)],hasFetched:true});
+ let renders=0;
+ const data=renderHook(()=>{renders++;return useAccountOrderItems();});
+ const count=renders;
+ act(()=>useOrdersStore.setState({isLoading:true,error:'خطای آزمایشی'}));
+ act(()=>useOrdersStore.setState({isLoading:false,error:null}));
+ expect(renders).toBe(count);expect(data.result.current).toEqual([paid(11,course)]);
+ act(()=>useOrdersStore.setState({orders:[paid(22,other)]}));
+ expect(renders).toBeGreaterThan(count);expect(data.result.current).toEqual([paid(22,other)]);
+});
+test('فهرست کامل همچنان تغییر بارگذاری و خطا را دریافت می‌کند',()=>{
+ useOrdersStore.getState().setOrdersUser(1);useOrdersStore.setState({hasFetched:true});
+ const data=renderHook(()=>useAccountOrders());
+ act(()=>useOrdersStore.setState({isLoading:true,error:'خطای آزمایشی'}));
+ expect(data.result.current).toMatchObject({isLoading:true,error:'خطای آزمایشی'});
+});
+test('مصرف‌کنندهٔ صرفاً سفارش پس از بی‌اعتبارشدن حافظه همچنان دوباره دریافت می‌کند',async()=>{
+ useOrdersStore.getState().setOrdersUser(1);useOrdersStore.setState({orders:[],hasFetched:true});
+ fetchClientOrders.mockResolvedValue({data:[paid(22,other)]});
+ const data=renderHook(()=>useAccountOrderItems());
+ await act(async()=>useOrdersStore.getState().invalidateOrders());
+ expect(fetchClientOrders).toHaveBeenCalledTimes(1);expect(data.result.current).toEqual([paid(22,other)]);
 });

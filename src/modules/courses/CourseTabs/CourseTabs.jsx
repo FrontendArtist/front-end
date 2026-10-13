@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
 import { useSession } from 'next-auth/react';
-import { useAccountOrders } from '@/hooks/useAccountOrders';
+import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import CourseContentManager from '../CourseContentManager';
 import ArticleReader from '@/app/articles/[slug]/ArticleReader';
@@ -20,7 +20,7 @@ import styles from './CourseTabs.module.scss';
  */
 export default function CourseTabs({ course, parsedContent, customStyles, isPurchased: propIsPurchased }) {
   const { data: session, status } = useSession();
-  const orders = useAccountOrders().orders;
+  const orders = useAccountOrderItems();
 
   // بررسی وضعیت خرید دوره توسط کاربر
   const isPurchased = useMemo(() => {

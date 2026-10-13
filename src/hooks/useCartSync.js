@@ -3,12 +3,12 @@ import { useSession } from "next-auth/react";
 import { useCartStore } from "@/store/useCartStore";
 import { fetchProfileCartData, updateProfileCartData } from "@/lib/client/profileClientApi";
 import { isIranianPhoneNumber } from "@/lib/phoneUtils";
-import { useAccountOrders } from '@/hooks/useAccountOrders';
+import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isOrderPaid } from "@/lib/constants/orderConstants";
 
 const useCartSync = () => {
   const { data: session, status } = useSession();
-  const orders = useAccountOrders().orders;
+  const orders = useAccountOrderItems();
 
   const cartState = useCartStore((state) => state);
   const items = cartState.items;

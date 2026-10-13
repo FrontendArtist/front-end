@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import clsx from 'clsx';
 import useAuthStore from '@/store/authStore';
-import { useAccountOrders } from '@/hooks/useAccountOrders';
+import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { useCartStore } from '@/store/useCartStore';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import { getPurchasedChapterIds } from '@/lib/courseAccessUtils';
@@ -46,7 +46,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
   // دریافت سفارشات از Zustand
-  const orders = useAccountOrders().orders;
+  const orders = useAccountOrderItems();
 
   // اکشن افزوده به سبد خرید و لیست آیتم‌ها از Zustand useCartStore
   const addItem = useCartStore((state) => state.addItem);

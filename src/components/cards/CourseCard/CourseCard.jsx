@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { useAccountOrders } from '@/hooks/useAccountOrders';
+import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
@@ -45,7 +45,7 @@ const CourseCard = ({ course }) => {
 
   const [isHydrated, setIsHydrated] = useState(false);
 
-  const { orders } = useAccountOrders();
+  const orders = useAccountOrderItems();
   const isPurchasedInOrders = (() => {
     const paidOrders = orders.filter(isOrderPaid);
 
