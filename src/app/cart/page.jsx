@@ -21,7 +21,7 @@ import {
 import useAuthStore from '@/store/authStore';
 import { executeOnlinePayment } from '@/lib/checkoutService';
 import usePaymentProcessing from '@/hooks/usePaymentProcessing';
-import PaymentConnectionNotice from '@/components/checkout/PaymentConnectionNotice';
+import { checkPaymentConnection, invalidatePaymentConnection } from '@/lib/client/paymentConnection';
 import styles from './Cart.module.scss';
 
 /**
@@ -55,6 +55,7 @@ export default function CartPage() {
 
     const [isProcessing, setIsProcessing] = usePaymentProcessing();
     const [errorMessage, setErrorMessage] = useState(null);
+    const [isCheckingVpn, setIsCheckingVpn] = useState(false);
 
     // دریافت داده‌ها و توابع از Store
     const items = useCartStore((state) => state.items);
@@ -76,6 +77,9 @@ export default function CartPage() {
      */
     const handleStartPayment = async () => {
         setIsProcessing(true);
+        if (errorMessage && errorMessage.includes('فیلترشکن')) {
+            invalidatePaymentConnection();
+        }
         setErrorMessage(null);
         try {
             await executeOnlinePayment({
@@ -90,6 +94,28 @@ export default function CartPage() {
             console.error('Payment Error:', err);
             setErrorMessage(err.message || 'خطا در ارتباط با درگاه پرداخت. لطفاً مجدداً تلاش کنید.');
             setIsProcessing(false);
+        }
+    };
+
+    /**
+     * بررسی مجدد اتصال و وضعیت فیلترشکن
+     */
+    const handleRecheckVpn = async () => {
+        if (isCheckingVpn) return;
+        setIsCheckingVpn(true);
+        try {
+            const result = await checkPaymentConnection({ refresh: true });
+            if (result?.isVpn === false) {
+                setErrorMessage(null);
+            } else if (result?.isVpn === true) {
+                setErrorMessage('فیلترشکن شما روشن است');
+            } else {
+                setErrorMessage(null);
+            }
+        } catch {
+            setErrorMessage(null);
+        } finally {
+            setIsCheckingVpn(false);
         }
     };
 
@@ -442,14 +468,60 @@ export default function CartPage() {
                                 color: '#fca5a5',
                                 fontSize: '0.85rem',
                                 marginTop: '10px',
-                                textAlign: 'center',
-                                lineHeight: '1.5'
+                                lineHeight: '1.5',
+                                ...(errorMessage.includes('فیلترشکن') ? {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '12px',
+                                    textAlign: 'right',
+                                } : {
+                                    textAlign: 'center',
+                                }),
                             }}>
-                                {errorMessage}
+                                {errorMessage.includes('فیلترشکن') ? (
+                                    <>
+                                        <span>فیلترشکن شما روشن است</span>
+                                        <button
+                                            type="button"
+                                            onClick={handleRecheckVpn}
+                                            disabled={isCheckingVpn}
+                                            style={{
+                                                padding: '4px 10px',
+                                                fontSize: '0.8rem',
+                                                backgroundColor: 'rgba(239, 68, 68, 0.25)',
+                                                border: '1px solid #ef4444',
+                                                borderRadius: '6px',
+                                                color: '#fef2f2',
+                                                cursor: isCheckingVpn ? 'wait' : 'pointer',
+                                                whiteSpace: 'nowrap',
+                                                opacity: isCheckingVpn ? 0.7 : 1,
+                                                transition: 'opacity 0.2s',
+                                                flexShrink: 0,
+                                            }}
+                                        >
+                                            {isCheckingVpn ? 'در حال بررسی...' : 'بررسی مجدد'}
+                                        </button>
+                                    </>
+                                ) : (
+                                    errorMessage
+                                )}
                             </div>
                         )}
 
-                        {!hasPhysicalProducts && finalTotalPrice > 0 && <PaymentConnectionNotice />}
+                        {/* پیام هشدار خاموش بودن VPN برای پرداخت آنلاین */}
+                        {!hasPhysicalProducts && finalTotalPrice > 0 && (
+                            <div className={styles.vpnNotice}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                <span>
+                                    <strong>توجه:</strong> پیش از اتصال به درگاه بانکی، لطفاً <strong>فیلترشکن (VPN)</strong> خود را خاموش کنید.
+                                </span>
+                            </div>
+                        )}
 
                         {/* دکمه پرداخت یا ادامه تسویه حساب */}
                         <button

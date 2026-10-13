@@ -1,7 +1,7 @@
 export const CONNECTION_TTL_MS = 2 * 60 * 1000;
 export const CONNECTION_RETRY_MS = 10000;
 const UNKNOWN_TTL_MS = 10000;
-export const CONNECTION_BLOCKED_MESSAGE = 'برای ورود به درگاه، فیلترشکن را خاموش کنید و با اینترنت ایران دوباره بررسی کنید.';
+export const CONNECTION_BLOCKED_MESSAGE = 'فیلترشکن شما روشن است';
 export const CONNECTION_ERROR_MESSAGE = 'وضعیت اتصال مشخص نشد؛ می‌توانید پرداخت را ادامه دهید یا دوباره بررسی کنید.';
 
 let cached = null;

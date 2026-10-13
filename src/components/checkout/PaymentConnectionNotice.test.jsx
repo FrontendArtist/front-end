@@ -9,7 +9,7 @@ afterEach(() => jest.restoreAllMocks());
 test('هنگام نمایش صفحه بررسی می‌کند و بعد از خاموش کردن VPN می‌توان دوباره بررسی کرد', async () => {
     fetch.mockResolvedValueOnce(response(true));
     render(<PaymentConnectionNotice />);
-    await screen.findByText(/با اینترنت ایران دوباره بررسی کنید/);
+    await screen.findByText(/فیلترشکن شما روشن است/);
     fireEvent.click(screen.getByRole('button', { name: 'بررسی مجدد اتصال' }));
     await screen.findByText(/اتصال بررسی شد/);
     expect(screen.queryByRole('button', { name: 'بررسی مجدد اتصال' })).toBeNull();
@@ -33,8 +33,8 @@ test('خطای بررسی پیام جداگانه دارد و تغییر فوک�
 test('بررسی دستی ناموفق تا پایان فاصلهٔ مجاز دوباره ارسال نمی‌شود', async () => {
     fetch.mockResolvedValue(response(true));
     render(<PaymentConnectionNotice />);
-    await screen.findByText(/با اینترنت ایران دوباره بررسی کنید/);
+    await screen.findByText(/فیلترشکن شما روشن است/);
     fireEvent.click(screen.getByRole('button', { name: 'بررسی مجدد اتصال' }));
-    await screen.findByText(/با اینترنت ایران دوباره بررسی کنید/);
+    await screen.findByText(/فیلترشکن شما روشن است/);
     expect(screen.getByRole('button', { name: 'چند لحظه صبر کنید' }).disabled).toBe(true);
 });

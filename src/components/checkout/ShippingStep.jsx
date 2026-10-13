@@ -13,7 +13,7 @@ import {
 import { formatPrice } from '@/lib/formatters';
 import { executeOnlinePayment } from '@/lib/checkoutService';
 import usePaymentProcessing from '@/hooks/usePaymentProcessing';
-import PaymentConnectionNotice from './PaymentConnectionNotice';
+import { checkPaymentConnection, invalidatePaymentConnection } from '@/lib/client/paymentConnection';
 import styles from './ShippingStep.module.scss';
 
 /**
@@ -38,6 +38,7 @@ export default function ShippingStep({ onPrevious }) {
     const [saving, setSaving] = useState(false);
     const [isProcessing, setIsProcessing] = usePaymentProcessing();
     const [error, setError] = useState('');
+    const [isCheckingVpn, setIsCheckingVpn] = useState(false);
 
     const [addressData, setAddressData] = useState({
         recipientName: '',
@@ -158,6 +159,9 @@ export default function ShippingStep({ onPrevious }) {
         ].filter(Boolean).join(' - ') +
         ` (گیرنده: ${addressData.recipientName}${addressData.recipientPhone ? ` - تلفن: ${addressData.recipientPhone}` : ''}${addressData.postalCode ? ` - کدپستی: ${addressData.postalCode}` : ''})`;
 
+        if (error && error.includes('فیلترشکن')) {
+            invalidatePaymentConnection();
+        }
         setIsProcessing(true);
         try {
             await executeOnlinePayment({
@@ -172,6 +176,28 @@ export default function ShippingStep({ onPrevious }) {
             console.error('Payment Error:', err);
             setError(err.message || 'خطا در اتصال به درگاه پرداخت شاپرک. لطفاً مجدداً تلاش کنید.');
             setIsProcessing(false);
+        }
+    };
+
+    /**
+     * بررسی مجدد اتصال و وضعیت فیلترشکن
+     */
+    const handleRecheckVpn = async () => {
+        if (isCheckingVpn) return;
+        setIsCheckingVpn(true);
+        try {
+            const result = await checkPaymentConnection({ refresh: true });
+            if (result?.isVpn === false) {
+                setError('');
+            } else if (result?.isVpn === true) {
+                setError('فیلترشکن شما روشن است');
+            } else {
+                setError('');
+            }
+        } catch {
+            setError('');
+        } finally {
+            setIsCheckingVpn(false);
         }
     };
 
@@ -372,9 +398,59 @@ export default function ShippingStep({ onPrevious }) {
                 </div>
             </div>
 
-            {error && <div className={styles.error}>{error}</div>}
+            {error && (
+                <div
+                    className={styles.error}
+                    style={error.includes('فیلترشکن') ? {
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        textAlign: 'right',
+                    } : {}}
+                >
+                    {error.includes('فیلترشکن') ? (
+                        <>
+                            <span>فیلترشکن شما روشن است</span>
+                            <button
+                                type="button"
+                                onClick={handleRecheckVpn}
+                                disabled={isCheckingVpn}
+                                style={{
+                                    padding: '4px 10px',
+                                    fontSize: '0.8rem',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+                                    border: '1px solid #ef4444',
+                                    borderRadius: '6px',
+                                    color: '#fef2f2',
+                                    cursor: isCheckingVpn ? 'wait' : 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    opacity: isCheckingVpn ? 0.7 : 1,
+                                    flexShrink: 0,
+                                }}
+                            >
+                                {isCheckingVpn ? 'در حال بررسی...' : 'بررسی مجدد'}
+                            </button>
+                        </>
+                    ) : (
+                        error
+                    )}
+                </div>
+            )}
 
-            {finalTotalPrice > 0 && <PaymentConnectionNotice />}
+            {/* پیام هشدار خاموش بودن VPN برای پرداخت آنلاین */}
+            {finalTotalPrice > 0 && (
+                <div className={styles.vpnNotice}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span>
+                        <strong>توجه:</strong> درگاه‌های بانکی شاپرک با فیلترشکن باز نمی‌شوند. لطفاً قبل از کلیک روی پرداخت، <strong>فیلترشکن (VPN)</strong> خود را خاموش فرمایید.
+                    </span>
+                </div>
+            )}
 
             <div className={styles.actions}>
                 <button
