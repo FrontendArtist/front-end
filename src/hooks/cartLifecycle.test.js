@@ -16,7 +16,7 @@ const otherChapter = { id: 'chapter-3', chapterId: 3, courseId: 8, type: 'chapte
 beforeEach(() => {
     jest.clearAllMocks();
     useCartStore.setState({ items: [], hydratedUserId: null, processedOrders: {}, userId: 7 });
-    useOrdersStore.setState({ orders: [] });
+    useOrdersStore.setState({ userId: '7', hasFetched: true, orders: [] });
 });
 afterEach(() => jest.useRealTimers());
 
@@ -46,7 +46,7 @@ test('پاسخ کند پروفایل باعث ذخیره سبد خالی نمی�
     await act(async () => { resolve({ cartData: { state: { items: [course] } } }); });
     expect(useCartStore.getState().items).toEqual([course]);
     await act(async () => { jest.advanceTimersByTime(2000); });
-    expect(updateProfileCartData).toHaveBeenCalledWith(expect.objectContaining({ state: expect.objectContaining({ items: [course] }) }));
+    expect(updateProfileCartData).toHaveBeenCalledWith(expect.objectContaining({ state: expect.objectContaining({ items: [course] }) }), 7);
     unmount();
 });
 
@@ -63,7 +63,7 @@ test('پاسخ دیرهنگام اقلامی را که کاربر اضافه ک�
 test('خرید فصل، دوره و فصل دیگر را از سبد حذف نمی‌کند', async () => {
     fetchProfileCartData.mockResolvedValue({ cartData: null });
     useCartStore.setState({ items: [course, chapter, otherChapter] });
-    useOrdersStore.setState({ orders: [{ paymentStatus: 'paid', items: [{ __component: 'order.course-order-item', courseId: 8, chapterId: 2 }] }] });
+    useOrdersStore.setState({ userId: '7', hasFetched: true, orders: [{ paymentStatus: 'paid', items: [{ __component: 'order.course-order-item', courseId: 8, chapterId: 2 }] }] });
     const { unmount } = renderHook(() => useCartSync());
     await waitFor(() => expect(useCartStore.getState().hydratedUserId).toBe(7));
     expect(useCartStore.getState().items).toEqual([course, otherChapter]);

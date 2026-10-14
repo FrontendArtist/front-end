@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { paymentAuthOptions } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { requestSepToken, SEP_GATEWAY_ACTION_URL } from '@/lib/sepPayment';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
@@ -35,7 +35,7 @@ export async function POST(request) {
         return NextResponse.json({ success: false, message: mockEnvironmentError }, { status: 400 });
     }
     // 1. بررسی سشن و هویت کاربر
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(paymentAuthOptions);
     if (!session?.user?.id) {
         return NextResponse.json(
             { success: false, message: 'برای انجام پرداخت باید وارد حساب کاربری خود شوید.' },
@@ -104,7 +104,8 @@ export async function POST(request) {
         }
 
         // 2. استعلام سفارش از استراپی و اعتبارسنجی مالکیت سفارش
-        let strapiUrl = `${STRAPI_BASE_URL}/api/orders?filters[documentId][$eq]=${encodeURIComponent(orderId)}&populate=*`;
+        const orderQuery = 'fields[0]=totalPrice&fields[1]=paymentStatus&fields[2]=orderStatus&fields[3]=phone&populate[user][fields][0]=id';
+        const strapiUrl = `${STRAPI_BASE_URL}/api/orders?filters[documentId][$eq]=${encodeURIComponent(orderId)}&${orderQuery}`;
         let res = await fetch(strapiUrl, {
             headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
             cache: 'no-store',
@@ -119,7 +120,7 @@ export async function POST(request) {
 
         // Fallback: اگر با documentId پیدا نشد، با ID عددی بررسی شود
         if (!order && !isNaN(Number(orderId))) {
-            const fallbackUrl = `${STRAPI_BASE_URL}/api/orders/${orderId}?populate=*`;
+            const fallbackUrl = `${STRAPI_BASE_URL}/api/orders/${encodeURIComponent(orderId)}?${orderQuery}`;
             const fallbackRes = await fetch(fallbackUrl, {
                 headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
                 cache: 'no-store',
@@ -139,7 +140,7 @@ export async function POST(request) {
 
         // بررسی مالکیت سفارش توسط کاربر لاگین‌شده
         const orderUserId = order.user?.id || order.attributes?.user?.data?.id;
-        if (orderUserId && String(orderUserId) !== String(session.user.id)) {
+        if (!orderUserId || String(orderUserId) !== String(session.user.id)) {
             return NextResponse.json(
                 { success: false, message: 'شما دسترسی به این سفارش ندارید.' },
                 { status: 403 }
@@ -150,6 +151,15 @@ export async function POST(request) {
         if (isOrderPaid(order)) {
             return NextResponse.json(
                 { success: false, message: 'این سفارش قبلاً با موفقیت پرداخت و تسویه شده است.' },
+                { status: 400 }
+            );
+        }
+
+        const orderStatus = order.orderStatus || order.attributes?.orderStatus;
+        const paymentStatus = order.paymentStatus || order.attributes?.paymentStatus;
+        if (orderStatus !== 'pending' || paymentStatus !== 'pending_payment') {
+            return NextResponse.json(
+                { success: false, message: 'سفارش انتخاب‌شده لغو یا بسته شده است. لطفاً صفحه را تازه‌سازی کنید و دوباره پرداخت را بزنید.' },
                 { status: 400 }
             );
         }

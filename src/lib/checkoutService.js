@@ -1,4 +1,5 @@
 import { PAYMENT_METHOD, PAYMENT_STATUS } from '@/lib/constants/orderConstants';
+import { ensurePaymentConnection } from '@/lib/client/paymentConnection';
 
 /**
  * سرویس متمرکز پرداخت آنلاین
@@ -27,27 +28,13 @@ export async function executeOnlinePayment({
     }
 
     const isFreeOrder = finalTotalPrice === 0;
+    let checkedBeforeOrder = false;
 
     // بررسی اتصال فیلترشکن (VPN) قبل از ورود به درگاه شاپرک
     // درگاه‌های بانکی شاپرک آی‌پی‌های خارجی و VPN را مسدود می‌کنند
     if (!isFreeOrder) {
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 800); // کاهش timeout به ۸۰۰ms
-            const vpnCheckRes = await fetch('/api/check-vpn', { cache: 'no-store', signal: controller.signal });
-            clearTimeout(timeoutId);
-            if (vpnCheckRes.ok) {
-                const vpnData = await vpnCheckRes.json();
-                if (vpnData?.success && vpnData?.isVpn) {
-                    throw new Error('فیلترشکن (VPN) شما روشن است! درگاه‌های پرداخت اینترنتی شاپرک دسترسی با فیلترشکن را مسدود می‌کنند. لطفاً ابتدا فیلترشکن خود را خاموش کرده و سپس دکمه پرداخت را بزنید.');
-                }
-            }
-        } catch (vpnErr) {
-            if (vpnErr.message?.includes('فیلترشکن')) {
-                throw vpnErr;
-            }
-            // timeout یا هر خطای دیگری: بی‌سروصدا رد می‌شود و پرداخت ادامه می‌یابد
-        }
+        await ensurePaymentConnection();
+        checkedBeforeOrder = true;
     }
 
     const paymentMethodToSend = isFreeOrder ? PAYMENT_METHOD.FREE : PAYMENT_METHOD.ONLINE;
@@ -95,6 +82,10 @@ export async function executeOnlinePayment({
     }
 
     // ۴. دریافت توکن پرداخت اینترنتی از درگاه سامان
+    // مبلغ نهایی سرور ممکن است با نمایش قدیمیِ صفر در مرورگر متفاوت باشد.
+    if (!checkedBeforeOrder && Number(order?.totalPrice) > 0) {
+        await ensurePaymentConnection();
+    }
     const tokenResponse = await fetch('/api/payment/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

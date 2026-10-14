@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions, paymentAuthOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { PAYMENT_METHOD } from "@/lib/constants/orderConstants";
@@ -68,7 +68,7 @@ export async function GET(request) {
 // --------------------------------------------------------------------------
 // قیمت و وضعیت مالی در Strapi تعیین می‌شوند؛ مرورگر فقط اقلام را انتخاب می‌کند.
 export async function POST(request) {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(paymentAuthOptions);
     if (!session?.user?.id) {
         return NextResponse.json({ message: 'برای خرید وارد حساب خود شوید.' }, { status: 401 });
     }
@@ -133,7 +133,7 @@ export async function POST(request) {
             return NextResponse.json({ message: result?.error?.message || 'ثبت سفارش انجام نشد.' },
                 { status: orderRes.status });
         }
-        // پاکسازی فقط اقلام سفارش پرداخت‌شده در صفحه نتیجه؛ لغو فقط پس از حذف دستی.
+        // Strapi cancels superseded pending online orders atomically; paid cart items are cleared on the result page.
         try {
             revalidatePath('/profile/orders');
             revalidatePath('/products', 'layout');
@@ -141,7 +141,8 @@ export async function POST(request) {
         } catch (error) {
             console.warn('بازخوانی کش سفارش انجام نشد:', error.message);
         }
-        return NextResponse.json(result, { status: 201 });
+        // Strapi validates current pricing and atomically reuses a matching pending order for 30 minutes.
+        return NextResponse.json(result, { status: orderRes.status === 200 ? 200 : 201 });
     } catch (error) {
         console.error('POST Orders Error:', error);
         return NextResponse.json({ message: 'ثبت سفارش موقتاً در دسترس نیست.' }, { status: 503 });

@@ -3,19 +3,24 @@
  * 
  * جریان کار:
  * 1. واکشی اطلاعات جلسه و دوره از استراپی و استخراج audioUrl واقعی (آدرس CDN هرگز به کلاینت داده نمی‌شود)
- * 2. برای جلسات رایگان (isFree): پخش آزادانه بدون افشای آدرس اصلی CDN
+ * 2. برای جلسه رایگان، فصل صفرمبلغ یا قیمت مؤثر صفر دوره: پخش بدون افشای آدرس اصلی CDN
  * 3. برای جلسات غیررایگان:
  *    - احراز هویت سشن NextAuth (جلوگیری از دسترسی کاربران لاگین‌نشده: 401)
  *    - بررسی دسترسی خرید (کاربر باید کل دوره یا فصل مربوطه را خریده باشد: 403)
  * 4. استریم بایت به بایت فایل صوتی از هاست دانلود با پشتیبانی از Range Request (جهت عقب/جلو بردن در پلیر و دانلود)
  */
 
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { checkCourseAccess } from '@/lib/ordersApi';
+import { resolveAudioAccess } from '@/lib/lessonAccess';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+
+// مقدار خالی یا نامعتبر نباید به‌اشتباه قیمت صفر و مجوز پخش بسازد.
+function hasZeroPrice(price) {
+  if (typeof price !== 'number' && typeof price !== 'string') return false;
+  if (typeof price === 'string' && !price.trim()) return false;
+  return Number(price) === 0;
+}
 
 /**
  * جستجوی امن جلسه و دوره از دیتابیس استراپی (Server-side Only)
@@ -80,7 +85,7 @@ async function findLessonFromStrapi(lessonId, cid) {
             course: c,
             chapterId: ch.id,
             audioUrl: l.audioUrl || null,
-            isFree: Boolean(l.isFree),
+            isFree: Boolean(l.isFree) || hasZeroPrice(ch.price),
           };
         }
       }
@@ -112,75 +117,6 @@ async function findLessonFromStrapi(lessonId, cid) {
   return null;
 }
 
-/**
- * بررسی دسترسی خرید کاربر برای جلسات غیررایگان
- */
-async function verifyAccess(session, lessonData) {
-  if (lessonData.isFree) {
-    return { allowed: true };
-  }
-
-  const role = String(session.user?.role?.type || session.user?.role || '').toLowerCase();
-  const isAdmin = ['administrator', 'admin', 'mentor', 'استاد'].includes(role);
-  if (isAdmin) {
-    return { allowed: true };
-  }
-
-  const course = lessonData.course;
-  if (!course) {
-    return { allowed: false, error: 'دوره یافت نشد.' };
-  }
-
-  // بررسی وضعیت خرید از طریق تابع مرجع ordersApi
-  const courseId = course.id;
-  const courseSlug = course.slug;
-  const { hasAccess, purchasedChapterIds } = await checkCourseAccess(
-    session.user.id,
-    courseId,
-    courseSlug,
-    session.user
-  );
-
-  // ۱. اگر کل دوره خریداری شده باشد
-  if (hasAccess) {
-    return { allowed: true };
-  }
-
-  // ۲. اگر جلسه داخل یک فصل خاص باشد و آن فصل خریداری شده باشد
-  if (lessonData.chapterId) {
-    const hasChapter = (purchasedChapterIds || []).some(
-      (chId) => String(chId) === String(lessonData.chapterId)
-    );
-    if (hasChapter) {
-      return { allowed: true };
-    }
-  }
-
-  // ۳. فال‌بک به دوره‌های ثبت‌نام‌شده در سشن کاربر
-  const enrolledCourses = session.user?.enrolledCourses || [];
-  const enrolledSlugs = session.user?.enrolledSlugs || [];
-  const enrolledChapters = session.user?.enrolledChapters || [];
-
-  const isEnrolledInCourse =
-    enrolledCourses.some((c) => String(c) === String(courseId) || String(c) === String(course.documentId)) ||
-    enrolledSlugs.some((s) => String(s) === String(courseSlug));
-
-  if (isEnrolledInCourse) {
-    return { allowed: true };
-  }
-
-  if (lessonData.chapterId) {
-    const isEnrolledInChapter = enrolledChapters.some(
-      (ch) => String(ch) === String(lessonData.chapterId)
-    );
-    if (isEnrolledInChapter) {
-      return { allowed: true };
-    }
-  }
-
-  return { allowed: false, error: 'شما این دوره یا فصل را خریداری نکرده‌اید.' };
-}
-
 export async function GET(request, { params }) {
   const { lessonId } = await params;
   const { searchParams } = new URL(request.url);
@@ -195,23 +131,12 @@ export async function GET(request, { params }) {
     );
   }
 
-  // ۲. اگر جلسه رایگان نبود، احراز هویت و بررسی خرید انجام شود
-  if (!lessonData.isFree) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return new Response(
-        JSON.stringify({ error: 'برای دسترسی به این فایل باید ابتدا وارد حساب کاربری خود شوید.' }),
-        { status: 401, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
-      );
-    }
-
-    const access = await verifyAccess(session, lessonData);
-    if (!access.allowed) {
-      return new Response(
-        JSON.stringify({ error: access.error || 'دسترسی غیرمجاز.' }),
-        { status: 403, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
-      );
-    }
+  const access = await resolveAudioAccess(lessonData);
+  if (!access.allowed) {
+    return new Response(
+      JSON.stringify({ error: access.error || 'دسترسی غیرمجاز.' }),
+      { status: access.status, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+    );
   }
 
   // ۳. استریم امن با پشتیبانی از Range Header
@@ -267,17 +192,8 @@ export async function HEAD(request, { params }) {
     return new Response(null, { status: 404 });
   }
 
-  if (!lessonData.isFree) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return new Response(null, { status: 401 });
-    }
-
-    const access = await verifyAccess(session, lessonData);
-    if (!access.allowed) {
-      return new Response(null, { status: 403 });
-    }
-  }
+  const access = await resolveAudioAccess(lessonData);
+  if (!access.allowed) return new Response(null, { status: access.status });
 
   try {
     const cdnResponse = await fetch(lessonData.audioUrl, { method: 'HEAD' });

@@ -1,10 +1,13 @@
 // src/app/providers.jsx
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { SessionProvider, useSession } from "next-auth/react";
 import { useCartStore } from '@/store/useCartStore';
+import { useOrdersStore } from '@/store/useOrdersStore';
+import { setProfileUser } from '@/lib/client/profileClientApi';
 import { syncByeMoneyUser } from '@/lib/byeMoneySync';
+import { DisplayRateProvider } from '@/context/DisplayRateContext';
 
 /**
  * همگام‌ساز سبد خرید با نشست کاربر جهت جلوگیری از Session Fixation و نشت داده
@@ -12,10 +15,11 @@ import { syncByeMoneyUser } from '@/lib/byeMoneySync';
 function CartSessionSync() {
   const { data: session, status } = useSession();
 
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.id) {
-      useCartStore.getState().setCartUser(session.user.id);
-    }
+  useLayoutEffect(() => {
+    const userId = status === 'authenticated' ? session?.user?.id : null;
+    useOrdersStore.getState().setOrdersUser(userId);
+    setProfileUser(userId);
+    if (status !== 'loading') useCartStore.getState().setCartUser(userId);
   }, [session?.user?.id, status]);
 
   return null;
@@ -35,9 +39,6 @@ function ByeMoneySessionSync() {
 
   return null;
 }
-
-import { DisplayRateProvider } from '@/context/DisplayRateContext';
-
 export function Providers({ children }) {
   useEffect(() => {
     // جلوگیری از لاگ‌های شلوغ و نامفهوم NextAuth در کنسول هنگام بارگذاری اولیه
@@ -66,4 +67,3 @@ export function Providers({ children }) {
     </SessionProvider>
   );
 }
-

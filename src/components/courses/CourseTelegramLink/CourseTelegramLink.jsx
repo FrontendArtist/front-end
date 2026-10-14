@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { useOrdersStore } from '@/store/useOrdersStore';
+import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import styles from './CourseTelegramLink.module.scss';
 
@@ -20,7 +20,7 @@ export default function CourseTelegramLink({
   initialHasPurchased = false,
 }) {
   const { data: session } = useSession();
-  const orders = useOrdersStore((state) => state.orders);
+  const orders = useAccountOrderItems();
 
   // بررسی خرید کل دوره از سفارشات با وضعیت paid
   const isPurchasedInOrders = useMemo(() => {

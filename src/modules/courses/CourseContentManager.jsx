@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import clsx from 'clsx';
 import useAuthStore from '@/store/authStore';
-import { useOrdersStore } from '@/store/useOrdersStore';
+import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { useCartStore } from '@/store/useCartStore';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
+import { getPurchasedChapterIds } from '@/lib/courseAccessUtils';
 import Modal from '@/components/ui/Modal/Modal';
 import VideoJSPlayer from './VideoJSPlayer';
 import PlyrAudioPlayer from './PlyrAudioPlayer';
@@ -46,7 +47,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
   // دریافت سفارشات از Zustand
-  const orders = useOrdersStore((state) => state.orders);
+  const orders = useAccountOrderItems();
 
   // اکشن افزوده به سبد خرید و لیست آیتم‌ها از Zustand useCartStore
   const addItem = useCartStore((state) => state.addItem);
@@ -188,23 +189,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   // استخراج لیست شناسه‌های فصل‌های خریداری شده از سفارشات کاربر با useMemo جهت جلوگیری از تغییر reference
   // ⚠️ فقط سفارش‌های پرداخت‌شده و تأییدشده لحاظ می‌شوند
   const purchasedChapterIdsFromOrders = useMemo(() => {
-    const chapterIds = new Set();
-    orders.forEach((order) => {
-      if (!isOrderPaid(order)) return;
-
-      const items = order.attributes?.items || order.items || [];
-      items.forEach((item) => {
-        if (item.type === 'chapter' || item.chapterId) {
-          if (item.chapterId) chapterIds.add(String(item.chapterId));
-          if (item.id) {
-            const rawId = String(item.id).replace('chapter-', '');
-            chapterIds.add(rawId);
-          }
-        }
-      });
-    });
-    return Array.from(chapterIds);
-  }, [orders]);
+    return getPurchasedChapterIds(orders, course);
+  }, [orders, course]);
 
   // =========================================================================
   // منطق کنترل دسترسی فصل‌ها (Chapter Access Logic)

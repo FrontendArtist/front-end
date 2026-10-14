@@ -4,6 +4,7 @@
  */
 import { API_BASE_URL } from './api';
 import { PAYMENT_METHOD, isOrderPaid } from './constants/orderConstants';
+import { getPurchasedChapterId, isChapterOrderItem } from './courseAccessUtils';
 
 /**
  * تابع واحد و استاندارد برای بررسی دسترسی کاربر به دوره و فصل‌ها
@@ -82,7 +83,7 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
     ]);
 
     // بررسی دوره‌های کاربر در استراپی (user.courses)
-    if (userRes.ok && userRes.status !== 204) {
+    if (userRes && userRes !== ordersRes && userRes.ok && userRes.status !== 204) {
       try {
         const rawUser = await userRes.text();
         const userData = rawUser ? JSON.parse(rawUser) : null;
@@ -101,7 +102,7 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
     }
 
     // بررسی سفارش‌های استراپی
-    if (ordersRes.ok && ordersRes.status !== 204) {
+    if (ordersRes && ordersRes.ok && ordersRes.status !== 204) {
       try {
         const rawOrders = await ordersRes.text();
         const ordersData = rawOrders ? JSON.parse(rawOrders) : null;
@@ -117,12 +118,7 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
             const itemSlug = item.slug ? String(item.slug) : '';
             const fallbackCourseId = (!itemCourseId && item.id != null) ? String(item.id) : '';
 
-            const isChapterItem = Boolean(
-              item.type === 'chapter' ||
-              item.chapterId ||
-              itemSlug.includes('-chapter-') ||
-              (item.id && String(item.id).startsWith('chapter-'))
-            );
+            const isChapterItem = isChapterOrderItem(item);
 
             const matchesThisItem = (
               (targetCourseId && (itemCourseId === targetCourseId || itemDocId === targetCourseId || fallbackCourseId === targetCourseId)) ||
@@ -139,32 +135,8 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
                 hasAccess = true;
               } else {
                 // بررسی خرید فصل‌های مجزا
-                if (item.chapterId) purchasedChapterIds.push(String(item.chapterId));
-                if (item.id) {
-                  const cleanId = String(item.id).replace('chapter-', '');
-                  purchasedChapterIds.push(cleanId);
-                }
-              }
-            } else if (!activeCourseOrder) {
-              // ذخیره وضعیت آخرین سفارش در صورتی که در وضعیت انتظار یا بررسی باشد
-              // سفارش‌های رد یا لغو شده نادیده گرفته می‌شوند تا صفحه دوره کاملاً آزاد بوده و امکان خرید مجدد وجود داشته باشد
-              const oStatus = String(order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
-              const pStatus = String(order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
-              const isRejected = pStatus === 'failed' || pStatus === 'rejected' || oStatus === 'canceled' || oStatus === 'cancelled' || oStatus === 'rejected';
-
-              // انتظار فیش فقط مربوط به کارت‌به‌کارت است؛ سفارش آنلاین رهاشده مانع خرید دوباره نیست.
-              const paymentMethod = String(order.paymentMethod || order.attributes?.paymentMethod || '').trim().toLowerCase();
-              if (!isRejected && paymentMethod === PAYMENT_METHOD.CARD_TO_CARD) {
-                activeCourseOrder = {
-                  orderId: order.id,
-                  documentId: order.documentId || String(order.id),
-                  orderStatus: oStatus,
-                  paymentStatus: pStatus,
-                  rejectionReason: order.rejectionReason || order.attributes?.rejectionReason || null,
-                  isPendingVerification: pStatus === 'pending_verification',
-                  isPendingPayment: pStatus === 'pending_payment',
-                  isRejected: false,
-                };
+                const chapterId = getPurchasedChapterId(item, courseId, courseSlug);
+                if (chapterId) purchasedChapterIds.push(chapterId);
               }
             }
           }

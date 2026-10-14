@@ -14,6 +14,7 @@ import { formatPrice } from '@/lib/formatters';
 import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import { executeOnlinePayment } from '@/lib/checkoutService';
 import usePaymentProcessing from '@/hooks/usePaymentProcessing';
+import { checkPaymentConnection, invalidatePaymentConnection } from '@/lib/client/paymentConnection';
 import styles from './ShippingStep.module.scss';
 
 /**
@@ -38,6 +39,7 @@ export default function ShippingStep({ onPrevious }) {
     const [saving, setSaving] = useState(false);
     const [isProcessing, setIsProcessing] = usePaymentProcessing();
     const [error, setError] = useState('');
+    const [isCheckingVpn, setIsCheckingVpn] = useState(false);
 
     const [addressData, setAddressData] = useState({
         recipientName: '',
@@ -158,6 +160,9 @@ export default function ShippingStep({ onPrevious }) {
         ].filter(Boolean).join(' - ') +
         ` (گیرنده: ${addressData.recipientName}${addressData.recipientPhone ? ` - تلفن: ${addressData.recipientPhone}` : ''}${addressData.postalCode ? ` - کدپستی: ${addressData.postalCode}` : ''})`;
 
+        if (error && error.includes('فیلترشکن')) {
+            invalidatePaymentConnection();
+        }
         setIsProcessing(true);
         try {
             await executeOnlinePayment({
@@ -172,6 +177,28 @@ export default function ShippingStep({ onPrevious }) {
             console.error('Payment Error:', err);
             setError(err.message || 'خطا در اتصال به درگاه پرداخت شاپرک. لطفاً مجدداً تلاش کنید.');
             setIsProcessing(false);
+        }
+    };
+
+    /**
+     * بررسی مجدد اتصال و وضعیت فیلترشکن
+     */
+    const handleRecheckVpn = async () => {
+        if (isCheckingVpn) return;
+        setIsCheckingVpn(true);
+        try {
+            const result = await checkPaymentConnection({ refresh: true });
+            if (result?.isVpn === false) {
+                setError('');
+            } else if (result?.isVpn === true) {
+                setError('فیلترشکن شما روشن است');
+            } else {
+                setError('');
+            }
+        } catch {
+            setError('');
+        } finally {
+            setIsCheckingVpn(false);
         }
     };
 
@@ -372,7 +399,45 @@ export default function ShippingStep({ onPrevious }) {
                 </div>
             </div>
 
-            {error && <div className={styles.error}>{error}</div>}
+            {error && (
+                <div
+                    className={styles.error}
+                    style={error.includes('فیلترشکن') ? {
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                        textAlign: 'right',
+                    } : {}}
+                >
+                    {error.includes('فیلترشکن') ? (
+                        <>
+                            <span>فیلترشکن شما روشن است</span>
+                            <button
+                                type="button"
+                                onClick={handleRecheckVpn}
+                                disabled={isCheckingVpn}
+                                style={{
+                                    padding: '4px 10px',
+                                    fontSize: '0.8rem',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+                                    border: '1px solid #ef4444',
+                                    borderRadius: '6px',
+                                    color: '#fef2f2',
+                                    cursor: isCheckingVpn ? 'wait' : 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    opacity: isCheckingVpn ? 0.7 : 1,
+                                    flexShrink: 0,
+                                }}
+                            >
+                                {isCheckingVpn ? 'در حال بررسی...' : 'بررسی مجدد'}
+                            </button>
+                        </>
+                    ) : (
+                        error
+                    )}
+                </div>
+            )}
 
             {/* پیام هشدار خاموش بودن VPN برای پرداخت آنلاین */}
             {finalTotalPrice > 0 && (

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { useOrdersStore } from '@/store/useOrdersStore';
+import { useAccountOrders } from '@/hooks/useAccountOrders';
 import { fetchProfileCartData } from '@/lib/client/profileClientApi';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
@@ -12,7 +12,7 @@ import styles from './PurchasesList.module.scss';
 import cartStyles from '@/app/cart/Cart.module.scss'; // Reuse cart styles
 
 export default function PurchasesList() {
-    const { orders, isLoading, error, fetchOrders, hasFetched } = useOrdersStore();
+    const { orders, isLoading, error, fetchOrders, hasFetched } = useAccountOrders();
     const { data: session, status: sessionStatus } = useSession();
     const [profileCourses, setProfileCourses] = useState([]);
 

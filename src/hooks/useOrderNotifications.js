@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useOrdersStore } from '@/store/useOrdersStore';
+import { useAccountOrders } from '@/hooks/useAccountOrders';
 import { useUserMessagesStore } from '@/store/useUserMessagesStore';
 
 const STORAGE_PREFIX = 'khak_read_notifications_';
 
 // مدیریت هماهنگ‌سازی سراسری اعلان‌ها به صورت Singleton برای جلوگیری از تکرار درخواست‌ها
-let globalSubscribersCount = 0;
 let lastPollTimestamp = Date.now();
 const VISIBILITY_THROTTLE_MS = 60000; // حداقل ۶۰ ثانیه فاصله بین رفرش‌های ناشی از سوئیچ تب
 
@@ -16,18 +16,15 @@ const triggerPoll = (token, userId) => {
     if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
     lastPollTimestamp = Date.now();
     useUserMessagesStore.getState().fetchMessages(token, userId, true);
-    useOrdersStore.getState().fetchOrders(true);
+    useOrdersStore.getState().fetchOrders(true, userId);
 };
 
 export function useOrderNotifications() {
     const { data: session, status } = useSession();
-    const userId = session?.user?.id;
+    const userId = status === 'authenticated' ? session?.user?.id : null;
     const token = session?.user?.jwt;
 
-    const orders = useOrdersStore((state) => state.orders);
-    const isOrdersLoading = useOrdersStore((state) => state.isLoading);
-    const hasOrdersFetched = useOrdersStore((state) => state.hasFetched);
-    const fetchOrders = useOrdersStore((state) => state.fetchOrders);
+    const { orders, isLoading: isOrdersLoading, hasFetched: hasOrdersFetched, fetchOrders } = useAccountOrders();
 
     const messages = useUserMessagesStore((state) => state.messages);
     const isMessagesLoading = useUserMessagesStore((state) => state.isLoading);
@@ -53,7 +50,6 @@ export function useOrderNotifications() {
             return;
         }
 
-        globalSubscribersCount++;
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
@@ -64,20 +60,9 @@ export function useOrderNotifications() {
             }
         };
 
-        // فعال‌سازی لیسنر فقط برای اولین کامپوننت مشترک در برنامه
-        if (globalSubscribersCount === 1) {
-            lastPollTimestamp = Date.now();
-            document.addEventListener('visibilitychange', handleVisibilityChange);
-        }
-
-        return () => {
-            globalSubscribersCount--;
-            // اگر همه کامپوننت‌ها unmount شدند، لیسنر را متوقف کن
-            if (globalSubscribersCount <= 0) {
-                globalSubscribersCount = 0;
-                document.removeEventListener('visibilitychange', handleVisibilityChange);
-            }
-        };
+        // هر مصرف‌کننده پاکسازی مستقل دارد؛ زمان مشترک از درخواست تکراری جلوگیری می‌کند.
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [status, userId, token]);
 
     // بارگذاری شناسه‌های خوانده شده از localStorage
@@ -90,9 +75,7 @@ export function useOrderNotifications() {
 
         try {
             const stored = localStorage.getItem(`${STORAGE_PREFIX}${userId}`);
-            if (stored) {
-                setReadIds(JSON.parse(stored));
-            }
+            setReadIds(stored ? JSON.parse(stored) : []);
         } catch {
             setReadIds([]);
         } finally {

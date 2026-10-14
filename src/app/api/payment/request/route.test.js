@@ -1,5 +1,7 @@
+/** @jest-environment node */
 import { POST } from './route';
 import { getServerSession } from 'next-auth';
+import { paymentAuthOptions } from '@/lib/auth';
 import { requestSepToken, SEP_GATEWAY_ACTION_URL } from '@/lib/sepPayment';
 import {
   createGatewayTopUp,
@@ -15,6 +17,7 @@ jest.mock('next-auth', () => ({
 
 jest.mock('@/lib/auth', () => ({
   authOptions: {},
+  paymentAuthOptions: { secret: 'payment-test' },
 }));
 
 jest.mock('next/server', () => ({
@@ -38,6 +41,10 @@ jest.mock('@/lib/gatewayTopUp', () => ({
   updateAttempt: jest.fn(),
   recordGatewayOutcome: jest.fn(),
   deliverGatewayOutcome: jest.fn(),
+}));
+
+jest.mock('@/lib/api', () => ({
+  STRAPI_API_URL: 'http://strapi.test',
 }));
 
 global.fetch = jest.fn();
@@ -264,8 +271,9 @@ describe('POST /api/payment/request - Noor Top-up & SEP Token Flow', () => {
       id: 42,
       documentId: 'order-doc-xyz',
       totalPrice: 25000,
+      orderStatus: 'pending',
+      paymentStatus: 'pending_payment',
       user: { id: 'user-123' },
-      paymentStatus: 'pending',
     };
 
     global.fetch.mockResolvedValueOnce({
@@ -327,5 +335,37 @@ describe('POST /api/payment/request - Noor Top-up & SEP Token Flow', () => {
     expect(data.success).toBe(false);
     expect(createAttempt).not.toHaveBeenCalled();
   });
-});
 
+  test('سشن سبک و استعلام محدود، مبلغ سرور را به بانک می‌فرستند', async () => {
+    const order = { id: 1, documentId: 'order-one', totalPrice: 100, orderStatus: 'pending', paymentStatus: 'pending_payment', user: { id: 'user-123' } };
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [order] }) });
+    requestSepToken.mockResolvedValueOnce({ success: true, token: 'bank-token' });
+
+    const req = createJsonRequest({ orderId: 'order-one' });
+    const result = await POST(req);
+    expect(result.status).toBe(200);
+    expect(await result.json()).toMatchObject({ success: true, token: 'bank-token', amount: 1000 });
+    expect(getServerSession).toHaveBeenCalledWith(paymentAuthOptions);
+    expect(global.fetch.mock.calls[0][0]).not.toContain('populate=*');
+    expect(global.fetch.mock.calls[0][0]).toContain('populate[user]');
+    expect(requestSepToken).toHaveBeenCalledWith(expect.objectContaining({ amount: 1000, resNum: 'order-one' }));
+  });
+
+  test.each([undefined, { id: 999 }])('مالک نامشخص یا متفاوت اجازهٔ توکن ندارد', async user => {
+    const order = { id: 1, documentId: 'order-one', totalPrice: 100, orderStatus: 'pending', paymentStatus: 'pending_payment', user };
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [order] }) });
+
+    const req = createJsonRequest({ orderId: 'order-one' });
+    expect((await POST(req)).status).toBe(403);
+    expect(requestSepToken).not.toHaveBeenCalled();
+  });
+
+  test('سفارش تسویه‌شده دوباره وارد درگاه نمی‌شود', async () => {
+    const order = { id: 1, documentId: 'order-one', totalPrice: 100, orderStatus: 'pending', paymentStatus: 'paid', user: { id: 'user-123' } };
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [order] }) });
+
+    const req = createJsonRequest({ orderId: 'order-one' });
+    expect((await POST(req)).status).toBe(400);
+    expect(requestSepToken).not.toHaveBeenCalled();
+  });
+});

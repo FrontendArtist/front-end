@@ -1,5 +1,6 @@
 import { formatSingleImage } from './strapiUtils';
 import { isIranianPhoneNumber } from './phoneUtils';
+import { getDiscountedCoursePrice } from './coursePricing';
 
 /**
  * بررسی و دریافت قیمت موثر دوره بر اساس کاربر (عادی یا خارجی)
@@ -74,7 +75,7 @@ export function formatStrapiCourses(apiResponse) {
 
       const chapters = Array.isArray(item.chapters)
         ? item.chapters.map(ch => {
-            const chPrice = Number(ch.priceNoor ?? ch.price) || 0;
+            const chPrice = Number(ch.priceNoor ?? ch.price ?? 0);
             return {
               id: ch.id,
               title: ch.title || '',
@@ -102,8 +103,8 @@ export function formatStrapiCourses(apiResponse) {
       const rawPrice = item.priceNoor ?? item.price;
       const originalPrice = Number(rawPrice) || 0;
       const internationalPrice = item.internationalPrice ? Number(item.internationalPrice) : null;
-      const discountPrice = discountPercent > 0 ? Number((originalPrice * (1 - discountPercent / 100)).toFixed(4)) : null;
-      const finalPrice = discountPrice !== null ? discountPrice : originalPrice;
+      const finalPrice = getDiscountedCoursePrice(item);
+      const discountPrice = discountPercent > 0 ? finalPrice : null;
 
       return {
         id: item.id,
