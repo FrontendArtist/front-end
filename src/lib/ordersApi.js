@@ -71,35 +71,10 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
       ? `${API_BASE_URL}/api/users/${encodeURIComponent(userId)}?populate=courses`
       : `${API_BASE_URL}/api/users?filters[documentId][$eq]=${encodeURIComponent(userId)}&populate=courses`;
 
-    const [ordersRes, userRes] = await Promise.all([
-      fetch(ordersUrl, {
-        headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
-        cache: 'no-store'
-      }),
-      fetch(userUrl, {
-        headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
-        cache: 'no-store'
-      })
-    ]);
-
-    // بررسی دوره‌های کاربر در استراپی (user.courses)
-    if (userRes && userRes !== ordersRes && userRes.ok && userRes.status !== 204) {
-      try {
-        const rawUser = await userRes.text();
-        const userData = rawUser ? JSON.parse(rawUser) : null;
-        const userObj = Array.isArray(userData) ? userData[0] : userData;
-        if (userObj) {
-          if (Array.isArray(userObj.courses) && userObj.courses.some(matchesCourse)) {
-            hasAccess = true;
-          }
-          if (Array.isArray(userObj.enrolledChapters)) {
-            userObj.enrolledChapters.forEach(chId => purchasedChapterIds.push(String(chId)));
-          }
-        }
-      } catch (err) {
-        console.error('[course-access] error parsing user courses:', err.message);
-      }
-    }
+    const ordersRes = await fetch(ordersUrl, {
+      headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
+      cache: 'no-store'
+    });
 
     // بررسی سفارش‌های استراپی
     if (ordersRes && ordersRes.ok && ordersRes.status !== 204) {
@@ -138,6 +113,24 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
                 const chapterId = getPurchasedChapterId(item, courseId, courseSlug);
                 if (chapterId) purchasedChapterIds.push(chapterId);
               }
+            } else if (!activeCourseOrder) {
+              const oStatus = String(order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
+              const pStatus = String(order.paymentStatus || order.attributes?.paymentStatus || '').trim().toLowerCase();
+              const isRejected = pStatus === 'failed' || pStatus === 'rejected' || oStatus === 'canceled' || oStatus === 'cancelled' || oStatus === 'rejected';
+
+              const paymentMethod = String(order.paymentMethod || order.attributes?.paymentMethod || '').trim().toLowerCase();
+              if (!isRejected && paymentMethod === PAYMENT_METHOD.CARD_TO_CARD) {
+                activeCourseOrder = {
+                  orderId: order.id,
+                  documentId: order.documentId || String(order.id),
+                  orderStatus: oStatus,
+                  paymentStatus: pStatus,
+                  rejectionReason: order.rejectionReason || order.attributes?.rejectionReason || null,
+                  isPendingVerification: pStatus === 'pending_verification',
+                  isPendingPayment: pStatus === 'pending_payment',
+                  isRejected: false,
+                };
+              }
             }
           }
         }
@@ -146,6 +139,31 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
       }
     } else {
       console.error('[course-access] orders request failed:', ordersRes.status);
+    }
+
+    // 3. در صورت عدم احراز دسترسی از سفارش‌ها، بررسی مستقیم رابطه دوره‌های کاربر در استراپی (user.courses)
+    if (!hasAccess) {
+      try {
+        const userRes = await fetch(userUrl, {
+          headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
+          cache: 'no-store'
+        });
+        if (userRes && userRes.ok && userRes.status !== 204) {
+          const rawUser = await userRes.text();
+          const userData = rawUser ? JSON.parse(rawUser) : null;
+          const userObj = Array.isArray(userData) ? userData[0] : userData;
+          if (userObj) {
+            if (Array.isArray(userObj.courses) && userObj.courses.some(matchesCourse)) {
+              hasAccess = true;
+            }
+            if (Array.isArray(userObj.enrolledChapters)) {
+              userObj.enrolledChapters.forEach(chId => purchasedChapterIds.push(String(chId)));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[course-access] error fetching user courses:', err.message);
+      }
     }
   } catch (error) {
     console.error('[course-access] error fetching orders or user courses:', error.message);
