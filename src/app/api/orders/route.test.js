@@ -17,7 +17,7 @@ describe('ثبت سفارش با قیمت معتبر سرور', () => {
     saved = { data: { id: 1, documentId: 'order-one', totalPrice: 101, paymentMethod: 'online', paymentStatus: 'pending_payment' } };
     getServerSession.mockResolvedValue({ user: { id: 5 } });
     global.fetch = jest.fn(async url => {
-      if (url.includes('/api/orders/checkout')) return response(saved);
+      if (url.includes('/api/orders/checkout')) return response(saved, 201);
       if (url.includes('/api/orders?')) return response({ data: [] });
       return response({ firstName: 'کاربر', email: 'user@example.test' });
     });
