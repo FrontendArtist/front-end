@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from '@jest/globals';
 import BaseSlider from './BaseSlider';
@@ -48,4 +49,4 @@ describe('BaseSlider Component', () => {
     expect(screen.getByText('No items to display.')).toBeInTheDocument();
   });
 
-}); 
+});

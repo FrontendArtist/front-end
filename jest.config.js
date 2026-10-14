@@ -8,6 +8,7 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^swiper/css(?:/.*)?$': '<rootDir>/__mocks__/styleMock.js',
     '^.+\\.(css|less|scss|sass)$': '<rootDir>/__mocks__/styleMock.js',
   },
 };
