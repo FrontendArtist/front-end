@@ -171,11 +171,8 @@ async function handlePaymentVerification(params, request) {
         const errorDesc = getSepErrorMessage(state) || 'پرداخت در درگاه لغو شد یا با خطا مواجه گردید.';
         console.warn('[SEP Callback State Not OK]:', { state, errorDesc, resNum });
 
-        // ثبت وضعیت ناموفق در سفارش همراه با دلیل مشخص
+        // A failed attempt does not cancel the order or prevent another payment attempt.
         await updateOrderInStrapi(orderDocId, {
-            paymentStatus: PAYMENT_STATUS.FAILED,
-            orderStatus: ORDER_STATUS.CANCELLED,
-            rejectionReason: errorDesc,
             notes: appendOrderNote(order.notes, `❌ پرداخت ناموفق در درگاه: ${errorDesc} (کد وضعیت: ${state})`),
         });
 
@@ -202,9 +199,6 @@ async function handlePaymentVerification(params, request) {
         console.error('[SEP Verify Failed]:', errorMsg);
 
         await updateOrderInStrapi(orderDocId, {
-            paymentStatus: PAYMENT_STATUS.FAILED,
-            orderStatus: ORDER_STATUS.CANCELLED,
-            rejectionReason: errorMsg,
             notes: appendOrderNote(order.notes, `❌ عدم تایید تراکنش توسط بانک: ${errorMsg} (کد: ${verifyResult.resultCode})`),
         });
 
@@ -233,9 +227,6 @@ async function handlePaymentVerification(params, request) {
         }
 
         await updateOrderInStrapi(orderDocId, {
-            paymentStatus: PAYMENT_STATUS.FAILED,
-            orderStatus: ORDER_STATUS.CANCELLED,
-            rejectionReason: 'مغایرت مبلغ پرداختی با مبلغ فاکتور',
             notes: appendOrderNote(order.notes, `🚨 هشدار مغایرت مبلغ: مبلغ پرداخت‌شده (${paidRialAmount} ریال) با مبلغ سفارش (${expectedRialPrice} ریال) مطابقت ندارد. دستور برگشت وجه صادر شد.`),
         });
 
@@ -347,7 +338,7 @@ async function updateOrderInStrapi(documentId, data, numericId = null) {
             });
 
             if (res.ok) {
-                console.log(`[updateOrderInStrapi] ✅ Successfully updated order ${id} to paid state.`);
+                console.log(`[updateOrderInStrapi] Successfully updated order ${id}.`);
                 return true;
             }
 

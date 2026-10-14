@@ -9,7 +9,7 @@ jest.mock('@/lib/sepPayment', () => ({
 }));
 
 import { getServerSession } from 'next-auth';
-import { requestSepToken, verifySepTransaction } from '@/lib/sepPayment';
+import { requestSepToken, verifySepTransaction, reverseSepTransaction } from '@/lib/sepPayment';
 import { POST as requestPayment } from '@/app/api/payment/request/route';
 const originalToken = process.env.STRAPI_API_TOKEN;
 
@@ -51,4 +51,43 @@ test('successful bank verification still accepts superseded order', async () => 
     expect(update).toMatchObject({ orderStatus: 'paid', paymentStatus: 'paid', refNum: 'bank-reference', rejectionReason: null });
     expect(response.status).toBe(303);
     expect(new URL(response.headers.get('location')).searchParams.get('status')).toBe('success');
+});
+
+test.each([
+    ['CanceledByUser', 'cancel', false, 0],
+    ['Failed', 'failed', false, 0],
+    ['OK', 'failed', false, 0],
+    ['OK', 'failed', true, 2000],
+])('unsuccessful attempt %s keeps order open and permits next payment', async (state, resultStatus, bankSuccess, amount) => {
+    process.env.STRAPI_API_TOKEN = 'test-token';
+    const { POST: verifyPayment } = require('@/app/api/payment/verify/route');
+    const order = { id: 1, documentId: 'same-order', totalPrice: 100, user: { id: 5 },
+        orderStatus: 'pending', paymentStatus: 'pending_payment', notes: 'summary', items: [] };
+    fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [order] }) })
+        .mockImplementationOnce(async (_, options) => {
+            const update = JSON.parse(options.body).data;
+            expect(update).not.toHaveProperty('orderStatus');
+            expect(update).not.toHaveProperty('paymentStatus');
+            expect(update).not.toHaveProperty('rejectionReason');
+            expect(update.notes).toContain('summary');
+            Object.assign(order, update);
+            return { ok: true };
+        });
+    verifySepTransaction.mockResolvedValue({ success: bankSuccess, resultDescription: 'declined',
+        transactionDetail: { OrginalAmount: amount } });
+    reverseSepTransaction.mockResolvedValue({ success: true });
+    const result = await verifyPayment(new Request('http://shop.test/api/payment/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ State: state, ResNum: 'same-order', RefNum: 'bank-reference' }),
+    }));
+    expect(new URL(result.headers.get('location')).searchParams.get('status')).toBe(resultStatus);
+    expect(order.orderStatus).toBe('pending');
+    expect(order.paymentStatus).toBe('pending_payment');
+    fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [order] }) });
+    requestSepToken.mockResolvedValue({ success: true, token: 'next-attempt' });
+    const retry = await requestPayment(new Request('http://shop.test/api/payment/request', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: 'same-order' }),
+    }));
+    expect(retry.status).toBe(200);
+    expect(requestSepToken).toHaveBeenCalledWith(expect.objectContaining({ resNum: 'same-order' }));
 });

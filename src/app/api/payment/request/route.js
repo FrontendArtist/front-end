@@ -91,7 +91,7 @@ export async function POST(request) {
         const paymentStatus = order.paymentStatus || order.attributes?.paymentStatus;
         if (orderStatus !== 'pending' || paymentStatus !== 'pending_payment') {
             return NextResponse.json(
-                { success: false, message: 'این سفارش دیگر قابل پرداخت نیست؛ پرداخت را از سبد خرید ادامه دهید.' },
+                { success: false, message: 'سفارش انتخاب‌شده لغو یا بسته شده است. لطفاً صفحه را تازه‌سازی کنید و دوباره پرداخت را بزنید.' },
                 { status: 400 }
             );
         }
