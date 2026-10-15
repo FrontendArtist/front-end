@@ -219,13 +219,13 @@ function CheckoutResultContent() {
                                 </>
                             ) : (
                                 <>
-                                    <Link href="/checkout" className={styles.primaryButton}>
+                                    <Link href="/cart" className={styles.primaryButton}>
                                         <RotateCcw size={18} />
-                                        تلاش مجدد پرداخت
+                                        بازگشت به سبد خرید و پرداخت مجدد
                                     </Link>
-                                    <Link href="/cart" className={styles.secondaryButton}>
-                                        <Receipt size={18} />
-                                        مشاهده سبد خرید
+                                    <Link href="/" className={styles.secondaryButton}>
+                                        <Home size={18} />
+                                        صفحه اصلی
                                     </Link>
                                     <Link href="/contact" className={styles.secondaryButton}>
                                         پشتیبانی و تماس
