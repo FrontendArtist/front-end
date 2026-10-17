@@ -9,6 +9,12 @@ describe('نتیجهٔ رایگان checkout از سرور تعیین می‌ش�
       url === '/api/orders' ? { data: { documentId: 'order-one', ...order } } :
       url === '/api/payment/request' ? { success: true, token: 'bank-token' } : { success: true, isVpn: false } }));
   };
+  it('تا پایان بررسی کوپن هیچ سفارش یا پرداختی آغاز نمی‌کند', async () => {
+    global.fetch = jest.fn();
+    await expect(executeOnlinePayment({ items: [{ id: 7 }], finalTotalPrice: 101,
+      appliedCoupon: { code: 'SALE', pending: true } })).rejects.toThrow('بررسی کد تخفیف');
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it('قیمت صفر مرورگر، سفارش پولی سرور را موفق رایگان نشان نمی‌دهد', async () => {
     server({ totalPrice: 101, paymentMethod: 'online', paymentStatus: 'pending_payment' });
     const router = { push: jest.fn() };

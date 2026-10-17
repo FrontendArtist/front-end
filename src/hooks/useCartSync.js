@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { useCartStore } from "@/store/useCartStore";
+import { useCartStore, selectCouponPending } from "@/store/useCartStore";
 import { fetchProfileCartData, updateProfileCartData } from "@/lib/client/profileClientApi";
 import { isIranianPhoneNumber } from "@/lib/phoneUtils";
 import { useAccountOrderItems } from '@/hooks/useAccountOrders';
@@ -16,6 +16,12 @@ const useCartSync = () => {
   const timeoutRef = useRef(null);
   const hydratedUserId = useCartStore((state) => state.hydratedUserId);
   const userId = session?.user?.id;
+
+  // تغییر اقلام یا هویت، مبلغ قبلی را بی‌اعتبار و کوپن را دوباره بررسی می‌کند.
+  useEffect(() => {
+    const current = useCartStore.getState();
+    if (selectCouponPending(current)) current.validateCoupon(current.appliedCoupon.code);
+  }, [items, cartState.appliedCoupon?.code, cartState.userId]);
 
   // ۰. بروزرسانی قیمت‌های سبد بر اساس وضعیت کاربر (ایرانی یا خارجی)
   useEffect(() => {

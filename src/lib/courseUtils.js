@@ -93,26 +93,19 @@ export function formatStrapiCourses(apiResponse) {
         ? item.curriculum.map(l => formatLesson(l, courseDocId)).filter(Boolean)
         : [];
 
-      let discountPercent = Number(item.discountPercent || 0);
       const discountUntil = item.discountUntil || null;
-
-      if (discountUntil && new Date(discountUntil).getTime() <= Date.now()) {
-        discountPercent = 0;
-      }
-
-      const rawPrice = item.priceNoor ?? item.price;
-      const originalPrice = Number(rawPrice) || 0;
+      const originalPrice = Number(item.priceNoor ?? item.price) || 0;
       const internationalPrice = item.internationalPrice ? Number(item.internationalPrice) : null;
-      const finalTomanPrice = getDiscountedCoursePrice(item);
-      const discountPrice = discountPercent > 0 ? Number((originalPrice * (1 - discountPercent / 100)).toFixed(4)) : null;
-      const finalPrice = discountPrice !== null ? discountPrice : originalPrice;
+      const finalPrice = getDiscountedCoursePrice({ ...item, price: originalPrice });
+      const discountPercent = finalPrice < originalPrice ? Number(item.discountPercent) : 0;
+      const discountPrice = discountPercent > 0 ? finalPrice : null;
 
       return {
         id: item.id,
         documentId: item.documentId,
         slug: item.slug,
         title: item.title,
-        price: { noor: finalPrice, toman: finalTomanPrice, original: originalPrice },
+        price: { noor: finalPrice, toman: finalPrice, original: originalPrice },
         priceNoor: finalPrice,
         originalPrice: originalPrice,
         originalPriceNoor: originalPrice,

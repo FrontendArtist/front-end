@@ -15,6 +15,7 @@ import {
     useCartStore,
     selectTotalPrice,
     selectCouponDiscount,
+    selectCouponPending,
     selectFinalTotalPrice,
     selectItemsCount,
     selectItemLevelDiscount,
@@ -65,6 +66,7 @@ export default function CartPage() {
     const appliedCoupon = useCartStore((state) => state.appliedCoupon);
     const totalPrice = useCartStore(selectTotalPrice);
     const couponDiscount = useCartStore(selectCouponDiscount);
+    const couponPending = useCartStore(selectCouponPending);
     const itemLevelDiscount = useCartStore(selectItemLevelDiscount);
     const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
@@ -526,7 +528,7 @@ export default function CartPage() {
                         <button
                             type="button"
                             onClick={handleProceed}
-                            disabled={isProcessing}
+                            disabled={isProcessing || couponPending}
                             className={styles.checkoutButton}
                         >
                             {isProcessing ? (

@@ -17,3 +17,13 @@ test('تخفیف منقضی یا نامعتبر مجوز رایگان نمی‌�
   expect(getDiscountedCoursePrice({ price: 100, discountPercent: 100, discountUntil: 'invalid' })).toBe(100);
   expect(getDiscountedCoursePrice({ price: 100, discountPercent: 100, discountUntil: '2000-01-01' })).toBe(100);
 });
+
+test.each([[101, 10, 91], [109, 10, 99], [1, 99, 1], [101, 100, 0], [0, 100, 0]])(
+  'قیمت پایه %s و تخفیف %s درصد، مبلغ نهایی %s می‌سازد', (price, discountPercent, expected) => {
+    expect(getDiscountedCoursePrice({ price, discountPercent })).toBe(expected);
+  });
+
+test('لحظه پایان تخفیف نیز منقضی است', () => {
+  expect(getDiscountedCoursePrice({ price: 101, discountPercent: 10, discountUntil: '2026-10-15T10:00:00Z' },
+    Date.parse('2026-10-15T10:00:00Z'))).toBe(101);
+});

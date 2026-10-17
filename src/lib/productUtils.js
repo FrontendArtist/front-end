@@ -1,3 +1,4 @@
+import { getDiscountedCoursePrice } from './coursePricing';
 import { formatSingleImage } from './strapiUtils';
 
 /**
@@ -67,17 +68,11 @@ export function formatStrapiProducts(apiResponse) {
         };
       }).filter(c => c.slug || c.name);
 
-      let discountPercent = Number(attrs.discountPercent || 0);
       const discountUntil = attrs.discountUntil || null;
-
-      // اگر تاریخ انقضای تخفیف گذشته باشد، تخفیف غیرفعال می‌شود
-      if (discountUntil && new Date(discountUntil).getTime() <= Date.now()) {
-        discountPercent = 0;
-      }
-
       const originalPrice = priceVal;
-      const discountPrice = discountPercent > 0 ? Number((originalPrice * (1 - discountPercent / 100)).toFixed(4)) : null;
-      const finalPrice = discountPrice !== null ? discountPrice : originalPrice;
+      const finalPrice = getDiscountedCoursePrice({ ...attrs, price: originalPrice });
+      const discountPercent = finalPrice < originalPrice ? Number(attrs.discountPercent) : 0;
+      const discountPrice = discountPercent > 0 ? finalPrice : null;
       const priceObject = { noor: finalPrice, toman: finalPrice, original: originalPrice };
 
       return {
@@ -113,20 +108,19 @@ export function formatStrapiProduct(product) {
     ? formatSingleImage(attr.images.data[0])
     : { url: '/images/placeholder.png' };
 
-  let discountPercent = Number(attr.discountPercent || 0);
   const discountUntil = attr.discountUntil || null;
-  if (discountUntil && new Date(discountUntil).getTime() <= Date.now()) {
-    discountPercent = 0;
-  }
-  const originalPrice = typeof attr.price === 'object' ? attr.price?.toman || 0 : (attr.price || 0);
-  const discountPrice = discountPercent > 0 ? Math.round(originalPrice * (1 - discountPercent / 100)) : null;
-  const finalPrice = discountPrice !== null ? discountPrice : originalPrice;
+  const originalPrice = Number(attr.priceNoor ?? (typeof attr.price === 'object' ? (attr.price?.noor ?? attr.price?.toman) : attr.price)) || 0;
+  const finalPrice = getDiscountedCoursePrice({ ...attr, price: originalPrice });
+  const discountPercent = finalPrice < originalPrice ? Number(attr.discountPercent) : 0;
+  const discountPrice = discountPercent > 0 ? finalPrice : null;
 
   return {
     id: product.id,
     title: attr.title,
     slug: attr.slug,
-    price: { toman: finalPrice, original: originalPrice },
+    price: { noor: finalPrice, toman: finalPrice, original: originalPrice },
+    priceNoor: finalPrice,
+    originalPriceNoor: originalPrice,
     originalPrice,
     discountPercent,
     discountPrice,

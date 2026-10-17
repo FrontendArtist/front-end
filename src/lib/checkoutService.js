@@ -27,6 +27,10 @@ export async function executeOnlinePayment({
         throw new Error('سبد خرید شما خالی است.');
     }
 
+    if (appliedCoupon?.pending) {
+        throw new Error('بررسی کد تخفیف برای سبد فعلی هنوز تمام نشده است.');
+    }
+
     const isFreeOrder = finalTotalPrice === 0;
     let checkedBeforeOrder = false;
 

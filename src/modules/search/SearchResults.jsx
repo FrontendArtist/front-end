@@ -1,5 +1,7 @@
 'use client';
 
+import { getDiscountedCoursePrice } from '@/lib/coursePricing';
+
 import { useState } from 'react';
 import clsx from 'clsx';
 import styles from './SearchResults.module.scss';
@@ -53,21 +55,20 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
             ? formatSingleImage(imagesList[0])
             : formatSingleImage(data.image || data.cover || data.images || null);
 
-        let discountPercent = Number(data.discountPercent || 0);
         const discountUntil = data.discountUntil || null;
-        if (discountUntil && new Date(discountUntil).getTime() <= Date.now()) {
-            discountPercent = 0;
-        }
-
-        const rawPrice = typeof data.price === 'object' ? data.price?.toman || 0 : (data.price || 0);
-        const discountPrice = discountPercent > 0 ? Math.round(rawPrice * (1 - discountPercent / 100)) : null;
-        const finalPrice = discountPrice !== null ? discountPrice : rawPrice;
+        const rawPrice = Number(data.priceNoor ?? (typeof data.price === 'object' ? (data.price?.noor ?? data.price?.toman) : data.price)) || 0;
+        const finalPrice = getDiscountedCoursePrice({ ...data, price: rawPrice });
+        const discountPercent = finalPrice < rawPrice ? Number(data.discountPercent) : 0;
+        const discountPrice = discountPercent > 0 ? finalPrice : null;
 
         return {
             id,
             slug: data.slug,
             title: data.title,
-            price: { toman: finalPrice, original: rawPrice },
+            price: { noor: finalPrice, toman: finalPrice, original: rawPrice },
+            priceNoor: finalPrice,
+            originalPriceNoor: rawPrice,
+            documentId: item.documentId,
             originalPrice: rawPrice,
             discountPercent,
             discountPrice,
@@ -107,21 +108,20 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
         const id = item.id;
         const imageObj = formatSingleImage(data.media?.[0] || data.media?.data?.[0] || data.image?.data || data.image || data.cover);
 
-        let discountPercent = Number(data.discountPercent || 0);
         const discountUntil = data.discountUntil || null;
-        if (discountUntil && new Date(discountUntil).getTime() <= Date.now()) {
-            discountPercent = 0;
-        }
-
-        const rawPrice = typeof data.price === 'object' ? data.price?.toman || 0 : (data.price || 0);
-        const discountPrice = discountPercent > 0 ? Math.round(rawPrice * (1 - discountPercent / 100)) : null;
-        const finalPrice = discountPrice !== null ? discountPrice : rawPrice;
+        const rawPrice = Number(data.priceNoor ?? (typeof data.price === 'object' ? (data.price?.noor ?? data.price?.toman) : data.price)) || 0;
+        const finalPrice = getDiscountedCoursePrice({ ...data, price: rawPrice });
+        const discountPercent = finalPrice < rawPrice ? Number(data.discountPercent) : 0;
+        const discountPrice = discountPercent > 0 ? finalPrice : null;
 
         return {
             id,
             slug: data.slug,
             title: data.title,
-            price: { toman: finalPrice, original: rawPrice },
+            price: { noor: finalPrice, toman: finalPrice, original: rawPrice },
+            priceNoor: finalPrice,
+            originalPriceNoor: rawPrice,
+            documentId: item.documentId,
             originalPrice: rawPrice,
             discountPercent,
             discountPrice,

@@ -1,8 +1,8 @@
 import { formatStrapiCourses, getEffectiveCoursePrice } from '../courseUtils';
-import { formatStrapiProducts } from '../productUtils';
+import { formatStrapiProducts, formatStrapiProduct } from '../productUtils';
 
 describe('courseUtils & productUtils with Noor pricing', () => {
-  test('formatStrapiCourses extracts priceNoor and calculates decimal discount without integer truncation', () => {
+  test('formatStrapiCourses extracts priceNoor and rounds the discount down, preserving the base precision', () => {
     const apiResponse = {
       data: [
         {
@@ -19,9 +19,9 @@ describe('courseUtils & productUtils with Noor pricing', () => {
     const formatted = formatStrapiCourses(apiResponse);
     expect(formatted).toHaveLength(1);
     expect(formatted[0].originalPrice).toBe(100.5);
-    // 100.5 * 0.9 = 90.45 (not rounded to integer 90)
-    expect(formatted[0].price.noor).toBe(90.45);
-    expect(formatted[0].priceNoor).toBe(90.45);
+    // مبلغ تخفیف ۱۰ نور است؛ دقت قیمت پایه در مبلغ نهایی ۹۰٫۵ حفظ می‌شود.
+    expect(formatted[0].price.noor).toBe(90.5);
+    expect(formatted[0].priceNoor).toBe(90.5);
   });
 
   test('getEffectiveCoursePrice returns Noor as primary unit', () => {
@@ -54,3 +54,12 @@ describe('courseUtils & productUtils with Noor pricing', () => {
     expect(formatted[0].priceNoor).toBe(75.5);
   });
 });
+
+test.each([undefined, '2099-01-01', '2000-01-01', 'invalid'])(
+  'دوره، محصول و محصول خلاصه با تاریخ %s محاسبه یکسان دارند', discountUntil => {
+    const record = { id: 1, title: 'آزمون', price: 109, discountPercent: 10, discountUntil };
+    const expected = !discountUntil || discountUntil === '2099-01-01' ? 99 : 109;
+    expect(formatStrapiCourses({ data: [record] })[0].priceNoor).toBe(expected);
+    expect(formatStrapiProducts({ data: [record] })[0].priceNoor).toBe(expected);
+    expect(formatStrapiProduct(record).priceNoor).toBe(expected);
+  });

@@ -8,6 +8,7 @@ import {
     selectFinalTotalPrice,
     selectTotalPrice,
     selectCouponDiscount,
+    selectCouponPending,
     selectItemsCount,
 } from '@/store/useCartStore';
 import { formatPrice } from '@/lib/formatters';
@@ -31,6 +32,8 @@ export default function ShippingStep({ onPrevious }) {
     const appliedCoupon = useCartStore((state) => state.appliedCoupon);
     const totalPrice = useCartStore(selectTotalPrice);
     const couponDiscount = useCartStore(selectCouponDiscount);
+    const couponPending = useCartStore(selectCouponPending);
+    const couponError = useCartStore(state => state.couponError);
     const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
 
@@ -453,6 +456,8 @@ export default function ShippingStep({ onPrevious }) {
                 </div>
             )}
 
+            {couponPending && <p role="status">در حال بررسی کد تخفیف برای سبد فعلی…</p>}
+            {couponError && <p role="alert">{couponError}</p>}
             <div className={styles.actions}>
                 <button
                     type="button"
@@ -469,7 +474,7 @@ export default function ShippingStep({ onPrevious }) {
                     type="button"
                     onClick={handlePayAndSubmit}
                     className={styles.nextButton}
-                    disabled={isProcessing}
+                    disabled={isProcessing || couponPending}
                 >
                     {isProcessing ? (
                         'در حال اتصال به درگاه سامان...'

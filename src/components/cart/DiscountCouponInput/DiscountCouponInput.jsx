@@ -1,20 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { useCartStore, selectTotalPrice, selectCouponDiscount } from '@/store/useCartStore';
-import { formatPrice, formatNoor } from '@/lib/formatters';
+import { useCartStore, selectCouponPending } from '@/store/useCartStore';
+import { formatNoor } from '@/lib/formatters';
 import styles from './DiscountCouponInput.module.scss';
 
 export default function DiscountCouponInput() {
     const [inputCode, setInputCode] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
 
     const items = useCartStore((state) => state.items);
-    const totalPrice = useCartStore(selectTotalPrice);
+    const isLoading = useCartStore(selectCouponPending);
+    const couponError = useCartStore(state => state.couponError);
     const appliedCoupon = useCartStore((state) => state.appliedCoupon);
-    const applyCoupon = useCartStore((state) => state.applyCoupon);
+    const applyCoupon = useCartStore((state) => state.validateCoupon);
     const removeCoupon = useCartStore((state) => state.removeCoupon);
 
     const handleApply = async (e) => {
@@ -23,55 +22,21 @@ export default function DiscountCouponInput() {
 
         if (!code) {
             setErrorMessage('لطفاً کد تخفیف را وارد نمایید.');
-            setSuccessMessage('');
             return;
         }
 
         if (items.length === 0) {
             setErrorMessage('سبد خرید شما خالی است.');
-            setSuccessMessage('');
             return;
         }
 
-        setIsLoading(true);
         setErrorMessage('');
-        setSuccessMessage('');
-
-        try {
-            const res = await fetch('/api/coupons/validate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    code,
-                    cartItems: items,
-                    currentTotal: totalPrice,
-                }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok || !data.valid) {
-                setErrorMessage(data.message || 'کد تخفیف وارد شده معتبر نمی‌باشد.');
-                return;
-            }
-
-            // ذخیره در Zustand Store
-            applyCoupon(data);
-            setSuccessMessage(data.message || 'کد تخفیف با موفقیت اعمال شد.');
-            setInputCode('');
-        } catch (err) {
-            console.error('Error applying coupon:', err);
-            setErrorMessage('خطا در برقراری ارتباط با سرور.');
-        } finally {
-            setIsLoading(false);
-        }
+        await applyCoupon(code);
+        setInputCode('');
     };
 
     const handleRemove = () => {
         removeCoupon();
-        setSuccessMessage('');
         setErrorMessage('');
         setInputCode('');
     };
@@ -85,7 +50,7 @@ export default function DiscountCouponInput() {
                         <div className={styles.textGroup}>
                             <span className={styles.codeText}>کد تخفیف: <strong>{appliedCoupon.code}</strong></span>
                             <span className={styles.discountDesc}>
-                                {appliedCoupon.discountType === 'percentage'
+                                {isLoading ? 'در حال بررسی کد برای سبد فعلی…' : appliedCoupon.discountType === 'percentage'
                                     ? `${appliedCoupon.discountValue}٪ تخفیف (${formatNoor(appliedCoupon.discountAmount)} نور)`
                                     : `${formatNoor(appliedCoupon.discountAmount)} نور تخفیف`}
                             </span>
@@ -105,7 +70,7 @@ export default function DiscountCouponInput() {
                         </svg>
                     </button>
                 </div>
-                {successMessage && <div className={styles.successText}>{successMessage}</div>}
+                {!isLoading && appliedCoupon.message && <div className={styles.successText}>{appliedCoupon.message}</div>}
             </div>
         );
     }
@@ -139,14 +104,14 @@ export default function DiscountCouponInput() {
                 </div>
             </form>
 
-            {errorMessage && (
+            {(errorMessage || couponError) && (
                 <div className={styles.errorAlert} role="alert">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="8" x2="12" y2="12" />
                         <line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
-                    <span>{errorMessage}</span>
+                    <span>{errorMessage || couponError}</span>
                 </div>
             )}
         </div>

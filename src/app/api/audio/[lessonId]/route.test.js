@@ -144,11 +144,11 @@ describe.each([['GET', GET], ['HEAD', HEAD]])('%s', (method, handler) => {
     expect((await run()).status).toBe(403);
   });
 
-  test('گردکردن مبلغ تخفیف مثل صفحه حفظ می‌شود', async () => {
+  test('تخفیف گرد‌شده روی قیمت یک، دسترسی رایگان کاذب نمی‌سازد', async () => {
     course.price = '1';
     course.discountPercent = 99;
     session = null;
-    expect((await run()).status).toBe(200);
+    expect((await run()).status).toBe(401);
   });
 
   test.each([{ is_foreigner: true }, { phoneNumber: '+4915112345678' }])('قیمت بین‌المللی پولی از تخفیف محلی رایگان نمی‌شود (%p)', async user => {

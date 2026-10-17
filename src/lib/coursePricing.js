@@ -8,5 +8,5 @@ export function getDiscountedCoursePrice(course, now = Date.now()) {
   const expiry = course.discountUntil ? new Date(course.discountUntil).getTime() : null;
   if (!Number.isInteger(percent) || percent <= 0 || percent > 100 ||
       (expiry !== null && (!Number.isFinite(expiry) || expiry <= now))) return price;
-  return Math.round(price * (1 - percent / 100));
+  return price - Math.floor(price * percent / 100);
 }

@@ -10,7 +10,17 @@ import { cancelOrdersAfterRemoval } from '@/lib/client/cartRemovalApi';
  */
 export const useCartStore = create(
     persist(
-        (set, get) => ({
+        (rawSet, get) => {
+            // مبلغ کوپن فقط برای همان اقلام و همان کاربر معتبر است.
+            const set = (patch) => rawSet(state => {
+                const next = typeof patch === 'function' ? patch(state) : patch;
+                if (next.items && next.items !== state.items && !Object.hasOwn(next, 'appliedCoupon')) {
+                    return { ...next, appliedCoupon: next.items.length && state.appliedCoupon
+                        ? { code: state.appliedCoupon.code, pending: true } : null, couponError: '' };
+                }
+                return next;
+            });
+            return ({
             /**
              * آرایه آیتم‌های موجود در سبد خرید
              * هر آیتم شامل: id, slug, title, price, image, quantity, type
@@ -82,6 +92,8 @@ export const useCartStore = create(
                     price: finalPrice,
                     priceNoor: finalPrice,
                     normalPrice: normalPrice,
+                    domesticPrice: rawItem.domesticPrice ?? finalPrice,
+                    domesticOriginalPrice: rawItem.domesticOriginalPrice ?? normalPrice,
                     originalPrice: normalPrice,
                     originalPriceNoor: normalPrice,
                     internationalPrice: rawItem.internationalPrice ? Number(rawItem.internationalPrice) : null,
@@ -140,13 +152,17 @@ export const useCartStore = create(
                 let hasChanges = false;
                 const updatedItems = currentItems.map((item) => {
                     if (item.type === 'course' && item.internationalPrice && Number(item.internationalPrice) > 0) {
-                        const targetPrice = isForeign ? Number(item.internationalPrice) : Number(item.normalPrice || item.originalPrice || item.price);
-                        if (item.price !== targetPrice) {
+                        const targetPrice = isForeign ? Number(item.internationalPrice) : Number(item.domesticPrice ?? item.price);
+                        const originalPrice = isForeign ? targetPrice : Number(item.domesticOriginalPrice ?? item.originalPrice ?? targetPrice);
+                        if (item.price !== targetPrice || item.priceNoor !== targetPrice) {
                             hasChanges = true;
                             return {
                                 ...item,
                                 normalPrice: item.normalPrice || item.price,
                                 price: targetPrice,
+                                priceNoor: targetPrice,
+                                originalPrice,
+                                originalPriceNoor: originalPrice,
                                 isInternationalPrice: isForeign,
                             };
                         }
@@ -203,19 +219,53 @@ export const useCartStore = create(
              * { code, title, discountType, discountValue, discountAmount, originalTotalPrice, finalTotalPrice }
              */
             appliedCoupon: null,
+            couponError: '',
+
+            validateCoupon: async (code) => {
+                const { items, userId, appliedCoupon } = get();
+                if (!items.length || !code?.trim()) return;
+                if (appliedCoupon?.code === code.trim() && appliedCoupon.validating && appliedCoupon.validationItems === items && appliedCoupon.validationUserId === userId) return;
+                const pending = { code: code.trim(), pending: true, validating: true, validationItems: items, validationUserId: userId };
+                set({ appliedCoupon: pending, couponError: '' });
+                try {
+                    const response = await fetch('/api/coupons/validate', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code: pending.code, cartItems: items, currentTotal: selectTotalPrice({ items }) }),
+                    });
+                    const data = await response.json();
+                    if (get().appliedCoupon !== pending || get().items !== items || get().userId !== userId) return;
+                    if (!response.ok || !data.valid) {
+                        set({ appliedCoupon: null, couponError: data.message || 'کد تخفیف برای سبد فعلی معتبر نیست.' });
+                        return;
+                    }
+                    const total = selectTotalPrice({ items });
+                    const discount = Number(data.discountAmount);
+                    if (!Number.isFinite(discount) || discount < 0 || discount > total ||
+                        Number(Number(data.originalTotalPrice).toFixed(4)) !== total ||
+                        Number(Number(data.finalTotalPrice).toFixed(4)) !== Number((total - discount).toFixed(4))) {
+                        set({ appliedCoupon: null, couponError: 'مبلغ تخفیف با سبد فعلی هماهنگ نیست. دوباره تلاش کنید.' });
+                        return;
+                    }
+                    get().applyCoupon(data);
+                } catch {
+                    if (get().appliedCoupon === pending && get().items === items && get().userId === userId) {
+                        set({ appliedCoupon: null, couponError: 'خطا در برقراری ارتباط با سرور. دوباره تلاش کنید.' });
+                    }
+                }
+            },
 
             /**
              * اعمال کوپن تخفیف در سبد خرید
              */
             applyCoupon: (couponData) => {
-                set({ appliedCoupon: couponData });
+                set({ appliedCoupon: { ...couponData, pending: false, validationItems: get().items, validationUserId: get().userId }, couponError: '' });
             },
 
             /**
              * حذف کوپن تخفیف
              */
             removeCoupon: () => {
-                set({ appliedCoupon: null });
+                set({ appliedCoupon: null, couponError: '' });
             },
 
             /**
@@ -282,10 +332,16 @@ export const useCartStore = create(
             clearCart: () => {
                 set({ items: [], appliedCoupon: null, userId: null });
             },
-        }),
+            });
+        },
         {
             // نام کلید ذخیره‌سازی در LocalStorage
             name: 'cart-storage',
+            // مبلغ ذخیره‌شده بازیابی نمی‌شود؛ فقط کد برای بررسی مجدد نگه داشته می‌شود.
+            merge: (persisted, current) => ({ ...current, ...persisted,
+                appliedCoupon: persisted?.items?.length && persisted?.appliedCoupon?.code
+                    ? { code: persisted.appliedCoupon.code, pending: true } : null,
+            }),
 
             // نسخه استور برای مایگریشن تغییرات استیت در کاربرانی که از قبل دیتا دارند
             version: 2,
@@ -313,7 +369,7 @@ export const useCartStore = create(
              */
             partialize: (state) => ({
                 items: state.items,
-                appliedCoupon: state.appliedCoupon,
+                appliedCoupon: state.appliedCoupon ? { code: state.appliedCoupon.code, pending: true } : null,
                 userId: state.userId,
                 processedOrders: state.processedOrders,
             }),
@@ -352,8 +408,11 @@ export const selectItemLevelDiscount = (state) => {
 /**
  * محاسبه مبلغ تخفیف کد تخفیف
  */
+export const selectCouponPending = (state) => Boolean(state.appliedCoupon &&
+    (state.appliedCoupon.pending || state.appliedCoupon.validationItems !== state.items || state.appliedCoupon.validationUserId !== state.userId));
+
 export const selectCouponDiscount = (state) =>
-    Number(Number(state.appliedCoupon?.discountAmount || 0).toFixed(4));
+    selectCouponPending(state) ? 0 : Number(Number(state.appliedCoupon?.discountAmount || 0).toFixed(4));
 
 /**
  * محاسبه مبلغ نهایی قابل پرداخت به واحد نور (پس از کسر تخفیف کوپن)

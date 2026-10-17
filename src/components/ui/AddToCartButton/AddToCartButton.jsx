@@ -96,8 +96,11 @@ export default function AddToCartButton({ course }) {
       title,
       price: formattedPrice,
       originalPrice: numOriginal,
+      domesticPrice: course.priceNoor ?? (typeof price === 'object' ? (price?.noor ?? price?.toman) : price),
+      domesticOriginalPrice: course.originalPriceNoor ?? course.originalPrice ?? (typeof price === 'object' ? price?.original : price),
       internationalPrice: intlPrice,
       discountPercent: (isForeign && intlPrice && intlPrice > 0) ? 0 : (course.discountPercent || 0),
+      discountUntil: course.discountUntil,
       image: courseImageUrl,
       type: 'course',
     });
