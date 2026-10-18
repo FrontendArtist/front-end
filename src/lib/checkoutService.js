@@ -1,3 +1,4 @@
+import { purchaseCourseCart } from '@/lib/courseCartApi';
 import { PAYMENT_METHOD, PAYMENT_STATUS } from '@/lib/constants/orderConstants';
 import { ensurePaymentConnection } from '@/lib/client/paymentConnection';
 import { purchaseCourseWithByeMoney } from '@/lib/byeMoneyApi';
@@ -233,4 +234,56 @@ function submitGatewayPayment(payment) {
     }
     document.body.appendChild(form);
     form.submit();
+}
+
+/** خرید سبد با قیمت تثبیت‌شده؛ ادامه پس از شارژ بر عهده سرور است. */
+export async function executeNoorCartPurchase({ cartId, jwt, router, payOnline = false }) {
+    if (!cartId || !jwt) throw new Error('نشست یا شناسه سبد معتبر نیست.');
+    let data;
+    if (payOnline) {
+        await ensurePaymentConnection();
+        const response = await fetch('/api/payment/request', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentType: 'course_cart', cartId }),
+        });
+        const payment = await response.json().catch(() => ({}));
+        if (!response.ok || !payment.success) throw new Error(payment.message || payment.error || 'شروع پرداخت ممکن نیست.');
+        if (!payment.paidWithWallet && !payment.alreadyProcessing) {
+            if (!payment.token || !payment.topUpRequestId) throw new Error('پاسخ پرداخت معتبر نیست.');
+            submitGatewayPayment(payment);
+            return { success: true, awaitingPayment: true };
+        }
+        data = payment.data;
+    } else {
+        try {
+            data = await purchaseCourseCart(cartId, jwt);
+        } catch (error) {
+            if (error.code === 'CART_INSUFFICIENT_BALANCE') {
+                return executeNoorCartPurchase({ cartId, jwt, router, payOnline: true });
+            }
+            throw error;
+        }
+    }
+    // فقط اقلام خرید تکمیل‌شده از سبد حذف شوند و اقلام تازه‌اضافه‌شده حفظ گردند.
+    if (data?.courses && Array.isArray(data.courses)) {
+        const completedCourseIds = new Set(
+            data.courses
+                .filter(c => ['Completed', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus))
+                .map(c => c.externalCourseId)
+        );
+        if (completedCourseIds.size > 0) {
+            const currentItems = useCartStore.getState().items;
+            for (const item of currentItems) {
+                if (item.type === 'course' && completedCourseIds.has(item.documentId || item.externalCourseId)) {
+                    useCartStore.getState().removeItem(item.id);
+                }
+            }
+        }
+    }
+    triggerLightUpdate();
+    invalidateProfileCache();
+    const target = '/checkout/result?source=noor&cartId=' + encodeURIComponent(cartId);
+    if (router?.push) router.push(target);
+    else if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') window.location.href = target;
+    return { success: true, data };
 }

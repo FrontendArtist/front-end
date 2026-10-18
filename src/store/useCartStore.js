@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { isSameCartItem, deduplicateCourses } from '@/lib/cartItemIdentity';
 import { persist } from 'zustand/middleware';
 import { removeOrderItems } from '@/lib/cartRecovery';
 import { cancelOrdersAfterRemoval } from '@/lib/client/cartRemovalApi';
@@ -14,6 +15,10 @@ export const useCartStore = create(
             // مبلغ کوپن فقط برای همان اقلام و همان کاربر معتبر است.
             const set = (patch) => rawSet(state => {
                 const next = typeof patch === 'function' ? patch(state) : patch;
+                if (next.items && JSON.stringify(next.items.map(item => [item.type, item.documentId || item.externalCourseId || item.id]).sort()) !==
+                    JSON.stringify(state.items.map(item => [item.type, item.documentId || item.externalCourseId || item.id]).sort())) {
+                    next.courseCartRevision = (state.courseCartRevision || 0) + 1;
+                }
                 if (next.items && next.items !== state.items && !Object.hasOwn(next, 'appliedCoupon')) {
                     return { ...next, appliedCoupon: next.items.length && state.appliedCoupon
                         ? { code: state.appliedCoupon.code, pending: true } : null, couponError: '' };
@@ -26,6 +31,7 @@ export const useCartStore = create(
              * هر آیتم شامل: id, slug, title, price, image, quantity, type
              */
             items: [],
+            courseCartRevision: 0,
             hydratedUserId: null,
             processedOrders: {},
             removalError: null,
@@ -102,7 +108,7 @@ export const useCartStore = create(
                 const currentItems = get().items;
 
                 const existingItemIndex = currentItems.findIndex(
-                    (cartItem) => cartItem.id === item.id
+                    (cartItem) => isSameCartItem(cartItem, item)
                 );
 
                 if (existingItemIndex !== -1) {
@@ -224,6 +230,14 @@ export const useCartStore = create(
             validateCoupon: async (code) => {
                 const { items, userId, appliedCoupon } = get();
                 if (!items.length || !code?.trim()) return;
+                // کوپن دوره همراه پیش‌نمایش قیمت استرپی بررسی می‌شود؛ این مرحله رزرو نمی‌کند.
+                if (items.every(item => item.type === 'course')) {
+                    if (appliedCoupon?.code === code.trim() &&
+                        appliedCoupon.validationItems === items && appliedCoupon.validationUserId === userId && !appliedCoupon.pending) return;
+                    set({ appliedCoupon: { code: code.trim(), pending: false, awaitingQuote: true,
+                        discountAmount: 0, validationItems: items, validationUserId: userId }, couponError: '' });
+                    return;
+                }
                 if (appliedCoupon?.code === code.trim() && appliedCoupon.validating && appliedCoupon.validationItems === items && appliedCoupon.validationUserId === userId) return;
                 const pending = { code: code.trim(), pending: true, validating: true, validationItems: items, validationUserId: userId };
                 set({ appliedCoupon: pending, couponError: '' });
@@ -344,7 +358,7 @@ export const useCartStore = create(
             }),
 
             // نسخه استور برای مایگریشن تغییرات استیت در کاربرانی که از قبل دیتا دارند
-            version: 2,
+            version: 3,
             migrate: (persistedState, version) => {
                 if (version < 2) {
                     if (persistedState?.items) {
@@ -360,6 +374,7 @@ export const useCartStore = create(
                         });
                     }
                 }
+                if (persistedState?.items) persistedState.items = deduplicateCourses(persistedState.items);
                 return persistedState;
             },
 
@@ -369,6 +384,7 @@ export const useCartStore = create(
              */
             partialize: (state) => ({
                 items: state.items,
+                courseCartRevision: state.courseCartRevision,
                 appliedCoupon: state.appliedCoupon ? { code: state.appliedCoupon.code, pending: true } : null,
                 userId: state.userId,
                 processedOrders: state.processedOrders,

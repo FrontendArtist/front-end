@@ -37,12 +37,13 @@ function CheckoutResultContent() {
     const topUpId = searchParams.get('topUpId') || '';
     const isWalletPurchase = searchParams.get('source') === 'noor';
     const courseId = isWalletPurchase ? searchParams.get('courseId') || '' : '';
-    const checkout = useCourseCheckoutResult(courseId, isTopUp ? topUpId : '');
-    const isCoursePurchase = isWalletPurchase || checkout.courses.length > 0;
+    const cartId = searchParams.get('cartId') || '';
+    const checkout = useCourseCheckoutResult(courseId, isTopUp ? topUpId : '', cartId);
+    const isCoursePurchase = Boolean(cartId) || isWalletPurchase || checkout.courses.length > 0;
     const isCheckingPurchase = isCoursePurchase && ['checking', 'activating'].includes(checkout.phase);
     const isVerifiedCourse = isCoursePurchase && checkout.phase === 'completed';
-    const courseMessage = checkout.phase === 'checking' ? 'در حال بررسی نتیجه خرید و فعال‌سازی دوره…'
-        : checkout.phase === 'completed' ? 'خرید با موفقیت انجام شد و دسترسی دوره برای شما فعال است.'
+    const courseMessage = checkout.phase === 'checking' ? 'در حال بررسی نتیجه خرید و فعال‌سازی دوره‌ها…'
+        : checkout.phase === 'completed' ? 'خرید با موفقیت انجام شد و دسترسی همه دوره‌ها برای شما فعال است.'
         : checkout.phase === 'incomplete' ? 'کیف پول شارژ شد، اما خرید دوره تکمیل نشد. نور شارژشده در کیف پول شما محفوظ است.'
         : checkout.phase === 'activating' ? 'پرداخت ثبت شد؛ در حال فعال‌سازی دوره هستیم. نیازی به پرداخت دوباره نیست.'
         : checkout.phase === 'paymentPending' ? 'خرید هنوز تأیید نشده است. وضعیت پرداخت را از کیف پول و حساب کاربری پیگیری کنید.'
@@ -93,7 +94,7 @@ function CheckoutResultContent() {
                     {/* عنوان نتیجه */}
                     <h1 className={styles.title}>
                         {isCoursePurchase
-                            ? isVerifiedCourse ? 'خرید موفق؛ دوره فعال شد' : isCheckingPurchase ? 'در حال بررسی و فعال‌سازی دوره…' : 'وضعیت خرید دوره'
+                            ? isVerifiedCourse ? 'خرید موفق؛ دوره‌ها فعال شدند' : isCheckingPurchase ? 'در حال بررسی و فعال‌سازی دوره‌ها…' : 'وضعیت خرید دوره'
                             : isTopUp && topUpId && !['standalone', 'paymentFailed'].includes(checkout.phase) ? 'وضعیت پرداخت در حال بررسی است'
                             : isSuccess
                             ? 'پرداخت با موفقیت انجام شد'
@@ -117,6 +118,16 @@ function CheckoutResultContent() {
                             : message || 'مشکلی در تایید تراکنش یا اتصال به درگاه رخ داد. چنانچه مبلغی از حساب شما کسر شده باشد، حداکثر ظرف ۷۲ ساعت توسط شاپرک عودت داده می‌شود.'}
                     </p>
 
+                    {isCoursePurchase && checkout.courses.length > 0 && (
+                        <div className={styles.detailsList} aria-label="وضعیت دوره‌های سبد">
+                            {checkout.courses.map(course => (
+                                <div className={styles.detailRow} key={course.externalCourseId}>
+                                    <span className={styles.label}>{course.title || course.externalCourseId}</span>
+                                    <span className={styles.value}>{({ Completed: 'فعال شد', Activating: 'در حال فعال‌سازی', DeliveryPending: 'پرداخت ثبت شد؛ در انتظار تحویل', PurchaseIncomplete: 'خرید تکمیل نشده', NotPurchased: 'خریداری نشده' })[course.purchaseStatus] || 'در حال بررسی'}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                     {/* جدول مشخصات تراکنش */}
                     <div className={styles.detailsList}>
                         {isTopUp && topUpId && (
@@ -204,6 +215,7 @@ function CheckoutResultContent() {
                     <div className={styles.actions}>
                         {isCoursePurchase ? (
                             <>
+                                {checkout.phase === 'paymentFailed' && <Link href="/cart" className={styles.primaryButton}>بازگشت به سبد خرید و پرداخت مجدد</Link>}
                                 <Link href="/profile/purchases" className={styles.primaryButton}>دوره‌های من</Link>
                                 <Link href="/profile" className={styles.secondaryButton}>کیف پول و حساب کاربری</Link>
                                 <Link href="/contact" className={styles.secondaryButton}>پشتیبانی و تماس</Link>

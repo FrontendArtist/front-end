@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { deduplicateCourses } from '@/lib/cartItemIdentity';
 import { useSession } from "next-auth/react";
 import { useCartStore, selectCouponPending } from "@/store/useCartStore";
 import { fetchProfileCartData, updateProfileCartData } from "@/lib/client/profileClientApi";
@@ -17,7 +18,7 @@ const useCartSync = () => {
   const hydratedUserId = useCartStore((state) => state.hydratedUserId);
   const userId = session?.user?.id;
 
-  // تغییر اقلام یا هویت، مبلغ قبلی را بی‌اعتبار و کوپن را دوباره بررسی می‌کند.
+  // تغییر اقلام یا هویت، مبلغ قبلی را بی‌اعتبار می‌کند؛ برای دوره کامل، بررسی با قیمت معتبر سبد انجام می‌شود.
   useEffect(() => {
     const current = useCartStore.getState();
     if (selectCouponPending(current)) current.validateCoupon(current.appliedCoupon.code);
@@ -44,7 +45,7 @@ const useCartSync = () => {
         if (!active || !profile || String(useCartStore.getState().userId) !== String(userId)) return;
         const current = useCartStore.getState();
         if (initialItems.length === 0 && current.items === initialItems && Array.isArray(profile.cartData?.state?.items)) {
-          useCartStore.setState({ items: profile.cartData.state.items, appliedCoupon: null });
+          useCartStore.setState({ items: deduplicateCourses(profile.cartData.state.items), appliedCoupon: null });
         }
         useCartStore.setState({ hydratedUserId: userId });
       } catch (error) {

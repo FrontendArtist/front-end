@@ -1,4 +1,6 @@
-import { executeOnlinePayment, executeNoorCoursePurchase } from '../checkoutService';
+import { purchaseCourseCart } from '@/lib/courseCartApi';
+jest.mock('@/lib/courseCartApi', () => ({ purchaseCourseCart: jest.fn() }));
+import { executeOnlinePayment, executeNoorCoursePurchase, executeNoorCartPurchase } from '../checkoutService';
 import { invalidatePaymentConnection } from '../client/paymentConnection';
 import { purchaseCourseWithByeMoney } from '@/lib/byeMoneyApi';
 import { triggerLightUpdate } from '@/store/useLightStore';
@@ -191,4 +193,65 @@ describe('خرید یک دوره با نور (ByeMoney Course Purchase - TASKS/R
     expect(global.fetch).not.toHaveBeenCalled();
     expect(useCartStore.getState().items).toHaveLength(1);
   });
+});
+
+describe('خرید سبد با قیمت تثبیت‌شده', () => {
+  test('فقط شناسه سبد را ارسال می‌کند و تا تأیید GET اقلام را نگه می‌دارد', async () => {
+    const items = [{ id: 1, type: 'course', documentId: 'one' }, { id: 2, type: 'course', documentId: 'two' }];
+    useCartStore.setState({ items });
+    purchaseCourseCart.mockResolvedValue({ cartId: 'cart-1', status: 'Paid', courses: [] });
+    const router = { push: jest.fn() };
+    await executeNoorCartPurchase({ cartId: 'cart-1', jwt: 'jwt', router });
+    expect(purchaseCourseCart).toHaveBeenCalledWith('cart-1', 'jwt');
+    expect(router.push).toHaveBeenCalledWith('/checkout/result?source=noor&cartId=cart-1');
+    expect(useCartStore.getState().items).toEqual(items);
+  });
+
+  test('فقط دوره‌های تکمیل‌شده را از سبد حذف می‌کند و اقلام تازه‌اضافه‌شده را نگه می‌دارد', async () => {
+    const items = [
+      { id: 10, type: 'course', documentId: 'c-10' },
+      { id: 20, type: 'course', documentId: 'c-20' },
+      { id: 30, type: 'course', documentId: 'c-new' },
+    ];
+    useCartStore.setState({ items });
+    purchaseCourseCart.mockResolvedValue({
+      cartId: 'cart-1',
+      status: 'Paid',
+      courses: [
+        { externalCourseId: 'c-10', purchaseStatus: 'Completed' },
+        { externalCourseId: 'c-20', purchaseStatus: 'Pending' },
+      ],
+    });
+    const router = { push: jest.fn() };
+    await executeNoorCartPurchase({ cartId: 'cart-1', jwt: 'jwt', router });
+    expect(useCartStore.getState().items.map(i => i.id)).toEqual([20, 30]);
+  });
+});
+
+test('کاهش هم‌زمان موجودی به شروع شارژ سروری تبدیل می‌شود؛ حافظه مرورگر الزامی نیست', async () => {
+    jest.clearAllMocks();
+    invalidatePaymentConnection();
+    purchaseCourseCart.mockRejectedValue(Object.assign(new Error('کسری موجودی'), { code: 'CART_INSUFFICIENT_BALANCE' }));
+    global.fetch = jest.fn(async url => ({ ok: true, json: async () => url.startsWith('/api/check-vpn')
+        ? { success: true, isVpn: false } : { success: true, token: 'bank-token', topUpRequestId: 'topup-cart' } }));
+    const submit = jest.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {});
+    const storage = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+    try {
+        expect(await executeNoorCartPurchase({ cartId: 'cart-1', jwt: 'jwt' })).toEqual({ success: true, awaitingPayment: true });
+        expect(purchaseCourseCart).toHaveBeenCalledTimes(1);
+        const call = fetch.mock.calls.find(([url]) => url === '/api/payment/request');
+        expect(JSON.parse(call[1].body)).toEqual({ paymentType: 'course_cart', cartId: 'cart-1' });
+        expect(submit).toHaveBeenCalledTimes(1);
+    } finally { storage.mockRestore(); submit.mockRestore(); document.body.innerHTML = ''; }
+});
+
+test('پاسخ درحال پردازش به نتیجه خواندنی می‌رود و توکن تازه نمی‌خواهد', async () => {
+    jest.clearAllMocks();
+    invalidatePaymentConnection();
+    global.fetch = jest.fn(async url => ({ ok: true, json: async () => url.startsWith('/api/check-vpn')
+        ? { success: true, isVpn: false } : { success: true, alreadyProcessing: true, data: { status: 'AwaitingTopUp' } } }));
+    const router = { push: jest.fn() };
+    await executeNoorCartPurchase({ cartId: 'cart-1', jwt: 'jwt', router, payOnline: true });
+    expect(router.push).toHaveBeenCalledWith('/checkout/result?source=noor&cartId=cart-1');
+    expect(purchaseCourseCart).not.toHaveBeenCalled();
 });

@@ -10,7 +10,7 @@ export default function DiscountCouponInput() {
     const [errorMessage, setErrorMessage] = useState('');
 
     const items = useCartStore((state) => state.items);
-    const isLoading = useCartStore(selectCouponPending);
+    const isLoading = useCartStore(state => selectCouponPending(state) || Boolean(state.appliedCoupon?.awaitingQuote));
     const couponError = useCartStore(state => state.couponError);
     const appliedCoupon = useCartStore((state) => state.appliedCoupon);
     const applyCoupon = useCartStore((state) => state.validateCoupon);

@@ -13,6 +13,41 @@ beforeEach(() => {
     cancelOrdersAfterRemoval.mockResolvedValue(undefined);
 });
 
+test('همان دوره با شناسه عددی متفاوت یا متنی دوباره به سبد اضافه نمی‌شود', () => {
+    useCartStore.setState({ items: [] });
+    state().addItem({ id: 42, documentId: 'same-course', type: 'course', priceNoor: 100 });
+    state().addItem({ id: 99, documentId: 'same-course', type: 'course', priceNoor: 200 });
+    state().addItem({ id: '42', type: 'course', priceNoor: 300 });
+    expect(state().items).toHaveLength(1);
+});
+
+test('سبد قدیمی با دوره‌های تکراری هنگام بازیابی پاکسازی می‌شود', async () => {
+    localStorage.setItem('cart-storage', JSON.stringify({ version: 2, state: {
+        userId: 7, items: [
+            { id: 42, documentId: 'same-course', type: 'course', priceNoor: 100 },
+            { id: 99, documentId: 'same-course', type: 'course', priceNoor: 200 },
+        ],
+    } }));
+    await useCartStore.persist.rehydrate();
+    expect(state().items).toHaveLength(1);
+    expect(state().items[0].documentId).toBe('same-course');
+});
+
+test('حذف و افزودن مجدد همان دوره نسل تازه می‌سازد و تغییر اطلاعات نمایشی نسل را عوض نمی‌کند', async () => {
+    useCartStore.setState({ items: [], courseCartRevision: 0 });
+    const course = { id: 42, documentId: 'course', type: 'course', priceNoor: 105 };
+    state().addItem(course);
+    const firstRevision = state().courseCartRevision;
+    state().updateUserPricing(false);
+    expect(state().courseCartRevision).toBe(firstRevision);
+    await state().removeItemManually(42);
+    state().addItem(course);
+    expect(state().courseCartRevision).toBeGreaterThan(firstRevision);
+    const revision = state().courseCartRevision;
+    await useCartStore.persist.rehydrate();
+    expect(state().courseCartRevision).toBe(revision);
+});
+
 test('حذف آخرین قلم و افزودن قلم نامرتبط، کد و مبلغ قبلی را برنمی‌گرداند', async () => {
     await state().validateCoupon('ONLY-A');
     expect(selectFinalTotalPrice(state())).toBe(91);
@@ -107,4 +142,18 @@ test('قیمت داخلی تخفیف‌خورده با همگام‌سازی ه�
     state().updateUserPricing(true); expect(state().items[0].priceNoor).toBe(200);
     state().updateUserPricing(false); expect(state().items[0].priceNoor).toBe(91);
     expect(state().items[0].originalPriceNoor).toBe(101);
+});
+
+test('کوپن رزروشده دوره با استعلام مستقل ظرفیت از بین نمی‌رود', async () => {
+    const courses = [{ id: 1, documentId: 'one', type: 'course', priceNoor: 105 }, { id: 2, documentId: 'two', type: 'course', priceNoor: 105 }];
+    useCartStore.setState({ items: courses, userId: 7, appliedCoupon: null });
+    fetch.mockResolvedValue({ ok: true, json: async () => ({ valid: false, message: 'ظرفیت کوپن تکمیل شده است.' }) });
+    await state().validateCoupon('LAST-ONE');
+    expect(state().appliedCoupon).toMatchObject({ code: 'LAST-ONE', awaitingQuote: true });
+    expect(selectCouponPending(state())).toBe(false);
+    state().applyCoupon({ code: 'LAST-ONE', quoteCartId: 'reserved-cart', discountAmount: 21, awaitingQuote: false });
+    await state().validateCoupon('LAST-ONE');
+    expect(selectCouponDiscount(state())).toBe(21);
+    expect(state().appliedCoupon.code).toBe('LAST-ONE');
+    expect(fetch).not.toHaveBeenCalled();
 });

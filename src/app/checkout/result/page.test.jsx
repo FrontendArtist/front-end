@@ -9,8 +9,8 @@ jest.mock('@/hooks/useCourseCheckoutResult', () => jest.fn());
 test('شارژ موفق با تحویل ناموفق، دوره را فعال‌شده نمایش نمی‌دهد', () => {
     useCourseCheckoutResult.mockReturnValue({ phase: 'activating', paid: true, courses: [{ externalCourseId: 'course-1', purchaseStatus: 'DeliveryPending' }] });
     render(<CheckoutResultPage />);
-    expect(screen.getByText('در حال بررسی و فعال‌سازی دوره…')).toBeTruthy();
-    expect(screen.queryByText('خرید موفق؛ دوره فعال شد')).toBeNull();
+    expect(screen.getByText('در حال بررسی و فعال‌سازی دوره‌ها…')).toBeTruthy();
+    expect(screen.queryByText('خرید موفق؛ دوره‌ها فعال شدند')).toBeNull();
     expect(screen.queryByText(/پرداخت مجدد/)).toBeNull();
 });
 
@@ -18,7 +18,7 @@ test('شکست خرید پس از شارژ، حفظ نور را صریح نما�
     useCourseCheckoutResult.mockReturnValue({ phase: 'incomplete', paid: true, courses: [{ externalCourseId: 'course-1', purchaseStatus: 'PurchaseIncomplete' }] });
     render(<CheckoutResultPage />);
     expect(screen.getByText(/نور شارژشده در کیف پول شما محفوظ است/)).toBeTruthy();
-    expect(screen.queryByText('خرید موفق؛ دوره فعال شد')).toBeNull();
+    expect(screen.queryByText('خرید موفق؛ دوره‌ها فعال شدند')).toBeNull();
 });
 
 test('پارامتر موفق در نشانی بدون استعلام موفق سرور، تأیید خرید یا شارژ نمی‌سازد', () => {
@@ -31,5 +31,12 @@ test('پارامتر موفق در نشانی بدون استعلام موفق �
 test('فقط تحویل تأییدشده، موفقیت فعال‌سازی نشان می‌دهد', () => {
     useCourseCheckoutResult.mockReturnValue({ phase: 'completed', paid: true, courses: [{ externalCourseId: 'course-1', purchaseStatus: 'Completed' }] });
     render(<CheckoutResultPage />);
-    expect(screen.getByText('خرید موفق؛ دوره فعال شد')).toBeTruthy();
+    expect(screen.getByText('خرید موفق؛ دوره‌ها فعال شدند')).toBeTruthy();
+});
+
+test('شکست قطعی خرید دوره راه بازگشت به همان سبد و پرداخت مجدد دارد', () => {
+    useCourseCheckoutResult.mockReturnValue({ phase: 'paymentFailed', paid: false,
+        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'PurchaseIncomplete' }] });
+    render(<CheckoutResultPage />);
+    expect(screen.getByRole('link', { name: 'بازگشت به سبد خرید و پرداخت مجدد' }).getAttribute('href')).toBe('/cart');
 });

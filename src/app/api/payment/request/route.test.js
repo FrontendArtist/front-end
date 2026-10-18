@@ -1,4 +1,7 @@
 /** @jest-environment node */
+import { getCourseCart, topUpCourseCart, purchaseCourseCart } from '@/lib/courseCartApi';
+jest.mock('@/lib/courseCartApi', () => ({ getCourseCart: jest.fn(), topUpCourseCart: jest.fn(), purchaseCourseCart: jest.fn() }));
+
 import { POST } from './route';
 import { getServerSession } from 'next-auth';
 import { paymentAuthOptions } from '@/lib/auth';
@@ -399,4 +402,44 @@ describe('POST /api/payment/request - Noor Top-up & SEP Token Flow', () => {
     expect((await POST(req)).status).toBe(400);
     expect(requestSepToken).not.toHaveBeenCalled();
   });
+});
+
+describe('پرداخت سبد چند دوره', () => {
+  const cartId = '8e169023-0b44-43fa-80cf-118bfe78fb01';
+  const request = () => ({ headers: { get: () => 'localhost' }, json: async () => ({ paymentType: 'course_cart', cartId, amountNoor: 1 }) });
+  beforeEach(() => { jest.clearAllMocks(); getServerSession.mockResolvedValue({ user: { id: 7, jwt: 'jwt' } }); });
+  test('کسری و شارژ از قرارداد سبد می‌آیند و مبلغ مرورگر استفاده نمی‌شود', async () => {
+    getCourseCart.mockResolvedValue({ status: 'Ready', shortfallInNoor: 189 });
+    topUpCourseCart.mockResolvedValue({ topUpRequestId: 'topup-cart', clientReferenceId: 'ref-cart', amountRial: 18900 });
+    createAttempt.mockResolvedValue({ status: 'created', resNum: 'ref-cart' });
+    updateAttempt.mockResolvedValue({ status: 'token_issued', resNum: 'ref-cart' });
+    requestSepToken.mockResolvedValue({ success: true, token: 'token' });
+    const result = await POST(request());
+    expect(result.status).toBe(200);
+    expect((await result.json()).topUpRequestId).toBe('topup-cart');
+    expect(topUpCourseCart).toHaveBeenCalledWith(cartId, 'jwt');
+    expect(createGatewayTopUp).not.toHaveBeenCalled();
+    expect(purchaseCourseCart).not.toHaveBeenCalled();
+    expect(requestSepToken).toHaveBeenCalledWith(expect.objectContaining({ amount: 18900 }));
+  });
+  test('سبد رایگان بدون شارژ و درگاه خریداری می‌شود', async () => {
+    getCourseCart.mockResolvedValue({ status: 'Ready', shortfallInNoor: 0, priceInNoor: 0 });
+    purchaseCourseCart.mockResolvedValue({ status: 'Paid', cartId, courses: [] });
+    const result = await POST(request());
+    expect((await result.json()).paidWithWallet).toBe(true);
+    expect(purchaseCourseCart).toHaveBeenCalledWith(cartId, 'jwt');
+    expect(requestSepToken).not.toHaveBeenCalled();
+  });
+});
+
+test('سبد در انتظار شارژ به نتیجه هدایت می‌شود و توکن تازه صادر نمی‌کند', async () => {
+    jest.clearAllMocks();
+    getServerSession.mockResolvedValue({ user: { id: 7, jwt: 'jwt' } });
+    getCourseCart.mockResolvedValue({ cartId: '8e169023-0b44-43fa-80cf-118bfe78fb01', status: 'AwaitingTopUp' });
+    const result = await POST({ json: async () => ({ paymentType: 'course_cart', cartId: '8e169023-0b44-43fa-80cf-118bfe78fb01' }) });
+    expect(result.status).toBe(200);
+    expect((await result.json()).alreadyProcessing).toBe(true);
+    expect(topUpCourseCart).not.toHaveBeenCalled();
+    expect(requestSepToken).not.toHaveBeenCalled();
+    expect(purchaseCourseCart).not.toHaveBeenCalled();
 });

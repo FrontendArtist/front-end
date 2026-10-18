@@ -1,3 +1,5 @@
+import { getCourseCart, purchaseCourseCart } from '@/lib/courseCartApi';
+jest.mock('@/lib/courseCartApi', () => ({ getCourseCart: jest.fn(), purchaseCourseCart: jest.fn() }));
 import { act, renderHook, waitFor } from '@testing-library/react';
 import useCourseCheckoutResult from './useCourseCheckoutResult';
 import { getCourseCheckout, getTopUpCheckout } from '@/lib/courseCheckoutApi';
@@ -67,4 +69,21 @@ test('نتیجه خرید مستقیم هم از سرور تأیید می‌شو
     const { result } = renderHook(() => useCourseCheckoutResult('course-1', ''));
     await waitFor(() => expect(result.current.phase).toBe('completed'));
     expect(getTopUpCheckout).not.toHaveBeenCalled();
+});
+
+ test('بازگشت بانک بدون حافظه مرورگر، سبد را از شناسه شارژ پیدا می‌کند و فقط استعلام می‌زند', async () => {
+    sessionStorage.clear();
+    getTopUpCheckout.mockResolvedValue({ cartId: 'cart-1', topUpStatus: 'Confirmed', courses: [] });
+    getCourseCart.mockResolvedValue({ status: 'Paid', courses: [
+        { externalCourseId: 'course-1', title: 'اول', purchaseStatus: 'Completed' },
+        { externalCourseId: 'course-2', title: 'دوم', purchaseStatus: 'DeliveryPending' },
+    ] });
+    const added = { id: 99, documentId: 'new-course', type: 'course' };
+    useCartStore.setState({ items: [course, otherCourse, added], hydratedUserId: 7 });
+    const { result } = renderHook(() => useCourseCheckoutResult('', 'topup-cart'));
+    await waitFor(() => expect(result.current.phase).toBe('activating'));
+    expect(getCourseCart).toHaveBeenCalledWith('cart-1', 'jwt', expect.anything());
+    expect(result.current.paid).toBe(true);
+    expect(useCartStore.getState().items).toEqual([added]);
+    expect(purchaseCourseCart).not.toHaveBeenCalled();
 });

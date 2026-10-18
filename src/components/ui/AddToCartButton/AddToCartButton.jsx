@@ -1,4 +1,5 @@
 'use client';
+import { isSameCartItem } from '@/lib/cartItemIdentity';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -62,7 +63,7 @@ export default function AddToCartButton({ course }) {
 
   // بررسی وجود دوره در سبد (فقط بعد از hydration معتبر است)
   const isInCart =
-    useCartStore((state) => state.items.some((item) => item.id === id)) &&
+    useCartStore((state) => state.items.some((item) => isSameCartItem(item, { ...course, type: 'course' }))) &&
     isHydrated;
 
   const handleAddToCart = () => {

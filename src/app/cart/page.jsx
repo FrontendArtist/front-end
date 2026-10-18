@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -21,11 +21,13 @@ import {
     selectItemLevelDiscount,
 } from '@/store/useCartStore';
 import useAuthStore from '@/store/authStore';
-import { executeOnlinePayment, executeNoorCoursePurchase } from '@/lib/checkoutService';
+import { executeOnlinePayment, executeNoorCartPurchase } from '@/lib/checkoutService';
 import usePaymentProcessing from '@/hooks/usePaymentProcessing';
 import { checkPaymentConnection, invalidatePaymentConnection } from '@/lib/client/paymentConnection';
 import styles from './Cart.module.scss';
-import { getCourseCheckout } from '@/lib/courseCheckoutApi';
+import { prepareCourseCart, getCourseCartId, getExistingCourseCartId, getCourseCart } from '@/lib/courseCartApi';
+import { previewCourseCart, sameCourseCartPrice } from '@/lib/courseCartPreviewApi';
+import { getWalletBalanceWithByeMoney } from '@/lib/byeMoneyApi';
 
 /**
  * صفحه سبد خرید
@@ -61,9 +63,13 @@ export default function CartPage() {
     const [isCheckingVpn, setIsCheckingVpn] = useState(false);
     const [checkoutPreview, setCheckoutPreview] = useState(null);
     const [previewRevision, setPreviewRevision] = useState(0);
+    const [walletPreview, setWalletPreview] = useState(null);
+    const paymentLock = useRef(false);
+    const walletRequest = useRef(0);
 
     // دریافت داده‌ها و توابع از Store
     const items = useCartStore((state) => state.items);
+    const courseCartRevision = useCartStore((state) => state.courseCartRevision);
     const updateQuantity = useCartStore((state) => state.updateQuantity);
     const removeItem = useCartStore((state) => state.removeItemManually);
     const appliedCoupon = useCartStore((state) => state.appliedCoupon);
@@ -78,56 +84,122 @@ export default function CartPage() {
     // آیا محصول فیزیکی نیازمند آدرس پستی در سبد وجود دارد؟
     const hasPhysicalProducts = items.some((item) => item.type === 'product');
 
-    // آیا شرایط خرید تک‌دوره با نور فراهم است؟ (برش اول TASKS/R01: یک دوره، بدون کوپن، مبلغ مثبت)
-    const isSingleCourseNoorEligible =
-        items.length === 1 &&
-        items[0].type === 'course' &&
-        !appliedCoupon?.code &&
-        finalTotalPrice > 0;
-
-    const externalCourseId = isSingleCourseNoorEligible ? (items[0].documentId || items[0].externalCourseId) : null;
-    const previewKey = `${session?.user?.id}:${externalCourseId}:${previewRevision}`;
+    // فقط دوره کامل در قرارداد خرید سبد پشتیبانی می‌شود.
+    const isCourseCartEligible = items.length > 0 && items.every(item => item.type === 'course');
+    const courseIdsKey = JSON.stringify(items.map(item => item.documentId || item.externalCourseId));
+    const couponCode = appliedCoupon?.code || null;
+    const previewKey = JSON.stringify([session?.user?.id, session?.user?.jwt, courseIdsKey, couponCode, courseCartRevision, previewRevision]);
     const preview = checkoutPreview?.key === previewKey ? checkoutPreview : null;
-    const isPreviewLoading = isSingleCourseNoorEligible && status === 'authenticated' && !preview;
-    const needsOnlinePayment = preview?.data?.shortfallInNoor > 0;
+    const isPreviewLoading = isCourseCartEligible && status === 'authenticated' && !preview;
+    const balance = (walletPreview && session?.user?.jwt && walletPreview.jwt === session.user.jwt) ? walletPreview.balance : null;
+    const shortfall = balance == null || !preview?.data ? null : Math.ceil(Math.max(0, preview.data.priceInNoor - balance));
+    const needsOnlinePayment = shortfall > 0;
+    const currentPreviewKey = useRef(previewKey);
+    currentPreviewKey.current = previewKey;
+    useEffect(() => {
+        currentPreviewKey.current = previewKey;
+        return () => { currentPreviewKey.current = null; };
+    }, [previewKey]);
 
     useEffect(() => {
-        if (!isSingleCourseNoorEligible || status !== 'authenticated') return;
+        if (!isCourseCartEligible || status !== 'authenticated' || !session?.user?.jwt) return;
+        let active = true;
+        const requestId = ++walletRequest.current;
+        const jwt = session.user.jwt;
+        getWalletBalanceWithByeMoney({ jwt }).then(result => {
+            if (active && walletRequest.current === requestId) setWalletPreview({ jwt, balance: result.success ? result.balance : null });
+        });
+        return () => { active = false; };
+    }, [isCourseCartEligible, status, session?.user?.jwt, previewRevision]);
+
+    useEffect(() => {
+        if (!isCourseCartEligible || status !== 'authenticated') return;
         if (!session?.user?.jwt) {
             setCheckoutPreview({ key: previewKey, error: 'نشست شما معتبر نیست. لطفاً دوباره وارد حساب شوید.' });
             return;
         }
-        if (!externalCourseId) {
+        const externalCourseIds = JSON.parse(courseIdsKey);
+        if (externalCourseIds.some(id => !id)) {
             setCheckoutPreview({ key: previewKey, error: 'شناسه دوره در سبد معتبر نیست. دوره را حذف و دوباره اضافه کنید.' });
             return;
         }
         const controller = new AbortController();
-        getCourseCheckout(externalCourseId, session.user.jwt, controller.signal)
+        const existingId = getExistingCourseCartId(session.user.id, externalCourseIds, couponCode, courseCartRevision);
+        const loadPreview = async () => {
+            if (existingId) {
+                try {
+                    const existing = await getCourseCart(existingId, session.user.jwt, controller.signal);
+                    if (['Paid', 'AwaitingTopUp'].includes(existing.status) ||
+                        (existing.status === 'Ready' && new Date(existing.expiresAtUtc).getTime() > Date.now())) return existing;
+                } catch (error) {
+                    if (controller.signal.aborted || error.code !== 'CART_NOT_FOUND') throw error;
+                }
+            }
+            return previewCourseCart({ externalCourseIds, couponCode }, session.user.jwt, controller.signal);
+        };
+        loadPreview()
             .then(data => {
-                if (!controller.signal.aborted) setCheckoutPreview({ key: previewKey, data });
+                if (controller.signal.aborted) return;
+                if (couponCode && !['Failed', 'Expired'].includes(data.status)) {
+                    useCartStore.getState().applyCoupon({ code: couponCode,
+                        discountAmount: data.couponDiscountInNoor, awaitingQuote: false });
+                }
+                if (['Failed', 'Expired'].includes(data.status)) {
+                    setCheckoutPreview({ key: previewKey, error: 'پرداخت سبد تکمیل نشده است. برای بررسی امکان پرداخت مجدد روی همین سبد، بررسی دوباره را بزنید.' });
+                } else setCheckoutPreview({ key: previewKey, data });
             })
             .catch(error => {
                 if (!controller.signal.aborted) setCheckoutPreview({ key: previewKey, error: error.message });
             });
         return () => controller.abort();
-    }, [isSingleCourseNoorEligible, externalCourseId, session?.user?.jwt, status, previewKey]);
+    }, [isCourseCartEligible, courseIdsKey, couponCode, session?.user?.jwt, status, previewKey]);
 
     /**
      * شروع پرداخت برای دوره‌های آموزشی
      */
     const handleStartPayment = async () => {
+        if (paymentLock.current) return;
+        paymentLock.current = true;
+        const paymentKey = previewKey;
         setIsProcessing(true);
         if (errorMessage && errorMessage.includes('فیلترشکن')) {
             invalidatePaymentConnection();
         }
         setErrorMessage(null);
         try {
-            if (isSingleCourseNoorEligible) {
-                await executeNoorCoursePurchase({
-                    items,
+            if (isCourseCartEligible) {
+                if (['Paid', 'AwaitingTopUp'].includes(preview?.data?.status)) {
+                    router.push('/checkout/result?source=noor&cartId=' + encodeURIComponent(preview.data.cartId));
+                    return;
+                }
+                if (!preview || !session?.user?.jwt) throw new Error('ابتدا منتظر بررسی قیمت سبد بمانید.');
+                const externalCourseIds = JSON.parse(courseIdsKey);
+                const data = await prepareCourseCart({
+                    cartId: getCourseCartId(session.user.id, externalCourseIds, couponCode, courseCartRevision),
+                    externalCourseIds, couponCode,
+                }, session.user.jwt);
+                if (currentPreviewKey.current !== paymentKey) return;
+                if (['Paid', 'AwaitingTopUp'].includes(data.status)) {
+                    router.push('/checkout/result?source=noor&cartId=' + encodeURIComponent(data.cartId));
+                    return;
+                }
+                if (data.status !== 'Ready') throw new Error('سبد برای پرداخت آماده نیست. دوباره تلاش کنید.');
+                walletRequest.current += 1;
+                setWalletPreview({ jwt: session.user.jwt, balance: data.balanceInNoor });
+                setCheckoutPreview({ key: paymentKey, data });
+                if (couponCode) useCartStore.getState().applyCoupon({ code: couponCode,
+                    discountAmount: data.couponDiscountInNoor, awaitingQuote: false });
+                if (!preview.data || !sameCourseCartPrice(preview.data, data)) {
+                    setErrorMessage(preview.data
+                        ? 'قیمت یا تخفیف سبد تغییر کرده است. مبلغ به‌روز را بررسی کنید و برای تأیید دوباره دکمه پرداخت را بزنید.'
+                        : 'مبلغ معتبر سبد دریافت شد. آن را بررسی کنید و برای تأیید دکمه پرداخت را بزنید.');
+                    return;
+                }
+                await executeNoorCartPurchase({
+                    cartId: data.cartId,
                     jwt: session?.user?.jwt,
                     router,
-                    payOnline: needsOnlinePayment,
+                    payOnline: data.shortfallInNoor > 0,
                 });
             } else {
                 await executeOnlinePayment({
@@ -140,8 +212,11 @@ export default function CartPage() {
                 });
             }
         } catch (err) {
+            if (currentPreviewKey.current !== paymentKey) return;
             console.error('Payment Error:', err);
             setErrorMessage(err.message || 'خطا در فرآیند پرداخت. لطفاً مجدداً تلاش کنید.');
+        } finally {
+            paymentLock.current = false;
             setIsProcessing(false);
         }
     };
@@ -401,6 +476,10 @@ export default function CartPage() {
                             </h2>
                             <div className={styles.itemsList}>
                                 {coursesAndChapters.map((item) => {
+                                    const quote = isCourseCartEligible ? preview?.data?.courses?.find(course =>
+                                        course.externalCourseId === (item.documentId || item.externalCourseId)) : null;
+                                    // سهم کوپن فقط در خلاصهٔ سبد نمایش داده می‌شود؛ قیمت ردیف پیش از کوپن است.
+                                    const price = isCourseCartEligible ? (quote ? quote.priceInNoor + (quote.couponDiscountInNoor ?? 0) : undefined) : item.price;
                                     const coursePageSlug = item.slug ? item.slug.split('-chapter-')[0] : '';
                                     const itemHref = item.type === 'chapter' ? `/courses/${coursePageSlug}` : `/courses/${item.slug}`;
 
@@ -419,9 +498,9 @@ export default function CartPage() {
 
                                             {/* اطلاعات دوره/فصل - لینک به صفحه جزئیات */}
                                             <Link href={itemHref} className={styles.itemInfo}>
-                                                <h3 className={styles.itemTitle}>{item.title}</h3>
+                                                <h3 className={styles.itemTitle}>{quote?.title || item.title}</h3>
                                                 <p className={styles.itemPrice}>
-                                                    {formatPrice(item.price)} تومان
+                                                    {price == null ? 'در انتظار بررسی قیمت' : <PriceWithHint price={price} size="sm" />}
                                                 </p>
                                                 <span className={styles.courseLabel}>
                                                     {item.type === 'chapter' ? 'فصل آموزشی' : 'دوره آموزشی'}
@@ -433,7 +512,7 @@ export default function CartPage() {
 
                                             {/* قیمت */}
                                             <div className={styles.itemTotal}>
-                                                <PriceWithHint price={item.price} size="sm" />
+                                                {price == null ? 'در انتظار بررسی قیمت' : <PriceWithHint price={price} size="sm" />}
                                             </div>
 
                                             {/* دکمه حذف */}
@@ -469,14 +548,15 @@ export default function CartPage() {
                         {/* جمع کل خرید */}
                         <div className={styles.summaryRow}>
                             <span>جمع جزء سبد خرید:</span>
-                            <PriceWithHint price={totalPrice} size="sm" />
+                            {isCourseCartEligible && !preview?.data ? 'در انتظار بررسی قیمت' :
+                                <PriceWithHint price={preview?.data?.originalTotalInNoor ?? totalPrice} size="sm" />}
                         </div>
 
                         {/* سود تخفیف خود محصولات در صورت وجود */}
-                        {itemLevelDiscount > 0 && (
+                        {(preview?.data?.itemDiscountInNoor ?? (isCourseCartEligible ? 0 : itemLevelDiscount)) > 0 && (
                             <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
                                 <span>تخفیف شگفت‌انگیز:</span>
-                                <PriceWithHint price={itemLevelDiscount} size="sm" />
+                                <PriceWithHint price={preview?.data?.itemDiscountInNoor ?? itemLevelDiscount} size="sm" />
                             </div>
                         )}
 
@@ -489,11 +569,11 @@ export default function CartPage() {
                         </div>
 
                         {/* نمایش ردیف تخفیف کوپن در صورت اعمال */}
-                        {couponDiscount > 0 && (
+                        {(preview?.data?.couponDiscountInNoor ?? (isCourseCartEligible ? 0 : couponDiscount)) > 0 && (
                             <div className={styles.summaryRow} style={{ color: '#86efac' }}>
                                 <span>تخفیف کوپن ({appliedCoupon?.code}):</span>
                                 <span style={{ direction: 'ltr', display: 'inline-flex' }}>
-                                    - <PriceWithHint price={couponDiscount} size="sm" hideHint={true} />
+                                    - <PriceWithHint price={preview?.data?.couponDiscountInNoor ?? couponDiscount} size="sm" hideHint={true} />
                                 </span>
                             </div>
                         )}
@@ -503,20 +583,24 @@ export default function CartPage() {
                         {/* مجموع نهایی قابل پرداخت */}
                         <div className={styles.summaryTotal}>
                             <span>مبلغ قابل پرداخت:</span>
-                            <PriceWithHint price={preview?.data?.priceInNoor ?? finalTotalPrice} size="md" />
+                            {isCourseCartEligible && !preview?.data ? 'در انتظار بررسی قیمت' :
+                                <PriceWithHint price={preview?.data?.priceInNoor ?? finalTotalPrice} size="md" />}
                         </div>
 
-                        {isSingleCourseNoorEligible && preview?.data && (
+                        {isCourseCartEligible && preview?.data && (
                             <div className={styles.walletCard}>
+                                {preview.data.status === 'AwaitingTopUp' && (
+                                    <p role="status">نتیجهٔ پرداخت قبلی در حال بررسی است. پس از تأیید ناموفق‌بودن پرداخت، امکان پرداخت مجدد همین سبد فعال می‌شود.</p>
+                                )}
                                 <div className={styles.walletCardRow}>
                                     <span>موجودی کیف پول:</span>
-                                    <strong>{formatPrice(preview.data.balanceInNoor)} نور</strong>
+                                    <strong>{balance == null ? 'در دسترس نیست؛ هنگام پرداخت بررسی می‌شود' : `${formatPrice(balance)} نور`}</strong>
                                 </div>
                                 {needsOnlinePayment && (
                                     <>
                                         <div className={`${styles.walletCardRow} ${styles.onlinePayRow}`}>
-                                            <span>پرداخت آنلاین:</span>
-                                            <strong>{formatPrice(preview.data.amountRial / 10)} تومان</strong>
+                                            <span>کسری موجودی:</span>
+                                            <strong>{formatPrice(shortfall)} نور</strong>
                                         </div>
                                         <div className={styles.walletCardNotice}>
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -524,13 +608,13 @@ export default function CartPage() {
                                                 <line x1="12" y1="16" x2="12" y2="12"></line>
                                                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                             </svg>
-                                            <span>فقط کسری موجودی پرداخت می‌شود؛ دوره پس از پرداخت خودکار فعال خواهد شد.</span>
+                                            <span>فقط کسری موجودی پرداخت می‌شود؛ دوره‌ها پس از پرداخت خودکار فعال خواهند شد.</span>
                                         </div>
                                     </>
                                 )}
                             </div>
                         )}
-                        {isSingleCourseNoorEligible && preview?.error && (
+                        {isCourseCartEligible && preview?.error && (
                             <div className={styles.previewError} role="alert">
                                 <p>{preview.error}</p>
                                 <button type="button" onClick={() => setPreviewRevision(value => value + 1)}>بررسی دوباره</button>
@@ -588,7 +672,7 @@ export default function CartPage() {
                         )}
 
                         {/* پیام هشدار خاموش بودن VPN برای پرداخت آنلاین شتاب */}
-                        {!hasPhysicalProducts && (!isSingleCourseNoorEligible || needsOnlinePayment) && finalTotalPrice > 0 && (
+                        {!hasPhysicalProducts && (!isCourseCartEligible || needsOnlinePayment) && finalTotalPrice > 0 && (
                             <div className={styles.vpnNotice}>
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -605,19 +689,23 @@ export default function CartPage() {
                         <button
                             type="button"
                             onClick={handleProceed}
-                            disabled={isProcessing || couponPending || isPreviewLoading || (isSingleCourseNoorEligible && status === 'authenticated' && Boolean(preview?.error))}
+                            disabled={isProcessing || (couponPending && !(isCourseCartEligible && preview?.error)) || isPreviewLoading}
                             className={styles.checkoutButton}
                         >
                             {isProcessing ? (
-                                isSingleCourseNoorEligible ? 'در حال پردازش خرید...' : 'در حال اتصال به درگاه پرداخت...'
+                                isCourseCartEligible ? 'در حال پردازش خرید...' : 'در حال اتصال به درگاه پرداخت...'
                             ) : isPreviewLoading ? (
-                                'در حال بررسی موجودی...'
+                                'در حال بررسی قیمت...'
+                            ) : preview?.data?.status === 'AwaitingTopUp' ? (
+                                'پیگیری وضعیت پرداخت'
+                            ) : isCourseCartEligible && preview?.error ? (
+                                'بررسی و ادامه پرداخت'
                             ) : hasPhysicalProducts ? (
                                 'ثبت آدرس و ادامه خرید '
-                            ) : finalTotalPrice === 0 ? (
+                            ) : (preview?.data?.priceInNoor ?? finalTotalPrice) === 0 ? (
                                 'ثبت‌نام و دسترسی رایگان '
-                            ) : isSingleCourseNoorEligible ? (
-                                preview?.data ? (needsOnlinePayment ? 'پرداخت آنلاین و خرید' : 'خرید با کیف پول نور') : 'خرید دوره'
+                            ) : isCourseCartEligible ? (
+                                balance == null ? 'ادامه پرداخت' : (needsOnlinePayment ? 'پرداخت آنلاین و خرید' : 'خرید با کیف پول نور')
                             ) : (
                                 'پرداخت آنلاین شتاب '
                             )}
