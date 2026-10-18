@@ -10,8 +10,8 @@ import styles from './EmptyCartState.module.scss';
 export default function EmptyCartState({
     title = 'سبد خرید شما خالی است',
     description = 'هنوز محصول یا دوره‌ای به سبد خرید خود اضافه نکرده‌اید.',
-    buttonText = 'بازگشت به فروشگاه',
-    buttonHref = '/products',
+    buttonText = 'بازگشت به دوره',
+    buttonHref = '/courses',
 }) {
     return (
         <div className={styles.emptyState}>

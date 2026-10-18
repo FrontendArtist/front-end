@@ -307,8 +307,8 @@ function PaymentCallbackContent() {
                                     : isLightTopup ? 'مشاهده پروفایل'
                                         : 'مشاهده سفارش‌ها'}
                         </Link>
-                        <Link href="/products" className={styles.secondaryButton}>
-                            بازگشت به فروشگاه
+                        <Link href="/courses" className={styles.secondaryButton}>
+                            بازگشت به دوره
                         </Link>
                     </div>
                 </div>

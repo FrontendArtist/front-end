@@ -377,8 +377,8 @@ export default function CartPage() {
                     <EmptyCartState
                         title="سبد خرید شما خالی است"
                         description="هنوز محصول یا دوره‌ای به سبد خرید خود اضافه نکرده‌اید."
-                        buttonText="بازگشت به فروشگاه"
-                        buttonHref="/products"
+                        buttonText="بازگشت به دوره"
+                        buttonHref="/courses"
                     />
                 </div>
             </div>

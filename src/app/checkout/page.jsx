@@ -79,8 +79,8 @@ export default function CheckoutPage() {
                     <EmptyCartState
                         title="سبد خرید شما خالی است"
                         description="برای ثبت سفارش، ابتدا باید محصولی به سبد خرید اضافه کنید."
-                        buttonText="مشاهده محصولات"
-                        buttonHref="/products"
+                        buttonText="بازگشت به دوره"
+                        buttonHref="/courses"
                     />
                 </div>
             </div>
