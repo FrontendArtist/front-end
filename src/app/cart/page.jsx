@@ -21,10 +21,11 @@ import {
     selectItemLevelDiscount,
 } from '@/store/useCartStore';
 import useAuthStore from '@/store/authStore';
-import { executeOnlinePayment } from '@/lib/checkoutService';
+import { executeOnlinePayment, executeNoorCoursePurchase } from '@/lib/checkoutService';
 import usePaymentProcessing from '@/hooks/usePaymentProcessing';
 import { checkPaymentConnection, invalidatePaymentConnection } from '@/lib/client/paymentConnection';
 import styles from './Cart.module.scss';
+import { getCourseCheckout } from '@/lib/courseCheckoutApi';
 
 /**
  * صفحه سبد خرید
@@ -52,12 +53,14 @@ export default function CartPage() {
     }, []);
 
     const router = useRouter();
-    const { status } = useSession();
+    const { data: session, status } = useSession();
     const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
     const [isProcessing, setIsProcessing] = usePaymentProcessing();
     const [errorMessage, setErrorMessage] = useState(null);
     const [isCheckingVpn, setIsCheckingVpn] = useState(false);
+    const [checkoutPreview, setCheckoutPreview] = useState(null);
+    const [previewRevision, setPreviewRevision] = useState(0);
 
     // دریافت داده‌ها و توابع از Store
     const items = useCartStore((state) => state.items);
@@ -75,8 +78,42 @@ export default function CartPage() {
     // آیا محصول فیزیکی نیازمند آدرس پستی در سبد وجود دارد؟
     const hasPhysicalProducts = items.some((item) => item.type === 'product');
 
+    // آیا شرایط خرید تک‌دوره با نور فراهم است؟ (برش اول TASKS/R01: یک دوره، بدون کوپن، مبلغ مثبت)
+    const isSingleCourseNoorEligible =
+        items.length === 1 &&
+        items[0].type === 'course' &&
+        !appliedCoupon?.code &&
+        finalTotalPrice > 0;
+
+    const externalCourseId = isSingleCourseNoorEligible ? (items[0].documentId || items[0].externalCourseId) : null;
+    const previewKey = `${session?.user?.id}:${externalCourseId}:${previewRevision}`;
+    const preview = checkoutPreview?.key === previewKey ? checkoutPreview : null;
+    const isPreviewLoading = isSingleCourseNoorEligible && status === 'authenticated' && !preview;
+    const needsOnlinePayment = preview?.data?.shortfallInNoor > 0;
+
+    useEffect(() => {
+        if (!isSingleCourseNoorEligible || status !== 'authenticated') return;
+        if (!session?.user?.jwt) {
+            setCheckoutPreview({ key: previewKey, error: 'نشست شما معتبر نیست. لطفاً دوباره وارد حساب شوید.' });
+            return;
+        }
+        if (!externalCourseId) {
+            setCheckoutPreview({ key: previewKey, error: 'شناسه دوره در سبد معتبر نیست. دوره را حذف و دوباره اضافه کنید.' });
+            return;
+        }
+        const controller = new AbortController();
+        getCourseCheckout(externalCourseId, session.user.jwt, controller.signal)
+            .then(data => {
+                if (!controller.signal.aborted) setCheckoutPreview({ key: previewKey, data });
+            })
+            .catch(error => {
+                if (!controller.signal.aborted) setCheckoutPreview({ key: previewKey, error: error.message });
+            });
+        return () => controller.abort();
+    }, [isSingleCourseNoorEligible, externalCourseId, session?.user?.jwt, status, previewKey]);
+
     /**
-     * شروع پرداخت آنلاین برای دوره‌های آموزشی
+     * شروع پرداخت برای دوره‌های آموزشی
      */
     const handleStartPayment = async () => {
         setIsProcessing(true);
@@ -85,17 +122,26 @@ export default function CartPage() {
         }
         setErrorMessage(null);
         try {
-            await executeOnlinePayment({
-                items,
-                finalTotalPrice,
-                appliedCoupon,
-                couponDiscount,
-                shippingAddress: null,
-                router,
-            });
+            if (isSingleCourseNoorEligible) {
+                await executeNoorCoursePurchase({
+                    items,
+                    jwt: session?.user?.jwt,
+                    router,
+                    payOnline: needsOnlinePayment,
+                });
+            } else {
+                await executeOnlinePayment({
+                    items,
+                    finalTotalPrice,
+                    appliedCoupon,
+                    couponDiscount,
+                    shippingAddress: null,
+                    router,
+                });
+            }
         } catch (err) {
             console.error('Payment Error:', err);
-            setErrorMessage(err.message || 'خطا در ارتباط با درگاه پرداخت. لطفاً مجدداً تلاش کنید.');
+            setErrorMessage(err.message || 'خطا در فرآیند پرداخت. لطفاً مجدداً تلاش کنید.');
             setIsProcessing(false);
         }
     };
@@ -457,8 +503,39 @@ export default function CartPage() {
                         {/* مجموع نهایی قابل پرداخت */}
                         <div className={styles.summaryTotal}>
                             <span>مبلغ قابل پرداخت:</span>
-                            <PriceWithHint price={finalTotalPrice} size="md" />
+                            <PriceWithHint price={preview?.data?.priceInNoor ?? finalTotalPrice} size="md" />
                         </div>
+
+                        {isSingleCourseNoorEligible && preview?.data && (
+                            <div className={styles.walletCard}>
+                                <div className={styles.walletCardRow}>
+                                    <span>موجودی کیف پول:</span>
+                                    <strong>{formatPrice(preview.data.balanceInNoor)} نور</strong>
+                                </div>
+                                {needsOnlinePayment && (
+                                    <>
+                                        <div className={`${styles.walletCardRow} ${styles.onlinePayRow}`}>
+                                            <span>پرداخت آنلاین:</span>
+                                            <strong>{formatPrice(preview.data.amountRial / 10)} تومان</strong>
+                                        </div>
+                                        <div className={styles.walletCardNotice}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                            </svg>
+                                            <span>فقط کسری موجودی پرداخت می‌شود؛ دوره پس از پرداخت خودکار فعال خواهد شد.</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                        {isSingleCourseNoorEligible && preview?.error && (
+                            <div className={styles.previewError} role="alert">
+                                <p>{preview.error}</p>
+                                <button type="button" onClick={() => setPreviewRevision(value => value + 1)}>بررسی دوباره</button>
+                            </div>
+                        )}
 
                         {errorMessage && (
                             <div style={{
@@ -510,8 +587,8 @@ export default function CartPage() {
                             </div>
                         )}
 
-                        {/* پیام هشدار خاموش بودن VPN برای پرداخت آنلاین */}
-                        {!hasPhysicalProducts && finalTotalPrice > 0 && (
+                        {/* پیام هشدار خاموش بودن VPN برای پرداخت آنلاین شتاب */}
+                        {!hasPhysicalProducts && (!isSingleCourseNoorEligible || needsOnlinePayment) && finalTotalPrice > 0 && (
                             <div className={styles.vpnNotice}>
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -528,15 +605,19 @@ export default function CartPage() {
                         <button
                             type="button"
                             onClick={handleProceed}
-                            disabled={isProcessing || couponPending}
+                            disabled={isProcessing || couponPending || isPreviewLoading || (isSingleCourseNoorEligible && status === 'authenticated' && Boolean(preview?.error))}
                             className={styles.checkoutButton}
                         >
                             {isProcessing ? (
-                                'در حال اتصال به درگاه پرداخت...'
+                                isSingleCourseNoorEligible ? 'در حال پردازش خرید...' : 'در حال اتصال به درگاه پرداخت...'
+                            ) : isPreviewLoading ? (
+                                'در حال بررسی موجودی...'
                             ) : hasPhysicalProducts ? (
                                 'ثبت آدرس و ادامه خرید '
                             ) : finalTotalPrice === 0 ? (
                                 'ثبت‌نام و دسترسی رایگان '
+                            ) : isSingleCourseNoorEligible ? (
+                                preview?.data ? (needsOnlinePayment ? 'پرداخت آنلاین و خرید' : 'خرید با کیف پول نور') : 'خرید دوره'
                             ) : (
                                 'پرداخت آنلاین شتاب '
                             )}

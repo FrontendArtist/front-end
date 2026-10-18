@@ -8,6 +8,8 @@ import { createGatewayTopUp, createAttempt, updateAttempt, recordGatewayOutcome,
     deliverGatewayOutcome } from '@/lib/gatewayTopUp';
 
 import { getSepMockEnvironmentError, isSepMockEnabled } from '@/lib/sepMock';
+import { getCourseCheckout } from '@/lib/courseCheckoutApi';
+import { purchaseCourseWithByeMoney } from '@/lib/byeMoneyApi';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -45,11 +47,34 @@ export async function POST(request) {
 
     try {
         const body = await request.json();
-        if (body.paymentType === 'light_topup') {
-            if (!session.user.jwt || !Number.isSafeInteger(body.amountNoor) || body.amountNoor <= 0) {
+        if (body.paymentType === 'light_topup' || body.paymentType === 'course_purchase') {
+            const isCoursePurchase = body.paymentType === 'course_purchase';
+            let amountNoor = body.amountNoor;
+            let pendingItems = [];
+            if (!session.user.jwt) {
+                return NextResponse.json({ success: false, message: 'نشست شما معتبر نیست.' }, { status: 401 });
+            }
+            if (isCoursePurchase) {
+                if (typeof body.externalCourseId !== 'string' || !body.externalCourseId.trim() || body.externalCourseId.length > 100) {
+                    return NextResponse.json({ success: false, message: 'شناسه دوره معتبر نیست.' }, { status: 400 });
+                }
+                const checkout = await getCourseCheckout(body.externalCourseId, session.user.jwt);
+                if (checkout.purchaseStatus !== 'NotPurchased') {
+                    return NextResponse.json({ success: false, message: 'خرید این دوره قبلاً ثبت شده است؛ وضعیت آن را در دوره‌های من پیگیری کنید.' }, { status: 409 });
+                }
+                if (checkout.shortfallInNoor === 0) {
+                    const purchase = await purchaseCourseWithByeMoney({ externalCourseId: body.externalCourseId, jwt: session.user.jwt });
+                    return NextResponse.json({ ...purchase, paidWithWallet: purchase.success }, { status: purchase.success ? 200 : 409 });
+                }
+                amountNoor = checkout.shortfallInNoor;
+                pendingItems = [{ itemType: 1, externalId: checkout.externalCourseId, priceNoorSnapshot: checkout.priceInNoor }];
+            }
+            if (!Number.isSafeInteger(amountNoor) || amountNoor <= 0) {
                 return NextResponse.json({ success: false, message: 'مقدار نور معتبر نیست.' }, { status: 400 });
             }
-            const topUp = await createGatewayTopUp(body.amountNoor, session.user.jwt);
+            const topUp = isCoursePurchase
+                ? await createGatewayTopUp(amountNoor, session.user.jwt, pendingItems)
+                : await createGatewayTopUp(amountNoor, session.user.jwt);
             let attempt = await createAttempt(topUp);
             const redirectUrl = getPaymentRedirectUrl(request);
             const tokenResult = await requestSepToken({

@@ -101,6 +101,7 @@ export async function GET(request) {
                 if (topUpAttempt.status === 'cancelled') {
                     return redirectToResult({
                         orderType: 'light_topup',
+                        topUpId: topUpAttempt.topUpRequestId,
                         status: 'cancel',
                         message: 'فرایند پرداخت در درگاه بانکی سامان لغو شد.',
                     }, request);
@@ -108,12 +109,14 @@ export async function GET(request) {
                 if (topUpAttempt.status === 'reversed') {
                     return redirectToResult({
                         orderType: 'light_topup',
+                        topUpId: topUpAttempt.topUpRequestId,
                         status: 'failed',
                         message: 'مبلغ پرداختی به حساب شما برگشت داده شد.',
                     }, request);
                 }
                 return redirectToResult({
                     orderType: 'light_topup',
+                    topUpId: topUpAttempt.topUpRequestId,
                     status: 'failed',
                     message: 'وضعیت پرداخت در حال بررسی است.',
                 }, request);
@@ -182,7 +185,7 @@ async function handlePaymentVerification(params, request) {
     if (topUpAttempt) {
         return processGatewayTopUpCallback({ attempt: topUpAttempt, state, status, refNum, request,
             terminalId, callbackParams: bankCallbackFields(params),
-            result: (query) => redirectToResult({ orderType: 'light_topup', ...query }, request) });
+            result: (query) => redirectToResult({ orderType: 'light_topup', topUpId: topUpAttempt.topUpRequestId, ...query }, request) });
     }
 
     // 2. واکشی سفارش از استراپی با توکن سیستمی STRAPI_TOKEN

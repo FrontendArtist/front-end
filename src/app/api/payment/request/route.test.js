@@ -3,6 +3,10 @@ import { POST } from './route';
 import { getServerSession } from 'next-auth';
 import { paymentAuthOptions } from '@/lib/auth';
 import { requestSepToken, SEP_GATEWAY_ACTION_URL } from '@/lib/sepPayment';
+import { getCourseCheckout } from '@/lib/courseCheckoutApi';
+import { purchaseCourseWithByeMoney } from '@/lib/byeMoneyApi';
+jest.mock('@/lib/courseCheckoutApi', () => ({ getCourseCheckout: jest.fn() }));
+jest.mock('@/lib/byeMoneyApi', () => ({ purchaseCourseWithByeMoney: jest.fn() }));
 import {
   createGatewayTopUp,
   createAttempt,
@@ -87,6 +91,33 @@ describe('POST /api/payment/request - Noor Top-up & SEP Token Flow', () => {
       get: (header) => (header === 'host' ? 'tarhelahi.ir' : null),
     },
     json: async () => body,
+  });
+
+  test('خرید آنلاین قیمت و کسری سرور را همراه دوره به درخواست شارژ وصل می‌کند', async () => {
+    getCourseCheckout.mockResolvedValue({ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased', priceInNoor: 150, shortfallInNoor: 30 });
+    requestSepToken.mockResolvedValue({ success: true, token: 'bank-token' });
+    updateAttempt.mockResolvedValue({ ...mockCreatedAttempt, status: 'token_issued' });
+    const response = await POST(createJsonRequest({ paymentType: 'course_purchase', externalCourseId: 'course-1', amountNoor: 1, price: 1, pendingItems: [] }));
+    expect(response.status).toBe(200);
+    expect(createGatewayTopUp).toHaveBeenCalledWith(30, mockUserSession.user.jwt, [{ itemType: 1, externalId: 'course-1', priceNoorSnapshot: 150 }]);
+    expect(requestSepToken).toHaveBeenCalledWith(expect.objectContaining({ amount: mockTopUp.amountRial }));
+    expect(purchaseCourseWithByeMoney).not.toHaveBeenCalled();
+  });
+
+  test('اگر موجودی در این فاصله کافی شده باشد خرید بدون شارژ اضافه تکمیل می‌شود', async () => {
+    getCourseCheckout.mockResolvedValue({ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased', priceInNoor: 150, shortfallInNoor: 0 });
+    purchaseCourseWithByeMoney.mockResolvedValue({ success: true, data: { transactionId: 'wallet-tx' } });
+    const response = await POST(createJsonRequest({ paymentType: 'course_purchase', externalCourseId: 'course-1' }));
+    expect((await response.json()).paidWithWallet).toBe(true);
+    expect(createGatewayTopUp).not.toHaveBeenCalled();
+    expect(requestSepToken).not.toHaveBeenCalled();
+  });
+
+  test('ثبت مالی قبلی به درخواست شارژ مجدد تبدیل نمی‌شود', async () => {
+    getCourseCheckout.mockResolvedValue({ purchaseStatus: 'DeliveryPending' });
+    const response = await POST(createJsonRequest({ paymentType: 'course_purchase', externalCourseId: 'course-1' }));
+    expect(response.status).toBe(409);
+    expect(createGatewayTopUp).not.toHaveBeenCalled();
   });
 
   test('boundary: when SEP token is received successfully but recording token_issued in Strapi fails, NO success response or usable token is returned', async () => {

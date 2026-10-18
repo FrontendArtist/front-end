@@ -17,11 +17,11 @@ function byeMoneyHeaders(jwt) {
   return { 'Content-Type': 'application/json', 'X-Service-Key': key, ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}) };
 }
 
-export async function createGatewayTopUp(amountNoor, jwt) {
+export async function createGatewayTopUp(amountNoor, jwt, pendingItems = []) {
   const response = await fetch(`${BYEMONEY_API_URL}/api/topup/requests`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
-    body: JSON.stringify({ amount: amountNoor, paymentMethod: PAYMENT_METHOD_GATEWAY, pendingItems: [] }),
+    body: JSON.stringify({ amount: amountNoor, paymentMethod: PAYMENT_METHOD_GATEWAY, pendingItems }),
     cache: 'no-store',
   });
   const data = await response.json().catch(() => ({}));

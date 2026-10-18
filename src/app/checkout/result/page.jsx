@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import useCompletedOrderCart from '@/hooks/useCompletedOrderCart';
+import useCourseCheckoutResult from '@/hooks/useCourseCheckoutResult';
 
 
 import { 
@@ -34,8 +35,22 @@ function CheckoutResultContent() {
     const message = searchParams.get('message') || '';
     const isTopUp = searchParams.get('orderType') === 'light_topup';
     const topUpId = searchParams.get('topUpId') || '';
+    const isWalletPurchase = searchParams.get('source') === 'noor';
+    const courseId = isWalletPurchase ? searchParams.get('courseId') || '' : '';
+    const checkout = useCourseCheckoutResult(courseId, isTopUp ? topUpId : '');
+    const isCoursePurchase = isWalletPurchase || checkout.courses.length > 0;
+    const isCheckingPurchase = isCoursePurchase && ['checking', 'activating'].includes(checkout.phase);
+    const isVerifiedCourse = isCoursePurchase && checkout.phase === 'completed';
+    const courseMessage = checkout.phase === 'checking' ? 'در حال بررسی نتیجه خرید و فعال‌سازی دوره…'
+        : checkout.phase === 'completed' ? 'خرید با موفقیت انجام شد و دسترسی دوره برای شما فعال است.'
+        : checkout.phase === 'incomplete' ? 'کیف پول شارژ شد، اما خرید دوره تکمیل نشد. نور شارژشده در کیف پول شما محفوظ است.'
+        : checkout.phase === 'activating' ? 'پرداخت ثبت شد؛ در حال فعال‌سازی دوره هستیم. نیازی به پرداخت دوباره نیست.'
+        : checkout.phase === 'paymentPending' ? 'خرید هنوز تأیید نشده است. وضعیت پرداخت را از کیف پول و حساب کاربری پیگیری کنید.'
+        : checkout.phase === 'paymentFailed' ? (status === 'cancel' ? 'پرداخت لغو شد؛ دوره خریداری نشده و سبد شما حفظ شده است.' : 'پرداخت تأیید نشد؛ دوره خریداری نشده و سبد شما حفظ شده است.')
+        : 'در حال حاضر تأیید وضعیت خرید ممکن نیست. برای پیگیری به حساب کاربری مراجعه کنید و دوباره پرداخت نکنید.';
 
-    const isSuccess = status === 'success';
+    const isSuccess = isCoursePurchase ? (isVerifiedCourse || checkout.paid === true)
+        : isTopUp && topUpId ? checkout.paid === true : status === 'success';
     const isCancel = status === 'cancel';
     const isFailed = !isSuccess && !isCancel;
 
@@ -77,7 +92,10 @@ function CheckoutResultContent() {
 
                     {/* عنوان نتیجه */}
                     <h1 className={styles.title}>
-                        {isSuccess
+                        {isCoursePurchase
+                            ? isVerifiedCourse ? 'خرید موفق؛ دوره فعال شد' : isCheckingPurchase ? 'در حال بررسی و فعال‌سازی دوره…' : 'وضعیت خرید دوره'
+                            : isTopUp && topUpId && !['standalone', 'paymentFailed'].includes(checkout.phase) ? 'وضعیت پرداخت در حال بررسی است'
+                            : isSuccess
                             ? 'پرداخت با موفقیت انجام شد'
                             : isCancel
                             ? 'پرداخت توسط شما لغو گردید'
@@ -86,7 +104,11 @@ function CheckoutResultContent() {
 
                     {/* پیام توضیحی */}
                     <p className={styles.description}>
-                        {isSuccess
+                        {isCoursePurchase
+                            ? courseMessage
+                            : isTopUp && topUpId && !['standalone', 'paymentFailed'].includes(checkout.phase)
+                            ? 'در حال بررسی نتیجه پرداخت و خرید هستیم. تا مشخص‌شدن نتیجه، دوباره پرداخت نکنید و وضعیت را از حساب کاربری پیگیری کنید.'
+                            : isSuccess
                             ? isTopUp
                                 ? 'نور شارژشده به کیف پول شما اضافه شد.'
                                 : 'سفارش شما با موفقیت در سیستم ثبت شد و دسترسی به دوره‌ها و خدمات خریداری‌شده فوراً برای حساب کاربری شما فعال گردید.'
@@ -142,20 +164,24 @@ function CheckoutResultContent() {
                         <div className={styles.detailRow}>
                             <span className={styles.label}>درگاه پرداخت:</span>
                             <span className={styles.value} style={{ direction: 'rtl', fontFamily: 'inherit' }}>
-                                پرداخت الکترونیک سامان (سپ)
+                                {isWalletPurchase ? 'کیف پول نور' : 'پرداخت الکترونیک سامان (سپ)'}
                             </span>
                         </div>
 
                         <div className={styles.detailRow}>
                             <span className={styles.label}>وضعیت پرداخت:</span>
                             <span className={`${styles.badge} ${isSuccess ? styles.successBadge : styles.failedBadge}`}>
-                                {isSuccess ? 'تایید شده و موفق' : isCancel ? 'لغو شده توسط کاربر' : 'ناموفق'}
+                                {isCoursePurchase ? (isVerifiedCourse ? 'خرید و فعال‌سازی تأیید شد' : checkout.paid ? 'پرداخت ثبت شد؛ خرید در حال پیگیری' : 'در حال پیگیری') : isSuccess ? 'تایید شده و موفق' : isCancel ? 'لغو شده توسط کاربر' : 'ناموفق'}
                             </span>
                         </div>
                     </div>
 
                     {/* راهنمای کاربر */}
-                    {isSuccess ? (
+                    {isCoursePurchase ? (
+                        <div className={styles.notice}>
+                            {isVerifiedCourse ? 'دوره را از بخش «دوره‌های من» مشاهده کنید.' : 'برای پیگیری نتیجه، کیف پول و دوره‌های من را بررسی کنید. تا مشخص‌شدن نتیجه دوباره پرداخت نکنید.'}
+                        </div>
+                    ) : isSuccess ? (
                         <div className={styles.notice}>
                             {isTopUp
                                 ? 'نتیجهٔ شارژ در کیف پول شما ثبت شد.'
@@ -176,7 +202,13 @@ function CheckoutResultContent() {
 
                     {/* دکمه‌های عملیاتی */}
                     <div className={styles.actions}>
-                        {isSuccess ? (
+                        {isCoursePurchase ? (
+                            <>
+                                <Link href="/profile/purchases" className={styles.primaryButton}>دوره‌های من</Link>
+                                <Link href="/profile" className={styles.secondaryButton}>کیف پول و حساب کاربری</Link>
+                                <Link href="/contact" className={styles.secondaryButton}>پشتیبانی و تماس</Link>
+                            </>
+                        ) : isSuccess ? (
                             isTopUp ? (
                                 <>
                                     <Link href="/profile" className={styles.primaryButton}>
