@@ -20,8 +20,14 @@ jest.mock('@/components/ui/BreadCrumb/Breadcrumb', () => () => null);
 jest.mock('next/image', () => () => null);
 
 const course = (id = 'course-1', price = 150) => ({ externalCourseId: id, title: 'عنوان معتبر', basePriceInNoor: price, itemDiscountInNoor: 0, couponDiscountInNoor: 0, priceInNoor: price });
+const byeMoneyCourse = (id = 'course-1', price = 150) => ({ externalCourseId: id, title: 'عنوان معتبر', priceInNoor: price, purchaseStatus: 'NotPurchased' });
 const quote = (price = 150) => ({ couponCode: null, originalTotalInNoor: price, itemDiscountInNoor: 0, couponDiscountInNoor: 0, priceInNoor: price, courses: [course('course-1', price)] });
-const ready = (price = 150, shortfall = 0) => ({ ...quote(price), cartId: 'cart-1', status: 'Ready', balanceInNoor: price - shortfall, shortfallInNoor: shortfall });
+const ready = (price = 150, shortfall = 0, courses = [byeMoneyCourse('course-1', price)]) => ({
+    cartId: 'cart-1', status: 'Ready', couponCode: null,
+    originalTotalInNoor: price, itemDiscountInNoor: 0, couponDiscountInNoor: 0, priceInNoor: price,
+    balanceInNoor: price - shortfall, shortfallInNoor: shortfall,
+    courses,
+});
 const purchaseButton = () => screen.findByRole('button', { name: 'خرید با کیف پول نور' });
 beforeEach(() => {
     jest.resetAllMocks();
@@ -138,7 +144,15 @@ test('کوپن عمومی در خلاصه کم می‌شود و قیمت نما�
         courses: base.courses.map((item, index) => ({ ...item, couponDiscountInNoor: index ? 10 : 11, priceInNoor: index ? 95 : 94 })) };
     useCartStore.setState({ items: [{ id: 1, documentId: 'one', type: 'course' }, { id: 2, documentId: 'two', type: 'course' }] });
     previewCourseCart.mockResolvedValueOnce(base).mockResolvedValue(discounted);
-    prepareCourseCart.mockResolvedValue({ ...discounted, status: 'Ready', cartId: 'cart-1', balanceInNoor: 200, shortfallInNoor: 0 });
+    prepareCourseCart.mockResolvedValue({
+        cartId: 'cart-1', status: 'Ready', couponCode: 'ALL10',
+        originalTotalInNoor: 210, itemDiscountInNoor: 0, couponDiscountInNoor: 21, priceInNoor: 189,
+        balanceInNoor: 200, shortfallInNoor: 0,
+        courses: [
+            { externalCourseId: 'one', title: 'عنوان معتبر', priceInNoor: 105, purchaseStatus: 'NotPurchased' },
+            { externalCourseId: 'two', title: 'عنوان معتبر', priceInNoor: 105, purchaseStatus: 'NotPurchased' },
+        ],
+    });
     render(<CartPage />);
     await purchaseButton();
     await act(async () => useCartStore.getState().applyCoupon({ code: 'ALL10' }));
@@ -149,6 +163,156 @@ test('کوپن عمومی در خلاصه کم می‌شود و قیمت نما�
     fireEvent.click(await purchaseButton());
     await waitFor(() => expect(executeNoorCartPurchase).toHaveBeenCalledWith(expect.objectContaining({ payOnline: false })));
     expect(prepareCourseCart).toHaveBeenCalledWith(expect.objectContaining({ externalCourseIds: ['one', 'two'], couponCode: 'ALL10' }), 'jwt');
+});
+
+test('ترکیب تخفیف دوره و کوپن: قیمت پایهٔ ردیف‌ها ثابت و هر تخفیف فقط در خلاصه کسر می‌شود', async () => {
+    // دوره اول ۱۰۰ با ۲۰ تخفیف دوره، دوره دوم ۲۰۰ بدون تخفیف دوره
+    // کوپن ۱۰٪ روی ۲۸۰ نور = ۲۸ نور
+    // جمع جزء: ۳۰۰، تخفیف شگفت‌انگیز: ۲۰، تخفیف کوپن: ۲۸، مبلغ قابل پرداخت: ۲۵۲
+    const strapiPreview = {
+        couponCode: 'SAVE10',
+        originalTotalInNoor: 300,
+        itemDiscountInNoor: 20,
+        couponDiscountInNoor: 28,
+        priceInNoor: 252,
+        courses: [
+            { externalCourseId: 'c1', title: 'دوره اول', basePriceInNoor: 100, itemDiscountInNoor: 20, couponDiscountInNoor: 8, priceInNoor: 72 },
+            { externalCourseId: 'c2', title: 'دوره دوم', basePriceInNoor: 200, itemDiscountInNoor: 0, couponDiscountInNoor: 20, priceInNoor: 180 },
+        ],
+    };
+    const byeMoneyReady = {
+        cartId: 'cart-combined',
+        status: 'Ready',
+        couponCode: 'SAVE10',
+        originalTotalInNoor: 300,
+        itemDiscountInNoor: 20,
+        couponDiscountInNoor: 28,
+        priceInNoor: 252,
+        balanceInNoor: 500,
+        shortfallInNoor: 0,
+        courses: [
+            { externalCourseId: 'c1', title: 'دوره اول', priceInNoor: 100, purchaseStatus: 'NotPurchased' },
+            { externalCourseId: 'c2', title: 'دوره دوم', priceInNoor: 200, purchaseStatus: 'NotPurchased' },
+        ],
+    };
+    useCartStore.setState({
+        items: [
+            { id: 101, documentId: 'c1', type: 'course', title: 'دوره اول' },
+            { id: 102, documentId: 'c2', type: 'course', title: 'دوره دوم' },
+        ],
+        appliedCoupon: { code: 'SAVE10' },
+    });
+    previewCourseCart.mockResolvedValue(strapiPreview);
+    prepareCourseCart.mockResolvedValue(byeMoneyReady);
+
+    render(<CartPage />);
+    await purchaseButton();
+
+    // قیمت‌های ردیف‌ها باید قیمت‌های پایه ثابت باشند (۱۰۰ و ۲۰۰)
+    expect(screen.getAllByText('100 نور')).toHaveLength(2);
+    expect(screen.getAllByText('200 نور')).toHaveLength(2);
+    // جمع جزء سبد خرید: ۳۰۰
+    expect(screen.getByText('300 نور')).toBeTruthy();
+    // تخفیف شگفت‌انگیز: ۲۰
+    expect(screen.getByText('20 نور')).toBeTruthy();
+    // تخفیف کوپن: ۲۸
+    expect(screen.getByText('28 نور')).toBeTruthy();
+    // مبلغ قابل پرداخت: ۲۵۲
+    expect(screen.getByText('252 نور')).toBeTruthy();
+
+    fireEvent.click(await purchaseButton());
+    await waitFor(() => expect(executeNoorCartPurchase).toHaveBeenCalledWith(expect.objectContaining({ cartId: 'cart-combined', payOnline: false })));
+});
+
+test('تخفیف کامل و خرید رایگان با قالب جدید بای‌مانی', async () => {
+    const strapiPreview = {
+        couponCode: 'FREE100',
+        originalTotalInNoor: 105,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 105,
+        priceInNoor: 0,
+        courses: [
+            { externalCourseId: 'free-c', title: 'دوره رایگان', basePriceInNoor: 105, itemDiscountInNoor: 0, couponDiscountInNoor: 105, priceInNoor: 0 },
+        ],
+    };
+    const byeMoneyReady = {
+        cartId: 'cart-free',
+        status: 'Ready',
+        couponCode: 'FREE100',
+        originalTotalInNoor: 105,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 105,
+        priceInNoor: 0,
+        balanceInNoor: 0,
+        shortfallInNoor: 0,
+        courses: [
+            { externalCourseId: 'free-c', title: 'دوره رایگان', priceInNoor: 105, purchaseStatus: 'NotPurchased' },
+        ],
+    };
+    useCartStore.setState({
+        items: [{ id: 201, documentId: 'free-c', type: 'course', title: 'دوره رایگان' }],
+        appliedCoupon: { code: 'FREE100' },
+    });
+    previewCourseCart.mockResolvedValue(strapiPreview);
+    prepareCourseCart.mockResolvedValue(byeMoneyReady);
+
+    render(<CartPage />);
+    const freeButton = await screen.findByRole('button', { name: 'ثبت‌نام و دسترسی رایگان' });
+    fireEvent.click(freeButton);
+
+    await waitFor(() => expect(executeNoorCartPurchase).toHaveBeenCalledWith(expect.objectContaining({ cartId: 'cart-free', payOnline: false })));
+});
+
+test('پیش‌نمایش استراپی و بازیابی سبد با قالب جدید بای‌مانی بدون هشدار کاذب', async () => {
+    getExistingCourseCartId.mockReturnValue('cart-recovered');
+    getCourseCart.mockResolvedValue({
+        cartId: 'cart-recovered',
+        status: 'Ready',
+        couponCode: 'ALL10',
+        originalTotalInNoor: 210,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 21,
+        priceInNoor: 189,
+        balanceInNoor: 200,
+        shortfallInNoor: 0,
+        expiresAtUtc: new Date(Date.now() + 60000).toISOString(),
+        courses: [
+            { externalCourseId: 'one', title: 'دوره اول', priceInNoor: 105, purchaseStatus: 'NotPurchased' },
+            { externalCourseId: 'two', title: 'دوره دوم', priceInNoor: 105, purchaseStatus: 'NotPurchased' },
+        ],
+    });
+    useCartStore.setState({
+        items: [
+            { id: 1, documentId: 'one', type: 'course', title: 'دوره اول' },
+            { id: 2, documentId: 'two', type: 'course', title: 'دوره دوم' },
+        ],
+        appliedCoupon: { code: 'ALL10' },
+    });
+    prepareCourseCart.mockResolvedValue({
+        cartId: 'cart-recovered',
+        status: 'Ready',
+        couponCode: 'ALL10',
+        originalTotalInNoor: 210,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 21,
+        priceInNoor: 189,
+        balanceInNoor: 200,
+        shortfallInNoor: 0,
+        courses: [
+            { externalCourseId: 'one', title: 'دوره اول', priceInNoor: 105, purchaseStatus: 'NotPurchased' },
+            { externalCourseId: 'two', title: 'دوره دوم', priceInNoor: 105, purchaseStatus: 'NotPurchased' },
+        ],
+    });
+
+    render(<CartPage />);
+    await purchaseButton();
+
+    expect(screen.getAllByText('105 نور')).toHaveLength(4);
+    expect(screen.getByText('189 نور')).toBeTruthy();
+
+    fireEvent.click(await purchaseButton());
+    await waitFor(() => expect(executeNoorCartPurchase).toHaveBeenCalledWith(expect.objectContaining({ cartId: 'cart-recovered' })));
+    expect(screen.queryByText(/قیمت یا تخفیف سبد تغییر کرده است/)).toBeNull();
 });
 
 test('خطای قیمت فقط پیش‌نمایش را تکرار می‌کند و checkout نمی‌زند', async () => {

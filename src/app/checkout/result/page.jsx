@@ -44,13 +44,14 @@ function CheckoutResultContent() {
     const isVerifiedCourse = isCoursePurchase && checkout.phase === 'completed';
     const courseMessage = checkout.phase === 'checking' ? 'در حال بررسی نتیجه خرید و فعال‌سازی دوره‌ها…'
         : checkout.phase === 'completed' ? 'خرید با موفقیت انجام شد و دسترسی همه دوره‌ها برای شما فعال است.'
-        : checkout.phase === 'incomplete' ? 'کیف پول شارژ شد، اما خرید دوره تکمیل نشد. نور شارژشده در کیف پول شما محفوظ است.'
+        : checkout.phase === 'accessMissing' ? 'سابقه خرید در بای‌مانی وجود دارد، اما دسترسی دوره در حساب شما فعال نیست. برای بررسی و بازیابی دسترسی با پشتیبانی تماس بگیرید و دوباره پرداخت نکنید.'
+        : checkout.phase === 'incomplete' ? (checkout.paid ? 'پرداخت یا شارژ ثبت شده است، اما خرید دوره تکمیل نشده است. وضعیت را از کیف پول و پشتیبانی پیگیری کنید.' : 'خرید دوره تکمیل نشده است. وضعیت را از حساب کاربری پیگیری کنید.')
         : checkout.phase === 'activating' ? 'پرداخت ثبت شد؛ در حال فعال‌سازی دوره هستیم. نیازی به پرداخت دوباره نیست.'
         : checkout.phase === 'paymentPending' ? 'خرید هنوز تأیید نشده است. وضعیت پرداخت را از کیف پول و حساب کاربری پیگیری کنید.'
         : checkout.phase === 'paymentFailed' ? (status === 'cancel' ? 'پرداخت لغو شد؛ دوره خریداری نشده و سبد شما حفظ شده است.' : 'پرداخت تأیید نشد؛ دوره خریداری نشده و سبد شما حفظ شده است.')
         : 'در حال حاضر تأیید وضعیت خرید ممکن نیست. برای پیگیری به حساب کاربری مراجعه کنید و دوباره پرداخت نکنید.';
 
-    const isSuccess = isCoursePurchase ? (isVerifiedCourse || checkout.paid === true)
+    const isSuccess = isCoursePurchase ? isVerifiedCourse
         : isTopUp && topUpId ? checkout.paid === true : status === 'success';
     const isCancel = status === 'cancel';
     const isFailed = !isSuccess && !isCancel;
@@ -123,7 +124,7 @@ function CheckoutResultContent() {
                             {checkout.courses.map(course => (
                                 <div className={styles.detailRow} key={course.externalCourseId}>
                                     <span className={styles.label}>{course.title || course.externalCourseId}</span>
-                                    <span className={styles.value}>{({ Completed: 'فعال شد', Activating: 'در حال فعال‌سازی', DeliveryPending: 'پرداخت ثبت شد؛ در انتظار تحویل', PurchaseIncomplete: 'خرید تکمیل نشده', NotPurchased: 'خریداری نشده' })[course.purchaseStatus] || 'در حال بررسی'}</span>
+                                    <span className={styles.value}>{({ Completed: 'فعال شد', AccessMissing: 'دسترسی فعال نیست؛ نیازمند پیگیری', Activating: 'در حال فعال‌سازی', DeliveryPending: 'پرداخت ثبت شد؛ در انتظار تحویل', PurchaseIncomplete: 'خرید تکمیل نشده', NotPurchased: 'خریداری نشده' })[course.purchaseStatus] || 'در حال بررسی'}</span>
                                 </div>
                             ))}
                         </div>

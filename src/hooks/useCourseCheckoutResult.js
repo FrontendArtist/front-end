@@ -1,7 +1,7 @@
 import { getCourseCart } from '@/lib/courseCartApi';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { getCourseCheckout, getTopUpCheckout } from '@/lib/courseCheckoutApi';
+import { getCourseCheckout, getTopUpCheckout, getCurrentCourseAccess } from '@/lib/courseCheckoutApi';
 import { triggerLightUpdate } from '@/store/useLightStore';
 import { invalidateProfileCache } from '@/lib/client/profileClientApi';
 import { useCartStore } from '@/store/useCartStore';
@@ -35,15 +35,26 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                     data = await getCourseCart(resolvedCartId, jwt, controller.signal);
                 }
                 if (controller.signal.aborted) return;
-                const courses = resolvedCartId || topUpId ? data.courses : [{ externalCourseId: courseId, purchaseStatus: data.purchaseStatus }];
+                let courses = resolvedCartId || topUpId ? data.courses : [{ externalCourseId: courseId, purchaseStatus: data.purchaseStatus }];
+                // سابقهٔ تحویل مالی، دسترسی فعلی پس از حذف دستی در استرپی را ثابت نمی‌کند.
+                if (courses.some(course => course.purchaseStatus === 'Completed')) {
+                    const access = await getCurrentCourseAccess(userId, controller.signal);
+                    if (controller.signal.aborted) {
+                        return;
+                    }
+                    courses = courses.map(course => course.purchaseStatus === 'Completed' && !access.has(course.externalCourseId)
+                        ? { ...course, purchaseStatus: 'AccessMissing' }
+                        : course);
+                }
                 knownCourses = courses;
-                const paid = resolvedCartId ? data.status === 'Paid' || data.topUpStatus === 'Confirmed' : topUpId ? data.topUpStatus === 'Confirmed' : courses.some(c => ['Completed', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus));
+                const paid = resolvedCartId ? data.status === 'Paid' || data.topUpStatus === 'Confirmed' : topUpId ? data.topUpStatus === 'Confirmed' : courses.some(c => ['Completed', 'AccessMissing', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus));
                 const phase = resolvedCartId && data.status !== 'Paid' && data.topUpStatus === 'Unresolved' ? 'unknown'
                     : resolvedCartId && data.status !== 'Paid' && data.topUpStatus === 'Pending' ? 'paymentPending'
                     : resolvedCartId && data.status !== 'Paid' && data.topUpStatus === 'Rejected' ? 'paymentFailed'
                     : resolvedCartId && ['Failed', 'Expired'].includes(data.status) ? (data.topUpStatus === 'Confirmed' ? 'incomplete' : 'paymentFailed')
                     : topUpId && data.topUpStatus === 'Rejected' ? 'paymentFailed'
                     : courses.length === 0 ? (paid ? 'standalone' : 'paymentPending')
+                    : courses.some(c => c.purchaseStatus === 'AccessMissing') ? 'accessMissing'
                     : courses.every(c => c.purchaseStatus === 'Completed') ? 'completed'
                     : courses.some(c => ['Activating', 'DeliveryPending'].includes(c.purchaseStatus)) ? 'activating'
                     : paid ? 'incomplete' : 'paymentPending';
@@ -63,8 +74,8 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                 next = { phase: 'unknown', courses: knownCourses };
             }
             checks += 1;
-            const keepChecking = !['completed', 'standalone', 'paymentFailed'].includes(next.phase) && checks < 15;
-            setResult({ ...next, phase: keepChecking && next.phase === 'incomplete' ? 'activating' : next.phase });
+            const keepChecking = !['completed', 'standalone', 'paymentFailed', 'accessMissing'].includes(next.phase) && checks < 15;
+            setResult(next);
             if (keepChecking) timer = setTimeout(check, 2000);
         };
         check();

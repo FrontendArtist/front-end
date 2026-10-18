@@ -92,7 +92,9 @@ export default function CartPage() {
     const preview = checkoutPreview?.key === previewKey ? checkoutPreview : null;
     const isPreviewLoading = isCourseCartEligible && status === 'authenticated' && !preview;
     const balance = (walletPreview && session?.user?.jwt && walletPreview.jwt === session.user.jwt) ? walletPreview.balance : null;
-    const shortfall = balance == null || !preview?.data ? null : Math.ceil(Math.max(0, preview.data.priceInNoor - balance));
+    const shortfall = preview?.data?.shortfallInNoor != null
+        ? preview.data.shortfallInNoor
+        : (balance == null || !preview?.data ? null : Math.ceil(Math.max(0, preview.data.priceInNoor - balance)));
     const needsOnlinePayment = shortfall > 0;
     const currentPreviewKey = useRef(previewKey);
     currentPreviewKey.current = previewKey;
@@ -478,8 +480,10 @@ export default function CartPage() {
                                 {coursesAndChapters.map((item) => {
                                     const quote = isCourseCartEligible ? preview?.data?.courses?.find(course =>
                                         course.externalCourseId === (item.documentId || item.externalCourseId)) : null;
-                                    // سهم کوپن فقط در خلاصهٔ سبد نمایش داده می‌شود؛ قیمت ردیف پیش از کوپن است.
-                                    const price = isCourseCartEligible ? (quote ? quote.priceInNoor + (quote.couponDiscountInNoor ?? 0) : undefined) : item.price;
+                                    // قیمت پایه هر دوره ثابت است؛ تخفیف دوره و کوپن فقط در خلاصهٔ سبد نمایش داده می‌شوند.
+                                    const price = isCourseCartEligible
+                                        ? (quote ? (quote.basePriceInNoor != null ? quote.basePriceInNoor : quote.priceInNoor) : undefined)
+                                        : item.price;
                                     const coursePageSlug = item.slug ? item.slug.split('-chapter-')[0] : '';
                                     const itemHref = item.type === 'chapter' ? `/courses/${coursePageSlug}` : `/courses/${item.slug}`;
 

@@ -16,3 +16,15 @@ export const getCourseCheckout = (externalCourseId, jwt, signal) =>
 
 export const getTopUpCheckout = (topUpId, jwt, signal) =>
     readCheckout(`/api/topup/${encodeURIComponent(topUpId)}/checkout`, jwt, signal);
+
+export async function getCurrentCourseAccess(userId, signal) {
+    const response = await fetch('/api/profile', { cache: 'no-store', signal });
+    if (!response.ok) {
+        throw new Error('بررسی دسترسی فعلی دوره‌ها ممکن نیست.');
+    }
+    const profile = await response.json();
+    if (String(profile.id) !== String(userId) || !Array.isArray(profile.courses)) {
+        throw new Error('اطلاعات دسترسی دوره‌ها معتبر نیست.');
+    }
+    return new Set(profile.courses.map(course => course.documentId));
+}
