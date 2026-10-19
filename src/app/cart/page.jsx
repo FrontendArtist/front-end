@@ -151,7 +151,11 @@ export default function CartPage() {
                 } else setCheckoutPreview({ key: previewKey, data });
             })
             .catch(error => {
-                if (!controller.signal.aborted) setCheckoutPreview({ key: previewKey, error: error.message });
+                if (controller.signal.aborted) return;
+                if (couponCode) {
+                    useCartStore.setState({ appliedCoupon: null, couponError: error.message });
+                }
+                setCheckoutPreview({ key: previewKey, error: error.message });
             });
         return () => controller.abort();
     }, [isCourseCartEligible, courseIdsKey, couponCode, session?.user?.jwt, status, previewKey]);
@@ -503,9 +507,9 @@ export default function CartPage() {
                                             {/* اطلاعات دوره/فصل - لینک به صفحه جزئیات */}
                                             <Link href={itemHref} className={styles.itemInfo}>
                                                 <h3 className={styles.itemTitle}>{quote?.title || item.title}</h3>
-                                                <p className={styles.itemPrice}>
+                                                <div className={styles.itemPrice}>
                                                     {price == null ? 'در انتظار بررسی قیمت' : <PriceWithHint price={price} size="sm" />}
-                                                </p>
+                                                </div>
                                                 <span className={styles.courseLabel}>
                                                     {item.type === 'chapter' ? 'فصل آموزشی' : 'دوره آموزشی'}
                                                 </span>

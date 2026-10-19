@@ -54,6 +54,8 @@ function CheckoutResultContent() {
     const isSuccess = isCoursePurchase ? isVerifiedCourse
         : isTopUp && topUpId ? checkout.paid === true : status === 'success';
     const isCancel = status === 'cancel';
+    const isPendingTopUp = isTopUp && topUpId && !isCoursePurchase &&
+        !['standalone', 'paymentFailed'].includes(checkout.phase);
     const isFailed = !isSuccess && !isCancel;
 
     useEffect(() => {
@@ -109,14 +111,14 @@ function CheckoutResultContent() {
                         {isCoursePurchase
                             ? courseMessage
                             : isTopUp && topUpId && !['standalone', 'paymentFailed'].includes(checkout.phase)
-                            ? 'در حال بررسی نتیجه پرداخت و خرید هستیم. تا مشخص‌شدن نتیجه، دوباره پرداخت نکنید و وضعیت را از حساب کاربری پیگیری کنید.'
+                            ? 'در حال بررسی نتیجه پرداخت هستیم. تا مشخص‌شدن نتیجه، دوباره پرداخت نکنید و وضعیت را از حساب کاربری پیگیری کنید.'
                             : isSuccess
                             ? isTopUp
                                 ? 'نور شارژشده به کیف پول شما اضافه شد.'
                                 : 'سفارش شما با موفقیت در سیستم ثبت شد و دسترسی به دوره‌ها و خدمات خریداری‌شده فوراً برای حساب کاربری شما فعال گردید.'
                             : isCancel
                             ? 'فرایند پرداخت در درگاه بانکی سامان لغو شد. در صورت تمایل می‌توانید سفارش خود را مجدداً تکمیل فرمایید.'
-                            : message || 'مشکلی در تایید تراکنش یا اتصال به درگاه رخ داد. چنانچه مبلغی از حساب شما کسر شده باشد، حداکثر ظرف ۷۲ ساعت توسط شاپرک عودت داده می‌شود.'}
+                            : message || 'پرداخت تأیید نشده است. اگر مبلغی کسر شده، وضعیت آن را از بانک یا پشتیبانی پیگیری کنید.'}
                     </p>
 
                     {isCoursePurchase && checkout.courses.length > 0 && (
@@ -183,7 +185,10 @@ function CheckoutResultContent() {
                         <div className={styles.detailRow}>
                             <span className={styles.label}>وضعیت پرداخت:</span>
                             <span className={`${styles.badge} ${isSuccess ? styles.successBadge : styles.failedBadge}`}>
-                                {isCoursePurchase ? (isVerifiedCourse ? 'خرید و فعال‌سازی تأیید شد' : checkout.paid ? 'پرداخت ثبت شد؛ خرید در حال پیگیری' : 'در حال پیگیری') : isSuccess ? 'تایید شده و موفق' : isCancel ? 'لغو شده توسط کاربر' : 'ناموفق'}
+                                {isCoursePurchase ? (isVerifiedCourse ? 'خرید و فعال‌سازی تأیید شد'
+                                    : checkout.phase === 'paymentFailed' ? (isCancel ? 'لغو شده توسط کاربر' : 'پرداخت تأیید نشد')
+                                    : checkout.paid ? 'پرداخت ثبت شد؛ خرید در حال پیگیری' : 'در حال پیگیری')
+                                    : isPendingTopUp ? 'در حال پیگیری' : isSuccess ? 'تایید شده و موفق' : isCancel ? 'لغو شده توسط کاربر' : 'ناموفق'}
                             </span>
                         </div>
                     </div>
@@ -191,7 +196,13 @@ function CheckoutResultContent() {
                     {/* راهنمای کاربر */}
                     {isCoursePurchase ? (
                         <div className={styles.notice}>
-                            {isVerifiedCourse ? 'دوره را از بخش «دوره‌های من» مشاهده کنید.' : 'برای پیگیری نتیجه، کیف پول و دوره‌های من را بررسی کنید. تا مشخص‌شدن نتیجه دوباره پرداخت نکنید.'}
+                            {isVerifiedCourse ? 'دوره را از بخش «دوره‌های من» مشاهده کنید.'
+                                : checkout.phase === 'paymentFailed' ? 'سبد شما حفظ شده است؛ می‌توانید از سبد خرید دوباره اقدام کنید.'
+                                : 'برای پیگیری نتیجه، کیف پول و دوره‌های من را بررسی کنید. تا مشخص‌شدن نتیجه دوباره پرداخت نکنید.'}
+                        </div>
+                    ) : isPendingTopUp ? (
+                        <div className={styles.notice}>
+                            نتیجهٔ شارژ یا برگشت وجه هنوز قطعی نیست. وضعیت را از کیف پول و پشتیبانی پیگیری کنید و دوباره پرداخت نکنید.
                         </div>
                     ) : isSuccess ? (
                         <div className={styles.notice}>
@@ -206,8 +217,7 @@ function CheckoutResultContent() {
                                 <strong>اگر مبلغ از حسابتان کسر شده ولی دسترسی فعال نشده است:</strong>
                             </div>
                             <p className={styles.deductionAlertText}>
-                                طبق قوانین بانکی شاپرک، در صورت کسر وجه و عدم تایید تراکنش، مبلغ حداکثر ظرف ۷۲ ساعت به صورت خودکار توسط بانک به حسابتان بازمی‌گردد.
-                                در صورت عدم بازگشت وجه یا نیاز به بررسی سریع‌تر، لطفاً با پشتیبانی تماس بگیرید یا کد پیگیری تراکنش را ارسال کنید.
+                                وضعیت کسر یا برگشت وجه را از بانک یا پشتیبانی پیگیری کنید و شناسهٔ تراکنش را نگه دارید.
                             </p>
                         </div>
                     )}

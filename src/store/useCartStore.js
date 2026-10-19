@@ -15,6 +15,12 @@ export const useCartStore = create(
             // مبلغ کوپن فقط برای همان اقلام و همان کاربر معتبر است.
             const set = (patch) => rawSet(state => {
                 const next = typeof patch === 'function' ? patch(state) : patch;
+                if (next.items && next.items !== state.items) {
+                    next.cartSyncRevision = (state.cartSyncRevision || 0) + 1;
+                    if (!Object.hasOwn(next, 'pendingCartSync')) {
+                        next.pendingCartSync = true;
+                    }
+                }
                 if (next.items && JSON.stringify(next.items.map(item => [item.type, item.documentId || item.externalCourseId || item.id]).sort()) !==
                     JSON.stringify(state.items.map(item => [item.type, item.documentId || item.externalCourseId || item.id]).sort())) {
                     next.courseCartRevision = (state.courseCartRevision || 0) + 1;
@@ -33,6 +39,8 @@ export const useCartStore = create(
             items: [],
             courseCartRevision: 0,
             hydratedUserId: null,
+            pendingCartSync: false,
+            cartSyncRevision: 0,
             processedOrders: {},
             removalError: null,
             removeItemManually: async (itemId) => {
@@ -293,7 +301,7 @@ export const useCartStore = create(
             setCartUser: (newUserId) => {
                 const currentUserId = get().userId;
                 if (currentUserId != null && String(currentUserId) !== String(newUserId)) {
-                    set({ items: [], appliedCoupon: null, userId: newUserId, hydratedUserId: null });
+                    set({ items: [], appliedCoupon: null, userId: newUserId, hydratedUserId: null, pendingCartSync: false });
                 } else {
                     set({ userId: newUserId, hydratedUserId: null });
                 }
@@ -344,7 +352,7 @@ export const useCartStore = create(
              * تمام آیتم‌ها (محصولات و دوره‌ها) و کوپن تخفیف حذف می‌شوند
              */
             clearCart: () => {
-                set({ items: [], appliedCoupon: null, userId: null });
+                set({ items: [], appliedCoupon: null, userId: null, pendingCartSync: false });
             },
             });
         },
@@ -385,6 +393,8 @@ export const useCartStore = create(
             partialize: (state) => ({
                 items: state.items,
                 courseCartRevision: state.courseCartRevision,
+                pendingCartSync: state.pendingCartSync,
+                cartSyncRevision: state.cartSyncRevision,
                 appliedCoupon: state.appliedCoupon ? { code: state.appliedCoupon.code, pending: true } : null,
                 userId: state.userId,
                 processedOrders: state.processedOrders,

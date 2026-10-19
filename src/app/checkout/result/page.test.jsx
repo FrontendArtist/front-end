@@ -57,4 +57,25 @@ test('شکست قطعی خرید دوره راه بازگشت به همان سب
         courses: [{ externalCourseId: 'course-1', purchaseStatus: 'PurchaseIncomplete' }] });
     render(<CheckoutResultPage />);
     expect(screen.getByRole('link', { name: 'بازگشت به سبد خرید و پرداخت مجدد' }).getAttribute('href')).toBe('/cart');
+    expect(screen.getByText('پرداخت تأیید نشد')).toBeTruthy();
+    expect(screen.queryByText(/تا مشخص‌شدن نتیجه دوباره پرداخت نکنید/)).toBeNull();
+});
+
+test('انصراف تأییدشده با پیام پرداخت نامعلوم نمایش داده نمی‌شود', () => {
+    useSearchParams.mockReturnValue(new URLSearchParams('status=cancel&orderType=light_topup&topUpId=topup-1'));
+    useCourseCheckoutResult.mockReturnValue({ phase: 'paymentFailed', paid: false,
+        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }] });
+    render(<CheckoutResultPage />);
+    expect(screen.getByText('لغو شده توسط کاربر')).toBeTruthy();
+    expect(screen.queryByText('در حال پیگیری')).toBeNull();
+});
+
+test('شارژ با نتیجه نامعلوم، شکست قطعی یا برگشت تضمین‌شده نشان نمی‌دهد', () => {
+    useSearchParams.mockReturnValue(new URLSearchParams('status=failed&orderType=light_topup&topUpId=topup-1'));
+    useCourseCheckoutResult.mockReturnValue({ phase: 'paymentPending', paid: false, courses: [] });
+    render(<CheckoutResultPage />);
+    expect(screen.getByText('در حال پیگیری')).toBeTruthy();
+    expect(screen.getByText(/نتیجهٔ شارژ یا برگشت وجه هنوز قطعی نیست/)).toBeTruthy();
+    expect(screen.queryByText('ناموفق')).toBeNull();
+    expect(screen.queryByText(/۷۲ ساعت/)).toBeNull();
 });

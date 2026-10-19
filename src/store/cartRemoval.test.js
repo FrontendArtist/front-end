@@ -15,6 +15,9 @@ test('حذف دستی همان قلم حذف‌شده و اقلام باقی‌�
     expect(cancelOrdersAfterRemoval).toHaveBeenCalledWith(course, [other]);
     await useCartStore.getState().removeItemManually(43);
     expect(cancelOrdersAfterRemoval).toHaveBeenLastCalledWith(other, []);
+    const persisted = JSON.parse(localStorage.getItem('cart-storage')).state;
+    expect(persisted.items).toEqual([]);
+    expect(persisted.pendingCartSync).toBe(true);
 });
 test('پاک‌سازی خودکار و خروج از حساب درخواست لغو نمی‌فرستند', () => {
     useCartStore.getState().removeItem(42);

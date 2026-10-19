@@ -37,6 +37,16 @@ beforeEach(() => {
     getWalletBalanceWithByeMoney.mockResolvedValue({ success: true, balance: 1000 });
 });
 
+test('خطای کوپن حالت انتظار را پایان می‌دهد و قیمت بدون کوپن بازیابی می‌شود', async () => {
+    useCartStore.setState({ appliedCoupon: { code: 'INVALID', awaitingQuote: true } });
+    previewCourseCart.mockRejectedValueOnce(new Error('کد تخفیف نامعتبر است.')).mockResolvedValue(quote());
+    render(<CartPage />);
+    await purchaseButton();
+    expect(useCartStore.getState().appliedCoupon).toBeNull();
+    expect(useCartStore.getState().couponError).toBe('کد تخفیف نامعتبر است.');
+    expect(prepareCourseCart).not.toHaveBeenCalled();
+});
+
 test('نمایش، فوکوس و نمایش مجدد صفحه هیچ آماده‌سازی مالی یا رزروی ایجاد نمی‌کنند', async () => {
     render(<StrictMode><CartPage /></StrictMode>);
     await purchaseButton();

@@ -44,7 +44,7 @@ const useCartSync = () => {
         const profile = await fetchProfileCartData(true, userId);
         if (!active || !profile || String(useCartStore.getState().userId) !== String(userId)) return;
         const current = useCartStore.getState();
-        if (initialItems.length === 0 && current.items === initialItems && Array.isArray(profile.cartData?.state?.items)) {
+        if (!current.pendingCartSync && initialItems.length === 0 && current.items === initialItems && Array.isArray(profile.cartData?.state?.items)) {
           useCartStore.setState({ items: deduplicateCourses(profile.cartData.state.items), appliedCoupon: null });
         }
         useCartStore.setState({ hydratedUserId: userId });
@@ -105,6 +105,7 @@ const useCartSync = () => {
         const currentCart = useCartStore.getState();
         if (currentCart.hydratedUserId !== userId) return;
         const currentItems = currentCart.items || [];
+        const savedRevision = currentCart.cartSyncRevision;
 
         if (currentItems.length === 0) {
           await updateProfileCartData(null, userId);
@@ -122,7 +123,10 @@ const useCartSync = () => {
           await updateProfileCartData(cartDataPayload, userId);
         }
 
-        console.log("💾 Cart synced to server successfully");
+        const latest = useCartStore.getState();
+        if (String(latest.userId) === String(userId) && latest.cartSyncRevision === savedRevision) {
+          useCartStore.setState({ pendingCartSync: false });
+        }
       } catch (error) {
         console.error("Silent Sync Failed:", error);
       }

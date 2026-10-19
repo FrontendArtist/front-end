@@ -15,10 +15,40 @@ const otherChapter = { id: 'chapter-3', chapterId: 3, courseId: 8, type: 'chapte
 
 beforeEach(() => {
     jest.clearAllMocks();
-    useCartStore.setState({ items: [], hydratedUserId: null, processedOrders: {}, userId: 7 });
+    useCartStore.setState({ items: [], hydratedUserId: null, processedOrders: {}, userId: 7, pendingCartSync: false, cartSyncRevision: 0 });
     useOrdersStore.setState({ userId: '7', hasFetched: true, orders: [] });
 });
 afterEach(() => jest.useRealTimers());
+
+test('حذف ذخیره‌نشده پس از بارگذاری مجدد با سبد قدیمی سرور جایگزین نمی‌شود', async () => {
+    jest.useFakeTimers();
+    useCartStore.setState({ items: [], pendingCartSync: true, cartSyncRevision: 3 });
+    fetchProfileCartData.mockResolvedValue({ cartData: { state: { items: [course] } } });
+    const { unmount } = renderHook(() => useCartSync());
+    await act(async () => {});
+    expect(useCartStore.getState().items).toEqual([]);
+    expect(useCartStore.getState().pendingCartSync).toBe(true);
+    await act(async () => { jest.advanceTimersByTime(2000); });
+    expect(updateProfileCartData).toHaveBeenCalledWith(null, 7);
+    expect(useCartStore.getState().pendingCartSync).toBe(false);
+    unmount();
+});
+
+test('پاسخ ذخیرهٔ قبلی تغییر تازهٔ سبد را ذخیره‌شده اعلام نمی‌کند', async () => {
+    jest.useFakeTimers();
+    let finish;
+    fetchProfileCartData.mockResolvedValue({ cartData: null });
+    updateProfileCartData.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    useCartStore.setState({ items: [course], pendingCartSync: true, cartSyncRevision: 1 });
+    const { unmount } = renderHook(() => useCartSync());
+    await act(async () => {});
+    await act(async () => { jest.advanceTimersByTime(2000); });
+    act(() => useCartStore.getState().removeItem(8));
+    await act(async () => finish({}));
+    expect(useCartStore.getState().pendingCartSync).toBe(true);
+    expect(useCartStore.getState().items).toEqual([]);
+    unmount();
+});
 
 test('شکست بازیابی نیز اجازهٔ نوشتن سبد خالی نمی‌دهد و با اتصال دوباره بازیابی می‌شود', async () => {
     jest.useFakeTimers();
