@@ -921,3 +921,150 @@
     }
 }
 
+.viewReceiptBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: fade(var(--color-primary), 15%);
+    border: 1px solid fade(var(--color-primary), 35%);
+    color: var(--color-text-primary);
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: var(--font-xs);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    &:hover {
+        background: fade(var(--color-primary), 25%);
+        color: var(--color-title-hover);
+        border-color: var(--color-title-hover);
+    }
+}
+
+.topUpsSection {
+    background: var(--gradient-card-horizontal-rtl);
+    border: 1px solid fade(var(--color-primary), 20%);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.topUpsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.topUpItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: fade(var(--color-bg-primary-overlay), 40%);
+    border: 1px solid fade(var(--color-primary), 15%);
+    border-radius: 10px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.topUpItemInfo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.topUpRef {
+    font-size: var(--font-sm);
+    color: var(--color-text-primary);
+}
+
+.topUpDate {
+    font-size: var(--font-xs);
+    color: var(--color-card-text);
+    opacity: 0.8;
+}
+
+.topUpItemDetails {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.topUpAmount {
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+}
+
+.topUpExplanation {
+    font-size: var(--font-xs);
+    color: var(--color-card-text);
+    opacity: 0.8;
+    margin: 4px 0 0;
+    line-height: 1.6;
+}
+
+.receiptModalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.receiptModal {
+    background: var(--color-bg-secondary, #141824);
+    border: 1px solid fade(var(--color-primary), 30%);
+    border-radius: var(--radius-card);
+    width: 100%;
+    max-width: 650px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+}
+
+.receiptModalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid fade(var(--color-primary), 15%);
+    padding-bottom: 14px;
+}
+
+.receiptModalTitle {
+    font-size: var(--font-lg);
+    font-family: var(--font-lalezar);
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.receiptModalClose {
+    background: none;
+    border: none;
+    color: var(--color-card-text);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: fade(var(--color-primary), 20%);
+        color: var(--color-text-primary);
+    }
+}
+

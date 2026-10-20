@@ -57,9 +57,41 @@ export default function OrdersList({ limit }) {
         return <span className={`${styles.orders__badge} ${cls}`}>{label}</span>;
     };
 
+    const ByeMoneyStatusBadges = ({ order }) => {
+        const finStatus = order.financialStatus?.trim();
+        const delStatus = order.deliveryStatus?.trim();
+
+        const financialMap = {
+            Paid: { label: 'پرداخت شده ✓', cls: styles.orders__badgeSuccess },
+            AwaitingPayment: { label: 'در انتظار پرداخت', cls: styles.orders__badgeWarning },
+            Processing: { label: 'در حال پردازش', cls: styles.orders__badgePending },
+            Preparing: { label: 'در حال آماده‌سازی', cls: styles.orders__badgeDefault },
+            Failed: { label: 'پرداخت ناموفق ⚠️', cls: styles.orders__badgeDanger },
+            Expired: { label: 'منقضی شده', cls: styles.orders__badgeDanger },
+            RequiresReview: { label: 'نیازمند بررسی مالی', cls: styles.orders__badgePaymentFailed },
+        };
+
+        const deliveryMap = {
+            Delivered: { label: 'تحویل داده شد ✓', cls: styles.orders__badgeSuccess },
+            PartiallyDelivered: { label: 'تحویل بخشی از اقلام', cls: styles.orders__badgeWarning },
+            Pending: { label: 'در انتظار تحویل', cls: styles.orders__badgeDefault },
+            NotStarted: { label: 'تحویل آغاز نشده', cls: styles.orders__badgeDefault },
+        };
+
+        const finEntry = financialMap[finStatus] ?? { label: finStatus || 'وضعیت مالی نامشخص', cls: styles.orders__badgeDefault };
+        const delEntry = deliveryMap[delStatus] ?? { label: delStatus || 'وضعیت تحویل نامشخص', cls: styles.orders__badgeDefault };
+
+        return (
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span className={`${styles.orders__badge} ${finEntry.cls}`}>{finEntry.label}</span>
+                <span className={`${styles.orders__badge} ${delEntry.cls}`}>{delEntry.label}</span>
+            </div>
+        );
+    };
+
     const CombinedStatusBadge = ({ order }) => {
         if (order.source === 'byemoney') {
-            return <span className={`${styles.orders__badge} ${styles.orders__badgeSuccess}`}>پرداخت شده ✓</span>;
+            return <ByeMoneyStatusBadges order={order} />;
         }
 
         const oStatus = order.orderStatus?.trim()?.toLowerCase();
@@ -182,6 +214,7 @@ export default function OrdersList({ limit }) {
                         ? (order.orderNumber || (orderData.id ? String(orderData.id).slice(0, 8).toUpperCase() : ''))
                         : orderData.id;
                     const items = Array.isArray(order.items) ? order.items : [];
+                    const itemCount = order.itemCount ?? items.length;
 
                     return (
                         <GradientBorderCard gradient={'horizontal-rtl'} key={orderData.documentId || orderData.id} className={styles.orders__cardWrapper} contentClassName={styles.orders__card} enableHover={false}>
@@ -199,12 +232,16 @@ export default function OrdersList({ limit }) {
                                 <div className={styles.orders__detailItem}>
                                     <span className={styles.orders__label}>مبلغ کل:</span>
                                     <span className={styles.orders__value}>
-                                        <PriceWithHint price={order.totalPrice} hideHint={isByeMoney} size="sm" />
+                                        {order.totalPrice != null ? (
+                                            <PriceWithHint price={order.totalPrice} hideHint={isByeMoney} size="sm" />
+                                        ) : (
+                                            '—'
+                                        )}
                                     </span>
                                 </div>
                                 <div className={styles.orders__detailItem}>
                                     <span className={styles.orders__label}>تعداد اقلام:</span>
-                                    <span className={styles.orders__value}>{items.length} آیتم</span>
+                                    <span className={styles.orders__value}>{itemCount} آیتم</span>
                                 </div>
                                 {(order.traceNo || order.trackingNumber || order.refNum) && (
                                     <div className={styles.orders__detailItem}>

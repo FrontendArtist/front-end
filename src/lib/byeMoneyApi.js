@@ -1124,6 +1124,221 @@ export async function getMyCoursePurchases({ jwt, page = 1, pageSize = 20, signa
 }
 
 /**
+ * کمک‌یار شناسه سفارش دوره‌های بای‌مانی (طبق قرارداد I11-T)
+ */
+export const CourseOrderId = {
+  isValid(value) {
+    if (!value || typeof value !== 'string') return false;
+    const parts = value.split(':');
+    if (parts.length !== 2) return false;
+    if (!['cart', 'topup', 'purchase'].includes(parts[0])) return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(parts[1]);
+  },
+  for(source, id) {
+    const prefix = source === 'Cart' ? 'cart' : source === 'TopUpCheckout' ? 'topup' : 'purchase';
+    return `${prefix}:${String(id).toLowerCase()}`;
+  }
+};
+
+/**
+ * دریافت فهرست پیگیری سفارش‌های کاربر جاری از بای‌مانی
+ * اندپوینت: GET /api/me/course-orders
+ *
+ * @param {object} params
+ * @param {string} params.jwt - توکن احراز هویت
+ * @param {number} [params.page=1]
+ * @param {number} [params.pageSize=20]
+ * @param {string} [params.fromUtc]
+ * @param {string} [params.toUtc]
+ * @param {string} [params.financialStatus] - Preparing|AwaitingPayment|Processing|Paid|Failed|Expired|RequiresReview
+ * @param {string} [params.deliveryStatus] - NotStarted|Pending|PartiallyDelivered|Delivered
+ * @param {string} [params.sourceType] - Cart|TopUpCheckout|Purchase
+ * @param {AbortSignal} [params.signal]
+ * @returns {Promise<{
+ *   success: boolean,
+ *   data?: {
+ *     items: Array<{
+ *       orderId: string,
+ *       sourceType: string,
+ *       cartId: string|null,
+ *       createdAtUtc: string,
+ *       updatedAtUtc: string,
+ *       financialStatus: string,
+ *       deliveryStatus: string,
+ *       finalAmountInNoor: number|null,
+ *       itemCount: number
+ *     }>,
+ *     page: number,
+ *     pageSize: number,
+ *     totalCount: number
+ *   },
+ *   unauthorized?: boolean,
+ *   forbidden?: boolean,
+ *   badRequest?: boolean,
+ *   error?: string,
+ *   networkError?: boolean
+ * }>}
+ */
+export async function getMyCourseOrders({
+  jwt,
+  page = 1,
+  pageSize = 20,
+  fromUtc,
+  toUtc,
+  financialStatus,
+  deliveryStatus,
+  sourceType,
+  signal,
+} = {}) {
+  if (!jwt) {
+    return { success: false, unauthorized: true, error: 'نشست کاربری نامعتبر است.' };
+  }
+  const params = new URLSearchParams();
+  params.set('page', String(page));
+  params.set('pageSize', String(pageSize));
+  if (fromUtc) params.set('fromUtc', String(fromUtc));
+  if (toUtc) params.set('toUtc', String(toUtc));
+  if (financialStatus) params.set('financialStatus', String(financialStatus));
+  if (deliveryStatus) params.set('deliveryStatus', String(deliveryStatus));
+  if (sourceType) params.set('sourceType', String(sourceType));
+
+  const url = `${BYEMONEY_API_URL}/api/me/course-orders?${params.toString()}`;
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+      signal,
+    });
+    if (res.status === 200) {
+      const data = await res.json();
+      return { success: true, data };
+    }
+    if (res.status === 401) {
+      return { success: false, unauthorized: true, error: 'نشست کاربری منقضی شده است.' };
+    }
+    if (res.status === 403) {
+      return { success: false, forbidden: true, error: 'دسترسی غیرمجاز.' };
+    }
+    if (res.status === 400) {
+      return { success: false, badRequest: true, error: 'پارامترهای فیلتر نامعتبر است.' };
+    }
+    let errorMsg = `خطای دریافت سفارش‌های کاربر (${res.status})`;
+    try {
+      const errJson = await res.json();
+      errorMsg = errJson.message || errJson.title || errorMsg;
+    } catch {}
+    return { success: false, error: errorMsg };
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+  }
+}
+
+/**
+ * دریافت جزئیات یک سفارش کاربر از بای‌مانی
+ * اندپوینت: GET /api/me/course-orders/{orderId}
+ *
+ * @param {object} params
+ * @param {string} params.jwt - توکن احراز هویت
+ * @param {string} params.orderId - شناسه سفارش (cart:UUID, topup:UUID, purchase:UUID)
+ * @param {AbortSignal} [params.signal]
+ * @returns {Promise<{
+ *   success: boolean,
+ *   data?: {
+ *     orderId: string,
+ *     sourceType: string,
+ *     cartId: string|null,
+ *     createdAtUtc: string,
+ *     updatedAtUtc: string,
+ *     financialStatus: string,
+ *     deliveryStatus: string,
+ *     finalAmountInNoor: number|null,
+ *     itemCount: number,
+ *     cartStatus: string|null,
+ *     expiresAtUtc: string|null,
+ *     currentTopUpRequestId: string|null,
+ *     cartSummary: {
+ *       originalTotalInNoor: number,
+ *       itemDiscountInNoor: number,
+ *       couponDiscountInNoor: number,
+ *       finalAmountInNoor: number
+ *     }|null,
+ *     items: Array<{
+ *       externalCourseId: string,
+ *       title: string|null,
+ *       priceInNoor: number|null,
+ *       finalAmountInNoor: number|null,
+ *       purchaseId: string|null,
+ *       transactionId: string|null,
+ *       purchasedAtUtc: string|null,
+ *       financialStatus: string,
+ *       deliveryStatus: string
+ *     }>,
+ *     topUps: Array<{
+ *       topUpRequestId: string,
+ *       status: string,
+ *       amountNoor: number,
+ *       amountRial: number|null,
+ *       rialPerNoorSnapshot: number|null,
+ *       clientReferenceCode: string,
+ *       createdAtUtc: string,
+ *       confirmedAtUtc: string|null,
+ *       gatewayResultKind: string|null,
+ *       reviewReasonCode: string|null
+ *     }>
+ *   },
+ *   notFound?: boolean,
+ *   unauthorized?: boolean,
+ *   forbidden?: boolean,
+ *   error?: string,
+ *   networkError?: boolean
+ * }>}
+ */
+export async function getMyCourseOrderDetails({ jwt, orderId, signal } = {}) {
+  if (!jwt || !orderId) {
+    return { success: false, error: 'شناسه سفارش یا توکن نامعتبر است.' };
+  }
+  const url = `${BYEMONEY_API_URL}/api/me/course-orders/${encodeURIComponent(orderId)}`;
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+      signal,
+    });
+    if (res.status === 200) {
+      const data = await res.json();
+      return { success: true, data };
+    }
+    if (res.status === 404) {
+      return { success: false, notFound: true, error: 'سفارش پیدا نشد.' };
+    }
+    if (res.status === 401) {
+      return { success: false, unauthorized: true, error: 'نشست کاربری منقضی شده است.' };
+    }
+    if (res.status === 403) {
+      return { success: false, forbidden: true, error: 'دسترسی به این سفارش مجاز نیست.' };
+    }
+    let errorMsg = `خطای دریافت جزئیات سفارش (${res.status})`;
+    try {
+      const errJson = await res.json();
+      errorMsg = errJson.message || errJson.title || errorMsg;
+    } catch {}
+    return { success: false, error: errorMsg };
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    return { success: false, networkError: true, error: 'خطا در دریافت جزئیات سفارش از بای‌مانی.' };
+  }
+}
+
+/**
  * دریافت رسید خرید یک دوره مشخص از بای‌مانی
  * اندپوینت: GET /api/me/course-purchases/{purchaseId}
  *

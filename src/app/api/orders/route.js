@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { PAYMENT_METHOD } from "@/lib/constants/orderConstants";
 import { STRAPI_API_URL } from "@/lib/api";
 
-import { getConversionRateWithByeMoney, getMyCoursePurchases, getCoursePurchaseReceipt } from '@/lib/byeMoneyApi';
+import { getConversionRateWithByeMoney, getMyCoursePurchases, getCoursePurchaseReceipt, getMyCourseOrders, getMyCourseOrderDetails, CourseOrderId } from '@/lib/byeMoneyApi';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
@@ -23,11 +23,90 @@ export async function GET(request) {
 
     try {
         const { searchParams } = new URL(request.url);
-        const documentId = searchParams.get('documentId');
+        const documentId = searchParams.get('documentId') || searchParams.get('orderId');
+        const purchaseId = searchParams.get('purchaseId');
 
-        // حالت ۱: دریافت یک سفارش خاص
+        // حالت ۱-الف: دریافت مستقیم رسید یک خرید شخصی طبق I11-P
+        if (purchaseId) {
+            if (session.user.jwt) {
+                const bmReceipt = await getCoursePurchaseReceipt({
+                    jwt: session.user.jwt,
+                    purchaseId
+                });
+                if (bmReceipt.success && bmReceipt.data) {
+                    return NextResponse.json({ success: true, data: bmReceipt.data });
+                }
+                if (bmReceipt.notFound) {
+                    return NextResponse.json({ success: false, notFound: true, message: "رسید خرید پیدا نشد." }, { status: 404 });
+                }
+                if (bmReceipt.unauthorized) {
+                    return NextResponse.json({ success: false, unauthorized: true, message: "نشست کاربری منقضی شده است." }, { status: 401 });
+                }
+                return NextResponse.json({ success: false, message: bmReceipt.error || "خطا در دریافت رسید" }, { status: 500 });
+            }
+            return NextResponse.json({ success: false, message: "نشست نامعتبر است." }, { status: 401 });
+        }
+
+        // حالت ۱-ب: دریافت یک سفارش خاص (بای‌مانی یا استراپی)
         if (documentId) {
-            // ۱-الف: بررسی در صورت وجود در بای‌مانی
+            // ۱. اگر شناسه با قالب سفارش پیگیری بای‌مانی (cart:..., topup:..., purchase:...) باشد
+            if (session.user.jwt && CourseOrderId.isValid(documentId)) {
+                try {
+                    const bmOrder = await getMyCourseOrderDetails({
+                        jwt: session.user.jwt,
+                        orderId: documentId
+                    });
+                    if (bmOrder.success && bmOrder.data) {
+                        const d = bmOrder.data;
+                        const cleanId = d.orderId.replace(/^[a-z]+:/, '');
+                        const mappedOrder = {
+                            id: d.orderId,
+                            documentId: d.orderId,
+                            orderId: d.orderId,
+                            source: 'byemoney',
+                            orderSource: 'byemoney',
+                            sourceType: d.sourceType,
+                            cartId: d.cartId,
+                            orderNumber: cleanId.slice(0, 8).toUpperCase(),
+                            createdAt: d.createdAtUtc,
+                            updatedAt: d.updatedAtUtc,
+                            orderStatus: d.financialStatus === 'Paid' ? 'paid' : (['Failed', 'Expired'].includes(d.financialStatus) ? 'failed' : 'pending'),
+                            paymentStatus: d.financialStatus === 'Paid' ? 'paid' : (['Failed', 'Expired'].includes(d.financialStatus) ? 'failed' : 'pending_payment'),
+                            paymentMethod: 'noor',
+                            totalPrice: d.finalAmountInNoor,
+                            financialStatus: d.financialStatus,
+                            deliveryStatus: d.deliveryStatus,
+                            itemCount: d.itemCount,
+                            cartStatus: d.cartStatus,
+                            expiresAtUtc: d.expiresAtUtc,
+                            currentTopUpRequestId: d.currentTopUpRequestId,
+                            cartSummary: d.cartSummary,
+                            items: (d.items || []).map(item => ({
+                                id: item.externalCourseId,
+                                documentId: item.externalCourseId,
+                                externalCourseId: item.externalCourseId,
+                                title: item.title,
+                                price: item.finalAmountInNoor ?? item.priceInNoor,
+                                priceInNoor: item.priceInNoor,
+                                finalAmountInNoor: item.finalAmountInNoor,
+                                purchaseId: item.purchaseId,
+                                transactionId: item.transactionId,
+                                purchasedAtUtc: item.purchasedAtUtc,
+                                financialStatus: item.financialStatus,
+                                deliveryStatus: item.deliveryStatus,
+                                type: 'course',
+                                __component: 'order.course-order-item'
+                            })),
+                            topUps: d.topUps || []
+                        };
+                        return NextResponse.json({ data: [mappedOrder] });
+                    }
+                } catch (bmOrderErr) {
+                    console.error("ByeMoney GET Course Order Details Error:", bmOrderErr);
+                }
+            }
+
+            // ۲. بررسی رسید خرید ثبت‌شده از مسیر شخصی getCoursePurchaseReceipt
             if (session.user.jwt) {
                 try {
                     const bmReceipt = await getCoursePurchaseReceipt({
@@ -39,8 +118,11 @@ export async function GET(request) {
                         const mappedOrder = {
                             id: r.purchaseId,
                             documentId: r.purchaseId,
+                            orderId: CourseOrderId.for('Purchase', r.purchaseId),
                             source: 'byemoney',
                             orderSource: 'byemoney',
+                            sourceType: 'Purchase',
+                            cartId: r.cartId,
                             orderNumber: r.purchaseId.slice(0, 8).toUpperCase(),
                             createdAt: r.purchasedAtUtc,
                             orderStatus: 'paid',
@@ -56,13 +138,24 @@ export async function GET(request) {
                             deliveredAtUtc: r.deliveredAtUtc,
                             cartSummary: r.cartSummary,
                             transactionId: r.transactionId,
+                            itemCount: 1,
                             items: [{
                                 id: r.courseExternalId,
                                 documentId: r.courseExternalId,
+                                externalCourseId: r.courseExternalId,
                                 title: r.courseTitle,
                                 price: r.finalAmountInNoor,
-                                type: 'course'
-                            }]
+                                finalAmountInNoor: r.finalAmountInNoor,
+                                baseAmountInNoor: r.baseAmountInNoor,
+                                purchaseId: r.purchaseId,
+                                transactionId: r.transactionId,
+                                purchasedAtUtc: r.purchasedAtUtc,
+                                financialStatus: r.financialStatus,
+                                deliveryStatus: r.deliveryStatus,
+                                type: 'course',
+                                __component: 'order.course-order-item'
+                            }],
+                            topUps: []
                         };
                         return NextResponse.json({ data: [mappedOrder] });
                     }
@@ -71,7 +164,7 @@ export async function GET(request) {
                 }
             }
 
-            // ۱-ب: اگر در بای‌مانی نبود، جستجو در استراپی
+            // ۳. اگر در بای‌مانی نبود، جستجو در استراپی
             const strapiUrl = `${STRAPI_BASE_URL}/api/orders`
                 + `?filters[documentId][$eq]=${encodeURIComponent(documentId)}`
                 + `&filters[user][id][$eq]=${session.user.id}`
@@ -123,42 +216,47 @@ export async function GET(request) {
             console.error("Strapi GET Orders Error:", sErr);
         }
 
-        // فراخوانی بای‌مانی با پشتیبانی از تحمل قطعی
+        // فراخوانی فهرست پیگیری سفارش‌های بای‌مانی طبق قرارداد I11-T
         if (session.user.jwt) {
             try {
-                const bmRes = await getMyCoursePurchases({
+                const bmRes = await getMyCourseOrders({
                     jwt: session.user.jwt,
                     page: 1,
                     pageSize: 100
                 });
                 if (bmRes.success && bmRes.data?.items) {
-                    byemoneyOrders = bmRes.data.items.map(item => ({
-                        id: item.purchaseId,
-                        documentId: item.purchaseId,
-                        purchaseId: item.purchaseId,
-                        cartId: item.cartId,
-                        source: 'byemoney',
-                        orderSource: 'byemoney',
-                        orderNumber: item.purchaseId.slice(0, 8).toUpperCase(),
-                        createdAt: item.purchasedAtUtc,
-                        orderStatus: 'paid',
-                        paymentStatus: 'paid',
-                        paymentMethod: 'noor',
-                        totalPrice: item.finalAmountInNoor,
-                        financialStatus: item.financialStatus,
-                        deliveryStatus: item.deliveryStatus,
-                        items: [{
-                            id: item.purchaseId,
-                            title: item.courseTitle,
-                            price: item.finalAmountInNoor,
-                            type: 'course'
-                        }]
-                    }));
+                    byemoneyOrders = bmRes.data.items.map(item => {
+                        const rawId = item.orderId;
+                        const cleanId = rawId.replace(/^[a-z]+:/, '');
+                        return {
+                            id: item.orderId,
+                            documentId: item.orderId,
+                            orderId: item.orderId,
+                            cartId: item.cartId,
+                            source: 'byemoney',
+                            orderSource: 'byemoney',
+                            sourceType: item.sourceType,
+                            orderNumber: cleanId.slice(0, 8).toUpperCase(),
+                            createdAt: item.createdAtUtc,
+                            updatedAt: item.updatedAtUtc,
+                            orderStatus: item.financialStatus === 'Paid' ? 'paid' : (['Failed', 'Expired'].includes(item.financialStatus) ? 'failed' : 'pending'),
+                            paymentStatus: item.financialStatus === 'Paid' ? 'paid' : (['Failed', 'Expired'].includes(item.financialStatus) ? 'failed' : 'pending_payment'),
+                            paymentMethod: 'noor',
+                            totalPrice: item.finalAmountInNoor,
+                            financialStatus: item.financialStatus,
+                            deliveryStatus: item.deliveryStatus,
+                            itemCount: item.itemCount,
+                            items: Array.from({ length: item.itemCount || 1 }, () => ({
+                                type: 'course',
+                                price: item.finalAmountInNoor
+                            }))
+                        };
+                    });
                 } else {
                     byemoneyWarning = true;
                 }
             } catch (bmFetchErr) {
-                console.error("ByeMoney GET purchases fetch error:", bmFetchErr);
+                console.error("ByeMoney GET course orders fetch error:", bmFetchErr);
                 byemoneyWarning = true;
             }
         } else {
