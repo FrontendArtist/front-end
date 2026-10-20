@@ -1160,10 +1160,24 @@ export async function getMyCoursePurchases({ jwt, page = 1, pageSize = 20, signa
  * }>}
  */
 export async function getCoursePurchaseReceipt({ jwt, purchaseId, signal } = {}) {
+  return fetchCoursePurchaseReceipt({ jwt, purchaseId, signal, scope: 'me' });
+}
+
+/**
+ * دریافت رسید خرید مشتری توسط ادمین دارای مجوز Purchases.View.
+ * GET /api/admin/course-purchases/{purchaseId} — همان DTO رسید کاربر.
+ * @param {{ jwt: string, purchaseId: string, signal?: AbortSignal }} params
+ * @returns {ReturnType<typeof getCoursePurchaseReceipt>}
+ */
+export async function getAdminCoursePurchaseReceipt({ jwt, purchaseId, signal } = {}) {
+  return fetchCoursePurchaseReceipt({ jwt, purchaseId, signal, scope: 'admin' });
+}
+
+async function fetchCoursePurchaseReceipt({ jwt, purchaseId, signal, scope }) {
   if (!jwt || !purchaseId) {
     return { success: false, error: 'شناسه خرید یا توکن نامعتبر است.' };
   }
-  const url = `${BYEMONEY_API_URL}/api/me/course-purchases/${encodeURIComponent(purchaseId)}`;
+  const url = `${BYEMONEY_API_URL}/api/${scope}/course-purchases/${encodeURIComponent(purchaseId)}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -1183,6 +1197,9 @@ export async function getCoursePurchaseReceipt({ jwt, purchaseId, signal } = {})
     }
     if (res.status === 401) {
       return { success: false, unauthorized: true, error: 'نشست کاربری منقضی شده است.' };
+    }
+    if (res.status === 403) {
+      return { success: false, forbidden: true, error: 'دسترسی به رسید خرید مجاز نیست.' };
     }
     let errorMsg = `خطای دریافت رسید (${res.status})`;
     try {
