@@ -2,7 +2,7 @@
 
 /**
  * @file src/components/admin/Orders/ManualOrderForm/ManualOrderForm.jsx
- * @description فرم ثبت سفارش دستی و فعال‌سازی دوره بر مبنای بررسی موجودی کیف پول نور در پنل ادمین
+ * @description فرم ثبت سفارش دستی و فعال‌سازی دوره بر مبنای بررسی موجودی کیف نور در پنل ادمین
  */
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -66,7 +66,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
     const [courseSearch, setCourseSearch] = useState('');
     const [openChapters, setOpenChapters] = useState({}); // { [courseId]: boolean }
 
-    // ── وضعیت‌های کیف پول نور و اتصال به سامانه ByeMoney ────────────────────
+    // ── وضعیت‌های کیف نور و اتصال به سامانه ByeMoney ────────────────────
     const [conversionRate, setConversionRate] = useState(null);
     const [rateLoading, setRateLoading] = useState(false);
     const [userBalance, setUserBalance] = useState(null);
@@ -339,7 +339,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                         ثبت دستی سفارش و فعال‌سازی دوره
                     </h1>
                     <p className={styles.header__subtitle}>
-                        انتخاب کاربر خریدار، تخصیص دوره‌های آموزشی و پرداخت مستقیم با موجودی کیف پول نور
+                        انتخاب کاربر خریدار، تخصیص دوره‌های آموزشی و پرداخت مستقیم با موجودی کیف نور
                     </p>
                 </div>
                 <Link href="/admin/orders" className={styles.header__backBtn}>
@@ -582,7 +582,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                 <div className={styles.freeOrderCheckbox__content}>
                                     <span className={styles.freeOrderCheckbox__title}>
                                         <Gift size={18} />
-                                        ثبت به‌صورت رایگان (بدون کسر از کیف پول نور)
+                                        ثبت به‌صورت رایگان (بدون کسر از کیف نور)
                                     </span>
                                     <span className={styles.freeOrderCheckbox__subtitle}>
                                         در صورت فعال‌سازی، هزینه دوره صفر منظور شده و بدون کسر نور، دسترسی کاربر بلافاصله فعال می‌شود.
@@ -649,12 +649,12 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                 <span>روش پرداخت:</span>
                                 <span className={styles.noorHighlight}>
                                     <Coins size={14} />
-                                    {isFreeOrder ? 'ثبت رایگان (بدون کسر)' : 'کیف پول نور'}
+                                    {isFreeOrder ? 'ثبت رایگان (بدون کسر)' : 'کیف نور'}
                                 </span>
                             </div>
 
                             <div className={styles.summaryCard__row}>
-                                <span>موجودی کیف پول:</span>
+                                <span>موجودی کیف نور:</span>
                                 <div className={styles.summaryCard__balanceValue}>
                                     {balanceLoading ? (
                                         <span className={styles.loadingText}>در حال استعلام...</span>

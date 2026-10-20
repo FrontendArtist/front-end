@@ -28,7 +28,7 @@ const ready = (price = 150, shortfall = 0, courses = [byeMoneyCourse('course-1',
     balanceInNoor: price - shortfall, shortfallInNoor: shortfall,
     courses,
 });
-const purchaseButton = () => screen.findByRole('button', { name: 'خرید با کیف پول نور' });
+const purchaseButton = () => screen.findByRole('button', { name: 'خرید با کیف نور' });
 beforeEach(() => {
     jest.resetAllMocks();
     useCartStore.setState({ items: [{ id: 42, documentId: 'course-1', type: 'course', title: 'دوره', price: 999, quantity: 1, slug: 'course' }], appliedCoupon: null, userId: 7, hydratedUserId: 7 });
@@ -61,7 +61,7 @@ test('نمایش، فوکوس و نمایش مجدد صفحه هیچ آماده�
     expect(screen.queryByText('999 نور')).toBeNull();
 });
 
-test.each([[150, 0, 'خرید با کیف پول نور'], [20, 130, 'پرداخت آنلاین و خرید']])('آماده‌سازی فقط پس از کلیک و پرداخت با کسری نهایی سرور انجام می‌شود: %s', async (balance, shortfall, label) => {
+test.each([[150, 0, 'خرید با کیف نور'], [20, 130, 'پرداخت آنلاین و خرید']])('آماده‌سازی فقط پس از کلیک و پرداخت با کسری نهایی سرور انجام می‌شود: %s', async (balance, shortfall, label) => {
     getWalletBalanceWithByeMoney.mockResolvedValue({ success: true, balance });
     prepareCourseCart.mockResolvedValue(ready(150, shortfall));
     render(<CartPage />);
@@ -113,17 +113,32 @@ test('تغییر انتخاب هنگام آماده‌سازی، پرداخت ا
     expect(executeNoorCartPurchase).not.toHaveBeenCalled();
 });
 
-test.each(['Paid', 'AwaitingTopUp'])('اقدام پرداخت قبلی با GET بازیابی می‌شود: %s', async status => {
+test('اقدام پرداخت تکمیل‌شده قبلی به صفحه نتیجه هدایت می‌شود', async () => {
     getExistingCourseCartId.mockReturnValue('cart-1');
-    getCourseCart.mockResolvedValue({ ...ready(), status });
+    getCourseCart.mockResolvedValue({ ...ready(), status: 'Paid' });
     render(<CartPage />);
-    await screen.findByRole('button', { name: status === 'AwaitingTopUp' ? 'پیگیری وضعیت پرداخت' : 'خرید با کیف پول نور' });
+    await screen.findByRole('button', { name: 'خرید با کیف نور' });
     expect(getCourseCart).toHaveBeenCalledWith('cart-1', 'jwt', expect.anything());
     expect(previewCourseCart).not.toHaveBeenCalled();
     expect(prepareCourseCart).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: status === 'AwaitingTopUp' ? 'پیگیری وضعیت پرداخت' : 'خرید با کیف پول نور' }));
+    fireEvent.click(screen.getByRole('button', { name: 'خرید با کیف نور' }));
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/checkout/result?source=noor&cartId=cart-1'));
     expect(executeNoorCartPurchase).not.toHaveBeenCalled();
+});
+
+test('سبد در انتظار شارژ امکان پرداخت مجدد آنلاین را فراهم می‌کند', async () => {
+    getExistingCourseCartId.mockReturnValue('cart-1');
+    const awaiting = { ...ready(150, 50), status: 'AwaitingTopUp' };
+    getCourseCart.mockResolvedValue(awaiting);
+    prepareCourseCart.mockResolvedValue(awaiting);
+    render(<CartPage />);
+    const retryBtn = await screen.findByRole('button', { name: 'پرداخت مجدد آنلاین' });
+    expect(getCourseCart).toHaveBeenCalledWith('cart-1', 'jwt', expect.anything());
+    fireEvent.click(retryBtn);
+    await waitFor(() => expect(executeNoorCartPurchase).toHaveBeenCalledWith(expect.objectContaining({
+        cartId: 'cart-1',
+        payOnline: true,
+    })));
 });
 
 test('رزرو معتبر قبلی بدون استعلام دوباره ظرفیت کوپن بازیابی می‌شود', async () => {

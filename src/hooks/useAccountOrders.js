@@ -15,6 +15,7 @@ function useAccountOrdersState(includeStatus) {
             hasFetched: matches && store.hasFetched,
             isLoading: includeStatus && userId != null && (!matches || store.isLoading),
             error: includeStatus && matches ? store.error : null,
+            byemoneyWarning: includeStatus && matches ? store.byemoneyWarning : false,
         };
     }));
     const fetchOrders = useCallback((force = false) =>

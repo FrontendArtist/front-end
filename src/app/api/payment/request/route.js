@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { requestSepToken, SEP_GATEWAY_ACTION_URL } from '@/lib/sepPayment';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
 import { STRAPI_API_URL } from '@/lib/api';
-import { createGatewayTopUp, createAttempt, updateAttempt, recordGatewayOutcome,
+import { createGatewayTopUp, createAttempt, findAttempt, updateAttempt, recordGatewayOutcome,
     deliverGatewayOutcome } from '@/lib/gatewayTopUp';
 
 import { getSepMockEnvironmentError, isSepMockEnabled } from '@/lib/sepMock';
@@ -62,15 +62,14 @@ export async function POST(request) {
                     return NextResponse.json({ success: false, message: 'شناسه سبد معتبر نیست.' }, { status: 400 });
                 }
                 const checkout = await getCourseCart(body.cartId, session.user.jwt);
-                if (checkout.status === 'AwaitingTopUp') return NextResponse.json({ success: true, alreadyProcessing: true, data: checkout });
                 if (checkout.status === 'Paid') return NextResponse.json({ success: true, paidWithWallet: true, data: checkout });
-                if (checkout.status !== 'Ready') return NextResponse.json({ success: false, message: 'سبد برای پرداخت آماده نیست؛ نتیجه قبلی را در حساب کاربری پیگیری کنید.' }, { status: 409 });
-                if (checkout.shortfallInNoor === 0) {
+                if (checkout.status !== 'Ready' && checkout.status !== 'AwaitingTopUp') return NextResponse.json({ success: false, message: 'سبد برای پرداخت آماده نیست؛ نتیجه قبلی را در حساب کاربری پیگیری کنید.' }, { status: 409 });
+                if (checkout.status === 'Ready' && checkout.shortfallInNoor === 0) {
                     const data = await purchaseCourseCart(body.cartId, session.user.jwt);
                     return NextResponse.json({ success: true, paidWithWallet: true, data });
                 }
                 cartTopUp = await topUpCourseCart(body.cartId, session.user.jwt);
-                amountNoor = checkout.shortfallInNoor;
+                amountNoor = checkout.shortfallInNoor || (cartTopUp?.amountRial ? Math.ceil(cartTopUp.amountRial / 1000) : 1);
             }
             if (isCoursePurchase) {
                 if (typeof body.externalCourseId !== 'string' || !body.externalCourseId.trim() || body.externalCourseId.length > 100) {
@@ -93,7 +92,10 @@ export async function POST(request) {
             const topUp = cartTopUp || (isCoursePurchase
                 ? await createGatewayTopUp(amountNoor, session.user.jwt, pendingItems)
                 : await createGatewayTopUp(amountNoor, session.user.jwt));
-            let attempt = await createAttempt(topUp);
+            let attempt = await findAttempt(topUp.clientReferenceId);
+            if (!attempt) {
+                attempt = await createAttempt(topUp);
+            }
             const redirectUrl = getPaymentRedirectUrl(request);
             const tokenResult = await requestSepToken({
                 amount: topUp.amountRial,

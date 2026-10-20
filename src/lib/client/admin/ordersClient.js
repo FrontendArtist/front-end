@@ -9,7 +9,7 @@ export async function updateOrderStatus(orderId, payload) {
     return data;
 }
 
-export async function fetchAdminOrders({ start, limit = 20, page, pageSize, status, search, statusPriority, period, settlementId } = {}) {
+export async function fetchAdminOrders({ start, limit = 20, page, pageSize, status, search, statusPriority, period, settlementId, source } = {}) {
     const params = new URLSearchParams();
     if (start !== undefined) params.set('start', String(start));
     if (limit !== undefined) params.set('limit', String(limit));
@@ -20,11 +20,12 @@ export async function fetchAdminOrders({ start, limit = 20, page, pageSize, stat
     if (search && search.trim()) params.set('search', search.trim());
     if (period) params.set('period', period);
     if (settlementId) params.set('settlementId', String(settlementId));
+    if (source && source !== 'all') params.set('source', source);
 
     const res = await fetch(`/api/admin/orders?${params.toString()}`);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'خطا در دریافت سفارش‌ها');
-    return data; // { orders, meta }
+    return data; // { orders, meta, byemoneyWarning }
 }
 
 export async function fetchAdminSettlements() {

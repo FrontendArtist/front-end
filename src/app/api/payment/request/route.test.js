@@ -13,6 +13,7 @@ jest.mock('@/lib/byeMoneyApi', () => ({ purchaseCourseWithByeMoney: jest.fn() })
 import {
   createGatewayTopUp,
   createAttempt,
+  findAttempt,
   updateAttempt,
   recordGatewayOutcome,
   deliverGatewayOutcome,
@@ -45,6 +46,7 @@ jest.mock('@/lib/sepPayment', () => ({
 jest.mock('@/lib/gatewayTopUp', () => ({
   createGatewayTopUp: jest.fn(),
   createAttempt: jest.fn(),
+  findAttempt: jest.fn(),
   updateAttempt: jest.fn(),
   recordGatewayOutcome: jest.fn(),
   deliverGatewayOutcome: jest.fn(),
@@ -432,14 +434,19 @@ describe('پرداخت سبد چند دوره', () => {
   });
 });
 
-test('سبد در انتظار شارژ به نتیجه هدایت می‌شود و توکن تازه صادر نمی‌کند', async () => {
+test('سبد در انتظار شارژ توکن تازه برای پرداخت مجدد صادر می‌کند', async () => {
     jest.clearAllMocks();
     getServerSession.mockResolvedValue({ user: { id: 7, jwt: 'jwt' } });
-    getCourseCart.mockResolvedValue({ cartId: '8e169023-0b44-43fa-80cf-118bfe78fb01', status: 'AwaitingTopUp' });
-    const result = await POST({ json: async () => ({ paymentType: 'course_cart', cartId: '8e169023-0b44-43fa-80cf-118bfe78fb01' }) });
+    getCourseCart.mockResolvedValue({ cartId: '8e169023-0b44-43fa-80cf-118bfe78fb01', status: 'AwaitingTopUp', shortfallInNoor: 100 });
+    topUpCourseCart.mockResolvedValue({ topUpRequestId: 'topup-cart', clientReferenceId: 'ref-cart', amountRial: 100000 });
+    findAttempt.mockResolvedValue({ status: 'created', resNum: 'ref-cart' });
+    updateAttempt.mockResolvedValue({ status: 'token_issued', resNum: 'ref-cart' });
+    requestSepToken.mockResolvedValue({ success: true, token: 'new-token' });
+    const result = await POST({ headers: { get: () => 'localhost' }, json: async () => ({ paymentType: 'course_cart', cartId: '8e169023-0b44-43fa-80cf-118bfe78fb01' }) });
     expect(result.status).toBe(200);
-    expect((await result.json()).alreadyProcessing).toBe(true);
-    expect(topUpCourseCart).not.toHaveBeenCalled();
-    expect(requestSepToken).not.toHaveBeenCalled();
-    expect(purchaseCourseCart).not.toHaveBeenCalled();
+    const data = await result.json();
+    expect(data.success).toBe(true);
+    expect(data.token).toBe('new-token');
+    expect(topUpCourseCart).toHaveBeenCalledWith('8e169023-0b44-43fa-80cf-118bfe78fb01', 'jwt');
+    expect(requestSepToken).toHaveBeenCalledWith(expect.objectContaining({ amount: 100000 }));
 });

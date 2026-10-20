@@ -401,7 +401,7 @@ export async function POST(request) {
         const orderPayload = {
             data: {
                 fullName: userFullName,
-                address: isFree ? 'ثبت رایگان توسط مدیر سیستم' : 'ثبت دستی با تسویه از کیف پول نور',
+                address: isFree ? 'ثبت رایگان توسط مدیر سیستم' : 'ثبت دستی با تسویه از کیف نور',
                 postalCode: '0000000000',
                 phone: targetUser.phoneNumber || '00000000000',
                 email: targetUser.email || `${targetUser.phoneNumber || targetUser.id}@tarhelahi.com`,
@@ -451,7 +451,7 @@ export async function POST(request) {
             transactionId: byeMoneyTransaction?.transactionId || null,
             message: isFree
                 ? 'سفارش رایگان با موفقیت ثبت شد و فرآیند فعال‌سازی دوره آغاز گردید.'
-                : 'سفارش دستی با موفقیت ثبت شد و مبلغ از کیف پول نور کاربر کسر گردید.',
+                : 'سفارش دستی با موفقیت ثبت شد و مبلغ از کیف نور کاربر کسر گردید.',
         }, { status: 201 });
 
     } catch (error) {

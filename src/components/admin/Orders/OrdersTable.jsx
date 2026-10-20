@@ -14,12 +14,13 @@
  */
 
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'react';
-import { ArrowUpDown, RotateCcw, Folder, CreditCard, CheckCircle2, ArrowLeft, Trash2, ChevronDown } from 'lucide-react';
+import { ArrowUpDown, RotateCcw, Folder, CreditCard, CheckCircle2, ArrowLeft, Trash2, ChevronDown, AlertTriangle } from 'lucide-react';
 import ReceiptModal from './ReceiptModal';
 import StatusUpdateModal from './StatusUpdateModal';
 import SettlementModal from './SettlementModal';
 import SettlementArchiveModal from './SettlementArchiveModal';
 import BulkDeleteModal from './BulkDeleteModal';
+import ByeMoneyReceiptModal from './ByeMoneyReceiptModal';
 import styles from './OrdersTable.module.scss';
 import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
@@ -45,6 +46,7 @@ const PAYMENT_METHOD_LABELS = {
     online: 'آنلاین',
     free: 'رایگان',
     cash: 'نقدی',
+    noor: 'نور (بای‌مانی)',
 };
 
 /** برچسب‌های نوع قلم */
@@ -162,10 +164,11 @@ function CopyButton({ text, label = 'کپی' }) {
 /**
  * OrderExpandedRow – ردیف کشویی با تمام جزئیات سفارش
  */
-function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
+function OrderExpandedRow({ order, colSpan, onOpenReceipt, onOpenByeMoneyReceipt }) {
     const buyerName = getBuyerDisplayName(order);
     const isPaid = isPaidOrder(order);
     const isCanceled = isCanceledOrder(order);
+    const isByeMoney = Boolean(order.isByeMoney || order.source === 'byemoney');
 
     // تشخیص وجود محصول فیزیکی در سبد خرید (دوره‌ها و شارژ نور نیاز به آدرس ارسال ندارند)
     const hasPhysicalProduct = Boolean(
@@ -237,6 +240,24 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
                                             title="مشاهده تصویر رسید پرداخت"
                                         >
                                             🧾 مشاهده رسید
+                                        </button>
+                                    </span>
+                                </div>
+                            )}
+                            {isByeMoney && (
+                                <div className={`${styles.expanded_field} ${styles['expanded_field--full']}`}>
+                                    <span className={styles.expanded_field__label}>رسید بای‌مانی</span>
+                                    <span className={styles.expanded_field__value}>
+                                        <button
+                                            type="button"
+                                            className={styles.receipt_link}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (onOpenByeMoneyReceipt) onOpenByeMoneyReceipt(order);
+                                            }}
+                                            title="مشاهده رسید خرید بای‌مانی"
+                                        >
+                                            🧾 مشاهده رسید بای‌مانی
                                         </button>
                                     </span>
                                 </div>
@@ -371,11 +392,17 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
                             <div className={styles.expanded_field}>
                                 <span className={styles.expanded_field__label}>مبلغ تراکنش</span>
                                 <span className={styles.expanded_field__value}>
-                                    {formatPrice(order.totalPrice)}
-                                    {Number(order.totalPrice) > 0 && (
-                                        <span className={styles.rialEquivalent}>
-                                            ({new Intl.NumberFormat('fa-IR').format(Math.round(Number(order.totalPrice || 0) * 10))} ریال)
-                                        </span>
+                                    {isByeMoney ? (
+                                        `${new Intl.NumberFormat('fa-IR').format(Number(order.totalPrice || 0))} نور`
+                                    ) : (
+                                        <>
+                                            {formatPrice(order.totalPrice)}
+                                            {Number(order.totalPrice) > 0 && (
+                                                <span className={styles.rialEquivalent}>
+                                                    ({new Intl.NumberFormat('fa-IR').format(Math.round(Number(order.totalPrice || 0) * 10))} ریال)
+                                                </span>
+                                            )}
+                                        </>
                                     )}
                                 </span>
                             </div>
@@ -414,13 +441,21 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
                                                     <span className={styles.item_card__meta}>تعداد: {item.quantity}</span>
                                                 )}
                                             </div>
-                                            <span className={styles.item_card__price}>{formatPrice(item.price)}</span>
+                                            <span className={styles.item_card__price}>
+                                                {isByeMoney
+                                                    ? `${new Intl.NumberFormat('fa-IR').format(Number(item.price || 0))} نور`
+                                                    : formatPrice(item.price)}
+                                            </span>
                                         </div>
                                     );
                                 })}
                                 <div className={styles.items_total}>
                                     <span>جمع کل</span>
-                                    <strong>{formatPrice(order.totalPrice)}</strong>
+                                    <strong>
+                                        {isByeMoney
+                                            ? `${new Intl.NumberFormat('fa-IR').format(Number(order.totalPrice || 0))} نور`
+                                            : formatPrice(order.totalPrice)}
+                                    </strong>
                                 </div>
                             </div>
                         ) : (
@@ -436,7 +471,13 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
 
 // ── OrdersTable ──────────────────────────────────────────────────────────────
 
-export default function OrdersTable({ initialOrders = [], initialMeta = null, initialStats = null, settlementStats = null }) {
+export default function OrdersTable({
+    initialOrders = [],
+    initialMeta = null,
+    initialStats = null,
+    settlementStats = null,
+    initialByemoneyWarning = false,
+}) {
     // ── State ──────────────────────────────────────────────────────────────────
     const [orders, setOrders] = useState(initialOrders);
     const [receiptModalOrder, setReceiptModal] = useState(null);
@@ -444,9 +485,12 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
     const [searchQuery, setSearchQuery] = useState('');
     const [appliedSearch, setAppliedSearch] = useState('');
     const [filterType, setFilterType] = useState('all'); // 'all' | 'pending' | 'paid' | 'canceled'
+    const [sourceFilter, setSourceFilter] = useState('all'); // 'all' | 'byemoney' | 'strapi'
     const [isStatusSorted, setIsStatusSorted] = useState(false); // اولویت‌بندی هوشمند وضعیت در سرور
     const [expandedId, setExpandedId] = useState(null); // شناسه ردیف باز
     const [isInitialLoading, setIsInitialLoading] = useState(false);
+    const [byemoneyWarning, setByemoneyWarning] = useState(initialByemoneyWarning);
+    const [byeMoneyModalOrder, setByeMoneyModalOrder] = useState(null);
 
     // ── Settlement & Bulk Delete State ─────────────────────────────────────────
     const [periodFilter, setPeriodFilter] = useState('current'); // 'current' | 'all'
@@ -495,6 +539,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                     search: appliedSearch,
                     period: activeSettlement ? undefined : periodFilter,
                     settlementId: activeSettlement ? (activeSettlement.id || activeSettlement.documentId) : undefined,
+                    source: sourceFilter,
                 });
 
                 if (!isCancelled && data?.orders) {
@@ -502,6 +547,9 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                     const newTotal = data.meta?.pagination?.total ?? data.orders.length;
                     setTotalOrders(newTotal);
                     setHasMore(data.orders.length < newTotal);
+                    if (typeof data.byemoneyWarning !== 'undefined') {
+                        setByemoneyWarning(Boolean(data.byemoneyWarning));
+                    }
                 }
             } catch (err) {
                 if (!isCancelled) {
@@ -519,7 +567,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
         return () => {
             isCancelled = true;
         };
-    }, [filterType, isStatusSorted, appliedSearch, periodFilter, activeSettlement]);
+    }, [filterType, isStatusSorted, appliedSearch, periodFilter, activeSettlement, sourceFilter]);
 
     // ── متد دریافت صفحات بعدی (Lazy Loading: ۲۰ تا ۲۰ تا) ────────────────────
     const loadMoreOrders = useCallback(async () => {
@@ -537,6 +585,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                 search: appliedSearch,
                 period: activeSettlement ? undefined : periodFilter,
                 settlementId: activeSettlement ? (activeSettlement.id || activeSettlement.documentId) : undefined,
+                source: sourceFilter,
             });
 
             if (data?.orders && Array.isArray(data.orders)) {
@@ -550,6 +599,10 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                 const newTotal = pagination?.total ?? totalOrders;
                 setTotalOrders(newTotal);
 
+                if (typeof data.byemoneyWarning !== 'undefined') {
+                    setByemoneyWarning(Boolean(data.byemoneyWarning));
+                }
+
                 if (data.orders.length < 20 || orders.length + data.orders.length >= newTotal) {
                     setHasMore(false);
                 }
@@ -562,7 +615,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
         } finally {
             setIsLoadingMore(false);
         }
-    }, [isLoadingMore, hasMore, isInitialLoading, orders.length, totalOrders, filterType, isStatusSorted, appliedSearch, periodFilter, activeSettlement]);
+    }, [isLoadingMore, hasMore, isInitialLoading, orders.length, totalOrders, filterType, isStatusSorted, appliedSearch, periodFilter, activeSettlement, sourceFilter]);
 
     // ── اتصال به اسکرول با IntersectionObserver ──────────────────────────────
     useEffect(() => {
@@ -869,6 +922,24 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                 </div>
             )}
 
+            {/* ── هشدار قطعی بای‌مانی ────────────────────────────────────────── */}
+            {byemoneyWarning && (
+                <div className={styles.byemoneyWarningAlert}>
+                    <div className={styles.byemoneyWarningAlert__content}>
+                        <AlertTriangle size={18} />
+                        <span>به دلیل اختلال موقت در ارتباط با سرویس مالی بای‌مانی، برخی از خریدهای اخیر ممکن است در این فهرست نمایش داده نشوند. سفارش‌های موجود از سامانه اصلی نمایش داده شده‌اند.</span>
+                    </div>
+                    <button
+                        type="button"
+                        className={styles.byemoneyWarningAlert__close}
+                        onClick={() => setByemoneyWarning(false)}
+                        aria-label="بستن هشدار"
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+
             {/* ── نوار ابزار: تب‌های فیلتر وضعیت و جستجو ─────────────── */}
             <AdminToolbar>
                 <div className={styles.filterTabs}>
@@ -930,6 +1001,31 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    {/* فیلتر منبع سفارش (همه / قدیمی / بای‌مانی) */}
+                    <div className={styles.periodSwitch} title="فیلتر بر اساس منبع سفارش">
+                        <button
+                            type="button"
+                            className={`${styles.periodSwitch__btn} ${sourceFilter === 'all' ? styles['periodSwitch__btn--active'] : ''}`}
+                            onClick={() => setSourceFilter('all')}
+                        >
+                            همه منابع
+                        </button>
+                        <button
+                            type="button"
+                            className={`${styles.periodSwitch__btn} ${sourceFilter === 'byemoney' ? styles['periodSwitch__btn--active'] : ''}`}
+                            onClick={() => setSourceFilter('byemoney')}
+                        >
+                            بای‌مانی
+                        </button>
+                        <button
+                            type="button"
+                            className={`${styles.periodSwitch__btn} ${sourceFilter === 'strapi' ? styles['periodSwitch__btn--active'] : ''}`}
+                            onClick={() => setSourceFilter('strapi')}
+                        >
+                            قدیمی (استراپی)
+                        </button>
+                    </div>
+
                     <AdminSearch
                         placeholder="جستجو بر اساس شماره سفارش، کاربر یا موبایل..."
                         value={searchQuery}
@@ -945,7 +1041,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                         }}
                     />
                     <span className={styles.toolbar__count}>
-                        {appliedSearch || filterType !== 'all' || isStatusSorted
+                        {appliedSearch || filterType !== 'all' || sourceFilter !== 'all' || isStatusSorted
                             ? `${new Intl.NumberFormat('fa-IR').format(totalOrders)} سفارش یافته‌شده`
                             : `نمایش ${new Intl.NumberFormat('fa-IR').format(orders.length)} از ${new Intl.NumberFormat('fa-IR').format(totalOrders)} سفارش`}
                     </span>
@@ -966,6 +1062,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                             setSearchQuery('');
                             setAppliedSearch('');
                             setFilterType('all');
+                            setSourceFilter('all');
                             setIsStatusSorted(false);
                         }}
                     >
@@ -1060,7 +1157,11 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
 
                                     {/* مبلغ */}
                                     <td className={styles.table__amount}>
-                                        {formatPriceRaw(order.totalPrice)}
+                                        {order.isByeMoney || order.source === 'byemoney' ? (
+                                            <span title="پرداخت با نور">{formatPriceRaw(order.totalPrice)} نور</span>
+                                        ) : (
+                                            formatPriceRaw(order.totalPrice)
+                                        )}
                                     </td>
 
                                     {/* تاریخ */}
@@ -1071,29 +1172,44 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                                     {/* عملیات */}
                                     <td>
                                         <div className={styles.actions}>
-                                            {needsReceiptApproval && (
+                                            {order.isByeMoney || order.source === 'byemoney' ? (
                                                 <AdminButton
-                                                    variant="edit"
+                                                    variant="default"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setReceiptModal(order);
+                                                        setByeMoneyModalOrder(order);
                                                     }}
-                                                    title="مشاهده و تأیید رسید پرداخت"
+                                                    title="مشاهده رسید خرید بای‌مانی"
                                                 >
-                                                    رسید
+                                                    مشاهده رسید
                                                 </AdminButton>
-                                            )}
+                                            ) : (
+                                                <>
+                                                    {needsReceiptApproval && (
+                                                        <AdminButton
+                                                            variant="edit"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setReceiptModal(order);
+                                                            }}
+                                                            title="مشاهده و تأیید رسید پرداخت"
+                                                        >
+                                                            رسید
+                                                        </AdminButton>
+                                                    )}
 
-                                            <AdminButton
-                                                variant="default"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setStatusModal(order);
-                                                }}
-                                                title="تغییر وضعیت سفارش"
-                                            >
-                                                وضعیت
-                                            </AdminButton>
+                                                    <AdminButton
+                                                        variant="default"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setStatusModal(order);
+                                                        }}
+                                                        title="تغییر وضعیت سفارش"
+                                                    >
+                                                        وضعیت
+                                                    </AdminButton>
+                                                </>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -1105,6 +1221,7 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                                         order={order}
                                         colSpan={COL_SPAN}
                                         onOpenReceipt={(ord) => setReceiptModal(ord)}
+                                        onOpenByeMoneyReceipt={(ord) => setByeMoneyModalOrder(ord)}
                                     />
                                 )}
                             </Fragment>
@@ -1171,6 +1288,14 @@ export default function OrdersTable({ initialOrders = [], initialMeta = null, in
                 onClose={() => setBulkDeleteTarget(null)}
                 onSuccess={handleBulkDeleteSuccess}
             />
+
+            {/* ── مودال رسید بای‌مانی ────────────────────────────────────────── */}
+            {byeMoneyModalOrder && (
+                <ByeMoneyReceiptModal
+                    order={byeMoneyModalOrder}
+                    onClose={() => setByeMoneyModalOrder(null)}
+                />
+            )}
         </AdminTableContainer>
     );
 }

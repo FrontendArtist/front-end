@@ -2,13 +2,14 @@ import { getCourseCart } from '@/lib/courseCartApi';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { getCourseCheckout, getTopUpCheckout, getCurrentCourseAccess } from '@/lib/courseCheckoutApi';
+import { getMyCoursePurchases, getCoursePurchaseReceipt } from '@/lib/byeMoneyApi';
 import { triggerLightUpdate } from '@/store/useLightStore';
 import { invalidateProfileCache } from '@/lib/client/profileClientApi';
 import { useCartStore } from '@/store/useCartStore';
 
 export default function useCourseCheckoutResult(courseId, topUpId, requestedCartId = null) {
     const { data: session, status } = useSession();
-    const [result, setResult] = useState({ phase: 'checking', courses: [] });
+    const [result, setResult] = useState({ phase: 'checking', courses: [], receipts: [] });
     const jwt = session?.user?.jwt;
     const userId = session?.user?.id;
     const hydratedUserId = useCartStore(state => state.hydratedUserId);
@@ -16,12 +17,13 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
     useEffect(() => {
         if (!courseId && !topUpId && !cartId) return;
         if (!jwt) {
-            if (status !== 'loading') setResult({ phase: 'unknown', courses: [] });
+            if (status !== 'loading') setResult({ phase: 'unknown', courses: [], receipts: [] });
             return;
         }
         let timer;
         let checks = 0;
         let knownCourses = [];
+        let knownReceipts = [];
         let resolvedCartId = cartId;
         const controller = new AbortController();
         const check = async () => {
@@ -58,7 +60,41 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                     : courses.every(c => c.purchaseStatus === 'Completed') ? 'completed'
                     : courses.some(c => ['Activating', 'DeliveryPending'].includes(c.purchaseStatus)) ? 'activating'
                     : paid ? 'incomplete' : 'paymentPending';
-                next = { phase, courses, paid };
+
+                // پس از موفقیت مالی، رسیدهای خریدهای بای‌مانی واکشی شوند
+                if (paid && knownReceipts.length === 0 && jwt) {
+                    try {
+                        const purchasesRes = await getMyCoursePurchases({ jwt, page: 1, pageSize: 50, signal: controller.signal });
+                        if (purchasesRes?.success && Array.isArray(purchasesRes.data?.items)) {
+                            let matchingItems = [];
+                            if (resolvedCartId) {
+                                matchingItems = purchasesRes.data.items.filter(item => item.cartId === resolvedCartId);
+                            }
+                            if (matchingItems.length === 0 && courseId) {
+                                matchingItems = purchasesRes.data.items.filter(item =>
+                                    item.courseExternalId === courseId ||
+                                    courses.some(c => c.externalCourseId === courseId)
+                                );
+                            }
+                            if (matchingItems.length === 0 && (resolvedCartId || courseId)) {
+                                matchingItems = purchasesRes.data.items.slice(0, Math.max(1, courses.length));
+                            }
+                            if (matchingItems.length > 0) {
+                                const receiptPromises = matchingItems.map(item =>
+                                    getCoursePurchaseReceipt({ jwt, purchaseId: item.purchaseId, signal: controller.signal })
+                                );
+                                const receiptResults = await Promise.all(receiptPromises);
+                                knownReceipts = receiptResults
+                                    .filter(r => r?.success && r.data)
+                                    .map(r => r.data);
+                            }
+                        }
+                    } catch {
+                        // در صورت خطا یا انصراف، مانع ادامه کاربری نمی‌شود
+                    }
+                }
+
+                next = { phase, courses, paid, receipts: knownReceipts };
                 // فقط قلمی حذف می‌شود که ثبت مالی آن در سرور تأیید شده است.
                 for (const course of courses.filter(c => userId && String(hydratedUserId) === String(userId) && ['Completed', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus))) {
                     const matching = useCartStore.getState().items.filter(item => item.type === 'course' &&
@@ -71,7 +107,7 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                 }
             } catch {
                 if (controller.signal.aborted) return;
-                next = { phase: 'unknown', courses: knownCourses };
+                next = { phase: 'unknown', courses: knownCourses, receipts: knownReceipts };
             }
             checks += 1;
             const keepChecking = !['completed', 'standalone', 'paymentFailed', 'accessMissing'].includes(next.phase) && checks < 15;

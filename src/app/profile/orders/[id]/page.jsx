@@ -179,14 +179,16 @@ export default function OrderDetailPage() {
     }
 
     const items = Array.isArray(order.items) ? order.items : [];
-    const isCardToCard = order.paymentMethod === 'card_to_card';
-    const isOnline = order.paymentMethod === 'online';
-    const isPaid = ['paid', 'shipped', 'delivered'].includes(order.orderStatus?.trim()?.toLowerCase()) || order.paymentStatus === 'paid';
-    const isFailedOrCanceled = 
+    const isByeMoney = order.source === 'byemoney';
+    const isCardToCard = !isByeMoney && order.paymentMethod === 'card_to_card';
+    const isOnline = !isByeMoney && order.paymentMethod === 'online';
+    const isPaid = isByeMoney || ['paid', 'shipped', 'delivered'].includes(order.orderStatus?.trim()?.toLowerCase()) || order.paymentStatus === 'paid';
+    const isFailedOrCanceled = !isByeMoney && (
         order.paymentStatus === 'failed' || 
         order.paymentStatus === 'rejected' ||
         order.orderStatus === 'canceled' ||
-        order.orderStatus === 'cancelled';
+        order.orderStatus === 'cancelled'
+    );
     const isRejected = isCardToCard && isFailedOrCanceled;
     const needsReceiptUpload = isCardToCard && order.paymentStatus === 'pending_payment' && !isRejected;
 
@@ -217,7 +219,7 @@ export default function OrderDetailPage() {
             <div className={styles.orderHeader}>
                 <div className={styles.orderHeaderTop}>
                     <h1 className={styles.orderTitle}>
-                        جزئیات سفارش
+                        {isByeMoney ? 'جزئیات رسید خرید دوره' : 'جزئیات سفارش'}
                     </h1>
                 </div>
                 <div className={styles.orderMeta}>
@@ -232,24 +234,35 @@ export default function OrderDetailPage() {
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>روش پرداخت:</span>
                         <span className={styles.metaValue}>
-                            {isCardToCard ? 'کارت به کارت' : (order.paymentMethod === 'free' ? 'رایگان' : 'پرداخت آنلاین (درگاه سامان)')}
+                            {isByeMoney ? 'کیف نور (بای‌مانی)' : (isCardToCard ? 'کارت به کارت' : (order.paymentMethod === 'free' ? 'رایگان' : 'پرداخت آنلاین (درگاه سامان)'))}
                         </span>
                     </span>
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>مبلغ کل:</span>
                         <span className={`${styles.metaValue} ${styles.metaPrice}`}>
-                            <PriceWithHint price={order.totalPrice} size="sm" />
+                            <PriceWithHint price={order.totalPrice} hideHint={isByeMoney} size="sm" />
                         </span>
                     </span>
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>وضعیت سفارش:</span>
                         <span className={styles.metaValue} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <OrderStatusBadge status={isOnline && isPaid ? 'paid' : order.orderStatus} paymentStatus={order.paymentStatus} paymentMethod={order.paymentMethod} />
-                            {isCardToCard && <PaymentStatusBadge status={order.paymentStatus} />}
-                            {isOnline && isPaid && (
-                                <span className={`${styles.badge} ${styles.badgeSuccess}`}>
-                                    پرداخت آنلاین موفق
-                                </span>
+                            {isByeMoney ? (
+                                <>
+                                    <span className={`${styles.badge} ${styles.badgeSuccess}`}>پرداخت شده ✓</span>
+                                    <span className={`${styles.badge} ${order.deliveryStatus === 'Delivered' ? styles.badgeSuccess : styles.badgeInfo}`}>
+                                        {order.deliveryStatus === 'Delivered' ? 'دسترسی فعال شد' : 'در انتظار فعال‌سازی'}
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    <OrderStatusBadge status={isOnline && isPaid ? 'paid' : order.orderStatus} paymentStatus={order.paymentStatus} paymentMethod={order.paymentMethod} />
+                                    {isCardToCard && <PaymentStatusBadge status={order.paymentStatus} />}
+                                    {isOnline && isPaid && (
+                                        <span className={`${styles.badge} ${styles.badgeSuccess}`}>
+                                            پرداخت آنلاین موفق
+                                        </span>
+                                    )}
+                                </>
                             )}
                         </span>
                     </span>
@@ -263,6 +276,95 @@ export default function OrderDetailPage() {
                     )}
                 </div>
             </div>
+
+            {/* ─── مشخصات رسید پرداخت با نور (سامانه مالی بای‌مانی) ────────── */}
+            {isByeMoney && (
+                <div className={styles.onlineReceiptCard}>
+                    <div className={styles.onlineReceiptHeader}>
+                        <div className={styles.onlineReceiptTitleWrap}>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="2" y="5" width="20" height="14" rx="2" />
+                                <line x1="2" y1="10" x2="22" y2="10" />
+                            </svg>
+                            <h2 className={styles.onlineReceiptTitle}>
+                                مشخصات رسید مالی دوره (سامانه بای‌مانی)
+                            </h2>
+                        </div>
+                        <span className={styles.receiptStatusSuccess}>
+                            ✓ پرداخت قطعی و موفق
+                        </span>
+                    </div>
+
+                    <div className={styles.onlineReceiptGrid}>
+                        <div className={styles.receiptField}>
+                            <span className={styles.receiptFieldLabel}>شناسه خرید (Purchase ID)</span>
+                            <div className={styles.copyableWrapper}>
+                                <span className={styles.receiptFieldValue} dir="ltr">{order.documentId || id}</span>
+                                <CopyBtn text={order.documentId || id} label="شناسه خرید" />
+                            </div>
+                        </div>
+
+                        {order.transactionId && (
+                            <div className={styles.receiptField}>
+                                <span className={styles.receiptFieldLabel}>شناسه تراکنش مالی (Transaction ID)</span>
+                                <div className={styles.copyableWrapper}>
+                                    <span className={styles.receiptFieldValue} dir="ltr">{order.transactionId}</span>
+                                    <CopyBtn text={order.transactionId} label="شناسه تراکنش" />
+                                </div>
+                            </div>
+                        )}
+
+                        {order.baseAmountInNoor != null && (
+                            <div className={styles.receiptField}>
+                                <span className={styles.receiptFieldLabel}>مبلغ پایه</span>
+                                <span className={styles.receiptFieldValue}>{Number(order.baseAmountInNoor).toLocaleString('fa-IR')} نور</span>
+                            </div>
+                        )}
+
+                        {order.discountAmountInNoor != null && order.discountAmountInNoor > 0 && (
+                            <div className={styles.receiptField}>
+                                <span className={styles.receiptFieldLabel}>مبلغ تخفیف</span>
+                                <span className={styles.receiptFieldValue}>{Number(order.discountAmountInNoor).toLocaleString('fa-IR')} نور</span>
+                            </div>
+                        )}
+
+                        {order.couponCode && (
+                            <div className={styles.receiptField}>
+                                <span className={styles.receiptFieldLabel}>کد تخفیف اعمال‌شده</span>
+                                <span className={styles.receiptFieldValue} dir="ltr">{order.couponCode}</span>
+                            </div>
+                        )}
+
+                        <div className={styles.receiptField}>
+                            <span className={styles.receiptFieldLabel}>مبلغ پرداختی نهایی</span>
+                            <span className={styles.receiptFieldValue}>{Number(order.totalPrice || 0).toLocaleString('fa-IR')} نور</span>
+                        </div>
+
+                        {order.referenceRialPerNoorAtPurchaseTime != null && (
+                            <div className={styles.receiptField}>
+                                <span className={styles.receiptFieldLabel}>نرخ مرجع هنگام خرید</span>
+                                <span className={styles.receiptFieldValue} dir="ltr">
+                                    {Number(order.referenceRialPerNoorAtPurchaseTime).toLocaleString('fa-IR')}
+                                </span>
+                            </div>
+                        )}
+
+                        <div className={styles.receiptField}>
+                            <span className={styles.receiptFieldLabel}>تاریخ و زمان خرید</span>
+                            <span className={styles.receiptFieldValue}>{formatDate(order.createdAt)}</span>
+                        </div>
+
+                        <div className={styles.receiptField}>
+                            <span className={styles.receiptFieldLabel}>وضعیت دسترسی</span>
+                            <span className={styles.receiptFieldValue}>
+                                {order.deliveryStatus === 'Delivered' ? 'دسترسی فعال شد' : 'در حال فعال‌سازی'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             {/* ─── مشخصات رسید پرداخت آنلاین (درگاه سامان کیش - سپ) ────── */}
             {isOnline && (

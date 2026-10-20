@@ -131,6 +131,99 @@ function CheckoutResultContent() {
                             ))}
                         </div>
                     )}
+
+                    {/* رسید مالی خریدهای بای‌مانی برای تمام دوره‌های سبد */}
+                    {isCoursePurchase && Array.isArray(checkout.receipts) && checkout.receipts.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', marginBottom: '16px' }}>
+                            {checkout.receipts.map((receipt) => (
+                                <div className={styles.detailsList} key={receipt.purchaseId} aria-label={`رسید دوره ${receipt.courseTitle}`}>
+                                    <div className={styles.detailRow} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '8px', marginBottom: '8px' }}>
+                                        <span className={styles.label} style={{ fontWeight: 'bold' }}>
+                                            <Receipt size={16} />
+                                            {receipt.courseTitle}
+                                        </span>
+                                        <span className={`${styles.badge} ${styles.successBadge}`}>
+                                            رسید مالی بای‌مانی ✓
+                                        </span>
+                                    </div>
+
+                                    <div className={styles.detailRow}>
+                                        <span className={styles.label}>شماره سفارش / شناسه خرید:</span>
+                                        <span
+                                            className={styles.value}
+                                            style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                            onClick={() => handleCopy(receipt.purchaseId)}
+                                            title="برای کپی کلیک کنید"
+                                            dir="ltr"
+                                        >
+                                            {receipt.purchaseId}
+                                            {copiedRef ? <Check size={14} color="#34d399" /> : <Copy size={14} opacity={0.6} />}
+                                        </span>
+                                    </div>
+
+                                    {receipt.baseAmountInNoor != null && (
+                                        <div className={styles.detailRow}>
+                                            <span className={styles.label}>مبلغ پایه:</span>
+                                            <span className={styles.value}>{Number(receipt.baseAmountInNoor).toLocaleString('fa-IR')} نور</span>
+                                        </div>
+                                    )}
+
+                                    {receipt.discountAmountInNoor != null && receipt.discountAmountInNoor > 0 && (
+                                        <div className={styles.detailRow}>
+                                            <span className={styles.label}>مبلغ تخفیف:</span>
+                                            <span className={styles.value}>{Number(receipt.discountAmountInNoor).toLocaleString('fa-IR')} نور</span>
+                                        </div>
+                                    )}
+
+                                    {receipt.couponCode && (
+                                        <div className={styles.detailRow}>
+                                            <span className={styles.label}>کد تخفیف:</span>
+                                            <span className={styles.value} dir="ltr">{receipt.couponCode}</span>
+                                        </div>
+                                    )}
+
+                                    <div className={styles.detailRow}>
+                                        <span className={styles.label}>مبلغ پرداختی:</span>
+                                        <span className={styles.value} style={{ fontWeight: 'bold' }}>
+                                            {Number(receipt.finalAmountInNoor || 0).toLocaleString('fa-IR')} نور
+                                        </span>
+                                    </div>
+
+                                    {receipt.referenceRialPerNoorAtPurchaseTime != null && (
+                                        <div className={styles.detailRow}>
+                                            <span className={styles.label}>نرخ مرجع هنگام خرید:</span>
+                                            <span className={styles.value} dir="ltr">
+                                                {Number(receipt.referenceRialPerNoorAtPurchaseTime).toLocaleString('fa-IR')}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <div className={styles.detailRow}>
+                                        <span className={styles.label}>زمان خرید:</span>
+                                        <span className={styles.value}>
+                                            {receipt.purchasedAtUtc
+                                                ? new Intl.DateTimeFormat('fa-IR', {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                }).format(new Date(receipt.purchasedAtUtc))
+                                                : '—'}
+                                        </span>
+                                    </div>
+
+                                    <div className={styles.detailRow}>
+                                        <span className={styles.label}>وضعیت تحویل:</span>
+                                        <span className={`${styles.badge} ${receipt.deliveryStatus === 'Delivered' ? styles.successBadge : styles.failedBadge}`}>
+                                            {receipt.deliveryStatus === 'Delivered' ? 'دسترسی فعال شد' : 'در انتظار فعال‌سازی'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {/* جدول مشخصات تراکنش */}
                     <div className={styles.detailsList}>
                         {isTopUp && topUpId && (
@@ -178,7 +271,7 @@ function CheckoutResultContent() {
                         <div className={styles.detailRow}>
                             <span className={styles.label}>درگاه پرداخت:</span>
                             <span className={styles.value} style={{ direction: 'rtl', fontFamily: 'inherit' }}>
-                                {isWalletPurchase ? 'کیف پول نور' : 'پرداخت الکترونیک سامان (سپ)'}
+                                {isWalletPurchase ? 'کیف نور' : 'پرداخت الکترونیک سامان (سپ)'}
                             </span>
                         </div>
 
@@ -227,7 +320,14 @@ function CheckoutResultContent() {
                         {isCoursePurchase ? (
                             <>
                                 {checkout.phase === 'paymentFailed' && <Link href="/cart" className={styles.primaryButton}>بازگشت به سبد خرید و پرداخت مجدد</Link>}
-                                <Link href="/profile/purchases" className={styles.primaryButton}>دوره‌های من</Link>
+                                <Link href="/profile/orders" className={styles.primaryButton}>
+                                    <Receipt size={18} />
+                                    سفارش‌های من
+                                </Link>
+                                <Link href="/profile/purchases" className={styles.secondaryButton}>
+                                    <GraduationCap size={18} />
+                                    دوره‌های من
+                                </Link>
                                 <Link href="/profile" className={styles.secondaryButton}>کیف پول و حساب کاربری</Link>
                                 <Link href="/contact" className={styles.secondaryButton}>پشتیبانی و تماس</Link>
                             </>

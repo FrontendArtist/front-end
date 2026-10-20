@@ -1592,5 +1592,39 @@ $transition: 0.2s ease;
     opacity: 0.8;
 }
 
+.byemoneyWarningAlert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: fade(var(--color-warning-amber), 12%);
+    border: 1px solid var(--color-warning-amber);
+    color: var(--color-warning-amber);
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 12px;
+    animation: slideDown 0.25s ease;
+
+    &__content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    &__close {
+        background: none;
+        border: none;
+        color: var(--color-warning-amber);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0 4px;
+        opacity: 0.7;
+        &:hover {
+            opacity: 1;
+        }
+    }
+}
+
 
 

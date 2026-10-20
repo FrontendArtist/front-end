@@ -27,6 +27,7 @@ export async function GET(request) {
         const search = searchParams.get('search') || searchParams.get('q') || '';
         const period = searchParams.get('period') || 'current';
         const settlementId = searchParams.get('settlementId') || null;
+        const source = searchParams.get('source') || 'all';
 
         const options = {
             ...(startParam !== null && limitParam !== null
@@ -37,15 +38,16 @@ export async function GET(request) {
             search,
             period,
             settlementId,
+            source,
         };
 
-        const { orders, meta, error } = await getOrders(session.user.jwt, options);
+        const { orders, meta, byemoneyWarning, error } = await getOrders(session.user.jwt, options);
 
         if (error) {
             return NextResponse.json({ error: 'خطا در دریافت سفارش‌ها از سرور' }, { status: 500 });
         }
 
-        return NextResponse.json({ orders, meta });
+        return NextResponse.json({ orders, meta, byemoneyWarning });
     } catch (err) {
         console.error('[AdminOrdersAPI GET] Error:', err);
         return NextResponse.json({ error: 'خطای داخلی سرور' }, { status: 500 });

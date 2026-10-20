@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { PAYMENT_METHOD } from "@/lib/constants/orderConstants";
 import { STRAPI_API_URL } from "@/lib/api";
 
-import { getConversionRateWithByeMoney } from '@/lib/byeMoneyApi';
+import { getConversionRateWithByeMoney, getMyCoursePurchases, getCoursePurchaseReceipt } from '@/lib/byeMoneyApi';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
@@ -22,40 +22,167 @@ export async function GET(request) {
     }
 
     try {
-        // ── BUG FIX ─────────────────────────────────────────────────────────────
-        // صفحه /profile/orders/[id] می‌تواند ?documentId=xyz بفرستد تا فقط
-        // یک سفارش خاص برگردد. قبلاً این پارامتر کاملاً نادیده گرفته می‌شد.
         const { searchParams } = new URL(request.url);
         const documentId = searchParams.get('documentId');
 
-        let strapiUrl;
+        // حالت ۱: دریافت یک سفارش خاص
         if (documentId) {
-            // دریافت یک سفارش خاص با documentId + تأیید مالکیت کاربر
-            strapiUrl = `${STRAPI_BASE_URL}/api/orders`
+            // ۱-الف: بررسی در صورت وجود در بای‌مانی
+            if (session.user.jwt) {
+                try {
+                    const bmReceipt = await getCoursePurchaseReceipt({
+                        jwt: session.user.jwt,
+                        purchaseId: documentId
+                    });
+                    if (bmReceipt.success && bmReceipt.data) {
+                        const r = bmReceipt.data;
+                        const mappedOrder = {
+                            id: r.purchaseId,
+                            documentId: r.purchaseId,
+                            source: 'byemoney',
+                            orderSource: 'byemoney',
+                            orderNumber: r.purchaseId.slice(0, 8).toUpperCase(),
+                            createdAt: r.purchasedAtUtc,
+                            orderStatus: 'paid',
+                            paymentStatus: 'paid',
+                            paymentMethod: 'noor',
+                            totalPrice: r.finalAmountInNoor,
+                            baseAmountInNoor: r.baseAmountInNoor,
+                            discountAmountInNoor: r.discountAmountInNoor,
+                            couponCode: r.couponCode,
+                            referenceRialPerNoorAtPurchaseTime: r.referenceRialPerNoorAtPurchaseTime,
+                            financialStatus: r.financialStatus,
+                            deliveryStatus: r.deliveryStatus,
+                            deliveredAtUtc: r.deliveredAtUtc,
+                            cartSummary: r.cartSummary,
+                            transactionId: r.transactionId,
+                            items: [{
+                                id: r.courseExternalId,
+                                documentId: r.courseExternalId,
+                                title: r.courseTitle,
+                                price: r.finalAmountInNoor,
+                                type: 'course'
+                            }]
+                        };
+                        return NextResponse.json({ data: [mappedOrder] });
+                    }
+                } catch (bmErr) {
+                    console.error("ByeMoney GET Receipt Error:", bmErr);
+                }
+            }
+
+            // ۱-ب: اگر در بای‌مانی نبود، جستجو در استراپی
+            const strapiUrl = `${STRAPI_BASE_URL}/api/orders`
                 + `?filters[documentId][$eq]=${encodeURIComponent(documentId)}`
                 + `&filters[user][id][$eq]=${session.user.id}`
                 + `&populate=*`;
-        } else {
-            // دریافت همه سفارشات کاربر (رفتار قبلی)
-            strapiUrl = `${STRAPI_BASE_URL}/api/orders`
-                + `?filters[user][id][$eq]=${session.user.id}`
-                + `&pagination[pageSize]=100`
-                + `&sort=createdAt:desc`
-                + `&populate=*`;
+
+            const res = await fetch(strapiUrl, {
+                headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
+                cache: 'no-store'
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                console.error("Strapi GET Single Order Error:", errText);
+                throw new Error("Failed to fetch order from Strapi");
+            }
+            const data = await res.json();
+            return NextResponse.json(data);
         }
 
-        const res = await fetch(strapiUrl, {
-            headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
-            cache: 'no-store'
+        // حالت ۲: دریافت فهرست کامل سفارشات (ادغام استراپی و بای‌مانی با تحمل قطعی)
+        let strapiOrders = [];
+        let byemoneyOrders = [];
+        let byemoneyWarning = false;
+
+        // فراخوانی استراپی
+        const strapiUrl = `${STRAPI_BASE_URL}/api/orders`
+            + `?filters[user][id][$eq]=${session.user.id}`
+            + `&pagination[pageSize]=100`
+            + `&sort=createdAt:desc`
+            + `&populate=*`;
+
+        try {
+            const res = await fetch(strapiUrl, {
+                headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
+                cache: 'no-store'
+            });
+
+            if (res.ok) {
+                const sData = await res.json();
+                strapiOrders = (sData.data || []).map(order => ({
+                    ...order,
+                    source: 'strapi',
+                    orderSource: 'strapi',
+                }));
+            } else {
+                console.error("Strapi GET Orders Non-OK:", await res.text());
+            }
+        } catch (sErr) {
+            console.error("Strapi GET Orders Error:", sErr);
+        }
+
+        // فراخوانی بای‌مانی با پشتیبانی از تحمل قطعی
+        if (session.user.jwt) {
+            try {
+                const bmRes = await getMyCoursePurchases({
+                    jwt: session.user.jwt,
+                    page: 1,
+                    pageSize: 100
+                });
+                if (bmRes.success && bmRes.data?.items) {
+                    byemoneyOrders = bmRes.data.items.map(item => ({
+                        id: item.purchaseId,
+                        documentId: item.purchaseId,
+                        purchaseId: item.purchaseId,
+                        cartId: item.cartId,
+                        source: 'byemoney',
+                        orderSource: 'byemoney',
+                        orderNumber: item.purchaseId.slice(0, 8).toUpperCase(),
+                        createdAt: item.purchasedAtUtc,
+                        orderStatus: 'paid',
+                        paymentStatus: 'paid',
+                        paymentMethod: 'noor',
+                        totalPrice: item.finalAmountInNoor,
+                        financialStatus: item.financialStatus,
+                        deliveryStatus: item.deliveryStatus,
+                        items: [{
+                            id: item.purchaseId,
+                            title: item.courseTitle,
+                            price: item.finalAmountInNoor,
+                            type: 'course'
+                        }]
+                    }));
+                } else {
+                    byemoneyWarning = true;
+                }
+            } catch (bmFetchErr) {
+                console.error("ByeMoney GET purchases fetch error:", bmFetchErr);
+                byemoneyWarning = true;
+            }
+        } else {
+            byemoneyWarning = true;
+        }
+
+        // ادغام و مرتب‌سازی بر اساس زمان نزولی (جدیدترین به قدیمی‌ترین)
+        const allOrders = [...byemoneyOrders, ...strapiOrders].sort((a, b) => {
+            const timeA = new Date(a.createdAt || a.attributes?.createdAt || 0).getTime();
+            const timeB = new Date(b.createdAt || b.attributes?.createdAt || 0).getTime();
+            return timeB - timeA;
         });
 
-        if (!res.ok) {
-            const errText = await res.text();
-            console.error("Strapi GET Orders Error:", errText);
-            throw new Error("Failed to fetch orders from Strapi");
-        }
-        const data = await res.json();
-        return NextResponse.json(data);
+        return NextResponse.json({
+            data: allOrders,
+            byemoneyWarning,
+            meta: {
+                pagination: {
+                    total: allOrders.length,
+                    page: 1,
+                    pageSize: 100
+                }
+            }
+        });
 
     } catch (error) {
         console.error("GET Orders Error:", error);

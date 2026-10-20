@@ -8,7 +8,7 @@ import { useAccountOrders } from '@/hooks/useAccountOrders';
 import styles from './OrdersList.module.scss';
 
 export default function OrdersList({ limit }) {
-    const { orders, isLoading, error, fetchOrders, hasFetched } = useAccountOrders();
+    const { orders, isLoading, error, fetchOrders, hasFetched, byemoneyWarning } = useAccountOrders();
 
     useEffect(() => {
         if (!hasFetched) {
@@ -58,6 +58,10 @@ export default function OrdersList({ limit }) {
     };
 
     const CombinedStatusBadge = ({ order }) => {
+        if (order.source === 'byemoney') {
+            return <span className={`${styles.orders__badge} ${styles.orders__badgeSuccess}`}>پرداخت شده ✓</span>;
+        }
+
         const oStatus = order.orderStatus?.trim()?.toLowerCase();
         const pStatus = order.paymentStatus?.trim()?.toLowerCase();
         const isOnline = order.paymentMethod === 'online';
@@ -110,19 +114,38 @@ export default function OrdersList({ limit }) {
 
     if (!displayedOrders || displayedOrders.length === 0) {
         return (
-            <div className={styles.orders__empty}>
-                <div className={styles.orders__emptyIcon}>
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="9" cy="21" r="1" />
-                        <circle cx="20" cy="21" r="1" />
-                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                    </svg>
+            <div className={styles.orders}>
+                {byemoneyWarning && (
+                    <div style={{
+                        backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                        border: '1px solid rgba(234, 179, 8, 0.3)',
+                        color: '#facc15',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        marginBottom: '20px',
+                        fontSize: '0.9rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <span>⚠️</span>
+                        <span>امکان دریافت خریدهای جدید از بای‌مانی وجود ندارد؛ در حال حاضر فقط سفارش‌های استراپی نمایش داده می‌شوند.</span>
+                    </div>
+                )}
+                <div className={styles.orders__empty}>
+                    <div className={styles.orders__emptyIcon}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="9" cy="21" r="1" />
+                            <circle cx="20" cy="21" r="1" />
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                        </svg>
+                    </div>
+                    <h2 className={styles.orders__emptyTitle}>سفارشی ثبت نشده است</h2>
+                    <p className={styles.orders__emptyDesc}>شما تاکنون هیچ دوره‌ای ثبت نام نکرده‌اید یا سفارشی نداشته‌اید.</p>
+                    <Link href="/courses" className={styles.orders__shopBtn}>
+                        مشاهده دوره‌ها
+                    </Link>
                 </div>
-                <h2 className={styles.orders__emptyTitle}>سفارشی ثبت نشده است</h2>
-                <p className={styles.orders__emptyDesc}>شما تاکنون هیچ دوره‌ای ثبت نام نکرده‌اید یا سفارشی نداشته‌اید.</p>
-                <Link href="/courses" className={styles.orders__shopBtn}>
-                    مشاهده دوره‌ها
-                </Link>
             </div>
         );
     }
@@ -133,15 +156,35 @@ export default function OrdersList({ limit }) {
                 {limit ? 'سفارش‌های اخیر' : 'تاریخچه سفارشات'}
             </h2>
 
+            {byemoneyWarning && (
+                <div style={{
+                    backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                    border: '1px solid rgba(234, 179, 8, 0.3)',
+                    color: '#facc15',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    marginBottom: '20px',
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                }}>
+                    <span>⚠️</span>
+                    <span>امکان دریافت خریدهای جدید از بای‌مانی وجود ندارد؛ در حال حاضر فقط سفارش‌های استراپی نمایش داده می‌شوند.</span>
+                </div>
+            )}
+
             <div className={styles.orders__list}>
                 {displayedOrders.map((orderData) => {
-                    // depending on strapi version, the order data might be flat or nested under attributes
                     const order = orderData.attributes || orderData;
-                    const id = orderData.id;
+                    const isByeMoney = order.source === 'byemoney' || orderData.source === 'byemoney';
+                    const id = isByeMoney
+                        ? (order.orderNumber || (orderData.id ? String(orderData.id).slice(0, 8).toUpperCase() : ''))
+                        : orderData.id;
                     const items = Array.isArray(order.items) ? order.items : [];
 
                     return (
-                        <GradientBorderCard gradient={'horizontal-rtl'} key={id} className={styles.orders__cardWrapper} contentClassName={styles.orders__card} enableHover={false}>
+                        <GradientBorderCard gradient={'horizontal-rtl'} key={orderData.documentId || orderData.id} className={styles.orders__cardWrapper} contentClassName={styles.orders__card} enableHover={false}>
                             <div className={styles.orders__header}>
                                 <div className={styles.orders__headerInfo}>
                                     <span className={styles.orders__id}>سفارش #{id}</span>
@@ -156,7 +199,7 @@ export default function OrdersList({ limit }) {
                                 <div className={styles.orders__detailItem}>
                                     <span className={styles.orders__label}>مبلغ کل:</span>
                                     <span className={styles.orders__value}>
-                                        <PriceWithHint price={order.totalPrice} size="sm" />
+                                        <PriceWithHint price={order.totalPrice} hideHint={isByeMoney} size="sm" />
                                     </span>
                                 </div>
                                 <div className={styles.orders__detailItem}>
@@ -173,7 +216,7 @@ export default function OrdersList({ limit }) {
                                 )}
 
                                 <Link
-                                    href={`/profile/orders/${orderData.documentId}`}
+                                    href={`/profile/orders/${orderData.documentId || order.documentId || orderData.id}`}
                                     className={styles.orders__viewBtn}
                                     aria-label={`مشاهده جزئیات سفارش ${id}`}
                                 >

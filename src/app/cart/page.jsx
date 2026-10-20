@@ -49,11 +49,6 @@ export default function CartPage() {
      * تا زمانی که کامپوننت mount نشده، چیزی نمایش نمی‌دهیم
      */
     const [isHydrated, setIsHydrated] = useState(false);
-
-    useEffect(() => {
-        setIsHydrated(true);
-    }, []);
-
     const router = useRouter();
     const { data: session, status } = useSession();
     const openAuthModal = useAuthStore((state) => state.openAuthModal);
@@ -66,6 +61,16 @@ export default function CartPage() {
     const [walletPreview, setWalletPreview] = useState(null);
     const paymentLock = useRef(false);
     const walletRequest = useRef(0);
+
+    useEffect(() => {
+        setIsHydrated(true);
+        const handlePageShow = () => {
+            paymentLock.current = false;
+            setIsProcessing(false);
+        };
+        window.addEventListener('pageshow', handlePageShow);
+        return () => window.removeEventListener('pageshow', handlePageShow);
+    }, [setIsProcessing]);
 
     // دریافت داده‌ها و توابع از Store
     const items = useCartStore((state) => state.items);
@@ -174,7 +179,7 @@ export default function CartPage() {
         setErrorMessage(null);
         try {
             if (isCourseCartEligible) {
-                if (['Paid', 'AwaitingTopUp'].includes(preview?.data?.status)) {
+                if (preview?.data?.status === 'Paid') {
                     router.push('/checkout/result?source=noor&cartId=' + encodeURIComponent(preview.data.cartId));
                     return;
                 }
@@ -185,11 +190,11 @@ export default function CartPage() {
                     externalCourseIds, couponCode,
                 }, session.user.jwt);
                 if (currentPreviewKey.current !== paymentKey) return;
-                if (['Paid', 'AwaitingTopUp'].includes(data.status)) {
+                if (data.status === 'Paid') {
                     router.push('/checkout/result?source=noor&cartId=' + encodeURIComponent(data.cartId));
                     return;
                 }
-                if (data.status !== 'Ready') throw new Error('سبد برای پرداخت آماده نیست. دوباره تلاش کنید.');
+                if (data.status !== 'Ready' && data.status !== 'AwaitingTopUp') throw new Error('سبد برای پرداخت آماده نیست. دوباره تلاش کنید.');
                 walletRequest.current += 1;
                 setWalletPreview({ jwt: session.user.jwt, balance: data.balanceInNoor });
                 setCheckoutPreview({ key: paymentKey, data });
@@ -205,7 +210,7 @@ export default function CartPage() {
                     cartId: data.cartId,
                     jwt: session?.user?.jwt,
                     router,
-                    payOnline: data.shortfallInNoor > 0,
+                    payOnline: data.shortfallInNoor > 0 || data.status === 'AwaitingTopUp',
                 });
             } else {
                 await executeOnlinePayment({
@@ -598,18 +603,39 @@ export default function CartPage() {
                         {isCourseCartEligible && preview?.data && (
                             <div className={styles.walletCard}>
                                 {preview.data.status === 'AwaitingTopUp' && (
-                                    <p role="status">نتیجهٔ پرداخت قبلی در حال بررسی است. پس از تأیید ناموفق‌بودن پرداخت، امکان پرداخت مجدد همین سبد فعال می‌شود.</p>
+                                    <div style={{
+                                        padding: '10px 12px',
+                                        backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                                        borderRadius: '8px',
+                                        color: '#fcd34d',
+                                        fontSize: '0.85rem',
+                                        marginBottom: '12px',
+                                        lineHeight: '1.5',
+                                    }}>
+                                        <span>پرداخت قبلی شما ناتمام ماند یا لغو شد. در صورتی که وجه از حسابتان کسر نشده است، می‌توانید مجدداً پرداخت را انجام دهید.</span>
+                                        <div style={{ marginTop: '6px' }}>
+                                            <Link
+                                                href={`/checkout/result?source=noor&cartId=${encodeURIComponent(preview.data.cartId)}`}
+                                                style={{ color: '#93c5fd', textDecoration: 'underline', fontSize: '0.8rem' }}
+                                            >
+                                                پیگیری و استعلام وضعیت پرداخت قبلی
+                                            </Link>
+                                        </div>
+                                    </div>
                                 )}
                                 <div className={styles.walletCardRow}>
-                                    <span>موجودی کیف پول:</span>
+                                    <span>موجودی کیف نور:</span>
                                     <strong>{balance == null ? 'در دسترس نیست؛ هنگام پرداخت بررسی می‌شود' : `${formatPrice(balance)} نور`}</strong>
                                 </div>
-                                {needsOnlinePayment && (
+                                {(needsOnlinePayment || preview.data.status === 'AwaitingTopUp') && (
                                     <>
-                                        <div className={`${styles.walletCardRow} ${styles.onlinePayRow}`}>
-                                            <span>کسری موجودی:</span>
-                                            <strong>{formatPrice(shortfall)} نور</strong>
-                                        </div>
+                                        {shortfall > 0 && (
+                                            <div className={`${styles.walletCardRow} ${styles.onlinePayRow}`}>
+                                                <span>کسری موجودی:</span>
+                                                <strong>{formatPrice(shortfall)} نور</strong>
+                                            </div>
+                                        )}
                                         <div className={styles.walletCardNotice}>
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <circle cx="12" cy="12" r="10"></circle>
@@ -701,11 +727,9 @@ export default function CartPage() {
                             className={styles.checkoutButton}
                         >
                             {isProcessing ? (
-                                isCourseCartEligible ? 'در حال پردازش خرید...' : 'در حال اتصال به درگاه پرداخت...'
+                                'در حال اتصال به درگاه پرداخت...'
                             ) : isPreviewLoading ? (
                                 'در حال بررسی قیمت...'
-                            ) : preview?.data?.status === 'AwaitingTopUp' ? (
-                                'پیگیری وضعیت پرداخت'
                             ) : isCourseCartEligible && preview?.error ? (
                                 'بررسی و ادامه پرداخت'
                             ) : hasPhysicalProducts ? (
@@ -713,7 +737,11 @@ export default function CartPage() {
                             ) : (preview?.data?.priceInNoor ?? finalTotalPrice) === 0 ? (
                                 'ثبت‌نام و دسترسی رایگان '
                             ) : isCourseCartEligible ? (
-                                balance == null ? 'ادامه پرداخت' : (needsOnlinePayment ? 'پرداخت آنلاین و خرید' : 'خرید با کیف پول نور')
+                                balance == null
+                                    ? 'ادامه پرداخت'
+                                    : (needsOnlinePayment || preview?.data?.status === 'AwaitingTopUp')
+                                        ? (preview?.data?.status === 'AwaitingTopUp' ? 'پرداخت مجدد آنلاین' : 'پرداخت آنلاین و خرید')
+                                        : 'خرید با کیف نور'
                             ) : (
                                 'پرداخت آنلاین شتاب '
                             )}

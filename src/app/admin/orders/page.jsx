@@ -26,7 +26,7 @@ export default async function AdminOrdersPage() {
     const jwt = session?.user?.jwt;
 
     // ── واکشی اولیه سفارش‌ها از Strapi (صفحه اول) و آمار وضعیت‌ها ────────
-    const [{ orders, meta, error }, statsData] = await Promise.all([
+    const [{ orders, meta, error, byemoneyWarning }, statsData] = await Promise.all([
         getOrders(jwt, { start: 0, limit: 20 }),
         getOrdersStats(jwt),
     ]);
@@ -80,6 +80,7 @@ export default async function AdminOrdersPage() {
                     initialMeta={meta}
                     initialStats={statsData?.statusCounts || null}
                     settlementStats={statsData}
+                    initialByemoneyWarning={Boolean(byemoneyWarning)}
                 />
             )}
         </div>
