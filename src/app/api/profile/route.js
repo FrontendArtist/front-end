@@ -43,6 +43,10 @@ export async function GET(request) {
         }
 
         const userData = rawText ? JSON.parse(rawText) : {};
+        if (!Array.isArray(userData.enrolledChapterIntegrationIds)) {
+            userData.enrolledChapterIntegrationIds = [];
+        }
+
         return NextResponse.json(userData);
 
     } catch (error) {

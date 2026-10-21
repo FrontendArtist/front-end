@@ -3,6 +3,14 @@ import { isIranianPhoneNumber } from './phoneUtils';
 import { getDiscountedCoursePrice } from './coursePricing';
 
 /**
+ * بررسی قطعی دورهٔ فصلی‌فروش
+ * صرف وجود فیلد یا مقدار غیر بولی کافی نیست؛ فقط مقدار بولی true ملاک است.
+ */
+export function isChapteredCourse(course) {
+  return course?.isChaptered === true;
+}
+
+/**
  * بررسی و دریافت قیمت موثر دوره بر اساس کاربر (عادی یا خارجی)
  */
 export function getEffectiveCoursePrice(course, user) {
@@ -78,6 +86,7 @@ export function formatStrapiCourses(apiResponse) {
             const chPrice = Number(ch.priceNoor ?? ch.price ?? 0);
             return {
               id: ch.id,
+              integrationId: ch.integrationId || null,
               title: ch.title || '',
               price: { noor: chPrice, toman: chPrice, original: chPrice },
               priceNoor: chPrice,
@@ -118,7 +127,7 @@ export function formatStrapiCourses(apiResponse) {
         image: formatSingleImage(item.media ? item.media[0] : item.image || null),
         teaserUrl: item.teaserUrl || null,
         content: item.content || null,
-        isChaptered: Boolean(item.isChaptered),
+        isChaptered: item.isChaptered === true,
         chapters,
         curriculum,
         telegramLink: item.telegramLink || item.telegram_link || item.telegramGroupLink || item.telegram || null,

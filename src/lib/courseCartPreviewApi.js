@@ -55,3 +55,20 @@ export function sameCourseCartPrice(left, right) {
     };
     return signature(left) === signature(right);
 }
+
+/**
+ * نگاشت یکدست قلم‌های سبد/پیش‌نمایش برای دوره‌ها و فصل‌ها
+ * پیش‌نمایش استرپی: type='course' | 'course_chapter', parentExternalId
+ * پاسخ بای‌مانی: itemType='Course' | 'CourseChapter', parentExternalId
+ */
+export function normalizeCartItemType(item) {
+    if (!item) return 'course';
+    const rawType = item.itemType || item.type;
+    if (!rawType) return 'course';
+    const str = String(rawType).toLowerCase().replace(/_/g, '');
+    return str === 'coursechapter' || str === 'chapter' ? 'course_chapter' : 'course';
+}
+
+export function isCartItemChapter(item) {
+    return normalizeCartItemType(item) === 'course_chapter';
+}

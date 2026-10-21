@@ -26,5 +26,17 @@ export async function getCurrentCourseAccess(userId, signal) {
     if (String(profile.id) !== String(userId) || !Array.isArray(profile.courses)) {
         throw new Error('اطلاعات دسترسی دوره‌ها معتبر نیست.');
     }
-    return new Set(profile.courses.map(course => course.documentId));
+    const accessSet = new Set(profile.courses.map(course => course.documentId));
+    accessSet.enrolledChapters = new Set((profile.enrolledChapters || []).map(String));
+    accessSet.enrolledChapterIntegrationIds = new Set((profile.enrolledChapterIntegrationIds || []).map(String));
+    accessSet.hasChapterAccess = (chapterExternalId, parentExternalId) => {
+        if (parentExternalId && accessSet.has(parentExternalId)) return true;
+        if (!chapterExternalId) return false;
+        const chapStr = String(chapterExternalId);
+        if (accessSet.has(chapStr)) return true;
+        if (accessSet.enrolledChapters.has(chapStr)) return true;
+        if (accessSet.enrolledChapterIntegrationIds.has(chapStr)) return true;
+        return false;
+    };
+    return accessSet;
 }

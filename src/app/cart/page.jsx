@@ -89,9 +89,13 @@ export default function CartPage() {
     // آیا محصول فیزیکی نیازمند آدرس پستی در سبد وجود دارد؟
     const hasPhysicalProducts = items.some((item) => item.type === 'product');
 
-    // فقط دوره کامل در قرارداد خرید سبد پشتیبانی می‌شود.
-    const isCourseCartEligible = items.length > 0 && items.every(item => item.type === 'course');
-    const courseIdsKey = JSON.stringify(items.map(item => item.documentId || item.externalCourseId));
+    // دوره کامل و فصل در قرارداد خرید نوری سبد پشتیبانی می‌شوند.
+    const isCourseCartEligible = items.length > 0 && items.every(item => item.type === 'course' || item.type === 'chapter');
+    const courseIdsKey = JSON.stringify(items.map(item =>
+        item.type === 'chapter'
+            ? (item.integrationId || item.externalCourseId || null)
+            : (item.documentId || item.externalCourseId || null)
+    ));
     const couponCode = appliedCoupon?.code || null;
     const previewKey = JSON.stringify([session?.user?.id, session?.user?.jwt, courseIdsKey, couponCode, courseCartRevision, previewRevision]);
     const preview = checkoutPreview?.key === previewKey ? checkoutPreview : null;
@@ -125,9 +129,17 @@ export default function CartPage() {
             setCheckoutPreview({ key: previewKey, error: 'نشست شما معتبر نیست. لطفاً دوباره وارد حساب شوید.' });
             return;
         }
+        const legacyChapter = items.find(item => item.type === 'chapter' && !item.integrationId && !item.externalCourseId);
+        if (legacyChapter) {
+            setCheckoutPreview({
+                key: previewKey,
+                error: `شناسهٔ فصل «${legacyChapter.title || 'انتخاب‌شده'}» قدیمی است؛ لطفاً این قلم را از سبد حذف کرده و مجدداً از صفحهٔ دوره انتخاب کنید.`
+            });
+            return;
+        }
         const externalCourseIds = JSON.parse(courseIdsKey);
         if (externalCourseIds.some(id => !id)) {
-            setCheckoutPreview({ key: previewKey, error: 'شناسه دوره در سبد معتبر نیست. دوره را حذف و دوباره اضافه کنید.' });
+            setCheckoutPreview({ key: previewKey, error: 'شناسه دوره یا فصل در سبد معتبر نیست. لطفاً آن را حذف و دوباره اضافه کنید.' });
             return;
         }
         const controller = new AbortController();
@@ -185,6 +197,9 @@ export default function CartPage() {
                 }
                 if (!preview || !session?.user?.jwt) throw new Error('ابتدا منتظر بررسی قیمت سبد بمانید.');
                 const externalCourseIds = JSON.parse(courseIdsKey);
+                if (externalCourseIds.some(id => !id)) {
+                    throw new Error('شناسهٔ دوره یا فصل در سبد معتبر نیست. لطفاً آن را حذف کرده و مجدداً انتخاب کنید.');
+                }
                 const data = await prepareCourseCart({
                     cartId: getCourseCartId(session.user.id, externalCourseIds, couponCode, courseCartRevision),
                     externalCourseIds, couponCode,
@@ -487,14 +502,18 @@ export default function CartPage() {
                             </h2>
                             <div className={styles.itemsList}>
                                 {coursesAndChapters.map((item) => {
+                                    const itemExternalId = item.type === 'chapter'
+                                        ? (item.integrationId || item.externalCourseId)
+                                        : (item.documentId || item.externalCourseId);
                                     const quote = isCourseCartEligible ? preview?.data?.courses?.find(course =>
-                                        course.externalCourseId === (item.documentId || item.externalCourseId)) : null;
-                                    // قیمت پایه هر دوره ثابت است؛ تخفیف دوره و کوپن فقط در خلاصهٔ سبد نمایش داده می‌شوند.
+                                        course.externalCourseId === itemExternalId) : null;
+                                    // قیمت پایه هر دوره/فصل ثابت است؛ تخفیف دوره و کوپن فقط در خلاصهٔ سبد نمایش داده می‌شوند.
                                     const price = isCourseCartEligible
                                         ? (quote ? (quote.basePriceInNoor != null ? quote.basePriceInNoor : quote.priceInNoor) : undefined)
                                         : item.price;
                                     const coursePageSlug = item.slug ? item.slug.split('-chapter-')[0] : '';
                                     const itemHref = item.type === 'chapter' ? `/courses/${coursePageSlug}` : `/courses/${item.slug}`;
+                                    const isLegacyChapter = item.type === 'chapter' && !item.integrationId && !item.externalCourseId;
 
                                     return (
                                         <div key={item.id} className={styles.cartItem}>
@@ -518,6 +537,20 @@ export default function CartPage() {
                                                 <span className={styles.courseLabel}>
                                                     {item.type === 'chapter' ? 'فصل آموزشی' : 'دوره آموزشی'}
                                                 </span>
+                                                {isLegacyChapter && (
+                                                    <div style={{
+                                                        marginTop: '6px',
+                                                        padding: '4px 8px',
+                                                        backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                                                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                                                        borderRadius: '6px',
+                                                        color: '#fca5a5',
+                                                        fontSize: '0.75rem',
+                                                        lineHeight: '1.4',
+                                                    }}>
+                                                        شناسهٔ این فصل به‌روزرسانی شده است؛ لطفاً این قلم را حذف کرده و مجدداً از صفحهٔ دوره انتخاب کنید.
+                                                    </div>
+                                                )}
                                             </Link>
 
                                             {/* فضای خالی به جای کنترلر تعداد */}

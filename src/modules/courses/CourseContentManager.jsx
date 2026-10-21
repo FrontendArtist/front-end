@@ -53,12 +53,16 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   const addItem = useCartStore((state) => state.addItem);
   const cartItems = useCartStore((state) => state.items);
 
-  const isChapterInCart = (chapterId) => {
-    return cartItems.some(
-      (item) =>
-        item.id === `chapter-${chapterId}` ||
-        String(item.chapterId) === String(chapterId)
-    );
+  const isChapterInCart = (chapterOrId) => {
+    const chId = typeof chapterOrId === 'object' ? chapterOrId?.id : chapterOrId;
+    const integrationId = typeof chapterOrId === 'object' ? chapterOrId?.integrationId : null;
+    return cartItems.some((item) => {
+      if (item.type !== 'chapter') return false;
+      if (integrationId && (item.integrationId === integrationId || item.externalCourseId === integrationId)) {
+        return true;
+      }
+      return item.id === `chapter-${chId}` || item.id === `chapter-${integrationId}` || String(item.chapterId) === String(chId);
+    });
   };
 
   // استیت‌های محلی برای پخش‌کننده ویدیو/صوت و آکوردئون
@@ -170,8 +174,18 @@ export default function CourseContentManager({ course, styles: propStyles }) {
     });
   }, [orders, course]);
 
-  // بررسی مالکیت کلی دوره (از طریق سفارشات یا رایگان بودن)
-  const hasFullCourseAccess = isFreeCourse || isPurchasedInOrders;
+  // بررسی مالکیت کلی دوره (از طریق سفارشات، سشن یا رایگان بودن)
+  const isEnrolledInSession = Boolean(
+    session?.user?.courses?.some((c) =>
+      String(c.id) === String(course.id) ||
+      (course.documentId && String(c.documentId) === String(course.documentId)) ||
+      c.slug === course.slug
+    ) ||
+    enrolledCourses.some((id) => String(id) === String(course.id) || (course.documentId && String(id) === String(course.documentId))) ||
+    enrolledSlugs.some((s) => s === course.slug)
+  );
+
+  const hasFullCourseAccess = isFreeCourse || isPurchasedInOrders || isEnrolledInSession;
 
   // هماهنگی بروزرسانی داده‌ها هنگام لاگین کاربر
   useEffect(() => {
@@ -201,7 +215,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
    * کاربر به فصل دسترسی دارد اگر:
    * 1. کل دوره را خریده باشد (hasFullCourseAccess)
    * 2. فصل رایگان باشد
-   * 3. فصل در سفارشات پرداخت‌شده کاربر (orders) ثبت شده باشد
+   * 3. فصل در سفارشات پرداخت‌شده کاربر (orders) یا سشن (enrolledChapters) ثبت شده باشد
    */
   const checkChapterAccess = (chapter) => {
     if (hasFullCourseAccess) return true;
@@ -209,23 +223,39 @@ export default function CourseContentManager({ course, styles: propStyles }) {
     if (chapterPrice === 0 || chapter.isFree) return true;
 
     const chapterIdStr = String(chapter.id);
-    return purchasedChapterIdsFromOrders.includes(chapterIdStr);
+    return (
+      purchasedChapterIdsFromOrders.includes(chapterIdStr) ||
+      enrolledChapters.some((id) => String(id) === chapterIdStr)
+    );
   };
 
   /**
    * هندلر افزودن یک فصل مشخص به سبد خرید
+   * هویت پایدار فصل integrationId و هویت والد documentId است.
+   * اگر داده لازم از سرور نرسیده باشد، کمبود قرارداد گزارش می‌شود و حدس زده نمی‌شود.
    */
   const handleAddChapterToCart = (chapter, event) => {
     event?.stopPropagation();
 
+    if (!chapter?.integrationId || !course?.documentId) {
+      alert('کمبود قرارداد سرور: شناسهٔ یکتای فصل (integrationId) یا والد (documentId) دریافت نشد. لطفاً صفحه را تازه‌سازی کرده یا با پشتیبانی تماس بگیرید.');
+      return;
+    }
+
     const chapterPrice = chapter.priceNoor ?? (typeof chapter.price === 'object' ? (chapter.price?.noor ?? chapter.price?.toman) : chapter.price) ?? 0;
 
     addItem({
-      id: `chapter-${chapter.id}`,
+      id: `chapter-${chapter.integrationId}`,
       chapterId: chapter.id,
+      integrationId: chapter.integrationId,
+      externalCourseId: chapter.integrationId,
+      parentExternalId: course.documentId,
+      courseDocumentId: course.documentId,
       courseId: course.id || course.documentId,
       slug: `${course.slug}-chapter-${chapter.id}`,
       title: `${course.title} - ${chapter.title}`,
+      chapterTitle: chapter.title,
+      courseTitle: course.title,
       price: chapterPrice,
       priceNoor: chapterPrice,
       image: course.media?.url || '/images/forempties2.png',
@@ -510,7 +540,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                       {!isUnlocked && chapterPrice > 0 ? (
                         <div className={styles.chapterBuyAction}>
                           <PriceWithHint price={chapterPrice} size="sm" />
-                          {isChapterInCart(chapter.id) ? (
+                          {isChapterInCart(chapter) ? (
                             <button
                               type="button"
                               className={clsx(styles.headerBuyChapterBtn, styles.inCartBtn)}

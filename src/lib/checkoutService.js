@@ -274,7 +274,10 @@ export async function executeNoorCartPurchase({ cartId, jwt, router, payOnline =
         if (completedCourseIds.size > 0) {
             const currentItems = useCartStore.getState().items;
             for (const item of currentItems) {
-                if (item.type === 'course' && completedCourseIds.has(item.documentId || item.externalCourseId)) {
+                const itemExternalId = item.type === 'chapter'
+                    ? (item.integrationId || item.externalCourseId)
+                    : (item.documentId || item.externalCourseId);
+                if (itemExternalId && completedCourseIds.has(itemExternalId)) {
                     useCartStore.getState().removeItem(item.id);
                 }
             }

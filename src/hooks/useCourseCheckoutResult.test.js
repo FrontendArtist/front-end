@@ -106,3 +106,51 @@ test('نتیجه خرید مستقیم هم از سرور تأیید می‌شو
     expect(useCartStore.getState().items).toEqual([added]);
     expect(purchaseCourseCart).not.toHaveBeenCalled();
 });
+
+test('خرید همزمان دوره و فصل با اعتبارسنجی فصل تکمیل می‌شود و پیام‌ها با هم هماهنگ می‌مانند', async () => {
+    const chapterCartItem = { id: 'chapter-uuid-1', type: 'chapter', integrationId: 'chapter-uuid-1', chapterId: 6 };
+    useCartStore.setState({ items: [course, chapterCartItem], hydratedUserId: 7 });
+
+    const access = new Set(['course-1']);
+    access.hasChapterAccess = (chapterExternalId) => chapterExternalId === 'chapter-uuid-1';
+    getCurrentCourseAccess.mockResolvedValue(access);
+
+    getCourseCart.mockResolvedValue({
+        status: 'Paid',
+        courses: [
+            { externalCourseId: 'course-1', title: 'دوره ازدواج کائناتی', purchaseStatus: 'Completed', itemType: 'Course' },
+            { externalCourseId: 'chapter-uuid-1', title: 'فصل 6', purchaseStatus: 'Completed', itemType: 'CourseChapter', parentExternalId: 'course-parent' },
+        ]
+    });
+
+    const { result } = renderHook(() => useCourseCheckoutResult('', '', 'cart-with-chapter'));
+    await waitFor(() => expect(result.current.phase).toBe('completed'));
+    expect(result.current.courses[0].purchaseStatus).toBe('Completed');
+    expect(result.current.courses[1].purchaseStatus).toBe('Completed');
+    expect(useCartStore.getState().items).toEqual([]);
+});
+
+test('بازکردن صفحه نتیجه با سبد خالی، دسترسی فصل را از نگاشت استراپی تایید می‌کند و خطا نمی‌دهد', async () => {
+    // سبد خرید از قبل خالی است (هیچ قلم یا chapterId کمکی در کلاینت نیست)
+    useCartStore.setState({ items: [], hydratedUserId: 7 });
+
+    const access = new Set(['course-1']);
+    access.enrolledChapterIntegrationIds = new Set(['chapter-uuid-1']);
+    access.hasChapterAccess = (chapterExternalId) => access.enrolledChapterIntegrationIds.has(chapterExternalId);
+    getCurrentCourseAccess.mockResolvedValue(access);
+
+    getCourseCart.mockResolvedValue({
+        status: 'Paid',
+        courses: [
+            { externalCourseId: 'course-1', title: 'دوره ازدواج کائناتی', purchaseStatus: 'Completed', itemType: 'Course' },
+            { externalCourseId: 'chapter-uuid-1', title: 'فصل 6', purchaseStatus: 'Completed', itemType: 'CourseChapter', parentExternalId: 'course-parent' },
+        ]
+    });
+
+    const { result } = renderHook(() => useCourseCheckoutResult('', '', 'cart-with-chapter'));
+    await waitFor(() => expect(result.current.phase).toBe('completed'));
+    expect(result.current.courses[0].purchaseStatus).toBe('Completed');
+    expect(result.current.courses[1].purchaseStatus).toBe('Completed');
+    expect(result.current.phase).not.toBe('accessMissing');
+});
+

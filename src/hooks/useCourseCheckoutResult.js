@@ -44,9 +44,14 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                     if (controller.signal.aborted) {
                         return;
                     }
-                    courses = courses.map(course => course.purchaseStatus === 'Completed' && !access.has(course.externalCourseId)
-                        ? { ...course, purchaseStatus: 'AccessMissing' }
-                        : course);
+                    courses = courses.map(course => {
+                        if (course.purchaseStatus !== 'Completed') return course;
+                        const isChapter = course.itemType === 'CourseChapter' || course.type === 'course_chapter' || Boolean(course.parentExternalId);
+                        const hasAccess = isChapter
+                            ? (access.hasChapterAccess ? access.hasChapterAccess(course.externalCourseId, course.parentExternalId) : (access.has(course.externalCourseId) || (course.parentExternalId && access.has(course.parentExternalId))))
+                            : access.has(course.externalCourseId);
+                        return hasAccess ? course : { ...course, purchaseStatus: 'AccessMissing' };
+                    });
                 }
                 knownCourses = courses;
                 const paid = resolvedCartId ? data.status === 'Paid' || data.topUpStatus === 'Confirmed' : topUpId ? data.topUpStatus === 'Confirmed' : courses.some(c => ['Completed', 'AccessMissing', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus));
@@ -97,8 +102,12 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                 next = { phase, courses, paid, receipts: knownReceipts };
                 // فقط قلمی حذف می‌شود که ثبت مالی آن در سرور تأیید شده است.
                 for (const course of courses.filter(c => userId && String(hydratedUserId) === String(userId) && ['Completed', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus))) {
-                    const matching = useCartStore.getState().items.filter(item => item.type === 'course' &&
-                        (item.documentId || item.externalCourseId) === course.externalCourseId);
+                    const matching = useCartStore.getState().items.filter(item => {
+                        const itemExternalId = item.type === 'chapter'
+                            ? (item.integrationId || item.externalCourseId)
+                            : (item.documentId || item.externalCourseId);
+                        return itemExternalId === course.externalCourseId;
+                    });
                     matching.forEach(item => useCartStore.getState().removeItem(item.id));
                 }
                 if (phase === 'completed') {

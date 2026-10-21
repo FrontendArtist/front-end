@@ -21,8 +21,8 @@ export const useCartStore = create(
                         next.pendingCartSync = true;
                     }
                 }
-                if (next.items && JSON.stringify(next.items.map(item => [item.type, item.documentId || item.externalCourseId || item.id]).sort()) !==
-                    JSON.stringify(state.items.map(item => [item.type, item.documentId || item.externalCourseId || item.id]).sort())) {
+                if (next.items && JSON.stringify(next.items.map(item => [item.type, item.integrationId || item.documentId || item.externalCourseId || item.id]).sort()) !==
+                    JSON.stringify(state.items.map(item => [item.type, item.integrationId || item.documentId || item.externalCourseId || item.id]).sort())) {
                     next.courseCartRevision = (state.courseCartRevision || 0) + 1;
                 }
                 if (next.items && next.items !== state.items && !Object.hasOwn(next, 'appliedCoupon')) {
@@ -238,8 +238,8 @@ export const useCartStore = create(
             validateCoupon: async (code) => {
                 const { items, userId, appliedCoupon } = get();
                 if (!items.length || !code?.trim()) return;
-                // کوپن دوره همراه پیش‌نمایش قیمت استرپی بررسی می‌شود؛ این مرحله رزرو نمی‌کند.
-                if (items.every(item => item.type === 'course')) {
+                // کوپن دوره و فصل همراه پیش‌نمایش قیمت استرپی بررسی می‌شود؛ این مرحله رزرو نمی‌کند.
+                if (items.every(item => item.type === 'course' || item.type === 'chapter')) {
                     if (appliedCoupon?.code === code.trim() &&
                         appliedCoupon.validationItems === items && appliedCoupon.validationUserId === userId && !appliedCoupon.pending) return;
                     set({ appliedCoupon: { code: code.trim(), pending: false, awaitingQuote: true,
@@ -315,12 +315,13 @@ export const useCartStore = create(
              * @param {Array<number>} [params.chapterIds] - شناسه‌های فصل‌های خریداری شده
              * @returns {boolean} آیا آیتمی حذف شد یا خیر
              */
-            removePaidCoursesAndChapters: ({ courseIds = [], courseSlugs = [], chapterIds = [] } = {}) => {
+            removePaidCoursesAndChapters: ({ courseIds = [], courseSlugs = [], chapterIds = [], chapterIntegrationIds = [] } = {}) => {
                 const numCourseIds = (courseIds || []).map(Number).filter(Boolean);
                 const strCourseSlugs = (courseSlugs || []).filter(Boolean);
                 const numChapterIds = (chapterIds || []).map(Number).filter(Boolean);
+                const strIntegrationIds = (chapterIntegrationIds || []).map(id => String(id).toLowerCase()).filter(Boolean);
 
-                if (numCourseIds.length === 0 && strCourseSlugs.length === 0 && numChapterIds.length === 0) {
+                if (numCourseIds.length === 0 && strCourseSlugs.length === 0 && numChapterIds.length === 0 && strIntegrationIds.length === 0) {
                     return false;
                 }
 
@@ -334,8 +335,10 @@ export const useCartStore = create(
                     if (item.type === 'chapter') {
                         const rawChapId = Number(item.chapterId || (typeof item.id === 'string' ? item.id.replace('chapter-', '') : item.id));
                         const isChapPaid = numChapterIds.includes(rawChapId);
+                        const isIntPaid = item.integrationId && strIntegrationIds.includes(String(item.integrationId).toLowerCase());
+                        const isExtPaid = item.externalCourseId && strIntegrationIds.includes(String(item.externalCourseId).toLowerCase());
                         const isParentPaid = item.courseId && numCourseIds.includes(Number(item.courseId));
-                        return !isChapPaid && !isParentPaid;
+                        return !isChapPaid && !isIntPaid && !isExtPaid && !isParentPaid;
                     }
                     return true;
                 });

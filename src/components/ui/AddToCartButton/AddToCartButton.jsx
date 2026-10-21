@@ -66,8 +66,13 @@ export default function AddToCartButton({ course }) {
     useCartStore((state) => state.items.some((item) => isSameCartItem(item, { ...course, type: 'course' }))) &&
     isHydrated;
 
+  // اگر دوره فصلی‌فروش باشد، خرید کل دوره مجاز نیست و دکمه نباید نمایش داده شود.
+  if (course.isChaptered === true) {
+    return null;
+  }
+
   const handleAddToCart = () => {
-    if (isInCart) return;
+    if (isInCart || course.isChaptered === true) return;
 
     const isForeign = Boolean(
       session?.user?.is_foreigner || 

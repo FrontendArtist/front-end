@@ -91,7 +91,7 @@ export async function getCourseBySlug(slug) {
 
       return {
         ...course,
-        isChaptered: Boolean(course.isChaptered),
+        isChaptered: course.isChaptered === true,
         chapters: Array.isArray(course.chapters) ? course.chapters : [],
         curriculum: Array.isArray(course.curriculum) ? course.curriculum : [],
       };

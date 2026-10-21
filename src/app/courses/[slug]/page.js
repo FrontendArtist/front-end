@@ -123,7 +123,7 @@ export default async function CoursePage({ params }) {
     discountUntil: hasIntlPrice ? null : (rawCourse.discountUntil || null),
     content: rawCourse.content,
     teaserUrl: rawCourse.teaserUrl,
-    isChaptered: rawCourse.isChaptered || false,
+    isChaptered: rawCourse.isChaptered === true,
     telegramLink: rawCourse.telegramLink || rawCourse.telegram_link || rawCourse.telegramGroupLink || rawCourse.telegram || null,
     media: {
       url: rawCourse.image.url.startsWith('http') || rawCourse.image.url.startsWith('/images/')
@@ -141,6 +141,7 @@ export default async function CoursePage({ params }) {
 
       return {
         ...chapter,
+        integrationId: chapter.integrationId || null,
         lessons: (chapter.lessons || []).map((lesson) => {
           // برای امنیت، اگر کاربر به دوره/فصل دسترسی ندارد و درس رایگان نیست، لینک مدیا پاک می‌شود
           const shouldStrip = !hasChapterAccess;

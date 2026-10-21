@@ -21,3 +21,21 @@ test('خطای پروفایل به دسترسی خالی تبدیل نمی‌ش�
     global.fetch = jest.fn().mockResolvedValue({ ok: false });
     await expect(getCurrentCourseAccess(7)).rejects.toThrow();
 });
+
+test('دسترسی فصل را از enrolledChapterIntegrationIds تایید می‌کند و در صورت حذف آن دسترسی رد می‌شود', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+            id: 7,
+            courses: [{ id: 42, documentId: 'course-parent' }],
+            enrolledChapters: [6],
+            enrolledChapterIntegrationIds: ['chapter-uuid-1'],
+        })
+    });
+    const access = await getCurrentCourseAccess(7);
+    expect(access.hasChapterAccess('chapter-uuid-1', 'other-parent')).toBe(true);
+    expect(access.hasChapterAccess('chapter-uuid-2', 'course-parent')).toBe(true);
+    // اگر شناسه فصل در enrolledChapterIntegrationIds نباشد (مثلاً حذف شده باشد)، دسترسی داده نمی‌شود
+    expect(access.hasChapterAccess('chapter-uuid-deleted', 'other-parent')).toBe(false);
+});
+
