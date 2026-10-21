@@ -23,7 +23,11 @@ export async function getCurrentCourseAccess(userId, signal) {
         throw new Error('بررسی دسترسی فعلی دوره‌ها ممکن نیست.');
     }
     const profile = await response.json();
-    if (String(profile.id) !== String(userId) || !Array.isArray(profile.courses)) {
+    if (
+        String(profile.id) !== String(userId) ||
+        !Array.isArray(profile.courses) ||
+        (Array.isArray(profile.enrolledChapters) && profile.enrolledChapters.length > 0 && !Array.isArray(profile.enrolledChapterIntegrationIds))
+    ) {
         throw new Error('اطلاعات دسترسی دوره‌ها معتبر نیست.');
     }
     const accessSet = new Set(profile.courses.map(course => course.documentId));

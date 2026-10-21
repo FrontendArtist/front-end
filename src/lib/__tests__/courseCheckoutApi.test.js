@@ -39,3 +39,17 @@ test('دسترسی فصل را از enrolledChapterIntegrationIds تایید م�
     expect(access.hasChapterAccess('chapter-uuid-deleted', 'other-parent')).toBe(false);
 });
 
+test('در صورت وجود enrolledChapters بدون فیلد معتبر enrolledChapterIntegrationIds، خطا پرتاب می‌شود', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+            id: 7,
+            courses: [{ id: 42, documentId: 'course-parent' }],
+            enrolledChapters: [6],
+            // enrolledChapterIntegrationIds مفقود یا نال است
+        })
+    });
+    await expect(getCurrentCourseAccess(7)).rejects.toThrow();
+});
+
+
