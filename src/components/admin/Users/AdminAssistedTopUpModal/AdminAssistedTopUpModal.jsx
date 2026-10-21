@@ -6,22 +6,25 @@
  *
  * مشخصات:
  * - کاربر ذینفع: فقط نمایشی (از context ردیف جدول)
- * - فیلد مبلغ ریالی
- * - آپلود تصویر رسید/فیش: اجباری (بدون امکان ثبت بدون آن)
+ * - فیلد مبلغ ریالی با تبدیل دقیق به تومان و محاسبه معادل نوری
+ * - آپلود تصویر رسید/فیش: اختیاری
  * - شناسه تراکنش خارجی: اختیاری
  * - اتصال مستقیم به اندپوینت ByeMoney: POST /api/admin/topups/assisted (بدون نیاز به تایید دوم)
+ * - مدیریت هدر Idempotency-Key جهت جلوگیری از شارژ مضاعف در تلاش مجدد (retry)
  */
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import { CreditCard, UploadCloud, Trash2, X, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { createAdminAssistedTopUpWithByeMoney, getConversionRateWithByeMoney } from '@/lib/byeMoneyApi';
+import { createAdminAssistedTopUpWithByeMoney, getConversionRateWithByeMoney, convertRialToTomanExact } from '@/lib/byeMoneyApi';
 import styles from './AdminAssistedTopUpModal.module.scss';
 
 export default function AdminAssistedTopUpModal({ user, conversionRate: initialConversionRate, onClose, onSuccess }) {
   const { data: session } = useSession();
   const fileInputRef = useRef(null);
+  const idempotencyKeyRef = useRef(null);
+  const lastSubmissionParamsRef = useRef(null);
 
   const [mounted, setMounted] = useState(false);
   const [amountRial, setAmountRial] = useState('');
@@ -90,11 +93,22 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
   }, [initialConversionRate, session?.user?.jwt]);
 
   const rawAmount = Number(amountRial);
-  const amountToman = rawAmount > 0 ? Math.floor(rawAmount / 10) : 0;
+  const calculatedTomanStr = convertRialToTomanExact(amountRial);
   const estimatedNoor = rawAmount > 0 && conversionRate > 0 ? rawAmount / conversionRate : 0;
   const formattedNoor = Number.isInteger(estimatedNoor)
     ? new Intl.NumberFormat('fa-IR').format(estimatedNoor)
     : new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 4 }).format(estimatedNoor);
+
+  const formatTomanDisplay = (tomanStr) => {
+    if (!tomanStr) return '۰';
+    const [intP, fracP] = tomanStr.split('.');
+    const formattedInt = new Intl.NumberFormat('fa-IR').format(Number(intP));
+    if (fracP) {
+      const faFrac = fracP.replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]);
+      return `${formattedInt}٫${faFrac}`;
+    }
+    return formattedInt;
+  };
 
   if (!mounted || !user) return null;
 
@@ -144,33 +158,59 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
       return;
     }
 
-    if (!receiptFile) {
-      setError('آپلود تصویر رسید/فیش واریزی الزامی است.');
-      return;
-    }
-
     const jwt = session?.user?.jwt;
     if (!jwt) {
       setError('نشست کاربری شما نامعتبر یا منقضی شده است. لطفاً مجدداً وارد شوید.');
       return;
     }
 
+    const beneficiaryExternalUserId = user.documentId || String(user.id);
+    const currentParams = {
+      beneficiaryId: beneficiaryExternalUserId,
+      amountRial: String(amountRial).trim(),
+      externalTransactionId: externalTransactionId.trim(),
+      receiptIdentifier: receiptFile ? `${receiptFile.name}-${receiptFile.size}-${receiptFile.lastModified}` : null,
+    };
+
+    // در صورتی که پارامترهای فرم تغییر نکرده باشند (تلاش مجدد همان عملیات)، از همان کلید یکتا استفاده می‌شود
+    const isSameOperation =
+      idempotencyKeyRef.current &&
+      lastSubmissionParamsRef.current &&
+      lastSubmissionParamsRef.current.beneficiaryId === currentParams.beneficiaryId &&
+      lastSubmissionParamsRef.current.amountRial === currentParams.amountRial &&
+      lastSubmissionParamsRef.current.externalTransactionId === currentParams.externalTransactionId &&
+      lastSubmissionParamsRef.current.receiptIdentifier === currentParams.receiptIdentifier;
+
+    let keyToUse = idempotencyKeyRef.current;
+    if (!isSameOperation || !keyToUse) {
+      keyToUse =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      idempotencyKeyRef.current = keyToUse;
+      lastSubmissionParamsRef.current = currentParams;
+    }
+
     setLoading(true);
 
     try {
-      const beneficiaryExternalUserId = user.documentId || String(user.id);
-
       const res = await createAdminAssistedTopUpWithByeMoney({
         beneficiaryExternalUserId,
+        amountToman: calculatedTomanStr,
         amountRial: rawAmount,
-        receipt: receiptFile,
+        receipt: receiptFile || null,
         externalTransactionId: externalTransactionId.trim() || undefined,
+        idempotencyKey: keyToUse,
         jwt,
       });
 
       if (!res.success) {
         throw new Error(res.error || 'خطا در ثبت شارژ در سامانه مالی بای‌مانی.');
       }
+
+      // پس از ثبت موفق، متغیرهای تلاش مجدد باطل می‌شوند
+      idempotencyKeyRef.current = null;
+      lastSubmissionParamsRef.current = null;
 
       if (onSuccess) {
         onSuccess({
@@ -246,15 +286,15 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
               />
               {rawAmount > 0 && (
                 <div className={styles.formGroup__hint}>
-                  مبلغ ورودی: <strong>{new Intl.NumberFormat('fa-IR').format(rawAmount)} ریال</strong> ({new Intl.NumberFormat('fa-IR').format(amountToman)} تومان) — معادل <strong>{formattedNoor} نور</strong> (بر پایه هر نور = {new Intl.NumberFormat('fa-IR').format(conversionRate)} ریال)
+                  مبلغ ورودی: <strong>{new Intl.NumberFormat('fa-IR').format(rawAmount)} ریال</strong> ({formatTomanDisplay(calculatedTomanStr)} تومان) — معادل <strong>{formattedNoor} نور</strong> (بر پایه هر نور = {new Intl.NumberFormat('fa-IR').format(conversionRate)} ریال)
                 </div>
               )}
             </div>
 
-            {/* ۳. آپلود رسید/فیش واریزی (اجباری) */}
+            {/* ۳. آپلود رسید/فیش واریزی (اختیاری) */}
             <div className={styles.formGroup}>
               <label className={styles.formGroup__label}>
-                تصویر رسید / فیش واریزی <span className={styles.formGroup__required}>* (الزامی)</span>
+                تصویر رسید / فیش واریزی (اختیاری)
               </label>
 
               {receiptPreview ? (
@@ -340,7 +380,7 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
             <button
               type="submit"
               className={styles.footer__submitBtn}
-              disabled={loading || rateLoading || !!rateError || !conversionRate || conversionRate <= 0 || !rawAmount || rawAmount <= 0 || !receiptFile}
+              disabled={loading || rateLoading || !!rateError || !conversionRate || conversionRate <= 0 || !rawAmount || rawAmount <= 0}
             >
               {loading ? (
                 'در حال ثبت در بای‌مانی...'

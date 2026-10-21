@@ -719,20 +719,66 @@ export async function checkAdminTopUpPermissionWithByeMoney({ jwt }) {
 }
 
 /**
+ * تبدیل دقیق مبلغ ریالی به تومان بدون هرگونه گردکردن یا قطع اعشار
+ * هر ۱ تومان معادل ۱۰ ریال است؛ بنابراین این تابع مقدار را دقیقاً بر ۱۰ تقسیم می‌کند.
+ * 
+ * @param {number|string} amountRial - مبلغ به ریال
+ * @returns {string} معادل تومانی به صورت رشته عددی دقیق
+ */
+export function convertRialToTomanExact(amountRial) {
+  if (amountRial === null || amountRial === undefined) return '';
+  const str = String(amountRial).trim().replace(/,/g, '');
+  if (!str) return '';
+
+  if (!/^-?\d+(\.\d+)?$/.test(str)) {
+    const num = Number(str);
+    if (!Number.isFinite(num)) return '';
+    return String(num / 10);
+  }
+
+  const isNegative = str.startsWith('-');
+  const unsigned = isNegative ? str.slice(1) : str;
+
+  const dotIndex = unsigned.indexOf('.');
+  let intPart = dotIndex >= 0 ? unsigned.slice(0, dotIndex) : unsigned;
+  let fracPart = dotIndex >= 0 ? unsigned.slice(dotIndex + 1) : '';
+
+  intPart = intPart.replace(/^0+(?=\d)/, '');
+  if (!intPart) intPart = '0';
+
+  if (intPart === '0') {
+    fracPart = '0' + fracPart;
+  } else {
+    const lastDigit = intPart.slice(-1);
+    intPart = intPart.slice(0, -1);
+    if (!intPart) intPart = '0';
+    fracPart = lastDigit + fracPart;
+  }
+
+  fracPart = fracPart.replace(/0+$/, '');
+
+  const result = fracPart ? `${intPart}.${fracPart}` : intPart;
+  if (result === '0') return '0';
+  return isNegative ? `-${result}` : result;
+}
+
+/**
  * ثبت شارژ کارت‌به‌کارت ادمین به‌نیابت از کاربر ناتوان در سامانه ByeMoney
  * اندپوینت: POST /api/admin/topups/assisted
  * 
  * @param {object} params
  * @param {string} params.beneficiaryExternalUserId - شناسه پایدار کاربر ذینفع در استرپی (documentId یا id)
- * @param {number} params.amountRial - مبلغ تراکنش به ریال
- * @param {File|Blob} params.receipt - تصویر فیش واریزی (اجباری)
+ * @param {number|string} [params.amountToman] - مبلغ تراکنش به تومان (مطابق قرارداد)
+ * @param {number|string} [params.amountRial] - مبلغ تراکنش به ریال (جهت سازگاری به عقب؛ با تبدیل دقیق به تومان ارسال می‌شود)
+ * @param {File|Blob} [params.receipt] - تصویر فیش واریزی (اختیاری)
  * @param {string} [params.externalTransactionId] - شناسه/کد پیگیری تراکنش خارجی (اختیاری)
  * @param {string} [params.idempotencyKey] - شناسه یکتا جهت جلوگیری از تراکنش تکراری (اختیاری)
  * @param {string} params.jwt - توکن احراز هویت ادمین
- * @returns {Promise<{ success: boolean, data?: { topUpRequestId: string, clientReferenceId: string, amountNoor: number, rialPerNoor: number }, error?: string, status?: number }>}
+ * @returns {Promise<{ success: boolean, data?: { topUpRequestId: string, clientReferenceId: string, amountNoor: number, rialPerNoor: number }, error?: string, status?: number, unauthorized?: boolean, forbidden?: boolean, conflict?: boolean }>}
  */
 export async function createAdminAssistedTopUpWithByeMoney({
   beneficiaryExternalUserId,
+  amountToman,
   amountRial,
   receipt,
   externalTransactionId,
@@ -740,31 +786,37 @@ export async function createAdminAssistedTopUpWithByeMoney({
   jwt,
 }) {
   if (!jwt) {
-    return { success: false, error: 'نشست کاربری نامعتبر است. لطفاً مجدداً وارد شوید.' };
+    return { success: false, unauthorized: true, status: 401, error: 'نشست کاربری نامعتبر است. لطفاً مجدداً وارد شوید.' };
   }
 
-  if (!beneficiaryExternalUserId) {
+  if (!beneficiaryExternalUserId || !String(beneficiaryExternalUserId).trim()) {
     return { success: false, error: 'شناسه کاربر ذینفع نامعتبر است.' };
   }
 
-  const numericAmount = Number(amountRial);
-  if (!numericAmount || numericAmount <= 0) {
-    return { success: false, error: 'مبلغ ریالی وارد شده نامعتبر است.' };
+  let resolvedAmountToman = '';
+  if (amountToman !== undefined && amountToman !== null && String(amountToman).trim() !== '') {
+    resolvedAmountToman = String(amountToman).trim().replace(/,/g, '');
+  } else if (amountRial !== undefined && amountRial !== null && String(amountRial).trim() !== '') {
+    resolvedAmountToman = convertRialToTomanExact(amountRial);
   }
 
-  if (!receipt) {
-    return { success: false, error: 'آپلود تصویر رسید/فیش واریزی الزامی است.' };
+  const numericAmountToman = Number(resolvedAmountToman);
+  if (!resolvedAmountToman || Number.isNaN(numericAmountToman) || numericAmountToman <= 0) {
+    return { success: false, error: 'مبلغ شارژ باید بزرگتر از صفر باشد.' };
   }
 
-  const key = idempotencyKey || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
+  const key = (typeof idempotencyKey === 'string' && idempotencyKey.trim()) ||
+    (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
   const endpoint = `${BYEMONEY_API_URL}/api/admin/topups/assisted`;
 
   const formData = new FormData();
-  formData.append('beneficiaryExternalUserId', String(beneficiaryExternalUserId));
-  formData.append('amountRial', String(numericAmount));
-  formData.append('receipt', receipt);
+  formData.append('BeneficiaryExternalUserId', String(beneficiaryExternalUserId).trim());
+  formData.append('AmountToman', String(resolvedAmountToman));
+  if (receipt) {
+    formData.append('Receipt', receipt);
+  }
   if (externalTransactionId && typeof externalTransactionId === 'string' && externalTransactionId.trim()) {
-    formData.append('externalTransactionId', externalTransactionId.trim());
+    formData.append('ExternalTransactionId', externalTransactionId.trim());
   }
 
   try {
@@ -795,9 +847,19 @@ export async function createAdminAssistedTopUpWithByeMoney({
       };
     }
 
+    if (response.status === 401) {
+      return {
+        success: false,
+        unauthorized: true,
+        status: 401,
+        error: 'نشست کاربری شما منقضی شده است. لطفاً مجدداً وارد حساب کاربری خود شوید.',
+      };
+    }
+
     if (response.status === 403) {
       return {
         success: false,
+        forbidden: true,
         status: 403,
         error: 'شما مجوز مالی لازم جهت ثبت شارژ برای کاربر را در سامانه مالی بای‌مانی ندارید.',
       };
@@ -808,6 +870,15 @@ export async function createAdminAssistedTopUpWithByeMoney({
     if (errJson.error) errMsg = errJson.error;
     else if (errJson.message) errMsg = errJson.message;
     else if (Array.isArray(errJson.errors)) errMsg = errJson.errors.join(' - ');
+
+    if (response.status === 409) {
+      return {
+        success: false,
+        conflict: true,
+        status: 409,
+        error: errMsg || 'تراکنش با این شناسه یکتا قبلاً با اطلاعات متفاوتی ثبت شده است.',
+      };
+    }
 
     return {
       success: false,
