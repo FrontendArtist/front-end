@@ -37,7 +37,7 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                     data = await getCourseCart(resolvedCartId, jwt, controller.signal);
                 }
                 if (controller.signal.aborted) return;
-                let courses = resolvedCartId || topUpId ? data.courses : [{ externalCourseId: courseId, purchaseStatus: data.purchaseStatus }];
+                let courses = resolvedCartId || topUpId ? (Array.isArray(data?.courses) ? data.courses : []) : [{ externalCourseId: courseId, purchaseStatus: data?.purchaseStatus }];
                 // سابقهٔ تحویل مالی، دسترسی فعلی پس از حذف دستی در استرپی را ثابت نمی‌کند.
                 if (courses.some(course => course.purchaseStatus === 'Completed')) {
                     const access = await getCurrentCourseAccess(userId, controller.signal);

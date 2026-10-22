@@ -51,6 +51,12 @@
         background: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b);
     }
 
+    &.pending::before {
+        background: linear-gradient(90deg, #d97706, #F6D982, #eab308, #F6D982, #d97706);
+        background-size: 200% 100%;
+        animation: pendingShimmer 2.5s linear infinite;
+    }
+
     @include respond(md) {
         padding: 32px 20px;
         border-radius: 20px;
@@ -88,9 +94,21 @@
         border: 2px solid rgba(251, 191, 36, 0.3);
     }
 
+    &.pending {
+        background: rgba(246, 217, 130, 0.12);
+        color: #F6D982;
+        box-shadow: 0 0 35px rgba(246, 217, 130, 0.25);
+        border: 2px solid rgba(246, 217, 130, 0.35);
+        animation: pendingPulse 2s ease-in-out infinite;
+    }
+
     svg {
         width: 44px;
         height: 44px;
+    }
+
+    .spinnerIcon {
+        animation: spin 1s linear infinite;
     }
 }
 
@@ -174,6 +192,12 @@
             background: rgba(239, 68, 68, 0.2);
             color: #f87171;
             border: 1px solid rgba(248, 113, 113, 0.3);
+        }
+
+        &.pendingBadge {
+            background: rgba(246, 217, 130, 0.15);
+            color: #F6D982;
+            border: 1px solid rgba(246, 217, 130, 0.3);
         }
     }
 }
@@ -314,5 +338,69 @@
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+.pendingProgress {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto 24px;
+    padding: 10px 24px;
+    background: rgba(246, 217, 130, 0.06);
+    border: 1px solid rgba(246, 217, 130, 0.15);
+    border-radius: 12px;
+    color: #F6D982;
+    font-size: 0.88rem;
+
+    .pendingProgressBar {
+        width: 140px;
+        height: 3px;
+        background: rgba(246, 217, 130, 0.2);
+        border-radius: 3px;
+        overflow: hidden;
+        position: relative;
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 40%;
+            background: #F6D982;
+            border-radius: 3px;
+            animation: pendingProgressAnim 1.5s ease-in-out infinite;
+        }
+    }
+}
+
+@keyframes pendingProgressAnim {
+    0% {
+        left: -40%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+@keyframes pendingShimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@keyframes pendingPulse {
+    0%, 100% {
+        box-shadow: 0 0 25px rgba(246, 217, 130, 0.25);
+        border-color: rgba(246, 217, 130, 0.35);
+    }
+    50% {
+        box-shadow: 0 0 45px rgba(246, 217, 130, 0.5);
+        border-color: rgba(246, 217, 130, 0.7);
     }
 }

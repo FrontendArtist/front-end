@@ -18,7 +18,8 @@ import {
     Home,
     Copy,
     Check,
-    Wallet
+    Wallet,
+    Loader2
 } from 'lucide-react';
 import styles from './page.module.scss';
 
@@ -40,7 +41,10 @@ function CheckoutResultContent() {
     const cartId = searchParams.get('cartId') || '';
     const checkout = useCourseCheckoutResult(courseId, isTopUp ? topUpId : '', cartId);
     const isCoursePurchase = Boolean(cartId) || isWalletPurchase || checkout.courses.length > 0;
-    const isCheckingPurchase = isCoursePurchase && ['checking', 'activating'].includes(checkout.phase);
+    const isCheckingPurchase = isCoursePurchase && (
+        ['checking', 'activating'].includes(checkout.phase) ||
+        (status === 'success' && ['incomplete', 'paymentPending', 'unknown'].includes(checkout.phase))
+    );
     const isVerifiedCourse = isCoursePurchase && checkout.phase === 'completed';
     const courseMessage = checkout.phase === 'checking' ? 'در حال بررسی نتیجه خرید و فعال‌سازی دوره‌ها…'
         : checkout.phase === 'completed' ? 'خرید با موفقیت انجام شد و دسترسی همه دوره‌ها برای شما فعال است.'
@@ -52,11 +56,20 @@ function CheckoutResultContent() {
         : 'در حال حاضر تأیید وضعیت خرید ممکن نیست. برای پیگیری به حساب کاربری مراجعه کنید و دوباره پرداخت نکنید.';
 
     const isSuccess = isCoursePurchase ? isVerifiedCourse
-        : isTopUp && topUpId ? checkout.paid === true : status === 'success';
-    const isCancel = status === 'cancel';
+        : isTopUp && topUpId ? (checkout.paid === true && checkout.phase === 'standalone') : status === 'success';
+    const isCancel = status === 'cancel' || (checkout.phase === 'paymentFailed' && status === 'cancel');
     const isPendingTopUp = isTopUp && topUpId && !isCoursePurchase &&
         !['standalone', 'paymentFailed'].includes(checkout.phase);
-    const isFailed = !isSuccess && !isCancel;
+    const isPending = !isSuccess && !isCancel && (
+        status === 'success'
+            ? !['paymentFailed', 'accessMissing'].includes(checkout.phase)
+            : (
+                isCheckingPurchase ||
+                isPendingTopUp ||
+                ['checking', 'activating', 'paymentPending', 'unknown'].includes(checkout.phase)
+            )
+    );
+    const isFailed = !isSuccess && !isCancel && !isPending;
 
     useEffect(() => {
         setMounted(true);
@@ -81,14 +94,16 @@ function CheckoutResultContent() {
     return (
         <div className={styles.resultPage}>
             <div className={styles.container}>
-                <div className={`${styles.card} ${isSuccess ? styles.success : isCancel ? styles.cancel : styles.failed}`}>
+                <div className={`${styles.card} ${isSuccess ? styles.success : isCancel ? styles.cancel : isPending ? styles.pending : styles.failed}`}>
                     
                     {/* آیکون وضعیت تراکنش */}
-                    <div className={`${styles.iconWrapper} ${isSuccess ? styles.success : isCancel ? styles.cancel : styles.failed}`}>
+                    <div className={`${styles.iconWrapper} ${isSuccess ? styles.success : isCancel ? styles.cancel : isPending ? styles.pending : styles.failed}`}>
                         {isSuccess ? (
                             <CheckCircle2 />
                         ) : isCancel ? (
                             <AlertTriangle />
+                        ) : isPending ? (
+                            <Loader2 className={styles.spinnerIcon} />
                         ) : (
                             <XCircle />
                         )}
@@ -111,7 +126,9 @@ function CheckoutResultContent() {
                         {isCoursePurchase
                             ? courseMessage
                             : isTopUp && topUpId && !['standalone', 'paymentFailed'].includes(checkout.phase)
-                            ? 'در حال بررسی نتیجه پرداخت هستیم. تا مشخص‌شدن نتیجه، دوباره پرداخت نکنید و وضعیت را از حساب کاربری پیگیری کنید.'
+                            ? (status === 'success'
+                                ? 'پرداخت با موفقیت ثبت شد؛ در حال تایید نهایی و فعال‌سازی دوره هستیم. لطفاً چند لحظه شکیبا باشید…'
+                                : 'در حال بررسی نتیجه پرداخت هستیم. تا مشخص‌شدن نتیجه، دوباره پرداخت نکنید و وضعیت را از حساب کاربری پیگیری کنید.')
                             : isSuccess
                             ? isTopUp
                                 ? 'نور شارژشده به کیف پول شما اضافه شد.'
@@ -121,12 +138,19 @@ function CheckoutResultContent() {
                             : message || 'پرداخت تأیید نشده است. اگر مبلغی کسر شده، وضعیت آن را از بانک یا پشتیبانی پیگیری کنید.'}
                     </p>
 
+                    {isPending && (
+                        <div className={styles.pendingProgress}>
+                            <div className={styles.pendingProgressBar} />
+                            <span>در حال استعلام پرداخت و فعال‌سازی دوره…</span>
+                        </div>
+                    )}
+
                     {isCoursePurchase && checkout.courses.length > 0 && (
                         <div className={styles.detailsList} aria-label="وضعیت دوره‌های سبد">
                             {checkout.courses.map(course => (
                                 <div className={styles.detailRow} key={course.externalCourseId}>
                                     <span className={styles.label}>{course.title || course.externalCourseId}</span>
-                                    <span className={styles.value}>{({ Completed: 'فعال شد', AccessMissing: 'دسترسی فعال نیست؛ نیازمند پیگیری', Activating: 'در حال فعال‌سازی', DeliveryPending: 'پرداخت ثبت شد؛ در انتظار تحویل', PurchaseIncomplete: 'خرید تکمیل نشده', NotPurchased: 'خریداری نشده' })[course.purchaseStatus] || 'در حال بررسی'}</span>
+                                    <span className={styles.value}>{({ Completed: 'فعال شد', AccessMissing: 'دسترسی فعال نیست؛ نیازمند پیگیری', Activating: 'در حال فعال‌سازی', DeliveryPending: 'پرداخت ثبت شد؛ در حال فعال‌سازی', PurchaseIncomplete: isPending ? 'در حال فعال‌سازی…' : 'خرید تکمیل نشده', NotPurchased: isPending ? 'در حال فعال‌سازی…' : 'خریداری نشده' })[course.purchaseStatus] || (isPending ? 'در حال فعال‌سازی…' : 'در حال بررسی')}</span>
                                 </div>
                             ))}
                         </div>
@@ -215,7 +239,7 @@ function CheckoutResultContent() {
 
                                     <div className={styles.detailRow}>
                                         <span className={styles.label}>وضعیت تحویل:</span>
-                                        <span className={`${styles.badge} ${receipt.deliveryStatus === 'Delivered' ? styles.successBadge : styles.failedBadge}`}>
+                                        <span className={`${styles.badge} ${receipt.deliveryStatus === 'Delivered' ? styles.successBadge : styles.pendingBadge}`}>
                                             {receipt.deliveryStatus === 'Delivered' ? 'دسترسی فعال شد' : 'در انتظار فعال‌سازی'}
                                         </span>
                                     </div>
@@ -277,11 +301,13 @@ function CheckoutResultContent() {
 
                         <div className={styles.detailRow}>
                             <span className={styles.label}>وضعیت پرداخت:</span>
-                            <span className={`${styles.badge} ${isSuccess ? styles.successBadge : styles.failedBadge}`}>
+                            <span className={`${styles.badge} ${isSuccess ? styles.successBadge : isPending ? styles.pendingBadge : styles.failedBadge}`}>
                                 {isCoursePurchase ? (isVerifiedCourse ? 'خرید و فعال‌سازی تأیید شد'
                                     : checkout.phase === 'paymentFailed' ? (isCancel ? 'لغو شده توسط کاربر' : 'پرداخت تأیید نشد')
+                                    : checkout.phase === 'activating' ? 'پرداخت ثبت شد؛ در حال فعال‌سازی'
                                     : checkout.paid ? 'پرداخت ثبت شد؛ خرید در حال پیگیری' : 'در حال پیگیری')
-                                    : isPendingTopUp ? 'در حال پیگیری' : isSuccess ? 'تایید شده و موفق' : isCancel ? 'لغو شده توسط کاربر' : 'ناموفق'}
+                                    : isPendingTopUp ? (status === 'success' ? 'پرداخت موفق؛ در حال فعال‌سازی' : 'در حال پیگیری')
+                                    : isSuccess ? 'تایید شده و موفق' : isCancel ? 'لغو شده توسط کاربر' : 'ناموفق'}
                             </span>
                         </div>
                     </div>
@@ -291,17 +317,24 @@ function CheckoutResultContent() {
                         <div className={styles.notice}>
                             {isVerifiedCourse ? 'دوره را از بخش «دوره‌های من» مشاهده کنید.'
                                 : checkout.phase === 'paymentFailed' ? 'سبد شما حفظ شده است؛ می‌توانید از سبد خرید دوباره اقدام کنید.'
+                                : isCheckingPurchase ? 'پرداخت شما با موفقیت ثبت شد؛ در حال فعال‌سازی دسترسی دوره هستیم. لطفاً چند لحظه شکیبا باشید…'
                                 : 'برای پیگیری نتیجه، کیف پول و دوره‌های من را بررسی کنید. تا مشخص‌شدن نتیجه دوباره پرداخت نکنید.'}
                         </div>
                     ) : isPendingTopUp ? (
                         <div className={styles.notice}>
-                            نتیجهٔ شارژ یا برگشت وجه هنوز قطعی نیست. وضعیت را از کیف پول و پشتیبانی پیگیری کنید و دوباره پرداخت نکنید.
+                            {status === 'success'
+                                ? 'پرداخت شما ثبت شده است؛ در حال بررسی و فعال‌سازی دوره هستیم. لطفاً صفحه را نبندید و چند لحظه منتظر بمانید…'
+                                : 'نتیجهٔ شارژ یا برگشت وجه هنوز قطعی نیست. وضعیت را از کیف پول و پشتیبانی پیگیری کنید و دوباره پرداخت نکنید.'}
                         </div>
                     ) : isSuccess ? (
                         <div className={styles.notice}>
                             {isTopUp
                                 ? 'نتیجهٔ شارژ در کیف پول شما ثبت شد.'
                                 : 'رسید پرداخت برای شما صادر شد. می‌توانید در پنل کاربری، سوابق سفارشات و محتوای دوره‌های خود را مشاهده و دریافت نمایید.'}
+                        </div>
+                    ) : isPending ? (
+                        <div className={styles.notice}>
+                            در حال بررسی نتیجه و فعال‌سازی دوره هستیم. لطفاً چند لحظه شکیبا باشید…
                         </div>
                     ) : (
                         <div className={styles.deductionAlertBox}>
@@ -361,6 +394,24 @@ function CheckoutResultContent() {
                                     </Link>
                                 </>
                             )
+                        ) : isPending ? (
+                            <>
+                                <Link href="/profile/purchases" className={styles.primaryButton}>
+                                    <GraduationCap size={18} />
+                                    دوره‌های من
+                                </Link>
+                                <Link href="/profile" className={styles.secondaryButton}>
+                                    <Wallet size={18} />
+                                    کیف پول و حساب کاربری
+                                </Link>
+                                <Link href="/" className={styles.secondaryButton}>
+                                    <Home size={18} />
+                                    صفحه اصلی
+                                </Link>
+                                <Link href="/contact" className={styles.secondaryButton}>
+                                    پشتیبانی و تماس
+                                </Link>
+                            </>
                         ) : (
                             isTopUp ? (
                                 <>

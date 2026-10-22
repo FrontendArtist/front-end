@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 jest.mock('next/navigation', () => ({ useSearchParams: jest.fn() }));
 jest.mock('@/hooks/useCompletedOrderCart', () => jest.fn());
 jest.mock('@/hooks/useCourseCheckoutResult', () => jest.fn());
-jest.mock('./page.module.scss', () => ({ card: 'card', success: 'success', failed: 'failed' }));
+jest.mock('./page.module.scss', () => ({ card: 'card', success: 'success', failed: 'failed', pending: 'pending', pendingBadge: 'pendingBadge' }));
 
 beforeEach(() => {
     useSearchParams.mockReturnValue(new URLSearchParams('status=success&orderType=light_topup&topUpId=topup-1'));
@@ -78,4 +78,26 @@ test('شارژ با نتیجه نامعلوم، شکست قطعی یا برگش�
     expect(screen.getByText(/نتیجهٔ شارژ یا برگشت وجه هنوز قطعی نیست/)).toBeTruthy();
     expect(screen.queryByText('ناموفق')).toBeNull();
     expect(screen.queryByText(/۷۲ ساعت/)).toBeNull();
+});
+
+test('بازگشت از پرداخت موفق با استعلام در حال پردازش، وضعیت ناموفق نشان نمی‌دهد و حالت در انتظار فعال‌سازی نمایش می‌دهد', () => {
+    useSearchParams.mockReturnValue(new URLSearchParams('orderType=light_topup&topUpId=topup-1&status=success&refNum=mock-ref'));
+    useCourseCheckoutResult.mockReturnValue({ phase: 'checking', courses: [], receipts: [] });
+    render(<CheckoutResultPage />);
+    expect(screen.getByRole('heading').closest('.card').className).not.toContain('failed');
+    expect(screen.getByRole('heading').closest('.card').className).toContain('pending');
+    expect(screen.queryByText('تراکنش پرداخت ناموفق بود')).toBeNull();
+    expect(screen.queryByText(/اگر مبلغ از حسابتان کسر شده/)).toBeNull();
+    expect(screen.getByText(/در حال استعلام پرداخت و فعال‌سازی دوره/)).toBeTruthy();
+});
+
+test('مرحله فعال‌سازی دوره ظاهر ناموفق ندارد و وضعیت در حال فعال‌سازی نشان می‌دهد', () => {
+    useSearchParams.mockReturnValue(new URLSearchParams('orderType=light_topup&topUpId=topup-1&status=success&refNum=mock-ref'));
+    useCourseCheckoutResult.mockReturnValue({ phase: 'activating', paid: true, courses: [{ externalCourseId: 'course-1', purchaseStatus: 'DeliveryPending' }] });
+    render(<CheckoutResultPage />);
+    expect(screen.getByRole('heading').closest('.card').className).not.toContain('failed');
+    expect(screen.getByRole('heading').closest('.card').className).toContain('pending');
+    expect(screen.queryByText('تراکنش پرداخت ناموفق بود')).toBeNull();
+    expect(screen.queryByText(/اگر مبلغ از حسابتان کسر شده/)).toBeNull();
+    expect(screen.getByText('در حال بررسی و فعال‌سازی دوره‌ها…')).toBeTruthy();
 });
