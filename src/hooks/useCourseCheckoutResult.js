@@ -1,4 +1,4 @@
-import { getCourseCart } from '@/lib/courseCartApi';
+import { getCourseCart, purchaseCourseCart } from '@/lib/courseCartApi';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { getCourseCheckout, getTopUpCheckout, getCurrentCourseAccess } from '@/lib/courseCheckoutApi';
@@ -35,6 +35,14 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                 if (!resolvedCartId && data.cartId) {
                     resolvedCartId = data.cartId;
                     data = await getCourseCart(resolvedCartId, jwt, controller.signal);
+                }
+                if (controller.signal.aborted) return;
+                if (resolvedCartId && (data?.status === 'AwaitingTopUp' || data?.status === 'Ready') && data?.topUpStatus === 'Confirmed') {
+                    try {
+                        data = await purchaseCourseCart(resolvedCartId, jwt, controller.signal);
+                    } catch {
+                        // در صورت خطا در نهایی‌سازی، در چرخهٔ بعدی مجدداً استعلام و تلاش می‌شود
+                    }
                 }
                 if (controller.signal.aborted) return;
                 let courses = resolvedCartId || topUpId ? (Array.isArray(data?.courses) ? data.courses : []) : [{ externalCourseId: courseId, purchaseStatus: data?.purchaseStatus }];
@@ -103,9 +111,12 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
 
                 next = { phase, courses, paid, receipts: knownReceipts };
                 // فقط قلمی حذف می‌شود که ثبت مالی آن در سرور تأیید شده است.
-                for (const course of courses.filter(c => userId && String(hydratedUserId) === String(userId) && (paid || ['Completed', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus)))) {
-                    const isProduct = course.itemType === 'Product' || course.type === 'product';
-                    if (isProduct && !paid) continue;
+                for (const course of courses.filter(c => {
+                    if (!userId || String(hydratedUserId) !== String(userId)) return false;
+                    const isProduct = c.itemType === 'Product' || c.type === 'product';
+                    if (isProduct) return paid;
+                    return ['Completed', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus);
+                })) {
                     const matching = useCartStore.getState().items.filter(item => {
                         const itemExternalId = item.type === 'chapter'
                             ? (item.integrationId || item.externalCourseId)

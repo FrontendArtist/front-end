@@ -399,26 +399,59 @@
     border-radius: var(--radius-card);
     border: 1px solid fade(var(--color-primary), 20%);
     box-shadow: var(--shadow-card-strong);
-    padding: 24px;
+    padding: 16px 18px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 
     @include respond(md) {
-        padding: 20px;
-        gap: 14px;
+        padding: 14px 16px;
+        gap: 10px;
+    }
+}
+
+.summaryGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+
+    @include respond(md) {
+        gap: 8px;
     }
 }
 
 .summaryTitle {
     font-family: var(--font-lalezar);
-    font-size: var(--font-xl);
+    font-size: var(--font-lg);
     color: var(--color-text-primary);
     margin: 0;
-    padding-bottom: 10px;
+    padding-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
     @include respond(md) {
-        font-size: var(--font-lg);
+        font-size: var(--font-md);
+        gap: 6px;
+    }
+}
+
+.summaryCount {
+    font-family: var(--font-iransans, sans-serif);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--color-title-hover, #ffd166);
+    background: rgba(255, 209, 102, 0.12);
+    border: 1px solid rgba(255, 209, 102, 0.25);
+    padding: 2px 8px;
+    border-radius: 20px;
+    line-height: 1.3;
+    display: inline-flex;
+    align-items: center;
+
+    @include respond(md) {
+        font-size: 0.725rem;
+        padding: 1px 6px;
     }
 }
 
@@ -426,7 +459,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: var(--font-sm);
+    font-size: 0.825rem;
     color: var(--color-card-text);
 
     strong {
@@ -438,36 +471,35 @@
 .couponSection {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin: 4px 0;
+    gap: 4px;
+    margin: 0;
 }
 
 .divider {
     height: 1px;
-    background: fade(var(--color-primary), 15%);
+    background: fade(var(--color-primary), 16%);
     margin: 2px 0;
 }
 
 .summaryTotal {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    font-size: var(--font-md);
+    align-items: baseline;
+    font-size: 0.9rem;
+    font-weight: 600;
     color: var(--color-text-primary);
-    padding-top: 10px;
-    border-top: 1px solid fade(var(--color-primary), 25%);
 
     strong {
         font-weight: var(--font-weight-bold);
-        font-size: var(--font-lg);
+        font-size: 1.15rem;
         color: var(--color-title-hover);
     }
 
     @include respond(md) {
-        font-size: var(--font-sm);
+        font-size: var(--font-xs);
 
         strong {
-            font-size: var(--font-md);
+            font-size: var(--font-sm);
         }
     }
 }
@@ -475,46 +507,42 @@
 .vpnNotice {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: rgba(245, 158, 11, 0.12);
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    border-radius: var(--border-radius);
-    color: #fde68a;
-    font-size: var(--font-xs);
-    line-height: 1.5;
-    margin-top: 10px;
-    margin-bottom: 4px;
+    gap: 6px;
+    padding: 2px 0;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.725rem;
+    line-height: 1.35;
+    margin: 2px 0;
     text-align: right;
 
     svg {
         flex-shrink: 0;
         color: #f59e0b;
-        width: 18px;
-        height: 18px;
+        width: 13px;
+        height: 13px;
     }
 
     strong {
         color: #fbbf24;
-        font-weight: 700;
+        font-weight: 600;
     }
 }
 
 .checkoutButton {
     display: inline-block;
     width: 100%;
-    padding: 13px 24px;
+    padding: 10px 18px;
     background: linear-gradient(135deg, #ffd166e6, #f59e0be6);
     color: var(--color-overlay);
     border: none;
     border-radius: var(--border-radius);
-    font-size: var(--font-md);
+    font-size: var(--font-sm);
     font-weight: var(--font-weight-bold);
     text-decoration: none;
     text-align: center;
     cursor: pointer;
     @include hover-transition;
-    margin-top: 4px;
+    margin-top: 2px;
     box-shadow: 0 4px 14px fade(var(--color-primary), 30%);
 
     &:hover {
@@ -527,92 +555,74 @@
     }
 
     @include respond(md) {
-        padding: 12px 20px;
-        font-size: var(--font-sm);
+        padding: 9px 16px;
+        font-size: var(--font-xs);
     }
 }
 
-// وضعیت کیف پول و تسویه پرداخت
+// وضعیت کیف پول و تسویه پرداخت - لیست بدون کادر اضافه
+.walletSection,
 .walletCard {
-    background: rgba(246, 217, 130, 0.05);
-    border: 1px solid rgba(246, 217, 130, 0.18);
-    border-radius: var(--border-radius);
-    padding: 14px 16px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 4px;
+    gap: 8px;
+    margin-top: 2px;
 }
 
-.walletCardRow {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: var(--font-sm);
-    color: var(--color-card-text);
-
-    strong {
-        color: var(--color-text-primary);
-        font-weight: var(--font-weight-bold);
-    }
+.awaitingTopUpNotice {
+    padding: 6px 10px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 6px;
+    color: #fcd34d;
+    font-size: 0.75rem;
+    line-height: 1.4;
 }
 
-.onlinePayRow {
-    padding-top: 10px;
-    border-top: 1px dashed rgba(246, 217, 130, 0.2);
-    font-size: var(--font-sm);
-    color: var(--color-text-primary);
-
-    strong {
-        color: var(--color-title-hover);
-        font-size: var(--font-md);
-        font-weight: var(--font-weight-bold);
-    }
-}
-
+.walletNotice,
 .walletCardNotice {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
-    font-size: var(--font-xs);
+    gap: 6px;
+    font-size: 0.725rem;
     color: var(--color-card-text);
-    opacity: 0.9;
-    line-height: 1.6;
-    margin: 4px 0 0;
+    opacity: 0.85;
+    line-height: 1.4;
+    margin: 2px 0 0;
     text-align: right;
 
     svg {
         flex-shrink: 0;
-        width: 15px;
-        height: 15px;
+        width: 13px;
+        height: 13px;
         color: #f59e0b;
         margin-top: 2px;
     }
 }
 
 .previewError {
-    padding: 10px 14px;
+    padding: 6px 10px;
     background: rgba(239, 68, 68, 0.15);
     border: 1px solid #ef4444;
     border-radius: var(--border-radius);
     color: #fca5a5;
-    font-size: var(--font-xs);
-    line-height: 1.5;
+    font-size: 0.75rem;
+    line-height: 1.4;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
 
     p {
         margin: 0;
     }
 
     button {
-        padding: 4px 10px;
-        font-size: 0.8rem;
+        padding: 3px 8px;
+        font-size: 0.75rem;
         background: rgba(239, 68, 68, 0.25);
         border: 1px solid #ef4444;
-        border-radius: 6px;
+        border-radius: 4px;
         color: #fef2f2;
         cursor: pointer;
         white-space: nowrap;
@@ -627,16 +637,16 @@
 .securityNote {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     justify-content: center;
-    font-size: var(--font-xs);
+    font-size: 0.72rem;
     color: var(--color-card-text);
-    margin-top: 2px;
+    margin-top: 1px;
     opacity: 0.85;
 
     svg {
-        width: 14px;
-        height: 14px;
+        width: 13px;
+        height: 13px;
         color: var(--color-success);
     }
 }
@@ -724,17 +734,17 @@
     }
 }
 
-// کارت نمایش خلاصه آدرس تحویل سفارش
+// نمایش خلاصه آدرس تحویل سفارش - بدون کادر اضافه
 .addressSummaryCard {
-    margin: 10px 0 6px 0;
-    padding: 12px 14px;
-    background: fade(var(--color-primary), 6%);
-    border: 1px solid fade(var(--color-primary), 20%);
-    border-radius: 10px;
+    margin: 2px 0;
+    padding: 2px 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    font-size: var(--font-xs);
+    gap: 4px;
+    font-size: 0.775rem;
 }
 
 .addressSummaryHeader {
@@ -744,14 +754,15 @@
 }
 
 .addressSummaryTitle {
-    font-weight: var(--font-weight-bold);
-    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+    font-size: 0.8rem;
+    color: var(--color-card-text);
 }
 
 .changeAddressBtn {
     background: none;
     border: none;
-    color: var(--color-accent);
+    color: var(--color-title-hover, #ffd166);
     font-size: 0.75rem;
     font-weight: var(--font-weight-medium);
     cursor: pointer;
@@ -765,7 +776,8 @@
 
 .addressSummaryText {
     margin: 0;
-    color: var(--color-card-text);
-    line-height: 1.5;
+    color: var(--color-text-primary);
+    line-height: 1.4;
     word-break: break-word;
+    font-size: 0.775rem;
 }

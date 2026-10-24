@@ -2,7 +2,7 @@
 
 .couponWrapper {
     width: 100%;
-    margin-top: 4px;
+    margin: 2px 0;
 }
 
 .couponForm {
@@ -22,15 +22,78 @@
     }
 }
 
+.toggleBtn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    background: transparent;
+    border: none;
+    color: var(--color-title-hover, #ffd166);
+    font-size: var(--font-xs, 0.8rem);
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+        opacity: 0.85;
+    }
+}
+
+.toggleText {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tagIcon {
+    width: 14px;
+    height: 14px;
+    color: var(--color-title-hover, #ffd166);
+}
+
+.togglePlus {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.closeBtn {
+    width: 34px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--color-card-text, rgba(255, 255, 255, 0.6));
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+
+    svg {
+        width: 13px;
+        height: 13px;
+    }
+
+    &:hover {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #fca5a5;
+    }
+}
+
 .couponInput {
     flex: 1;
     min-width: 0;
-    height: 45px;
+    height: 36px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
-    padding: 0 12px;
-    font-size: var(--font-sm, 0.875rem);
+    border-radius: 8px;
+    padding: 0 10px;
+    font-size: var(--font-xs, 0.8rem);
     color: var(--color-text-primary, #ffffff);
     font-family: inherit;
     direction: ltr;
@@ -43,14 +106,14 @@
         text-align: right;
         text-transform: none;
         color: rgba(255, 255, 255, 0.4);
-        font-size: var(--font-xs, 0.8rem);
+        font-size: var(--font-xs, 0.775rem);
     }
 
     &:focus {
         outline: none;
         background: rgba(255, 255, 255, 0.07);
         border-color: rgba(255, 209, 102, 0.6);
-        box-shadow: 0 0 12px rgba(255, 209, 102, 0.15);
+        box-shadow: 0 0 10px rgba(255, 209, 102, 0.15);
     }
 
     &.hasError {
@@ -65,25 +128,25 @@
 }
 
 .submitBtn {
-    height: 42px;
-    padding: 0 16px;
+    height: 36px;
+    padding: 0 12px;
     background: linear-gradient(135deg, rgba(255, 209, 102, 0.9), rgba(245, 158, 11, 0.9));
     color: #111827;
     font-weight: 700;
-    font-size: var(--font-xs, 0.8rem);
+    font-size: var(--font-xs, 0.775rem);
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
     white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+    box-shadow: 0 3px 10px rgba(245, 158, 11, 0.2);
 
     &:hover:not(:disabled) {
         transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+        box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
         background: linear-gradient(135deg, #ffd166, #f59e0b);
     }
 

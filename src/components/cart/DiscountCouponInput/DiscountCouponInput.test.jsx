@@ -17,6 +17,7 @@ test('رابط پس از تغییر سبد مبلغ قدیمی را پنهان �
         valid: true, code: 'SALE', discountAmount: 10, originalTotalPrice: 101, finalTotalPrice: 91,
     }) }).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
     render(<><CartSyncProvider /><DiscountCouponInput /></>);
+    fireEvent.click(screen.getByText('کد تخفیف دارید؟ ثبت کد'));
     fireEvent.change(screen.getByPlaceholderText('کد تخفیف دارید؟ وارد کنید...'), { target: { value: 'SALE' } });
     fireEvent.click(screen.getByText('اعمال کد'));
     await waitFor(() => expect(selectFinalTotalPrice(useCartStore.getState())).toBe(91));
@@ -34,6 +35,7 @@ test('حذف کد در زمان بررسی، پاسخ دیرهنگام را در
     let finish;
     global.fetch = jest.fn(() => new Promise(resolve => { finish = resolve; }));
     render(<><CartSyncProvider /><DiscountCouponInput /></>);
+    fireEvent.click(screen.getByText('کد تخفیف دارید؟ ثبت کد'));
     fireEvent.change(screen.getByPlaceholderText('کد تخفیف دارید؟ وارد کنید...'), { target: { value: 'SALE' } });
     fireEvent.click(screen.getByText('اعمال کد'));
     fireEvent.click(screen.getByLabelText('حذف کد تخفیف'));

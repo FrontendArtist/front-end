@@ -15,7 +15,9 @@ jest.mock('@/lib/courseCartPreviewApi', () => ({ ...jest.requireActual('@/lib/co
 jest.mock('@/lib/byeMoneyApi', () => ({ getWalletBalanceWithByeMoney: jest.fn() }));
 jest.mock('@/lib/checkoutService', () => ({ executeNoorCartPurchase: jest.fn(), executeOnlinePayment: jest.fn() }));
 jest.mock('@/components/cart/DiscountCouponInput/DiscountCouponInput', () => () => null);
-jest.mock('@/components/ui/PriceWithHint/PriceWithHint', () => ({ price }) => <span>{price} نور</span>);
+jest.mock('@/components/ui/PriceWithHint/PriceWithHint', () => ({ price, hideHint }) => (
+    <span data-testid="price-hint" data-hide-hint={hideHint ? 'true' : 'false'}>{price} نور</span>
+));
 jest.mock('@/components/ui/BreadCrumb/Breadcrumb', () => () => null);
 jest.mock('next/image', () => () => null);
 
@@ -530,5 +532,16 @@ test('سبد کالای فیزیکی دارای آدرس: نمایش آدرس د
     expect(mockPush).not.toHaveBeenCalledWith('/checkout');
 
     global.fetch = originalFetch;
+});
+
+test('زیرنویس معادل تومان در سایدبار فقط برای مبلغ قابل پرداخت نمایش داده می‌شود', async () => {
+    render(<CartPage />);
+    await purchaseButton();
+
+    const subtotal = (screen.queryByText('قیمت کالاها:') || screen.getByText('جمع جزء سبد خرید:')).parentElement.querySelector('[data-testid="price-hint"]');
+    expect(subtotal.getAttribute('data-hide-hint')).toBe('true');
+
+    const total = screen.getByText('مبلغ قابل پرداخت:').parentElement.querySelector('[data-testid="price-hint"]');
+    expect(total.getAttribute('data-hide-hint')).toBe('false');
 });
 

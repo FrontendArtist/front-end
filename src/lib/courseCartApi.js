@@ -140,7 +140,11 @@ export async function getCourseCart(cartId, jwt, signal) {
     rememberCart({ cartId }, data);
     return data;
 }
-export const purchaseCourseCart = (cartId, jwt) => requestCart(`/${encodeURIComponent(cartId)}/purchase`, jwt, { method: 'POST' });
+export async function purchaseCourseCart(cartId, jwt, signal) {
+    const data = await requestCart(`/${encodeURIComponent(cartId)}/purchase`, jwt, { method: 'POST', signal });
+    rememberCart({ cartId }, data);
+    return data;
+}
 export async function topUpCourseCart(cartId, jwt) {
     const data = await requestCart(`/${encodeURIComponent(cartId)}/topup`, jwt, { method: 'POST' });
     writeStored('course-cart-status:' + cartId, 'AwaitingTopUp');

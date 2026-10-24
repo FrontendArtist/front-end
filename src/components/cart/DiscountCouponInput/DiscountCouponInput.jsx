@@ -16,6 +16,8 @@ export default function DiscountCouponInput() {
     const applyCoupon = useCartStore((state) => state.validateCoupon);
     const removeCoupon = useCartStore((state) => state.removeCoupon);
 
+    const [isOpen, setIsOpen] = useState(false);
+
     const handleApply = async (e) => {
         if (e) e.preventDefault();
         const code = inputCode.trim();
@@ -75,6 +77,27 @@ export default function DiscountCouponInput() {
         );
     }
 
+    if (!isOpen && !inputCode && !couponError && !errorMessage) {
+        return (
+            <div className={styles.couponWrapper}>
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(true)}
+                    className={styles.toggleBtn}
+                >
+                    <span className={styles.toggleText}>
+                        <svg className={styles.tagIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                            <line x1="7" y1="7" x2="7.01" y2="7" />
+                        </svg>
+                        کد تخفیف دارید؟ ثبت کد
+                    </span>
+                    <span className={styles.togglePlus}>+</span>
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className={styles.couponWrapper}>
             <form onSubmit={handleApply} className={styles.couponForm}>
@@ -89,6 +112,7 @@ export default function DiscountCouponInput() {
                         placeholder="کد تخفیف دارید؟ وارد کنید..."
                         className={`${styles.couponInput} ${errorMessage ? styles.hasError : ''}`}
                         disabled={isLoading || items.length === 0}
+                        autoFocus
                     />
                     <button
                         type="submit"
@@ -100,6 +124,22 @@ export default function DiscountCouponInput() {
                         ) : (
                             'اعمال کد'
                         )}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsOpen(false);
+                            setInputCode('');
+                            setErrorMessage('');
+                        }}
+                        className={styles.closeBtn}
+                        aria-label="بستن"
+                        title="انصراف"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
                     </button>
                 </div>
             </form>

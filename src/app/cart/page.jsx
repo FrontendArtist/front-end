@@ -633,248 +633,239 @@ export default function CartPage() {
 
                 {/* Sidebar: خلاصه سفارش */}
                 <aside className={styles.sidebar}>
-                    <h2 className={styles.summaryTitle}>خلاصه سفارش</h2>
+                    <h2 className={styles.summaryTitle}>
+                        <span>خلاصه سفارش</span>
+                        <span className={styles.summaryCount}>{formatPrice(itemsCount)} کالا</span>
+                    </h2>
                     <div className={styles.summary}>
-
-                        {/* تعداد کل آیتم‌ها */}
-                        <div className={styles.summaryRow}>
-                            <span>تعداد اقلام:</span>
-                            <strong>{itemsCount} مورد</strong>
-                        </div>
-
-                        {/* جمع کل خرید */}
-                        <div className={styles.summaryRow}>
-                            <span>جمع جزء سبد خرید:</span>
-                            {isCartEligible && !preview?.data ? 'در انتظار بررسی قیمت' :
-                                <PriceWithHint price={preview?.data?.originalTotalInNoor ?? totalPrice} size="sm" />}
-                        </div>
-
-                        {/* سود تخفیف خود محصولات در صورت وجود */}
-                        {(preview?.data?.itemDiscountInNoor ?? (isCartEligible ? 0 : itemLevelDiscount)) > 0 && (
-                            <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
-                                <span>تخفیف شگفت‌انگیز:</span>
-                                <PriceWithHint price={preview?.data?.itemDiscountInNoor ?? itemLevelDiscount} size="sm" />
-                            </div>
-                        )}
-
-                        <div className={styles.divider}></div>
-
-                        {/* بخش کد تخفیف */}
-                        <div className={styles.couponSection}>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>کد تخفیف:</span>
-                            <DiscountCouponInput />
-                        </div>
-
-                        {/* نمایش ردیف تخفیف کوپن در صورت اعمال */}
-                        {(preview?.data?.couponDiscountInNoor ?? (isCartEligible ? 0 : couponDiscount)) > 0 && (
-                            <div className={styles.summaryRow} style={{ color: '#86efac' }}>
-                                <span>تخفیف کوپن ({appliedCoupon?.code}):</span>
-                                <span style={{ direction: 'ltr', display: 'inline-flex' }}>
-                                    - <PriceWithHint price={preview?.data?.couponDiscountInNoor ?? couponDiscount} size="sm" hideHint={true} />
-                                </span>
-                            </div>
-                        )}
-
-                        {/* ردیف هزینه ارسال در صورت وجود کالای فیزیکی در سبد */}
-                        {hasPhysicalProducts && (
+                        {/* آدرس تحویل سفارش فیزیکی */}
+                        {hasPhysicalProducts && userAddress?.fullAddress && (
                             <>
+                                <div className={styles.addressSummaryCard}>
+                                    <div className={styles.addressSummaryHeader}>
+                                        <span className={styles.addressSummaryTitle}>آدرس تحویل:</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsAddressModalOpen(true)}
+                                            className={styles.changeAddressBtn}
+                                        >
+                                            تغییر آدرس
+                                        </button>
+                                    </div>
+                                    <p className={styles.addressSummaryText}>
+                                        {userAddress.recipientName ? `${userAddress.recipientName} - ` : ''}{userAddress.fullAddress}
+                                    </p>
+                                </div>
+                                <div className={styles.divider}></div>
+                            </>
+                        )}
+
+                        {/* بخش اول (اقلام و ارسال): قیمت کالاها، سود تخفیف، هزینه ارسال و کد تخفیف */}
+                        <div className={styles.summaryGroup}>
+                            {/* قیمت کالاها */}
+                            <div className={styles.summaryRow}>
+                                <span>قیمت کالاها:</span>
+                                {isCartEligible && !preview?.data ? 'در انتظار بررسی قیمت' :
+                                    <PriceWithHint price={preview?.data?.originalTotalInNoor ?? totalPrice} size="sm" hideHint={true} />}
+                            </div>
+
+                            {/* سود تخفیف خود محصولات در صورت وجود */}
+                            {(preview?.data?.itemDiscountInNoor ?? (isCartEligible ? 0 : itemLevelDiscount)) > 0 && (
+                                <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
+                                    <span>سود شما از خرید:</span>
+                                    <PriceWithHint price={preview?.data?.itemDiscountInNoor ?? itemLevelDiscount} size="sm" hideHint={true} />
+                                </div>
+                            )}
+
+                            {/* نمایش ردیف تخفیف کوپن در صورت اعمال */}
+                            {(preview?.data?.couponDiscountInNoor ?? (isCartEligible ? 0 : couponDiscount)) > 0 && (
+                                <div className={styles.summaryRow} style={{ color: '#86efac' }}>
+                                    <span>تخفیف کوپن ({appliedCoupon?.code}):</span>
+                                    <span style={{ direction: 'ltr', display: 'inline-flex' }}>
+                                        - <PriceWithHint price={preview?.data?.couponDiscountInNoor ?? couponDiscount} size="sm" hideHint={true} />
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* ردیف هزینه ارسال در صورت وجود کالای فیزیکی در سبد */}
+                            {hasPhysicalProducts && (
                                 <div className={styles.summaryRow}>
-                                    <span>هزینه ارسال{preview?.data?.shippingRuleLabel ? ` (${preview.data.shippingRuleLabel})` : ''}:</span>
+                                    <span>هزینه ارسال:</span>
                                     {isCartEligible && !preview?.data ? 'در انتظار بررسی' :
                                         (preview?.data?.shippingAmountInNoor === 0 ? (
                                             <span style={{ color: '#4ade80', fontWeight: 600 }}>رایگان</span>
                                         ) : (
-                                            <PriceWithHint price={preview?.data?.shippingAmountInNoor ?? 0} size="sm" />
+                                            <PriceWithHint price={preview?.data?.shippingAmountInNoor ?? 0} size="sm" hideHint={true} />
                                         ))}
                                 </div>
-                                {userAddress?.fullAddress && (
-                                    <div className={styles.addressSummaryCard}>
-                                        <div className={styles.addressSummaryHeader}>
-                                            <span className={styles.addressSummaryTitle}>آدرس تحویل:</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsAddressModalOpen(true)}
-                                                className={styles.changeAddressBtn}
-                                            >
-                                                تغییر آدرس
-                                            </button>
-                                        </div>
-                                        <p className={styles.addressSummaryText}>
-                                            {userAddress.recipientName ? `${userAddress.recipientName} - ` : ''}{userAddress.fullAddress}
-                                        </p>
-                                    </div>
-                                )}
-                            </>
-                        )}
+                            )}
 
-                        <div className={styles.divider}></div>
-
-                        {/* مجموع نهایی قابل پرداخت */}
-                        <div className={styles.summaryTotal}>
-                            <span>مبلغ قابل پرداخت:</span>
-                            {isCartEligible && !preview?.data ? 'در انتظار بررسی قیمت' :
-                                <PriceWithHint price={preview?.data?.priceInNoor ?? finalTotalPrice} size="md" />}
+                            {/* بخش کد تخفیف */}
+                            <div className={styles.couponSection}>
+                                <DiscountCouponInput />
+                            </div>
                         </div>
 
-                        {isCartEligible && preview?.data && (
-                            <div className={styles.walletCard}>
-                                {preview.data.status === 'AwaitingTopUp' && (
-                                    <div style={{
-                                        padding: '10px 12px',
-                                        backgroundColor: 'rgba(245, 158, 11, 0.12)',
-                                        border: '1px solid rgba(245, 158, 11, 0.3)',
-                                        borderRadius: '8px',
-                                        color: '#fcd34d',
-                                        fontSize: '0.85rem',
-                                        marginBottom: '12px',
-                                        lineHeight: '1.5',
-                                    }}>
-                                        <span>پرداخت قبلی شما ناتمام ماند یا لغو شد. در صورتی که وجه از حسابتان کسر نشده است، می‌توانید مجدداً پرداخت را انجام دهید.</span>
-                                        <div style={{ marginTop: '6px' }}>
-                                            <Link
-                                                href={`/checkout/result?source=noor&cartId=${encodeURIComponent(preview.data.cartId)}`}
-                                                style={{ color: '#93c5fd', textDecoration: 'underline', fontSize: '0.8rem' }}
-                                            >
-                                                پیگیری و استعلام وضعیت پرداخت قبلی
-                                            </Link>
-                                        </div>
-                                    </div>
-                                )}
-                                <div className={styles.walletCardRow}>
-                                    <span>موجودی کیف نور:</span>
-                                    <strong>{balance == null ? 'در دسترس نیست؛ هنگام پرداخت بررسی می‌شود' : `${formatPrice(balance)} نور`}</strong>
-                                </div>
-                                {(needsOnlinePayment || preview.data.status === 'AwaitingTopUp') && (
-                                    <>
-                                        {shortfall > 0 && (
-                                            <div className={`${styles.walletCardRow} ${styles.onlinePayRow}`}>
-                                                <span>کسری موجودی:</span>
-                                                <strong>{formatPrice(shortfall)} نور</strong>
+                        {/* خط جداکننده اول */}
+                        <div className={styles.divider}></div>
+
+                        {/* بخش دوم (حساب‌وکتاب نهایی): مبلغ قابل پرداخت، موجودی کیف نور و کسری قابل پرداخت آنلاین */}
+                        <div className={styles.summaryGroup}>
+                            {/* مجموع نهایی قابل پرداخت */}
+                            <div className={styles.summaryTotal}>
+                                <span>مبلغ قابل پرداخت:</span>
+                                {isCartEligible && !preview?.data ? 'در انتظار بررسی قیمت' :
+                                    <PriceWithHint price={preview?.data?.priceInNoor ?? finalTotalPrice} size="md" />}
+                            </div>
+
+                            {/* وضعیت موجودی کیف نور و کسری */}
+                            {isCartEligible && preview?.data && (
+                                <div className={styles.walletSection}>
+                                    {preview.data.status === 'AwaitingTopUp' && (
+                                        <div className={styles.awaitingTopUpNotice}>
+                                            <span>پرداخت قبلی شما ناتمام ماند یا لغو شد. در صورتی که وجه از حسابتان کسر نشده است، می‌توانید مجدداً پرداخت را انجام دهید.</span>
+                                            <div style={{ marginTop: '4px' }}>
+                                                <Link
+                                                    href={`/checkout/result?source=noor&cartId=${encodeURIComponent(preview.data.cartId)}`}
+                                                    style={{ color: '#93c5fd', textDecoration: 'underline', fontSize: '0.75rem' }}
+                                                >
+                                                    پیگیری و استعلام وضعیت پرداخت قبلی
+                                                </Link>
                                             </div>
-                                        )}
-                                        <div className={styles.walletCardNotice}>
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <circle cx="12" cy="12" r="10"></circle>
-                                                <line x1="12" y1="16" x2="12" y2="12"></line>
-                                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                            </svg>
-                                            <span>فقط کسری موجودی پرداخت می‌شود؛ سفارش پس از تأیید پرداخت خودکار ثبت خواهد شد.</span>
                                         </div>
-                                    </>
-                                )}
-                            </div>
-                        )}
-                        {isCartEligible && preview?.error && (
-                            <div className={styles.previewError} role="alert">
-                                <p>{preview.error}</p>
-                                <button type="button" onClick={() => setPreviewRevision(value => value + 1)}>بررسی دوباره</button>
-                            </div>
-                        )}
-
-                        {errorMessage && (
-                            <div style={{
-                                padding: '10px 14px',
-                                backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                                border: '1px solid #ef4444',
-                                borderRadius: '8px',
-                                color: '#fca5a5',
-                                fontSize: '0.85rem',
-                                marginTop: '10px',
-                                lineHeight: '1.5',
-                                ...(errorMessage.includes('فیلترشکن') ? {
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    gap: '12px',
-                                    textAlign: 'right',
-                                } : {
-                                    textAlign: 'center',
-                                }),
-                            }}>
-                                {errorMessage.includes('فیلترشکن') ? (
-                                    <>
-                                        <span>فیلترشکن شما روشن است</span>
-                                        <button
-                                            type="button"
-                                            onClick={handleRecheckVpn}
-                                            disabled={isCheckingVpn}
-                                            style={{
-                                                padding: '4px 10px',
-                                                fontSize: '0.8rem',
-                                                backgroundColor: 'rgba(239, 68, 68, 0.25)',
-                                                border: '1px solid #ef4444',
-                                                borderRadius: '6px',
-                                                color: '#fef2f2',
-                                                cursor: isCheckingVpn ? 'wait' : 'pointer',
-                                                whiteSpace: 'nowrap',
-                                                opacity: isCheckingVpn ? 0.7 : 1,
-                                                transition: 'opacity 0.2s',
-                                                flexShrink: 0,
-                                            }}
-                                        >
-                                            {isCheckingVpn ? 'در حال بررسی...' : 'بررسی مجدد'}
-                                        </button>
-                                    </>
-                                ) : (
-                                    errorMessage
-                                )}
-                            </div>
-                        )}
-
-                        {/* پیام هشدار خاموش بودن VPN برای پرداخت آنلاین شتاب */}
-                        {(!isCartEligible || needsOnlinePayment) && finalTotalPrice > 0 && (
-                            <div className={styles.vpnNotice}>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                                    <line x1="12" y1="8" x2="12" y2="12" />
-                                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                                </svg>
-                                <span>
-                                    <strong>توجه:</strong> پیش از اتصال به درگاه بانکی، لطفاً <strong>فیلترشکن (VPN)</strong> خود را خاموش کنید.
-                                </span>
-                            </div>
-                        )}
-
-                        {/* دکمه پرداخت یا ادامه تسویه حساب */}
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (status !== 'authenticated') {
-                                    openAuthModal(() => handleStartPayment());
-                                    return;
-                                }
-                                handleStartPayment();
-                            }}
-                            disabled={isProcessing || (couponPending && !(isCartEligible && preview?.error)) || isPreviewLoading}
-                            className={styles.checkoutButton}
-                        >
-                            {isProcessing ? (
-                                'در حال اتصال به درگاه پرداخت...'
-                            ) : isPreviewLoading ? (
-                                'در حال بررسی قیمت...'
-                            ) : isCartEligible && preview?.error ? (
-                                'بررسی و ادامه پرداخت'
-                            ) : (preview?.data?.priceInNoor ?? finalTotalPrice) === 0 ? (
-                                'ثبت‌نام و دسترسی رایگان '
-                            ) : isCartEligible ? (
-                                balance == null
-                                    ? 'ادامه پرداخت'
-                                    : (needsOnlinePayment || preview?.data?.status === 'AwaitingTopUp')
-                                        ? (preview?.data?.status === 'AwaitingTopUp' ? 'پرداخت مجدد آنلاین' : 'پرداخت آنلاین و خرید')
-                                        : 'خرید با کیف نور'
-                            ) : (
-                                'پرداخت آنلاین شتاب '
+                                    )}
+                                    <div className={styles.summaryRow}>
+                                        <span>موجودی کیف نور:</span>
+                                        <strong>{balance == null ? 'در دسترس نیست؛ هنگام پرداخت بررسی می‌شود' : `${formatPrice(balance)} نور`}</strong>
+                                    </div>
+                                    {(needsOnlinePayment || preview.data.status === 'AwaitingTopUp') && (
+                                        shortfall > 0 && (
+                                            <div className={styles.summaryRow}>
+                                                <span>کسری قابل پرداخت آنلاین:</span>
+                                                <strong style={{ color: 'var(--color-title-hover, #ffd166)' }}>{formatPrice(shortfall)} نور</strong>
+                                            </div>
+                                        )
+                                    )}
+                                </div>
                             )}
-                        </button>
+                        </div>
 
-                        {/* پیام امنیت */}
-                        <p className={styles.securityNote}>
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                            پرداخت امن و مطمئن
-                        </p>
+                        {/* خط جداکننده دوم */}
+                        <div className={styles.divider}></div>
+
+                        {/* بخش سوم (اقدام نهایی): هشدار VPN، دکمه پرداخت و نشان امنیت */}
+                        <div className={styles.summaryGroup}>
+                            {isCartEligible && preview?.error && (
+                                <div className={styles.previewError} role="alert">
+                                    <p>{preview.error}</p>
+                                    <button type="button" onClick={() => setPreviewRevision(value => value + 1)}>بررسی دوباره</button>
+                                </div>
+                            )}
+
+                            {errorMessage && (
+                                <div style={{
+                                    padding: '8px 12px',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                                    border: '1px solid #ef4444',
+                                    borderRadius: '6px',
+                                    color: '#fca5a5',
+                                    fontSize: '0.78rem',
+                                    lineHeight: '1.4',
+                                    ...(errorMessage.includes('فیلترشکن') ? {
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: '12px',
+                                        textAlign: 'right',
+                                    } : {
+                                        textAlign: 'center',
+                                    }),
+                                }}>
+                                    {errorMessage.includes('فیلترشکن') ? (
+                                        <>
+                                            <span>فیلترشکن شما روشن است</span>
+                                            <button
+                                                type="button"
+                                                onClick={handleRecheckVpn}
+                                                disabled={isCheckingVpn}
+                                                style={{
+                                                    padding: '4px 10px',
+                                                    fontSize: '0.8rem',
+                                                    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+                                                    border: '1px solid #ef4444',
+                                                    borderRadius: '6px',
+                                                    color: '#fef2f2',
+                                                    cursor: isCheckingVpn ? 'wait' : 'pointer',
+                                                    whiteSpace: 'nowrap',
+                                                    opacity: isCheckingVpn ? 0.7 : 1,
+                                                    transition: 'opacity 0.2s',
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                {isCheckingVpn ? 'در حال بررسی...' : 'بررسی مجدد'}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        errorMessage
+                                    )}
+                                </div>
+                            )}
+
+                            {/* پیام هشدار خاموش بودن VPN برای پرداخت آنلاین شتاب */}
+                            {(!isCartEligible || needsOnlinePayment) && finalTotalPrice > 0 && (
+                                <div className={styles.vpnNotice}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                        <line x1="12" y1="8" x2="12" y2="12" />
+                                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                                    </svg>
+                                    <span>
+                                        <strong>توجه:</strong> پیش از اتصال به درگاه بانکی، لطفاً <strong>فیلترشکن (VPN)</strong> خود را خاموش کنید.
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* دکمه پرداخت یا ادامه تسویه حساب */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (status !== 'authenticated') {
+                                        openAuthModal(() => handleStartPayment());
+                                        return;
+                                    }
+                                    handleStartPayment();
+                                }}
+                                disabled={isProcessing || (couponPending && !(isCartEligible && preview?.error)) || isPreviewLoading}
+                                className={styles.checkoutButton}
+                            >
+                                {isProcessing ? (
+                                    'در حال اتصال به درگاه پرداخت...'
+                                ) : isPreviewLoading ? (
+                                    'در حال بررسی قیمت...'
+                                ) : isCartEligible && preview?.error ? (
+                                    'بررسی و ادامه پرداخت'
+                                ) : (preview?.data?.priceInNoor ?? finalTotalPrice) === 0 ? (
+                                    'ثبت‌نام و دسترسی رایگان '
+                                ) : isCartEligible ? (
+                                    balance == null
+                                        ? 'ادامه پرداخت'
+                                        : (needsOnlinePayment || preview?.data?.status === 'AwaitingTopUp')
+                                            ? (preview?.data?.status === 'AwaitingTopUp' ? 'پرداخت مجدد آنلاین' : 'پرداخت آنلاین و خرید')
+                                            : 'خرید با کیف نور'
+                                ) : (
+                                    'پرداخت آنلاین شتاب '
+                                )}
+                            </button>
+
+                            {/* پیام امنیت */}
+                            <p className={styles.securityNote}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                پرداخت امن و مطمئن
+                            </p>
+                        </div>
                     </div>
                 </aside>
             </div>

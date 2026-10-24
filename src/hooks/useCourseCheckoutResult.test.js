@@ -154,3 +154,23 @@ test('بازکردن صفحه نتیجه با سبد خالی، دسترسی ف�
     expect(result.current.phase).not.toBe('accessMissing');
 });
 
+test('شارژ تأییدشده با سبد AwaitingTopUp، سبد را خریداری می‌کند و منتظر دوره نمی‌ماند', async () => {
+    getTopUpCheckout.mockResolvedValue({ cartId: 'cart-1', topUpStatus: 'Confirmed', courses: [] });
+    getCourseCart.mockResolvedValue({
+        status: 'AwaitingTopUp',
+        topUpStatus: 'Confirmed',
+        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }],
+    });
+    purchaseCourseCart.mockResolvedValue({
+        status: 'Paid',
+        topUpStatus: 'Confirmed',
+        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'Completed' }],
+    });
+    const { result } = renderHook(() => useCourseCheckoutResult('', 'topup-cart'));
+    await waitFor(() => expect(result.current.phase).toBe('completed'));
+    expect(purchaseCourseCart).toHaveBeenCalledWith('cart-1', 'jwt', expect.anything());
+    expect(result.current.courses[0].purchaseStatus).toBe('Completed');
+    expect(useCartStore.getState().items).toEqual([otherCourse]);
+});
+
+
