@@ -9,6 +9,7 @@ import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
 import DiscountCouponInput from '@/components/cart/DiscountCouponInput/DiscountCouponInput';
 import EmptyCartState from '@/components/cart/EmptyCartState/EmptyCartState';
+import AddressModal from '@/components/cart/AddressModal/AddressModal';
 import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import { formatPrice } from '@/lib/formatters';
 import {
@@ -88,6 +89,25 @@ export default function CartPage() {
 
     // آیا محصول فیزیکی نیازمند آدرس پستی در سبد وجود دارد؟
     const hasPhysicalProducts = items.some((item) => item.type === 'product');
+    const [userAddress, setUserAddress] = useState(null);
+    const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+
+    // دریافت آدرس کاربر از پروفایل در صورت وجود کالای فیزیکی در سبد
+    useEffect(() => {
+        if (!hasPhysicalProducts || status !== 'authenticated' || typeof fetch !== 'function') return;
+        let active = true;
+        fetch('/api/profile')
+            .then((res) => res.json())
+            .then((data) => {
+                if (active && data?.address) {
+                    setUserAddress(data.address);
+                }
+            })
+            .catch(() => {});
+        return () => {
+            active = false;
+        };
+    }, [hasPhysicalProducts, status]);
 
     // سبد خرید یکپارچه نوری (دوره، فصل و کالای فیزیکی)
     const isCartEligible = items.length > 0 && items.every(item => item.type === 'course' || item.type === 'chapter' || item.type === 'product');
@@ -182,7 +202,7 @@ export default function CartPage() {
     /**
      * شروع پرداخت برای سبد یکپارچه نوری
      */
-    const handleStartPayment = async () => {
+    const handleStartPayment = async (addressOverride = null) => {
         if (paymentLock.current) return;
         paymentLock.current = true;
         const paymentKey = previewKey;
@@ -205,11 +225,23 @@ export default function CartPage() {
 
                 // اگر کالای فیزیکی در سبد است، ابتدا کنترل وجود آدرس کامل بدون ساخت رزرو
                 if (hasPhysicalProducts) {
-                    const profileRes = await fetch('/api/profile');
-                    const profileData = await profileRes.json().catch(() => ({}));
-                    const addr = profileData?.address;
+                    let addr = addressOverride || userAddress;
                     if (!addr || !addr.fullAddress?.trim() || !addr.recipientName?.trim()) {
-                        router.push('/checkout');
+                        if (typeof fetch === 'function') {
+                            try {
+                                const profileRes = await fetch('/api/profile');
+                                const profileData = await profileRes.json().catch(() => ({}));
+                                addr = profileData?.address || null;
+                                if (addr) setUserAddress(addr);
+                            } catch {
+                                addr = null;
+                            }
+                        }
+                    }
+                    if (!addr || !addr.fullAddress?.trim() || !addr.recipientName?.trim()) {
+                        paymentLock.current = false;
+                        setIsProcessing(false);
+                        setIsAddressModalOpen(true);
                         return;
                     }
                 }
@@ -289,27 +321,27 @@ export default function CartPage() {
     };
 
     /**
+     * ثبت موفق آدرس از درون مدال و ادامهٔ خودکار پرداخت
+     */
+    const handleAddressSuccess = (savedAddr) => {
+        setUserAddress(savedAddr);
+        setIsAddressModalOpen(false);
+        setPreviewRevision((rev) => rev + 1);
+        setTimeout(() => {
+            handleStartPayment(savedAddr);
+        }, 50);
+    };
+
+    /**
      * هندلر اصلی دکمه ادامه خرید / پرداخت
      */
     const handleProceed = () => {
-        if (hasPhysicalProducts) {
-            // برای محصول فیزیکی نیاز به آدرس در /checkout داریم
-            if (status === 'authenticated') {
-                router.push('/checkout');
-            } else {
-                openAuthModal(() => {
-                    router.push('/checkout');
-                });
-            }
+        if (status === 'authenticated') {
+            handleStartPayment();
         } else {
-            // برای دوره‌های آموزشی، مستقیماً پرداخت آنلاین انجام می‌شود
-            if (status === 'authenticated') {
+            openAuthModal(() => {
                 handleStartPayment();
-            } else {
-                openAuthModal(() => {
-                    handleStartPayment();
-                });
-            }
+            });
         }
     };
 
@@ -645,15 +677,34 @@ export default function CartPage() {
 
                         {/* ردیف هزینه ارسال در صورت وجود کالای فیزیکی در سبد */}
                         {hasPhysicalProducts && (
-                            <div className={styles.summaryRow}>
-                                <span>هزینه ارسال{preview?.data?.shippingRuleLabel ? ` (${preview.data.shippingRuleLabel})` : ''}:</span>
-                                {isCartEligible && !preview?.data ? 'در انتظار بررسی' :
-                                    (preview?.data?.shippingAmountInNoor === 0 ? (
-                                        <span style={{ color: '#4ade80', fontWeight: 600 }}>رایگان</span>
-                                    ) : (
-                                        <PriceWithHint price={preview?.data?.shippingAmountInNoor ?? 0} size="sm" />
-                                    ))}
-                            </div>
+                            <>
+                                <div className={styles.summaryRow}>
+                                    <span>هزینه ارسال{preview?.data?.shippingRuleLabel ? ` (${preview.data.shippingRuleLabel})` : ''}:</span>
+                                    {isCartEligible && !preview?.data ? 'در انتظار بررسی' :
+                                        (preview?.data?.shippingAmountInNoor === 0 ? (
+                                            <span style={{ color: '#4ade80', fontWeight: 600 }}>رایگان</span>
+                                        ) : (
+                                            <PriceWithHint price={preview?.data?.shippingAmountInNoor ?? 0} size="sm" />
+                                        ))}
+                                </div>
+                                {userAddress?.fullAddress && (
+                                    <div className={styles.addressSummaryCard}>
+                                        <div className={styles.addressSummaryHeader}>
+                                            <span className={styles.addressSummaryTitle}>آدرس تحویل:</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsAddressModalOpen(true)}
+                                                className={styles.changeAddressBtn}
+                                            >
+                                                تغییر آدرس
+                                            </button>
+                                        </div>
+                                        <p className={styles.addressSummaryText}>
+                                            {userAddress.recipientName ? `${userAddress.recipientName} - ` : ''}{userAddress.fullAddress}
+                                        </p>
+                                    </div>
+                                )}
+                            </>
                         )}
 
                         <div className={styles.divider}></div>
@@ -828,6 +879,13 @@ export default function CartPage() {
                 </aside>
             </div>
             </div>
+            <AddressModal
+                isOpen={isAddressModalOpen}
+                onClose={() => setIsAddressModalOpen(false)}
+                initialAddress={userAddress}
+                onSuccess={handleAddressSuccess}
+                submitLabel="ثبت آدرس و ادامه پرداخت"
+            />
         </div>
     );
 }

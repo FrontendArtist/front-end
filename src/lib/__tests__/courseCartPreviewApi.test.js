@@ -181,3 +181,62 @@ test('تغییر هزینه ارسال هشدار عدم تطابق قیمت ا�
     expect(sameCourseCartPrice(base, changedShipping)).toBe(false);
 });
 
+test('پیش‌نمایش استراپی بدون lineTotalInNoor با سبد بای‌مانی دارای lineTotalInNoor صریح تطابق دارد', () => {
+    const strapiPreview = {
+        couponCode: null,
+        originalTotalInNoor: 150,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 0,
+        priceInNoor: 150,
+        courses: [
+            { externalCourseId: 'course-1', title: 'دوره تستی', basePriceInNoor: 150, priceInNoor: 150 },
+        ],
+    };
+    const byeMoneyCart = {
+        cartId: 'cart-recovered',
+        status: 'Ready',
+        couponCode: null,
+        originalTotalInNoor: 150,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 0,
+        priceInNoor: 150,
+        courses: [
+            { externalCourseId: 'course-1', title: 'دوره تستی', priceInNoor: 150, quantity: 1, lineTotalInNoor: 150, purchaseStatus: 'NotPurchased' },
+        ],
+    };
+    expect(sameCourseCartPrice(strapiPreview, byeMoneyCart)).toBe(true);
+});
+
+test('پیش‌نمایش مختلط استراپی که شامل فیلد items کامل و courses فیلترشده است با سبد بای‌مانی تطابق دارد', () => {
+    const strapiMixedPreview = {
+        couponCode: null,
+        originalTotalInNoor: 200,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 0,
+        shippingAmountInNoor: 20,
+        priceInNoor: 220,
+        items: [
+            { externalId: 'course-1', type: 'course', basePriceInNoor: 150, priceInNoor: 150, quantity: 1, lineTotalInNoor: 150 },
+            { externalId: 'book-1', type: 'product', basePriceInNoor: 50, priceInNoor: 50, quantity: 1, lineTotalInNoor: 50 },
+        ],
+        courses: [
+            { externalCourseId: 'course-1', type: 'course', basePriceInNoor: 150, priceInNoor: 150, quantity: 1, lineTotalInNoor: 150 },
+        ],
+    };
+    const byeMoneyCart = {
+        cartId: 'cart-mixed',
+        status: 'Ready',
+        couponCode: null,
+        originalTotalInNoor: 200,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 0,
+        shippingAmountInNoor: 20,
+        priceInNoor: 220,
+        courses: [
+            { externalCourseId: 'book-1', priceInNoor: 50, quantity: 1, lineTotalInNoor: 50, itemType: 'Product' },
+            { externalCourseId: 'course-1', priceInNoor: 150, quantity: 1, lineTotalInNoor: 150, itemType: 'Course' },
+        ],
+    };
+    expect(sameCourseCartPrice(strapiMixedPreview, byeMoneyCart)).toBe(true);
+});
+

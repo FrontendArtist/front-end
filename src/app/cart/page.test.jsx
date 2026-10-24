@@ -389,3 +389,146 @@ test('سبد مختلط شامل دوره و کالای فیزیکی پیش‌ن
     expect(screen.queryByText('در انتظار بررسی قیمت')).toBeNull();
     expect(screen.queryByText('در انتظار بررسی')).toBeNull();
 });
+
+test('سبد فقط دوره‌ای: بدون باز شدن مدال آدرس وارد مرحله پرداخت می‌شود', async () => {
+    render(<CartPage />);
+    fireEvent.click(await purchaseButton());
+    await waitFor(() => expect(prepareCourseCart).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('ثبت آدرس تحویل سفارش')).toBeNull();
+    expect(mockPush).not.toHaveBeenCalledWith('/checkout');
+});
+
+test('سبد کالای فیزیکی بدون آدرس: کلیک روی پرداخت، مدال آدرس را باز می‌کند و پس از ثبت، پرداخت ادامه می‌یابد', async () => {
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn();
+
+    // 1. پروفایل اولیه فاقد آدرس است
+    global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ address: null }),
+    });
+
+    useCartStore.setState({
+        items: [
+            { id: 10, documentId: 'prod-doc-1', type: 'product', title: 'کتاب فیزیکی', price: 100, quantity: 1, slug: 'book' },
+        ],
+    });
+
+    const physicalPreview = {
+        couponCode: null,
+        originalTotalInNoor: 100,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 0,
+        shippingAmountInNoor: 20,
+        shippingRuleLabel: 'ارسال عادی',
+        priceInNoor: 120,
+        items: [
+            { externalId: 'prod-doc-1', externalCourseId: 'prod-doc-1', title: 'کتاب فیزیکی', type: 'product', basePriceInNoor: 100, priceInNoor: 100, quantity: 1 },
+        ],
+    };
+    previewCourseCart.mockResolvedValue(physicalPreview);
+    prepareCourseCart.mockResolvedValue({
+        cartId: 'cart-1',
+        status: 'Ready',
+        priceInNoor: 120,
+        balanceInNoor: 200,
+        shortfallInNoor: 0,
+    });
+
+    render(<CartPage />);
+    const btn = await purchaseButton();
+
+    // کلیک روی پرداخت -> باز شدن مدال در همان صفحه
+    fireEvent.click(btn);
+
+    await waitFor(() => {
+        expect(screen.getByText('ثبت آدرس تحویل سفارش')).toBeTruthy();
+    });
+    expect(mockPush).not.toHaveBeenCalledWith('/checkout');
+    expect(prepareCourseCart).not.toHaveBeenCalled();
+
+    // ۲. ثبت آدرس در مدال با متد POST
+    global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { id: 1, documentId: 'new-addr-doc' } }),
+    });
+
+    fireEvent.change(screen.getByLabelText(/نام و نام خانوادگی گیرنده/), {
+        target: { value: 'رضا حسینی' },
+    });
+    fireEvent.change(screen.getByLabelText(/نشانی پستی کامل/), {
+        target: { value: 'مشهد، بلوار سجاد، پلاک ۱۲' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت آدرس و ادامه پرداخت' }));
+
+    // ۳. پس از ثبت موفق، مدال بسته شده و آماده‌سازی پرداخت خودکار انجام می‌شود
+    await waitFor(() => {
+        expect(prepareCourseCart).toHaveBeenCalledTimes(1);
+    });
+
+    global.fetch = originalFetch;
+});
+
+test('سبد کالای فیزیکی دارای آدرس: نمایش آدرس در سایدبار و پرداخت مستقیم بدون باز شدن مدال', async () => {
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn();
+
+    // کاربر از قبل آدرس کامل دارد
+    global.fetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+            address: {
+                recipientName: 'مهدی احمدی',
+                fullAddress: 'اصفهان، خیابان چهارباغ، کوچه نسیم',
+            },
+        }),
+    });
+
+    useCartStore.setState({
+        items: [
+            { id: 10, documentId: 'prod-doc-1', type: 'product', title: 'کتاب فیزیکی', price: 100, quantity: 1, slug: 'book' },
+        ],
+    });
+
+    const physicalPreview = {
+        couponCode: null,
+        originalTotalInNoor: 100,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 0,
+        shippingAmountInNoor: 20,
+        priceInNoor: 120,
+        items: [
+            { externalId: 'prod-doc-1', externalCourseId: 'prod-doc-1', title: 'کتاب فیزیکی', type: 'product', basePriceInNoor: 100, priceInNoor: 100, quantity: 1 },
+        ],
+    };
+    previewCourseCart.mockResolvedValue(physicalPreview);
+    prepareCourseCart.mockResolvedValue({
+        cartId: 'cart-1',
+        status: 'Ready',
+        priceInNoor: 120,
+        balanceInNoor: 200,
+        shortfallInNoor: 0,
+    });
+
+    render(<CartPage />);
+    const btn = await purchaseButton();
+
+    // بررسی نمایش آدرس در سایدبار
+    await waitFor(() => {
+        expect(screen.getByText(/اصفهان، خیابان چهارباغ/)).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'تغییر آدرس' })).toBeTruthy();
+    });
+
+    // کلیک روی پرداخت -> مستقیماً پرداخت آغاز شده و مدال مزاحم باز نمی‌شود
+    fireEvent.click(btn);
+
+    await waitFor(() => {
+        expect(prepareCourseCart).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByText('ثبت آدرس تحویل سفارش')).toBeNull();
+    expect(mockPush).not.toHaveBeenCalledWith('/checkout');
+
+    global.fetch = originalFetch;
+});
+

@@ -1,0 +1,162 @@
+@use '@/styles/base/mixins' as *;
+
+.addressForm {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 4px;
+}
+
+.hint {
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+    margin: 0 0 6px 0;
+    line-height: 1.5;
+    opacity: 0.9;
+
+    @include respond(md) {
+        font-size: var(--font-xs);
+    }
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+
+    @include respond(md) {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    label {
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text-primary);
+    }
+
+    input,
+    textarea {
+        padding: 10px 14px;
+        background: fade(var(--color-primary), 6%);
+        border: 1.5px solid fade(var(--color-primary), 30%);
+        border-radius: var(--border-radius);
+        color: var(--color-text-primary);
+        font-size: var(--font-sm);
+        font-family: inherit;
+        @include hover-transition;
+
+        &:focus {
+            outline: none;
+            border-color: var(--color-accent);
+            background: fade(var(--color-primary), 12%);
+            box-shadow: 0 0 14px fade(var(--color-primary), 25%);
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        &::placeholder {
+            color: var(--color-card-text);
+            opacity: 0.6;
+        }
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 72px;
+        line-height: 1.6;
+    }
+}
+
+.required {
+    color: var(--color-error);
+    margin-right: 4px;
+}
+
+.error {
+    padding: 10px 14px;
+    background-color: rgba(239, 68, 68, 0.15);
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    color: #fca5a5;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.formActions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 8px;
+
+    @include respond(md) {
+        flex-direction: column-reverse;
+    }
+}
+
+.saveButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 24px;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-title-hover));
+    color: var(--color-card-text);
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    @include hover-transition;
+
+    &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 14px fade(var(--color-primary), 30%);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    @include respond(md) {
+        width: 100%;
+    }
+}
+
+.cancelButton {
+    padding: 11px 20px;
+    background: transparent;
+    color: var(--color-card-text);
+    border: 1px solid fade(var(--color-primary), 30%);
+    border-radius: var(--border-radius);
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    @include hover-transition;
+
+    &:hover:not(:disabled) {
+        background: fade(var(--color-primary), 10%);
+        border-color: fade(var(--color-primary), 50%);
+        color: var(--color-text-primary);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    @include respond(md) {
+        width: 100%;
+    }
+}
+

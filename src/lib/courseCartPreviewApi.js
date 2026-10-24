@@ -26,11 +26,14 @@ export function previewCourseCart(body, jwt, signal) {
     });
 }
 
-// مقایسهٔ مبلغ کل، هزینه ارسال و ردیف‌ها بین پیش‌نمایش استراپی و سبد بایمانی، بدون محاسبه یا ضرب دستی در مرورگر
+// مقایسهٔ مبلغ کل، هزینه ارسال و ردیف‌ها بین پیش‌نمایش استراپی و سبد بایمانی، بدون هشدار کاذب ناشی از فیلدهای اختیاری
 export function sameCourseCartPrice(left, right) {
     if (!left || !right) return false;
     const signature = data => {
-        const rows = [...(data.courses || data.items || [])].sort((a, b) => {
+        const rawRows = (Array.isArray(data.items) && data.items.length > 0)
+            ? data.items
+            : (Array.isArray(data.courses) ? data.courses : []);
+        const rows = [...rawRows].sort((a, b) => {
             const idA = a.externalCourseId || a.externalId || '';
             const idB = b.externalCourseId || b.externalId || '';
             return idA.localeCompare(idB);
@@ -48,12 +51,13 @@ export function sameCourseCartPrice(left, right) {
             couponDiscount,
             shippingAmount,
             price,
-            rows.map(item => [
-                item.externalCourseId || item.externalId,
-                Number(item.basePriceInNoor != null ? item.basePriceInNoor : item.unitPriceInNoor != null ? item.unitPriceInNoor : item.priceInNoor || 0),
-                Number(item.quantity != null ? item.quantity : 1),
-                item.lineTotalInNoor != null ? Number(item.lineTotalInNoor) : null,
-            ]),
+            rows.map(item => {
+                const id = item.externalCourseId || item.externalId || '';
+                const unitPrice = Number(item.basePriceInNoor != null ? item.basePriceInNoor : item.unitPriceInNoor != null ? item.unitPriceInNoor : item.priceInNoor || 0);
+                const quantity = Number(item.quantity != null ? item.quantity : 1);
+                const lineTotal = Number(item.lineTotalInNoor != null ? item.lineTotalInNoor : (unitPrice * quantity));
+                return [id, unitPrice, quantity, lineTotal];
+            }),
         ]);
     };
     return signature(left) === signature(right);
