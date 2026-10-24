@@ -31,9 +31,30 @@ async function requestCart(path, jwt, { body, method = 'GET', signal } = {}) {
     return data;
 }
 
+function buildCartIdentityItems(items, externalCourseIds) {
+    if (Array.isArray(items) && items.length > 0) {
+        return items.map(item => ({
+            externalId: item.externalId || item.integrationId || item.documentId || item.id,
+            type: item.type === 'course_chapter' || item.type === 'chapter' ? 'course_chapter'
+                : item.type === 'product' ? 'product' : 'course',
+            quantity: typeof item.quantity === 'number' && item.quantity > 0 ? item.quantity : 1,
+        })).sort((a, b) => {
+            const keyA = `${a.type}:${a.externalId}`;
+            const keyB = `${b.type}:${b.externalId}`;
+            return keyA.localeCompare(keyB);
+        });
+    }
+    return ([...(externalCourseIds || [])]).sort().map(id => ({
+        externalId: id,
+        type: 'course',
+        quantity: 1,
+    }));
+}
+
 // شناسه برای تکرار همان درخواست ثابت می‌ماند؛ مبلغ تنها از سرور خوانده می‌شود.
-export function getExistingCourseCartId(userId, externalCourseIds, couponCode, revision = 0) {
-    const key = `course-cart:${JSON.stringify([userId, [...externalCourseIds].sort(), couponCode || null])}`;
+export function getExistingCourseCartId(userId, externalCourseIds, couponCode, revision = 0, items = null) {
+    const canonicalItems = buildCartIdentityItems(items, externalCourseIds);
+    const key = `course-cart:${JSON.stringify([userId, canonicalItems, couponCode || null])}`;
     const id = readStored(key);
     if (!id) return null;
     const status = readStored('course-cart-status:' + id);
@@ -41,8 +62,9 @@ export function getExistingCourseCartId(userId, externalCourseIds, couponCode, r
     return ['AwaitingTopUp', 'Paid'].includes(status) || (sameRevision && status === 'Ready') ? id : null;
 }
 
-export function getCourseCartId(userId, externalCourseIds, couponCode, revision = 0) {
-    const key = `course-cart:${JSON.stringify([userId, [...externalCourseIds].sort(), couponCode || null])}`;
+export function getCourseCartId(userId, externalCourseIds, couponCode, revision = 0, items = null) {
+    const canonicalItems = buildCartIdentityItems(items, externalCourseIds);
+    const key = `course-cart:${JSON.stringify([userId, canonicalItems, couponCode || null])}`;
     const previous = readStored(key);
     const protectedCart = previous && ['AwaitingTopUp', 'Paid'].includes(readStored('course-cart-status:' + previous));
     const sameRevision = !previous || (readStored('course-cart-revision:' + previous) || '0') === String(revision);
@@ -72,7 +94,8 @@ function rememberCart(body, data) {
 
 // لغو مصرف‌کننده فقط پاسخ همان صفحه را کنار می‌گذارد؛ درخواست مشترک رزرو قطع نمی‌شود.
 export function prepareCourseCart(body, jwt, signal) {
-    const requestKey = JSON.stringify([jwt, body.cartId, [...body.externalCourseIds].sort(), body.couponCode]);
+    const canonicalItems = buildCartIdentityItems(body.items, body.externalCourseIds);
+    const requestKey = JSON.stringify([jwt, body.cartId, canonicalItems, body.couponCode]);
     let pending = preparations.get(requestKey);
     if (!pending) {
         const userId = cartOwners.get(body.cartId);

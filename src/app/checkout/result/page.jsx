@@ -146,21 +146,39 @@ function CheckoutResultContent() {
                     )}
 
                     {isCoursePurchase && checkout.courses.length > 0 && (
-                        <div className={styles.detailsList} aria-label="وضعیت دوره‌های سبد">
-                            {checkout.courses.map(course => (
-                                <div className={styles.detailRow} key={course.externalCourseId}>
-                                    <span className={styles.label}>{course.title || course.externalCourseId}</span>
-                                    <span className={styles.value}>{({ Completed: 'فعال شد', AccessMissing: 'دسترسی فعال نیست؛ نیازمند پیگیری', Activating: 'در حال فعال‌سازی', DeliveryPending: 'پرداخت ثبت شد؛ در حال فعال‌سازی', PurchaseIncomplete: isPending ? 'در حال فعال‌سازی…' : 'خرید تکمیل نشده', NotPurchased: isPending ? 'در حال فعال‌سازی…' : 'خریداری نشده' })[course.purchaseStatus] || (isPending ? 'در حال فعال‌سازی…' : 'در حال بررسی')}</span>
-                                </div>
-                            ))}
+                        <div className={styles.detailsList} aria-label="وضعیت اقلام سبد">
+                            {checkout.courses.map(course => {
+                                const isProduct = course.itemType === 'Product' || course.type === 'product';
+                                const statusLabel = isProduct
+                                    ? (checkout.paid ? 'در حال آماده‌سازی' : isPending ? 'در حال بررسی…' : 'خریداری نشده')
+                                    : ({
+                                        Completed: 'فعال شد',
+                                        AccessMissing: 'دسترسی فعال نیست؛ نیازمند پیگیری',
+                                        Activating: 'در حال فعال‌سازی',
+                                        DeliveryPending: 'پرداخت ثبت شد؛ در حال فعال‌سازی',
+                                        PurchaseIncomplete: isPending ? 'در حال فعال‌سازی…' : 'خرید تکمیل نشده',
+                                        NotPurchased: isPending ? 'در حال فعال‌سازی…' : 'خریداری نشده'
+                                    })[course.purchaseStatus] || (isPending ? 'در حال فعال‌سازی…' : 'در حال بررسی');
+                                return (
+                                    <div className={styles.detailRow} key={course.externalCourseId}>
+                                        <span className={styles.label}>{course.title || course.externalCourseId}</span>
+                                        <span className={styles.value}>{statusLabel}</span>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
 
-                    {/* رسید مالی خریدهای بای‌مانی برای تمام دوره‌های سبد */}
+                    {/* رسید مالی خریدهای بای‌مانی برای تمام اقلام سبد */}
                     {isCoursePurchase && Array.isArray(checkout.receipts) && checkout.receipts.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', marginBottom: '16px' }}>
-                            {checkout.receipts.map((receipt) => (
-                                <div className={styles.detailsList} key={receipt.purchaseId} aria-label={`رسید دوره ${receipt.courseTitle}`}>
+                            {checkout.receipts.map((receipt) => {
+                                const isPhysical = receipt.itemType === 'Product' || receipt.type === 'product';
+                                const deliveryText = isPhysical
+                                    ? 'در حال آماده‌سازی'
+                                    : (receipt.deliveryStatus === 'Delivered' ? 'دسترسی فعال شد' : 'در انتظار فعال‌سازی');
+                                return (
+                                <div className={styles.detailsList} key={receipt.purchaseId} aria-label={`رسید ${receipt.courseTitle}`}>
                                     <div className={styles.detailRow} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '8px', marginBottom: '8px' }}>
                                         <span className={styles.label} style={{ fontWeight: 'bold' }}>
                                             <Receipt size={16} />
@@ -239,12 +257,13 @@ function CheckoutResultContent() {
 
                                     <div className={styles.detailRow}>
                                         <span className={styles.label}>وضعیت تحویل:</span>
-                                        <span className={`${styles.badge} ${receipt.deliveryStatus === 'Delivered' ? styles.successBadge : styles.pendingBadge}`}>
-                                            {receipt.deliveryStatus === 'Delivered' ? 'دسترسی فعال شد' : 'در انتظار فعال‌سازی'}
+                                        <span className={`${styles.badge} ${isPhysical || receipt.deliveryStatus === 'Delivered' ? styles.successBadge : styles.pendingBadge}`}>
+                                            {deliveryText}
                                         </span>
                                     </div>
                                 </div>
-                            ))}
+                            );
+                            })}
                         </div>
                     )}
 

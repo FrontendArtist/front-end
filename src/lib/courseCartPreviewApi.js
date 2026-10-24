@@ -2,7 +2,10 @@ const previews = new Map();
 
 // درخواست هم‌زمان مشترک است؛ پیش‌نمایش هیچ رزرو یا رکورد پرداختی نمی‌سازد.
 export function previewCourseCart(body, jwt, signal) {
-    const key = JSON.stringify([jwt, [...body.externalCourseIds].sort(), body.couponCode || null]);
+    const itemsKey = Array.isArray(body.items)
+        ? body.items.map(i => `${i.type || 'course'}:${i.externalId}:${i.quantity || 1}`).sort().join(',')
+        : ([...(body.externalCourseIds || [])]).sort().join(',');
+    const key = JSON.stringify([jwt, itemsKey, body.couponCode || null]);
     let pending = previews.get(key);
     if (!pending) {
         pending = fetch('/api/course-carts/preview', {
@@ -23,33 +26,33 @@ export function previewCourseCart(body, jwt, signal) {
     });
 }
 
-// مقایسهٔ مبلغ کل و ردیف‌ها بین پیش‌نمایش استراپی و سبد بایمانی، بدون هشدار کاذب
+// مقایسهٔ مبلغ کل، هزینه ارسال و ردیف‌ها بین پیش‌نمایش استراپی و سبد بایمانی، بدون محاسبه یا ضرب دستی در مرورگر
 export function sameCourseCartPrice(left, right) {
     if (!left || !right) return false;
     const signature = data => {
-        const courses = [...(data.courses || [])].sort((a, b) =>
-            (a.externalCourseId || '').localeCompare(b.externalCourseId || '')
-        );
-        const originalTotal = data.originalTotalInNoor != null
-            ? Number(data.originalTotalInNoor)
-            : (courses.length > 0
-                ? courses.reduce((sum, item) => sum + Number(item.basePriceInNoor != null ? item.basePriceInNoor : item.priceInNoor || 0), 0)
-                : Number(data.priceInNoor || 0));
+        const rows = [...(data.courses || data.items || [])].sort((a, b) => {
+            const idA = a.externalCourseId || a.externalId || '';
+            const idB = b.externalCourseId || b.externalId || '';
+            return idA.localeCompare(idB);
+        });
+        const originalTotal = Number(data.originalTotalInNoor != null ? data.originalTotalInNoor : 0);
         const itemDiscount = Number(data.itemDiscountInNoor || 0);
         const couponDiscount = Number(data.couponDiscountInNoor || 0);
-        const price = data.priceInNoor != null
-            ? Number(data.priceInNoor)
-            : (originalTotal - itemDiscount - couponDiscount);
+        const shippingAmount = Number(data.shippingAmountInNoor || 0);
+        const price = Number(data.priceInNoor != null ? data.priceInNoor : 0);
 
         return JSON.stringify([
             data.couponCode?.trim().toUpperCase() || null,
             originalTotal,
             itemDiscount,
             couponDiscount,
+            shippingAmount,
             price,
-            courses.map(item => [
-                item.externalCourseId,
-                Number(item.basePriceInNoor != null ? item.basePriceInNoor : item.priceInNoor || 0),
+            rows.map(item => [
+                item.externalCourseId || item.externalId,
+                Number(item.basePriceInNoor != null ? item.basePriceInNoor : item.unitPriceInNoor != null ? item.unitPriceInNoor : item.priceInNoor || 0),
+                Number(item.quantity != null ? item.quantity : 1),
+                item.lineTotalInNoor != null ? Number(item.lineTotalInNoor) : null,
             ]),
         ]);
     };

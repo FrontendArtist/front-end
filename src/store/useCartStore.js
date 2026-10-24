@@ -21,8 +21,8 @@ export const useCartStore = create(
                         next.pendingCartSync = true;
                     }
                 }
-                if (next.items && JSON.stringify(next.items.map(item => [item.type, item.integrationId || item.documentId || item.externalCourseId || item.id]).sort()) !==
-                    JSON.stringify(state.items.map(item => [item.type, item.integrationId || item.documentId || item.externalCourseId || item.id]).sort())) {
+                if (next.items && JSON.stringify(next.items.map(item => [item.type, item.integrationId || item.documentId || item.externalCourseId || item.id, item.quantity || 1]).sort()) !==
+                    JSON.stringify(state.items.map(item => [item.type, item.integrationId || item.documentId || item.externalCourseId || item.id, item.quantity || 1]).sort())) {
                     next.courseCartRevision = (state.courseCartRevision || 0) + 1;
                 }
                 if (next.items && next.items !== state.items && !Object.hasOwn(next, 'appliedCoupon')) {

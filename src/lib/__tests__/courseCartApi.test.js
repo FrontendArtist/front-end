@@ -97,6 +97,14 @@ test('تغییر کوپن، اقلام یا کاربر شناسه جدید می�
     expect(new Set(ids).size).toBe(4);
 });
 
+test('تغییر تعداد کالای فیزیکی شناسه سبد را عوض می‌کند', () => {
+    const items1 = [{ externalId: 'prod-1', type: 'product', quantity: 1 }];
+    const items2 = [{ externalId: 'prod-1', type: 'product', quantity: 2 }];
+    const id1 = getCourseCartId(7, null, null, 0, items1);
+    const id2 = getCourseCartId(7, null, null, 0, items2);
+    expect(id1).not.toBe(id2);
+});
+
 test('پس از انقضای قیمت، بررسی مجدد شناسه همان سبد را حفظ می‌کند', () => {
     const oldId = getCourseCartId(7, ['one'], null);
     sessionStorage.setItem(`course-cart-expiry:${oldId}`, '2000-01-01T00:00:00Z');

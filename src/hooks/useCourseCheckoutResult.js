@@ -39,13 +39,14 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                 if (controller.signal.aborted) return;
                 let courses = resolvedCartId || topUpId ? (Array.isArray(data?.courses) ? data.courses : []) : [{ externalCourseId: courseId, purchaseStatus: data?.purchaseStatus }];
                 // سابقهٔ تحویل مالی، دسترسی فعلی پس از حذف دستی در استرپی را ثابت نمی‌کند.
-                if (courses.some(course => course.purchaseStatus === 'Completed')) {
+                if (courses.some(course => course.purchaseStatus === 'Completed' && (course.itemType !== 'Product' && course.type !== 'product'))) {
                     const access = await getCurrentCourseAccess(userId, controller.signal);
                     if (controller.signal.aborted) {
                         return;
                     }
                     courses = courses.map(course => {
-                        if (course.purchaseStatus !== 'Completed') return course;
+                        const isProduct = course.itemType === 'Product' || course.type === 'product';
+                        if (isProduct || course.purchaseStatus !== 'Completed') return course;
                         const isChapter = course.itemType === 'CourseChapter' || course.type === 'course_chapter' || Boolean(course.parentExternalId);
                         const hasAccess = isChapter
                             ? (access.hasChapterAccess ? access.hasChapterAccess(course.externalCourseId, course.parentExternalId) : (access.has(course.externalCourseId) || (course.parentExternalId && access.has(course.parentExternalId))))
@@ -55,6 +56,7 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                 }
                 knownCourses = courses;
                 const paid = resolvedCartId ? data.status === 'Paid' || data.topUpStatus === 'Confirmed' : topUpId ? data.topUpStatus === 'Confirmed' : courses.some(c => ['Completed', 'AccessMissing', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus));
+                const digitalCourses = courses.filter(c => c.itemType !== 'Product' && c.type !== 'product');
                 const phase = resolvedCartId && data.status !== 'Paid' && data.topUpStatus === 'Unresolved' ? 'unknown'
                     : resolvedCartId && data.status !== 'Paid' && data.topUpStatus === 'Pending' ? 'paymentPending'
                     : resolvedCartId && data.status !== 'Paid' && data.topUpStatus === 'Rejected' ? 'paymentFailed'
@@ -62,7 +64,7 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                     : topUpId && data.topUpStatus === 'Rejected' ? 'paymentFailed'
                     : courses.length === 0 ? (paid ? 'standalone' : 'paymentPending')
                     : courses.some(c => c.purchaseStatus === 'AccessMissing') ? 'accessMissing'
-                    : courses.every(c => c.purchaseStatus === 'Completed') ? 'completed'
+                    : (paid && (digitalCourses.length === 0 || digitalCourses.every(c => c.purchaseStatus === 'Completed'))) ? 'completed'
                     : courses.some(c => ['Activating', 'DeliveryPending'].includes(c.purchaseStatus)) ? 'activating'
                     : paid ? 'incomplete' : 'paymentPending';
 
@@ -101,7 +103,9 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
 
                 next = { phase, courses, paid, receipts: knownReceipts };
                 // فقط قلمی حذف می‌شود که ثبت مالی آن در سرور تأیید شده است.
-                for (const course of courses.filter(c => userId && String(hydratedUserId) === String(userId) && ['Completed', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus))) {
+                for (const course of courses.filter(c => userId && String(hydratedUserId) === String(userId) && (paid || ['Completed', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus)))) {
+                    const isProduct = course.itemType === 'Product' || course.type === 'product';
+                    if (isProduct && !paid) continue;
                     const matching = useCartStore.getState().items.filter(item => {
                         const itemExternalId = item.type === 'chapter'
                             ? (item.integrationId || item.externalCourseId)

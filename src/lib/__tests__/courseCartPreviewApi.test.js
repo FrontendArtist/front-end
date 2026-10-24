@@ -137,3 +137,47 @@ test('خرید رایگان و تخفیف کامل بین پیش‌نمایش و
     expect(sameCourseCartPrice(strapiPreview, byeMoneyCart)).toBe(true);
 });
 
+test('سبد کالای فیزیکی با تعداد و هزینه ارسال بین استرپی و بای‌مانی تطابق دارد', () => {
+    const strapiPreview = {
+        couponCode: null,
+        originalTotalInNoor: 150,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 0,
+        shippingAmountInNoor: 20,
+        priceInNoor: 170,
+        items: [
+            { externalId: 'prod-1', title: 'کتاب', unitPriceInNoor: 50, quantity: 3, lineTotalInNoor: 150 },
+        ],
+    };
+    const byeMoneyCart = {
+        cartId: 'cart-uuid',
+        status: 'Ready',
+        couponCode: null,
+        originalTotalInNoor: 150,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 0,
+        shippingAmountInNoor: 20,
+        priceInNoor: 170,
+        courses: [
+            { externalCourseId: 'prod-1', title: 'کتاب', priceInNoor: 50, quantity: 3, lineTotalInNoor: 150, itemType: 'Product' },
+        ],
+    };
+    expect(sameCourseCartPrice(strapiPreview, byeMoneyCart)).toBe(true);
+});
+
+test('تغییر هزینه ارسال هشدار عدم تطابق قیمت ایجاد می‌کند', () => {
+    const base = {
+        couponCode: null,
+        originalTotalInNoor: 100,
+        shippingAmountInNoor: 20,
+        priceInNoor: 120,
+        courses: [{ externalCourseId: 'prod-1', priceInNoor: 100, quantity: 1, lineTotalInNoor: 100 }],
+    };
+    const changedShipping = {
+        ...base,
+        shippingAmountInNoor: 30,
+        priceInNoor: 130,
+    };
+    expect(sameCourseCartPrice(base, changedShipping)).toBe(false);
+});
+

@@ -123,7 +123,43 @@ export default function ShippingStep({ onPrevious }) {
     };
 
     /**
-     * تأیید آدرس و اتصال مستقیم به درگاه پرداخت شاپرک
+     * تأیید و ذخیرهٔ آدرس و بازگشت به سبد خرید جهت پرداخت با نور
+     */
+    const handleSaveAddressAndReturn = async () => {
+        setError('');
+
+        if (!addressData.fullAddress || !addressData.recipientName) {
+            setError('لطفاً ابتدا نام گیرنده و آدرس پستی کامل را تکمیل کنید');
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const response = await fetch('/api/addresses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    data: {
+                        title: 'آدرس اصلی',
+                        ...addressData,
+                        user: session?.user?.id,
+                    },
+                }),
+            });
+
+            if (!response.ok) throw new Error('خطا در ذخیره آدرس');
+            setIsEditing(false);
+            router.push('/cart');
+        } catch (err) {
+            console.error('Error saving address:', err);
+            setError(err.message || 'خطا در ذخیره آدرس');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    /**
+     * متد قدیمی پرداخت ریالی (حفظ‌شده برای سازگاری؛ در سبد کالای فیزیکی نوری استفاده نمی‌شود)
      */
     const handlePayAndSubmit = async () => {
         setError('');
@@ -472,15 +508,15 @@ export default function ShippingStep({ onPrevious }) {
                 </button>
                 <button
                     type="button"
-                    onClick={handlePayAndSubmit}
+                    onClick={handleSaveAddressAndReturn}
                     className={styles.nextButton}
-                    disabled={isProcessing || couponPending}
+                    disabled={isProcessing || saving || couponPending}
                 >
-                    {isProcessing ? (
-                        'در حال اتصال به درگاه سامان...'
+                    {saving ? (
+                        'در حال ذخیره آدرس...'
                     ) : (
                         <>
-                            <span>تأیید آدرس و پرداخت آنلاین 💳</span>
+                            <span>تأیید آدرس و بازگشت به سبد خرید 🛒</span>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <polyline points="15 18 9 12 15 6" />
                             </svg>
