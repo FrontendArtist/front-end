@@ -358,3 +358,34 @@ test('رزرو انتخاب قبلی مانع شروع پرداخت انتخاب
     fireEvent.click(await purchaseButton());
     await waitFor(() => expect(executeNoorCartPurchase).toHaveBeenCalledTimes(1));
 });
+
+test('سبد مختلط شامل دوره و کالای فیزیکی پیش‌نمایش را درست دریافت و نمایش می‌دهد', async () => {
+    const mixedPreview = {
+        couponCode: null,
+        originalTotalInNoor: 250,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 0,
+        shippingAmountInNoor: 25,
+        shippingRuleLabel: 'ارسال ثابت داخلی',
+        priceInNoor: 275,
+        items: [
+            { externalId: 'course-1', externalCourseId: 'course-1', title: 'دوره آموزشی', type: 'course', basePriceInNoor: 150, priceInNoor: 150 },
+            { externalId: 'prod-doc-1', externalCourseId: 'prod-doc-1', title: 'کتاب فیزیکی', type: 'product', basePriceInNoor: 100, priceInNoor: 100, quantity: 1 },
+        ],
+    };
+    useCartStore.setState({
+        items: [
+            { id: 42, documentId: 'course-1', type: 'course', title: 'دوره آموزشی', price: 150, quantity: 1, slug: 'course' },
+            { id: 10, documentId: 'prod-doc-1', type: 'product', title: 'کتاب فیزیکی', price: 100, quantity: 1, slug: 'book' },
+        ],
+    });
+    previewCourseCart.mockResolvedValue(mixedPreview);
+    render(<CartPage />);
+    await purchaseButton();
+
+    expect(screen.getByText('275 نور')).toBeTruthy();
+    expect(screen.getByText('25 نور')).toBeTruthy();
+    expect(screen.queryByText('شناسه اقلام سبد معتبر نیست. لطفاً آن را حذف و دوباره اضافه کنید.')).toBeNull();
+    expect(screen.queryByText('در انتظار بررسی قیمت')).toBeNull();
+    expect(screen.queryByText('در انتظار بررسی')).toBeNull();
+});

@@ -107,8 +107,8 @@ export default async function HomePage() {
       <AboutMentorSection />
       <CoursesSection data={courses} serverError={coursesResult.status === 'rejected'} />
       {/* <HakimElahiSection /> */}
-      {/* <ProductCategoriesSection data={categories} serverError={categoriesResult.status === 'rejected'} />
-      <ProductsSection data={products} serverError={productsResult.status === 'rejected'} /> */}
+      <ProductCategoriesSection data={categories} serverError={categoriesResult.status === 'rejected'} />
+      <ProductsSection data={products} serverError={productsResult.status === 'rejected'} />
       <ServicesSection data={services} serverError={servicesResult.status === 'rejected'} />
       <ArticlesSection data={articles} serverError={articlesResult.status === 'rejected'} />
       <FaqSection data={faqs} serverError={faqsResult.status === 'rejected'} />

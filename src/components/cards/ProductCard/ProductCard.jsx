@@ -17,6 +17,7 @@ const ProductCard = ({ product }) => {
 
   const {
     id,
+    documentId,
     slug,
     image,
     title,
@@ -73,8 +74,11 @@ const ProductCard = ({ product }) => {
       }
     }
 
+    const docId = documentId || product.documentId || String(id);
     const productToAdd = {
       id,
+      documentId: docId,
+      externalCourseId: docId,
       slug,
       title,
       price: formattedPrice,

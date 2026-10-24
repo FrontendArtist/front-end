@@ -16,7 +16,7 @@ import styles from './ProductAddToCart.module.scss';
 export default function ProductAddToCart({ product }) {
     if (!product) return null;
 
-    const { id, slug, image, title, price, categories, stock, isAvailable } = product;
+    const { id, documentId, slug, image, title, price, categories, stock, isAvailable } = product;
     const formattedPrice = (typeof price === 'object' ? price?.toman : price) || 0;
 
     const [isHydrated, setIsHydrated] = useState(false);
@@ -87,8 +87,11 @@ export default function ProductAddToCart({ product }) {
             : (image?.url || (product.images && product.images[0]?.url) || '/images/forempties2.png');
         const numOriginal = product.originalPrice ?? (typeof price === 'object' && price?.original ? price.original : formattedPrice);
 
+        const docId = documentId || product.documentId || String(id);
         addItem({
             id,
+            documentId: docId,
+            externalCourseId: docId,
             slug,
             title,
             price: formattedPrice,

@@ -94,7 +94,7 @@ export default function CartPage() {
     const itemsKey = JSON.stringify(items.map(item => ({
         externalId: item.type === 'chapter'
             ? (item.integrationId || item.externalCourseId || null)
-            : (item.documentId || item.externalCourseId || null),
+            : (item.documentId || item.externalCourseId || (item.id != null ? String(item.id) : null)),
         type: item.type === 'chapter' ? 'course_chapter' : item.type,
         quantity: item.quantity || 1,
     })));
@@ -214,9 +214,13 @@ export default function CartPage() {
                     }
                 }
 
+                const externalCourseIds = parsedItems
+                    .filter(i => i.type === 'course' || i.type === 'course_chapter')
+                    .map(i => i.externalId);
                 const data = await prepareCourseCart({
-                    cartId: getCourseCartId(session.user.id, null, couponCode, courseCartRevision, parsedItems),
+                    cartId: getCourseCartId(session.user.id, externalCourseIds, couponCode, courseCartRevision, parsedItems),
                     items: parsedItems,
+                    externalCourseIds,
                     couponCode,
                 }, session.user.jwt);
                 if (currentPreviewKey.current !== paymentKey) return;
@@ -232,7 +236,7 @@ export default function CartPage() {
                     discountAmount: data.couponDiscountInNoor, awaitingQuote: false });
                 if (!preview.data || !sameCourseCartPrice(preview.data, data)) {
                     setErrorMessage(preview.data
-                        ? 'قیمت یا هزینه ارسال سبد تغییر کرده است. مبلغ به‌روز را بررسی کنید و برای تأیید دوباره دکمه پرداخت را بزنید.'
+                        ? 'قیمت یا تخفیف سبد تغییر کرده است. مبلغ به‌روز را بررسی کنید و برای تأیید دوباره دکمه پرداخت را بزنید.'
                         : 'مبلغ معتبر سبد دریافت شد. آن را بررسی کنید و برای تأیید دکمه پرداخت را بزنید.');
                     return;
                 }
@@ -520,10 +524,10 @@ export default function CartPage() {
                                     const itemExternalId = item.type === 'chapter'
                                         ? (item.integrationId || item.externalCourseId)
                                         : (item.documentId || item.externalCourseId);
-                                    const quote = isCourseCartEligible ? preview?.data?.courses?.find(course =>
-                                        course.externalCourseId === itemExternalId) : null;
+                                    const quote = isCartEligible ? (preview?.data?.courses || preview?.data?.items)?.find(course =>
+                                        (course.externalCourseId === itemExternalId || course.externalId === itemExternalId)) : null;
                                     // قیمت پایه هر دوره/فصل ثابت است؛ تخفیف دوره و کوپن فقط در خلاصهٔ سبد نمایش داده می‌شوند.
-                                    const price = isCourseCartEligible
+                                    const price = isCartEligible
                                         ? (quote ? (quote.basePriceInNoor != null ? quote.basePriceInNoor : quote.priceInNoor) : undefined)
                                         : item.price;
                                     const coursePageSlug = item.slug ? item.slug.split('-chapter-')[0] : '';
@@ -790,7 +794,7 @@ export default function CartPage() {
                                 }
                                 handleStartPayment();
                             }}
-                            disabled={isProcessing || (couponPending && !(isCartEligible && preview?.error)) || isPreviewLoading || Boolean(preview?.error)}
+                            disabled={isProcessing || (couponPending && !(isCartEligible && preview?.error)) || isPreviewLoading}
                             className={styles.checkoutButton}
                         >
                             {isProcessing ? (

@@ -25,7 +25,7 @@ test('نشست نامعتبر پیش از ارتباط با استرپی رد م
 });
 test('خطای قرارداد و قطع سرویس به موفقیت تبدیل نمی‌شوند', async () => {
     fetch.mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ error: 'کوپن معتبر نیست.' }) });
-    expect((await POST(request({}))).status).toBe(400);
+    expect((await POST(request({ externalCourseIds: ['one'] }))).status).toBe(400);
     fetch.mockRejectedValueOnce(new Error('offline'));
-    expect((await POST(request({}))).status).toBe(503);
+    expect((await POST(request({ externalCourseIds: ['one'] }))).status).toBe(503);
 });

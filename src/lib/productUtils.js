@@ -116,6 +116,7 @@ export function formatStrapiProduct(product) {
 
   return {
     id: product.id,
+    documentId: product.documentId || attr.documentId || String(product.id || ''),
     title: attr.title,
     slug: attr.slug,
     price: { noor: finalPrice, toman: finalPrice, original: originalPrice },
