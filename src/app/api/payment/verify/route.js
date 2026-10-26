@@ -303,6 +303,8 @@ async function handlePaymentVerification(params, request) {
         }
 
         await updateOrderInStrapi(orderDocId, {
+            paymentStatus: PAYMENT_STATUS.FAILED,
+            orderStatus: ORDER_STATUS.CANCELLED,
             notes: appendOrderNote(order.notes, `🚨 هشدار مغایرت مبلغ: مبلغ پرداخت‌شده (${paidRialAmount} ریال) با مبلغ سفارش (${expectedRialPrice} ریال) مطابقت ندارد. دستور برگشت وجه صادر شد.`),
         });
 
