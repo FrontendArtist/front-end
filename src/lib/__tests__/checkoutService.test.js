@@ -255,3 +255,35 @@ test('پاسخ درحال پردازش به نتیجه خواندنی می‌ر�
     expect(router.push).toHaveBeenCalledWith('/checkout/result?source=noor&cartId=cart-1');
     expect(purchaseCourseCart).not.toHaveBeenCalled();
 });
+
+describe('گیت مسدودسازی خرید مجدد در سرویس تسویه', () => {
+  const ownedCourse = { id: 101, documentId: 'doc-101', slug: 'owned-course', title: 'دوره خریداری‌شده', type: 'course' };
+  const mockSession = { user: { id: 1, courses: [{ documentId: 'doc-101' }] } };
+
+  test('executeOnlinePayment در صورت مالکیت قبلی خطا می‌دهد و درخواست ارسال نمی‌کند', async () => {
+    global.fetch = jest.fn();
+    await expect(executeOnlinePayment({
+      items: [ownedCourse],
+      finalTotalPrice: 500,
+      session: mockSession,
+    })).rejects.toThrow('قبلاً توسط شما خریداری شده است');
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('executeNoorCoursePurchase در صورت احراز مالکیت دوره متوقف می‌شود', async () => {
+    await expect(executeNoorCoursePurchase({
+      items: [ownedCourse],
+      jwt: 'token',
+      session: mockSession,
+    })).rejects.toThrow('شما قبلاً این دوره آموزشی را خریداری کرده‌اید');
+  });
+
+  test('executeNoorCartPurchase در صورت وجود دوره خریداری‌شده در سبد متوقف می‌شود', async () => {
+    await expect(executeNoorCartPurchase({
+      cartId: 'cart-owned',
+      jwt: 'token',
+      items: [ownedCourse],
+      session: mockSession,
+    })).rejects.toThrow('قبلاً توسط شما خریداری شده است');
+  });
+});

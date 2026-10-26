@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { isChapterOrderItem, getPurchasedChapterId, getPurchasedChapterIds } from '../courseAccessUtils';
+import { isChapterOrderItem, getPurchasedChapterId, getPurchasedChapterIds, isCoursePurchasedByUser, isCartItemPurchasedByUser } from '../courseAccessUtils';
 import { checkCourseAccess } from '../ordersApi';
 
 const course = { id: 189, slug: 'az-khak-ta-aflak' };
@@ -80,4 +80,36 @@ test('بررسی واقعی سفارش سمت سرور با منطق مشترک 
 test('خرید کل دوره همچنان دسترسی کامل می‌دهد', async () => {
   global.fetch = jest.fn().mockResolvedValue(new Response(JSON.stringify({ data: [paid([{ courseId: 189, slug: course.slug }])] })));
   expect((await checkCourseAccess(9, course.id, course.slug)).hasAccess).toBe(true);
+});
+
+
+describe('isCoursePurchasedByUser', () => {
+  test('بررسی تابع بودن و کارکرد فلگ‌های مستقیم', () => {
+    expect(typeof isCoursePurchasedByUser).toBe('function');
+    expect(isCoursePurchasedByUser({ isPurchased: true })).toBe(true);
+    expect(isCoursePurchasedByUser({ hasAccess: true })).toBe(true);
+    expect(isCoursePurchasedByUser({ isPurchased: false })).toBe(false);
+  });
+
+  test('تشخیص از روی سشن کاربر', () => {
+    const session = { user: { courses: [{ id: 189 }] } };
+    expect(isCoursePurchasedByUser(course, { session })).toBe(true);
+  });
+
+  test('تشخیص از روی سفارش‌های پرداخت‌شده', () => {
+    const orders = [paid([{ courseId: 189, slug: course.slug }])];
+    expect(isCoursePurchasedByUser(course, { orders })).toBe(true);
+  });
+});
+
+describe('isCartItemPurchasedByUser', () => {
+  test('بررسی تابع بودن و کالای فیزیکی', () => {
+    expect(typeof isCartItemPurchasedByUser).toBe('function');
+    expect(isCartItemPurchasedByUser({ type: 'product' })).toBe(false);
+  });
+
+  test('تشخیص دوره یا فصل خریداری‌شده در سبد خرید', () => {
+    const session = { user: { courses: [{ id: 189 }] } };
+    expect(isCartItemPurchasedByUser({ type: 'course', id: 189 }, { session })).toBe(true);
+  });
 });

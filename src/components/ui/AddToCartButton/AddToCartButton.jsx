@@ -1,12 +1,13 @@
 'use client';
 import { isSameCartItem } from '@/lib/cartItemIdentity';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
 import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';
+import { isCoursePurchasedByUser } from '@/lib/courseAccessUtils';
 import styles from './AddToCartButton.module.scss';
 
 /**
@@ -15,10 +16,11 @@ import styles from './AddToCartButton.module.scss';
  * این کامپوننت برای استفاده در Server Component‌ها طراحی شده است.
  * منطق hydration-safe آن:
  * - اگر سفارش کارت‌به‌کارت معلق باشد: دکمه وضعیت بررسی/ارسال فیش
+ * - اگر دوره خریداری شده باشد: دکمه "مشاهده دوره"
  * - اگر در سبد باشد: دکمه "موجود در سبد خرید"
  * - در غیر اینصورت: دکمه "افزودن به سبد خرید"
  * 
- * @param {{ course: { id: string|number; slug: string; title: string; price: number; image: string; } }} props
+ * @param {{ course: { id: string|number; slug: string; title: string; price: number; image: string; documentId?: string; isPurchased?: boolean; } }} props
  */
 export default function AddToCartButton({ course }) {
   const { id, slug, title, price, image } = course;
@@ -31,6 +33,12 @@ export default function AddToCartButton({ course }) {
   }, []);
 
   const orders = useAccountOrderItems();
+
+  // بررسی وضعیت مالکیت دوره توسط کاربر (سشن، سفارش‌ها یا فلگ ارسالی)
+  const isPurchased = useMemo(() => {
+    return isCoursePurchasedByUser(course, { session, orders });
+  }, [course, session, orders]);
+
   const pendingOrder = (() => {
     return orders.find((order) => {
       const oStatus = (order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
@@ -72,7 +80,7 @@ export default function AddToCartButton({ course }) {
   }
 
   const handleAddToCart = () => {
-    if (isInCart || course.isChaptered === true) return;
+    if (isInCart || course.isChaptered === true || isPurchased) return;
 
     const isForeign = Boolean(
       session?.user?.is_foreigner || 
@@ -126,6 +134,13 @@ export default function AddToCartButton({ course }) {
     </svg>
   );
 
+  const EyeIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+  );
+
   // نمایش وضعیت سفارش معلق کارت‌به‌کارت
   if (isHydrated && pendingOrder) {
     const pStatus = (pendingOrder.paymentStatus || pendingOrder.attributes?.paymentStatus || '').trim().toLowerCase();
@@ -156,7 +171,32 @@ export default function AddToCartButton({ course }) {
     );
   }
 
-  // قبل از hydration یا وقتی دوره در سبد نیست: دکمه فعال
+  // نمایش دکمه مشاهده دوره در صورت مالکیت کاربر
+  if (isHydrated && isPurchased) {
+    const handleViewCourse = (e) => {
+      if (typeof window !== 'undefined' && window.location.pathname.includes(`/courses/${slug}`)) {
+        const targetSection = document.querySelector('#curriculum') || document.querySelector('[class*="CourseTabs"]') || document.querySelector('[class*="courseTabs"]');
+        if (targetSection) {
+          e.preventDefault();
+          targetSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+    };
+
+    return (
+      <Link
+        href={`/courses/${slug}`}
+        onClick={handleViewCourse}
+        className={`${styles.addToCartBtn} ${styles.viewCourseBtn}`}
+        aria-label={`مشاهده دوره ${title}`}
+      >
+        <EyeIcon />
+        <span>مشاهده دوره</span>
+      </Link>
+    );
+  }
+
+  // قبل از hydration یا وقتی دوره در سبد نیست: دکمه فعال افزودن به سبد
   if (!isHydrated || !isInCart) {
     return (
       <button

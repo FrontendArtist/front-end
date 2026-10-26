@@ -1,5 +1,5 @@
 import { getCourseCart, purchaseCourseCart } from '@/lib/courseCartApi';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { getCourseCheckout, getTopUpCheckout, getCurrentCourseAccess } from '@/lib/courseCheckoutApi';
 import { getMyCoursePurchases, getCoursePurchaseReceipt } from '@/lib/byeMoneyApi';
@@ -9,15 +9,29 @@ import { useCartStore } from '@/store/useCartStore';
 
 export default function useCourseCheckoutResult(courseId, topUpId, requestedCartId = null) {
     const { data: session, status } = useSession();
-    const [result, setResult] = useState({ phase: 'checking', courses: [], receipts: [] });
+    const [result, setResult] = useState({
+        phase: 'checking',
+        courses: [],
+        receipts: [],
+        isUnderReview: false,
+        reviewCaseId: null,
+        reviewReasonCode: null
+    });
+    const purchasingRef = useRef(new Set());
     const jwt = session?.user?.jwt;
     const userId = session?.user?.id;
-    const hydratedUserId = useCartStore(state => state.hydratedUserId);
     const cartId = requestedCartId;
     useEffect(() => {
         if (!courseId && !topUpId && !cartId) return;
         if (!jwt) {
-            if (status !== 'loading') setResult({ phase: 'unknown', courses: [], receipts: [] });
+            if (status !== 'loading') setResult({
+                phase: 'unknown',
+                courses: [],
+                receipts: [],
+                isUnderReview: false,
+                reviewCaseId: null,
+                reviewReasonCode: null
+            });
             return;
         }
         let timer;
@@ -37,11 +51,25 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                     data = await getCourseCart(resolvedCartId, jwt, controller.signal);
                 }
                 if (controller.signal.aborted) return;
-                if (resolvedCartId && (data?.status === 'AwaitingTopUp' || data?.status === 'Ready') && data?.topUpStatus === 'Confirmed') {
-                    try {
-                        data = await purchaseCourseCart(resolvedCartId, jwt, controller.signal);
-                    } catch {
-                        // در صورت خطا در نهایی‌سازی، در چرخهٔ بعدی مجدداً استعلام و تلاش می‌شود
+                const isFinancialReview = Boolean(
+                    data?.isUnderReview ||
+                    data?.IsUnderReview ||
+                    data?.reviewCaseId ||
+                    data?.ReviewCaseId ||
+                    data?.topUpStatus === 'Unresolved'
+                );
+                const reviewCaseId = data?.reviewCaseId || data?.ReviewCaseId || null;
+                const reviewReasonCode = data?.reviewReasonCode || data?.ReviewReasonCode || null;
+
+                if (resolvedCartId && (data?.status === 'AwaitingTopUp' || data?.status === 'Ready') && data?.topUpStatus === 'Confirmed' && !isFinancialReview) {
+                    if (!purchasingRef.current.has(resolvedCartId)) {
+                        purchasingRef.current.add(resolvedCartId);
+                        try {
+                            data = await purchaseCourseCart(resolvedCartId, jwt);
+                        } catch {
+                            // در صورت خطا در نهایی‌سازی، در چرخهٔ بعدی مجدداً استعلام و تلاش می‌شود
+                            purchasingRef.current.delete(resolvedCartId);
+                        }
                     }
                 }
                 if (controller.signal.aborted) return;
@@ -65,7 +93,8 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                 knownCourses = courses;
                 const paid = resolvedCartId ? data.status === 'Paid' || data.topUpStatus === 'Confirmed' : topUpId ? data.topUpStatus === 'Confirmed' : courses.some(c => ['Completed', 'AccessMissing', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus));
                 const digitalCourses = courses.filter(c => c.itemType !== 'Product' && c.type !== 'product');
-                const phase = resolvedCartId && data.status !== 'Paid' && data.topUpStatus === 'Unresolved' ? 'unknown'
+                const phase = isFinancialReview && !paid ? 'financialReview'
+                    : resolvedCartId && data.status !== 'Paid' && data.topUpStatus === 'Unresolved' ? 'unknown'
                     : resolvedCartId && data.status !== 'Paid' && data.topUpStatus === 'Pending' ? 'paymentPending'
                     : resolvedCartId && data.status !== 'Paid' && data.topUpStatus === 'Rejected' ? 'paymentFailed'
                     : resolvedCartId && ['Failed', 'Expired'].includes(data.status) ? (data.topUpStatus === 'Confirmed' ? 'incomplete' : 'paymentFailed')
@@ -109,10 +138,19 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                     }
                 }
 
-                next = { phase, courses, paid, receipts: knownReceipts };
+                next = {
+                    phase,
+                    courses,
+                    paid,
+                    receipts: knownReceipts,
+                    isUnderReview: isFinancialReview,
+                    reviewCaseId,
+                    reviewReasonCode
+                };
                 // فقط قلمی حذف می‌شود که ثبت مالی آن در سرور تأیید شده است.
+                const currentHydratedUserId = useCartStore.getState().hydratedUserId;
                 for (const course of courses.filter(c => {
-                    if (!userId || String(hydratedUserId) !== String(userId)) return false;
+                    if (!userId || (currentHydratedUserId != null && String(currentHydratedUserId) !== String(userId))) return false;
                     const isProduct = c.itemType === 'Product' || c.type === 'product';
                     if (isProduct) return paid;
                     return ['Completed', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus);
@@ -131,15 +169,22 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                 }
             } catch {
                 if (controller.signal.aborted) return;
-                next = { phase: 'unknown', courses: knownCourses, receipts: knownReceipts };
+                next = {
+                    phase: 'unknown',
+                    courses: knownCourses,
+                    receipts: knownReceipts,
+                    isUnderReview: false,
+                    reviewCaseId: null,
+                    reviewReasonCode: null
+                };
             }
             checks += 1;
-            const keepChecking = !['completed', 'standalone', 'paymentFailed', 'accessMissing'].includes(next.phase) && checks < 15;
+            const keepChecking = !['completed', 'standalone', 'paymentFailed', 'accessMissing', 'financialReview'].includes(next.phase) && checks < 15;
             setResult(next);
             if (keepChecking) timer = setTimeout(check, 2000);
         };
         check();
         return () => { controller.abort(); clearTimeout(timer); };
-    }, [courseId, topUpId, cartId, jwt, status, userId, hydratedUserId]);
+    }, [courseId, topUpId, cartId, jwt, status, userId]);
     return result;
 }

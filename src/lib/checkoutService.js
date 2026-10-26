@@ -6,6 +6,7 @@ import { useCartStore } from '@/store/useCartStore';
 import { triggerLightUpdate } from '@/store/useLightStore';
 import { invalidateProfileCache } from '@/lib/client/profileClientApi';
 import { getSession } from 'next-auth/react';
+import { isCoursePurchasedByUser, isCartItemPurchasedByUser } from '@/lib/courseAccessUtils';
 
 /**
  * سرویس متمرکز پرداخت آنلاین
@@ -19,6 +20,8 @@ import { getSession } from 'next-auth/react';
  * @param {number} params.couponDiscount - مبلغ تخفیف کوپن
  * @param {string|null} params.shippingAddress - آدرس کامل پستی در صورت وجود محصول فیزیکی
  * @param {Object} [params.router] - شیء router از Next.js برای ریدایرکت‌های کلاینتی
+ * @param {Object} [params.session] - سشن کاربر جهت اعتبارسنجی مالکیت قبلی
+ * @param {Array} [params.orders] - سفارشات کاربر جهت اعتبارسنجی مالکیت قبلی
  * @returns {Promise<{success: boolean, isFree?: boolean}>}
  */
 export async function executeOnlinePayment({
@@ -28,6 +31,8 @@ export async function executeOnlinePayment({
     couponDiscount = 0,
     shippingAddress = null,
     router = null,
+    session = null,
+    orders = null,
 }) {
     if (!items || items.length === 0) {
         throw new Error('سبد خرید شما خالی است.');
@@ -35,6 +40,16 @@ export async function executeOnlinePayment({
 
     if (appliedCoupon?.pending) {
         throw new Error('بررسی کد تخفیف برای سبد فعلی هنوز تمام نشده است.');
+    }
+
+    // گیت کنترلی پیش از پرداخت: بررسی مالکیت قبلی اقلام سبد در صورت در دسترس بودن سشن/سفارشات
+    if (session || orders) {
+        const ownedItem = items.find(item => isCartItemPurchasedByUser(item, { session, orders }));
+        if (ownedItem) {
+            const err = new Error(`دورهٔ «${ownedItem.title || 'انتخاب‌شده'}» قبلاً توسط شما خریداری شده است و امکان خرید مجدد آن وجود ندارد.`);
+            err.conflict = true;
+            throw err;
+        }
     }
 
     const isFreeOrder = finalTotalPrice === 0;
@@ -128,6 +143,8 @@ export async function executeOnlinePayment({
  * @param {string} [params.jwt] - توکن نشست کاربری (اختیاری؛ در صورت نبود از سشن خوانده می‌شود)
  * @param {boolean} [params.payOnline] - در صورت کسری معلوم، مستقیم به مسیر پرداخت آنلاین برود
  * @param {Object} [params.router] - شیء router از Next.js برای هدایت به نتیجه
+ * @param {Object} [params.session] - شیء session کاربر برای گیت بررسی مالکیت قبلی
+ * @param {Array} [params.orders] - سفارشات کاربر برای گیت بررسی مالکیت قبلی
  * @returns {Promise<{success: boolean, data?: Object}>}
  */
 export async function executeNoorCoursePurchase({
@@ -135,6 +152,8 @@ export async function executeNoorCoursePurchase({
     jwt = null,
     router = null,
     payOnline = false,
+    session = null,
+    orders = null,
 }) {
     if (!items || items.length === 0) {
         throw new Error('سبد خرید شما خالی است.');
@@ -151,10 +170,20 @@ export async function executeNoorCoursePurchase({
         throw new Error('شناسه دوره معتبر نیست.');
     }
 
+    // گیت کنترلی پیش از پرداخت: در صورت احراز مالکیت قبلی دوره توسط کاربر، مانع ارسال درخواست شویم
+    if (session || orders) {
+        if (isCoursePurchasedByUser(courseItem, { session, orders })) {
+            const err = new Error('شما قبلاً این دوره آموزشی را خریداری کرده‌اید.');
+            err.conflict = true;
+            err.alreadyOwned = true;
+            throw err;
+        }
+    }
+
     let token = jwt;
     if (!token) {
-        const session = await getSession();
-        token = session?.user?.jwt;
+        const currentSession = session || await getSession();
+        token = currentSession?.user?.jwt;
     }
 
     if (!token) {
@@ -189,7 +218,10 @@ export async function executeNoorCoursePurchase({
     if (!purchaseResult.success) {
         const error = new Error(purchaseResult.error || 'خطا در خرید دوره با نور');
         if (purchaseResult.insufficientBalance) error.insufficientBalance = true;
-        if (purchaseResult.conflict) error.conflict = true;
+        if (purchaseResult.conflict) {
+            error.conflict = true;
+            error.alreadyOwned = true;
+        }
         if (purchaseResult.unauthorized) error.unauthorized = true;
         if (purchaseResult.notFound) error.notFound = true;
         throw error;
@@ -237,8 +269,20 @@ function submitGatewayPayment(payment) {
 }
 
 /** خرید سبد با قیمت تثبیت‌شده؛ ادامه پس از شارژ بر عهده سرور است. */
-export async function executeNoorCartPurchase({ cartId, jwt, router, payOnline = false }) {
+export async function executeNoorCartPurchase({ cartId, jwt, router, payOnline = false, items = null, session = null, orders = null }) {
     if (!cartId || !jwt) throw new Error('نشست یا شناسه سبد معتبر نیست.');
+
+    // گیت کنترلی پیش از پرداخت سبد در صورت ارائه اقلام و سشن
+    if (Array.isArray(items) && (session || orders)) {
+        const ownedItem = items.find(item => isCartItemPurchasedByUser(item, { session, orders }));
+        if (ownedItem) {
+            const error = new Error(`دورهٔ «${ownedItem.title || 'انتخاب‌شده'}» قبلاً توسط شما خریداری شده است.`);
+            error.conflict = true;
+            error.code = 'CART_UNAVAILABLE';
+            throw error;
+        }
+    }
+
     let data;
     if (payOnline) {
         await ensurePaymentConnection();
@@ -259,7 +303,7 @@ export async function executeNoorCartPurchase({ cartId, jwt, router, payOnline =
             data = await purchaseCourseCart(cartId, jwt);
         } catch (error) {
             if (error.code === 'CART_INSUFFICIENT_BALANCE') {
-                return executeNoorCartPurchase({ cartId, jwt, router, payOnline: true });
+                return executeNoorCartPurchase({ cartId, jwt, router, payOnline: true, items, session, orders });
             }
             throw error;
         }

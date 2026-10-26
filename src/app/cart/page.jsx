@@ -29,6 +29,8 @@ import styles from './Cart.module.scss';
 import { prepareCourseCart, getCourseCartId, getExistingCourseCartId, getCourseCart } from '@/lib/courseCartApi';
 import { previewCourseCart, sameCourseCartPrice } from '@/lib/courseCartPreviewApi';
 import { getWalletBalanceWithByeMoney } from '@/lib/byeMoneyApi';
+import { useAccountOrderItems } from '@/hooks/useAccountOrders';
+import { isCartItemPurchasedByUser } from '@/lib/courseAccessUtils';
 
 /**
  * صفحه سبد خرید
@@ -53,6 +55,7 @@ export default function CartPage() {
     const router = useRouter();
     const { data: session, status } = useSession();
     const openAuthModal = useAuthStore((state) => state.openAuthModal);
+    const orders = useAccountOrderItems();
 
     const [isProcessing, setIsProcessing] = usePaymentProcessing();
     const [errorMessage, setErrorMessage] = useState(null);
@@ -86,6 +89,12 @@ export default function CartPage() {
     const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
     const removalError = useCartStore((state) => state.removalError);
+
+    // اقلام دوره‌ای که کاربر قبلاً مالک آن‌ها شده است (برای جلوگیری از خرید مجدد)
+    const ownedCartItems = (status === 'authenticated')
+        ? items.filter((item) => isCartItemPurchasedByUser(item, { session, orders }))
+        : [];
+    const hasOwnedCartItems = ownedCartItems.length > 0;
 
     // آیا محصول فیزیکی نیازمند آدرس پستی در سبد وجود دارد؟
     const hasPhysicalProducts = items.some((item) => item.type === 'product');
@@ -212,6 +221,12 @@ export default function CartPage() {
         }
         setErrorMessage(null);
         try {
+            if (status === 'authenticated' && hasOwnedCartItems) {
+                const firstOwned = ownedCartItems[0];
+                const itemName = firstOwned?.title || 'انتخاب‌شده';
+                throw new Error(`دورهٔ «${itemName}» قبلاً توسط شما خریداری شده است و امکان پرداخت مجدد آن وجود ندارد. لطفاً این قلم را از سبد خرید حذف کنید.`);
+            }
+
             if (isCartEligible) {
                 if (preview?.data?.status === 'Paid') {
                     router.push('/checkout/result?source=noor&cartId=' + encodeURIComponent(preview.data.cartId));
@@ -277,6 +292,9 @@ export default function CartPage() {
                     jwt: session?.user?.jwt,
                     router,
                     payOnline: data.shortfallInNoor > 0 || data.status === 'AwaitingTopUp',
+                    items,
+                    session,
+                    orders,
                 });
             } else {
                 await executeOnlinePayment({
@@ -286,6 +304,8 @@ export default function CartPage() {
                     couponDiscount,
                     shippingAddress: null,
                     router,
+                    session,
+                    orders,
                 });
             }
         } catch (err) {
@@ -565,9 +585,10 @@ export default function CartPage() {
                                     const coursePageSlug = item.slug ? item.slug.split('-chapter-')[0] : '';
                                     const itemHref = item.type === 'chapter' ? `/courses/${coursePageSlug}` : `/courses/${item.slug}`;
                                     const isLegacyChapter = item.type === 'chapter' && !item.integrationId && !item.externalCourseId;
+                                    const isOwned = status === 'authenticated' && isCartItemPurchasedByUser(item, { session, orders });
 
                                     return (
-                                        <div key={item.id} className={styles.cartItem}>
+                                        <div key={item.id} className={`${styles.cartItem} ${isOwned ? styles.ownedItemRow : ''}`}>
                                             {/* تصویر دوره/فصل - لینک به صفحه جزئیات */}
                                             <Link href={itemHref} className={styles.itemImage}>
                                                 <Image
@@ -585,9 +606,21 @@ export default function CartPage() {
                                                 <div className={styles.itemPrice}>
                                                     {price == null ? 'در انتظار بررسی قیمت' : <PriceWithHint price={price} size="sm" />}
                                                 </div>
-                                                <span className={styles.courseLabel}>
-                                                    {item.type === 'chapter' ? 'فصل آموزشی' : 'دوره آموزشی'}
-                                                </span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                    <span className={styles.courseLabel}>
+                                                        {item.type === 'chapter' ? 'فصل آموزشی' : 'دوره آموزشی'}
+                                                    </span>
+                                                    {isOwned && (
+                                                        <span className={styles.ownedBadge}>
+                                                            خریداری‌شده
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {isOwned && (
+                                                    <div className={styles.itemOwnedWarning} role="alert">
+                                                        این {item.type === 'chapter' ? 'فصل' : 'دوره'} قبلاً خریداری شده است. برای ادامه تسویه، لطفاً این قلم را از سبد حذف کنید.
+                                                    </div>
+                                                )}
                                                 {isLegacyChapter && (
                                                     <div style={{
                                                         marginTop: '6px',
@@ -755,6 +788,19 @@ export default function CartPage() {
 
                         {/* بخش سوم (اقدام نهایی): هشدار VPN، دکمه پرداخت و نشان امنیت */}
                         <div className={styles.summaryGroup}>
+                            {hasOwnedCartItems && (
+                                <div className={styles.ownedItemsNotice} role="alert">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    <span>
+                                        یک یا چند دوره در سبد خرید قبلاً توسط شما خریداری شده است. لطفاً آن‌ها را از سبد حذف کنید.
+                                    </span>
+                                </div>
+                            )}
+
                             {isCartEligible && preview?.error && (
                                 <div className={styles.previewError} role="alert">
                                     <p>{preview.error}</p>
@@ -820,7 +866,7 @@ export default function CartPage() {
                                         <line x1="12" y1="16" x2="12.01" y2="16" />
                                     </svg>
                                     <span>
-                                        <strong>توجه:</strong> پیش از اتصال به درگاه بانکی، لطفاً <strong>فیلترشکن (VPN)</strong> خود را خاموش کنید.
+                                        پیش از پرداخت، <strong>فیلترشکن (VPN)</strong> را خاموش کنید.
                                     </span>
                                 </div>
                             )}
@@ -835,11 +881,13 @@ export default function CartPage() {
                                     }
                                     handleStartPayment();
                                 }}
-                                disabled={isProcessing || (couponPending && !(isCartEligible && preview?.error)) || isPreviewLoading}
+                                disabled={isProcessing || (couponPending && !(isCartEligible && preview?.error)) || isPreviewLoading || hasOwnedCartItems}
                                 className={styles.checkoutButton}
                             >
                                 {isProcessing ? (
                                     'در حال اتصال به درگاه پرداخت...'
+                                ) : hasOwnedCartItems ? (
+                                    'حذف دوره‌های خریداری‌شده برای ادامه'
                                 ) : isPreviewLoading ? (
                                     'در حال بررسی قیمت...'
                                 ) : isCartEligible && preview?.error ? (

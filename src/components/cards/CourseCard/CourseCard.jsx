@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useAccountOrderItems } from '@/hooks/useAccountOrders';
-import { isOrderPaid } from '@/lib/constants/orderConstants';
+import { isCoursePurchasedByUser } from '@/lib/courseAccessUtils';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
@@ -47,51 +47,7 @@ const CourseCard = ({ course }) => {
   const [isHydrated, setIsHydrated] = useState(false);
 
   const orders = useAccountOrderItems();
-  const isPurchasedInOrders = (() => {
-    const paidOrders = orders.filter(isOrderPaid);
-
-    const allItems = paidOrders.flatMap(order => {
-      const items = order.attributes?.items || order.items;
-      return Array.isArray(items) ? items : [];
-    });
-
-    return allItems.some(item => {
-      // ۱. بررسی خرید کل دوره
-      const isDirectCourseMatch =
-        item.slug === slug ||
-        String(item.id) === String(id) ||
-        String(item.courseId) === String(id) ||
-        (course.documentId && String(item.documentId) === String(course.documentId));
-
-      if (isDirectCourseMatch) return true;
-
-      // ۲. بررسی خرید حداقل یکی از فصل‌های این دوره
-      const isChapterItem =
-        item.type === 'chapter' ||
-        Boolean(item.chapterId) ||
-        (typeof item.slug === 'string' && item.slug.includes('-chapter-'));
-
-      if (isChapterItem) {
-        // تطابق دوره والد بر اساس courseId یا اسلاگ
-        const parentCourseMatches =
-          String(item.courseId) === String(id) ||
-          (course.documentId && String(item.courseId) === String(course.documentId)) ||
-          (slug && typeof item.slug === 'string' && item.slug.startsWith(`${slug}-chapter-`));
-
-        if (parentCourseMatches) return true;
-
-        // تطابق با شناسه فصل‌ها در صورت وجود آرایه chapters در آبجکت دوره
-        if (Array.isArray(course.chapters) && course.chapters.length > 0) {
-          const rawItemChapterId = item.chapterId || (item.id && String(item.id).replace('chapter-', ''));
-          return course.chapters.some(ch => String(ch.id) === String(rawItemChapterId));
-        }
-      }
-
-      return false;
-    });
-  })();
-
-  const isPurchased = isPurchasedInOrders;
+  const isPurchased = isCoursePurchasedByUser(course, { session, orders, checkChapters: true });
 
   useEffect(() => {
     setIsHydrated(true);

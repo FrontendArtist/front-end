@@ -116,7 +116,7 @@ export default async function CoursePage({ params }) {
     priceNoor: effectivePriceNoor,
     originalPrice: effectiveOriginalPrice,
     originalPriceNoor: effectiveOriginalPrice,
-    originalPrice: effectiveOriginalPrice,
+    isPurchased: isUserEnrolledInCourse,
     internationalPrice: rawCourse.internationalPrice || null,
     isInternationalPrice: hasIntlPrice,
     discountPercent: effectiveDiscountPercent,
@@ -255,7 +255,7 @@ export default async function CoursePage({ params }) {
             )}
 
             <div className={styles.buyDetail}>
-              {!course.isChaptered && !isFreeCourse && !isUserStudentOfCourse && (
+              {!course.isChaptered && !isFreeCourse && (
                 <div className={styles.actionWrapper}>
                   {activeCourseOrder?.isPendingVerification ? (
                     <Link

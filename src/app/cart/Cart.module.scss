@@ -781,3 +781,58 @@
     word-break: break-word;
     font-size: 0.775rem;
 }
+
+// اقلام خریداری‌شده در سبد
+.ownedItemRow {
+    border-color: rgba(239, 68, 68, 0.35) !important;
+    background: rgba(239, 68, 68, 0.04) !important;
+}
+
+.ownedBadge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #6ee7b7;
+    border-radius: 6px;
+    font-size: 0.725rem;
+    font-weight: var(--font-weight-medium);
+    width: fit-content;
+}
+
+.itemOwnedWarning {
+    margin-top: 6px;
+    padding: 6px 10px;
+    background-color: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 6px;
+    color: #fca5a5;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    text-align: right;
+}
+
+.ownedItemsNotice {
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid #ef4444;
+    border-radius: 6px;
+    color: #fca5a5;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: right;
+
+    svg {
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        color: #ef4444;
+    }
+
+    span {
+        flex: 1;
+    }
+}

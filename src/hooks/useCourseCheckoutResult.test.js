@@ -168,9 +168,99 @@ test('شارژ تأییدشده با سبد AwaitingTopUp، سبد را خرید
     });
     const { result } = renderHook(() => useCourseCheckoutResult('', 'topup-cart'));
     await waitFor(() => expect(result.current.phase).toBe('completed'));
-    expect(purchaseCourseCart).toHaveBeenCalledWith('cart-1', 'jwt', expect.anything());
+    expect(purchaseCourseCart).toHaveBeenCalledWith('cart-1', 'jwt');
     expect(result.current.courses[0].purchaseStatus).toBe('Completed');
     expect(useCartStore.getState().items).toEqual([otherCourse]);
 });
 
+test('تغییر hydratedUserId حین فعال‌سازی، فراخوانی خرید را لغو یا تکراری نمی‌کند', async () => {
+    getTopUpCheckout.mockResolvedValue({ cartId: 'cart-1', topUpStatus: 'Confirmed', courses: [] });
+    getCourseCart.mockResolvedValue({
+        status: 'AwaitingTopUp',
+        topUpStatus: 'Confirmed',
+        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }],
+    });
+    purchaseCourseCart.mockImplementation(async () => {
+        // شبیه‌سازی تغییر hydratedUserId در حین اجرای خرید توسط useCartSync
+        useCartStore.setState({ hydratedUserId: 7 });
+        return {
+            status: 'Paid',
+            topUpStatus: 'Confirmed',
+            courses: [{ externalCourseId: 'course-1', purchaseStatus: 'Completed' }],
+        };
+    });
+    useCartStore.setState({ items: [course, otherCourse], hydratedUserId: null });
+    const { result } = renderHook(() => useCourseCheckoutResult('', 'topup-cart'));
+    await waitFor(() => expect(result.current.phase).toBe('completed'));
+    expect(purchaseCourseCart).toHaveBeenCalledTimes(1);
+    expect(purchaseCourseCart).toHaveBeenCalledWith('cart-1', 'jwt');
+});
 
+test('ارجاع به رسیدگی مالی با پرچم isUnderReview در پاسخ سبد، فاز را financialReview می‌کند و Polling بلافاصله متوقف می‌شود', async () => {
+    jest.useFakeTimers();
+    getCourseCart.mockResolvedValue({
+        status: 'AwaitingTopUp',
+        topUpStatus: 'Pending',
+        isUnderReview: true,
+        reviewCaseId: 'case-sep-6',
+        reviewReasonCode: 'VERIFY_UNKNOWN',
+        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }],
+    });
+    const { result } = renderHook(() => useCourseCheckoutResult('', '', 'cart-under-review'));
+    await act(async () => {});
+    expect(result.current.phase).toBe('financialReview');
+    expect(result.current.isUnderReview).toBe(true);
+    expect(result.current.reviewCaseId).toBe('case-sep-6');
+    expect(result.current.reviewReasonCode).toBe('VERIFY_UNKNOWN');
+    expect(purchaseCourseCart).not.toHaveBeenCalled();
+    expect(getCourseCart).toHaveBeenCalledTimes(1);
+
+    // گذشت زمان نباید باعث استعلام مجدد شود (توقف بلافاصله Polling)
+    await act(async () => {
+        jest.advanceTimersByTime(10000);
+    });
+    expect(getCourseCart).toHaveBeenCalledTimes(1);
+    expect(useCartStore.getState().items).toHaveLength(2);
+});
+
+test('تراکنش‌های عادی در حال پردازش بدون پرچم بررسی مالی، به Polling ادامه می‌دهند', async () => {
+    jest.useFakeTimers();
+    getCourseCart.mockResolvedValue({
+        status: 'AwaitingTopUp',
+        topUpStatus: 'Pending',
+        isUnderReview: false,
+        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }],
+    });
+    const { result } = renderHook(() => useCourseCheckoutResult('', '', 'cart-pending-normal'));
+    await act(async () => {});
+    expect(result.current.phase).toBe('paymentPending');
+    expect(getCourseCart).toHaveBeenCalledTimes(1);
+
+    // در چرخهٔ بعدی استعلام مجدد انجام می‌شود
+    await act(async () => {
+        jest.advanceTimersByTime(2000);
+    });
+    expect(getCourseCart).toHaveBeenCalledTimes(2);
+});
+
+test('شارژ ارجاع داده شده به بررسی مالی از طریق topUpId فاز financialReview می‌گیرد و Polling متوقف می‌شود', async () => {
+    jest.useFakeTimers();
+    getTopUpCheckout.mockResolvedValue({
+        topUpId: 'topup-under-review',
+        topUpStatus: 'Pending',
+        isUnderReview: true,
+        reviewCaseId: 'case-topup-456',
+        courses: [],
+    });
+    const { result } = renderHook(() => useCourseCheckoutResult('', 'topup-under-review'));
+    await act(async () => {});
+    expect(result.current.phase).toBe('financialReview');
+    expect(result.current.reviewCaseId).toBe('case-topup-456');
+    expect(getTopUpCheckout).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+        jest.advanceTimersByTime(10000);
+    });
+    expect(getTopUpCheckout).toHaveBeenCalledTimes(1);
+    expect(purchaseCourseCart).not.toHaveBeenCalled();
+});

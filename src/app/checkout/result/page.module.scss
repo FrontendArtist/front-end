@@ -47,7 +47,8 @@
         background: linear-gradient(90deg, #ef4444, #f87171, #ef4444);
     }
 
-    &.cancel::before {
+    &.cancel::before,
+    &.financialReview::before {
         background: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b);
     }
 
@@ -87,7 +88,8 @@
         border: 2px solid rgba(248, 113, 113, 0.3);
     }
 
-    &.cancel {
+    &.cancel,
+    &.financialReview {
         background: rgba(245, 158, 11, 0.15);
         color: #fbbf24;
         box-shadow: 0 0 35px rgba(245, 158, 11, 0.3);
@@ -127,18 +129,321 @@
     font-size: 0.95rem;
     color: rgba(255, 250, 234, 0.7);
     line-height: 1.7;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
     max-width: 480px;
     margin-left: auto;
     margin-right: auto;
 }
 
+// ─── سرتیتر بخش اقلام سفارش (Section Header مینیمال و بدون کادر) ───────────
+.itemsSectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px 10px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    @include respond(sm) {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+.itemsSectionTitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.94rem;
+    font-weight: 700;
+    color: #FFFAEA;
+}
+
+.itemsCount {
+    color: rgba(255, 250, 234, 0.65);
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.itemsTotalPaid {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.86rem;
+}
+
+.totalPaidLabel {
+    color: rgba(255, 250, 234, 0.65);
+    font-size: 0.82rem;
+}
+
+.totalPaidValue {
+    color: #F6D982;
+    font-weight: 700;
+    font-size: 0.92rem;
+}
+
+// ─── لیست آکاردئونی اقلام ───────────────────────────────────────────────────
+.accordionContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.accordionItem {
+    background: rgba(6, 24, 24, 0.6);
+    border: 1px solid rgba(246, 217, 130, 0.12);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+
+    &:hover {
+        border-color: rgba(246, 217, 130, 0.25);
+    }
+
+    &.open {
+        border-color: rgba(246, 217, 130, 0.3);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+}
+
+.accordionHeader {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: right;
+    transition: background 0.15s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+}
+
+.accordionHeaderRight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.accordionItemTitle {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #FFFAEA;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.accordionItemPrice {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #F6D982;
+    background: rgba(246, 217, 130, 0.08);
+    border: 1px solid rgba(246, 217, 130, 0.15);
+    padding: 2px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.accordionHeaderLeft {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    margin-right: 8px;
+}
+
+.chevron {
+    color: rgba(255, 250, 234, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s ease;
+
+    &.expanded {
+        transform: rotate(180deg);
+        color: #F6D982;
+    }
+}
+
+.accordionBody {
+    background: rgba(3, 13, 13, 0.45);
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: right;
+    animation: fadeIn 0.2s ease-out;
+}
+
+// ─── پانویس رسید: مشخصات پرداخت و تراکنش (Receipt Footer مینیمال و کم‌ارتفاع) ─
+.receiptFooter {
+    border-top: 1px dashed rgba(246, 217, 130, 0.2);
+    padding-top: 16px;
+    margin-top: 8px;
+    margin-bottom: 20px;
+    text-align: right;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.receiptFooterHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: rgba(255, 250, 234, 0.85);
+    margin-bottom: 12px;
+
+    svg {
+        color: #F6D982;
+        flex-shrink: 0;
+    }
+}
+
+.receiptFooterGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.receiptRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+    font-size: 0.84rem;
+    min-height: 32px;
+    width: 100%;
+    min-width: 0;
+    gap: 12px;
+    box-sizing: border-box;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    @include respond(sm) {
+        gap: 8px;
+        padding: 6px 0;
+    }
+}
+
+.receiptLabel {
+    color: rgba(255, 250, 234, 0.65);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    white-space: nowrap;
+
+    svg {
+        flex-shrink: 0;
+    }
+}
+
+.receiptValue {
+    color: #F6D982;
+    font-weight: 600;
+    font-family: monospace, inherit;
+    direction: ltr;
+    font-size: 0.84rem;
+    min-width: 0;
+    flex-shrink: 1;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.receiptValueWithCopy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    color: #F6D982;
+    transition: color 0.15s ease;
+    min-width: 0;
+    flex-shrink: 1;
+    max-width: 100%;
+
+    &:hover {
+        color: #FFF;
+    }
+
+    svg {
+        flex-shrink: 0;
+    }
+}
+
+// برای سازگاری کامل کلاس‌های قبلی
+.gatewayCard {
+    @extend .receiptFooter;
+}
+.gatewayHeader {
+    @extend .receiptFooterHeader;
+}
+.gatewayGrid {
+    @extend .receiptFooterGrid;
+}
+.gridItem {
+    @extend .receiptRow;
+}
+.gridLabel {
+    @extend .receiptLabel;
+}
+.gridValue {
+    @extend .receiptValue;
+}
+.gridValueWithCopy {
+    @extend .receiptValueWithCopy;
+}
+
+.truncateText {
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    direction: ltr;
+    font-family: monospace, inherit;
+    font-weight: 600;
+    min-width: 0;
+    display: inline-block;
+
+    @include respond(md) {
+        max-width: 220px;
+    }
+
+    @include respond(sm) {
+        max-width: 140px;
+    }
+}
+
+// ─── سطرهای جزئیات و بج‌ها ─────────────────────────────────────────────────
 .detailsList {
     background: rgba(6, 24, 24, 0.6);
     border: 1px solid rgba(246, 217, 130, 0.1);
     border-radius: 16px;
     padding: 16px 20px;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -149,8 +454,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.9rem;
-    padding-bottom: 12px;
+    font-size: 0.88rem;
+    padding-bottom: 10px;
     border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
 
     &:last-child {
@@ -159,7 +464,7 @@
     }
 
     .label {
-        color: rgba(255, 250, 234, 0.6);
+        color: rgba(255, 250, 234, 0.65);
         display: flex;
         align-items: center;
         gap: 6px;
@@ -172,33 +477,61 @@
         direction: ltr;
         user-select: all;
     }
+}
 
-    .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
+.valueWithCopy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    color: #F6D982;
+    user-select: all;
+    transition: color 0.15s ease;
 
-        &.successBadge {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            border: 1px solid rgba(52, 211, 153, 0.3);
-        }
+    &:hover {
+        color: #FFF;
+    }
+}
 
-        &.failedBadge {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-            border: 1px solid rgba(248, 113, 113, 0.3);
-        }
+.truncatedValue {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    direction: ltr;
+    font-family: monospace, inherit;
+    font-weight: 600;
 
-        &.pendingBadge {
-            background: rgba(246, 217, 130, 0.15);
-            color: #F6D982;
-            border: 1px solid rgba(246, 217, 130, 0.3);
-        }
+    @include respond(sm) {
+        max-width: 130px;
+    }
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+
+    &.successBadge {
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    &.failedBadge {
+        background: rgba(239, 68, 68, 0.2);
+        color: #f87171;
+        border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    &.pendingBadge {
+        background: rgba(246, 217, 130, 0.15);
+        color: #F6D982;
+        border: 1px solid rgba(246, 217, 130, 0.3);
     }
 }
 
@@ -208,7 +541,7 @@
     background: rgba(255, 255, 255, 0.03);
     border-radius: 12px;
     padding: 12px 16px;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
     line-height: 1.6;
     border-right: 3px solid #F6D982;
     text-align: right;
@@ -219,7 +552,7 @@
     border: 1px solid rgba(245, 158, 11, 0.25);
     border-radius: 14px;
     padding: 16px 20px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
     text-align: right;
     display: flex;
     flex-direction: column;
@@ -250,11 +583,72 @@
     margin: 0;
 }
 
+// ─── دکمه اقدام اصلی و لینک‌های متنی در انتهای کارت ────────────────────────
+.bottomActions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.textLinks {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.textLink {
+    color: rgba(255, 250, 234, 0.75);
+    font-size: 0.88rem;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s ease;
+
+    &:hover {
+        color: #F6D982;
+        text-decoration: underline;
+    }
+}
+
+.textLinkDot {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 0.8rem;
+    user-select: none;
+}
+
+.supportHint {
+    font-size: 0.82rem;
+    color: rgba(255, 250, 234, 0.55);
+    margin: 4px 0 0;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.supportLink {
+    color: #F6D982;
+    text-decoration: none;
+    font-weight: 600;
+    transition: opacity 0.15s ease;
+
+    &:hover {
+        opacity: 0.8;
+        text-decoration: underline;
+    }
+}
+
 .actions {
     display: flex;
     gap: 12px;
     justify-content: center;
     flex-wrap: wrap;
+    margin-bottom: 24px;
 
     @include respond(sm) {
         flex-direction: column;
@@ -341,12 +735,23 @@
     }
 }
 
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .pendingProgress {
     display: inline-flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    margin: 0 auto 24px;
+    margin: 0 auto 20px;
     padding: 10px 24px;
     background: rgba(246, 217, 130, 0.06);
     border: 1px solid rgba(246, 217, 130, 0.15);

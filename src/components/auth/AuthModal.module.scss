@@ -1,4 +1,12 @@
-@use '@/styles/base/mixins' as *;
+// ─── Animations ───────────────────────────────────────────────────────────────
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
 // ─── Overlay ──────────────────────────────────────────────────────────────────
 .overlay {
@@ -12,15 +20,6 @@
   z-index: 9999;
   padding: 20px;
   animation: fadeIn 0.25s ease-out;
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
 }
 
 // ─── Modal Card Wrapper ───────────────────────────────────────────────────────
