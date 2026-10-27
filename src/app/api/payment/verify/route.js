@@ -114,6 +114,22 @@ export async function GET(request) {
                         message: 'مبلغ پرداختی به حساب شما برگشت داده شد.',
                     }, request);
                 }
+                if (topUpAttempt.status === 'financial_review') {
+                    return redirectToResult({
+                        orderType: 'light_topup',
+                        topUpId: topUpAttempt.topUpRequestId,
+                        status: 'financial_review',
+                        message: 'وضعیت پرداخت در صف بررسی مالی قرار دارد.',
+                    }, request);
+                }
+                if (topUpAttempt.status === 'pending_sync') {
+                    return redirectToResult({
+                        orderType: 'light_topup',
+                        topUpId: topUpAttempt.topUpRequestId,
+                        status: 'pending_sync',
+                        message: 'وضعیت پرداخت در حال بررسی و همگام‌سازی است.',
+                    }, request);
+                }
                 return redirectToResult({
                     orderType: 'light_topup',
                     topUpId: topUpAttempt.topUpRequestId,

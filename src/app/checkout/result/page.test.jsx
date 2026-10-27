@@ -316,3 +316,43 @@ test('بازگشت از درگاه با status=success در صورت ارجاع 
     expect(screen.getAllByText(/نیازی به پرداخت مجدد نیست/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole('link', { name: 'کیف پول و حساب کاربری' })).toBeTruthy();
 });
+
+test('بازگشت از درگاه با status=financial_review صریح مستقیماً کارت بررسی مالی و عدم نیاز به پرداخت مجدد را نمایش می‌دهد', () => {
+    useSearchParams.mockReturnValue(new URLSearchParams('orderType=light_topup&topUpId=topup-fr&status=financial_review&refNum=sep-ref-777'));
+    useCourseCheckoutResult.mockReturnValue({
+        phase: 'financialReview',
+        isUnderReview: true,
+        paid: false,
+        courses: [],
+        receipts: []
+    });
+    render(<CheckoutResultPage />);
+
+    expect(screen.queryByText(/در حال استعلام پرداخت و فعال‌سازی دوره/)).toBeNull();
+    expect(screen.getByText('پرداخت در صف بررسی مالی قرار گرفت')).toBeTruthy();
+    expect(screen.getByText(/به دلیل پاسخ نامشخص درگاه بانکی، پرداخت شما در صف بررسی مالی قرار گرفته است/)).toBeTruthy();
+    expect(screen.getByText('در انتظار بررسی مالی')).toBeTruthy();
+    expect(screen.queryByText('تراکنش پرداخت ناموفق بود')).toBeNull();
+    expect(screen.getByRole('link', { name: 'کیف پول و حساب کاربری' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /پرداخت مجدد/ })).toBeNull();
+});
+
+test('بازگشت از درگاه با status=pending_sync پیام در حال بررسی و همگام‌سازی پرداخت بدون اسپینر نمایش می‌دهد', () => {
+    useSearchParams.mockReturnValue(new URLSearchParams('orderType=light_topup&topUpId=topup-ps&status=pending_sync&refNum=sep-ref-888'));
+    useCourseCheckoutResult.mockReturnValue({
+        phase: 'pendingSync',
+        isUnderReview: false,
+        paid: false,
+        courses: [],
+        receipts: []
+    });
+    render(<CheckoutResultPage />);
+
+    expect(screen.queryByText(/در حال استعلام پرداخت و فعال‌سازی دوره/)).toBeNull();
+    expect(screen.getByText('پرداخت در حال بررسی و همگام‌سازی است')).toBeTruthy();
+    expect(screen.getAllByText(/بدون نیاز به پرداخت مجدد/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('در حال همگام‌سازی')).toBeTruthy();
+    expect(screen.queryByText('تراکنش پرداخت ناموفق بود')).toBeNull();
+    expect(screen.getByRole('link', { name: 'کیف پول و حساب کاربری' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /پرداخت مجدد/ })).toBeNull();
+});

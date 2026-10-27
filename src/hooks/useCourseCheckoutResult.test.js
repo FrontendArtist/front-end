@@ -264,3 +264,60 @@ test('شارژ ارجاع داده شده به بررسی مالی از طریق
     expect(getTopUpCheckout).toHaveBeenCalledTimes(1);
     expect(purchaseCourseCart).not.toHaveBeenCalled();
 });
+
+test('وضعیت صریح financial_review از URL بلافاصله فاز را financialReview کرده و هیچ Polling انجام نمی‌شود', async () => {
+    jest.useFakeTimers();
+    const { result } = renderHook(() => useCourseCheckoutResult('', 'topup-1', null, 'financial_review'));
+    expect(result.current.phase).toBe('financialReview');
+    expect(result.current.isUnderReview).toBe(true);
+    expect(getTopUpCheckout).not.toHaveBeenCalled();
+    expect(getCourseCart).not.toHaveBeenCalled();
+
+    await act(async () => {
+        jest.advanceTimersByTime(10000);
+    });
+    expect(getTopUpCheckout).not.toHaveBeenCalled();
+});
+
+test('وضعیت صریح pending_sync از URL بلافاصله فاز را pendingSync کرده و هیچ Polling انجام نمی‌شود', async () => {
+    jest.useFakeTimers();
+    const { result } = renderHook(() => useCourseCheckoutResult('', 'topup-1', null, 'pending_sync'));
+    expect(result.current.phase).toBe('pendingSync');
+    expect(getTopUpCheckout).not.toHaveBeenCalled();
+
+    await act(async () => {
+        jest.advanceTimersByTime(10000);
+    });
+    expect(getTopUpCheckout).not.toHaveBeenCalled();
+});
+
+test('سفارش عادی فاقد cartId و topUpId فاز idle می‌گیرد و استعلام یا Polling انجام نمی‌شود', async () => {
+    jest.useFakeTimers();
+    const { result } = renderHook(() => useCourseCheckoutResult('', '', null));
+    expect(result.current.phase).toBe('idle');
+    expect(getTopUpCheckout).not.toHaveBeenCalled();
+    expect(getCourseCart).not.toHaveBeenCalled();
+
+    await act(async () => {
+        jest.advanceTimersByTime(10000);
+    });
+    expect(getTopUpCheckout).not.toHaveBeenCalled();
+});
+
+test('وضعیت failed از URL پس از یک دور استعلام متوقف شده و Polling ادامه نمی‌یابد', async () => {
+    jest.useFakeTimers();
+    getCourseCart.mockResolvedValue({
+        status: 'Failed',
+        topUpStatus: 'Rejected',
+        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }],
+    });
+    const { result } = renderHook(() => useCourseCheckoutResult('', '', 'cart-failed', 'failed'));
+    await act(async () => {});
+    expect(result.current.phase).toBe('paymentFailed');
+    expect(getCourseCart).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+        jest.advanceTimersByTime(10000);
+    });
+    expect(getCourseCart).toHaveBeenCalledTimes(1);
+});

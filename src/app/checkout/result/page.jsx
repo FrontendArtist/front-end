@@ -40,10 +40,11 @@ function CheckoutResultContent() {
     const isWalletPurchase = searchParams.get('source') === 'noor';
     const courseId = isWalletPurchase ? searchParams.get('courseId') || '' : '';
     const cartId = searchParams.get('cartId') || '';
-    const checkout = useCourseCheckoutResult(courseId, isTopUp ? topUpId : '', cartId);
+    const checkout = useCourseCheckoutResult(courseId, isTopUp ? topUpId : '', cartId, status);
     const isCoursePurchase = Boolean(cartId) || isWalletPurchase || checkout.courses.length > 0;
-    const isFinancialReview = checkout.phase === 'financialReview';
-    const isCheckingPurchase = isCoursePurchase && !isFinancialReview && (
+    const isFinancialReview = status === 'financial_review' || checkout.phase === 'financialReview' || Boolean(checkout.isUnderReview);
+    const isPendingSync = status === 'pending_sync' || checkout.phase === 'pendingSync';
+    const isCheckingPurchase = isCoursePurchase && !isFinancialReview && !isPendingSync && (
         ['checking', 'activating'].includes(checkout.phase) ||
         (status === 'success' && ['incomplete', 'paymentPending', 'unknown'].includes(checkout.phase))
     );
@@ -53,8 +54,9 @@ function CheckoutResultContent() {
         : checkout.phase === 'accessMissing' ? 'سابقه خرید در بای‌مانی وجود دارد، اما دسترسی دوره در حساب شما فعال نیست. برای بررسی و بازیابی دسترسی با پشتیبانی تماس بگیرید و دوباره پرداخت نکنید.'
         : checkout.phase === 'incomplete' ? (checkout.paid ? 'پرداخت یا شارژ ثبت شده است، اما خرید دوره تکمیل نشده است. وضعیت را از کیف پول و پشتیبانی پیگیری کنید.' : 'خرید دوره تکمیل نشده است. وضعیت را از حساب کاربری پیگیری کنید.')
         : checkout.phase === 'activating' ? 'پرداخت ثبت شد؛ در حال فعال‌سازی دوره هستیم. نیازی به پرداخت دوباره نیست.'
-        : checkout.phase === 'financialReview' ? 'به دلیل پاسخ نامشخص درگاه بانکی، پرداخت شما در صف بررسی مالی قرار گرفته است. در صورت کسر وجه از حساب، موضوع بررسی شده و نیازی به پرداخت مجدد نیست.'
-        : checkout.phase === 'paymentPending' ? 'خرید هنوز تأیید نشده است. وضعیت پرداخت را از کیف پول و حساب کاربری پیگیری کنید.'
+        : isFinancialReview ? 'به دلیل پاسخ نامشخص درگاه بانکی، پرداخت شما در صف بررسی مالی قرار گرفته است. در صورت کسر وجه از حساب، موضوع بررسی شده و نیازی به پرداخت مجدد نیست.'
+        : isPendingSync ? 'پرداخت در حال بررسی و همگام‌سازی است (بدون نیاز به پرداخت مجدد). وضعیت دوره به زودی در حساب کاربری ثبت خواهد شد.'
+        : checkout.phase === 'paymentPending' ? 'پرداخت شما در حال بررسی است. نتیجه را از کیف پول و حساب کاربری پیگیری کنید.'
         : checkout.phase === 'paymentFailed' ? (status === 'cancel' ? 'پرداخت لغو شد؛ دوره خریداری نشده و سبد شما حفظ شده است.' : 'پرداخت تأیید نشد؛ دوره خریداری نشده و سبد شما حفظ شده است.')
         : 'در حال حاضر تأیید وضعیت خرید ممکن نیست. برای پیگیری به حساب کاربری مراجعه کنید و دوباره پرداخت نکنید.';
 
@@ -62,17 +64,17 @@ function CheckoutResultContent() {
         : isTopUp && topUpId ? (checkout.paid === true && checkout.phase === 'standalone') : status === 'success';
     const isCancel = status === 'cancel' || (checkout.phase === 'paymentFailed' && status === 'cancel');
     const isPendingTopUp = isTopUp && topUpId && !isCoursePurchase &&
-        !['standalone', 'paymentFailed', 'financialReview'].includes(checkout.phase);
-    const isPending = !isSuccess && !isCancel && !isFinancialReview && (
+        !['standalone', 'paymentFailed', 'financialReview', 'pendingSync', 'idle'].includes(checkout.phase);
+    const isPending = !isSuccess && !isCancel && !isFinancialReview && !isPendingSync && (
         status === 'success'
-            ? !['paymentFailed', 'accessMissing', 'financialReview'].includes(checkout.phase)
+            ? !['paymentFailed', 'accessMissing', 'financialReview', 'pendingSync', 'idle'].includes(checkout.phase)
             : (
                 isCheckingPurchase ||
                 isPendingTopUp ||
-                ['checking', 'activating', 'paymentPending', 'unknown'].includes(checkout.phase)
+                ['checking', 'activating', 'paymentPending'].includes(checkout.phase)
             )
     );
-    const isFailed = !isSuccess && !isCancel && !isPending && !isFinancialReview;
+    const isFailed = !isSuccess && !isCancel && !isPending && !isFinancialReview && !isPendingSync;
 
     // ادغام لیست دوره‌ها و رسیدهای مالی در یک ساختار یکپارچه
     const courses = checkout.courses || [];
@@ -164,9 +166,16 @@ function CheckoutResultContent() {
     const getItemStatusInfo = (item) => {
         const isProduct = item.course?.itemType === 'Product' || item.course?.type === 'product' || item.receipt?.itemType === 'Product' || item.receipt?.type === 'product';
 
-        if (checkout.phase === 'financialReview') {
+        if (isFinancialReview) {
             return {
                 label: 'در انتظار بررسی مالی',
+                badgeClass: styles.pendingBadge
+            };
+        }
+
+        if (isPendingSync) {
+            return {
+                label: 'در حال همگام‌سازی',
                 badgeClass: styles.pendingBadge
             };
         }
@@ -228,14 +237,16 @@ function CheckoutResultContent() {
         };
     };
 
-    const paymentStatusBadgeClass = isSuccess ? styles.successBadge : isFinancialReview ? styles.pendingBadge : isPending ? styles.pendingBadge : styles.failedBadge;
+    const paymentStatusBadgeClass = isSuccess ? styles.successBadge : (isFinancialReview || isPendingSync) ? styles.pendingBadge : isPending ? styles.pendingBadge : styles.failedBadge;
     const paymentStatusText = isCoursePurchase ? (isVerifiedCourse ? 'خرید و فعال‌سازی تأیید شد'
-        : checkout.phase === 'financialReview' ? 'در انتظار بررسی مالی'
+        : isFinancialReview ? 'در انتظار بررسی مالی'
+        : isPendingSync ? 'در حال همگام‌سازی پرداخت'
         : checkout.phase === 'paymentFailed' ? (isCancel ? 'لغو شده توسط کاربر' : 'پرداخت تأیید نشد')
         : checkout.phase === 'activating' ? 'پرداخت ثبت شد؛ در حال فعال‌سازی'
         : checkout.paid ? 'پرداخت ثبت شد؛ خرید در حال پیگیری' : 'در حال پیگیری')
         : isPendingTopUp ? (status === 'success' ? 'پرداخت موفق؛ در حال فعال‌سازی' : 'در حال پیگیری')
         : isFinancialReview ? 'در انتظار بررسی مالی'
+        : isPendingSync ? 'در حال همگام‌سازی'
         : isSuccess ? 'تایید شده و موفق' : isCancel ? 'لغو شده توسط کاربر' : 'ناموفق';
 
     if (!mounted) {
@@ -250,13 +261,13 @@ function CheckoutResultContent() {
     return (
         <div className={styles.resultPage}>
             <div className={styles.container}>
-                <div className={`${styles.card} ${isSuccess ? styles.success : isCancel ? styles.cancel : isFinancialReview ? styles.financialReview : isPending ? styles.pending : styles.failed}`}>
+                <div className={`${styles.card} ${isSuccess ? styles.success : isCancel ? styles.cancel : isFinancialReview ? styles.financialReview : isPendingSync ? (styles.pendingSync || styles.financialReview) : isPending ? styles.pending : styles.failed}`}>
                     
                     {/* آیکون وضعیت تراکنش */}
-                    <div className={`${styles.iconWrapper} ${isSuccess ? styles.success : isCancel ? styles.cancel : isFinancialReview ? styles.financialReview : isPending ? styles.pending : styles.failed}`}>
+                    <div className={`${styles.iconWrapper} ${isSuccess ? styles.success : isCancel ? styles.cancel : isFinancialReview ? styles.financialReview : isPendingSync ? (styles.pendingSync || styles.financialReview) : isPending ? styles.pending : styles.failed}`}>
                         {isSuccess ? (
                             <CheckCircle2 />
-                        ) : isCancel || isFinancialReview ? (
+                        ) : isCancel || isFinancialReview || isPendingSync ? (
                             <AlertTriangle />
                         ) : isPending ? (
                             <Loader2 className={styles.spinnerIcon} />
@@ -268,9 +279,10 @@ function CheckoutResultContent() {
                     {/* عنوان نتیجه */}
                     <h1 className={styles.title}>
                         {isCoursePurchase
-                            ? isVerifiedCourse ? 'خرید موفق؛ دوره‌ها فعال شدند' : isFinancialReview ? 'پرداخت در صف بررسی مالی قرار گرفت' : isCheckingPurchase ? 'در حال بررسی و فعال‌سازی دوره‌ها…' : 'وضعیت خرید دوره'
+                            ? isVerifiedCourse ? 'خرید موفق؛ دوره‌ها فعال شدند' : isFinancialReview ? 'پرداخت در صف بررسی مالی قرار گرفت' : isPendingSync ? 'پرداخت در حال بررسی و همگام‌سازی است' : isCheckingPurchase ? 'در حال بررسی و فعال‌سازی دوره‌ها…' : 'وضعیت خرید دوره'
                             : isFinancialReview ? 'پرداخت در صف بررسی مالی قرار گرفت'
-                            : isTopUp && topUpId && !['standalone', 'paymentFailed'].includes(checkout.phase) ? 'وضعیت پرداخت در حال بررسی است'
+                            : isPendingSync ? 'پرداخت در حال بررسی و همگام‌سازی است'
+                            : isTopUp && topUpId && !['standalone', 'paymentFailed', 'idle'].includes(checkout.phase) ? 'وضعیت پرداخت در حال بررسی است'
                             : isSuccess
                             ? 'پرداخت با موفقیت انجام شد'
                             : isCancel
@@ -284,7 +296,9 @@ function CheckoutResultContent() {
                             ? courseMessage
                             : isFinancialReview
                             ? 'به دلیل پاسخ نامشخص درگاه بانکی، پرداخت شما در صف بررسی مالی قرار گرفته است. وضعیت را از حساب کاربری یا پشتیبانی پیگیری کنید و دوباره پرداخت نکنید.'
-                            : isTopUp && topUpId && !['standalone', 'paymentFailed'].includes(checkout.phase)
+                            : isPendingSync
+                            ? 'پرداخت شما در حال بررسی و همگام‌سازی است (بدون نیاز به پرداخت مجدد). وضعیت تراکنش به زودی به‌روزرسانی شده و می‌توانید نتیجه را از حساب کاربری یا کیف پول پیگیری فرمایید.'
+                            : isTopUp && topUpId && !['standalone', 'paymentFailed', 'idle'].includes(checkout.phase)
                             ? (status === 'success'
                                 ? 'پرداخت با موفقیت ثبت شد؛ در حال تایید نهایی و فعال‌سازی دوره هستیم. لطفاً چند لحظه شکیبا باشید…'
                                 : 'در حال بررسی نتیجه پرداخت هستیم. تا مشخص‌شدن نتیجه، دوباره پرداخت نکنید و وضعیت را از حساب کاربری پیگیری کنید.')
@@ -585,6 +599,10 @@ function CheckoutResultContent() {
                         <div className={styles.notice}>
                             پرونده رسیدگی مالی برای این پرداخت ایجاد شده است. نیازی به پرداخت دوباره نیست و وضعیت از حساب کاربری قابل پیگیری است.
                         </div>
+                    ) : isPendingSync ? (
+                        <div className={styles.notice}>
+                            پرداخت در حال بررسی و همگام‌سازی است (بدون نیاز به پرداخت مجدد). وضعیت تراکنش به زودی به‌روزرسانی شده و می‌توانید نتیجه را از حساب کاربری یا کیف پول پیگیری فرمایید.
+                        </div>
                     ) : (
                         <div className={styles.deductionAlertBox}>
                             <div className={styles.deductionAlertHeader}>
@@ -680,7 +698,7 @@ function CheckoutResultContent() {
                                     </div>
                                 </>
                             )
-                        ) : isPending ? (
+                        ) : (isPending || isFinancialReview || isPendingSync) ? (
                             <>
                                 <Link href="/profile" className={styles.primaryButton}>
                                     <Wallet size={18} />

@@ -217,7 +217,7 @@ describe('SEP TopUp Verification Flow', () => {
       ['RefNum', 'SUSPICIOUS-REF'],
     ]);
 
-    expect(new URL(response.url).searchParams.get('status')).toBe('failed');
+    expect(new URL(response.url).searchParams.get('status')).toBe('financial_review');
     expect(cancelGatewayTopUp).not.toHaveBeenCalled();
     expect(updateAttempt).toHaveBeenCalledWith(
       expect.anything(),
@@ -235,7 +235,8 @@ describe('SEP TopUp Verification Flow', () => {
 
     const response = await callback();
 
-    expect(new URL(response.url).searchParams.get('status')).toBe('failed');
+    expect(new URL(response.url).searchParams.get('status')).toBe('financial_review');
+    expect(deliverGatewayOutcome).toHaveBeenCalled();
     expect(updateAttempt).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ status: 'financial_review', lastError: 'VERIFY_-2' })
@@ -280,7 +281,8 @@ describe('SEP TopUp Verification Flow', () => {
 
     const response = await callback();
 
-    expect(new URL(response.url).searchParams.get('status')).toBe('failed');
+    expect(new URL(response.url).searchParams.get('status')).toBe('financial_review');
+    expect(deliverGatewayOutcome).toHaveBeenCalled();
     expect(updateAttempt).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ status: 'financial_review', lastError: 'VERIFY_2' })
@@ -363,7 +365,7 @@ describe('SEP TopUp Verification Flow', () => {
 
     const response = await callback();
 
-    expect(new URL(response.url).searchParams.get('status')).toBe('failed');
+    expect(new URL(response.url).searchParams.get('status')).toBe('financial_review');
     expect(confirmGatewayTopUp).not.toHaveBeenCalled();
     expect(reverseSepTransaction).not.toHaveBeenCalled();
     expect(updateAttempt).toHaveBeenCalledWith(
@@ -371,6 +373,44 @@ describe('SEP TopUp Verification Flow', () => {
       expect.objectContaining({ status: 'financial_review', lastError: errorCode })
     );
   });
+  test('bank resultCode -6 notifies ByeMoney and redirects with status financial_review', async () => {
+    verifySepTransaction.mockResolvedValue({
+      success: false,
+      resultCode: -6,
+      resultDescription: 'More than 30 minutes passed',
+    });
+
+    const response = await callback();
+
+    expect(new URL(response.url).searchParams.get('status')).toBe('financial_review');
+    expect(deliverGatewayOutcome).toHaveBeenCalledWith(expect.objectContaining({
+      result: expect.objectContaining({
+        kind: 'Unknown',
+        bankResultCode: '-6',
+      }),
+    }));
+    expect(updateAttempt).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ status: 'financial_review', lastError: 'VERIFY_-6' })
+    );
+    expect(reverseSepTransaction).not.toHaveBeenCalled();
+    expect(confirmGatewayTopUp).not.toHaveBeenCalled();
+  });
+
+  test('delivery failure for negative verify code marks pending_sync', async () => {
+    verifySepTransaction.mockResolvedValue({
+      success: false,
+      resultCode: -6,
+      resultDescription: 'More than 30 minutes passed',
+    });
+    deliverGatewayOutcome.mockRejectedValueOnce(new Error('ByeMoney connection error'));
+
+    const response = await callback();
+
+    expect(new URL(response.url).searchParams.get('status')).toBe('pending_sync');
+    expect(updateAttempt).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ status: 'pending_sync', lastError: 'VERIFY_-6' })
+    );
+  });
 });
-
-

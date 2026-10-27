@@ -7,7 +7,7 @@ import { triggerLightUpdate } from '@/store/useLightStore';
 import { invalidateProfileCache } from '@/lib/client/profileClientApi';
 import { useCartStore } from '@/store/useCartStore';
 
-export default function useCourseCheckoutResult(courseId, topUpId, requestedCartId = null) {
+export default function useCourseCheckoutResult(courseId, topUpId, requestedCartId = null, urlStatus = null) {
     const { data: session, status } = useSession();
     const [result, setResult] = useState({
         phase: 'checking',
@@ -22,7 +22,50 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
     const userId = session?.user?.id;
     const cartId = requestedCartId;
     useEffect(() => {
-        if (!courseId && !topUpId && !cartId) return;
+        if (!courseId && !topUpId && !cartId) {
+            setResult({
+                phase: 'idle',
+                courses: [],
+                receipts: [],
+                isUnderReview: false,
+                reviewCaseId: null,
+                reviewReasonCode: null
+            });
+            return;
+        }
+        if (urlStatus === 'financial_review') {
+            setResult({
+                phase: 'financialReview',
+                courses: [],
+                receipts: [],
+                isUnderReview: true,
+                reviewCaseId: null,
+                reviewReasonCode: null
+            });
+            return;
+        }
+        if (urlStatus === 'pending_sync') {
+            setResult({
+                phase: 'pendingSync',
+                courses: [],
+                receipts: [],
+                isUnderReview: false,
+                reviewCaseId: null,
+                reviewReasonCode: null
+            });
+            return;
+        }
+        if (urlStatus === 'cancel') {
+            setResult({
+                phase: 'paymentFailed',
+                courses: [],
+                receipts: [],
+                isUnderReview: false,
+                reviewCaseId: null,
+                reviewReasonCode: null
+            });
+            return;
+        }
         if (!jwt) {
             if (status !== 'loading') setResult({
                 phase: 'unknown',
@@ -179,12 +222,14 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                 };
             }
             checks += 1;
-            const keepChecking = !['completed', 'standalone', 'paymentFailed', 'accessMissing', 'financialReview'].includes(next.phase) && checks < 15;
+            const keepChecking = urlStatus !== 'failed' &&
+                !['completed', 'standalone', 'paymentFailed', 'accessMissing', 'financialReview', 'pendingSync', 'idle', 'unknown'].includes(next.phase) &&
+                checks < 15;
             setResult(next);
             if (keepChecking) timer = setTimeout(check, 2000);
         };
         check();
         return () => { controller.abort(); clearTimeout(timer); };
-    }, [courseId, topUpId, cartId, jwt, status, userId]);
+    }, [courseId, topUpId, cartId, jwt, status, userId, urlStatus]);
     return result;
 }
