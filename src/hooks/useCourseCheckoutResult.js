@@ -99,7 +99,8 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                     data?.IsUnderReview ||
                     data?.reviewCaseId ||
                     data?.ReviewCaseId ||
-                    data?.topUpStatus === 'Unresolved'
+                    data?.topUpStatus === 'Unresolved' ||
+                    data?.topUpStatus === 'UnderReview'
                 );
                 const reviewCaseId = data?.reviewCaseId || data?.ReviewCaseId || null;
                 const reviewReasonCode = data?.reviewReasonCode || data?.ReviewReasonCode || null;

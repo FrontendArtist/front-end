@@ -63,7 +63,8 @@ export async function POST(request) {
                 }
                 const checkout = await getCourseCart(body.cartId, session.user.jwt);
                 if (checkout.status === 'Paid') return NextResponse.json({ success: true, paidWithWallet: true, data: checkout });
-                if (checkout.status !== 'Ready' && checkout.status !== 'AwaitingTopUp') return NextResponse.json({ success: false, message: 'سبد برای پرداخت آماده نیست؛ نتیجه قبلی را در حساب کاربری پیگیری کنید.' }, { status: 409 });
+                const isCartPayable = checkout.status === 'Ready' || checkout.status === 'AwaitingTopUp' || Boolean(checkout.isUnderReview) || checkout.topUpStatus === 'UnderReview' || checkout.topUpStatus === 'Pending';
+                if (!isCartPayable) return NextResponse.json({ success: false, message: 'سبد برای پرداخت آماده نیست؛ نتیجه قبلی را در حساب کاربری پیگیری کنید.' }, { status: 409 });
                 if (checkout.status === 'Ready' && checkout.shortfallInNoor === 0) {
                     const data = await purchaseCourseCart(body.cartId, session.user.jwt);
                     return NextResponse.json({ success: true, paidWithWallet: true, data });

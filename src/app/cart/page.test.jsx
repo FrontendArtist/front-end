@@ -143,6 +143,22 @@ test('سبد در انتظار شارژ امکان پرداخت مجدد آنل�
     })));
 });
 
+test('سبد در حالت در حال بررسی دکمه پرداخت مجدد آنلاین را فعال نگه می‌دارد و امکان پرداخت مجدد را فراهم می‌کند', async () => {
+    getExistingCourseCartId.mockReturnValue('cart-under-review');
+    const underReviewCart = { ...ready(150, 50), cartId: 'cart-under-review', status: 'Ready', isUnderReview: true, topUpStatus: 'UnderReview' };
+    getCourseCart.mockResolvedValue(underReviewCart);
+    prepareCourseCart.mockResolvedValue(underReviewCart);
+    render(<CartPage />);
+    const retryBtn = await screen.findByRole('button', { name: 'پرداخت مجدد آنلاین' });
+    expect(retryBtn.disabled).toBe(false);
+    expect(screen.getByText('در حال بررسی؛ در صورت کسر وجه، نور به کیف پول اضافه می‌شود؛ می‌توانید حدود ۳۰ دقیقه صبر کنید یا دوباره پرداخت کنید.')).toBeTruthy();
+    fireEvent.click(retryBtn);
+    await waitFor(() => expect(executeNoorCartPurchase).toHaveBeenCalledWith(expect.objectContaining({
+        cartId: 'cart-under-review',
+        payOnline: true,
+    })));
+});
+
 test('رزرو معتبر قبلی بدون استعلام دوباره ظرفیت کوپن بازیابی می‌شود', async () => {
     const items = useCartStore.getState().items;
     useCartStore.setState({ appliedCoupon: { code: 'LAST', pending: true } });

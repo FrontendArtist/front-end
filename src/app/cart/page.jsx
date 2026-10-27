@@ -136,6 +136,13 @@ export default function CartPage() {
         ? preview.data.shortfallInNoor
         : (balance == null || !preview?.data ? null : Math.ceil(Math.max(0, preview.data.priceInNoor - balance)));
     const needsOnlinePayment = shortfall > 0;
+    const isCartUnderReview = Boolean(
+        preview?.data?.isUnderReview ||
+        preview?.data?.IsUnderReview ||
+        preview?.data?.topUpStatus === 'UnderReview' ||
+        preview?.data?.topUpStatus === 'Pending' ||
+        preview?.data?.topUpStatus === 'Unresolved'
+    );
     const currentPreviewKey = useRef(previewKey);
     currentPreviewKey.current = previewKey;
     useEffect(() => {
@@ -179,7 +186,7 @@ export default function CartPage() {
             if (existingId) {
                 try {
                     const existing = await getCourseCart(existingId, session.user.jwt, controller.signal);
-                    if (['Paid', 'AwaitingTopUp'].includes(existing.status) ||
+                    if (['Paid', 'AwaitingTopUp'].includes(existing.status) || existing.isUnderReview || existing.topUpStatus === 'UnderReview' ||
                         (existing.status === 'Ready' && new Date(existing.expiresAtUtc).getTime() > Date.now())) return existing;
                 } catch (error) {
                     if (controller.signal.aborted || error.code !== 'CART_NOT_FOUND') throw error;
@@ -190,11 +197,12 @@ export default function CartPage() {
         loadPreview()
             .then(data => {
                 if (controller.signal.aborted) return;
+                const isUnderReview = Boolean(data?.isUnderReview || data?.IsUnderReview || data?.topUpStatus === 'UnderReview' || data?.topUpStatus === 'Pending' || data?.topUpStatus === 'Unresolved');
                 if (couponCode && !['Failed', 'Expired'].includes(data.status)) {
                     useCartStore.getState().applyCoupon({ code: couponCode,
                         discountAmount: data.couponDiscountInNoor, awaitingQuote: false });
                 }
-                if (['Failed', 'Expired'].includes(data.status)) {
+                if (['Failed', 'Expired'].includes(data.status) && !isUnderReview) {
                     setCheckoutPreview({ key: previewKey, error: 'پرداخت سبد تکمیل نشده است. برای بررسی امکان پرداخت مجدد روی همین سبد، بررسی دوباره را بزنید.' });
                 } else setCheckoutPreview({ key: previewKey, data });
             })
@@ -275,7 +283,8 @@ export default function CartPage() {
                     router.push('/checkout/result?source=noor&cartId=' + encodeURIComponent(data.cartId));
                     return;
                 }
-                if (data.status !== 'Ready' && data.status !== 'AwaitingTopUp') throw new Error('سبد برای پرداخت آماده نیست. دوباره تلاش کنید.');
+                const isDataPayable = data.status === 'Ready' || data.status === 'AwaitingTopUp' || Boolean(data.isUnderReview) || data.topUpStatus === 'UnderReview' || data.topUpStatus === 'Pending';
+                if (!isDataPayable) throw new Error('سبد برای پرداخت آماده نیست. دوباره تلاش کنید.');
                 walletRequest.current += 1;
                 setWalletPreview({ jwt: session.user.jwt, balance: data.balanceInNoor });
                 setCheckoutPreview({ key: paymentKey, data });
@@ -291,7 +300,7 @@ export default function CartPage() {
                     cartId: data.cartId,
                     jwt: session?.user?.jwt,
                     router,
-                    payOnline: data.shortfallInNoor > 0 || data.status === 'AwaitingTopUp',
+                    payOnline: data.shortfallInNoor > 0 || data.status === 'AwaitingTopUp' || Boolean(data.isUnderReview) || data.topUpStatus === 'UnderReview',
                     items,
                     session,
                     orders,
@@ -754,9 +763,13 @@ export default function CartPage() {
                             {/* وضعیت موجودی کیف نور و کسری */}
                             {isCartEligible && preview?.data && (
                                 <div className={styles.walletSection}>
-                                    {preview.data.status === 'AwaitingTopUp' && (
+                                    {(preview.data.status === 'AwaitingTopUp' || isCartUnderReview) && (
                                         <div className={styles.awaitingTopUpNotice}>
-                                            <span>پرداخت قبلی شما ناتمام ماند یا لغو شد. در صورتی که وجه از حسابتان کسر نشده است، می‌توانید مجدداً پرداخت را انجام دهید.</span>
+                                            <span>
+                                                {isCartUnderReview
+                                                    ? 'در حال بررسی؛ در صورت کسر وجه، نور به کیف پول اضافه می‌شود؛ می‌توانید حدود ۳۰ دقیقه صبر کنید یا دوباره پرداخت کنید.'
+                                                    : 'پرداخت قبلی شما ناتمام ماند یا لغو شد. در صورتی که وجه از حسابتان کسر نشده است، می‌توانید مجدداً پرداخت را انجام دهید.'}
+                                            </span>
                                             <div style={{ marginTop: '4px' }}>
                                                 <Link
                                                     href={`/checkout/result?source=noor&cartId=${encodeURIComponent(preview.data.cartId)}`}
@@ -771,7 +784,7 @@ export default function CartPage() {
                                         <span>موجودی کیف نور:</span>
                                         <strong>{balance == null ? 'در دسترس نیست؛ هنگام پرداخت بررسی می‌شود' : `${formatPrice(balance)} نور`}</strong>
                                     </div>
-                                    {(needsOnlinePayment || preview.data.status === 'AwaitingTopUp') && (
+                                    {(needsOnlinePayment || preview.data.status === 'AwaitingTopUp' || isCartUnderReview) && (
                                         shortfall > 0 && (
                                             <div className={styles.summaryRow}>
                                                 <span>کسری قابل پرداخت آنلاین:</span>
@@ -897,8 +910,8 @@ export default function CartPage() {
                                 ) : isCartEligible ? (
                                     balance == null
                                         ? 'ادامه پرداخت'
-                                        : (needsOnlinePayment || preview?.data?.status === 'AwaitingTopUp')
-                                            ? (preview?.data?.status === 'AwaitingTopUp' ? 'پرداخت مجدد آنلاین' : 'پرداخت آنلاین و خرید')
+                                        : (needsOnlinePayment || preview?.data?.status === 'AwaitingTopUp' || isCartUnderReview)
+                                            ? ((preview?.data?.status === 'AwaitingTopUp' || isCartUnderReview) ? 'پرداخت مجدد آنلاین' : 'پرداخت آنلاین و خرید')
                                             : 'خرید با کیف نور'
                                 ) : (
                                     'پرداخت آنلاین شتاب '

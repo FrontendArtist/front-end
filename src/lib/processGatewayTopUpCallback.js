@@ -24,16 +24,16 @@ async function reverseVerified(attempt, refNum, terminalNumber, reason, result) 
   const saved = await getTopUpConfirmation(attempt.resNum).catch(() => null);
   if (!saved) {
     await updateAttempt(attempt, { status: 'financial_review', refNum, lastError: 'BYEMONEY_STATUS_UNKNOWN' });
-    return result({ status: 'financial_review', message: 'وضعیت شارژ برای بررسی مالی ثبت شد.' });
+    return result({ status: 'failed', message: 'وضعیت شارژ برای بررسی مالی ثبت شد.' });
   }
   if (isConfirmedTopUp(saved)) {
     await updateAttempt(attempt, { status: 'financial_review', refNum, lastError: 'TOPUP_ALREADY_CONFIRMED' });
-    return result({ status: 'financial_review', message: 'وضعیت پرداخت برای بررسی مالی ثبت شد.' });
+    return result({ status: 'failed', message: 'وضعیت پرداخت برای بررسی مالی ثبت شد.' });
   }
   const blockCode = reviewBlockCode(saved);
   if (blockCode) {
     await updateAttempt(attempt, { status: 'financial_review', refNum, lastError: blockCode });
-    return result({ status: 'financial_review', message: 'نتیجه تازه بانک نیازمند رسیدگی مالی است.' });
+    return result({ status: 'failed', message: 'نتیجه تازه بانک نیازمند رسیدگی مالی است.' });
   }
 
   const now = new Date().toISOString();
@@ -64,7 +64,7 @@ async function reverseVerified(attempt, refNum, terminalNumber, reason, result) 
     lastError: success ? null : `REVERSE_${bank.resultCode ?? 'UNKNOWN'}`,
   });
   return result({
-    status: success ? (outcome.delivery?.ok ? 'failed' : 'pending_sync') : (outcome.delivery?.ok ? 'financial_review' : 'pending_sync'),
+    status: 'failed',
     message: success
       ? (outcome.delivery?.ok ? 'مبلغ پرداختی به حساب شما برگشت داده شد.' : 'درخواست برگشت وجه در انتظار همگام‌سازی است.')
       : 'درخواست برگشت وجه برای رسیدگی مالی ثبت شد.'
@@ -92,7 +92,7 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
       lastError: 'TERMINAL_MISMATCH'
     });
     return result({
-      status: delivered ? 'financial_review' : 'pending_sync',
+      status: 'failed',
       message: 'اطلاعات ترمینال بانکی نامعتبر است.'
     });
   }
@@ -111,7 +111,7 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
       lastError: state || 'INVALID_CALLBACK'
     });
     return result({
-      status: delivered ? 'financial_review' : 'pending_sync',
+      status: 'failed',
       message: 'وضعیت پرداخت برای بررسی مالی ثبت شد.'
     });
   }
@@ -139,7 +139,7 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
       status: delivery.ok ? state === 'CanceledByUser' ? 'cancelled' : 'failed' : 'pending_sync',
       lastError: delivery.ok ? state : 'BYEMONEY_DELIVERY_PENDING',
     });
-    return result({ status: state === 'CanceledByUser' && delivery.ok ? 'cancel' : delivery.ok ? 'failed' : 'pending_sync',
+    return result({ status: state === 'CanceledByUser' ? 'cancel' : 'failed',
       message: delivery.ok ? getSepErrorMessage(state) : 'نتیجهٔ بانک در انتظار ثبت نهایی است.' });
   }
 
@@ -154,7 +154,7 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
       lastError: 'REFNUM_CONFLICT'
     });
     return result({
-      status: delivered ? 'financial_review' : 'pending_sync',
+      status: 'failed',
       message: 'شناسهٔ بانکی برای بررسی مالی ثبت شد.'
     });
   }
@@ -215,7 +215,7 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
       lastError: `VERIFY_${bank.resultCode ?? 'UNKNOWN'}`,
     });
     return result({
-      status: isTransitory ? 'pending_sync' : delivery.ok ? 'financial_review' : 'pending_sync',
+      status: 'failed',
       message: delivery.ok ? 'نتیجهٔ تأیید بانک برای بررسی مالی ثبت شد.' : 'نتیجهٔ تأیید بانک در انتظار همگام‌سازی است.'
     });
   }
@@ -241,7 +241,7 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
     const delivery = await deliverGatewayOutcome(recorded).catch(() => null);
     if (!delivery?.accepted) {
       await updateAttempt(verified, { status: 'pending_sync', lastError: 'BYEMONEY_DELIVERY_PENDING' });
-      return result({ status: 'pending_sync', message: 'نتیجهٔ بانک در انتظار ثبت مالی است.' });
+      return result({ status: 'failed', message: 'نتیجهٔ بانک در انتظار ثبت مالی است.' });
     }
     return reverseVerified(verified, refNum, terminalNumber, 'TOPUP_AMOUNT_MISMATCH', result);
   }
@@ -250,7 +250,7 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
   const blockCode = reviewBlockCode(confirmation);
   if (blockCode) {
     await updateAttempt(verified, { status: 'financial_review', lastError: blockCode });
-    return result({ status: 'financial_review', message: 'نتیجه تازه بانک نیازمند رسیدگی مالی است.' });
+    return result({ status: 'failed', message: 'نتیجه تازه بانک نیازمند رسیدگی مالی است.' });
   }
 
   const delivery = await deliverGatewayOutcome(recorded).catch(() => ({ ok: false }));
@@ -260,11 +260,11 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
   }
   if (delivery.data?.code === 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED') {
     await updateAttempt(verified, { status: 'financial_review', lastError: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' });
-    return result({ status: 'financial_review', message: 'بازپرداخت دستی ثبت شده و نتیجه تازه بانک نیازمند رسیدگی است.' });
+    return result({ status: 'failed', message: 'بازپرداخت دستی ثبت شده و نتیجه تازه بانک نیازمند رسیدگی است.' });
   }
   if (delivery.data?.code === 'TOPUP_AMOUNT_MISMATCH' ||
       delivery.data?.code === 'TOPUP_REQUIRES_REVIEW')
     return reverseVerified(verified, refNum, terminalNumber, 'TOPUP_AMOUNT_MISMATCH', result);
   await updateAttempt(verified, { status: 'pending_sync', lastError: delivery.data?.code || 'BYEMONEY_DELIVERY_PENDING' });
-  return result({ status: 'pending_sync', message: 'پرداخت بانکی ثبت شد و شارژ در انتظار همگام‌سازی است.' });
+  return result({ status: 'failed', message: 'پرداخت بانکی ثبت شد و شارژ در انتظار همگام‌سازی است.' });
 }

@@ -59,14 +59,14 @@ export function getExistingCourseCartId(userId, externalCourseIds, couponCode, r
     if (!id) return null;
     const status = readStored('course-cart-status:' + id);
     const sameRevision = (readStored('course-cart-revision:' + id) || '0') === String(revision);
-    return ['AwaitingTopUp', 'Paid'].includes(status) || (sameRevision && status === 'Ready') ? id : null;
+    return ['AwaitingTopUp', 'Paid', 'UnderReview'].includes(status) || (sameRevision && status === 'Ready') ? id : null;
 }
 
 export function getCourseCartId(userId, externalCourseIds, couponCode, revision = 0, items = null) {
     const canonicalItems = buildCartIdentityItems(items, externalCourseIds);
     const key = `course-cart:${JSON.stringify([userId, canonicalItems, couponCode || null])}`;
     const previous = readStored(key);
-    const protectedCart = previous && ['AwaitingTopUp', 'Paid'].includes(readStored('course-cart-status:' + previous));
+    const protectedCart = previous && ['AwaitingTopUp', 'Paid', 'UnderReview'].includes(readStored('course-cart-status:' + previous));
     const sameRevision = !previous || (readStored('course-cart-revision:' + previous) || '0') === String(revision);
     if (previous && (protectedCart || sameRevision)) {
         cartKeys.set(previous, key);
