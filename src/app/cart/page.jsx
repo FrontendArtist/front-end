@@ -31,6 +31,7 @@ import { previewCourseCart, sameCourseCartPrice } from '@/lib/courseCartPreviewA
 import { getWalletBalanceWithByeMoney } from '@/lib/byeMoneyApi';
 import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isCartItemPurchasedByUser } from '@/lib/courseAccessUtils';
+import { getCartItemDisplayTitle } from '@/lib/courseTitleUtils';
 
 /**
  * صفحه سبد خرید
@@ -595,6 +596,7 @@ export default function CartPage() {
                                     const itemHref = item.type === 'chapter' ? `/courses/${coursePageSlug}` : `/courses/${item.slug}`;
                                     const isLegacyChapter = item.type === 'chapter' && !item.integrationId && !item.externalCourseId;
                                     const isOwned = status === 'authenticated' && isCartItemPurchasedByUser(item, { session, orders });
+                                    const itemTitle = getCartItemDisplayTitle(item, quote);
 
                                     return (
                                         <div key={item.id} className={`${styles.cartItem} ${isOwned ? styles.ownedItemRow : ''}`}>
@@ -602,7 +604,7 @@ export default function CartPage() {
                                             <Link href={itemHref} className={styles.itemImage}>
                                                 <Image
                                                     src={item.image || '/images/forempties2.png'}
-                                                    alt={item.title}
+                                                    alt={itemTitle}
                                                     fill
                                                     sizes="(max-width: 768px) 100px, 120px"
                                                     className={styles.image}
@@ -611,7 +613,7 @@ export default function CartPage() {
 
                                             {/* اطلاعات دوره/فصل - لینک به صفحه جزئیات */}
                                             <Link href={itemHref} className={styles.itemInfo}>
-                                                <h3 className={styles.itemTitle}>{quote?.title || item.title}</h3>
+                                                <h3 className={styles.itemTitle}>{itemTitle}</h3>
                                                 <div className={styles.itemPrice}>
                                                     {price == null ? 'در انتظار بررسی قیمت' : <PriceWithHint price={price} size="sm" />}
                                                 </div>

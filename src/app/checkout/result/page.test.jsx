@@ -318,6 +318,63 @@ test('بازگشت از درگاه با status=success در صورت ارجاع 
     expect(screen.getByRole('link', { name: 'کیف پول و حساب کاربری' })).toBeTruthy();
 });
 
+test('برای خرید فصلی، عنوان به شکل «عنوان دوره (فصل مثلا 1)» در اقلام رسید نمایش داده می‌شود', () => {
+    useSearchParams.mockReturnValue(new URLSearchParams('source=noor&cartId=cart-chapter-1'));
+    useCourseCheckoutResult.mockReturnValue({
+        phase: 'completed',
+        paid: true,
+        courses: [
+            {
+                externalCourseId: 'ch-int-1',
+                title: 'دوره هفت آسمان (فصل 1)',
+                purchaseStatus: 'Completed',
+                itemType: 'CourseChapter',
+                parentExternalId: 'course-doc-1'
+            }
+        ],
+        receipts: [
+            {
+                purchaseId: 'p-1',
+                courseExternalId: 'ch-int-1',
+                courseTitle: 'دوره هفت آسمان (فصل 1)',
+                finalAmountInNoor: 50,
+                itemType: 'CourseChapter'
+            }
+        ]
+    });
+    render(<CheckoutResultPage />);
+
+    expect(screen.getByText('دوره هفت آسمان (فصل 1)')).toBeTruthy();
+});
+
+test('برای خرید فصلی در صورت ارسال عنوان خام فصل از سرور، عنوان دوره از کش به فرمت پرانتز اضافه می‌شود', () => {
+    localStorage.setItem('chapter_course_titles', JSON.stringify({
+        'ch-int-2': {
+            courseTitle: 'طرح الهی',
+            chapterTitle: 'فصل 2',
+            parentExternalId: 'course-doc-2'
+        }
+    }));
+    useSearchParams.mockReturnValue(new URLSearchParams('source=noor&cartId=cart-chapter-2'));
+    useCourseCheckoutResult.mockReturnValue({
+        phase: 'completed',
+        paid: true,
+        courses: [
+            {
+                externalCourseId: 'ch-int-2',
+                title: 'فصل 2',
+                purchaseStatus: 'Completed',
+                itemType: 'CourseChapter',
+                parentExternalId: 'course-doc-2'
+            }
+        ],
+        receipts: []
+    });
+    render(<CheckoutResultPage />);
+
+    expect(screen.getByText('طرح الهی (فصل 2)')).toBeTruthy();
+});
+
 test('بازگشت از درگاه با status=financial_review صریح مستقیماً کارت بررسی مالی و دکمه‌های پرداخت مجدد را نمایش می‌دهد', () => {
     useSearchParams.mockReturnValue(new URLSearchParams('orderType=light_topup&topUpId=topup-fr&status=financial_review&refNum=sep-ref-777'));
     useCourseCheckoutResult.mockReturnValue({
@@ -337,6 +394,63 @@ test('بازگشت از درگاه با status=financial_review صریح مست�
     expect(screen.queryByText(/نیازی به پرداخت/)).toBeNull();
     expect(screen.getByRole('link', { name: 'بازگشت به سبد و پرداخت مجدد' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'کیف پول و حساب کاربری' })).toBeTruthy();
+});
+
+test('برای خرید فصلی، عنوان به شکل «عنوان دوره (فصل مثلا 1)» در اقلام رسید نمایش داده می‌شود', () => {
+    useSearchParams.mockReturnValue(new URLSearchParams('source=noor&cartId=cart-chapter-1'));
+    useCourseCheckoutResult.mockReturnValue({
+        phase: 'completed',
+        paid: true,
+        courses: [
+            {
+                externalCourseId: 'ch-int-1',
+                title: 'دوره هفت آسمان (فصل 1)',
+                purchaseStatus: 'Completed',
+                itemType: 'CourseChapter',
+                parentExternalId: 'course-doc-1'
+            }
+        ],
+        receipts: [
+            {
+                purchaseId: 'p-1',
+                courseExternalId: 'ch-int-1',
+                courseTitle: 'دوره هفت آسمان (فصل 1)',
+                finalAmountInNoor: 50,
+                itemType: 'CourseChapter'
+            }
+        ]
+    });
+    render(<CheckoutResultPage />);
+
+    expect(screen.getByText('دوره هفت آسمان (فصل 1)')).toBeTruthy();
+});
+
+test('برای خرید فصلی در صورت ارسال عنوان خام فصل از سرور، عنوان دوره از کش به فرمت پرانتز اضافه می‌شود', () => {
+    localStorage.setItem('chapter_course_titles', JSON.stringify({
+        'ch-int-2': {
+            courseTitle: 'طرح الهی',
+            chapterTitle: 'فصل 2',
+            parentExternalId: 'course-doc-2'
+        }
+    }));
+    useSearchParams.mockReturnValue(new URLSearchParams('source=noor&cartId=cart-chapter-2'));
+    useCourseCheckoutResult.mockReturnValue({
+        phase: 'completed',
+        paid: true,
+        courses: [
+            {
+                externalCourseId: 'ch-int-2',
+                title: 'فصل 2',
+                purchaseStatus: 'Completed',
+                itemType: 'CourseChapter',
+                parentExternalId: 'course-doc-2'
+            }
+        ],
+        receipts: []
+    });
+    render(<CheckoutResultPage />);
+
+    expect(screen.getByText('طرح الهی (فصل 2)')).toBeTruthy();
 });
 
 test('بازگشت از درگاه با status=pending_sync پیام در حال بررسی و همگام‌سازی پرداخت بدون اسپینر نمایش می‌دهد', () => {
@@ -359,4 +473,61 @@ test('بازگشت از درگاه با status=pending_sync پیام در حال
     expect(screen.queryByText('تراکنش پرداخت ناموفق بود')).toBeNull();
     expect(screen.getByRole('link', { name: 'بازگشت به سبد و پرداخت مجدد' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'کیف پول و حساب کاربری' })).toBeTruthy();
+});
+
+test('برای خرید فصلی، عنوان به شکل «عنوان دوره (فصل مثلا 1)» در اقلام رسید نمایش داده می‌شود', () => {
+    useSearchParams.mockReturnValue(new URLSearchParams('source=noor&cartId=cart-chapter-1'));
+    useCourseCheckoutResult.mockReturnValue({
+        phase: 'completed',
+        paid: true,
+        courses: [
+            {
+                externalCourseId: 'ch-int-1',
+                title: 'دوره هفت آسمان (فصل 1)',
+                purchaseStatus: 'Completed',
+                itemType: 'CourseChapter',
+                parentExternalId: 'course-doc-1'
+            }
+        ],
+        receipts: [
+            {
+                purchaseId: 'p-1',
+                courseExternalId: 'ch-int-1',
+                courseTitle: 'دوره هفت آسمان (فصل 1)',
+                finalAmountInNoor: 50,
+                itemType: 'CourseChapter'
+            }
+        ]
+    });
+    render(<CheckoutResultPage />);
+
+    expect(screen.getByText('دوره هفت آسمان (فصل 1)')).toBeTruthy();
+});
+
+test('برای خرید فصلی در صورت ارسال عنوان خام فصل از سرور، عنوان دوره از کش به فرمت پرانتز اضافه می‌شود', () => {
+    localStorage.setItem('chapter_course_titles', JSON.stringify({
+        'ch-int-2': {
+            courseTitle: 'طرح الهی',
+            chapterTitle: 'فصل 2',
+            parentExternalId: 'course-doc-2'
+        }
+    }));
+    useSearchParams.mockReturnValue(new URLSearchParams('source=noor&cartId=cart-chapter-2'));
+    useCourseCheckoutResult.mockReturnValue({
+        phase: 'completed',
+        paid: true,
+        courses: [
+            {
+                externalCourseId: 'ch-int-2',
+                title: 'فصل 2',
+                purchaseStatus: 'Completed',
+                itemType: 'CourseChapter',
+                parentExternalId: 'course-doc-2'
+            }
+        ],
+        receipts: []
+    });
+    render(<CheckoutResultPage />);
+
+    expect(screen.getByText('طرح الهی (فصل 2)')).toBeTruthy();
 });

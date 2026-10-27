@@ -15,6 +15,7 @@ import VideoJSPlayer from './VideoJSPlayer';
 import PlyrAudioPlayer from './PlyrAudioPlayer';
 import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
+import { formatChapterDisplayTitle, rememberChapterCourse } from '@/lib/courseTitleUtils';
 import moduleStyles from './CourseContentManager.module.scss';
 
 /**
@@ -244,6 +245,8 @@ export default function CourseContentManager({ course, styles: propStyles }) {
 
     const chapterPrice = chapter.priceNoor ?? (typeof chapter.price === 'object' ? (chapter.price?.noor ?? chapter.price?.toman) : chapter.price) ?? 0;
 
+    rememberChapterCourse(chapter.integrationId, course.title, chapter.title, course.documentId);
+
     addItem({
       id: `chapter-${chapter.integrationId}`,
       chapterId: chapter.id,
@@ -253,7 +256,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
       courseDocumentId: course.documentId,
       courseId: course.id || course.documentId,
       slug: `${course.slug}-chapter-${chapter.id}`,
-      title: `${course.title} - ${chapter.title}`,
+      title: formatChapterDisplayTitle(course.title, chapter.title),
       chapterTitle: chapter.title,
       courseTitle: course.title,
       price: chapterPrice,

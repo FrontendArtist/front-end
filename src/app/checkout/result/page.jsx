@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import useCompletedOrderCart from '@/hooks/useCompletedOrderCart';
 import useCourseCheckoutResult from '@/hooks/useCourseCheckoutResult';
+import { formatChapterDisplayTitle, getRememberedChapterCourse } from '@/lib/courseTitleUtils';
 
 import { 
     CheckCircle2, 
@@ -29,6 +30,7 @@ function CheckoutResultContent() {
     useCompletedOrderCart(searchParams.get('status'), searchParams.get('orderType') === 'light_topup' ? null : searchParams.get('orderId'));
     const [mounted, setMounted] = useState(false);
     const [copiedKey, setCopiedKey] = useState(null);
+    const [remoteCourseTitles, setRemoteCourseTitles] = useState({});
 
     const status = searchParams.get('status') || 'failed';
     const orderId = searchParams.get('orderId') || '';
@@ -89,6 +91,81 @@ function CheckoutResultContent() {
     );
     const isFailed = !isSuccess && !isCancel && !isPending && !isReviewOrPending;
 
+    // واکشی خودکار نام دوره‌های مفقود برای خریدهای فصلی
+    useEffect(() => {
+        const missingParentIds = [];
+        const checkItem = (item) => {
+            const isChapter = item?.itemType === 'CourseChapter' ||
+                item?.type === 'course_chapter' ||
+                Boolean(item?.parentExternalId);
+            const parentId = item?.parentExternalId;
+            const title = item?.title || item?.courseTitle || '';
+            if (isChapter && parentId && !title.includes('(') && !remoteCourseTitles[parentId]) {
+                missingParentIds.push(parentId);
+            }
+        };
+        (checkout.courses || []).forEach(checkItem);
+        (checkout.receipts || []).forEach(checkItem);
+
+        if (missingParentIds.length === 0 || typeof fetch !== 'function') return;
+
+        let active = true;
+        fetch('/api/courses?pageSize=50')
+            .then(res => res.ok ? res.json() : null)
+            .then(json => {
+                if (!active || !json?.data) return;
+                const newTitles = {};
+                for (const course of json.data) {
+                    const docId = course.documentId || String(course.id);
+                    if (missingParentIds.includes(docId) && course.title) {
+                        newTitles[docId] = course.title;
+                    }
+                }
+                if (Object.keys(newTitles).length > 0) {
+                    setRemoteCourseTitles(prev => ({ ...prev, ...newTitles }));
+                }
+            })
+            .catch(() => {});
+
+        return () => { active = false; };
+    }, [checkout.courses, checkout.receipts, remoteCourseTitles]);
+
+    const resolveResultItemTitle = (course, receipt, defaultIdx) => {
+        const isChapter = course?.itemType === 'CourseChapter' ||
+            course?.type === 'course_chapter' ||
+            receipt?.itemType === 'CourseChapter' ||
+            Boolean(course?.parentExternalId || receipt?.parentExternalId);
+
+        const rawTitle = course?.title || receipt?.courseTitle || course?.externalCourseId || `قلم ${defaultIdx + 1}`;
+
+        if (!isChapter) {
+            return rawTitle;
+        }
+
+        if (rawTitle.includes('(')) {
+            return rawTitle;
+        }
+
+        const chapterKey = course?.externalCourseId || receipt?.courseExternalId;
+        const parentKey = course?.parentExternalId || receipt?.parentExternalId;
+
+        let courseName = (parentKey && remoteCourseTitles[parentKey]) ||
+            (chapterKey && remoteCourseTitles[chapterKey]) || null;
+
+        if (!courseName) {
+            const remembered = getRememberedChapterCourse(chapterKey, parentKey);
+            if (remembered?.courseTitle) {
+                courseName = remembered.courseTitle;
+            }
+        }
+
+        if (courseName) {
+            return formatChapterDisplayTitle(courseName, rawTitle);
+        }
+
+        return rawTitle;
+    };
+
     // ادغام لیست دوره‌ها و رسیدهای مالی در یک ساختار یکپارچه
     const courses = checkout.courses || [];
     const receipts = Array.isArray(checkout.receipts) ? checkout.receipts : [];
@@ -113,7 +190,7 @@ function CheckoutResultContent() {
                 }
                 return {
                     id: course.externalCourseId || matchedReceipt?.purchaseId || `item-${idx}`,
-                    title: course.title || matchedReceipt?.courseTitle || course.externalCourseId || `قلم ${idx + 1}`,
+                    title: resolveResultItemTitle(course, matchedReceipt, idx),
                     course,
                     receipt: matchedReceipt || null,
                 };
@@ -123,7 +200,7 @@ function CheckoutResultContent() {
                 if (!usedReceiptIds.has(r.purchaseId)) {
                     list.push({
                         id: r.purchaseId || `receipt-${idx}`,
-                        title: r.courseTitle || `قلم ${list.length + 1}`,
+                        title: resolveResultItemTitle(null, r, list.length + idx),
                         course: null,
                         receipt: r,
                     });
@@ -134,7 +211,7 @@ function CheckoutResultContent() {
 
         return receipts.map((r, idx) => ({
             id: r.purchaseId || `receipt-${idx}`,
-            title: r.courseTitle || `قلم ${idx + 1}`,
+            title: resolveResultItemTitle(null, r, idx),
             course: null,
             receipt: r,
         }));
