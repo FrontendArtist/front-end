@@ -949,9 +949,19 @@ export async function getBatchBalancesWithByeMoney({ userIds, jwt }) {
         normalizedBalances[key] = Number(value ?? 0);
       }
 
+      let normalizedGiftBalances = null;
+      const rawGiftBalances = data.giftBalances || data.GiftBalances;
+      if (rawGiftBalances && typeof rawGiftBalances === 'object') {
+        normalizedGiftBalances = {};
+        for (const [key, value] of Object.entries(rawGiftBalances)) {
+          normalizedGiftBalances[key] = value !== null && value !== undefined && !Number.isNaN(Number(value)) ? Number(value) : null;
+        }
+      }
+
       return {
         success: true,
         balances: normalizedBalances,
+        giftBalances: normalizedGiftBalances,
       };
     }
 
@@ -1592,3 +1602,174 @@ export async function getAdminCoursePurchases({
   }
 }
 
+
+/**
+ * ارسال هدیه نور به یک یا چند کاربر توسط ادمین در سامانه ByeMoney
+ * اندپوینت: POST /api/admin/noor-gifts
+ *
+ * @param {object} params
+ * @param {string[]} params.externalUserIds - آرایه‌ای از شناسه یکتای کاربران (فقط documentId مجاز است)
+ * @param {number|string} params.amountNoor - مقدار نور برای هر کاربر (عدد صحیح مثبت)
+ * @param {string} params.reason - علت هدیه (اجباری)
+ * @param {string} [params.idempotencyKey] - کلید یکتای جلوگیری از ثبت تکراری
+ * @param {string} params.jwt - توکن احراز هویت ادمین
+ * @returns {Promise<{ success: boolean, status: number, data?: object, invalidUsers?: Array<{externalUserId: string, reason: string}>, error?: string, forbidden?: boolean, unauthorized?: boolean, conflict?: boolean }>}
+ */
+export async function sendNoorGiftWithByeMoney({
+  externalUserIds,
+  amountNoor,
+  reason,
+  idempotencyKey,
+  jwt,
+}) {
+  if (!jwt) {
+    return {
+      success: false,
+      status: 401,
+      unauthorized: true,
+      error: 'نشست کاربری نامعتبر است. لطفاً مجدداً وارد شوید.',
+    };
+  }
+
+  if (!Array.isArray(externalUserIds) || externalUserIds.length === 0) {
+    return {
+      success: false,
+      status: 400,
+      error: 'حداقل یک کاربر باید برای دریافت هدیه انتخاب شود.',
+    };
+  }
+
+  // اعتبارسنجی شناسه کاربران: فقط documentId معتبر
+  const cleanUserIds = externalUserIds
+    .map(id => (typeof id === 'string' ? id.trim() : String(id || '').trim()))
+    .filter(Boolean);
+
+  if (cleanUserIds.length === 0) {
+    return {
+      success: false,
+      status: 400,
+      error: 'شناسه کاربران نامعتبر است. کاربر باید دارای شناسه معتبر documentId باشد.',
+    };
+  }
+
+  // سقف حداکثر ۱۰۰ کاربر طبق قرارداد
+  if (cleanUserIds.length > 100) {
+    return {
+      success: false,
+      status: 400,
+      error: 'حداکثر ۱۰۰ کاربر در هر درخواست مجاز است.',
+    };
+  }
+
+  // تبدیل ارقام فارسی و عربی به لاتین و اعتبارسنجی عدد صحیح مثبت
+  let rawAmountStr = String(amountNoor ?? '')
+    .trim()
+    .replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+    .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+    .replace(/,/g, '');
+
+  const numericAmount = Number(rawAmountStr);
+  if (!rawAmountStr || !Number.isInteger(numericAmount) || numericAmount <= 0) {
+    return {
+      success: false,
+      status: 400,
+      error: 'مقدار نور باید یک عدد صحیح مثبت باشد.',
+    };
+  }
+
+  // بررسی علت اجباری
+  const cleanReason = typeof reason === 'string' ? reason.trim() : '';
+  if (!cleanReason) {
+    return {
+      success: false,
+      status: 400,
+      error: 'علت ثبت هدیه اجباری است.',
+    };
+  }
+
+  const key =
+    (typeof idempotencyKey === 'string' && idempotencyKey.trim()) ||
+    (typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `idemp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
+
+  const endpoint = `${BYEMONEY_API_URL}/api/admin/noor-gifts`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${jwt}`,
+        'Idempotency-Key': key,
+      },
+      body: JSON.stringify({
+        externalUserIds: cleanUserIds,
+        amountNoor: numericAmount,
+        reason: cleanReason,
+      }),
+      cache: 'no-store',
+    });
+
+    if (response.ok) {
+      const data = await response.json().catch(() => ({}));
+      return {
+        success: true,
+        status: response.status,
+        data,
+      };
+    }
+
+    if (response.status === 401) {
+      return {
+        success: false,
+        status: 401,
+        unauthorized: true,
+        error: 'نشست کاربری شما منقضی شده است.',
+      };
+    }
+
+    if (response.status === 403) {
+      return {
+        success: false,
+        status: 403,
+        forbidden: true,
+        error: 'شما دسترسی لازم برای ثبت هدیه نور (Noor.Gift) را ندارید.',
+      };
+    }
+
+    if (response.status === 409) {
+      return {
+        success: false,
+        status: 409,
+        conflict: true,
+        error: 'درخواستی با همین کلید ولی محتوای متفاوت ثبت شده است؛ لطفاً فرم را دوباره باز کنید.',
+      };
+    }
+
+    const errJson = await response.json().catch(() => ({}));
+
+    if (response.status === 400) {
+      const invalidUsers = errJson.invalidUsers || errJson.InvalidUsers || [];
+      return {
+        success: false,
+        status: 400,
+        invalidUsers: Array.isArray(invalidUsers) ? invalidUsers : [],
+        error: errJson.error || errJson.message || 'اطلاعات ارسالی نامعتبر است. هیچ هدیه‌ای ثبت نشد.',
+      };
+    }
+
+    return {
+      success: false,
+      status: response.status,
+      error: errJson.error || errJson.message || `خطا در ثبت هدیه نور (کد خطا: ${response.status})`,
+    };
+  } catch (err) {
+    console.error('[ByeMoney sendNoorGift Error]:', err);
+    return {
+      success: false,
+      status: 0,
+      error: 'خطا در برقراری ارتباط با سامانه بای‌مانی. لطفاً اتصال اینترنت خود را بررسی کنید.',
+    };
+  }
+}

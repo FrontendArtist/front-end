@@ -423,21 +423,6 @@
     }
 }
 
-/* نمایش موجودی نور در جدول کاربران */
-.lightValue {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-bold);
-    font-size: var(--font-sm);
-    white-space: nowrap;
-    width: 90px;
-    justify-content: space-between;
-
-
-}
-
 /* ─────────────────────────────────────────────────────────────────────────────
  * TABLE USER CELL EXTRA STYLES
  * ───────────────────────────────────────────────────────────────────────────── */
@@ -459,4 +444,137 @@
 .emptyTableCell {
     text-align: center;
     padding: var(--space-title-text-desktop);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * نور و هدیه و انتخاب سطرها
+ * ───────────────────────────────────────────────────────────────────────────── */
+.lightCellWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: var(--font-xs);
+    white-space: nowrap;
+    min-width: 95px;
+}
+
+.lightRow,
+.giftRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lightLabel,
+.giftLabel {
+    width: 32px;
+    font-size: var(--font-xs);
+    color: var(--color-text-secondary);
+    opacity: 0.85;
+}
+
+.lightValue {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-sm);
+}
+
+.giftValue {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+}
+
+.giftRow--active {
+    .giftLabel {
+        color: #d97706;
+        font-weight: 500;
+    }
+    .giftValue {
+        color: #f59e0b;
+    }
+}
+
+.giftRow--empty {
+    .giftValue {
+        color: var(--color-text-secondary);
+        font-weight: normal;
+        opacity: 0.6;
+    }
+}
+
+.giftIcon {
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+.actionBtnsWrap {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.compactBtn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 0.4rem 0.65rem !important;
+    font-size: var(--font-xs) !important;
+    white-space: nowrap !important;
+}
+
+.roleFilterSelect {
+    padding: 0.75rem 1rem;
+    border: 1px solid fade(var(--color-primary), 12%);
+    border-radius: 10px;
+    background-color: fade(var(--color-black), 15%);
+    color: var(--color-card-text);
+    font-family: inherit;
+    font-size: var(--font-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-title-hover);
+        background-color: fade(var(--color-black), 25%);
+    }
+
+    option {
+        background-color: #1e293b;
+        color: #fff;
+    }
+}
+
+.checkboxCol {
+    width: 36px;
+    text-align: center !important;
+}
+
+.checkboxInput {
+    cursor: pointer;
+    accent-color: #f59e0b;
+    width: 16px;
+    height: 16px;
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.35;
+    }
+}
+
+.refreshNotice {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
+    font-size: var(--font-xs);
 }

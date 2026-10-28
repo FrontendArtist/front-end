@@ -62,6 +62,7 @@ export async function getUsers(jwt, { page, pageSize, start, limit = 20 } = {}) 
                 phoneNumber: attrs.phoneNumber || '—',
                 role: attrs.role?.name || attrs.role?.type || 'نامشخص',
                 light: attrs.light ?? 0,
+                giftBalance: attrs.giftBalance ?? null,
                 createdAt: attrs.createdAt
             };
         });
@@ -71,13 +72,23 @@ export async function getUsers(jwt, { page, pageSize, start, limit = 20 } = {}) 
         if (userIds.length > 0) {
             try {
                 const batchRes = await getBatchBalancesWithByeMoney({ userIds, jwt });
-                if (batchRes.success && batchRes.balances) {
+                if (batchRes.success) {
                     users.forEach(u => {
-                        const docBalance = batchRes.balances[u.documentId];
-                        const idBalance = batchRes.balances[String(u.id)];
-                        const liveBalance = docBalance !== undefined ? docBalance : idBalance;
-                        if (liveBalance !== undefined && liveBalance !== null) {
-                            u.light = Number(liveBalance);
+                        if (batchRes.balances) {
+                            const docBalance = batchRes.balances[u.documentId];
+                            const idBalance = batchRes.balances[String(u.id)];
+                            const liveBalance = docBalance !== undefined ? docBalance : idBalance;
+                            if (liveBalance !== undefined && liveBalance !== null) {
+                                u.light = Number(liveBalance);
+                            }
+                        }
+                        if (batchRes.giftBalances) {
+                            const docGift = batchRes.giftBalances[u.documentId];
+                            const idGift = batchRes.giftBalances[String(u.id)];
+                            const liveGift = docGift !== undefined ? docGift : idGift;
+                            if (liveGift !== undefined && liveGift !== null) {
+                                u.giftBalance = Number(liveGift);
+                            }
                         }
                     });
                 }
@@ -163,12 +174,21 @@ export async function getUserDetails(userId, jwt) {
 
         const targetExternalId = dataWrap.documentId || String(dataWrap.id);
         let liveLight = attrs.light ?? 0;
+        let liveGiftBalance = attrs.giftBalance ?? null;
         try {
             const batchRes = await getBatchBalancesWithByeMoney({ userIds: [targetExternalId], jwt });
-            if (batchRes.success && batchRes.balances) {
-                const b = batchRes.balances[targetExternalId] ?? batchRes.balances[String(dataWrap.id)];
-                if (b !== undefined && b !== null) {
-                    liveLight = Number(b);
+            if (batchRes.success) {
+                if (batchRes.balances) {
+                    const b = batchRes.balances[targetExternalId] ?? batchRes.balances[String(dataWrap.id)];
+                    if (b !== undefined && b !== null) {
+                        liveLight = Number(b);
+                    }
+                }
+                if (batchRes.giftBalances) {
+                    const gb = batchRes.giftBalances[targetExternalId] ?? batchRes.giftBalances[String(dataWrap.id)];
+                    if (gb !== undefined && gb !== null) {
+                        liveGiftBalance = Number(gb);
+                    }
                 }
             }
         } catch (_) {}
@@ -180,6 +200,7 @@ export async function getUserDetails(userId, jwt) {
             email: attrs.email || '—',
             phoneNumber: attrs.phoneNumber || '—',
             light: liveLight,
+            giftBalance: liveGiftBalance,
             createdAt: attrs.createdAt,
             orders: (attrs.orders?.data || attrs.orders || []).map(o => ({
                 id: o.id,

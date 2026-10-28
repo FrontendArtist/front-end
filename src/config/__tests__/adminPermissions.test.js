@@ -6,6 +6,7 @@ describe('Admin Permissions Configuration', () => {
         expect(ADMIN_PERMISSIONS.TOPUP_REVIEW).toBe('TopUp.Review');
         expect(ADMIN_PERMISSIONS.COURSES_MANAGE).toBe('Courses.Manage');
         expect(ADMIN_PERMISSIONS.WALLET_VIEW).toBe('Wallet.View');
+        expect(ADMIN_PERMISSIONS.NOOR_GIFT).toBe('Noor.Gift');
     });
 
     test('ROUTE_PERMISSIONS assigns Courses.Manage to /admin/orders/new and TopUp.Review to /admin/gateway-reviews', () => {

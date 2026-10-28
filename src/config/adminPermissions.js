@@ -15,6 +15,7 @@ export const ADMIN_PERMISSIONS = {
     TOPUP_REVIEW: 'TopUp.Review',
     COURSES_MANAGE: 'Courses.Manage',
     WALLET_VIEW: 'Wallet.View',
+    NOOR_GIFT: 'Noor.Gift',
 };
 
 /**
