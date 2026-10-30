@@ -129,9 +129,9 @@
   flex-shrink: 0;
   width: 248px;
   position: sticky;
-  top: 120px; // Distance from viewport top when stuck
+  top: calc(120px + var(--top-banner-height, 0px)); // Distance from viewport top when stuck
   align-self: flex-start; // ← REQUIRED: don't stretch to article height
-  max-height: calc(100vh - 110px);
+  max-height: calc(100vh - 120px - var(--top-banner-height, 0px));
   overflow-y: auto;
   background: #042222;
   border: 1px solid rgba(246, 217, 130, 0.22);

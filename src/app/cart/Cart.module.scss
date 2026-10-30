@@ -384,7 +384,7 @@
 // Sidebar خلاصه سفارش - مطابق سایدبار پروفایل
 .sidebar {
     position: sticky;
-    top: 100px;
+    top: calc(var(--space-section-top-desktop) + 16px);
 
     @include respond(lg) {
         position: static;

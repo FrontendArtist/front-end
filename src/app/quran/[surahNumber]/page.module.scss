@@ -15,7 +15,7 @@
   min-height: 100vh;
 
   @include respond(md) {
-    padding-top: 90px;
+    padding-top: var(--space-section-top-desktop);
     padding-bottom: 40px;
   }
 }

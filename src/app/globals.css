@@ -1,3 +1,8 @@
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(100px + var(--top-banner-height, 0px) + 20px);
+}
+
 :root {
   --background: var(--color-white);
   --foreground: var(--color-dark-17);
