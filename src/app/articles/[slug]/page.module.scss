@@ -129,9 +129,9 @@
   flex-shrink: 0;
   width: 248px;
   position: sticky;
-  top: calc(120px + var(--top-banner-height, 0px)); // Distance from viewport top when stuck
+  top: calc(var(--space-section-top-desktop) + 20px); // Distance from viewport top when stuck
   align-self: flex-start; // ← REQUIRED: don't stretch to article height
-  max-height: calc(100vh - 120px - var(--top-banner-height, 0px));
+  max-height: calc(100vh - var(--space-section-top-desktop) - 20px);
   overflow-y: auto;
   background: #042222;
   border: 1px solid rgba(246, 217, 130, 0.22);
@@ -269,7 +269,7 @@
     padding-bottom: 0.45rem;
     position: relative;
     font-weight: var(--font-weight-bold, 700);
-    scroll-margin-top: 100px;
+    scroll-margin-top: calc(var(--space-section-top-desktop) + 20px);
 
     &::after {
       content: '';
@@ -291,7 +291,7 @@
     padding-bottom: 0.45rem;
     position: relative;
     font-weight: var(--font-weight-bold, 700);
-    scroll-margin-top: 100px;
+    scroll-margin-top: calc(var(--space-section-top-desktop) + 20px);
 
     &::after {
       content: '';
@@ -311,7 +311,7 @@
     margin-top: 1.75rem;
     margin-bottom: 0.85rem;
     font-weight: var(--font-weight-bold, 700);
-    scroll-margin-top: 100px;
+    scroll-margin-top: calc(var(--space-section-top-desktop) + 20px);
   }
 
   // ---- Paragraphs ----

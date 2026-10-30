@@ -1,6 +1,6 @@
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: calc(100px + var(--top-banner-height, 0px) + 20px);
+  scroll-padding-top: calc(var(--space-section-top-desktop) + 20px);
 }
 
 :root {
