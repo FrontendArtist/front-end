@@ -241,7 +241,7 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
               <li><Link href="/" onClick={closeMobileMenu}>صفحه اصلی</Link></li>
               <li><Link href="/courses" onClick={closeMobileMenu}>دوره‌ها</Link></li>
               <li><Link href="/articles" onClick={closeMobileMenu}>مقالات</Link></li>
-              <li><Link href="/quran" onClick={closeMobileMenu}>کلام نور</Link></li>
+              {/* <li><Link href="/quran" onClick={closeMobileMenu}>کلام نور</Link></li> */}
               <li><Link href="/services" onClick={closeMobileMenu}>خدمات</Link></li>
               <li><Link href="/about" onClick={closeMobileMenu}>درباره ما</Link></li>
               <li><Link href="/contact" onClick={closeMobileMenu}>تماس با ما</Link></li>
