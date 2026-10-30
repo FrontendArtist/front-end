@@ -8,28 +8,45 @@ import AddToCartButton from '@/components/ui/AddToCartButton/AddToCartButton';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import CartSyncProvider from '@/components/providers/CartSyncProvider';
 import { useOrdersStore } from '@/store/useOrdersStore';
+import { useNotificationsStore } from '@/store/useNotificationsStore';
 import { useCartStore } from '@/store/useCartStore';
 import { fetchClientOrders } from '@/lib/client/ordersClientApi';
-import { fetchProfileCartData, updateProfileCartData } from '@/lib/client/profileClientApi';
+import {
+    fetchClientNotifications,
+    updateClientNotifications,
+} from '@/lib/client/notificationsClientApi';
+import { fetchProfileCartData } from '@/lib/client/profileClientApi';
+
 let mockSession;
 jest.mock('next-auth/react',()=>({useSession:()=>mockSession,SessionProvider:({children})=>children}));
 jest.mock('@/lib/client/ordersClientApi',()=>({fetchClientOrders:jest.fn()}));
+jest.mock('@/lib/client/notificationsClientApi',()=>({
+    fetchClientNotifications:jest.fn(),
+    updateClientNotifications:jest.fn().mockResolvedValue({success:true}),
+}));
 jest.mock('@/lib/client/profileClientApi',()=>({setProfileUser:jest.fn(),fetchProfileCartData:jest.fn(),updateProfileCartData:jest.fn().mockResolvedValue({})}));
 jest.mock('@/store/useUserMessagesStore',()=>({useUserMessagesStore:Object.assign((selector)=>selector({messages:[],isLoading:false,hasFetched:true,fetchMessages:jest.fn()}),{getState:()=>({fetchMessages:jest.fn()})})}));
 jest.mock('next/image',()=>({__esModule:true,default:()=>null}));
 jest.mock('@/components/ui/DiscountCountdown/DiscountCountdown',()=>()=>null);
 jest.mock('@/components/ui/GradientBorderCard/GradientBorderCard',()=>({children})=><div>{children}</div>);
+
 const course={image:{url:'/course.png'},id:8,type:'course',slug:'course-one',title:'دوره آزمون',price:100};
 const other={id:9,type:'course',slug:'course-two',title:'دوره دوم',price:100};
 const paid=(id,item)=>({id,documentId:`order-${id}`,paymentStatus:'paid',items:[{...item,courseId:item.id}]});
 const deferred=()=>{let resolve;const promise=new Promise(r=>{resolve=r});return {promise,resolve};};
 const login=id=>{mockSession=id==null?{status:'unauthenticated',data:null}:{status:'authenticated',data:{user:{id,jwt:`token-${id}`}}};};
 const App=()=> <Providers><OrdersList/><CourseCard course={course}/><CartSyncProvider/></Providers>;
+
 beforeEach(()=>{
- jest.clearAllMocks();login(1);useOrdersStore.getState().setOrdersUser(null);
+ jest.clearAllMocks();
+ login(1);
+ useOrdersStore.getState().setOrdersUser(null);
+ useNotificationsStore.getState().setNotificationsUser(null);
  useCartStore.setState({items:[],userId:null,hydratedUserId:null,processedOrders:{},appliedCoupon:null});
  fetchProfileCartData.mockResolvedValue({cartData:null});
+ fetchClientNotifications.mockResolvedValue({data:[]});
 });
+
 test('خروج و ورود بدون بارگذاری مجدد نمایش و مالکیت را عوض می‌کند و سبد حساب دوم درست پاک می‌شود',async()=>{
  fetchClientOrders.mockResolvedValueOnce({data:[paid(11,course)]}).mockResolvedValueOnce({data:[paid(22,other)]});
  const view=render(<App/>);
@@ -41,6 +58,7 @@ test('خروج و ورود بدون بارگذاری مجدد نمایش و ما
  expect(screen.queryByText('مشاهده دوره')).toBeNull();await waitFor(()=>expect(useCartStore.getState().items).toEqual([course]));
  expect(fetchClientOrders).toHaveBeenCalledTimes(2);
 });
+
 test('پاسخ دیرهنگام سفارش و پروفایل حساب اول سبد یا نمایش حساب دوم را عوض نمی‌کند',async()=>{
  const orders=deferred(),profile=deferred();
  fetchClientOrders.mockReturnValueOnce(orders.promise).mockResolvedValueOnce({data:[]});
@@ -54,13 +72,39 @@ test('پاسخ دیرهنگام سفارش و پروفایل حساب اول س�
 function Notifications({ label }) { const { notifications }=useOrderNotifications(); return <span data-testid={label}>{notifications.map(n=>n.id).join(',')}</span>; }
 test('اعلان سفارش و دکمهٔ سفارش معلق با تغییر مستقیم حساب، دادهٔ قبلی را نشان نمی‌دهند',async()=>{
  fetchClientOrders.mockResolvedValueOnce({data:[paid(11,course),{id:12,documentId:'pending-one',paymentMethod:'card_to_card',paymentStatus:'pending_payment',items:[course]}]}).mockResolvedValueOnce({data:[]});
+ fetchClientNotifications
+   .mockResolvedValueOnce({data:[{id:1,documentId:'notif-11',eventKey:'order-11_confirmed',rawId:'order-11',type:'confirmed',title:'تایید شد',notifMessage:'فعال شد',isRead:false,createdAt:new Date().toISOString()}]})
+   .mockResolvedValueOnce({data:[]});
  const Page=()=> <Providers><Notifications label="notifications"/><AddToCartButton course={course}/></Providers>;
  const view=render(<Page/>);await waitFor(()=>expect(screen.getByText('منتظر ارسال فیش')).toBeTruthy());
- expect(screen.getByTestId('notifications').textContent).toBe('order-11_confirmed');
+ await waitFor(()=>expect(screen.getByTestId('notifications').textContent).toBe('order-11_confirmed'));
  act(()=>{login(2);view.rerender(<Page/>);});
  expect(screen.queryByText('منتظر ارسال فیش')).toBeNull();expect(screen.getByTestId('notifications').textContent).toBe('');
  await waitFor(()=>expect(useOrdersStore.getState().hasFetched).toBe(true));
  expect(screen.getByRole('button',{name:'افزودن دوره آزمون به سبد خرید'})).toBeTruthy();
+});
+
+test('اعلان‌های قدیمی‌تر از یک هفته فیلتر می‌شوند و خواندن اعلان به بک‌اند ارسال می‌گردد',async()=>{
+ const recentDate = new Date().toISOString();
+ const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+ fetchClientOrders.mockResolvedValue({data:[]});
+ fetchClientNotifications.mockResolvedValueOnce({
+   data:[
+     {id:1,documentId:'notif-recent',eventKey:'order-1_confirmed',rawId:'order-1',type:'confirmed',title:'تایید شد',notifMessage:'جدید',isRead:false,createdAt:recentDate},
+     {id:2,documentId:'notif-old',eventKey:'order-2_confirmed',rawId:'order-2',type:'confirmed',title:'قدیمی',notifMessage:'قدیمی',isRead:false,createdAt:eightDaysAgo},
+   ],
+ });
+ const hook = renderHook(() => useOrderNotifications(), { wrapper: Providers });
+ await waitFor(() => expect(hook.result.current.hasFetched).toBe(true));
+ expect(hook.result.current.notifications.map((n) => n.id)).toEqual(['order-1_confirmed']);
+ await act(async () => {
+   hook.result.current.markAsRead('order-1_confirmed');
+ });
+ expect(hook.result.current.notifications).toEqual([]);
+ expect(updateClientNotifications).toHaveBeenCalledWith({
+   action: 'markAsRead',
+   id: 'order-1_confirmed',
+ });
 });
 
 test('پس از حذف یکی از مشترکان، رفرش تب فقط برای حساب فعلی و یک بار انجام می‌شود',async()=>{

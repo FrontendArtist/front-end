@@ -1,10 +1,14 @@
 import { create } from 'zustand';
 import { fetchClientOrders } from '@/lib/client/ordersClientApi';
+import { useNotificationsStore } from '@/store/useNotificationsStore';
+
 const EMPTY_ORDERS = [];
 let generation = 0;
 let inFlight = null;
+
 export const selectAccountOrders = (state, userId) =>
     userId != null && state.userId === String(userId) ? state.orders : EMPTY_ORDERS;
+
 export const useOrdersStore = create((set, get) => ({
     userId: null, orders: [], isLoading: false, error: null, hasFetched: false,
     setOrdersUser: (userId) => {
@@ -40,5 +44,8 @@ export const useOrdersStore = create((set, get) => ({
         inFlight = request;
         return request.promise;
     },
-    invalidateOrders: () => set({ hasFetched: false }),
+    invalidateOrders: () => {
+        set({ hasFetched: false });
+        useNotificationsStore.getState().invalidateNotifications();
+    },
 }));
