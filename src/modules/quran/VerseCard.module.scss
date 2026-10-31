@@ -5,8 +5,9 @@
  * ساختار BEM:
  *   Block:    .verseCard
  *   Elements: __header, __number, __controls, __audioBtn, __body,
- *             __arabicText, __translation, __tafsir, __tafsirHeader, __tafsirText
- *   Modifiers: --arabic, --tafsir, --active
+ *             __arabicText, __translation, __tafsir, __tafsirHeader, __tafsirText,
+ *             __tafsirDivider
+ *   Modifiers: --arabic, --tafsir, --active, --hasTafsirAudio
  *
  * طراحی:
  * - استفاده از متغیرهای رنگی پروژه (--color-*)
@@ -80,6 +81,11 @@
         #10b981
       );
     }
+  }
+
+  // کارت آیه دارای صوت تفسیر اختصاصی
+  &--hasTafsirAudio {
+    border-bottom-color: rgba(246, 217, 130, 0.25);
   }
 
   @include respond(md) {
@@ -380,6 +386,54 @@
   color: rgba(255, 250, 234, 0.8);
   text-align: right;
   margin: 0;
+}
+
+// =============================================================================
+// Element: __tafsirDivider — بوردر و جداکننده مقطع صوتی/تفسیری با رنگ روشن
+// برای تفکیک آیه دارای صوت تفسیر و آیات ماقبل از آیات بعدی
+// =============================================================================
+
+.verseCard__tafsirDivider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 2px;
+  margin: 0.75rem 0;
+  background: linear-gradient(
+    90deg,
+    rgba(246, 217, 130, 0.05) 0%,
+    rgba(246, 217, 130, 0.5) 15%,
+    rgba(255, 244, 208, 0.95) 50%,
+    rgba(246, 217, 130, 0.5) 85%,
+    rgba(246, 217, 130, 0.05) 100%
+  );
+  box-shadow: 0 0 12px rgba(246, 217, 130, 0.5), 0 0 24px rgba(246, 217, 130, 0.25);
+  border-radius: 999px;
+
+  // نگین لوزی شکل با درخشش روشن در مرکز خط
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    width: 9px;
+    height: 9px;
+    background: #fff4d0;
+    border: 1px solid #f6d982;
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(246, 217, 130, 0.9), 0 0 22px rgba(246, 217, 130, 0.6);
+  }
+
+  @include respond(md) {
+    margin: 0.5rem 0;
+  }
+
+  @include respond(sm) {
+    margin: 0.35rem 0;
+  }
 }
 
 // =============================================================================

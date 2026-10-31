@@ -62,6 +62,14 @@ export default function VerseCard({
     strapiData?.tafsirAudioUrl ||
     null;
 
+  // بررسی وجود صوت تفسیر برای انداختن بوردر/جداکننده با رنگ روشن بعد از این آیه
+  const hasTafsirAudio = Boolean(
+    tafsirAudio ||
+    verse.tafsirAudioUrl ||
+    (verse.tafsirAudio && (verse.tafsirAudio.url || typeof verse.tafsirAudio === 'string')) ||
+    strapiData?.tafsirAudioUrl
+  );
+
   // آدرس صوت ترجمه گویا (اولویت با صوت آپلود شده در بک‌اند، سپس فال‌بک به بهروز رضوی)
   const persianAudioUrl = verse.translationAudioUrl || getRazaviAudioUrl(surahNumber, verseNumber);
 
@@ -108,132 +116,145 @@ export default function VerseCard({
   };
 
   return (
-    <article
-      className={`${styles.verseCard} ${isActive ? styles['verseCard--active'] : ''}`}
-      id={`verse-${verseNumber}`}
-      aria-label={`آیه ${verseNumber}`}
-    >
-      {/* ===== هدر کارت: شماره آیه + دکمه‌های صوت عربی و تفسیر ===== */}
-      <header className={styles.verseCard__header}>
-        <h2 className={styles.verseCard__number} aria-label={`شماره آیه ${verseNumber}`}>
-          {verseNumber}
-        </h2>
+    <>
+      <article
+        className={`${styles.verseCard} ${isActive ? styles['verseCard--active'] : ''} ${
+          hasTafsirAudio ? styles['verseCard--hasTafsirAudio'] : ''
+        }`}
+        id={`verse-${verseNumber}`}
+        aria-label={`آیه ${verseNumber}`}
+      >
+        {/* ===== هدر کارت: شماره آیه + دکمه‌های صوت عربی و تفسیر ===== */}
+        <header className={styles.verseCard__header}>
+          <h2 className={styles.verseCard__number} aria-label={`شماره آیه ${verseNumber}`}>
+            {verseNumber}
+          </h2>
 
-        {/* دکمه هدر: قرائت عربی */}
-        <div className={styles.verseCard__controls} role="group" aria-label="کنترل‌های صوتی هدر">
-          {/* دکمه ۱: قرائت عربی */}
-          {arabicAudioUrl && (
-            <button
-              type="button"
-              className={`${styles.verseCard__audioBtn} ${styles['verseCard__audioBtn--arabic']} ${
-                isArabicPlaying ? styles['verseCard__audioBtn--active'] : ''
-              }`}
-              onClick={handleArabicClick}
-              aria-label={`${isArabicPlaying ? 'توقف' : 'پخش'} قرائت عربی آیه ${verseNumber}`}
-              aria-pressed={isArabicPlaying}
-              title={isArabicPlaying ? 'توقف قرائت عربی' : 'پخش قرائت عربی'}
-            >
-              {isArabicPlaying ? (
-                <Pause size={15} aria-hidden="true" />
-              ) : (
-                <Play size={15} aria-hidden="true" />
-              )}
-              <span className={styles.verseCard__audioBtnLabel}>قرائت عربی</span>
-            </button>
-          )}
-        </div>
-      </header>
-
-      {/* ===== بدنه کارت ===== */}
-      <div className={styles.verseCard__body}>
-        {/* ۱. متن عربی آیه */}
-        <p
-          className={styles.verseCard__arabicText}
-          lang="ar"
-          dir="rtl"
-          aria-label={`متن عربی آیه ${verseNumber}`}
-        >
-          {arabicText}
-        </p>
-
-        {/* ۲. باکس ترجمه فارسی — صوت ترجمه در این باکس قرار دارد */}
-        {persianTranslation && (
-          <div className={styles.verseCard__translationBox} lang="fa" dir="rtl">
-            <div className={styles.verseCard__translationHeader}>
-              <span className={styles.verseCard__translationLabel}>
-                <Volume2 size={14} aria-hidden="true" />
-                <span>ترجمه فارسی</span>
-              </span>
-
-              {/* دکمه ۲: صوت ترجمه گویا (بهروز رضوی) */}
-              {isPersianAudioAvailable && persianAudioUrl && (
-                <button
-                  type="button"
-                  className={`${styles.verseCard__audioBtn} ${styles['verseCard__audioBtn--persian']} ${
-                    isPersianPlaying ? styles['verseCard__audioBtn--active'] : ''
-                  }`}
-                  onClick={handlePersianClick}
-                  aria-label={`${isPersianPlaying ? 'توقف' : 'پخش'} ترجمه گویا آیه ${verseNumber}`}
-                  aria-pressed={isPersianPlaying}
-                  title={
-                    isPersianPlaying
-                      ? 'توقف ترجمه گویا'
-                      : 'پخش ترجمه گویا (بهروز رضوی)'
-                  }
-                >
-                  {isPersianPlaying ? (
-                    <Pause size={14} aria-hidden="true" />
-                  ) : (
-                    <Play size={14} aria-hidden="true" />
-                  )}
-                  <span className={styles.verseCard__audioBtnLabel}>
-                    ترجمه گویا (بهروز رضوی)
-                  </span>
-                </button>
-              )}
-            </div>
-
-            {/* متن ترجمه */}
-            <p className={styles.verseCard__translationText}>{persianTranslation}</p>
+          {/* دکمه هدر: قرائت عربی */}
+          <div className={styles.verseCard__controls} role="group" aria-label="کنترل‌های صوتی هدر">
+            {/* دکمه ۱: قرائت عربی */}
+            {arabicAudioUrl && (
+              <button
+                type="button"
+                className={`${styles.verseCard__audioBtn} ${styles['verseCard__audioBtn--arabic']} ${
+                  isArabicPlaying ? styles['verseCard__audioBtn--active'] : ''
+                }`}
+                onClick={handleArabicClick}
+                aria-label={`${isArabicPlaying ? 'توقف' : 'پخش'} قرائت عربی آیه ${verseNumber}`}
+                aria-pressed={isArabicPlaying}
+                title={isArabicPlaying ? 'توقف قرائت عربی' : 'پخش قرائت عربی'}
+              >
+                {isArabicPlaying ? (
+                  <Pause size={15} aria-hidden="true" />
+                ) : (
+                  <Play size={15} aria-hidden="true" />
+                )}
+                <span className={styles.verseCard__audioBtnLabel}>قرائت عربی</span>
+              </button>
+            )}
           </div>
-        )}
+        </header>
 
-        {/* ۳. تفسیر اختصاصی Strapi (متن و/یا صوت) */}
-        {(tafsirText || tafsirAudio) && (
-          <div className={styles.verseCard__tafsir} lang="fa" dir="rtl">
-            <div className={styles.verseCard__tafsirHeader}>
-              <div className={styles.verseCard__tafsirTitle}>
-                <BookOpen size={16} aria-hidden="true" />
-                <span>تفسیر اختصاصی</span>
+        {/* ===== بدنه کارت ===== */}
+        <div className={styles.verseCard__body}>
+          {/* ۱. متن عربی آیه */}
+          <p
+            className={styles.verseCard__arabicText}
+            lang="ar"
+            dir="rtl"
+            aria-label={`متن عربی آیه ${verseNumber}`}
+          >
+            {arabicText}
+          </p>
+
+          {/* ۲. باکس ترجمه فارسی — صوت ترجمه در این باکس قرار دارد */}
+          {persianTranslation && (
+            <div className={styles.verseCard__translationBox} lang="fa" dir="rtl">
+              <div className={styles.verseCard__translationHeader}>
+                <span className={styles.verseCard__translationLabel}>
+                  <Volume2 size={14} aria-hidden="true" />
+                  <span>ترجمه فارسی</span>
+                </span>
+
+                {/* دکمه ۲: صوت ترجمه گویا (بهروز رضوی) */}
+                {isPersianAudioAvailable && persianAudioUrl && (
+                  <button
+                    type="button"
+                    className={`${styles.verseCard__audioBtn} ${styles['verseCard__audioBtn--persian']} ${
+                      isPersianPlaying ? styles['verseCard__audioBtn--active'] : ''
+                    }`}
+                    onClick={handlePersianClick}
+                    aria-label={`${isPersianPlaying ? 'توقف' : 'پخش'} ترجمه گویا آیه ${verseNumber}`}
+                    aria-pressed={isPersianPlaying}
+                    title={
+                      isPersianPlaying
+                        ? 'توقف ترجمه گویا'
+                        : 'پخش ترجمه گویا (بهروز رضوی)'
+                    }
+                  >
+                    {isPersianPlaying ? (
+                      <Pause size={14} aria-hidden="true" />
+                    ) : (
+                      <Play size={14} aria-hidden="true" />
+                    )}
+                    <span className={styles.verseCard__audioBtnLabel}>
+                      ترجمه گویا (بهروز رضوی)
+                    </span>
+                  </button>
+                )}
               </div>
 
-              {/* دکمه ۳: تفسیر صوتی (در باکس تفسیر) */}
-              {tafsirAudio && (
-                <button
-                  type="button"
-                  className={`${styles.verseCard__audioBtn} ${styles['verseCard__audioBtn--tafsir']} ${
-                    isTafsirPlaying ? styles['verseCard__audioBtn--active'] : ''
-                  }`}
-                  onClick={handleTafsirClick}
-                  aria-label={`${isTafsirPlaying ? 'توقف' : 'پخش'} تفسیر صوتی آیه ${verseNumber}`}
-                  aria-pressed={isTafsirPlaying}
-                  title={isTafsirPlaying ? 'توقف تفسیر صوتی' : 'پخش تفسیر صوتی'}
-                >
-                  {isTafsirPlaying ? (
-                    <Pause size={14} aria-hidden="true" />
-                  ) : (
-                    <Play size={14} aria-hidden="true" />
-                  )}
-                  <span className={styles.verseCard__audioBtnLabel}>تفسیر صوتی</span>
-                </button>
-              )}
+              {/* متن ترجمه */}
+              <p className={styles.verseCard__translationText}>{persianTranslation}</p>
             </div>
+          )}
 
-            {/* متن تفسیر */}
-            {tafsirText && <p className={styles.verseCard__tafsirText}>{tafsirText}</p>}
-          </div>
-        )}
-      </div>
-    </article>
+          {/* ۳. تفسیر اختصاصی Strapi (متن و/یا صوت) */}
+          {(tafsirText || tafsirAudio) && (
+            <div className={styles.verseCard__tafsir} lang="fa" dir="rtl">
+              <div className={styles.verseCard__tafsirHeader}>
+                <div className={styles.verseCard__tafsirTitle}>
+                  <BookOpen size={16} aria-hidden="true" />
+                  <span>تفسیر اختصاصی</span>
+                </div>
+
+                {/* دکمه ۳: تفسیر صوتی (در باکس تفسیر) */}
+                {tafsirAudio && (
+                  <button
+                    type="button"
+                    className={`${styles.verseCard__audioBtn} ${styles['verseCard__audioBtn--tafsir']} ${
+                      isTafsirPlaying ? styles['verseCard__audioBtn--active'] : ''
+                    }`}
+                    onClick={handleTafsirClick}
+                    aria-label={`${isTafsirPlaying ? 'توقف' : 'پخش'} تفسیر صوتی آیه ${verseNumber}`}
+                    aria-pressed={isTafsirPlaying}
+                    title={isTafsirPlaying ? 'توقف تفسیر صوتی' : 'پخش تفسیر صوتی'}
+                  >
+                    {isTafsirPlaying ? (
+                      <Pause size={14} aria-hidden="true" />
+                    ) : (
+                      <Play size={14} aria-hidden="true" />
+                    )}
+                    <span className={styles.verseCard__audioBtnLabel}>تفسیر صوتی</span>
+                  </button>
+                )}
+              </div>
+
+              {/* متن تفسیر */}
+              {tafsirText && <p className={styles.verseCard__tafsirText}>{tafsirText}</p>}
+            </div>
+          )}
+        </div>
+      </article>
+
+      {/* خط و بوردر جداکننده با رنگ روشن برای تفکیک این آیه و آیات قبل از آیات بعدی */}
+      {hasTafsirAudio && (
+        <div
+          className={styles.verseCard__tafsirDivider}
+          role="separator"
+          aria-label={`جداکننده مقطع تفسیری پس از آیه ${verseNumber}`}
+        />
+      )}
+    </>
   );
 }
