@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect } from 'react';
 import { SessionProvider, useSession } from "next-auth/react";
 import { useCartStore } from '@/store/useCartStore';
 import { useOrdersStore } from '@/store/useOrdersStore';
+import { useNotificationsStore } from '@/store/useNotificationsStore';
 import { setProfileUser } from '@/lib/client/profileClientApi';
 
 /**
@@ -16,6 +17,7 @@ function CartSessionSync() {
   useLayoutEffect(() => {
     const userId = status === 'authenticated' ? session?.user?.id : null;
     useOrdersStore.getState().setOrdersUser(userId);
+    useNotificationsStore.getState().setNotificationsUser(userId);
     setProfileUser(userId);
     if (status !== 'loading') useCartStore.getState().setCartUser(userId);
   }, [session?.user?.id, status]);

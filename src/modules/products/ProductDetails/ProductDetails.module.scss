@@ -34,7 +34,7 @@
 .galleryCol {
   width: 100%;
   position: sticky;
-  top: 90px;
+  top: calc(var(--space-section-top-desktop) + 16px);
   align-self: flex-start;
 
   @include respond(md) {
