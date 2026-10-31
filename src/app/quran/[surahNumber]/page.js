@@ -18,8 +18,6 @@ import styles from './page.module.scss';
 
 export const dynamic = 'force-dynamic';
 
-
-
 // ============================================================================
 // پیکربندی API خارجی Al Quran Cloud
 // ============================================================================
@@ -30,7 +28,7 @@ const EDITIONS = 'quran-uthmani,fa.makarem,ar.alafasy';
  * نگاشت شماره سوره به نام فارسی برای SEO و UI
  * @type {Record<number, string>}
  */
-const SURAH_NAMES_FA = {
+export const SURAH_NAMES_FA = {
   1: 'الفاتحه', 2: 'البقره', 3: 'آل عمران', 4: 'النساء', 5: 'المائده',
   6: 'الأنعام', 7: 'الأعراف', 8: 'الأنفال', 9: 'التوبه', 10: 'یونس',
   11: 'هود', 12: 'یوسف', 13: 'الرعد', 14: 'ابراهیم', 15: 'الحجر',
@@ -163,6 +161,7 @@ export default async function SurahTafsirPage({ params }) {
 
           const tafsirText = strapiVerse?.tafsirText || null;
           const tafsirAudioUrl = strapiVerse?.tafsirAudioUrl || null;
+          const subjects = strapiVerse?.subjects || [];
           const hasTafsir = Boolean(tafsirText || tafsirAudioUrl);
 
           return {
@@ -175,6 +174,7 @@ export default async function SurahTafsirPage({ params }) {
             translationAudioUrl,
             tafsirText,
             tafsirAudioUrl,
+            subjects,
             hasTafsir,
           };
         });
@@ -248,6 +248,7 @@ export default async function SurahTafsirPage({ params }) {
           translationAudioUrl,
           tafsirText: strapiVerse?.tafsirText || null,
           tafsirAudioUrl: strapiVerse?.tafsirAudioUrl || null,
+          subjects: strapiVerse?.subjects || [],
           hasTafsir: Boolean(strapiVerse?.tafsirText || strapiVerse?.tafsirAudioUrl),
         };
       })
@@ -293,7 +294,7 @@ export default async function SurahTafsirPage({ params }) {
 
   const breadcrumbItems = [
     { label: 'خانه', href: '/' },
-    { label: 'قرآن کریم', href: '/quran' },
+    { label: 'کلام نور', href: '/quran' },
     { label: `تفسیر سوره ${surahNameFa}` },
   ];
 

@@ -4,15 +4,11 @@
  *
  * ساختار BEM:
  *   Block:    .verseCard
- *   Elements: __header, __number, __controls, __audioBtn, __body,
- *             __arabicText, __translation, __tafsir, __tafsirHeader, __tafsirText,
+ *   Elements: __header, __titleGroup, __number, __surahBadge, __controls, __audioBtn,
+ *             __body, __arabicText, __translation, __tafsir, __tafsirHeader, __tafsirText,
+ *             __subjects, __subjectsLabel, __subjectsList, __subjectBadge,
  *             __tafsirDivider
  *   Modifiers: --arabic, --tafsir, --active, --hasTafsirAudio
- *
- * طراحی:
- * - استفاده از متغیرهای رنگی پروژه (--color-*)
- * - فونت عربی جداگانه برای خوانایی بهتر
- * - Responsive: در موبایل دکمه‌ها زیر متن قرار می‌گیرند
  */
 
 @use '../../styles/base/mixins' as *;
@@ -116,6 +112,13 @@
   }
 }
 
+.verseCard__titleGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 // =============================================================================
 // Element: __number — شماره آیه (h2)
 // =============================================================================
@@ -139,6 +142,26 @@
   .verseCard:hover & {
     background: linear-gradient(135deg, rgba(246, 217, 130, 0.25), rgba(246, 217, 130, 0.1));
     border-color: rgba(246, 217, 130, 0.5);
+  }
+}
+
+.verseCard__surahBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(246, 217, 130, 0.1);
+  border: 1px solid rgba(246, 217, 130, 0.28);
+  color: var(--color-text-primary);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(246, 217, 130, 0.2);
+    border-color: rgba(246, 217, 130, 0.5);
+    transform: translateY(-1px);
   }
 }
 
@@ -386,6 +409,58 @@
   color: rgba(255, 250, 234, 0.8);
   text-align: right;
   margin: 0;
+}
+
+// =============================================================================
+// Element: __subjects — برچسب‌های موضوعی آیه (تفسیر موضوعی)
+// =============================================================================
+
+.verseCard__subjects {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed rgba(246, 217, 130, 0.15);
+  direction: rtl;
+}
+
+.verseCard__subjectsLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--font-xs);
+  color: rgba(246, 217, 130, 0.75);
+  font-weight: var(--font-weight-medium);
+}
+
+.verseCard__subjectsList {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.verseCard__subjectBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(246, 217, 130, 0.1);
+  border: 1px solid rgba(246, 217, 130, 0.3);
+  color: var(--color-text-primary);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(246, 217, 130, 0.22);
+    border-color: rgba(246, 217, 130, 0.6);
+    color: #fff8dc;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(246, 217, 130, 0.2);
+  }
 }
 
 // =============================================================================
