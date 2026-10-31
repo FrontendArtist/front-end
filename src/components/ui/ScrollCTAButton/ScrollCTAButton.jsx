@@ -15,9 +15,18 @@ const ScrollCTAButton = ({ targetId, children, className }) => {
   const handleClick = useCallback(() => {
     const targetElement = document.getElementById(targetId);
     if (targetElement) {
-      targetElement.scrollIntoView({
+      // محاسبه ارتفاع داینامیک هدر (شامل نوبار + تاپ‌بنر)
+      const header = document.querySelector('header');
+      const headerHeight = header ? header.offsetHeight : 100;
+      const extraOffset = 20; // فاصله تنفس بالای سکشن
+
+      const currentScroll = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
+      const elementTop = targetElement.getBoundingClientRect().top + currentScroll;
+      const targetPosition = elementTop - headerHeight - extraOffset;
+
+      window.scrollTo({
+        top: Math.max(0, targetPosition),
         behavior: 'smooth',
-        block: 'start',
       });
     }
   }, [targetId]);

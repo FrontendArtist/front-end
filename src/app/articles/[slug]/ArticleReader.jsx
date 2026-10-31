@@ -122,7 +122,10 @@ export default function ArticleReader({ excerpt, content }) {
     if (!tocItems || tocItems.length === 0) return;
 
     const handleScroll = () => {
-      const scrollBuffer = 110; // Offset for navbar (100px) + small buffer
+      // محاسبه پویای ارتفاع هدر (شامل نوبار + تاپ‌بنر) برای اسکرول اسپای دقیق
+      const header = document.querySelector('header');
+      const headerHeight = header ? header.offsetHeight : 100;
+      const scrollBuffer = headerHeight + 25;
       let currentId = tocItems[0].id;
 
       for (const item of tocItems) {
@@ -163,10 +166,13 @@ export default function ArticleReader({ excerpt, content }) {
     setTimeout(() => {
       const element = document.getElementById(id);
       if (element) {
-        const navbarHeight = 100; // Header height is 100px
+        // محاسبه دقیق ارتفاع هدر (شامل نوبار + تاپ بنر در صورت فعال بودن)
+        const header = document.querySelector('header');
+        const headerHeight = header ? header.offsetHeight : 100;
+        const extraOffset = 16; // فاصله تنفس برای عدم چسبیدن تیتر به نوار
         const currentScroll = window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0;
         const elementTop = element.getBoundingClientRect().top + currentScroll;
-        const targetPosition = elementTop - navbarHeight;
+        const targetPosition = elementTop - headerHeight - extraOffset;
 
         window.scrollTo({
           top: Math.max(0, targetPosition),
@@ -259,4 +265,3 @@ export default function ArticleReader({ excerpt, content }) {
     </div>
   );
 }
-

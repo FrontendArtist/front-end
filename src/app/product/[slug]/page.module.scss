@@ -1,14 +1,17 @@
 @use '../../../styles/base/mixins' as *;
 
 .productPage {
-  padding: var(--space-section-top-desktop) 0;
+  padding-top: var(--space-section-top-desktop);
+  padding-bottom: var(--space-section-bottom-desktop);
 
   @include respond(md) {
-    padding: 96px 0;
+    padding-top: var(--space-section-top-desktop);
+    padding-bottom: 48px;
   }
 
   @include respond(sm) {
-    padding: 64px 0;
+    padding-top: var(--space-section-top-desktop);
+    padding-bottom: 32px;
   }
 }
 

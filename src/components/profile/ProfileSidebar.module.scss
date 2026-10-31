@@ -12,7 +12,7 @@
     flex-direction: column;
     gap: 24px;
     position: sticky;
-    top: 100px;
+    top: calc(var(--space-section-top-desktop) + 16px);
 
     @include respond(lg) {
         position: static;

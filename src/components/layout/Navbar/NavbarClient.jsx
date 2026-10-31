@@ -154,7 +154,7 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
               </Link>
             </li>
             <li><Link href="/courses" className={styles.navLink}>دوره‌ها</Link></li>
-            <li><Link href="/quran" className={styles.navLink}>کلام نور</Link></li>
+            {/* <li><Link href="/quran" className={styles.navLink}>کلام نور</Link></li> */}
             <li><Link href="/services" className={styles.navLink}>خدمات</Link></li>
             <li><Link href="/about" className={styles.navLink}>درباره ما</Link></li>
             <li><Link href="/contact" className={styles.navLink}>تماس با ما</Link></li>
@@ -269,7 +269,7 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
               <li><Link href="/products" onClick={closeMobileMenu}>محصولات</Link></li>
               <li><Link href="/courses" onClick={closeMobileMenu}>دوره‌ها</Link></li>
               <li><Link href="/articles" onClick={closeMobileMenu}>مقالات</Link></li>
-              <li><Link href="/quran" onClick={closeMobileMenu}>کلام نور</Link></li>
+              {/* <li><Link href="/quran" onClick={closeMobileMenu}>کلام نور</Link></li> */}
               <li><Link href="/services" onClick={closeMobileMenu}>خدمات</Link></li>
               <li><Link href="/about" onClick={closeMobileMenu}>درباره ما</Link></li>
               <li><Link href="/contact" onClick={closeMobileMenu}>تماس با ما</Link></li>

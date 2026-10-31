@@ -16,6 +16,7 @@
   border-radius: 16px;
   box-shadow: 0 8px 32px color-mix(in srgb, var(--color-black) 25%, transparent);
   overflow: visible;
+
   @include respond(md) {
     margin-top: 36px;
     margin-bottom: 36px;
@@ -44,7 +45,6 @@
   width: 100%;
   box-sizing: border-box;
   position: relative;
-  overflow-x: auto;
   scrollbar-width: none;
 
   &::-webkit-scrollbar {
@@ -241,6 +241,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
