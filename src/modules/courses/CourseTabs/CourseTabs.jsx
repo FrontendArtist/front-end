@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
 import { useSession } from 'next-auth/react';
 import { useAccountOrderItems } from '@/hooks/useAccountOrders';
-import { isOrderPaid } from '@/lib/constants/orderConstants';
+import { isCoursePurchasedByUser } from '@/lib/courseAccessUtils';
 import CourseContentManager from '../CourseContentManager';
 import ArticleReader from '@/app/articles/[slug]/ArticleReader';
 import styles from './CourseTabs.module.scss';
@@ -22,77 +22,17 @@ export default function CourseTabs({ course, parsedContent, customStyles, isPurc
   const { data: session, status } = useSession();
   const orders = useAccountOrderItems();
 
-  // بررسی وضعیت خرید دوره توسط کاربر
+  // بررسی وضعیت خرید دوره یا حداقل یکی از فصل‌ها
   const isPurchased = useMemo(() => {
-    // ۱. بررسی پراپ‌های مستقیم در صورت ارسال
-    if (typeof propIsPurchased === 'boolean') return propIsPurchased;
-    if (typeof course?.isPurchased === 'boolean') return course.isPurchased;
-    if (typeof course?.isEnrolled === 'boolean') return course.isEnrolled;
-    if (typeof course?.hasAccess === 'boolean') return course.hasAccess;
+    if (propIsPurchased === true) return true;
+    if (course?.isPurchased === true || course?.isEnrolled === true || course?.hasAccess === true) return true;
+    if (!course) return false;
 
-    // ۲. بررسی اطلاعات ثبت‌نام از داخل سشن کاربر
-    const enrolledCourses = session?.user?.enrolledCourses || [];
-    const enrolledSlugs = session?.user?.enrolledSlugs || [];
-    const isEnrolledInSession =
-      (course?.id && enrolledCourses.some((c) => String(c?.id || c) === String(course.id))) ||
-      (course?.documentId && enrolledCourses.some((c) => String(c?.documentId || c) === String(course.documentId))) ||
-      (course?.slug && enrolledSlugs.some((s) => String(s) === String(course.slug)));
-
-    if (isEnrolledInSession) return true;
-
-    // ۳. بررسی سفارشات پرداخت‌شده کاربر
-    if (Array.isArray(orders) && course) {
-      const foundInOrders = orders.some((order) => {
-        if (!isOrderPaid(order)) return false;
-
-        const items = order.attributes?.items || order.items || [];
-        return items.some((item) => {
-          const isChapterItem = Boolean(
-            item.type === 'chapter' ||
-            item.chapterId ||
-            (item.slug && String(item.slug).includes('-chapter-')) ||
-            (item.id && String(item.id).startsWith('chapter-'))
-          );
-          if (isChapterItem) return false;
-
-          return (
-            item.slug === course.slug ||
-            String(item.courseId) === String(course.id) ||
-            String(item.id) === String(course.id) ||
-            String(item.documentId) === String(course.documentId)
-          );
-        });
-      });
-
-      if (foundInOrders) return true;
-
-      // بررسی خرید فصل‌های دوره (در صورت فصلی بودن دوره)
-      if (course?.chapters && Array.isArray(course.chapters)) {
-        const hasPurchasedChapter = course.chapters.some((ch) => {
-          const chId = String(ch.id);
-          const inSession = session?.user?.enrolledChapters?.some((ec) => String(ec?.id || ec) === chId);
-          if (inSession) return true;
-
-          return orders.some((order) => {
-            if (!isOrderPaid(order)) return false;
-            const items = order.attributes?.items || order.items || [];
-            return items.some((item) => {
-              if (item.type === 'chapter' || item.chapterId) {
-                return (
-                  String(item.chapterId) === chId ||
-                  String(item.id).replace('chapter-', '') === chId
-                );
-              }
-              return false;
-            });
-          });
-        });
-
-        if (hasPurchasedChapter) return true;
-      }
-    }
-
-    return false;
+    // فلگ false فقط یعنی «کل دوره خریده نشده»؛ خرید فصل باید مستقل بررسی شود.
+    return isCoursePurchasedByUser(
+      { ...course, isPurchased: undefined, hasAccess: undefined },
+      { session, orders, checkChapters: true }
+    );
   }, [propIsPurchased, course, session, orders]);
 
   const hasContent = Boolean(parsedContent);

@@ -127,6 +127,35 @@ describe('ordersApi - checkCourseAccess', () => {
         expect(res.hasAccess).toBe(true);
     });
 
+    it('detects a ByeMoney full-course item by the parent documentId', async () => {
+        const mockOrdersResponse = {
+            data: [
+                {
+                    orderStatus: 'paid',
+                    paymentStatus: 'paid',
+                    items: [
+                        {
+                            type: 'course',
+                            documentId: 'rjmfjwdlye17u1ojlwrqxxv',
+                            externalCourseId: 'rjmfjwdlye17u1ojlwrqxxv',
+                            title: 'ازدواج کائناتی'
+                        }
+                    ]
+                }
+            ]
+        };
+
+        global.fetch.mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify(mockOrdersResponse)
+        });
+
+        const res = await checkCourseAccess(35, 126, 'ezdevaj', null, 'rjmfjwdlye17u1ojlwrqxxv');
+        expect(res.hasAccess).toBe(true);
+        expect(res.activeCourseOrder).toBeNull();
+    });
+
     it('preserves chapter-only access behavior for chapter purchases', async () => {
         const mockOrdersResponse = {
             data: [

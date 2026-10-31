@@ -20,6 +20,8 @@ jest.mock('next/link', () => {
 describe('PurchasesList Component', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        useOrdersStore.getState = jest.fn(() => ({ fetchOrders: jest.fn() }));
+        global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ data: [] }) });
     });
 
     it('renders courses from user.courses (Noor purchase) when orders are empty', async () => {
@@ -116,6 +118,111 @@ describe('PurchasesList Component', () => {
         });
 
         expect(screen.getByText('دوره‌های آموزشی (1)')).toBeInTheDocument();
+    });
+
+    it('shows the course title and a working link for a ByeMoney chapter purchase without slug', async () => {
+        useOrdersStore.mockReturnValue({
+            orders: [
+                {
+                    id: 'cart:11111111-1111-1111-1111-111111111111',
+                    orderStatus: 'paid',
+                    paymentStatus: 'paid',
+                    items: [
+                        {
+                            type: 'chapter',
+                            integrationId: 'chapter-uuid-78',
+                            externalCourseId: 'chapter-uuid-78',
+                            parentExternalId: 'course-doc-118',
+                            courseDocumentId: 'course-doc-118',
+                            price: 250000
+                        }
+                    ]
+                }
+            ],
+            isLoading: false,
+            error: null,
+            fetchOrders: jest.fn(),
+            hasFetched: true,
+        });
+
+        useSession.mockReturnValue({
+            data: { user: { id: 77, courses: [] } },
+            status: 'authenticated'
+        });
+
+        fetchProfileCartData.mockResolvedValue({ courses: [] });
+        global.fetch.mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: [
+                    {
+                        id: 118,
+                        documentId: 'course-doc-118',
+                        slug: 'khakbeaflak',
+                        title: 'خاک به افلاک',
+                        chapters: [
+                            { id: 78, integrationId: 'chapter-uuid-78', title: 'فصل اول' }
+                        ]
+                    }
+                ]
+            })
+        });
+
+        render(<PurchasesList />);
+
+        await waitFor(() => {
+            expect(screen.getByText('خاک به افلاک (فصل اول)')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('فصل آموزشی')).toBeInTheDocument();
+        const viewLink = screen.getByRole('link', { name: 'مشاهده' });
+        expect(viewLink).toHaveAttribute('href', '/courses/khakbeaflak');
+    });
+
+    it('links a ByeMoney purchase row that only carries courseTitle', async () => {
+        useOrdersStore.mockReturnValue({
+            orders: [
+                {
+                    id: 'purchase:22222222-2222-2222-2222-222222222222',
+                    orderStatus: 'paid',
+                    paymentStatus: 'paid',
+                    items: [
+                        {
+                            type: 'course',
+                            documentId: 'purchase:22222222-2222-2222-2222-222222222222',
+                            title: 'خاک به افلاک',
+                            courseTitle: 'خاک به افلاک',
+                            price: 250000
+                        }
+                    ]
+                }
+            ],
+            isLoading: false,
+            error: null,
+            fetchOrders: jest.fn(),
+            hasFetched: true,
+        });
+
+        useSession.mockReturnValue({
+            data: { user: { id: 78, courses: [] } },
+            status: 'authenticated'
+        });
+
+        fetchProfileCartData.mockResolvedValue({ courses: [] });
+        global.fetch.mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: [
+                    { id: 118, documentId: 'course-doc-118', slug: 'khakbeaflak', title: 'خاک به افلاک', chapters: [] }
+                ]
+            })
+        });
+
+        render(<PurchasesList />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('link', { name: 'مشاهده' })).toHaveAttribute('href', '/courses/khakbeaflak');
+        });
     });
 
     it('shows empty state when no courses and no products exist', async () => {

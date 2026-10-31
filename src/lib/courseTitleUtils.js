@@ -143,3 +143,128 @@ export function getCartItemDisplayTitle(item, quote) {
     return quote?.title || item?.title || chapterName;
 }
 
+function looksLikeUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value || ''));
+}
+
+function isUsableCourseSlug(value) {
+    const slug = String(value || '').trim();
+    if (!slug || looksLikeUuid(slug) || slug === '#') return false;
+    return true;
+}
+
+function isChapterPurchaseItem(item) {
+    return Boolean(
+        item &&
+        (item.type === 'chapter' ||
+            item.type === 'course_chapter' ||
+            item.itemType === 'CourseChapter' ||
+            item.chapterId ||
+            item.parentExternalId ||
+            String(item.slug || '').includes('-chapter-'))
+    );
+}
+
+function getChapterMatchIds(item) {
+    const values = [item?.integrationId, item?.externalCourseId, item?.chapterId];
+    // شناسهٔ عددی component شمارهٔ ردیف سفارش است و هویت فصل نیست.
+    if (item?.chapterId == null) values.push(item?.id);
+    return values
+        .filter(value => value != null && !/^chapter-\d+$/.test(String(value)))
+        .map(String);
+}
+
+function catalogChapterMatches(chapter, externalIds) {
+    if (!chapter || externalIds.length === 0) return false;
+    return [chapter.id, chapter.integrationId]
+        .filter(value => value != null)
+        .some(value => externalIds.includes(String(value)));
+}
+
+/**
+ * یافتن دورهٔ کاتالوگ متناظر با قلم خرید؛ شناسهٔ والد در اقلام بای‌مانی documentId است
+ * و اسلاگ در آن‌ها وجود ندارد.
+ */
+export function findPurchasedCourseInCatalog(item, catalog = []) {
+    if (!item || !Array.isArray(catalog)) return null;
+    const isChapter = isChapterPurchaseItem(item);
+    const parentDocId = item.parentExternalId || item.courseDocumentId || (isChapter ? item.documentId : null);
+    const ownDocId = !isChapter ? (item.documentId || item.externalCourseId || item.courseDocumentId) : null;
+    const parentNumericId = item.courseId != null ? String(item.courseId) : '';
+    const chapterExternalIds = isChapter ? getChapterMatchIds(item) : [];
+
+    return catalog.find((course) => {
+        if (!course) return false;
+        const courseDoc = String(course.documentId ?? '');
+        const courseId = String(course.id ?? '');
+        if (parentDocId && courseDoc && courseDoc === String(parentDocId)) return true;
+        if (ownDocId && courseDoc && courseDoc === String(ownDocId)) return true;
+        if (parentNumericId && courseId && courseId === parentNumericId) return true;
+        if (!isChapter && item.slug && course.slug && String(course.slug) === String(item.slug)) return true;
+        // خریدهای بای‌مانی در فهرست فقط courseTitle دارند؛ تطابق دقیق عنوان آخرین راه‌حل است.
+        const itemCourseTitle = String(item.courseTitle || (!isChapter ? item.title : '') || '').trim();
+        if (itemCourseTitle && course.title && String(course.title).trim() === itemCourseTitle) return true;
+        if (isChapter && chapterExternalIds.length > 0 && Array.isArray(course.chapters)) {
+            return course.chapters.some(ch => catalogChapterMatches(ch, chapterExternalIds));
+        }
+        return false;
+    }) || null;
+}
+
+/**
+ * اسلاگ قابل‌ناوبری دورهٔ والد را از قلم خرید و کاتالوگ دوره‌ها استخراج می‌کند.
+ */
+export function resolvePurchasedCourseSlug(item, catalog = []) {
+    if (!item) return '';
+    const isChapter = isChapterPurchaseItem(item);
+    const slugFromChapterPath = String(item.slug || '').includes('-chapter-')
+        ? String(item.slug).split('-chapter-')[0]
+        : '';
+
+    const catalogMatch = findPurchasedCourseInCatalog(item, catalog);
+
+    const candidates = [
+        item.courseSlug,
+        slugFromChapterPath,
+        !isChapter ? item.slug : '',
+        catalogMatch?.slug,
+    ];
+
+    return candidates.map(value => String(value || '').trim()).find(isUsableCourseSlug) || '';
+}
+
+/**
+ * عنوان نمایشی قلم خرید: «عنوان دوره (عنوان فصل)» برای فصل و عنوان دوره برای دوره.
+ * برای اقلام بای‌مانی که slug/title کامل ندارند، نام از کاتالوگ بازیابی می‌شود.
+ */
+export function resolvePurchasedCourseTitle(item, catalog = []) {
+    if (!item) return '';
+    const isChapter = isChapterPurchaseItem(item);
+    const catalogMatch = findPurchasedCourseInCatalog(item, catalog);
+
+    if (!isChapter) {
+        return catalogMatch?.title || item.title || item.courseTitle || '';
+    }
+
+    const chapterExternalIds = getChapterMatchIds(item);
+    const catalogChapter = catalogMatch && Array.isArray(catalogMatch.chapters)
+        ? catalogMatch.chapters.find(ch => catalogChapterMatches(ch, chapterExternalIds))
+        : null;
+
+    const courseTitle = catalogMatch?.title || item.courseTitle || '';
+    const chapterTitle = catalogChapter?.title || item.chapterTitle || '';
+
+    if (courseTitle && chapterTitle) {
+        return formatChapterDisplayTitle(courseTitle, chapterTitle);
+    }
+    if (courseTitle) return courseTitle;
+    if (chapterTitle) return chapterTitle;
+
+    return getCartItemDisplayTitle(item, null) || item.title || '';
+}
+
+export function resolvePurchasedCourseHref(item, catalog = []) {
+    const slug = resolvePurchasedCourseSlug(item, catalog);
+    return slug ? `/courses/${slug}` : '';
+}
+

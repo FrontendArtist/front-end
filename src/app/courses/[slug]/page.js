@@ -17,6 +17,7 @@ import CourseTelegramLink from '@/components/courses/CourseTelegramLink/CourseTe
 import CourseTeaserPlayer from '@/components/courses/CourseTeaserPlayer';
 import styles from './page.module.scss';
 import { checkCourseAccess } from '@/lib/ordersApi';
+import { isChapterPurchasedByUser } from '@/lib/courseAccessUtils';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 
 import { SITE_NAME, SITE_URL } from '@/lib/constants';
@@ -84,11 +85,11 @@ export default async function CoursePage({ params }) {
     hasAccess, 
     purchasedChapterIds,
     activeCourseOrder
-  } = await checkCourseAccess(session?.user?.id, rawCourse.id, rawCourse.slug, session?.user);
+  } = await checkCourseAccess(session?.user?.id, rawCourse.id, rawCourse.slug, session?.user, rawCourse.documentId);
 
   const isUserEnrolledInCourse = isFreeCourse || Boolean(session && hasAccess);
   const hasPurchasedAnyChapter = (rawCourse.chapters || []).some(ch =>
-    purchasedChapterIds.includes(String(ch.id))
+    isChapterPurchasedByUser(ch, { session, purchasedChapterIds })
   );
   const isUserStudentOfCourse = isUserEnrolledInCourse || Boolean(session && hasPurchasedAnyChapter);
 
@@ -135,13 +136,14 @@ export default async function CoursePage({ params }) {
       const isChapterFree = chapter.price?.toman === 0 || chapter.price === 0 || !chapter.price;
       const isChapterPurchased =
         isUserEnrolledInCourse ||
-        purchasedChapterIds.includes(String(chapter.id));
+        isChapterPurchasedByUser(chapter, { session, purchasedChapterIds });
 
       const hasChapterAccess = isFreeCourse || isChapterFree || (session && isChapterPurchased);
 
       return {
         ...chapter,
         integrationId: chapter.integrationId || null,
+        isPurchased: Boolean(session && isChapterPurchased),
         lessons: (chapter.lessons || []).map((lesson) => {
           // برای امنیت، اگر کاربر به دوره/فصل دسترسی ندارد و درس رایگان نیست، لینک مدیا پاک می‌شود
           const shouldStrip = !hasChapterAccess;

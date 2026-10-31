@@ -6,6 +6,7 @@ import { getMyCoursePurchases, getCoursePurchaseReceipt } from '@/lib/byeMoneyAp
 import { triggerLightUpdate } from '@/store/useLightStore';
 import { invalidateProfileCache } from '@/lib/client/profileClientApi';
 import { useCartStore } from '@/store/useCartStore';
+import { useOrdersStore } from '@/store/useOrdersStore';
 
 export default function useCourseCheckoutResult(courseId, topUpId, requestedCartId = null, urlStatus = null) {
     const { data: session, status } = useSession();
@@ -210,6 +211,8 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                 if (phase === 'completed') {
                     triggerLightUpdate();
                     invalidateProfileCache();
+                    // کش سفارش‌ها باید پاک شود تا «دوره‌های من» و دسترسی فصل بلافاصله تازه شوند.
+                    useOrdersStore.getState().invalidateOrders();
                 }
             } catch {
                 if (controller.signal.aborted) return;

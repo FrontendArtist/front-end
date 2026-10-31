@@ -2,16 +2,48 @@ import { isOrderPaid } from './constants/orderConstants';
 
 export function isChapterOrderItem(item) {
   if (!item || typeof item !== 'object') return false;
-  return Boolean(item.type === 'chapter' || item.chapterId ||
-    String(item.slug || '').includes('-chapter-') || String(item.id || '').startsWith('chapter-'));
+  const rawType = String(item.itemType || item.type || '').toLowerCase().replace(/_/g, '');
+  return Boolean(
+    rawType === 'chapter' ||
+    rawType === 'coursechapter' ||
+    item.chapterId ||
+    item.parentExternalId ||
+    String(item.slug || '').includes('-chapter-') ||
+    String(item.id || '').startsWith('chapter-')
+  );
 }
 
-export function getPurchasedChapterId(item, courseId, courseSlug) {
-  if (!item || typeof item !== 'object') return null;
-  if (item.type === 'product' || item.__component === 'order.product-order-item' || !isChapterOrderItem(item)) return null;
-  const belongsToCourse = String(item.courseId ?? '') === String(courseId) ||
-    (courseSlug && String(item.slug || '').startsWith(`${courseSlug}-chapter-`));
-  if (!belongsToCourse) return null;
+function normalizeIdentity(value) {
+  if (value == null) return '';
+  return String(value).trim();
+}
+
+/**
+ * آیا قلم سفارش از نوع فصل است و به دورهٔ داده‌شده تعلق دارد؟
+ * هویت والد می‌تواند شناسهٔ عددی، اسلاگ یا documentId دوره باشد؛ اقلام بای‌مانی فقط
+ * parentExternalId (documentId دوره) را دارند و شناسهٔ عددی/اسلاگ در آن‌ها خالی است.
+ */
+function chapterItemBelongsToCourse(item, courseId, courseSlug, courseDocumentId) {
+  if (!item || typeof item !== 'object') return false;
+  if (item.type === 'product' || item.__component === 'order.product-order-item' || !isChapterOrderItem(item)) return false;
+
+  const targetId = normalizeIdentity(courseId);
+  const targetSlug = normalizeIdentity(courseSlug).toLowerCase();
+  const targetDocId = normalizeIdentity(courseDocumentId);
+  const itemCourseId = normalizeIdentity(item.courseId ?? item.parentCourseId);
+  const itemSlug = normalizeIdentity(item.slug).toLowerCase();
+  const itemParentDocId = normalizeIdentity(
+    item.parentExternalId || item.courseDocumentId || item.parentCourseDocumentId
+  );
+
+  if (targetId && itemCourseId && itemCourseId === targetId) return true;
+  if (targetSlug && itemSlug.startsWith(`${targetSlug}-chapter-`)) return true;
+  if (targetDocId && itemParentDocId && itemParentDocId === targetDocId) return true;
+  return false;
+}
+
+export function getPurchasedChapterId(item, courseId, courseSlug, courseDocumentId = null) {
+  if (!chapterItemBelongsToCourse(item, courseId, courseSlug, courseDocumentId)) return null;
 
   // id عددیِ component، شمارهٔ ردیف سفارش است؛ فقط chapterId یا قالب قدیمیِ صریح معتبر است.
   const chapterId = item.chapterId != null
@@ -20,13 +52,79 @@ export function getPurchasedChapterId(item, courseId, courseSlug) {
   return chapterId && /^[1-9]\d*$/.test(chapterId) ? chapterId : null;
 }
 
+/**
+ * شناسهٔ یکتای فصل (integrationId) که بای‌مانی و Strapi برای خرید فصل استفاده می‌کنند.
+ * شناسهٔ عددیِ ردیف component هرگز به‌عنوان integrationId پذیرفته نمی‌شود.
+ */
+export function getPurchasedChapterIntegrationId(item, courseId, courseSlug, courseDocumentId = null) {
+  if (!chapterItemBelongsToCourse(item, courseId, courseSlug, courseDocumentId)) return null;
+  const integrationId = normalizeIdentity(item.integrationId || item.externalCourseId || item.chapterExternalId);
+  if (!integrationId) return null;
+  if (/^chapter-[1-9]\d*$/.test(integrationId)) return null;
+  return integrationId;
+}
+
 export function getPurchasedChapterIds(orders, course) {
-  if (!Array.isArray(orders) || !course || course.id == null) return [];
-  return [...new Set(orders.filter(isOrderPaid).flatMap(order => {
+  if (!Array.isArray(orders) || !course) return [];
+  if (course.id == null && !course.documentId && !course.slug) return [];
+
+  const ids = [];
+  orders.filter(isOrderPaid).forEach(order => {
     const items = order.items || order.attributes?.items;
-    return Array.isArray(items) ? items.map(item =>
-      getPurchasedChapterId(item, course.id, course.slug)).filter(Boolean) : [];
-  }))];
+    if (!Array.isArray(items)) return;
+    items.forEach(item => {
+      const numericId = getPurchasedChapterId(item, course.id, course.slug, course.documentId);
+      if (numericId) ids.push(numericId);
+      const integrationId = getPurchasedChapterIntegrationId(item, course.id, course.slug, course.documentId);
+      if (integrationId) ids.push(integrationId);
+    });
+  });
+
+  return [...new Set(ids)];
+}
+
+/**
+ * شناسه‌های قابل‌مقایسهٔ یک فصل: شناسهٔ عددی دیتابیس و شناسهٔ یکتای یکپارچه‌سازی.
+ */
+export function getChapterIdentityIds(chapter) {
+  if (!chapter || typeof chapter !== 'object') return [];
+  return [...new Set(
+    [chapter.id, chapter.integrationId, chapter.externalCourseId]
+      .map(normalizeIdentity)
+      .filter(Boolean)
+  )];
+}
+
+/**
+ * آیا کاربر به این فصل دسترسی دارد؟
+ * منابع: فلگ محاسبه‌شده در سرور، سشن (شناسهٔ عددی و integrationId)، یا سفارش‌های پرداخت‌شده.
+ *
+ * @param {Object} chapter - فصل دوره
+ * @param {Object} [options]
+ * @param {Object} [options.session] - سشن NextAuth
+ * @param {Array} [options.orders] - سفارش‌های کاربر
+ * @param {Object} [options.course] - دورهٔ والد (برای استخراج اقلام سفارش)
+ * @param {Array} [options.purchasedChapterIds] - شناسه‌های محاسبه‌شده در سرور (عدد یا UUID)
+ * @returns {boolean}
+ */
+export function isChapterPurchasedByUser(chapter, { session = null, orders = [], course = null, purchasedChapterIds = null } = {}) {
+  if (!chapter || typeof chapter !== 'object') return false;
+  if (chapter.isPurchased === true || chapter.hasAccess === true) return true;
+
+  const identityIds = getChapterIdentityIds(chapter);
+  if (identityIds.length === 0) return false;
+
+  const user = session?.user;
+  const enrolledIds = [
+    ...(Array.isArray(user?.enrolledChapters) ? user.enrolledChapters : []),
+    ...(Array.isArray(user?.enrolledChapterIntegrationIds) ? user.enrolledChapterIntegrationIds : []),
+  ].map(normalizeIdentity).filter(Boolean);
+  if (identityIds.some(id => enrolledIds.includes(id))) return true;
+
+  const purchasedIds = Array.isArray(purchasedChapterIds)
+    ? purchasedChapterIds.map(normalizeIdentity)
+    : (course ? getPurchasedChapterIds(orders, course) : []);
+  return identityIds.some(id => purchasedIds.includes(id));
 }
 
 /**
@@ -83,6 +181,24 @@ export function isCoursePurchasedByUser(course, { session = null, orders = [], p
     if (Array.isArray(user.enrolledSlugs) && targetSlug) {
       if (user.enrolledSlugs.some(s => String(s).trim().toLowerCase() === targetSlug)) return true;
     }
+    if (checkChapters) {
+      // فلگ سرور (پس از خرید فصل) بر دادهٔ قدیمی سشن مقدم است.
+      if (Array.isArray(course.chapters) && course.chapters.some(ch => ch?.isPurchased === true || ch?.hasAccess === true)) {
+        return true;
+      }
+      const chapterIds = Array.isArray(course.chapters)
+        ? course.chapters.flatMap(ch => [ch?.id, ch?.integrationId].filter(Boolean).map(String))
+        : [];
+      if (chapterIds.length > 0) {
+        const enrolledNumeric = Array.isArray(user.enrolledChapters) ? user.enrolledChapters.map(String) : [];
+        const enrolledIntegration = Array.isArray(user.enrolledChapterIntegrationIds)
+          ? user.enrolledChapterIntegrationIds.map(String)
+          : [];
+        if (chapterIds.some(id => enrolledNumeric.includes(id) || enrolledIntegration.includes(id))) {
+          return true;
+        }
+      }
+    }
   }
 
   // 2. بررسی دوره‌های پروفایل
@@ -105,15 +221,20 @@ export function isCoursePurchasedByUser(course, { session = null, orders = [], p
           if (checkChapters) {
             const itemCourseId = item.courseId != null ? String(item.courseId).trim() : null;
             const itemSlug = item.slug ? String(item.slug).trim().toLowerCase() : null;
+            const itemParentDoc = item.parentExternalId || item.courseDocumentId || item.documentId;
             const parentMatches =
-              (targetDocId && itemCourseId === targetDocId) ||
+              (targetDocId && (itemCourseId === targetDocId || String(itemParentDoc || '') === targetDocId)) ||
               (targetId && itemCourseId === targetId) ||
               (targetSlug && itemSlug && itemSlug.startsWith(`${targetSlug}-chapter-`));
             if (parentMatches) return true;
 
             if (Array.isArray(course.chapters) && course.chapters.length > 0) {
               const rawChapterId = item.chapterId || (item.id && String(item.id).replace('chapter-', ''));
-              if (rawChapterId && course.chapters.some(ch => String(ch.id) === String(rawChapterId))) {
+              const itemIntegration = item.integrationId || item.externalCourseId;
+              if (course.chapters.some(ch =>
+                (rawChapterId && String(ch.id) === String(rawChapterId)) ||
+                (itemIntegration && ch.integrationId && String(ch.integrationId) === String(itemIntegration))
+              )) {
                 return true;
               }
             }
@@ -202,6 +323,9 @@ export default {
   isChapterOrderItem,
   getPurchasedChapterId,
   getPurchasedChapterIds,
+  getPurchasedChapterIntegrationId,
+  getChapterIdentityIds,
+  isChapterPurchasedByUser,
   isCoursePurchasedByUser,
   isCartItemPurchasedByUser
 };

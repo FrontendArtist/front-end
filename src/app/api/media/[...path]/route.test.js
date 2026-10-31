@@ -45,7 +45,7 @@ describe.each([['GET', GET], ['HEAD', HEAD]])('%s', (method, handler) => {
   test.each(['course-doc', 'course', '42', null])('خرید دوره واقعی با شناسه %p حفظ می‌شود', async cid => {
     checkCourseAccess.mockResolvedValue({ hasAccess: true, purchasedChapterIds: [] });
     expect((await run(cid)).status).toBe(200);
-    expect(checkCourseAccess).toHaveBeenCalledWith(9, 42, 'course', session.user);
+    expect(checkCourseAccess).toHaveBeenCalledWith(9, 42, 'course', session.user, 'course-doc');
   });
   test.each([['7', 200], ['8', 403]])('خرید فصل %s نتیجه %s دارد', async (chapter, status) => {
     checkCourseAccess.mockResolvedValue({ hasAccess: false, purchasedChapterIds: [chapter] });

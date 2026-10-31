@@ -76,7 +76,7 @@ describe.each([['GET', GET], ['HEAD', HEAD]])('%s', (method, handler) => {
   test('خرید کل دوره اجازه پخش فصل پولی را می‌دهد', async () => {
     checkCourseAccess.mockResolvedValue({ hasAccess: true, purchasedChapterIds: [] });
     expect((await run()).status).toBe(200);
-    expect(checkCourseAccess).toHaveBeenCalledWith(9, 42, 'test-course', session.user);
+    expect(checkCourseAccess).toHaveBeenCalledWith(9, 42, 'test-course', session.user, 'course-doc');
   });
 
   test('خرید فصل همان جلسه اجازه پخش می‌دهد', async () => {

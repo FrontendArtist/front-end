@@ -2,7 +2,10 @@ import {
     formatChapterDisplayTitle,
     rememberChapterCourse,
     getRememberedChapterCourse,
-    getCartItemDisplayTitle
+    getCartItemDisplayTitle,
+    resolvePurchasedCourseSlug,
+    resolvePurchasedCourseHref,
+    resolvePurchasedCourseTitle
 } from '../courseTitleUtils';
 
 describe('courseTitleUtils', () => {
@@ -42,6 +45,39 @@ describe('courseTitleUtils', () => {
         expect(byParent).toMatchObject({
             courseTitle: 'معماری ذهن'
         });
+    });
+
+    test('resolvePurchasedCourseSlug finds the parent course by documentId when the item has no slug', () => {
+        const catalog = [{ id: 118, documentId: 'doc-118', slug: 'khakbeaflak', title: 'خاک به افلاک', chapters: [] }];
+        const item = { type: 'course', documentId: 'doc-118', externalCourseId: 'doc-118' };
+
+        expect(resolvePurchasedCourseSlug(item, catalog)).toBe('khakbeaflak');
+        expect(resolvePurchasedCourseHref(item, catalog)).toBe('/courses/khakbeaflak');
+    });
+
+    test('resolvePurchasedCourseTitle composes the course and chapter names from the catalog', () => {
+        const catalog = [{
+            id: 118,
+            documentId: 'doc-118',
+            slug: 'khakbeaflak',
+            title: 'خاک به افلاک',
+            chapters: [{ id: 78, integrationId: 'ch-uuid', title: 'فصل اول' }]
+        }];
+        const item = {
+            type: 'chapter',
+            integrationId: 'ch-uuid',
+            externalCourseId: 'ch-uuid',
+            parentExternalId: 'doc-118'
+        };
+
+        expect(resolvePurchasedCourseTitle(item, catalog)).toBe('خاک به افلاک (فصل اول)');
+    });
+
+    test('resolvePurchasedCourseSlug falls back to an exact title match for ByeMoney list rows', () => {
+        const catalog = [{ id: 118, documentId: 'doc-118', slug: 'khakbeaflak', title: 'خاک به افلاک', chapters: [] }];
+        const item = { type: 'course', courseTitle: 'خاک به افلاک', documentId: 'purchase-uuid-1' };
+
+        expect(resolvePurchasedCourseHref(item, catalog)).toBe('/courses/khakbeaflak');
     });
 
     test('getCartItemDisplayTitle formats chapter items with courseTitle and chapterTitle', () => {

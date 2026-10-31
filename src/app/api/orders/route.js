@@ -6,6 +6,7 @@ import { PAYMENT_METHOD } from "@/lib/constants/orderConstants";
 import { STRAPI_API_URL } from "@/lib/api";
 
 import { getConversionRateWithByeMoney, getMyCoursePurchases, getCoursePurchaseReceipt, getMyCourseOrders, getMyCourseOrderDetails, CourseOrderId } from '@/lib/byeMoneyApi';
+import { attachPurchasesToByeMoneyOrder, mapByeMoneyLineItem } from '@/lib/byeMoneyOrderItems';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
@@ -81,22 +82,7 @@ export async function GET(request) {
                             expiresAtUtc: d.expiresAtUtc,
                             currentTopUpRequestId: d.currentTopUpRequestId,
                             cartSummary: d.cartSummary,
-                            items: (d.items || []).map(item => ({
-                                id: item.externalCourseId,
-                                documentId: item.externalCourseId,
-                                externalCourseId: item.externalCourseId,
-                                title: item.title,
-                                price: item.finalAmountInNoor ?? item.priceInNoor,
-                                priceInNoor: item.priceInNoor,
-                                finalAmountInNoor: item.finalAmountInNoor,
-                                purchaseId: item.purchaseId,
-                                transactionId: item.transactionId,
-                                purchasedAtUtc: item.purchasedAtUtc,
-                                financialStatus: item.financialStatus,
-                                deliveryStatus: item.deliveryStatus,
-                                type: 'course',
-                                __component: 'order.course-order-item'
-                            })),
+                            items: (d.items || []).map(item => mapByeMoneyLineItem(item)).filter(Boolean),
                             topUps: d.topUps || []
                         };
                         return NextResponse.json({ data: [mappedOrder] });
@@ -139,22 +125,11 @@ export async function GET(request) {
                             cartSummary: r.cartSummary,
                             transactionId: r.transactionId,
                             itemCount: 1,
-                            items: [{
-                                id: r.courseExternalId,
-                                documentId: r.courseExternalId,
-                                externalCourseId: r.courseExternalId,
+                            items: [mapByeMoneyLineItem({
+                                ...r,
                                 title: r.courseTitle,
-                                price: r.finalAmountInNoor,
-                                finalAmountInNoor: r.finalAmountInNoor,
-                                baseAmountInNoor: r.baseAmountInNoor,
-                                purchaseId: r.purchaseId,
-                                transactionId: r.transactionId,
-                                purchasedAtUtc: r.purchasedAtUtc,
-                                financialStatus: r.financialStatus,
-                                deliveryStatus: r.deliveryStatus,
-                                type: 'course',
-                                __component: 'order.course-order-item'
-                            }],
+                                externalCourseId: r.courseExternalId,
+                            })].filter(Boolean),
                             topUps: []
                         };
                         return NextResponse.json({ data: [mappedOrder] });
@@ -224,11 +199,24 @@ export async function GET(request) {
                     page: 1,
                     pageSize: 100
                 });
+                let purchases = [];
+                try {
+                    const purchasesRes = await getMyCoursePurchases({
+                        jwt: session.user.jwt,
+                        page: 1,
+                        pageSize: 100,
+                    });
+                    if (purchasesRes?.success && Array.isArray(purchasesRes.data?.items)) {
+                        purchases = purchasesRes.data.items;
+                    }
+                } catch (purchasesErr) {
+                    console.error("ByeMoney GET course purchases fetch error:", purchasesErr);
+                }
                 if (bmRes.success && bmRes.data?.items) {
                     byemoneyOrders = bmRes.data.items.map(item => {
                         const rawId = item.orderId;
                         const cleanId = rawId.replace(/^[a-z]+:/, '');
-                        return {
+                        return attachPurchasesToByeMoneyOrder({
                             id: item.orderId,
                             documentId: item.orderId,
                             orderId: item.orderId,
@@ -250,7 +238,7 @@ export async function GET(request) {
                                 type: 'course',
                                 price: item.finalAmountInNoor
                             }))
-                        };
+                        }, purchases);
                     });
                 } else {
                     byemoneyWarning = true;

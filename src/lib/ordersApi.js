@@ -17,7 +17,7 @@ import { getPurchasedChapterId, isChapterOrderItem } from './courseAccessUtils';
  * @param {object} sessionUser - آبجکت کاربر در سشن (جهت بررسی fallback)
  * @returns {Promise<{ hasAccess: boolean, purchasedChapterIds: string[] }>}
  */
-export async function checkCourseAccess(userId, courseId, courseSlug, sessionUser = null) {
+export async function checkCourseAccess(userId, courseId, courseSlug, sessionUser = null, courseDocumentId = null) {
   if (!userId || !courseId) {
     return { hasAccess: false, purchasedChapterIds: [], activeCourseOrder: null };
   }
@@ -29,6 +29,7 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
 
   const targetCourseId = String(courseId ?? '');
   const targetCourseSlug = String(courseSlug ?? '').toLowerCase();
+  const targetCourseDocId = String(courseDocumentId ?? '').trim();
 
   // Helper برای بررسی انطباق دوره با id عددی، documentId یا slug
   const matchesCourse = (c) => {
@@ -38,6 +39,7 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
     const cSlug = String(c.slug ?? '').toLowerCase();
     return (
       (targetCourseId && (cId === targetCourseId || cDocId === targetCourseId)) ||
+      (targetCourseDocId && (cId === targetCourseDocId || cDocId === targetCourseDocId)) ||
       (targetCourseSlug && cSlug === targetCourseSlug)
     );
   };
@@ -55,6 +57,9 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
     }
     if (Array.isArray(sessionUser.enrolledChapters)) {
       sessionUser.enrolledChapters.forEach(chId => purchasedChapterIds.push(String(chId)));
+    }
+    if (Array.isArray(sessionUser.enrolledChapterIntegrationIds)) {
+      sessionUser.enrolledChapterIntegrationIds.forEach(chId => purchasedChapterIds.push(String(chId)));
     }
   }
 
@@ -89,7 +94,10 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
 
           for (const item of items) {
             const itemCourseId = item.courseId != null ? String(item.courseId) : '';
-            const itemDocId = item.courseDocumentId != null ? String(item.courseDocumentId) : '';
+            const itemDocId = item.courseDocumentId != null
+              ? String(item.courseDocumentId)
+              : (item.documentId != null ? String(item.documentId) : (item.externalCourseId != null ? String(item.externalCourseId) : ''));
+            const itemParentDoc = item.parentExternalId != null ? String(item.parentExternalId) : '';
             const itemSlug = item.slug ? String(item.slug) : '';
             const fallbackCourseId = (!itemCourseId && item.id != null) ? String(item.id) : '';
 
@@ -97,6 +105,7 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
 
             const matchesThisItem = (
               (targetCourseId && (itemCourseId === targetCourseId || itemDocId === targetCourseId || fallbackCourseId === targetCourseId)) ||
+              (targetCourseDocId && (itemDocId === targetCourseDocId || itemParentDoc === targetCourseDocId || fallbackCourseId === targetCourseDocId)) ||
               (targetCourseSlug && itemSlug.toLowerCase() === targetCourseSlug) ||
               (isChapterItem && targetCourseSlug && itemSlug.startsWith(`${targetCourseSlug}-chapter-`)) ||
               (isChapterItem && targetCourseId && itemCourseId === targetCourseId)
@@ -110,8 +119,10 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
                 hasAccess = true;
               } else {
                 // بررسی خرید فصل‌های مجزا
-                const chapterId = getPurchasedChapterId(item, courseId, courseSlug);
+                const chapterId = getPurchasedChapterId(item, courseId, courseSlug, courseDocumentId);
                 if (chapterId) purchasedChapterIds.push(chapterId);
+                const integrationId = item.integrationId || item.externalCourseId;
+                if (integrationId) purchasedChapterIds.push(String(integrationId));
               }
             } else if (!activeCourseOrder) {
               const oStatus = String(order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();
@@ -158,6 +169,9 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
             }
             if (Array.isArray(userObj.enrolledChapters)) {
               userObj.enrolledChapters.forEach(chId => purchasedChapterIds.push(String(chId)));
+            }
+            if (Array.isArray(userObj.enrolledChapterIntegrationIds)) {
+              userObj.enrolledChapterIntegrationIds.forEach(chId => purchasedChapterIds.push(String(chId)));
             }
           }
         }

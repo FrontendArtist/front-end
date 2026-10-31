@@ -4,6 +4,18 @@ import { checkCourseAccess } from '@/lib/ordersApi';
 import { getDiscountedCoursePrice } from '@/lib/coursePricing';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 
+/**
+ * شناسه‌های قابل‌مقایسهٔ فصلِ یک جلسه: شناسهٔ عددی و integrationId.
+ * اقلام بای‌مانی فصل را با integrationId می‌شناسند، نه شمارهٔ ردیف دیتابیس.
+ */
+function getLessonChapterIdentityIds(course, chapterId) {
+  const chapter = (Array.isArray(course?.chapters) ? course.chapters : [])
+    .find(ch => String(ch.id) === String(chapterId));
+  return [...new Set([chapterId, chapter?.integrationId]
+    .filter(value => value != null)
+    .map(String))];
+}
+
 function hasZeroPrice(price) {
   if (typeof price !== 'number' && typeof price !== 'string') return false;
   if (typeof price === 'string' && !price.trim()) return false;
@@ -36,7 +48,8 @@ async function verifyAccess(session, lessonData, allowFree) {
     session.user.id,
     courseId,
     courseSlug,
-    session.user
+    session.user,
+    course.documentId
   );
 
   // ۱. اگر کل دوره خریداری شده باشد
@@ -46,8 +59,9 @@ async function verifyAccess(session, lessonData, allowFree) {
 
   // ۲. اگر جلسه داخل یک فصل خاص باشد و آن فصل خریداری شده باشد
   if (lessonData.chapterId) {
+    const chapterIds = getLessonChapterIdentityIds(course, lessonData.chapterId);
     const hasChapter = (purchasedChapterIds || []).some(
-      (chId) => String(chId) === String(lessonData.chapterId)
+      (chId) => chapterIds.includes(String(chId))
     );
     if (hasChapter) {
       return { allowed: true };
@@ -68,8 +82,13 @@ async function verifyAccess(session, lessonData, allowFree) {
   }
 
   if (lessonData.chapterId) {
-    const isEnrolledInChapter = enrolledChapters.some(
-      (ch) => String(ch) === String(lessonData.chapterId)
+    const chapterIds = getLessonChapterIdentityIds(course, lessonData.chapterId);
+    const enrolledChapterIds = [
+      ...enrolledChapters,
+      ...(session.user?.enrolledChapterIntegrationIds || []),
+    ];
+    const isEnrolledInChapter = enrolledChapterIds.some(
+      (ch) => chapterIds.includes(String(ch))
     );
     if (isEnrolledInChapter) {
       return { allowed: true };

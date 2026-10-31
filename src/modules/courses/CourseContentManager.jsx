@@ -9,7 +9,7 @@ import useAuthStore from '@/store/authStore';
 import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { useCartStore } from '@/store/useCartStore';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
-import { getPurchasedChapterIds } from '@/lib/courseAccessUtils';
+import { isChapterPurchasedByUser } from '@/lib/courseAccessUtils';
 import Modal from '@/components/ui/Modal/Modal';
 import VideoJSPlayer from './VideoJSPlayer';
 import PlyrAudioPlayer from './PlyrAudioPlayer';
@@ -42,7 +42,6 @@ export default function CourseContentManager({ course, styles: propStyles }) {
   // استخراج دوره‌ها و فصل‌های خریداری‌شده کاربر از داخل سشن
   const enrolledCourses = session?.user?.enrolledCourses || [];
   const enrolledSlugs = session?.user?.enrolledSlugs || [];
-  const enrolledChapters = session?.user?.enrolledChapters || [];
 
   const router = useRouter();
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
@@ -186,7 +185,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
     enrolledSlugs.some((s) => s === course.slug)
   );
 
-  const hasFullCourseAccess = isFreeCourse || isPurchasedInOrders || isEnrolledInSession;
+  const hasFullCourseAccess = isFreeCourse || course.isPurchased === true || isPurchasedInOrders || isEnrolledInSession;
 
   // هماهنگی بروزرسانی داده‌ها هنگام لاگین کاربر
   useEffect(() => {
@@ -201,12 +200,6 @@ export default function CourseContentManager({ course, styles: propStyles }) {
     }
   }, [status, wasUnauthenticated, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // استخراج لیست شناسه‌های فصل‌های خریداری شده از سفارشات کاربر با useMemo جهت جلوگیری از تغییر reference
-  // ⚠️ فقط سفارش‌های پرداخت‌شده و تأییدشده لحاظ می‌شوند
-  const purchasedChapterIdsFromOrders = useMemo(() => {
-    return getPurchasedChapterIds(orders, course);
-  }, [orders, course]);
-
   // =========================================================================
   // منطق کنترل دسترسی فصل‌ها (Chapter Access Logic)
   // =========================================================================
@@ -220,14 +213,13 @@ export default function CourseContentManager({ course, styles: propStyles }) {
    */
   const checkChapterAccess = (chapter) => {
     if (hasFullCourseAccess) return true;
+    // فلگ سرور بر دادهٔ قدیمی سشن/سفارش مقدم است تا وضعیت بلافاصله پس از خرید یکسان بماند.
+    if (chapter?.isPurchased === true || chapter?.hasAccess === true) return true;
+
     const chapterPrice = chapter.priceNoor ?? (typeof chapter.price === 'object' ? (chapter.price?.noor ?? chapter.price?.toman) : chapter.price) ?? 0;
     if (chapterPrice === 0 || chapter.isFree) return true;
 
-    const chapterIdStr = String(chapter.id);
-    return (
-      purchasedChapterIdsFromOrders.includes(chapterIdStr) ||
-      enrolledChapters.some((id) => String(id) === chapterIdStr)
-    );
+    return isChapterPurchasedByUser(chapter, { session, orders, course });
   };
 
   /**

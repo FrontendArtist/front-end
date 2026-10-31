@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { isChapterOrderItem, getPurchasedChapterId, getPurchasedChapterIds, isCoursePurchasedByUser, isCartItemPurchasedByUser } from '../courseAccessUtils';
+import { isChapterOrderItem, getPurchasedChapterId, getPurchasedChapterIds, isCoursePurchasedByUser, isCartItemPurchasedByUser, isChapterPurchasedByUser } from '../courseAccessUtils';
 import { checkCourseAccess } from '../ordersApi';
 
 const course = { id: 189, slug: 'az-khak-ta-aflak' };
@@ -82,6 +82,42 @@ test('خرید کل دوره همچنان دسترسی کامل می‌دهد', 
   expect((await checkCourseAccess(9, course.id, course.slug)).hasAccess).toBe(true);
 });
 
+
+describe('isChapterPurchasedByUser', () => {
+  const chapter = { id: 78, integrationId: 'chapter-uuid-78' };
+  const courseWithDoc = { id: 118, documentId: 'course-doc-118', slug: 'khakbeaflak' };
+
+  test('شناسهٔ یکتای فصل در سشن (خرید بای‌مانی) دسترسی می‌دهد', () => {
+    const session = {
+      user: { enrolledChapters: [], enrolledChapterIntegrationIds: ['chapter-uuid-78'] }
+    };
+    expect(isChapterPurchasedByUser(chapter, { session })).toBe(true);
+  });
+
+  test('قلم سفارش بای‌مانی با documentId والد و integrationId فصل شناسایی می‌شود', () => {
+    const orders = [paid([{
+      type: 'chapter',
+      integrationId: 'chapter-uuid-78',
+      externalCourseId: 'chapter-uuid-78',
+      parentExternalId: 'course-doc-118',
+      price: 100
+    }])];
+
+    expect(getPurchasedChapterIds(orders, courseWithDoc)).toEqual(['chapter-uuid-78']);
+    expect(isChapterPurchasedByUser(chapter, { orders, course: courseWithDoc })).toBe(true);
+  });
+
+  test('فصل دورهٔ دیگر با همان شماره دسترسی نمی‌دهد', () => {
+    const orders = [paid([{
+      type: 'chapter',
+      chapterId: 78,
+      parentExternalId: 'other-course-doc'
+    }])];
+
+    expect(getPurchasedChapterIds(orders, courseWithDoc)).toEqual([]);
+    expect(isChapterPurchasedByUser(chapter, { orders, course: courseWithDoc })).toBe(false);
+  });
+});
 
 describe('isCoursePurchasedByUser', () => {
   test('بررسی تابع بودن و کارکرد فلگ‌های مستقیم', () => {
