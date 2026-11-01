@@ -1,0 +1,82 @@
+/**
+ * @file src/app/quran/subjects/[slug]/page.module.scss
+ * @description استایل‌های صفحه تفسیر موضوعی قرآن کریم
+ */
+
+@use '../../../../styles/base/mixins' as *;
+
+.subjectPage {
+  padding-top: var(--space-section-top-desktop);
+  padding-bottom: var(--space-section-bottom-desktop);
+  min-height: 100vh;
+
+  @include respond(md) {
+    padding-top: var(--space-section-top-desktop);
+    padding-bottom: 40px;
+  }
+}
+
+.subjectHeader {
+  text-align: center;
+  margin-bottom: var(--space-title-content-desktop);
+  padding: 2rem 1rem;
+  border-bottom: 1px solid rgba(246, 217, 130, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+
+  @include respond(md) {
+    margin-bottom: 2rem;
+    padding: 1.5rem 0.5rem;
+  }
+}
+
+.subjectBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 1rem;
+  border-radius: 999px;
+  background: rgba(246, 217, 130, 0.12);
+  border: 1px solid rgba(246, 217, 130, 0.3);
+  color: var(--color-text-primary);
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.subjectTitle {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.5;
+  margin: 0;
+  direction: rtl;
+  text-shadow: 0 0 25px rgba(246, 217, 130, 0.2);
+}
+
+.subjectDescription {
+  font-size: var(--font-sm);
+  color: rgba(255, 250, 234, 0.8);
+  max-width: 680px;
+  line-height: 1.8;
+  margin: 0;
+  direction: rtl;
+}
+
+.subjectMeta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+.metaPill {
+  padding: 0.25rem 0.85rem;
+  background: rgba(246, 217, 130, 0.08);
+  border: 1px solid rgba(246, 217, 130, 0.18);
+  border-radius: 20px;
+  color: var(--color-text-primary);
+  font-size: var(--font-xs);
+}
