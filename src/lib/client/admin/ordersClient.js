@@ -29,11 +29,44 @@ export async function fetchAdminOrders({ start, limit = 20, page, pageSize, stat
 }
 
 /** جزئیات و خط زمانی تلاش‌های خرید یک سفارش بای‌مانی (فقط‌مشاهده؛ JWT از session سروری) */
-export async function fetchOrderTracking(orderId, { signal } = {}) {
-    const res = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/tracking`, { signal });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'خطا در دریافت جزئیات سفارش');
-    return data;
+const TRACKING_TTL_MS = 60 * 1000;
+const trackingCache = new Map(); // orderId -> { at, promise }
+
+function abortError() {
+    const err = new Error('Aborted');
+    err.name = 'AbortError';
+    return err;
+}
+
+/**
+ * پاسخ هر سفارش ۶۰ ثانیه کش می‌شود و درخواست‌های هم‌زمان یک promise مشترک دارند؛
+ * بنابراین mount دوباره (StrictMode) یا باز و بسته کردن ردیف، بک‌اند را دوباره صدا نمی‌زند.
+ * signal فقط انتظار همین فراخواننده را لغو می‌کند، نه درخواست مشترک را. force=true کش را دور می‌زند.
+ */
+export function fetchOrderTracking(orderId, { signal, force = false } = {}) {
+    let entry = trackingCache.get(orderId);
+    if (force || !entry || Date.now() - entry.at > TRACKING_TTL_MS) {
+        const promise = (async () => {
+            const res = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/tracking`);
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'خطا در دریافت جزئیات سفارش');
+            return data;
+        })();
+        entry = { at: Date.now(), promise };
+        trackingCache.set(orderId, entry);
+        // خطا کش نمی‌شود تا «تلاش مجدد» واقعاً دوباره درخواست بزند
+        promise.catch(() => {
+            if (trackingCache.get(orderId) === entry) trackingCache.delete(orderId);
+        });
+    }
+
+    if (!signal) return entry.promise;
+    if (signal.aborted) return Promise.reject(abortError());
+    return new Promise((resolve, reject) => {
+        const onAbort = () => reject(abortError());
+        signal.addEventListener('abort', onAbort, { once: true });
+        entry.promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort));
+    });
 }
 
 export async function fetchAdminSettlements() {

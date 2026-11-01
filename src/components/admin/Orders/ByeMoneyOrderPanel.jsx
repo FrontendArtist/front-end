@@ -16,6 +16,7 @@ import { canShowReceipt, getFinancialStatusConfig } from '@/lib/admin/orderTrack
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import PhysicalDeliveryControl from './PhysicalDeliveryControl';
 import AdminBadge from '../Shared/AdminBadge';
+import AdminButton from '../Shared/AdminButton';
 import styles from './OrdersTable.module.scss';
 
 const DELIVERY_LABELS = {
@@ -86,13 +87,14 @@ function Timeline({ events }) {
  */
 export default function ByeMoneyOrderPanel({ order, onSummary }) {
     const [state, setState] = useState({ loading: true, error: null, data: null });
+    const [reloadKey, setReloadKey] = useState(0);
     const orderId = order.orderId || order.id;
 
     useEffect(() => {
         const controller = new AbortController();
         let mounted = true;
         setState({ loading: true, error: null, data: null });
-        fetchOrderTracking(orderId, { signal: controller.signal })
+        fetchOrderTracking(orderId, { signal: controller.signal, force: reloadKey > 0 })
             .then((data) => {
                 if (!mounted) return;
                 setState({ loading: false, error: null, data });
@@ -108,7 +110,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
         };
         // onSummary عمداً در وابستگی‌ها نیست: بارگذاری فقط به تغییر سفارش وابسته است
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [orderId]);
+    }, [orderId, reloadKey]);
 
     if (state.loading) {
         return <p className={styles.expanded_empty}>در حال دریافت اقلام و خط زمانی سفارش...</p>;
@@ -117,6 +119,9 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
         return (
             <div className={`${styles.expanded_section}`} role="alert">
                 <p className={styles.expanded_empty}>⚠️ {state.error || 'جزئیات سفارش در دسترس نیست.'}</p>
+                <AdminButton variant="default" onClick={() => setReloadKey((k) => k + 1)}>
+                    تلاش مجدد
+                </AdminButton>
             </div>
         );
     }
@@ -158,9 +163,48 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                             </span>
                         </div>
                     ) : null}
-                    <div className={styles.expanded_field}>
-                        <span className={styles.expanded_field__label}>مبلغ نهایی</span>
-                        <span className={styles.expanded_field__value}>{fa(detail.finalAmountInNoor)} نور</span>
+                    {!(isPaid && receipt) && (
+                        <div className={styles.expanded_field}>
+                            <span className={styles.expanded_field__label}>مبلغ نهایی</span>
+                            <span className={styles.expanded_field__value}>{fa(detail.finalAmountInNoor)} نور</span>
+                        </div>
+                    )}
+                    {isPaid && receipt && (
+                        <div data-testid="order-receipt" className={styles.onlinePayDetails}>
+                            <div className={styles.expanded_field}>
+                                <span className={styles.expanded_field__label}>زمان خرید</span>
+                                <span className={styles.expanded_field__value}>{formatTime(receipt.purchasedAtUtc)}</span>
+                            </div>
+                            {receipt.couponCode && (
+                                <div className={styles.expanded_field}>
+                                    <span className={styles.expanded_field__label}>کد تخفیف</span>
+                                    <span className={styles.expanded_field__value} dir="ltr">{receipt.couponCode}</span>
+                                </div>
+                            )}
+                            {receipt.cartSummary && (
+                                <>
+                                    <div className={styles.expanded_field}>
+                                        <span className={styles.expanded_field__label}>جمع قیمت اقلام</span>
+                                        <span className={styles.expanded_field__value}>{fa(receipt.cartSummary.originalTotalInNoor)} نور</span>
+                                    </div>
+                                    {receipt.cartSummary.shippingAmountInNoor > 0 && (
+                                        <div className={styles.expanded_field}>
+                                            <span className={styles.expanded_field__label}>هزینهٔ ارسال</span>
+                                            <span className={styles.expanded_field__value}>{fa(receipt.cartSummary.shippingAmountInNoor)} نور</span>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                            <div className={styles.expanded_field}>
+                                <span className={styles.expanded_field__label}>مبلغ پرداختی قطعی</span>
+                                <span className={styles.expanded_field__value}>{fa(receipt.finalAmountInNoor)} نور</span>
+                            </div>
+                        </div>
+                    )}
+                    <div>
+                        <AdminButton variant="default" onClick={() => setReloadKey((k) => k + 1)} title="دریافت دوباره از سرور">
+                            تازه‌سازی
+                        </AdminButton>
                     </div>
                 </div>
             </div>
@@ -201,46 +245,12 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                     ))}
             </div>
 
-            {isPaid && receipt && (
-                <div className={styles.expanded_section} data-testid="order-receipt">
-                    <h4 className={styles.expanded_section__title}>🧾 رسید سفارش</h4>
-                    <div className={styles.onlinePayDetails}>
-                        <div className={styles.expanded_field}>
-                            <span className={styles.expanded_field__label}>زمان خرید</span>
-                            <span className={styles.expanded_field__value}>{formatTime(receipt.purchasedAtUtc)}</span>
-                        </div>
-                        {receipt.couponCode && (
-                            <div className={styles.expanded_field}>
-                                <span className={styles.expanded_field__label}>کد تخفیف</span>
-                                <span className={styles.expanded_field__value} dir="ltr">{receipt.couponCode}</span>
-                            </div>
-                        )}
-                        {receipt.cartSummary && (
-                            <>
-                                <div className={styles.expanded_field}>
-                                    <span className={styles.expanded_field__label}>جمع قیمت اقلام</span>
-                                    <span className={styles.expanded_field__value}>{fa(receipt.cartSummary.originalTotalInNoor)} نور</span>
-                                </div>
-                                {receipt.cartSummary.shippingAmountInNoor > 0 && (
-                                    <div className={styles.expanded_field}>
-                                        <span className={styles.expanded_field__label}>هزینهٔ ارسال</span>
-                                        <span className={styles.expanded_field__value}>{fa(receipt.cartSummary.shippingAmountInNoor)} نور</span>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                        <div className={styles.expanded_field}>
-                            <span className={styles.expanded_field__label}>مبلغ پرداختی قطعی</span>
-                            <span className={styles.expanded_field__value}>{fa(receipt.finalAmountInNoor)} نور</span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className={styles.expanded_section}>
-                <h4 className={styles.expanded_section__title}>⏱️ خط زمانی تلاش‌های خرید</h4>
+            <details className={styles.expanded_section}>
+                <summary className={styles.expanded_section__title} style={{ cursor: 'pointer' }}>
+                    ⏱️ خط زمانی تلاش‌های خرید ({fa(timeline.length)} رویداد)
+                </summary>
                 <Timeline events={timeline} />
-            </div>
+            </details>
         </>
     );
 }

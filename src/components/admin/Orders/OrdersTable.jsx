@@ -21,12 +21,13 @@ import SettlementModal from './SettlementModal';
 import SettlementArchiveModal from './SettlementArchiveModal';
 import BulkDeleteModal from './BulkDeleteModal';
 import ByeMoneyOrderPanel from './ByeMoneyOrderPanel';
-import { canShowReceipt, getFinancialStatusConfig } from '@/lib/admin/orderTracking';
+import { getFinancialStatusConfig } from '@/lib/admin/orderTracking';
 import styles from './OrdersTable.module.scss';
 import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
+import AdminSelect from '../Shared/AdminSelect';
 import AdminLazyLoad from '../Shared/AdminLazyLoad';
 import { fetchAdminOrders } from '@/lib/client/admin/ordersClient';
 
@@ -39,6 +40,19 @@ const ORDER_STATUS_CONFIG = {
     'shipped': { label: 'ارسال شده', variant: 'info' },
     'delivered': { label: 'تحویل شده', variant: 'success' },
     'canceled': { label: 'لغو شده', variant: 'error' },
+};
+
+const SOURCE_OPTIONS = [
+    { value: 'all', label: 'همه منابع' },
+    { value: 'byemoney', label: 'بای‌مانی' },
+    { value: 'strapi', label: 'قدیمی (استراپی)' },
+];
+
+/** وضعیت ارسال سفارش بای‌مانی در ستون جدول؛ NotStarted یعنی چیزی برای ارسال نیست */
+const DELIVERY_COLUMN_CONFIG = {
+    Pending: { label: 'در انتظار ارسال', variant: 'warning' },
+    PartiallyDelivered: { label: 'تحویل ناقص', variant: 'info' },
+    Delivered: { label: 'تحویل شده', variant: 'success' },
 };
 
 /** برچسب‌های روش پرداخت */
@@ -406,7 +420,7 @@ export default function OrdersTable({
     const [bulkDeleteTarget, setBulkDeleteTarget] = useState(null); // null | 'canceled' | 'pending'
     const [settlementSuccessMessage, setSettlementSuccessMessage] = useState(null);
     const [statsInfo, setStatsInfo] = useState(settlementStats);
-    const [isSettlementPanelOpen, setIsSettlementPanelOpen] = useState(true); // باز/بسته بودن پنل تسویه
+    const [isSettlementPanelOpen, setIsSettlementPanelOpen] = useState(false); // باز/بسته بودن پنل تسویه
 
     // ── Pagination & Lazy Loading State ──────────────────────────────────────
     const initialTotal = initialMeta?.pagination?.total ?? (initialOrders?.length || 0);
@@ -573,6 +587,19 @@ export default function OrdersTable({
         };
     }, [initialStats, orders, periodFilter, activeSettlement]);
 
+    const statusOptions = useMemo(() => {
+        const n = (v) => new Intl.NumberFormat('fa-IR').format(v ?? 0);
+        return [
+            { value: 'all', label: `همه (${n(totalOrders || orders.length)})` },
+            { value: 'pending', label: `در انتظار پرداخت (${n(counts.pending)})` },
+            { value: 'paid', label: `پرداخت شده (${n(counts.paid)})` },
+            { value: 'online', label: `پرداخت آنلاین (${n(counts.online)})` },
+            { value: 'canceled', label: `ناموفق / لغو شده (${n(counts.canceled)})` },
+            { value: 'expired', label: `منقضی (${n(counts.expired)})` },
+            { value: 'review', label: `نیازمند بررسی (${n(counts.review)})` },
+        ];
+    }, [counts, totalOrders, orders.length]);
+
     // حذف گروهی فقط سفارش‌های استرپی را پاک می‌کند؛ شمارندهٔ آن نباید سفارش‌های بای‌مانی را بشمارد
     const bulkDeleteCounts = useMemo(() => {
         const strapiCounts = statsInfo?.strapiStatusCounts;
@@ -585,6 +612,14 @@ export default function OrdersTable({
             canceled: strapiOrders.filter(isCanceledOrder).length,
         };
     }, [statsInfo, orders, periodFilter, activeSettlement]);
+
+    const cleanupOptions = useMemo(() => {
+        const n = (v) => new Intl.NumberFormat('fa-IR').format(v ?? 0);
+        const opts = [];
+        if (bulkDeleteCounts.canceled > 0) opts.push({ value: 'canceled', label: `حذف لغو شده‌ها (${n(bulkDeleteCounts.canceled)})` });
+        if (bulkDeleteCounts.pending > 0) opts.push({ value: 'pending', label: `حذف در انتظارها (${n(bulkDeleteCounts.pending)})` });
+        return opts;
+    }, [bulkDeleteCounts]);
 
     // ── محاسبات دوره تسویه مالی ──────────────────────────────────────────────
     const settlementsCount = statsInfo?.settlementsCount ?? 0;
@@ -681,7 +716,7 @@ export default function OrdersTable({
         setExpandedId((prev) => (prev === orderId ? null : orderId));
     }
 
-    const COL_SPAN = 8; // تعداد ستون‌های جدول
+    const COL_SPAN = 9; // تعداد ستون‌های جدول
     const headers = [
         <div key="expand-col" style={{ width: 16 }}></div>,
         'شناسه',
@@ -705,6 +740,7 @@ export default function OrdersTable({
             />
             {isStatusSorted && <span className={styles.sort_active_dot} />}
         </button>,
+        'وضعیت ارسال',
         'مبلغ',
         'تاریخ',
         'عملیات',
@@ -875,100 +911,31 @@ export default function OrdersTable({
             {/* ── نوار ابزار: تب‌های فیلتر وضعیت و جستجو ─────────────── */}
             <AdminToolbar>
                 <div className={styles.filterTabs}>
-                    <AdminButton
-                        variant={filterType === 'all' ? 'edit' : 'default'}
-                        onClick={() => setFilterType('all')}
-                    >
-                        همه ({new Intl.NumberFormat('fa-IR').format(filterType === 'all' ? totalOrders : (totalOrders || orders.length))})
-                    </AdminButton>
-                    <AdminButton
-                        variant={filterType === 'pending' ? 'edit' : 'default'}
-                        onClick={() => setFilterType('pending')}
-                    >
-                        در انتظار پرداخت ({new Intl.NumberFormat('fa-IR').format(counts.pending)})
-                    </AdminButton>
-                    <AdminButton
-                        variant={filterType === 'paid' ? 'edit' : 'default'}
-                        onClick={() => setFilterType('paid')}
-                    >
-                        پرداخت شده ({new Intl.NumberFormat('fa-IR').format(counts.paid)})
-                    </AdminButton>
-                    <AdminButton
-                        variant={filterType === 'online' ? 'edit' : 'default'}
-                        onClick={() => setFilterType('online')}
-                    >
-                        پرداخت آنلاین ({new Intl.NumberFormat('fa-IR').format(counts.online)})
-                    </AdminButton>
-                    <AdminButton
-                        variant={filterType === 'canceled' ? 'edit' : 'default'}
-                        onClick={() => setFilterType('canceled')}
-                    >
-                        ناموفق / لغو شده ({new Intl.NumberFormat('fa-IR').format(counts.canceled)})
-                    </AdminButton>
-                    <AdminButton
-                        variant={filterType === 'expired' ? 'edit' : 'default'}
-                        onClick={() => setFilterType('expired')}
-                    >
-                        منقضی ({new Intl.NumberFormat('fa-IR').format(counts.expired)})
-                    </AdminButton>
-                    <AdminButton
-                        variant={filterType === 'review' ? 'edit' : 'default'}
-                        onClick={() => setFilterType('review')}
-                    >
-                        نیازمند بررسی ({new Intl.NumberFormat('fa-IR').format(counts.review)})
-                    </AdminButton>
-
-                    {/* دکمه‌های پاکسازی گروهی */}
-                    {bulkDeleteCounts.canceled > 0 && (
-                        <button
-                            type="button"
-                            className={styles.bulkDeleteBtn}
-                            onClick={() => setBulkDeleteTarget('canceled')}
-                            title="حذف دائمی تمام سفارش‌های لغو شده"
-                        >
-                            <Trash2 size={13} />
-                            <span>حذف لغو شده‌ها ({new Intl.NumberFormat('fa-IR').format(bulkDeleteCounts.canceled)})</span>
-                        </button>
-                    )}
-
-                    {bulkDeleteCounts.pending > 0 && (
-                        <button
-                            type="button"
-                            className={styles.bulkDeletePendingBtn}
-                            onClick={() => setBulkDeleteTarget('pending')}
-                            title="حذف دائمی تمام سفارش‌های در انتظار پرداخت"
-                        >
-                            <Trash2 size={13} />
-                            <span>حذف در انتظارها ({new Intl.NumberFormat('fa-IR').format(bulkDeleteCounts.pending)})</span>
-                        </button>
+                    <AdminSelect
+                        value={filterType}
+                        onChange={setFilterType}
+                        options={statusOptions}
+                        ariaLabel="فیلتر وضعیت سفارش"
+                    />
+                    {cleanupOptions.length > 0 && (
+                        <AdminSelect
+                            value=""
+                            onChange={(val) => setBulkDeleteTarget(val)}
+                            options={cleanupOptions}
+                            placeholder="پاکسازی گروهی"
+                            icon={<Trash2 size={14} />}
+                            ariaLabel="پاکسازی گروهی سفارش‌ها"
+                        />
                     )}
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                    {/* فیلتر منبع سفارش (همه / قدیمی / بای‌مانی) */}
-                    <div className={styles.periodSwitch} title="فیلتر بر اساس منبع سفارش">
-                        <button
-                            type="button"
-                            className={`${styles.periodSwitch__btn} ${sourceFilter === 'all' ? styles['periodSwitch__btn--active'] : ''}`}
-                            onClick={() => setSourceFilter('all')}
-                        >
-                            همه منابع
-                        </button>
-                        <button
-                            type="button"
-                            className={`${styles.periodSwitch__btn} ${sourceFilter === 'byemoney' ? styles['periodSwitch__btn--active'] : ''}`}
-                            onClick={() => setSourceFilter('byemoney')}
-                        >
-                            بای‌مانی
-                        </button>
-                        <button
-                            type="button"
-                            className={`${styles.periodSwitch__btn} ${sourceFilter === 'strapi' ? styles['periodSwitch__btn--active'] : ''}`}
-                            onClick={() => setSourceFilter('strapi')}
-                        >
-                            قدیمی (استراپی)
-                        </button>
-                    </div>
+                    <AdminSelect
+                        value={sourceFilter}
+                        onChange={setSourceFilter}
+                        options={SOURCE_OPTIONS}
+                        ariaLabel="فیلتر منبع سفارش"
+                    />
 
                     <AdminSearch
                         placeholder="جستجو بر اساس شماره سفارش، کاربر یا موبایل..."
@@ -1040,6 +1007,14 @@ export default function OrdersTable({
                                 <tr
                                     className={`${styles.table__row} ${isExpanded ? styles['table__row--expanded'] : ''}`}
                                     onClick={() => toggleExpand(order.id)}
+                                    onKeyDown={(e) => {
+                                        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                                            e.preventDefault();
+                                            toggleExpand(order.id);
+                                        }
+                                    }}
+                                    tabIndex={0}
+                                    aria-expanded={isExpanded}
                                 >
                                     {/* دکمه toggle */}
                                     <td className={styles.expand_toggle_cell}>
@@ -1108,6 +1083,18 @@ export default function OrdersTable({
                                         </div>
                                     </td>
 
+                                    {/* وضعیت ارسال */}
+                                    <td>
+                                        {isByeMoneyRow && isPaidOrder(order) && DELIVERY_COLUMN_CONFIG[order.deliveryStatus] ? (
+                                            <AdminBadge
+                                                text={DELIVERY_COLUMN_CONFIG[order.deliveryStatus].label}
+                                                variant={DELIVERY_COLUMN_CONFIG[order.deliveryStatus].variant}
+                                            />
+                                        ) : (
+                                            <span className={styles.expanded_empty}>—</span>
+                                        )}
+                                    </td>
+
                                     {/* مبلغ */}
                                     <td className={styles.table__amount}>
                                         {order.isByeMoney || order.source === 'byemoney' ? (
@@ -1126,29 +1113,7 @@ export default function OrdersTable({
                                     <td>
                                         <div className={styles.actions}>
                                             {isByeMoneyRow ? (
-                                                <>
-                                                    <AdminButton
-                                                        variant="edit"
-                                                        disabled={!canShowReceipt(order)}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setExpandedId(order.id);
-                                                        }}
-                                                        title={canShowReceipt(order) ? 'مشاهده رسید سفارش' : 'رسید فقط برای سفارش پرداخت‌شده وجود دارد'}
-                                                    >
-                                                        رسید
-                                                    </AdminButton>
-                                                    <AdminButton
-                                                        variant="default"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleExpand(order.id);
-                                                        }}
-                                                        title={isExpanded ? 'بستن جزئیات' : 'مشاهده اقلام و خط زمانی تلاش‌ها'}
-                                                    >
-                                                        {isExpanded ? 'بستن' : 'جزئیات'}
-                                                    </AdminButton>
-                                                </>
+                                                <span className={styles.expanded_empty} title="برای مشاهده جزئیات روی ردیف کلیک کنید">—</span>
                                             ) : (
                                                 <>
                                                     {needsReceiptApproval && (
