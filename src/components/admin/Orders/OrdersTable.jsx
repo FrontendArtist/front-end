@@ -405,7 +405,7 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
                                         </div>
                                     )}
                                 </div>
-                                {order.isPhysicalProduct && purchaseId && (
+                                {order.isPhysicalProduct && purchaseId && isPaidOrder(order) && (
                                     <PhysicalDeliveryControl purchaseId={purchaseId} cartId={cartId} />
                                 )}
                             </div>

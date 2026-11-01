@@ -58,8 +58,12 @@ export default function PurchasesList() {
             );
         });
     });
+    // فقط وقتی سفارشی وجود دارد ولی هنوز خریدش نمایش‌پذیر نیست منتظر تحویل می‌مانیم؛
+    // کاربر بدون هیچ سفارشی چیزی برای انتظار ندارد.
+    const isAwaitingDelivery = Boolean(userId) && hasFetched && orders.length > 0 && !hasLoadedPurchases;
+    const isRetrying = isAwaitingDelivery && refreshAttempt < 3;
     useEffect(() => {
-        if (!userId || hasLoadedPurchases || refreshAttempt >= 3) return;
+        if (!isRetrying) return;
         const delays = [2500, 5000, 9000];
         const timer = setTimeout(() => {
             fetchOrders(true);
@@ -67,7 +71,7 @@ export default function PurchasesList() {
             setRefreshAttempt(attempt => attempt + 1);
         }, delays[refreshAttempt]);
         return () => clearTimeout(timer);
-    }, [userId, hasLoadedPurchases, refreshAttempt, fetchOrders, loadProfileCourses]);
+    }, [isRetrying, refreshAttempt, fetchOrders, loadProfileCourses]);
 
     useEffect(() => {
         let isMounted = true;
@@ -273,8 +277,8 @@ export default function PurchasesList() {
 
             {courses.length === 0 && products.length === 0 ? (
                 <div className={styles.purchases__empty}>
-                    <p>{refreshAttempt > 0 && refreshAttempt <= 3
-                        ? 'در حال به‌روزرسانی فهرست خریدها…'
+                    <p>{isRetrying
+                        ?'در حال به‌روزرسانی فهرست خریدها…'
                         : 'شما تاکنون محصول یا دوره‌ای خریداری نکرده‌اید.'}</p>
                 </div>
             ) : (

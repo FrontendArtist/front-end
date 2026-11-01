@@ -560,4 +560,18 @@ test('زیرنویس معادل تومان در سایدبار فقط برای �
     const total = screen.getByText('مبلغ قابل پرداخت:').parentElement.querySelector('[data-testid="price-hint"]');
     expect(total.getAttribute('data-hide-hint')).toBe('false');
 });
+test('خطای عدم تنظیم هزینه ارسال برای کالای فیزیکی در سایدبار سبد خرید نمایش داده می‌شود', async () => {
+    previewCourseCart.mockRejectedValueOnce(new Error('خرید کالای فیزیکی تا تنظیم مبلغ ارسال فعال نیست.'));
+    useCartStore.setState({
+        items: [
+            { id: 10, documentId: 'prod-doc-1', type: 'product', title: 'کتاب فیزیکی', price: 100, quantity: 1, slug: 'book' },
+        ],
+    });
+
+    render(<CartPage />);
+    const alert = await screen.findByRole('alert');
+    expect(alert).toBeTruthy();
+    expect(alert.textContent).toContain('خرید کالای فیزیکی تا تنظیم مبلغ ارسال فعال نیست.');
+    expect(screen.getByRole('button', { name: 'بررسی دوباره' })).toBeTruthy();
+});
 

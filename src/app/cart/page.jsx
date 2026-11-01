@@ -818,30 +818,26 @@ export default function CartPage() {
 
                             {isCartEligible && preview?.error && (
                                 <div className={styles.previewError} role="alert">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
                                     <p>{preview.error}</p>
                                     <button type="button" onClick={() => setPreviewRevision(value => value + 1)}>بررسی دوباره</button>
                                 </div>
                             )}
 
-                            {errorMessage && (
-                                <div style={{
-                                    padding: '8px 12px',
-                                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                                    border: '1px solid #ef4444',
-                                    borderRadius: '6px',
-                                    color: '#fca5a5',
-                                    fontSize: '0.78rem',
-                                    lineHeight: '1.4',
-                                    ...(errorMessage.includes('فیلترشکن') ? {
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        gap: '12px',
-                                        textAlign: 'right',
-                                    } : {
-                                        textAlign: 'center',
-                                    }),
-                                }}>
+                            {errorMessage && errorMessage !== preview?.error && (
+                                <div
+                                    className={`${styles.cartErrorMessage} ${errorMessage.includes('فیلترشکن') ? styles.vpnError : ''}`}
+                                    role="alert"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
                                     {errorMessage.includes('فیلترشکن') ? (
                                         <>
                                             <span>فیلترشکن شما روشن است</span>
@@ -849,25 +845,12 @@ export default function CartPage() {
                                                 type="button"
                                                 onClick={handleRecheckVpn}
                                                 disabled={isCheckingVpn}
-                                                style={{
-                                                    padding: '4px 10px',
-                                                    fontSize: '0.8rem',
-                                                    backgroundColor: 'rgba(239, 68, 68, 0.25)',
-                                                    border: '1px solid #ef4444',
-                                                    borderRadius: '6px',
-                                                    color: '#fef2f2',
-                                                    cursor: isCheckingVpn ? 'wait' : 'pointer',
-                                                    whiteSpace: 'nowrap',
-                                                    opacity: isCheckingVpn ? 0.7 : 1,
-                                                    transition: 'opacity 0.2s',
-                                                    flexShrink: 0,
-                                                }}
                                             >
                                                 {isCheckingVpn ? 'در حال بررسی...' : 'بررسی مجدد'}
                                             </button>
                                         </>
                                     ) : (
-                                        errorMessage
+                                        <span>{errorMessage}</span>
                                     )}
                                 </div>
                             )}
