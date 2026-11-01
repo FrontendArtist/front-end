@@ -2,16 +2,24 @@
 
 /**
  * @file src/modules/quran/SurahViewer.jsx
- * @description کامپوننت کلاینت هماهنگ‌کننده آیات سوره، فیلتر مشروط تفاسیر، انتخاب قاری و پلیر پیوسته
+ * @description کامپوننت کلاینت هماهنگ‌کننده آیات سوره، فیلتر موضوعی، انتخاب قاری و پلیر پیوسته
  */
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Play, Pause, User, Loader2, ChevronDown, BookOpen } from 'lucide-react';
+import { Play, Pause, User, Loader2, ChevronDown, BookOpen, Tag } from 'lucide-react';
 import { getRazaviAudioUrl } from '@/utils/quranAudio';
 import { RECITERS_LIST, DEFAULT_RECITER } from '@/utils/quranReciters';
 import VerseCard from './VerseCard';
 import QuranAudioPlayer from './QuranAudioPlayer';
 import styles from './SurahViewer.module.scss';
+
+/**
+ * کلید یکتای هر آیه (پشتیبانی از حالت تک‌سوره و چندسوره در تفسیر موضوعی)
+ */
+function getVerseKey(verse, fallbackSurahNumber) {
+  const sNum = verse?.surahNumber || fallbackSurahNumber || 0;
+  return `${sNum}:${verse?.verseNumber}`;
+}
 
 /**
  * تعیین صوت بعدی در زنجیره پخش پیوسته:
@@ -32,9 +40,14 @@ function getNextTrack(
   const currentVerse = verses[currentIndex];
   if (!currentVerse) return null;
 
+  const currentSurahNum = currentVerse.surahNumber || surahNumber;
+  const currentKey = getVerseKey(currentVerse, surahNumber);
+
   if (currentStep === 'arabic') {
-    const persianUrl = currentVerse.translationAudioUrl || getRazaviAudioUrl(surahNumber, currentVerse.verseNumber);
-    const hasPersian = Boolean(persianUrl) && !failedPersianSet.has(currentVerse.verseNumber);
+    const persianUrl =
+      currentVerse.translationAudioUrl ||
+      getRazaviAudioUrl(currentSurahNum, currentVerse.verseNumber);
+    const hasPersian = Boolean(persianUrl) && !failedPersianSet.has(currentKey);
 
     if (hasPersian) {
       return { index: currentIndex, step: 'persian', url: persianUrl };
@@ -47,8 +60,10 @@ function getNextTrack(
 
     if (currentIndex + 1 < verses.length) {
       const nextVerse = verses[currentIndex + 1];
+      const nextKey = getVerseKey(nextVerse, surahNumber);
       const nextArabicUrl =
         nextVerse.customArabicAudioUrl ||
+        reciterAudioMap[selectedReciter]?.[nextKey] ||
         reciterAudioMap[selectedReciter]?.[nextVerse.verseNumber] ||
         nextVerse.arabicAudioUrl;
 
@@ -70,8 +85,10 @@ function getNextTrack(
 
     if (currentIndex + 1 < verses.length) {
       const nextVerse = verses[currentIndex + 1];
+      const nextKey = getVerseKey(nextVerse, surahNumber);
       const nextArabicUrl =
         nextVerse.customArabicAudioUrl ||
+        reciterAudioMap[selectedReciter]?.[nextKey] ||
         reciterAudioMap[selectedReciter]?.[nextVerse.verseNumber] ||
         nextVerse.arabicAudioUrl;
 
@@ -88,8 +105,10 @@ function getNextTrack(
   if (currentStep === 'tafsir') {
     if (currentIndex + 1 < verses.length) {
       const nextVerse = verses[currentIndex + 1];
+      const nextKey = getVerseKey(nextVerse, surahNumber);
       const nextArabicUrl =
         nextVerse.customArabicAudioUrl ||
+        reciterAudioMap[selectedReciter]?.[nextKey] ||
         reciterAudioMap[selectedReciter]?.[nextVerse.verseNumber] ||
         nextVerse.arabicAudioUrl;
 
@@ -111,16 +130,23 @@ function getNextTrack(
  */
 function getAudioUrlForStep(verse, step, surahNumber, selectedReciter, reciterAudioMap) {
   if (!verse) return '';
+  const effectiveSurahNum = verse.surahNumber || surahNumber;
+  const vKey = getVerseKey(verse, surahNumber);
+
   switch (step) {
     case 'arabic':
       return (
         verse.customArabicAudioUrl ||
+        reciterAudioMap[selectedReciter]?.[vKey] ||
         reciterAudioMap[selectedReciter]?.[verse.verseNumber] ||
         verse.arabicAudioUrl ||
         ''
       );
     case 'persian':
-      return verse.translationAudioUrl || getRazaviAudioUrl(surahNumber, verse.verseNumber);
+      return (
+        verse.translationAudioUrl ||
+        getRazaviAudioUrl(effectiveSurahNum, verse.verseNumber)
+      );
     case 'tafsir':
       return verse.tafsirAudioUrl || verse.tafsirAudio?.url || '';
     default:
@@ -131,18 +157,55 @@ function getAudioUrlForStep(verse, step, surahNumber, selectedReciter, reciterAu
 /**
  * @param {{
  *   verses: Array<any>,
- *   surahNumber: number,
+ *   surahNumber?: number,
  *   surahNameFa: string,
- *   showAllVerses: boolean,
+ *   showSurahBadge?: boolean,
  * }} props
  */
 export default function SurahViewer({
   verses = [],
   surahNumber,
   surahNameFa,
+  showSurahBadge = false,
 }) {
-  // تمام آیاتی که به کامپوننت ارسال می‌شوند، منحصراً آیات دارای تفسیر اختصاصی هستند
-  const displayedVerses = verses;
+  // --------------------------------------------------------------------------
+  // فیلتر موضوعی در داخل سوره (در صورتی که آیات دارای موضوع باشند)
+  // --------------------------------------------------------------------------
+  const [selectedSubjectSlug, setSelectedSubjectSlug] = useState('all');
+
+  const availableSubjects = useMemo(() => {
+    if (showSurahBadge) return []; // در صفحه خود موضوع، نیازی به فیلتر مجدد موضوع نیست
+    const map = new Map();
+    verses.forEach((v) => {
+      if (Array.isArray(v.subjects)) {
+        v.subjects.forEach((sub) => {
+          if (sub && sub.title) {
+            const key = sub.slug || String(sub.id);
+            const existing = map.get(key);
+            if (existing) {
+              existing.count += 1;
+            } else {
+              map.set(key, {
+                slug: key,
+                title: sub.title,
+                count: 1,
+              });
+            }
+          }
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [verses, showSurahBadge]);
+
+  const displayedVerses = useMemo(() => {
+    if (selectedSubjectSlug === 'all') return verses;
+    return verses.filter(
+      (v) =>
+        Array.isArray(v.subjects) &&
+        v.subjects.some((s) => (s.slug || String(s.id)) === selectedSubjectSlug)
+    );
+  }, [verses, selectedSubjectSlug]);
 
   // --------------------------------------------------------------------------
   // State: انتخاب قاری
@@ -150,11 +213,13 @@ export default function SurahViewer({
   const [selectedReciter, setSelectedReciter] = useState(DEFAULT_RECITER);
   const [isReciterLoading, setIsReciterLoading] = useState(false);
 
-  // کش صوت قاریان: { [reciterId]: { [verseNumber]: url } }
+  // کش صوت قاریان: { [reciterId]: { [verseKey]: url } }
   const [reciterAudioMap, setReciterAudioMap] = useState(() => {
     const initialMap = {};
     verses.forEach((v) => {
       if (v.arabicAudioUrl) {
+        const key = getVerseKey(v, surahNumber);
+        initialMap[key] = v.arabicAudioUrl;
         initialMap[v.verseNumber] = v.arabicAudioUrl;
       }
     });
@@ -170,17 +235,14 @@ export default function SurahViewer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [autoScroll, setAutoScroll] = useState(true);
 
   // نگهداری آیاتی که صوت ترجمه‌شان لود نشد
   const [failedPersianAudios, setFailedPersianAudios] = useState(() => new Set());
 
   const audioRef = useRef(null);
-  // متغیرهای جلوگیری از حلقه بی‌پایان خطا و قفل شدن صفحه (Circuit Breaker & Throttle)
   const consecutiveErrorsRef = useRef(0);
   const playTimeoutRef = useRef(null);
 
-  // پاکسازی تایمرها هنگام خروج از کامپوننت
   useEffect(() => {
     return () => {
       if (playTimeoutRef.current) {
@@ -227,7 +289,10 @@ export default function SurahViewer({
       if (reciterAudioMap[newReciterId]) {
         if (isPlaying && currentStep === 'arabic') {
           const currentVerse = displayedVerses[currentVerseIndex];
-          const newUrl = reciterAudioMap[newReciterId][currentVerse?.verseNumber];
+          const vKey = getVerseKey(currentVerse, surahNumber);
+          const newUrl =
+            reciterAudioMap[newReciterId][vKey] ||
+            reciterAudioMap[newReciterId][currentVerse?.verseNumber];
           if (newUrl && audioRef.current) {
             const time = audioRef.current.currentTime;
             audioRef.current.src = newUrl;
@@ -240,18 +305,37 @@ export default function SurahViewer({
 
       setIsReciterLoading(true);
       try {
-        const response = await fetch(
-          `https://api.alquran.cloud/v1/surah/${surahNumber}/${newReciterId}`
+        // جمع‌آوری سوره‌های یکتا (پشتیبانی از حالت تک‌سوره و چندسوره در تفسیر موضوعی)
+        const uniqueSurahNumbers = Array.from(
+          new Set(
+            verses
+              .map((v) => v.surahNumber || surahNumber)
+              .filter(Boolean)
+          )
         );
-        if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-        const data = await response.json();
 
-        if (data?.data?.ayahs && Array.isArray(data.data.ayahs)) {
-          const mapForReciter = {};
-          data.data.ayahs.forEach((ayah) => {
-            mapForReciter[ayah.numberInSurah] = ayah.audio;
-          });
+        const mapForReciter = {};
 
+        await Promise.allSettled(
+          uniqueSurahNumbers.map(async (sNum) => {
+            const response = await fetch(
+              `https://api.alquran.cloud/v1/surah/${sNum}/${newReciterId}`
+            );
+            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+            const data = await response.json();
+
+            if (data?.data?.ayahs && Array.isArray(data.data.ayahs)) {
+              data.data.ayahs.forEach((ayah) => {
+                mapForReciter[`${sNum}:${ayah.numberInSurah}`] = ayah.audio;
+                if (sNum === surahNumber) {
+                  mapForReciter[ayah.numberInSurah] = ayah.audio;
+                }
+              });
+            }
+          })
+        );
+
+        if (Object.keys(mapForReciter).length > 0) {
           setReciterAudioMap((prev) => ({
             ...prev,
             [newReciterId]: mapForReciter,
@@ -259,7 +343,9 @@ export default function SurahViewer({
 
           if (isPlaying && currentStep === 'arabic') {
             const currentVerse = displayedVerses[currentVerseIndex];
-            const newUrl = mapForReciter[currentVerse?.verseNumber];
+            const vKey = getVerseKey(currentVerse, surahNumber);
+            const newUrl =
+              mapForReciter[vKey] || mapForReciter[currentVerse?.verseNumber];
             if (newUrl && audioRef.current) {
               const time = audioRef.current.currentTime;
               audioRef.current.src = newUrl;
@@ -274,18 +360,23 @@ export default function SurahViewer({
         setIsReciterLoading(false);
       }
     },
-    [reciterAudioMap, isPlaying, currentStep, currentVerseIndex, displayedVerses, surahNumber]
+    [reciterAudioMap, isPlaying, currentStep, currentVerseIndex, displayedVerses, verses, surahNumber]
   );
 
-  // اسکرول نرم به آیه فعال (همیشه فعال)
+  // اسکرول نرم به آیه فعال
   const scrollToVerse = useCallback(
-    (verseNum) => {
-      const el = document.getElementById(`verse-${verseNum}`);
+    (verse) => {
+      if (!verse) return;
+      const effectiveSurahNum = verse.surahNumber || surahNumber;
+      const domId = showSurahBadge
+        ? `verse-${effectiveSurahNum}-${verse.verseNumber}`
+        : `verse-${verse.verseNumber}`;
+      const el = document.getElementById(domId);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     },
-    []
+    [surahNumber, showSurahBadge]
   );
 
   // پخش قطعه مشخص
@@ -310,10 +401,8 @@ export default function SurahViewer({
         reciterAudioMap
       );
 
-      // اگر برای این مرحله صوت وجود نداشت
       if (!url) {
         consecutiveErrorsRef.current += 1;
-        // Circuit Breaker: اگر ۳ فایل متوالی آدرس نداشتند، پخش متوقف می‌شود تا صفحه قفل نکند
         if (consecutiveErrorsRef.current >= 3) {
           console.warn('⚠️ چند آدرس صوتی یافت نشد. پخش متوقف شد.');
           setIsPlaying(false);
@@ -356,20 +445,17 @@ export default function SurahViewer({
           .then(() => {
             setIsPlaying(true);
             consecutiveErrorsRef.current = 0;
-            scrollToVerse(verse.verseNumber);
+            scrollToVerse(verse);
           })
           .catch((err) => {
-            // ۱. خطای AbortError (ناشی از توقف یا تغییر توسط کاربر) کاملاً طبیعی است و نباید به آیه بعدی بپرد
             if (err.name === 'AbortError') {
               return;
             }
-            // ۲. خطای مسدود شدن پخش خودکار توسط مرورگر (Autoplay Policy)
             if (err.name === 'NotAllowedError') {
               console.warn('⚠️ پخش خودکار توسط مرورگر مسدود شد');
               setIsPlaying(false);
               return;
             }
-            // توجه: خطای لود فایل در onError تگ audio مدیریت می‌شود، بنابراین در اینجا هرگز getNextTrack صدا زده نمی‌شود
             console.warn('⚠️ خطا در دستور play صوت:', err.message);
             setIsPlaying(false);
           });
@@ -431,7 +517,6 @@ export default function SurahViewer({
 
     if (next) {
       if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
-      // مکث کوتاه ۱۰۰ میلی‌ثانیه‌ای بین ترک‌ها
       playTimeoutRef.current = setTimeout(() => {
         playTrack(next.index, next.step);
       }, 100);
@@ -464,11 +549,9 @@ export default function SurahViewer({
     }
   };
 
-  // مدیریت خطای فایل صوتی با Circuit Breaker و Throttle
   const handleAudioError = useCallback(() => {
     consecutiveErrorsRef.current += 1;
 
-    // اگر ۲ بار متوالی فایل صوتی لود نشد، پخش متوقف می‌شود تا صفحه قفل نکند
     if (consecutiveErrorsRef.current >= 2) {
       console.warn('⚠️ فایل صوتی در دسترس نیست. برای جلوگیری از قفل شدن مرورگر، پخش متوقف شد.');
       setIsPlaying(false);
@@ -479,12 +562,11 @@ export default function SurahViewer({
     const verse = displayedVerses[currentVerseIndex];
     const updatedFailed = new Set(failedPersianAudios);
     if (currentStep === 'persian' && verse) {
-      updatedFailed.add(verse.verseNumber);
+      updatedFailed.add(getVerseKey(verse, surahNumber));
       setFailedPersianAudios(updatedFailed);
     }
 
     if (playTimeoutRef.current) clearTimeout(playTimeoutRef.current);
-    // تاخیر ۳۵۰ میلی‌ثانیه‌ای به جای پرش فوری برای حفظ روانی UI
     playTimeoutRef.current = setTimeout(() => {
       const next = getNextTrack(
         currentVerseIndex,
@@ -564,7 +646,7 @@ export default function SurahViewer({
         isPlayerOpen ? styles['surahViewer--playerOpen'] : ''
       }`}
     >
-      {/* ===== نوار بالایی: انتخاب قاری، فیلتر سوره و دکمه پخش ===== */}
+      {/* ===== نوار بالایی: انتخاب قاری، فیلتر موضوعی و دکمه پخش ===== */}
       <div className={styles.topBar}>
         <div className={styles.toolbarRow}>
           {/* انتخابگر قاری قرآن */}
@@ -600,14 +682,14 @@ export default function SurahViewer({
             </div>
           </div>
 
-          {/* دکمه شروع / توقف پخش سوره */}
+          {/* دکمه شروع / توقف پخش پیوسته */}
           <button
             type="button"
             className={`${styles.playContinuousBtn} ${
               isPlayerOpen && isPlaying ? styles['playContinuousBtn--active'] : ''
             }`}
             onClick={handleContinuousPlayBtnClick}
-            aria-label="پخش پیوسته سوره"
+            aria-label="پخش پیوسته آیات"
           >
             {isPlayerOpen && isPlaying ? (
               <>
@@ -617,26 +699,64 @@ export default function SurahViewer({
             ) : (
               <>
                 <Play size={16} aria-hidden="true" />
-                <span>پخش پیوسته سوره</span>
+                <span>{showSurahBadge ? 'پخش پیوسته موضوع' : 'پخش پیوسته سوره'}</span>
               </>
             )}
           </button>
         </div>
 
+        {/* نوار فیلتر موضوعات موجود در این سوره */}
+        {availableSubjects.length > 0 && (
+          <div className={styles.filterContainer}>
+            <div className={styles.filterTabs} role="tablist" aria-label="فیلتر موضوعی آیات سوره">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={selectedSubjectSlug === 'all'}
+                className={`${styles.filterTab} ${
+                  selectedSubjectSlug === 'all' ? styles['filterTab--active'] : ''
+                }`}
+                onClick={() => setSelectedSubjectSlug('all')}
+              >
+                <span>همه آیات</span>
+                <span className={styles.filterCountBadge}>{verses.length}</span>
+              </button>
+
+              {availableSubjects.map((sub) => (
+                <button
+                  key={sub.slug}
+                  type="button"
+                  role="tab"
+                  aria-selected={selectedSubjectSlug === sub.slug}
+                  className={`${styles.filterTab} ${
+                    selectedSubjectSlug === sub.slug ? styles['filterTab--active'] : ''
+                  }`}
+                  onClick={() => setSelectedSubjectSlug(sub.slug)}
+                >
+                  <Tag size={12} aria-hidden="true" />
+                  <span>{sub.title}</span>
+                  <span className={styles.filterCountBadge}>{sub.count}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ===== لیست کارت‌های آیات ===== */}
       <section
         className={styles.versesList}
-        aria-label={`آیات سوره ${surahNameFa}`}
+        aria-label={`آیات ${surahNameFa}`}
       >
         {displayedVerses.length > 0 ? (
           displayedVerses.map((verse, index) => {
             const isThisVerseActive = isPlayerOpen && currentVerseIndex === index;
             const activeStepForCard = isThisVerseActive ? currentStep : null;
+            const vKey = getVerseKey(verse, surahNumber);
 
             const currentArabicAudioUrl =
               verse.customArabicAudioUrl ||
+              reciterAudioMap[selectedReciter]?.[vKey] ||
               reciterAudioMap[selectedReciter]?.[verse.verseNumber] ||
               verse.arabicAudioUrl;
 
@@ -645,15 +765,25 @@ export default function SurahViewer({
               arabicAudioUrl: currentArabicAudioUrl,
             };
 
+            const nextVerse =
+              index < displayedVerses.length - 1 ? displayedVerses[index + 1] : null;
+            const isSurahChanging = Boolean(
+              nextVerse &&
+                Number(nextVerse.surahNumber || surahNumber) !==
+                  Number(verse.surahNumber || surahNumber)
+            );
+
             return (
               <VerseCard
-                key={verse.verseNumber}
+                key={verse.id || vKey}
                 verse={verseWithActiveReciter}
-                surahNumber={surahNumber}
+                surahNumber={verse.surahNumber || surahNumber}
+                showSurahBadge={showSurahBadge}
+                showDivider={showSurahBadge ? isSurahChanging : undefined}
                 isActive={isThisVerseActive}
                 activeStep={activeStepForCard}
                 isPlaying={isPlaying}
-                isPersianAudioAvailable={!failedPersianAudios.has(verse.verseNumber)}
+                isPersianAudioAvailable={!failedPersianAudios.has(vKey)}
                 onPlayTrack={(step) => playTrack(index, step)}
                 onPauseTrack={pauseAudio}
               />
@@ -670,7 +800,7 @@ export default function SurahViewer({
       {/* ===== نوار پلیر چسبان انتهای صفحه ===== */}
       {isPlayerOpen && activeVerse && (
         <QuranAudioPlayer
-          surahNameFa={surahNameFa}
+          surahNameFa={activeVerse.surahNameFa || surahNameFa}
           currentVerseNumber={activeVerse.verseNumber}
           totalVerses={displayedVerses.length}
           currentStep={currentStep}
