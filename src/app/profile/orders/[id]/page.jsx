@@ -20,7 +20,8 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import OrderReceiptUpload from '@/components/profile/OrderReceiptUpload';
 import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
-import { getCoursePurchaseReceipt } from '@/lib/byeMoneyApi';
+import { getCoursePurchaseReceipt, getMyCourseOrderReceipt } from '@/lib/byeMoneyApi';
+import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import styles from './orderDetail.module.scss';
 
 // ─── فرمت‌کننده‌ها و ابزارها ──────────────────────────────────────────
@@ -116,6 +117,25 @@ export default function OrderDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [receiptModal, setReceiptModal] = useState({ isOpen: false, isLoading: false, data: null, error: null });
+
+    const [orderReceipt, setOrderReceipt] = useState({ isOpen: false, isLoading: false, data: null, error: null });
+
+    // رسید کل سفارش (I11-O): مبالغ فقط از پاسخ بای‌مانی خوانده می‌شوند
+    const handleViewOrderReceipt = async (orderId) => {
+        if (!orderId) return;
+        setOrderReceipt({ isOpen: true, isLoading: true, data: null, error: null });
+        try {
+            if (!session?.user?.jwt) throw new Error('نشست کاربری شما منقضی شده است. لطفاً مجدداً وارد شوید.');
+            const res = await getMyCourseOrderReceipt({ jwt: session.user.jwt, orderId });
+            if (res.success && res.data) {
+                setOrderReceipt({ isOpen: true, isLoading: false, data: res.data, error: null });
+                return;
+            }
+            throw new Error(res.error || 'خطا در دریافت رسید سفارش.');
+        } catch (err) {
+            setOrderReceipt({ isOpen: true, isLoading: false, data: null, error: err.message });
+        }
+    };
 
     const handleViewReceipt = async (purchaseId) => {
         if (!purchaseId) return;
@@ -577,6 +597,20 @@ export default function OrderDetailPage() {
                                         <span className={styles.itemType}>
                                             {isCourse ? 'دوره آموزشی' : 'محصول'}
                                         </span>
+                                        {isByeMoney && item.type === 'product' && (
+                                            <>
+                                                {item.unitPrice != null && (
+                                                    <span className={styles.itemType}>
+                                                        قیمت واحد: {formatPrice(item.unitPrice)} نور
+                                                    </span>
+                                                )}
+                                                {getPhysicalDeliveryLabel(item.physicalDeliveryStatus) && (
+                                                    <span className={styles.itemType} data-testid="physical-delivery-status">
+                                                        وضعیت ارسال: {getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}
+                                                    </span>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
                                     <div className={styles.itemMeta}>
                                         {isByeMoney && item.purchaseId && (
@@ -592,13 +626,30 @@ export default function OrderDetailPage() {
                                             <span className={styles.itemQty}>× {item.quantity}</span>
                                         )}
                                         <span className={styles.itemPrice}>
-                                            <PriceWithHint price={(item.price ?? 0) * (item.quantity ?? 1)} hideHint={isByeMoney} size="sm" />
+                                            <PriceWithHint price={isByeMoney ? (item.price ?? 0) : (item.price ?? 0) * (item.quantity ?? 1)} hideHint={isByeMoney} size="sm" />
                                         </span>
                                     </div>
                                 </li>
                             );
                         })}
                     </ul>
+                    {isByeMoney && Number(order.cartSummary?.shippingAmountInNoor) > 0 && (
+                        <div className={styles.receiptField} data-testid="shipping-row">
+                            <span className={styles.receiptFieldLabel}>هزینهٔ ارسال</span>
+                            <span className={styles.receiptFieldValue}>
+                                {formatPrice(order.cartSummary.shippingAmountInNoor)} نور
+                            </span>
+                        </div>
+                    )}
+                    {isByeMoney && isPaid && (
+                        <button
+                            type="button"
+                            className={styles.viewReceiptBtn}
+                            onClick={() => handleViewOrderReceipt(order.orderId || order.documentId || id)}
+                        >
+                            مشاهده رسید کل سفارش
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -761,6 +812,76 @@ export default function OrderDetailPage() {
                             <span className={styles.trackingInfo}>
                                 کد پیگیری: <strong dir="ltr">{order.trackingNumber}</strong>
                             </span>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ─── مدال رسید کل سفارش (I11-O) ────── */}
+            {orderReceipt.isOpen && (
+                <div className={styles.receiptModalOverlay} onClick={() => setOrderReceipt({ isOpen: false, isLoading: false, data: null, error: null })}>
+                    <div className={styles.receiptModal} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.receiptModalHeader}>
+                            <h3 className={styles.receiptModalTitle}>رسید کل سفارش (سامانه بای‌مانی)</h3>
+                            <button
+                                type="button"
+                                className={styles.receiptModalClose}
+                                onClick={() => setOrderReceipt({ isOpen: false, isLoading: false, data: null, error: null })}
+                                aria-label="بستن رسید"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        {orderReceipt.isLoading && (
+                            <div style={{ textAlign: 'center', padding: '24px' }}>در حال دریافت رسید سفارش...</div>
+                        )}
+                        {orderReceipt.error && (
+                            <div className={styles.errorState} style={{ margin: 0 }}>
+                                <p>{orderReceipt.error}</p>
+                            </div>
+                        )}
+                        {orderReceipt.data && (
+                            <div className={styles.onlineReceiptGrid} data-testid="order-receipt">
+                                {(orderReceipt.data.items || []).map((it, idx) => (
+                                    <div key={it.purchaseId || idx} className={styles.receiptField}>
+                                        <span className={styles.receiptFieldLabel}>
+                                            {it.title || '—'}
+                                            {Number(it.quantity) > 1 ? ` × ${Number(it.quantity).toLocaleString('fa-IR')}` : ''}
+                                            {it.unitPriceInNoor != null && Number(it.quantity) > 1 ? ` (قیمت واحد ${formatPrice(it.unitPriceInNoor)})` : ''}
+                                            {getPhysicalDeliveryLabel(it.physicalDeliveryStatus) ? ` — ${getPhysicalDeliveryLabel(it.physicalDeliveryStatus)}` : ''}
+                                        </span>
+                                        <span className={styles.receiptFieldValue}>{formatPrice(it.finalAmountInNoor)} نور</span>
+                                    </div>
+                                ))}
+                                {orderReceipt.data.couponCode && (
+                                    <div className={styles.receiptField}>
+                                        <span className={styles.receiptFieldLabel}>کد تخفیف</span>
+                                        <span className={styles.receiptFieldValue} dir="ltr">{orderReceipt.data.couponCode}</span>
+                                    </div>
+                                )}
+                                {Number(orderReceipt.data.cartSummary?.shippingAmountInNoor) > 0 && (
+                                    <div className={styles.receiptField}>
+                                        <span className={styles.receiptFieldLabel}>هزینهٔ ارسال</span>
+                                        <span className={styles.receiptFieldValue}>{formatPrice(orderReceipt.data.cartSummary.shippingAmountInNoor)} نور</span>
+                                    </div>
+                                )}
+                                <div className={styles.receiptField}>
+                                    <span className={styles.receiptFieldLabel}>مبلغ نهایی سفارش</span>
+                                    <span className={styles.receiptFieldValue} style={{ color: 'var(--color-primary)' }}>
+                                        {formatPrice(orderReceipt.data.finalAmountInNoor)} نور
+                                    </span>
+                                </div>
+                                {orderReceipt.data.transactionId && (
+                                    <div className={styles.receiptField}>
+                                        <span className={styles.receiptFieldLabel}>شناسه تراکنش مالی</span>
+                                        <span className={styles.receiptFieldValue} dir="ltr">{orderReceipt.data.transactionId}</span>
+                                    </div>
+                                )}
+                                <div className={styles.receiptField}>
+                                    <span className={styles.receiptFieldLabel}>زمان خرید</span>
+                                    <span className={styles.receiptFieldValue}>{formatDate(orderReceipt.data.purchasedAtUtc)}</span>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>

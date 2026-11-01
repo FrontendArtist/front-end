@@ -8,8 +8,39 @@ function isChapterLike(item) {
     return rawType === 'coursechapter' || rawType === 'chapter' || Boolean(item.parentExternalId);
 }
 
+function isProductLike(item) {
+    return String(item.itemType || '').toLowerCase() === 'product';
+}
+
+/**
+ * قلم کالای فیزیکی: نه دوره است و نه به صفحهٔ دوره لینک می‌شود.
+ * finalAmountInNoor از قبل مبلغ کل همهٔ تعداد است؛ price همان را نگه می‌دارد و unitPrice قیمت واحد است.
+ */
+function mapByeMoneyProductItem(item) {
+    const externalId = item.externalCourseId || item.externalId || item.courseExternalId || item.purchaseId || null;
+    const quantity = Number(item.quantity);
+    return {
+        id: externalId,
+        productExternalId: externalId,
+        title: item.title || item.courseTitle || null,
+        price: item.finalAmountInNoor ?? item.price ?? item.priceInNoor ?? null,
+        unitPrice: item.unitPriceInNoor ?? item.priceInNoor ?? null,
+        quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+        purchaseId: item.purchaseId || null,
+        transactionId: item.transactionId || null,
+        purchasedAtUtc: item.purchasedAtUtc || null,
+        financialStatus: item.financialStatus || null,
+        deliveryStatus: item.deliveryStatus || null,
+        physicalDeliveryStatus: item.physicalDeliveryStatus || null,
+        type: 'product',
+        itemType: 'Product',
+        __component: 'order.product-order-item',
+    };
+}
+
 export function mapByeMoneyLineItem(item) {
     if (!item || typeof item !== 'object') return null;
+    if (isProductLike(item)) return mapByeMoneyProductItem(item);
     const isChapter = isChapterLike(item);
     const externalId = item.externalCourseId || item.courseExternalId || item.purchaseId || null;
     const parentExternalId = item.parentExternalId || item.courseDocumentId || null;

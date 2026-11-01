@@ -1346,10 +1346,14 @@ export async function getMyCourseOrders({
  *       originalTotalInNoor: number,
  *       itemDiscountInNoor: number,
  *       couponDiscountInNoor: number,
+ *       shippingAmountInNoor?: number,
  *       finalAmountInNoor: number
  *     }|null,
  *     items: Array<{
  *       externalCourseId: string,
+ *       itemType?: string,
+ *       quantity?: number,
+ *       physicalDeliveryStatus?: 'Preparing'|'Shipped'|'Delivered'|null,
  *       title: string|null,
  *       priceInNoor: number|null,
  *       finalAmountInNoor: number|null,
@@ -1448,6 +1452,7 @@ export async function getMyCourseOrderDetails({ jwt, orderId, signal } = {}) {
  *       originalTotalInNoor: number,
  *       itemDiscountInNoor: number,
  *       couponDiscountInNoor: number,
+ *       shippingAmountInNoor?: number,
  *       finalAmountInNoor: number
  *     }|null
  *   },
@@ -1506,6 +1511,168 @@ async function fetchCoursePurchaseReceipt({ jwt, purchaseId, signal, scope }) {
   } catch (err) {
     if (err.name === 'AbortError') throw err;
     return { success: false, networkError: true, error: 'خطا در دریافت رسید خرید از بای‌مانی.' };
+  }
+}
+
+/**
+ * رسید کل سفارش کاربر (I11-O): GET /api/me/course-orders/{orderId}/receipt
+ * فقط سفارش Paid رسید دارد؛ ناموجود، متعلق به دیگری و پرداخت‌نشده همگی 404 «خرید پیدا نشد.» هستند.
+ * مبالغ فقط از پاسخ خوانده می‌شوند و در فرانت محاسبه نمی‌شوند.
+ *
+ * @param {object} params
+ * @param {string} params.jwt
+ * @param {string} params.orderId - cart:UUID | topup:UUID | purchase:UUID
+ * @param {AbortSignal} [params.signal]
+ * @returns {Promise<{
+ *   success: boolean,
+ *   data?: {
+ *     orderId: string, sourceType: string, cartId: string|null, transactionId: string|null,
+ *     purchasedAtUtc: string, couponCode: string|null, finalAmountInNoor: number,
+ *     financialStatus: string, deliveryStatus: string,
+ *     cartSummary: { originalTotalInNoor: number, itemDiscountInNoor: number, couponDiscountInNoor: number, shippingAmountInNoor?: number, finalAmountInNoor: number }|null,
+ *     items: Array<{
+ *       purchaseId: string, externalId: string, title: string, itemType: string, parentExternalId: string|null,
+ *       quantity: number, unitPriceInNoor: number, baseAmountInNoor: number, discountAmountInNoor: number,
+ *       finalAmountInNoor: number, referenceRialPerNoorAtPurchaseTime: number|null,
+ *       deliveryStatus: string, physicalDeliveryStatus: 'Preparing'|'Shipped'|'Delivered'|null,
+ *       purchasedAtUtc: string, deliveredAtUtc: string|null
+ *     }>
+ *   },
+ *   badRequest?: boolean, notFound?: boolean, unauthorized?: boolean, forbidden?: boolean,
+ *   error?: string, networkError?: boolean
+ * }>}
+ */
+export async function getMyCourseOrderReceipt({ jwt, orderId, signal } = {}) {
+  return fetchCourseOrderReceipt({ jwt, orderId, signal, scope: 'me' });
+}
+
+/**
+ * رسید کل سفارش برای ادمین دارای Purchases.View: GET /api/admin/course-orders/{orderId}/receipt
+ * همان DTO رسید کاربر؛ بدون مجوز 403.
+ * @param {{ jwt: string, orderId: string, signal?: AbortSignal }} params
+ * @returns {ReturnType<typeof getMyCourseOrderReceipt>}
+ */
+export async function getAdminCourseOrderReceipt({ jwt, orderId, signal } = {}) {
+  return fetchCourseOrderReceipt({ jwt, orderId, signal, scope: 'admin' });
+}
+
+async function fetchCourseOrderReceipt({ jwt, orderId, signal, scope }) {
+  if (!jwt || !orderId) {
+    return { success: false, error: 'شناسه سفارش یا توکن نامعتبر است.' };
+  }
+  const url = `${BYEMONEY_API_URL}/api/${scope}/course-orders/${encodeURIComponent(orderId)}/receipt`;
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+      signal,
+    });
+    if (res.status === 200) {
+      const data = await res.json();
+      return { success: true, data };
+    }
+    if (res.status === 400) {
+      return { success: false, badRequest: true, error: 'شناسه سفارش نامعتبر است.' };
+    }
+    if (res.status === 404) {
+      return { success: false, notFound: true, error: 'خرید پیدا نشد.' };
+    }
+    if (res.status === 401) {
+      return { success: false, unauthorized: true, error: 'نشست کاربری منقضی شده است.' };
+    }
+    if (res.status === 403) {
+      return { success: false, forbidden: true, error: 'دسترسی به رسید سفارش مجاز نیست.' };
+    }
+    let errorMsg = `خطای دریافت رسید سفارش (${res.status})`;
+    try {
+      const errJson = await res.json();
+      errorMsg = errJson.message || errJson.title || errorMsg;
+    } catch {}
+    return { success: false, error: errorMsg };
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    return { success: false, networkError: true, error: 'خطا در دریافت رسید سفارش از بای‌مانی.' };
+  }
+}
+
+/** پیام دامنه را از قالب MiddlewareErrorResponse ({ title, status, errors[] }) بیرون می‌کشد. */
+function extractDomainErrorMessage(errJson, fallback) {
+  if (!errJson || typeof errJson !== 'object') return fallback;
+  const errors = Array.isArray(errJson.errors) ? errJson.errors : [];
+  for (const e of errors) {
+    if (typeof e === 'string' && e.trim()) return e;
+    if (e && typeof e === 'object') {
+      const msg = e.message || e.errorMessage || e.error;
+      if (typeof msg === 'string' && msg.trim()) return msg;
+    }
+  }
+  return errJson.message || errJson.title || fallback;
+}
+
+/**
+ * ثبت وضعیت ارسال کالای فیزیکی در بای‌مانی (فقط ادمین دارای Courses.Manage).
+ * PUT /api/admin/physical-purchases/{purchaseId}/delivery-status
+ * فقط رو به جلو: Preparing→Shipped→Delivered؛ تکرار همان وضعیت 200 بی‌اثر است.
+ * این تابع باید فقط از route سروری Next.js صدا زده شود (توکن به مرورگر نرسد).
+ *
+ * @param {object} params
+ * @param {string} params.jwt
+ * @param {string} params.purchaseId - items[].purchaseId قلم کالا
+ * @param {'Shipped'|'Delivered'} params.status - حساس به حروف؛ Preparing پذیرفته نمی‌شود
+ * @returns {Promise<{
+ *   success: boolean,
+ *   data?: { purchaseId: string, deliveryStatus: string, shippedAtUtc: string|null, deliveredAtUtc: string|null },
+ *   badRequest?: boolean, notFound?: boolean, unauthorized?: boolean, forbidden?: boolean,
+ *   error?: string, networkError?: boolean
+ * }>}
+ */
+export async function updatePhysicalPurchaseDeliveryStatus({ jwt, purchaseId, status, signal } = {}) {
+  if (!jwt) {
+    return { success: false, unauthorized: true, error: 'نشست ادمین نامعتبر است.' };
+  }
+  if (!purchaseId || !['Shipped', 'Delivered'].includes(status)) {
+    return { success: false, badRequest: true, error: 'شناسه خرید یا وضعیت نامعتبر است.' };
+  }
+  const url = `${BYEMONEY_API_URL}/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/delivery-status`;
+  try {
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status }),
+      cache: 'no-store',
+      signal,
+    });
+    if (res.status === 200) {
+      const data = await res.json();
+      return { success: true, data };
+    }
+    if (res.status === 401) {
+      return { success: false, unauthorized: true, error: 'نشست ادمین منقضی شده است.' };
+    }
+    if (res.status === 403) {
+      return { success: false, forbidden: true, error: 'ادمین مجوز مدیریت دوره‌ها و کالاها (Courses.Manage) را ندارد.' };
+    }
+    let errJson = null;
+    try {
+      errJson = await res.json();
+    } catch {}
+    if (res.status === 404) {
+      return { success: false, notFound: true, error: extractDomainErrorMessage(errJson, 'خرید کالای فیزیکی یافت نشد.') };
+    }
+    if (res.status === 400) {
+      return { success: false, badRequest: true, error: extractDomainErrorMessage(errJson, 'تغییر وضعیت ارسال مجاز نیست.') };
+    }
+    return { success: false, error: extractDomainErrorMessage(errJson, `خطای ثبت وضعیت ارسال (${res.status})`) };
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
   }
 }
 

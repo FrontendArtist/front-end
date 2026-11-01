@@ -22,6 +22,7 @@ import SettlementModal from './SettlementModal';
 import SettlementArchiveModal from './SettlementArchiveModal';
 import BulkDeleteModal from './BulkDeleteModal';
 import { getAdminCoursePurchaseReceipt } from '@/lib/byeMoneyApi';
+import PhysicalDeliveryControl from './PhysicalDeliveryControl';
 import styles from './OrdersTable.module.scss';
 import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
@@ -374,15 +375,17 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
 
                             {/* ── بخش ۳: اقلام دوره ── */}
                             <div className={styles.expanded_section}>
-                                <h4 className={styles.expanded_section__title}>🎓 قلم دوره</h4>
+                                <h4 className={styles.expanded_section__title}>
+                                    {order.isPhysicalProduct ? '📦 قلم کالا' : '🎓 قلم دوره'}
+                                </h4>
                                 <div className={styles.items_list}>
                                     {order.items && order.items.length > 0 ? (
                                         order.items.map((item, idx) => (
                                             <div key={idx} className={styles.item_card}>
-                                                <span className={styles.item_card__icon}>📚</span>
+                                                <span className={styles.item_card__icon}>{item.type === 'product' ? '📦' : '📚'}</span>
                                                 <div className={styles.item_card__info}>
-                                                    <span className={styles.item_card__title}>{item.title || 'دوره آموزشی'}</span>
-                                                    <span className={styles.item_card__type}>دوره آموزشی</span>
+                                                    <span className={styles.item_card__title}>{item.title || (item.type === 'product' ? 'کالا' : 'دوره آموزشی')}</span>
+                                                    <span className={styles.item_card__type}>{item.type === 'product' ? 'کالای فیزیکی' : 'دوره آموزشی'}</span>
                                                 </div>
                                                 <span className={styles.item_card__price}>
                                                     {`${Number(item.price || order.totalPrice || 0).toLocaleString('fa-IR')} نور`}
@@ -402,6 +405,9 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
                                         </div>
                                     )}
                                 </div>
+                                {order.isPhysicalProduct && purchaseId && (
+                                    <PhysicalDeliveryControl purchaseId={purchaseId} cartId={cartId} />
+                                )}
                             </div>
                         </>
                     ) : (

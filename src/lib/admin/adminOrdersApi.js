@@ -139,6 +139,7 @@ export async function getOrdersStats(jwt) {
 import { getAdminCoursePurchases } from '../byeMoneyApi';
 
 function mapByeMoneyToAdminOrder(item) {
+    const isProduct = String(item.itemType || '').toLowerCase() === 'product';
     return {
         id: item.purchaseId,
         documentId: item.purchaseId,
@@ -163,7 +164,15 @@ function mapByeMoneyToAdminOrder(item) {
         trackingNumber: null,
         cardHolderName: null,
         notes: null,
-        items: [{
+        isPhysicalProduct: isProduct,
+        items: [isProduct ? {
+            __component: 'order.product-order-item',
+            title: item.courseTitle || 'کالا',
+            price: item.finalAmountInNoor,
+            type: 'product',
+            itemType: 'Product',
+            purchaseId: item.purchaseId,
+        } : {
             __component: 'order.course-order-item',
             title: item.courseTitle || 'دوره آموزشی',
             price: item.finalAmountInNoor,
