@@ -6,6 +6,7 @@ import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
 import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
+import AdminSelect from '../Shared/AdminSelect';
 import AdminLazyLoad from '../Shared/AdminLazyLoad';
 import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
 import { fetchAdminUsers } from '@/lib/client/admin/usersClient';
@@ -17,7 +18,13 @@ import { ADMIN_PERMISSIONS } from '@/config/adminPermissions';
 import AdminAssistedTopUpModal from './AdminAssistedTopUpModal/AdminAssistedTopUpModal';
 import AdminNoorGiftModal from './AdminNoorGiftModal/AdminNoorGiftModal';
 import CreateUserModal from './CreateUserModal/CreateUserModal';
-import { UserPlus, Gift, X, AlertCircle, Eye, CreditCard } from 'lucide-react';
+import { UserPlus, Gift, X, AlertCircle, Eye, CreditCard, Filter } from 'lucide-react';
+
+const ROLE_OPTIONS = [
+    { value: 'all', label: 'همه نقش‌ها' },
+    { value: 'user', label: 'کاربر عادی' },
+    { value: 'admin', label: 'مدیر سیستم' },
+];
 import styles from './Users.module.scss';
 
 function LightCell({ user }) {
@@ -271,16 +278,13 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onClear={() => setSearchQuery('')}
                 />
-                <select
-                    className={styles.roleFilterSelect}
+                <AdminSelect
                     value={roleFilter}
-                    onChange={(e) => setRoleFilter(e.target.value)}
-                    aria-label="فیلتر بر اساس نقش"
-                >
-                    <option value="all">همه نقش‌ها</option>
-                    <option value="user">کاربر عادی</option>
-                    <option value="admin">مدیر سیستم</option>
-                </select>
+                    onChange={setRoleFilter}
+                    options={ROLE_OPTIONS}
+                    icon={<Filter size={15} />}
+                    ariaLabel="فیلتر بر اساس نقش"
+                />
                 <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-text-secondary)', marginRight: 'auto' }}>
                     نمایش {new Intl.NumberFormat('fa-IR').format(filteredUsers.length)} از {new Intl.NumberFormat('fa-IR').format(totalUsers || filteredUsers.length)} کاربر
                 </span>

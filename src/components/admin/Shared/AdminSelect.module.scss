@@ -1,0 +1,172 @@
+@use '../../../styles/base/mixins' as *;
+
+.selectWrapper {
+    position: relative;
+    display: inline-block;
+    user-select: none;
+}
+
+.trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    min-height: 44px;
+    min-width: 160px;
+    background-color: fade(var(--color-black), 15%);
+    border: 1px solid fade(var(--color-primary), 12%);
+    border-radius: 10px;
+    color: var(--color-card-text);
+    font-family: inherit;
+    font-size: var(--font-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 2px 4px fade(var(--color-black), 20%);
+    text-align: right;
+
+    &:hover:not(:disabled) {
+        background-color: fade(var(--color-black), 25%);
+        border-color: fade(var(--color-title-hover), 30%);
+        color: var(--color-title-hover);
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-title-hover);
+        background-color: fade(var(--color-black), 25%);
+        box-shadow: 0 0 0 3px fade(var(--color-title-hover), 15%);
+    }
+
+    &--open {
+        border-color: var(--color-title-hover);
+        background-color: fade(var(--color-black), 30%);
+        box-shadow: 0 0 0 3px fade(var(--color-title-hover), 15%);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
+
+.triggerContent {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.prefixIcon {
+    display: flex;
+    align-items: center;
+    color: var(--color-title-hover);
+    flex-shrink: 0;
+}
+
+.triggerLabel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chevron {
+    color: var(--color-text-primary);
+    opacity: 0.75;
+    flex-shrink: 0;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease, opacity 0.2s ease;
+
+    &--open {
+        transform: rotate(180deg);
+        color: var(--color-title-hover);
+        opacity: 1;
+    }
+}
+
+.dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 100%;
+    width: max-content;
+    min-width: 175px;
+    max-width: 280px;
+    background: rgba(6, 24, 24, 0.97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid fade(var(--color-primary), 25%);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.35);
+    padding: 6px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: dropdownEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: top right;
+}
+
+@keyframes dropdownEnter {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--color-card-text);
+    font-family: inherit;
+    font-size: var(--font-sm);
+    font-weight: 400;
+    text-align: right;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover,
+    &--focused {
+        background-color: fade(var(--color-title-hover), 14%);
+        color: var(--color-title-hover);
+        outline: none;
+    }
+
+    &--selected {
+        background-color: fade(var(--color-title-hover), 20%);
+        color: var(--color-title-hover);
+        font-weight: 600;
+
+        &:hover {
+            background-color: fade(var(--color-title-hover), 24%);
+        }
+    }
+}
+
+.optionContent {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.checkIcon {
+    color: var(--color-title-hover);
+    flex-shrink: 0;
+}
+

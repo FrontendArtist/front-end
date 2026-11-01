@@ -526,29 +526,6 @@
     white-space: nowrap !important;
 }
 
-.roleFilterSelect {
-    padding: 0.75rem 1rem;
-    border: 1px solid fade(var(--color-primary), 12%);
-    border-radius: 10px;
-    background-color: fade(var(--color-black), 15%);
-    color: var(--color-card-text);
-    font-family: inherit;
-    font-size: var(--font-sm);
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:focus {
-        outline: none;
-        border-color: var(--color-title-hover);
-        background-color: fade(var(--color-black), 25%);
-    }
-
-    option {
-        background-color: #1e293b;
-        color: #fff;
-    }
-}
-
 .checkboxCol {
     width: 36px;
     text-align: center !important;
