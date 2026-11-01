@@ -36,6 +36,12 @@ export const OUTCOME_CONFIG = {
         requiresRef: true,
         variant: 'success',
     },
+    CONFIRMED_EXCEPTIONAL: {
+        label: 'تأیید استثنایی و شارژ نور',
+        description: 'فقط نور معادل شارژ می‌شود؛ هیچ خرید یا سفارشی ایجاد نمی‌شود.',
+        requiresRef: true,
+        variant: 'warning',
+    },
     UNPAID_REJECTED: {
         label: 'پرداخت‌نشده و رد شارژ',
         description: 'پرداختی به حساب واریز نشده و شارژ رد می‌شود (مرجع مالی باید خالی باشد).',
@@ -61,12 +67,14 @@ export const EVIDENCE_STAGE_LABELS = {
 /**
  * تبدیل پیام‌های خطا به پیام‌های دقیق و استاندارد فارسی
  * @param {any} err - خطای پرتاب‌شده یا شیء خطای دریافتی
+ * @param {{ outcomeCode?: string }} [context] - زمینهٔ نتیجهٔ انتخاب‌شده برای پیام اختصاصی
  * @returns {{ message: string, code: string, isUnknownOutcome: boolean }}
  */
-export function formatGatewayReviewError(err) {
+export function formatGatewayReviewError(err, context = {}) {
     const status = err?.status || err?.response?.status;
     const code = err?.code || err?.response?.data?.code || '';
     const rawMessage = err?.message || err?.response?.data?.error || '';
+    const isExceptional = context?.outcomeCode === 'CONFIRMED_EXCEPTIONAL';
     if (status === 401 || status === 403) return { code: code || 'REVIEW_PERMISSION_DENIED', message: 'نشست یا مجوز رسیدگی مالی معتبر نیست.', isUnknownOutcome: false };
     if (code === 'REVIEW_RESOLUTION_IN_PROGRESS') return { code, message: 'عملیات دیگری در جریان است. وضعیت پرونده را دوباره دریافت کنید.', isUnknownOutcome: true };
 
@@ -83,13 +91,17 @@ export function formatGatewayReviewError(err) {
         if (code === 'REVIEW_STATE_MISMATCH') {
             return {
                 code: 'REVIEW_STATE_MISMATCH',
-                message: 'تعارض وضعیت در سرویس مالی (State Mismatch). لطفاً آخرین وضعیت تراکنش و شارژ را استعلام کرده و دوباره بررسی کنید.',
+                message: isExceptional
+                    ? 'شرایط تأیید استثنایی دیگر برقرار نیست: شارژ در وضعیت ردشده نیست، مدرک بانکی معتبر نیست، مبلغ واریز با مبلغ شارژ برابر نیست، یا سابقهٔ بازپرداخت دستی/برگشت بانکی وجود دارد. پرونده به‌روزرسانی شد؛ دوباره بررسی کنید.'
+                    : 'تعارض وضعیت در سرویس مالی (State Mismatch). لطفاً آخرین وضعیت تراکنش و شارژ را استعلام کرده و دوباره بررسی کنید.',
                 isUnknownOutcome: false,
             };
         }
         return {
             code: 'REVIEW_CASE_CONFLICT',
-            message: 'تعارض در پرونده رسیدگی (REVIEW_CASE_CONFLICT). این پرونده احتمالاً با نتیجه دیگری پیش‌تر حل شده است. پرونده خودکار حل‌شده فرض نمی‌شود؛ لطفاً اطلاعات پرونده را مجدداً بررسی فرمایید.',
+            message: isExceptional
+                ? 'نسخهٔ پروندهٔ شما قدیمی است یا این پرونده پیش‌تر بسته شده است. برای جلوگیری از ثبت تکراری، فرم با آخرین نسخه به‌روزرسانی شد؛ دوباره بررسی کنید.'
+                : 'تعارض در پرونده رسیدگی (REVIEW_CASE_CONFLICT). این پرونده احتمالاً با نتیجه دیگری پیش‌تر حل شده است. پرونده خودکار حل‌شده فرض نمی‌شود؛ لطفاً اطلاعات پرونده را مجدداً بررسی فرمایید.',
             isUnknownOutcome: false,
         };
     }
@@ -110,10 +122,22 @@ export function formatGatewayReviewError(err) {
         };
     }
 
+    if (code === 'REVIEW_OUTCOME_INVALID' || code === 'REVIEW_FINANCIAL_REFERENCE_INVALID') {
+        return {
+            code,
+            message: isExceptional
+                ? 'نتیجهٔ رسیدگی یا مرجع مالی ارسالی برای تأیید استثنایی معتبر نیست. شمارهٔ پیگیری بانکی و مشخصات واریز را بررسی کنید.'
+                : 'نتیجهٔ رسیدگی یا مرجع مالی ارسالی برای بای‌مانی معتبر نیست.',
+            isUnknownOutcome: false,
+        };
+    }
+
     if (status === 400 || status === 422 || code === 'REVIEW_INVALID_RESOLUTION') {
         return {
             code: 'REVIEW_INVALID_RESOLUTION',
-            message: 'اطلاعات گزارش یا نتیجه رسیدگی معتبر نیست. تاریخ، مبلغ و شناسه‌های واردشده را بررسی کنید.',
+            message: isExceptional
+                ? 'اطلاعات واریز یا نتیجهٔ رسیدگی برای تأیید استثنایی معتبر نیست. مبلغ واریز باید دقیقاً با مبلغ شارژ برابر باشد و شناسه، تاریخ و مبلغ واریز کامل باشد.'
+                : 'اطلاعات گزارش یا نتیجه رسیدگی معتبر نیست. تاریخ، مبلغ و شناسه‌های واردشده را بررسی کنید.',
             isUnknownOutcome: false,
         };
     }

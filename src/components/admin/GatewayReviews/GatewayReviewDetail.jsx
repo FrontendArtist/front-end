@@ -154,17 +154,19 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
     const reopening = useRef(null);
     const inFlight = useRef(false);
     const [uncertain, setUncertain] = useState(false);
+    const [confirmExceptional, setConfirmExceptional] = useState(false);
 
     // به‌روزرسانی هوشمند فیلدها هنگام انتخاب نتیجه رسیدگی
     const handleOutcomeChange = (newOutcome) => {
         setOutcome(newOutcome);
         setError('');
+        setConfirmExceptional(false);
 
         if (!checkedDate) {
             setCheckedDate(todayIso());
         }
 
-        if (newOutcome === 'PAID_AND_CONFIRMED') {
+        if (newOutcome === 'PAID_AND_CONFIRMED' || newOutcome === 'CONFIRMED_EXCEPTIONAL') {
             setMatched('yes');
             if (!depositRef && data) {
                 setDepositRef(data.refNum || data.clientReferenceCode || '');
@@ -180,7 +182,7 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
         }
     };
 
-    async function run(action) {
+    async function run(action, context = {}) {
         if (inFlight.current) return;
         inFlight.current = true;
         setBusy(true);
@@ -189,10 +191,22 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
         try {
             await action();
         } catch (err) {
-            const parsed = formatGatewayReviewError(err);
+            const parsed = formatGatewayReviewError(err, context);
             setError(parsed.message);
             setUncertain(parsed.isUnknownOutcome);
-            if (!parsed.isUnknownOutcome) operation.current = null;
+            if (!parsed.isUnknownOutcome) {
+                operation.current = null;
+                if (parsed.code === 'REVIEW_CASE_CONFLICT' || parsed.code === 'REVIEW_STATE_MISMATCH') {
+                    setOutcome('');
+                    setConfirmExceptional(false);
+                    try {
+                        const current = await fetchGatewayReview(data.clientReferenceCode, 1);
+                        if (current) setData(current);
+                    } catch {
+                        // پیام تعارض اصلی حفظ می‌شود؛ به‌روزرسانی دستی از سرصفحه هم در دسترس است.
+                    }
+                }
+            }
         } finally {
             inFlight.current = false;
             setBusy(false);
@@ -219,7 +233,7 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
             pending ||
             operation.current || {
                 outcomeCode: outcome,
-                resolutionFinancialReferenceId: ['PAID_AND_CONFIRMED', 'REVERSED_REJECTED'].includes(outcome)
+                resolutionFinancialReferenceId: ['PAID_AND_CONFIRMED', 'CONFIRMED_EXCEPTIONAL', 'REVERSED_REJECTED'].includes(outcome)
                     ? data.refNum
                     : null,
                 evidence: {
@@ -250,7 +264,7 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                     ? 'نتیجه بررسی با موفقیت ثبت و پرونده مختومه شد.'
                     : 'نتیجه ثبت شد؛ مدرک تازه رسیده و پرونده برای بررسی دوباره باز است.'
             );
-        });
+        }, { outcomeCode: payload.outcomeCode });
     }
 
     async function reopen(event) {
@@ -323,14 +337,19 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
     }
 
     const isConfirmed = data.topUpStatus === 'Confirmed';
+    const pendingOutcomeCode = data.pendingOperation?.payload?.outcomeCode;
     const editable = !busy && !uncertain && !data.pendingOperation;
     const outcomeDisabled = (value) =>
         value === 'PAID_AND_CONFIRMED'
             ? !data.canClosePaid
+            : value === 'CONFIRMED_EXCEPTIONAL'
+            ? !data.canCloseExceptional
             : value === 'REVERSED_REJECTED'
             ? !data.canCloseReversed
             : isConfirmed || (value === 'NO_MATCHING_DEPOSIT' && Boolean(data.manualRefundReference));
     const latest = [...(data.audit || [])].reverse().find((x) => x.eventType === 'resolved');
+    const outcomeOptions = ['PAID_AND_CONFIRMED', 'CONFIRMED_EXCEPTIONAL', 'NO_MATCHING_DEPOSIT', 'REVERSED_REJECTED', 'MANUAL_REFUND']
+        .filter((value) => value !== 'CONFIRMED_EXCEPTIONAL' || data.canCloseExceptional);
 
     const details = [
         ['نام کاربر', data.userName || 'ثبت نشده'],
@@ -423,6 +442,12 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                         </p>
                     )}
 
+                    {data.outcomeCode === 'CONFIRMED_EXCEPTIONAL' && (
+                        <p style={{ color: 'var(--color-success)' }}>
+                            نور معادل این شارژ به کیف پول کاربر اضافه شده و هیچ خریدی ثبت نشده است.
+                        </p>
+                    )}
+
                     {/* فرم ثبت مدرک و بازگشایی پرونده مختومه‌شده */}
                     <div className={styles.reopenBox}>
                         <h3 style={{ fontSize: 'var(--font-md)', color: 'var(--color-title-hover)', margin: '0 0 0.5rem' }}>
@@ -460,7 +485,7 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                     <h2>تعیین تکلیف پرونده پرداخت</h2>
                     <p>نتیجه بررسی گزارش درگاه بانکی را انتخاب و پرونده را مختومه کنید.</p>
 
-                    {!data.canClosePaid && (
+                    {!data.canClosePaid && !data.canCloseExceptional && (
                         <p style={{ color: 'var(--color-warning-amber)' }}>
                             نکته: بستن با نتیجه «شارژ موفق» نیازمند تأیید معتبر پرداخت در سرویس مالی است.
                         </p>
@@ -479,6 +504,21 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                         </p>
                     )}
 
+                    {(outcome === 'CONFIRMED_EXCEPTIONAL' || pendingOutcomeCode === 'CONFIRMED_EXCEPTIONAL') && (
+                        <div role="note" className={styles.exceptionalWarning}>
+                            <AlertTriangle size={18} />
+                            <div>
+                                <strong>فقط نور شارژ می‌شود؛ هیچ خریدی انجام نمی‌شود.</strong>
+                                <p>
+                                    با ثبت این نتیجه، وضعیت شارژ به «شارژ موفق» تغییر می‌کند و نور معادل مبلغ شارژ به کیف پول کاربر اضافه می‌شود. هیچ سفارش، سبد یا دسترسی جدیدی ساخته نمی‌شود.
+                                </p>
+                                <p>
+                                    مبلغ واریز باید دقیقاً با مبلغ شارژ برابر باشد و سابقهٔ بازپرداخت دستی یا برگشت بانکی نباید وجود داشته باشد.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     <form onSubmit={submit} className={styles.resolutionSection__form} noValidate>
                         <fieldset disabled={!editable} className={styles.reviewFields}>
                             {/* فیلد اصلی: نتیجه رسیدگی */}
@@ -490,7 +530,7 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                                     onChange={(e) => handleOutcomeChange(e.target.value)}
                                 >
                                     <option value="">انتخاب کنید</option>
-                                    {['PAID_AND_CONFIRMED', 'NO_MATCHING_DEPOSIT', 'REVERSED_REJECTED', 'MANUAL_REFUND'].map(
+                                    {outcomeOptions.map(
                                         (value) => (
                                             <option key={value} value={value} disabled={outcomeDisabled(value)}>
                                                 {OUTCOME_CONFIG[value].label}
@@ -623,13 +663,29 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                                     </Field>
                                 </div>
                             </div>
+
+                            {outcome === 'CONFIRMED_EXCEPTIONAL' && (
+                                <label className={styles.confirmGate} htmlFor="review-exceptional-confirm">
+                                    <input
+                                        id="review-exceptional-confirm"
+                                        type="checkbox"
+                                        checked={confirmExceptional}
+                                        onChange={(e) => setConfirmExceptional(e.target.checked)}
+                                    />
+                                    <span>تأیید می‌کنم فقط نور معادل این شارژ واریز می‌شود و هیچ خرید یا سفارشی انجام نمی‌شود.</span>
+                                </label>
+                            )}
                         </fieldset>
 
                         <div>
                             <button
                                 className={`${styles.btn} ${styles['btn--primary']}`}
                                 type="submit"
-                                disabled={busy || (data.pendingOperation && !data.pendingOperation.canRetry)}
+                                disabled={
+                                    busy ||
+                                    (data.pendingOperation && !data.pendingOperation.canRetry) ||
+                                    (outcome === 'CONFIRMED_EXCEPTIONAL' && !confirmExceptional)
+                                }
                             >
                                 {busy
                                     ? 'در حال پیگیری…'

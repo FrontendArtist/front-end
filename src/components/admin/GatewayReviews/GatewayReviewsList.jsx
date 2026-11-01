@@ -18,6 +18,7 @@ import {
     fetchGatewayReviews,
     REASON_CONFIG,
     CASE_STATUS_CONFIG,
+    OUTCOME_CONFIG,
     EVIDENCE_STAGE_LABELS,
     formatGatewayReviewError,
 } from '@/lib/client/admin/gatewayReviewsClient';
@@ -212,6 +213,7 @@ export default function GatewayReviewsList({ initialData = null }) {
                             <th>علت ارجاع</th>
                             <th>نتیجهٔ درگاه</th>
                             <th>وضعیت پرونده</th>
+                            <th>نتیجهٔ رسیدگی</th>
                             <th>تاریخ ایجاد پرونده</th>
                             <th>اعلان به سیستم مالی</th>
                             <th>عملیات</th>
@@ -220,13 +222,13 @@ export default function GatewayReviewsList({ initialData = null }) {
                     <tbody>
                         {loading && cases.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className={styles.emptyCell}>
+                                <td colSpan={9} className={styles.emptyCell}>
                                     در حال دریافت پرونده‌ها...
                                 </td>
                             </tr>
                         ) : cases.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className={styles.emptyCell}>
+                                <td colSpan={9} className={styles.emptyCell}>
                                     هیچ پرونده‌ای با شرایط انتخابی یافت نشد.
                                 </td>
                             </tr>
@@ -269,6 +271,19 @@ export default function GatewayReviewsList({ initialData = null }) {
                                             <span className={`${styles.badge} ${styles[`badge--${statusMeta.variant}`]}`}>
                                                 {statusMeta.label}
                                             </span>
+                                        </td>
+                                        <td>
+                                            {c.outcomeCode ? (
+                                                <span
+                                                    className={`${styles.badge} ${
+                                                        styles[`badge--${(OUTCOME_CONFIG[c.outcomeCode] || { variant: 'default' }).variant}`]
+                                                    }`}
+                                                >
+                                                    {OUTCOME_CONFIG[c.outcomeCode]?.label || c.outcomeDescription || c.outcomeCode}
+                                                </span>
+                                            ) : (
+                                                <span className={styles.subText}>—</span>
+                                            )}
                                         </td>
                                         <td className={styles.subText} style={{ whiteSpace: 'nowrap' }}>
                                             <bdi dir="ltr">{formatDate(c.openedAtUtc)}</bdi>

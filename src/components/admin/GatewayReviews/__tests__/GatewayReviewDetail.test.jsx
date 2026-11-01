@@ -13,6 +13,14 @@ const openCase = {
     userName: 'کاربر نمونه', userPhone: '09123456789', amountRial: 10000, requestedAtUtc: '2026-09-30T06:00:00Z',
     reasonCode: 'NO_CALLBACK', status: 'open', revision: 1, history: [], audit: [], canClosePaid: false, canCloseReversed: false,
 };
+const exceptionalCase = {
+    ...openCase,
+    topUpStatus: 'Rejected',
+    gatewayResultKind: 'Verified',
+    refNum: 'BANK-REF-1',
+    rrn: 'RRN-1',
+    canCloseExceptional: true,
+};
 beforeEach(() => {
     jest.clearAllMocks();
     Object.defineProperty(global.crypto, 'randomUUID', { configurable: true, value: () => '12345678-1234-1234-1234-123456789abc' });
@@ -78,5 +86,53 @@ test('new manual evidence reopens a closed case', async () => {
     fireEvent.change(screen.getByLabelText('مدرک جدید برای بازگشایی'), { target: { value: 'گزارش جدید بانک' } });
     fireEvent.click(screen.getByRole('button', { name: 'ثبت مدرک و بازگشایی' }));
     await waitFor(() => expect(client.reopenGatewayReview).toHaveBeenCalledWith('TR-1', expect.objectContaining({ note: 'گزارش جدید بانک' })));
+});
+
+test('exceptional confirmation is hidden when the server does not allow it', () => {
+    render(<GatewayReviewDetail initialCase={{ ...exceptionalCase, canCloseExceptional: false }} />);
+    expect(screen.queryByRole('option', { name: 'تأیید استثنایی و شارژ نور' })).not.toBeInTheDocument();
+});
+
+test('exceptional confirmation warns, needs acknowledgement and sends the bank reference with the revision', async () => {
+    client.resolveGatewayReview.mockResolvedValue({
+        ...exceptionalCase, status: 'resolved', outcomeCode: 'CONFIRMED_EXCEPTIONAL',
+    });
+    render(<GatewayReviewDetail initialCase={exceptionalCase} />);
+
+    fireEvent.change(screen.getByLabelText('نتیجه رسیدگی'), { target: { value: 'CONFIRMED_EXCEPTIONAL' } });
+    expect(screen.getByText('فقط نور شارژ می‌شود؛ هیچ خریدی انجام نمی‌شود.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت بررسی و بستن پرونده' }));
+    expect(client.resolveGatewayReview).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByLabelText('تأیید می‌کنم فقط نور معادل این شارژ واریز می‌شود و هیچ خرید یا سفارشی انجام نمی‌شود.'));
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت بررسی و بستن پرونده' }));
+
+    await waitFor(() => expect(client.resolveGatewayReview).toHaveBeenCalledTimes(1));
+    expect(client.resolveGatewayReview.mock.calls[0][1]).toMatchObject({
+        outcomeCode: 'CONFIRMED_EXCEPTIONAL',
+        resolutionFinancialReferenceId: 'BANK-REF-1',
+        evidence: {
+            expectedRevision: 1,
+            matchingDepositFound: true,
+            depositReference: 'BANK-REF-1',
+            depositAmountRial: 10000,
+        },
+    });
+    await waitFor(() => expect(screen.getByText(/نور معادل این شارژ/)).toBeInTheDocument());
+});
+
+test('a stale revision clears the selection and reloads the case', async () => {
+    client.resolveGatewayReview.mockRejectedValue({ status: 409, code: 'REVIEW_CASE_CONFLICT' });
+    client.fetchGatewayReview.mockResolvedValue({ ...exceptionalCase, revision: 2 });
+    render(<GatewayReviewDetail initialCase={exceptionalCase} />);
+
+    fireEvent.change(screen.getByLabelText('نتیجه رسیدگی'), { target: { value: 'CONFIRMED_EXCEPTIONAL' } });
+    fireEvent.click(screen.getByLabelText('تأیید می‌کنم فقط نور معادل این شارژ واریز می‌شود و هیچ خرید یا سفارشی انجام نمی‌شود.'));
+    fireEvent.click(screen.getByRole('button', { name: 'ثبت بررسی و بستن پرونده' }));
+
+    await waitFor(() => expect(client.fetchGatewayReview).toHaveBeenCalledWith('TR-1', 1));
+    await waitFor(() => expect(screen.getByLabelText('نتیجه رسیدگی')).toHaveValue(''));
+    expect(screen.getByText(/نسخهٔ پروندهٔ شما قدیمی است/)).toBeInTheDocument();
 });
 

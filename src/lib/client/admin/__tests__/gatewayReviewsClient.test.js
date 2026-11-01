@@ -37,6 +37,36 @@ describe('gatewayReviewsClient', () => {
             expect(formatted.isUnknownOutcome).toBe(false);
         });
 
+        it('explains a stale form when exceptional confirmation conflicts', () => {
+            const formatted = formatGatewayReviewError(
+                { status: 409, code: 'REVIEW_CASE_CONFLICT' },
+                { outcomeCode: 'CONFIRMED_EXCEPTIONAL' }
+            );
+            expect(formatted.code).toBe('REVIEW_CASE_CONFLICT');
+            expect(formatted.message).toContain('نسخهٔ پروندهٔ شما قدیمی است');
+            expect(formatted.isUnknownOutcome).toBe(false);
+        });
+
+        it('explains which exceptional precondition failed on state mismatch', () => {
+            const formatted = formatGatewayReviewError(
+                { status: 409, code: 'REVIEW_STATE_MISMATCH' },
+                { outcomeCode: 'CONFIRMED_EXCEPTIONAL' }
+            );
+            expect(formatted.message).toContain('شرایط تأیید استثنایی دیگر برقرار نیست');
+            expect(formatted.message).toContain('مبلغ واریز با مبلغ شارژ برابر نیست');
+            expect(formatted.isUnknownOutcome).toBe(false);
+        });
+
+        it('formats 422 financial reference errors for exceptional confirmation', () => {
+            const formatted = formatGatewayReviewError(
+                { status: 422, code: 'REVIEW_FINANCIAL_REFERENCE_INVALID' },
+                { outcomeCode: 'CONFIRMED_EXCEPTIONAL' }
+            );
+            expect(formatted.code).toBe('REVIEW_FINANCIAL_REFERENCE_INVALID');
+            expect(formatted.message).toContain('تأیید استثنایی');
+            expect(formatted.isUnknownOutcome).toBe(false);
+        });
+
         it('formats 422 REVIEW_MANUAL_REFUND_NOT_SUPPORTED with Persian message', () => {
             const err = { status: 422, code: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' };
             const formatted = formatGatewayReviewError(err);

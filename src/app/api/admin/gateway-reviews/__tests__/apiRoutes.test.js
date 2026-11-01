@@ -58,8 +58,20 @@ test('complete no-match closure passes exact operation and evidence', async () =
     expect((await resolve(request(body), context)).status).toBe(200);
     expect(api.resolveGatewayReview).toHaveBeenCalledWith('staff-jwt', 'TR-1', body);
 });
-test('manual refund is forwarded with reference; financial rejection remains 422', async () => {
-    const body = payload(); body.outcomeCode = 'MANUAL_REFUND'; body.evidence.manualRefundReference = 'refund-ref';
+test('exceptional confirmation requires matching deposit and financial reference before sending', async () => {
+    const body = payload();
+    body.outcomeCode = 'CONFIRMED_EXCEPTIONAL';
+    expect((await resolve(request(body), context)).status).toBe(400);
+    expect(api.resolveGatewayReview).not.toHaveBeenCalled();
+
+    body.resolutionFinancialReferenceId = 'BANK-REF-1';
+    body.evidence = { ...body.evidence, matchingDepositFound: true, depositReference: 'BANK-REF-1', depositDate: '2026-09-30', depositAmountRial: 10000 };
+    api.resolveGatewayReview.mockResolvedValue({ status: 'resolved' });
+    expect((await resolve(request(body), context)).status).toBe(200);
+    expect(api.resolveGatewayReview).toHaveBeenCalledWith('staff-jwt', 'TR-1', body);
+});
+
+test('manual refund is forwarded with reference; financial rejection remains 422', async () => {    const body = payload(); body.outcomeCode = 'MANUAL_REFUND'; body.evidence.manualRefundReference = 'refund-ref';
     api.resolveGatewayReview.mockRejectedValue({ status: 422, code: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' });
     const response = await resolve(request(body), context);
     expect(response.status).toBe(422);

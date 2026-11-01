@@ -117,7 +117,17 @@ describe('GatewayReviewsList Component', () => {
         expect(screen.getByText('999')).toBeInTheDocument();
         expect(screen.queryByText('توضیح این کد موجود نیست.')).not.toBeInTheDocument();
         expect(screen.getByText('999').closest('td').querySelector('button')).toBeNull();
-        expect(screen.getByText('—')).toBeInTheDocument();
+        expect(screen.getByText('REF-002').closest('tr').querySelectorAll('td')[3]).toHaveTextContent('—');
+    });
+
+    it('نمایش نتیجهٔ تأیید استثنایی در فهرست', () => {
+        render(<GatewayReviewsList initialData={{
+            ...initialData,
+            data: [{ ...mockCases[1], outcomeCode: 'CONFIRMED_EXCEPTIONAL', outcomeDescription: 'تأیید استثنایی و شارژ نور' }],
+        }} />);
+
+        expect(screen.getByRole('columnheader', { name: 'نتیجهٔ رسیدگی' })).toBeInTheDocument();
+        expect(screen.getByText('تأیید استثنایی و شارژ نور')).toBeInTheDocument();
     });
 
     it('triggers refetch when reason filter is changed', async () => {
