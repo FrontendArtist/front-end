@@ -14,15 +14,14 @@
  */
 
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'react';
-import { useSession } from 'next-auth/react';
 import { ArrowUpDown, RotateCcw, Folder, CreditCard, CheckCircle2, ArrowLeft, Trash2, ChevronDown, AlertTriangle } from 'lucide-react';
 import ReceiptModal from './ReceiptModal';
 import StatusUpdateModal from './StatusUpdateModal';
 import SettlementModal from './SettlementModal';
 import SettlementArchiveModal from './SettlementArchiveModal';
 import BulkDeleteModal from './BulkDeleteModal';
-import { getAdminCoursePurchaseReceipt } from '@/lib/byeMoneyApi';
-import PhysicalDeliveryControl from './PhysicalDeliveryControl';
+import ByeMoneyOrderPanel from './ByeMoneyOrderPanel';
+import { canShowReceipt, getFinancialStatusConfig } from '@/lib/admin/orderTracking';
 import styles from './OrdersTable.module.scss';
 import AdminSearch from '../Shared/AdminSearch';
 import { AdminTableContainer, AdminTable, AdminToolbar } from '../Shared/AdminTable';
@@ -166,57 +165,10 @@ function CopyButton({ text, label = 'کپی' }) {
 /**
  * OrderExpandedRow – ردیف کشویی با جزئیات کامل و غیرتکراری سفارش
  */
-function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
+function OrderExpandedRow({ order, colSpan, onOpenReceipt, onAttemptSummary }) {
     const isPaid = isPaidOrder(order);
     const isCanceled = isCanceledOrder(order);
     const isByeMoney = Boolean(order.isByeMoney || order.source === 'byemoney');
-    const { data: session } = useSession();
-
-    // استیت دریافت رسید تفصیلی بای‌مانی از API
-    const [receiptData, setReceiptData] = useState(null);
-    const [receiptLoading, setReceiptLoading] = useState(false);
-    const [receiptError, setReceiptError] = useState(null);
-
-    useEffect(() => {
-        if (!isByeMoney) return;
-        const purchaseId = order.purchaseId || order.documentId || order.id;
-        if (!purchaseId || !session?.user?.jwt) return;
-
-        let isMounted = true;
-        const controller = new AbortController();
-
-        async function fetchReceipt() {
-            setReceiptLoading(true);
-            setReceiptError(null);
-            try {
-                const res = await getAdminCoursePurchaseReceipt({
-                    jwt: session.user.jwt,
-                    purchaseId,
-                    signal: controller.signal,
-                });
-                if (!isMounted) return;
-                if (res.success && res.data) {
-                    setReceiptData(res.data);
-                } else {
-                    setReceiptError(res.error || 'رسید تفصیلی خرید در دسترس نیست');
-                }
-            } catch (err) {
-                if (!isMounted) return;
-                if (err.name !== 'AbortError') {
-                    setReceiptError('عدم امکان استعلام رسید تفصیلی');
-                }
-            } finally {
-                if (isMounted) setReceiptLoading(false);
-            }
-        }
-
-        fetchReceipt();
-
-        return () => {
-            isMounted = false;
-            controller.abort();
-        };
-    }, [isByeMoney, order.purchaseId, order.documentId, order.id, session?.user?.jwt]);
 
     // تشخیص وجود محصول فیزیکی در سبد خرید (دوره‌ها و شارژ نور نیاز به آدرس ارسال ندارند)
     const hasPhysicalProduct = Boolean(
@@ -231,185 +183,13 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt }) {
         })
     );
 
-    // مقادیر ادغام‌شده برای سفارش‌های بای‌مانی
-    const purchaseId = order.purchaseId || order.documentId || order.id;
-    const cartId = receiptData?.cartId || order.cartId;
-    const deliveryStatus = receiptData?.deliveryStatus || order.deliveryStatus;
-    const baseAmountInNoor = receiptData?.baseAmountInNoor ?? order.baseAmountInNoor;
-    const discountAmountInNoor = receiptData?.discountAmountInNoor ?? order.discountAmountInNoor;
-    const couponCode = receiptData?.couponCode || order.couponCode;
-    const referenceRate = receiptData?.referenceRialPerNoorAtPurchaseTime ?? order.referenceRialPerNoorAtPurchaseTime;
-
     return (
         <tr className={styles.expanded_row}>
             <td colSpan={colSpan} className={styles.expanded_cell}>
                 <div className={styles.expanded_content}>
 
                     {isByeMoney ? (
-                        <>
-                            {/* ── بخش ۱: مشخصات تراکنش و رسید مالی بای‌مانی ── */}
-                            <div className={`${styles.expanded_section} ${styles.expanded_section_online}`}>
-                                <h4 className={styles.expanded_section__title}>
-                                    🧾 رسید مالی خرید دوره (بای‌مانی)
-                                </h4>
-                                <div className={styles.onlinePayDetails}>
-                                    <div className={styles.onlinePayStatusRow}>
-                                        <span className={styles.expanded_field__label}>وضعیت مالی:</span>
-                                        <span className={styles.onlinePayBadgeSuccess}>
-                                            ✅ ثبت قطعی در سامانه بای‌مانی (Paid)
-                                        </span>
-                                    </div>
-
-                                    <div className={styles.expanded_field}>
-                                        <span className={styles.expanded_field__label}>شناسه خرید (Purchase ID)</span>
-                                        <div className={styles.copyableField}>
-                                            <span className={styles.expanded_field__value} dir="ltr">
-                                                {purchaseId}
-                                            </span>
-                                            {purchaseId && <CopyButton text={purchaseId} label="شناسه خرید" />}
-                                        </div>
-                                    </div>
-
-                                    {cartId && (
-                                        <div className={styles.expanded_field}>
-                                            <span className={styles.expanded_field__label}>شناسه سبد خرید (Cart ID)</span>
-                                            <div className={styles.copyableField}>
-                                                <span className={styles.expanded_field__value} dir="ltr">
-                                                    {cartId}
-                                                </span>
-                                                <CopyButton text={cartId} label="شناسه سبد خرید" />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {order.buyerExternalUserId && (
-                                        <div className={styles.expanded_field}>
-                                            <span className={styles.expanded_field__label}>شناسه کاربر در استراپی</span>
-                                            <div className={styles.copyableField}>
-                                                <span className={styles.expanded_field__value} dir="ltr">
-                                                    {order.buyerExternalUserId}
-                                                </span>
-                                                <CopyButton text={order.buyerExternalUserId} label="شناسه کاربر" />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className={styles.expanded_field}>
-                                        <span className={styles.expanded_field__label}>وضعیت تحویل دوره</span>
-                                        <span className={styles.expanded_field__value}>
-                                            {deliveryStatus === 'Delivered' ? (
-                                                <span className={styles.onlinePayBadgeSuccess}>
-                                                    تحویل داده شد (Delivered)
-                                                </span>
-                                            ) : (
-                                                <span className={styles.onlinePayBadgePending}>
-                                                    در انتظار فعال‌سازی (Pending)
-                                                </span>
-                                            )}
-                                        </span>
-                                    </div>
-
-                                    {receiptLoading && (
-                                        <span className={styles.expanded_field__label} style={{ fontSize: '0.75rem' }}>
-                                            در حال دریافت جزئیات تکمیلی رسید...
-                                        </span>
-                                    )}
-                                    {receiptError && !receiptData && (
-                                        <span className={styles.expanded_field__label} style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem' }}>
-                                            ℹ️ استعلام رسید تفصیلی نیازمند دسترسی خریدار یا اندپوینت رسیدگی اختصاصی است.
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* ── بخش ۲: جزئیات مالی و تخفیف ── */}
-                            <div className={`${styles.expanded_section} ${styles.expanded_section_online}`}>
-                                <h4 className={styles.expanded_section__title}>
-                                    💎 جزئیات مالی پرداخت با نور
-                                </h4>
-                                <div className={styles.onlinePayDetails}>
-                                    {baseAmountInNoor != null && (
-                                        <div className={styles.expanded_field}>
-                                            <span className={styles.expanded_field__label}>مبلغ پایه</span>
-                                            <span className={styles.expanded_field__value}>
-                                                {Number(baseAmountInNoor).toLocaleString('fa-IR')} نور
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {discountAmountInNoor != null && Number(discountAmountInNoor) > 0 && (
-                                        <div className={styles.expanded_field}>
-                                            <span className={styles.expanded_field__label}>مبلغ تخفیف</span>
-                                            <span className={styles.expanded_field__value} style={{ color: '#f87171' }}>
-                                                {Number(discountAmountInNoor).toLocaleString('fa-IR')} نور
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {couponCode && (
-                                        <div className={styles.expanded_field}>
-                                            <span className={styles.expanded_field__label}>کد تخفیف</span>
-                                            <span className={styles.expanded_field__value} dir="ltr">
-                                                {couponCode}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    <div className={styles.expanded_field}>
-                                        <span className={styles.expanded_field__label}>مبلغ پرداختی قطعی</span>
-                                        <span className={styles.expanded_field__value} style={{ color: '#34d399', fontWeight: 'bold' }}>
-                                            {Number(order.totalPrice || 0).toLocaleString('fa-IR')} نور
-                                        </span>
-                                    </div>
-
-                                    {referenceRate != null && (
-                                        <div className={styles.expanded_field}>
-                                            <span className={styles.expanded_field__label}>نرخ مرجع هنگام خرید (صرفاً اطلاعاتی)</span>
-                                            <span className={styles.expanded_field__value} dir="ltr">
-                                                {Number(referenceRate).toLocaleString('fa-IR')} ریال / نور
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* ── بخش ۳: اقلام دوره ── */}
-                            <div className={styles.expanded_section}>
-                                <h4 className={styles.expanded_section__title}>
-                                    {order.isPhysicalProduct ? '📦 قلم کالا' : '🎓 قلم دوره'}
-                                </h4>
-                                <div className={styles.items_list}>
-                                    {order.items && order.items.length > 0 ? (
-                                        order.items.map((item, idx) => (
-                                            <div key={idx} className={styles.item_card}>
-                                                <span className={styles.item_card__icon}>{item.type === 'product' ? '📦' : '📚'}</span>
-                                                <div className={styles.item_card__info}>
-                                                    <span className={styles.item_card__title}>{item.title || (item.type === 'product' ? 'کالا' : 'دوره آموزشی')}</span>
-                                                    <span className={styles.item_card__type}>{item.type === 'product' ? 'کالای فیزیکی' : 'دوره آموزشی'}</span>
-                                                </div>
-                                                <span className={styles.item_card__price}>
-                                                    {`${Number(item.price || order.totalPrice || 0).toLocaleString('fa-IR')} نور`}
-                                                </span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className={styles.item_card}>
-                                            <span className={styles.item_card__icon}>📚</span>
-                                            <div className={styles.item_card__info}>
-                                                <span className={styles.item_card__title}>{order.courseTitle || 'دوره آموزشی'}</span>
-                                                <span className={styles.item_card__type}>دوره آموزشی</span>
-                                            </div>
-                                            <span className={styles.item_card__price}>
-                                                {`${Number(order.totalPrice || 0).toLocaleString('fa-IR')} نور`}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                {order.isPhysicalProduct && purchaseId && isPaidOrder(order) && (
-                                    <PhysicalDeliveryControl purchaseId={purchaseId} cartId={cartId} />
-                                )}
-                            </div>
-                        </>
+                        <ByeMoneyOrderPanel order={order} onSummary={onAttemptSummary} />
                     ) : (
                         <>
                             {/* ── سفارش‌های سنتی استراپی: جزئیات پرداخت ── */}
@@ -611,7 +391,7 @@ export default function OrdersTable({
     const [statusModalOrder, setStatusModal] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [appliedSearch, setAppliedSearch] = useState('');
-    const [filterType, setFilterType] = useState('all'); // 'all' | 'pending' | 'paid' | 'canceled'
+    const [filterType, setFilterType] = useState('all'); // 'all' | 'pending' | 'paid' | 'online' | 'canceled' | 'expired' | 'review'
     const [sourceFilter, setSourceFilter] = useState('all'); // 'all' | 'byemoney' | 'strapi'
     const [isStatusSorted, setIsStatusSorted] = useState(false); // اولویت‌بندی هوشمند وضعیت در سرور
     const [expandedId, setExpandedId] = useState(null); // شناسه ردیف باز
@@ -779,6 +559,8 @@ export default function OrdersTable({
                 paid: initialStats.paid ?? 0,
                 canceled: initialStats.canceled ?? 0,
                 online: initialStats.online ?? orders.filter((o) => o.paymentMethod === 'online').length,
+                expired: initialStats.expired ?? 0,
+                review: initialStats.review ?? 0,
             };
         }
         return {
@@ -786,8 +568,23 @@ export default function OrdersTable({
             paid: orders.filter(isPaidOrder).length,
             canceled: orders.filter(isCanceledOrder).length,
             online: orders.filter((o) => o.paymentMethod === 'online').length,
+            expired: orders.filter((o) => o.orderStatus === 'expired').length,
+            review: orders.filter((o) => o.orderStatus === 'review').length,
         };
     }, [initialStats, orders, periodFilter, activeSettlement]);
+
+    // حذف گروهی فقط سفارش‌های استرپی را پاک می‌کند؛ شمارندهٔ آن نباید سفارش‌های بای‌مانی را بشمارد
+    const bulkDeleteCounts = useMemo(() => {
+        const strapiCounts = statsInfo?.strapiStatusCounts;
+        if (strapiCounts && periodFilter === 'current' && !activeSettlement) {
+            return { pending: strapiCounts.pending ?? 0, canceled: strapiCounts.canceled ?? 0 };
+        }
+        const strapiOrders = orders.filter((o) => !o.isByeMoney);
+        return {
+            pending: strapiOrders.filter((o) => o.orderStatus === 'pending').length,
+            canceled: strapiOrders.filter(isCanceledOrder).length,
+        };
+    }, [statsInfo, orders, periodFilter, activeSettlement]);
 
     // ── محاسبات دوره تسویه مالی ──────────────────────────────────────────────
     const settlementsCount = statsInfo?.settlementsCount ?? 0;
@@ -848,6 +645,7 @@ export default function OrdersTable({
         setSettlementSuccessMessage(res.message);
         setOrders((prev) =>
             prev.filter((o) => {
+                if (o.isByeMoney) return true;
                 const status = (o.orderStatus || '').trim().toLowerCase();
                 return status !== bulkDeleteTarget;
             })
@@ -990,6 +788,14 @@ export default function OrdersTable({
                                         {new Intl.NumberFormat('fa-IR').format(currentPeriodRevenue)} تومان
                                     </strong>
                                 </div>
+                                {statsInfo?.byemoney?.revenueNoor !== null && statsInfo?.byemoney?.revenueNoor !== undefined && (
+                                    <div className={styles.settlementStatItem}>
+                                        <span className={styles.settlementStatItem__label}>درآمد بای‌مانی (فقط پرداخت‌شده):</span>
+                                        <strong className={styles.settlementStatItem__valueSuccess}>
+                                            {new Intl.NumberFormat('fa-IR').format(statsInfo.byemoney.revenueNoor)} نور
+                                        </strong>
+                                    </div>
+                                )}
                                 <div className={styles.settlementStatItem}>
                                     <span className={styles.settlementStatItem__label}>تعداد سفارش ها :</span>
                                     <strong className={styles.settlementStatItem__value}>
@@ -1097,11 +903,23 @@ export default function OrdersTable({
                         variant={filterType === 'canceled' ? 'edit' : 'default'}
                         onClick={() => setFilterType('canceled')}
                     >
-                        لغو شده ({new Intl.NumberFormat('fa-IR').format(counts.canceled)})
+                        ناموفق / لغو شده ({new Intl.NumberFormat('fa-IR').format(counts.canceled)})
+                    </AdminButton>
+                    <AdminButton
+                        variant={filterType === 'expired' ? 'edit' : 'default'}
+                        onClick={() => setFilterType('expired')}
+                    >
+                        منقضی ({new Intl.NumberFormat('fa-IR').format(counts.expired)})
+                    </AdminButton>
+                    <AdminButton
+                        variant={filterType === 'review' ? 'edit' : 'default'}
+                        onClick={() => setFilterType('review')}
+                    >
+                        نیازمند بررسی ({new Intl.NumberFormat('fa-IR').format(counts.review)})
                     </AdminButton>
 
                     {/* دکمه‌های پاکسازی گروهی */}
-                    {counts.canceled > 0 && (
+                    {bulkDeleteCounts.canceled > 0 && (
                         <button
                             type="button"
                             className={styles.bulkDeleteBtn}
@@ -1109,11 +927,11 @@ export default function OrdersTable({
                             title="حذف دائمی تمام سفارش‌های لغو شده"
                         >
                             <Trash2 size={13} />
-                            <span>حذف لغو شده‌ها ({new Intl.NumberFormat('fa-IR').format(counts.canceled)})</span>
+                            <span>حذف لغو شده‌ها ({new Intl.NumberFormat('fa-IR').format(bulkDeleteCounts.canceled)})</span>
                         </button>
                     )}
 
-                    {counts.pending > 0 && (
+                    {bulkDeleteCounts.pending > 0 && (
                         <button
                             type="button"
                             className={styles.bulkDeletePendingBtn}
@@ -1121,7 +939,7 @@ export default function OrdersTable({
                             title="حذف دائمی تمام سفارش‌های در انتظار پرداخت"
                         >
                             <Trash2 size={13} />
-                            <span>حذف در انتظارها ({new Intl.NumberFormat('fa-IR').format(counts.pending)})</span>
+                            <span>حذف در انتظارها ({new Intl.NumberFormat('fa-IR').format(bulkDeleteCounts.pending)})</span>
                         </button>
                     )}
                 </div>
@@ -1200,7 +1018,10 @@ export default function OrdersTable({
                 <AdminTable headers={headers}>
                     {orders.map((order) => {
                         const isOnline = order.paymentMethod === 'online';
-                        let ordConf = ORDER_STATUS_CONFIG[order.orderStatus?.trim()] || ORDER_STATUS_CONFIG[order.orderStatus] || ORDER_STATUS_CONFIG.pending;
+                        const isByeMoneyRow = Boolean(order.isByeMoney || order.source === 'byemoney');
+                        let ordConf = isByeMoneyRow
+                            ? getFinancialStatusConfig(order.financialStatus)
+                            : (ORDER_STATUS_CONFIG[order.orderStatus?.trim()] || ORDER_STATUS_CONFIG[order.orderStatus] || ORDER_STATUS_CONFIG.pending);
                         if (isOnline) {
                             if (isPaidOrder(order)) {
                                 ordConf = { label: 'پرداخت آنلاین موفق', variant: 'success' };
@@ -1273,6 +1094,12 @@ export default function OrdersTable({
                                                 text={ordConf.label}
                                                 variant={ordConf.variant}
                                             />
+                                            {isByeMoneyRow && order.attemptSummary && (
+                                                <AdminBadge
+                                                    text={order.attemptSummary.label}
+                                                    variant={order.attemptSummary.tone}
+                                                />
+                                            )}
                                             {order.trackingNumber && (
                                                 <span className={styles.tracking_code}>
                                                     🚚 {order.trackingNumber}
@@ -1298,17 +1125,30 @@ export default function OrdersTable({
                                     {/* عملیات */}
                                     <td>
                                         <div className={styles.actions}>
-                                            {order.isByeMoney || order.source === 'byemoney' ? (
-                                                <AdminButton
-                                                    variant="default"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        toggleExpand(order.id);
-                                                    }}
-                                                    title={isExpanded ? 'بستن جزئیات' : 'مشاهده جزئیات رسید و سفارش'}
-                                                >
-                                                    {isExpanded ? 'بستن' : 'جزئیات'}
-                                                </AdminButton>
+                                            {isByeMoneyRow ? (
+                                                <>
+                                                    <AdminButton
+                                                        variant="edit"
+                                                        disabled={!canShowReceipt(order)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setExpandedId(order.id);
+                                                        }}
+                                                        title={canShowReceipt(order) ? 'مشاهده رسید سفارش' : 'رسید فقط برای سفارش پرداخت‌شده وجود دارد'}
+                                                    >
+                                                        رسید
+                                                    </AdminButton>
+                                                    <AdminButton
+                                                        variant="default"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleExpand(order.id);
+                                                        }}
+                                                        title={isExpanded ? 'بستن جزئیات' : 'مشاهده اقلام و خط زمانی تلاش‌ها'}
+                                                    >
+                                                        {isExpanded ? 'بستن' : 'جزئیات'}
+                                                    </AdminButton>
+                                                </>
                                             ) : (
                                                 <>
                                                     {needsReceiptApproval && (
@@ -1347,6 +1187,7 @@ export default function OrdersTable({
                                         order={order}
                                         colSpan={COL_SPAN}
                                         onOpenReceipt={(ord) => setReceiptModal(ord)}
+                                        onAttemptSummary={(summary) => handleOrderUpdate(order.id, { attemptSummary: summary })}
                                     />
                                 )}
                             </Fragment>
@@ -1409,7 +1250,7 @@ export default function OrdersTable({
             <BulkDeleteModal
                 isOpen={Boolean(bulkDeleteTarget)}
                 status={bulkDeleteTarget || 'canceled'}
-                count={bulkDeleteTarget === 'canceled' ? (counts.canceled || 0) : (counts.pending || 0)}
+                count={bulkDeleteTarget === 'canceled' ? (bulkDeleteCounts.canceled || 0) : (bulkDeleteCounts.pending || 0)}
                 onClose={() => setBulkDeleteTarget(null)}
                 onSuccess={handleBulkDeleteSuccess}
             />

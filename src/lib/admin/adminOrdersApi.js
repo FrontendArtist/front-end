@@ -1,5 +1,11 @@
 import { adminFetch } from './adminFetch';
 import { STRAPI_API_URL } from '../api';
+import { getAdminCourseOrders } from '../byeMoneyApi';
+import {
+    BYEMONEY_ONLY_TABS,
+    financialStatusesForTab,
+    mapByeMoneyOrderRow,
+} from './orderTracking';
 
 function toEnglishDigits(str) {
     if (!str) return '';
@@ -8,7 +14,88 @@ function toEnglishDigits(str) {
         .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
 }
 
+const BYEMONEY_REVENUE_PAGE_SIZE = 100;
+const BYEMONEY_REVENUE_MAX_PAGES = 100;
+
+async function countByeMoneyOrders(jwt, financialStatus) {
+    const res = await getAdminCourseOrders({ jwt, page: 1, pageSize: 1, financialStatus });
+    if (!res.success) throw new Error(res.error || 'byemoney count failed');
+    return res.data?.totalCount ?? 0;
+}
+
+/** جمع مبلغ (نور) فقط سفارش‌های Paid؛ اگر هر صفحه‌ای خطا بدهد null تا عدد ناقص نمایش داده نشود */
+async function sumPaidByeMoneyRevenue(jwt, paidCount) {
+    if (!paidCount) return 0;
+    const pageCount = Math.min(Math.ceil(paidCount / BYEMONEY_REVENUE_PAGE_SIZE), BYEMONEY_REVENUE_MAX_PAGES);
+    const pages = await Promise.all(
+        Array.from({ length: pageCount }, (_, i) =>
+            getAdminCourseOrders({
+                jwt,
+                page: i + 1,
+                pageSize: BYEMONEY_REVENUE_PAGE_SIZE,
+                financialStatus: 'Paid',
+            })
+        )
+    );
+    if (pages.some((p) => !p.success)) return null;
+    return pages.reduce(
+        (sum, p) =>
+            sum +
+            (p.data?.items || []).reduce(
+                (s, o) => (o.financialStatus === 'Paid' ? s + Number(o.finalAmountInNoor || 0) : s),
+                0
+            ),
+        0
+    );
+}
+
+/**
+ * شمارنده‌ها و درآمد سفارش‌های بای‌مانی. در انتظار = AwaitingPayment + Processing (همان تب «در انتظار»).
+ * درآمد فقط از سفارش‌های Paid و به «نور» است؛ با تومانِ استرپی جمع نمی‌شود.
+ */
+async function getByeMoneyOrderStats(jwt) {
+    try {
+        const [paid, awaiting, processing, failed, expired, review] = await Promise.all(
+            ['Paid', 'AwaitingPayment', 'Processing', 'Failed', 'Expired', 'RequiresReview'].map((s) =>
+                countByeMoneyOrders(jwt, s)
+            )
+        );
+        const revenueNoor = await sumPaidByeMoneyRevenue(jwt, paid);
+        return {
+            available: true,
+            counts: { paid, pending: awaiting + processing, canceled: failed, expired, review },
+            revenueNoor,
+        };
+    } catch (err) {
+        if (process.env.NODE_ENV === 'development') {
+            console.error('[getOrdersStats] ByeMoney stats error:', err);
+        }
+        return { available: false, counts: null, revenueNoor: null };
+    }
+}
+
+/**
+ * آمار صفحهٔ سفارش‌ها: شمارندهٔ تب‌ها هم استرپی و هم بای‌مانی را می‌شمارد.
+ * شمارندهٔ خالص استرپی در `strapiStatusCounts` می‌ماند (حذف گروهی و تسویه فقط استرپی را دربر می‌گیرند).
+ */
 export async function getOrdersStats(jwt) {
+    const [strapiStats, byemoney] = await Promise.all([getStrapiOrdersStats(jwt), getByeMoneyOrderStats(jwt)]);
+    const strapiCounts = strapiStats.statusCounts;
+    const bm = byemoney.counts;
+    const statusCounts = bm
+        ? {
+            pending: (strapiCounts?.pending ?? 0) + bm.pending,
+            paid: (strapiCounts?.paid ?? 0) + bm.paid,
+            canceled: (strapiCounts?.canceled ?? 0) + bm.canceled,
+            online: strapiCounts?.online ?? 0,
+            expired: bm.expired,
+            review: bm.review,
+        }
+        : strapiCounts && { ...strapiCounts, expired: 0, review: 0 };
+    return { ...strapiStats, statusCounts, strapiStatusCounts: strapiCounts, byemoney };
+}
+
+async function getStrapiOrdersStats(jwt) {
     const countData = await adminFetch('/api/orders?pagination[limit]=1', jwt);
     const totalOrders = countData?.meta?.pagination?.total ?? null;
 
@@ -136,58 +223,6 @@ export async function getOrdersStats(jwt) {
     };
 }
 
-import { getAdminCoursePurchases } from '../byeMoneyApi';
-
-function mapByeMoneyToAdminOrder(item) {
-    const isProduct = String(item.itemType || '').toLowerCase() === 'product';
-    return {
-        id: item.purchaseId,
-        documentId: item.purchaseId,
-        purchaseId: item.purchaseId,
-        cartId: item.cartId,
-        orderNumber: item.purchaseId.slice(0, 8).toUpperCase(),
-        source: 'byemoney',
-        orderSource: 'byemoney',
-        isByeMoney: true,
-        paymentMethod: 'noor',
-        paymentStatus: 'paid',
-        orderStatus: 'paid',
-        totalPrice: item.finalAmountInNoor,
-        financialStatus: item.financialStatus,
-        deliveryStatus: item.deliveryStatus,
-        createdAt: item.purchasedAtUtc,
-        fullName: item.buyerDisplayName || 'کاربر بای‌مانی',
-        buyerDisplayName: item.buyerDisplayName,
-        buyerExternalUserId: item.buyerExternalUserId,
-        phone: null,
-        email: null,
-        trackingNumber: null,
-        cardHolderName: null,
-        notes: null,
-        isPhysicalProduct: isProduct,
-        items: [isProduct ? {
-            __component: 'order.product-order-item',
-            title: item.courseTitle || 'کالا',
-            price: item.finalAmountInNoor,
-            type: 'product',
-            itemType: 'Product',
-            purchaseId: item.purchaseId,
-        } : {
-            __component: 'order.course-order-item',
-            title: item.courseTitle || 'دوره آموزشی',
-            price: item.finalAmountInNoor,
-            type: 'order.course-order-item',
-        }],
-        user: {
-            username: item.buyerDisplayName || item.buyerExternalUserId,
-            documentId: item.buyerExternalUserId,
-        },
-        receiptImageUrl: null,
-        settlement: null,
-        settledAt: null,
-    };
-}
-
 async function findStrapiUserIdForByeMoney(jwt, search) {
     if (!search || !search.trim()) return null;
     const raw = search.trim();
@@ -223,45 +258,105 @@ async function findStrapiUserIdForByeMoney(jwt, search) {
     }
 }
 
-async function fetchByeMoneyOrdersRaw(jwt, { page = 1, pageSize = 20, buyerExternalUserId, status }) {
-    if (status === 'pending' || status === 'canceled') {
-        return { items: [], totalCount: 0, byemoneyWarning: false };
-    }
-    if (buyerExternalUserId === '__USER_NOT_FOUND__') {
-        return { items: [], totalCount: 0, byemoneyWarning: false };
-    }
-
+/**
+ * یک صفحه از فهرست پیگیری بای‌مانی (هر ردیف یک سفارش با هر وضعیت مالی).
+ * @returns {Promise<{ items: object[], totalCount: number, error?: string }>}
+ */
+async function fetchByeMoneyPage(jwt, { page, pageSize, buyerExternalUserId, financialStatus }) {
     try {
-        const res = await getAdminCoursePurchases({
+        const res = await getAdminCourseOrders({
             jwt,
             page,
             pageSize,
             buyerExternalUserId: buyerExternalUserId || undefined,
-            financialStatus: 'Paid',
+            financialStatus,
         });
         if (res.success && res.data) {
-            const mapped = (res.data.items || []).map(mapByeMoneyToAdminOrder);
             return {
-                items: mapped,
+                items: (res.data.items || []).map(mapByeMoneyOrderRow),
                 totalCount: res.data.totalCount || 0,
-                byemoneyWarning: false,
             };
         }
-        return {
-            items: [],
-            totalCount: 0,
-            byemoneyWarning: true,
-            error: res.error,
-        };
+        return { items: [], totalCount: 0, error: res.error || 'خطا در دریافت سفارش‌های بای‌مانی' };
     } catch (err) {
         console.error('[AdminOrdersApi] ByeMoney fetch error:', err);
-        return {
-            items: [],
-            totalCount: 0,
-            byemoneyWarning: true,
-            error: err.message,
-        };
+        return { items: [], totalCount: 0, error: err.message || 'خطا' };
     }
+}
+
+/** بازهٔ [localStart, localStart+take) از یک وضعیت مالی؛ با pageSize ثابت حداکثر دو صفحه می‌خواند */
+async function fetchByeMoneySlice(jwt, { financialStatus, buyerExternalUserId, localStart, take, pageSize }) {
+    const firstPage = Math.floor(localStart / pageSize) + 1;
+    const lastPage = Math.floor((localStart + take - 1) / pageSize) + 1;
+    const base = { buyerExternalUserId, financialStatus, pageSize };
+    const first = await fetchByeMoneyPage(jwt, { ...base, page: firstPage });
+    let items = first.items;
+    let error = first.error;
+    if (!error && lastPage > firstPage) {
+        const second = await fetchByeMoneyPage(jwt, { ...base, page: lastPage });
+        items = [...items, ...second.items];
+        error = second.error;
+    }
+    const offset = localStart - (firstPage - 1) * pageSize;
+    return { items: items.slice(offset, offset + take), totalCount: first.totalCount, error };
+}
+
+/**
+ * سفارش‌های بای‌مانی یک تب از موقعیت `start` به تعداد `limit`.
+ * API فقط یک financialStatus می‌پذیرد؛ تب چندوضعیتی (در انتظار) با چند فراخوانی ترتیبی و جمع شمارش‌ها
+ * صفحه‌بندی می‌شود (Processing پیش از AwaitingPayment؛ نگاه کنید به TAB_FINANCIAL_STATUSES).
+ * @returns {Promise<{ items: object[], totalCount: number, byemoneyWarning: boolean, error?: string }>}
+ */
+async function fetchByeMoneyOrdersRaw(jwt, { start = 0, limit = 20, buyerExternalUserId, status }) {
+    const empty = { items: [], totalCount: 0, byemoneyWarning: false };
+    if (buyerExternalUserId === '__USER_NOT_FOUND__') return empty;
+
+    const statuses = financialStatusesForTab(status);
+    if (statuses.length === 0) return empty;
+
+    if (statuses.length === 1) {
+        const r = await fetchByeMoneySlice(jwt, {
+            financialStatus: statuses[0],
+            buyerExternalUserId,
+            localStart: start,
+            take: limit,
+            pageSize: limit,
+        });
+        return { items: r.items, totalCount: r.totalCount, byemoneyWarning: Boolean(r.error), error: r.error };
+    }
+
+    const probes = await Promise.all(
+        statuses.map((financialStatus) =>
+            fetchByeMoneyPage(jwt, { page: 1, pageSize: 1, buyerExternalUserId, financialStatus })
+        )
+    );
+    let warning = probes.some((p) => p.error);
+    const totals = probes.map((p) => p.totalCount);
+    const totalCount = totals.reduce((a, b) => a + b, 0);
+
+    const items = [];
+    let cursor = start;
+    let remaining = limit;
+    let base = 0;
+    for (let i = 0; i < statuses.length; i++) {
+        if (remaining > 0 && cursor < base + totals[i]) {
+            const localStart = cursor - base;
+            const take = Math.min(remaining, totals[i] - localStart);
+            const r = await fetchByeMoneySlice(jwt, {
+                financialStatus: statuses[i],
+                buyerExternalUserId,
+                localStart,
+                take,
+                pageSize: limit,
+            });
+            if (r.error) warning = true;
+            items.push(...r.items);
+            cursor += r.items.length;
+            remaining -= r.items.length;
+        }
+        base += totals[i];
+    }
+    return { items, totalCount, byemoneyWarning: warning };
 }
 
 async function fetchStrapiOrdersRaw(jwt, { start, limit, page, pageSize, status, search, statusPriority, period, settlementId }) {
@@ -492,17 +587,18 @@ export async function getOrders(jwt, options = {}) {
     const reqLimit = limit !== undefined ? Number(limit) : (pageSize !== undefined ? Number(pageSize) : 20);
     const reqStart = start !== undefined ? Number(start) : ((Number(page) || 1) - 1) * reqLimit;
 
+    // تب‌های «منقضی» و «نیازمند بررسی» فقط مفهوم بای‌مانی‌اند؛ ردیف‌های قدیمی استرپی در آن‌ها نیستند
+    const strapiParams = { status, search, statusPriority, period, settlementId };
+    const skipStrapi = BYEMONEY_ONLY_TABS.includes(status);
+    // پوشهٔ آرشیو تسویه فقط سفارش‌های استرپی را دارد؛ سفارش‌های بای‌مانی تسویه نمی‌شوند
+    const skipByeMoney = Boolean(settlementId);
+
     // ۱. فیلتر فقط استراپی
     if (source === 'strapi') {
-        const strapiData = await fetchStrapiOrdersRaw(jwt, {
-            start: reqStart,
-            limit: reqLimit,
-            status,
-            search,
-            statusPriority,
-            period,
-            settlementId,
-        });
+        if (skipStrapi) {
+            return { orders: [], meta: { pagination: { total: 0, start: reqStart, limit: reqLimit } }, byemoneyWarning: false, error: false };
+        }
+        const strapiData = await fetchStrapiOrdersRaw(jwt, { start: reqStart, limit: reqLimit, ...strapiParams });
         return {
             orders: strapiData.orders,
             meta: strapiData.meta,
@@ -517,15 +613,17 @@ export async function getOrders(jwt, options = {}) {
         buyerExternalUserId = await findStrapiUserIdForByeMoney(jwt, search);
     }
 
-    // ۲. فیلتر فقط بای‌مانی
-    if (source === 'byemoney') {
-        const bmPage = Math.floor(reqStart / reqLimit) + 1;
-        const bmData = await fetchByeMoneyOrdersRaw(jwt, {
-            page: bmPage,
-            pageSize: reqLimit,
+    const bmData = skipByeMoney
+        ? { items: [], totalCount: 0, byemoneyWarning: false }
+        : await fetchByeMoneyOrdersRaw(jwt, {
+            start: reqStart,
+            limit: reqLimit,
             buyerExternalUserId,
             status,
         });
+
+    // ۲. فیلتر فقط بای‌مانی
+    if (source === 'byemoney') {
         return {
             orders: bmData.items,
             meta: {
@@ -533,7 +631,7 @@ export async function getOrders(jwt, options = {}) {
                     total: bmData.totalCount,
                     start: reqStart,
                     limit: reqLimit,
-                    page: bmPage,
+                    page: Math.floor(reqStart / reqLimit) + 1,
                     pageSize: reqLimit,
                 },
             },
@@ -543,108 +641,33 @@ export async function getOrders(jwt, options = {}) {
     }
 
     // ۳. منبع «همه»: صفحه‌بندی متوالی (اول کل بای‌مانی از جدید به قدیم، سپس سفارش‌های استراپی)
-    const bmProbe = await fetchByeMoneyOrdersRaw(jwt, {
-        page: 1,
-        pageSize: reqLimit,
-        buyerExternalUserId,
-        status,
-    });
-
-    const bmTotal = bmProbe.totalCount || 0;
-    const byemoneyWarning = bmProbe.byemoneyWarning;
-
-    const rangeStart = reqStart;
-    const rangeEnd = reqStart + reqLimit;
-
-    let orders = [];
+    let orders = bmData.items;
     let strapiTotal = 0;
 
-    // حالت الف: کل این صفحه متعلق به بای‌مانی است
-    if (rangeEnd <= bmTotal && bmTotal > 0) {
-        const bmPage = Math.floor(rangeStart / reqLimit) + 1;
-        if (bmPage === 1) {
-            orders = bmProbe.items.slice(0, reqLimit);
-        } else {
-            const pageData = await fetchByeMoneyOrdersRaw(jwt, {
-                page: bmPage,
-                pageSize: reqLimit,
-                buyerExternalUserId,
-                status,
-            });
-            orders = pageData.items;
-        }
-        const strapiCountData = await fetchStrapiOrdersRaw(jwt, {
-            start: 0,
-            limit: 1,
-            status,
-            search,
-            statusPriority,
-            period,
-            settlementId,
-        });
-        strapiTotal = strapiCountData.meta?.pagination?.total || 0;
-    }
-    // حالت ب: صفحه مرز بین بای‌مانی و استراپی (ته‌مانده بای‌مانی و بقیه از ابتدای استراپی)
-    else if (rangeStart < bmTotal && rangeEnd > bmTotal && bmTotal > 0) {
-        const bmCount = bmTotal - rangeStart;
-        const bmPage = Math.floor(rangeStart / reqLimit) + 1;
-        let bmRemaining = [];
-        if (bmPage === 1) {
-            bmRemaining = bmProbe.items.slice(rangeStart % reqLimit, bmTotal);
-        } else {
-            const pageData = await fetchByeMoneyOrdersRaw(jwt, {
-                page: bmPage,
-                pageSize: reqLimit,
-                buyerExternalUserId,
-                status,
-            });
-            bmRemaining = pageData.items.slice(0, bmCount);
-        }
-
-        const strapiCount = reqLimit - bmCount;
-        const strapiData = await fetchStrapiOrdersRaw(jwt, {
-            start: 0,
-            limit: strapiCount,
-            status,
-            search,
-            statusPriority,
-            period,
-            settlementId,
-        });
-
-        strapiTotal = strapiData.meta?.pagination?.total || 0;
-        orders = [...bmRemaining, ...strapiData.orders];
-    }
-    // حالت ج: کل این صفحه از استراپی تامین می‌شود
-    else {
-        const strapiStart = Math.max(0, rangeStart - bmTotal);
+    if (!skipStrapi) {
+        const strapiStart = Math.max(0, reqStart - bmData.totalCount);
+        const strapiNeeded = reqLimit - bmData.items.length;
         const strapiData = await fetchStrapiOrdersRaw(jwt, {
             start: strapiStart,
-            limit: reqLimit,
-            status,
-            search,
-            statusPriority,
-            period,
-            settlementId,
+            limit: Math.max(1, strapiNeeded),
+            ...strapiParams,
         });
         strapiTotal = strapiData.meta?.pagination?.total || 0;
-        orders = strapiData.orders;
+        if (strapiNeeded > 0) orders = [...orders, ...strapiData.orders];
     }
-
-    const totalCount = bmTotal + strapiTotal;
 
     return {
         orders,
         meta: {
             pagination: {
-                total: totalCount,
+                total: bmData.totalCount + strapiTotal,
                 start: reqStart,
                 limit: reqLimit,
                 page: Math.floor(reqStart / reqLimit) + 1,
                 pageSize: reqLimit,
             },
         },
-        byemoneyWarning,
+        byemoneyWarning: bmData.byemoneyWarning,
         error: false,
     };
 }

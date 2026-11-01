@@ -1627,4 +1627,61 @@ $transition: 0.2s ease;
 }
 
 
-
+
+// ── خط زمانی تلاش‌های خرید (سفارش بای‌مانی) ───────────────────────────────
+.timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0 14px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-right: 2px solid fade(var(--color-primary), 20%);
+
+    &__item {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-right: 12px;
+
+        &::before {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: 6px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--color-primary);
+        }
+
+        &--final::before {
+            background: var(--color-title-hover);
+        }
+    }
+
+    &__head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        font-size: var(--font-sm);
+    }
+
+    &__time {
+        color: var(--color-text-secondary);
+        font-size: var(--font-xs);
+        margin-inline-start: auto;
+    }
+
+    &__details {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: var(--font-xs);
+    }
+}

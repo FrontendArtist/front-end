@@ -28,6 +28,14 @@ export async function fetchAdminOrders({ start, limit = 20, page, pageSize, stat
     return data; // { orders, meta, byemoneyWarning }
 }
 
+/** جزئیات و خط زمانی تلاش‌های خرید یک سفارش بای‌مانی (فقط‌مشاهده؛ JWT از session سروری) */
+export async function fetchOrderTracking(orderId, { signal } = {}) {
+    const res = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/tracking`, { signal });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'خطا در دریافت جزئیات سفارش');
+    return data;
+}
+
 export async function fetchAdminSettlements() {
     const res = await fetch('/api/admin/settlements');
     const data = await res.json().catch(() => ({}));

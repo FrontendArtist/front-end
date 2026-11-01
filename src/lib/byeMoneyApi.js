@@ -1556,6 +1556,108 @@ export async function getAdminCourseOrderReceipt({ jwt, orderId, signal } = {}) 
   return fetchCourseOrderReceipt({ jwt, orderId, signal, scope: 'admin' });
 }
 
+/**
+ * فهرست پیگیری سفارش‌های همهٔ کاربران برای ادمین دارای Purchases.View (I11-T)
+ * GET /api/admin/course-orders — هر ردیف یک سفارش (سبد/شارژ/خرید) با هر وضعیت مالی.
+ * financialStatus فقط یک مقدار می‌پذیرد؛ بدون مجوز 403.
+ * @param {{ jwt: string, page?: number, pageSize?: number, financialStatus?: string, deliveryStatus?: string,
+ *   sourceType?: string, buyerExternalUserId?: string, fromUtc?: string, toUtc?: string, signal?: AbortSignal }} params
+ * @returns {Promise<{ success: boolean, data?: { items: Array<{
+ *   orderId: string, sourceType: string, cartId: string|null, createdAtUtc: string, updatedAtUtc: string,
+ *   financialStatus: string, deliveryStatus: string, finalAmountInNoor: number|null, itemCount: number,
+ *   topUpAttemptCount: number, buyerExternalUserId: string, buyerDisplayName: string|null }>,
+ *   page: number, pageSize: number, totalCount: number },
+ *   unauthorized?: boolean, forbidden?: boolean, badRequest?: boolean, error?: string, networkError?: boolean }>}
+ */
+export async function getAdminCourseOrders({
+  jwt,
+  page = 1,
+  pageSize = 20,
+  financialStatus,
+  deliveryStatus,
+  sourceType,
+  buyerExternalUserId,
+  fromUtc,
+  toUtc,
+  signal,
+} = {}) {
+  if (!jwt) {
+    return { success: false, unauthorized: true, error: 'توکن نامعتبر است.' };
+  }
+  const params = new URLSearchParams();
+  params.set('page', String(page));
+  params.set('pageSize', String(pageSize));
+  if (financialStatus) params.set('financialStatus', String(financialStatus));
+  if (deliveryStatus) params.set('deliveryStatus', String(deliveryStatus));
+  if (sourceType) params.set('sourceType', String(sourceType));
+  if (buyerExternalUserId) params.set('buyerExternalUserId', String(buyerExternalUserId));
+  if (fromUtc) params.set('fromUtc', String(fromUtc));
+  if (toUtc) params.set('toUtc', String(toUtc));
+  return fetchAdminCourseOrdersEndpoint(
+    `${BYEMONEY_API_URL}/api/admin/course-orders?${params.toString()}`,
+    jwt,
+    signal,
+    'خطای دریافت فهرست سفارش‌های ادمین',
+  );
+}
+
+/**
+ * جزئیات یک سفارش برای ادمین دارای Purchases.View: GET /api/admin/course-orders/{orderId}
+ * پاسخ { buyerExternalUserId, buyerDisplayName, order }؛ order همان DTO جزئیات /api/me/course-orders/{orderId}
+ * (items[]، topUps[] و cartSummary) است و برای سفارش پرداخت‌نشده هم کار می‌کند.
+ * @param {{ jwt: string, orderId: string, signal?: AbortSignal }} params
+ */
+export async function getAdminCourseOrderDetails({ jwt, orderId, signal } = {}) {
+  if (!jwt || !orderId) {
+    return { success: false, error: 'شناسه سفارش یا توکن نامعتبر است.' };
+  }
+  return fetchAdminCourseOrdersEndpoint(
+    `${BYEMONEY_API_URL}/api/admin/course-orders/${encodeURIComponent(orderId)}`,
+    jwt,
+    signal,
+    'خطای دریافت جزئیات سفارش',
+  );
+}
+
+async function fetchAdminCourseOrdersEndpoint(url, jwt, signal, errorPrefix) {
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+      signal,
+    });
+    if (res.status === 200) {
+      const data = await res.json();
+      return { success: true, data };
+    }
+    if (res.status === 400) {
+      return { success: false, badRequest: true, error: 'شناسه یا پارامترهای فیلتر نامعتبر است.' };
+    }
+    if (res.status === 404) {
+      return { success: false, notFound: true, error: 'سفارش پیدا نشد.' };
+    }
+    if (res.status === 401) {
+      return { success: false, unauthorized: true, error: 'نشست ادمین منقضی شده است.' };
+    }
+    if (res.status === 403) {
+      return { success: false, forbidden: true, error: 'ادمین به سفارش‌های بای‌مانی دسترسی ندارد (فاقد مجوز Purchases.View).' };
+    }
+    let errorMsg = `${errorPrefix} (${res.status})`;
+    try {
+      const errJson = await res.json();
+      errorMsg = errJson.message || errJson.title || errorMsg;
+    } catch {}
+    return { success: false, error: errorMsg };
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    return { success: false, networkError: true, error: 'خطا در ارتباط با بای‌مانی در بخش ادمین.' };
+  }
+}
+
 async function fetchCourseOrderReceipt({ jwt, orderId, signal, scope }) {
   if (!jwt || !orderId) {
     return { success: false, error: 'شناسه سفارش یا توکن نامعتبر است.' };
