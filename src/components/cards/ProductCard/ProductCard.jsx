@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { isSameCartKey } from '@/lib/cartItemKey';
 import { useCartStore } from '@/store/useCartStore';
 import DiscountCountdown from '@/components/ui/DiscountCountdown/DiscountCountdown';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
@@ -45,7 +46,7 @@ const ProductCard = ({ product }) => {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItemManually);
 
-  const cartItem = useCartStore((state) => state.items.find((item) => item.id === id));
+  const cartItem = useCartStore((state) => state.items.find((item) => isSameCartKey(item, id, 'product')));
   const isInCart = isHydrated && !!cartItem;
   const currentQuantity = cartItem?.quantity || 0;
 
@@ -99,7 +100,7 @@ const ProductCard = ({ product }) => {
     e.stopPropagation();
 
     if (isMaxStockReached) return;
-    updateQuantity(id, currentQuantity + 1);
+    updateQuantity(id, currentQuantity + 1, 'product');
   };
 
   const handleDecrement = (e) => {
@@ -107,9 +108,9 @@ const ProductCard = ({ product }) => {
     e.stopPropagation();
 
     if (currentQuantity > 1) {
-      updateQuantity(id, currentQuantity - 1);
+      updateQuantity(id, currentQuantity - 1, 'product');
     } else {
-      removeItem(id);
+      removeItem(id, 'product');
     }
   };
 

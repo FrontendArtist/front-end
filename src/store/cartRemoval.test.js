@@ -10,29 +10,29 @@ beforeEach(() => {
 });
 
 test('حذف دستی همان قلم حذف‌شده و اقلام باقی‌مانده را به سرور می‌فرستد', async () => {
-    await useCartStore.getState().removeItemManually(42);
+    await useCartStore.getState().removeItemManually(42, 'course');
     expect(useCartStore.getState().items).toEqual([other]);
     expect(cancelOrdersAfterRemoval).toHaveBeenCalledWith(course, [other]);
-    await useCartStore.getState().removeItemManually(43);
+    await useCartStore.getState().removeItemManually(43, 'course');
     expect(cancelOrdersAfterRemoval).toHaveBeenLastCalledWith(other, []);
     const persisted = JSON.parse(localStorage.getItem('cart-storage')).state;
     expect(persisted.items).toEqual([]);
     expect(persisted.pendingCartSync).toBe(true);
 });
 test('پاک‌سازی خودکار و خروج از حساب درخواست لغو نمی‌فرستند', () => {
-    useCartStore.getState().removeItem(42);
+    useCartStore.getState().removeItem(42, 'course');
     useCartStore.getState().clearCart();
     expect(cancelOrdersAfterRemoval).not.toHaveBeenCalled();
 });
 test('سبد مهمان بدون درخواست لغو تغییر می‌کند', async () => {
     useCartStore.setState({ userId: null });
-    await useCartStore.getState().removeItemManually(42);
+    await useCartStore.getState().removeItemManually(42, 'course');
     expect(useCartStore.getState().items).toEqual([other]);
     expect(cancelOrdersAfterRemoval).not.toHaveBeenCalled();
 });
 test('شکست درخواست قلم را برمی‌گرداند و خطای قابل نمایش ثبت می‌کند', async () => {
     cancelOrdersAfterRemoval.mockRejectedValue(new Error('خطای ارتباط'));
-    await useCartStore.getState().removeItemManually(42);
+    await useCartStore.getState().removeItemManually(42, 'course');
     expect(useCartStore.getState().items).toContainEqual(course);
     expect(useCartStore.getState().removalError).toBe('خطای ارتباط');
 });

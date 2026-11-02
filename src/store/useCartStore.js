@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { isSameCartItem, deduplicateCourses } from '@/lib/cartItemIdentity';
+import { isSameCartKey } from '@/lib/cartItemKey';
 import { persist } from 'zustand/middleware';
 import { removeOrderItems } from '@/lib/cartRecovery';
 import { cancelOrdersAfterRemoval } from '@/lib/client/cartRemovalApi';
@@ -43,11 +44,11 @@ export const useCartStore = create(
             cartSyncRevision: 0,
             processedOrders: {},
             removalError: null,
-            removeItemManually: async (itemId) => {
+            removeItemManually: async (itemId, type) => {
                 const userId = get().userId;
-                const removed = get().items.find(item => item.id === itemId);
+                const removed = get().items.find(item => isSameCartKey(item, itemId, type));
                 if (!removed) return;
-                const remaining = get().items.filter(item => item.id !== itemId);
+                const remaining = get().items.filter(item => !isSameCartKey(item, itemId, type));
                 set({ items: remaining, removalError: null });
                 if (!userId) return;
                 try {
@@ -55,7 +56,7 @@ export const useCartStore = create(
                 } catch (error) {
                     if (get().userId !== userId) return;
                     // شکست درخواست نباید کاربر را با سفارش معلق و حذف نهایی قلم تنها بگذارد.
-                    set({ items: get().items.some(item => item.id === itemId) ? get().items : [...get().items, removed], removalError: error.message });
+                    set({ items: get().items.some(item => isSameCartKey(item, itemId, type)) ? get().items : [...get().items, removed], removalError: error.message });
                 }
             },
             completeOrder: (userId, orderId, purchased) => {
@@ -188,15 +189,15 @@ export const useCartStore = create(
                 }
             },
 
-            removeItem: (itemId) => {
+            removeItem: (itemId, type) => {
                 set({
-                    items: get().items.filter((item) => item.id !== itemId),
+                    items: get().items.filter((item) => !isSameCartKey(item, itemId, type)),
                 });
             },
 
-            updateQuantity: (itemId, newQuantity) => {
+            updateQuantity: (itemId, newQuantity, type) => {
                 const currentItems = get().items;
-                const itemIndex = currentItems.findIndex((item) => item.id === itemId);
+                const itemIndex = currentItems.findIndex((item) => isSameCartKey(item, itemId, type));
 
                 if (itemIndex === -1) return;
 
@@ -207,7 +208,7 @@ export const useCartStore = create(
                 }
 
                 if (newQuantity < 1) {
-                    get().removeItemManually(itemId);
+                    get().removeItemManually(itemId, type);
                     return;
                 }
 

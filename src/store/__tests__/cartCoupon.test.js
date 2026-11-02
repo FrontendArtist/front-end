@@ -40,7 +40,7 @@ test('حذف و افزودن مجدد همان دوره نسل تازه می‌�
     const firstRevision = state().courseCartRevision;
     state().updateUserPricing(false);
     expect(state().courseCartRevision).toBe(firstRevision);
-    await state().removeItemManually(42);
+    await state().removeItemManually(42, 'course');
     state().addItem(course);
     expect(state().courseCartRevision).toBeGreaterThan(firstRevision);
     const revision = state().courseCartRevision;

@@ -43,7 +43,7 @@ test('پاسخ ذخیرهٔ قبلی تغییر تازهٔ سبد را ذخیر�
     const { unmount } = renderHook(() => useCartSync());
     await act(async () => {});
     await act(async () => { jest.advanceTimersByTime(2000); });
-    act(() => useCartStore.getState().removeItem(8));
+    act(() => useCartStore.getState().removeItem(8, 'course'));
     await act(async () => finish({}));
     expect(useCartStore.getState().pendingCartSync).toBe(true);
     expect(useCartStore.getState().items).toEqual([]);

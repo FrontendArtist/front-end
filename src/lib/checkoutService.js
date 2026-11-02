@@ -228,7 +228,7 @@ export async function executeNoorCoursePurchase({
     }
 
     // فقط دوره خریداری‌شده حذف شود؛ اقلامی که در این فاصله اضافه شده‌اند حفظ شوند.
-    useCartStore.getState().removeItem(courseItem.id);
+    useCartStore.getState().removeItem(courseItem.id, courseItem.type);
 
     // ۲. به‌روزرسانی موجودی نور
     triggerLightUpdate();
@@ -322,7 +322,7 @@ export async function executeNoorCartPurchase({ cartId, jwt, router, payOnline =
                     ? (item.integrationId || item.externalCourseId)
                     : (item.documentId || item.externalCourseId);
                 if (itemExternalId && completedCourseIds.has(itemExternalId)) {
-                    useCartStore.getState().removeItem(item.id);
+                    useCartStore.getState().removeItem(item.id, item.type);
                 }
             }
         }

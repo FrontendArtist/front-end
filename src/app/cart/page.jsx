@@ -25,6 +25,7 @@ import useAuthStore from '@/store/authStore';
 import { executeOnlinePayment, executeNoorCartPurchase } from '@/lib/checkoutService';
 import usePaymentProcessing from '@/hooks/usePaymentProcessing';
 import { checkPaymentConnection, invalidatePaymentConnection } from '@/lib/client/paymentConnection';
+import { cartItemKey } from '@/lib/cartItemKey';
 import styles from './Cart.module.scss';
 import { prepareCourseCart, getCourseCartId, getExistingCourseCartId, getCourseCart } from '@/lib/courseCartApi';
 import { previewCourseCart, sameCourseCartPrice } from '@/lib/courseCartPreviewApi';
@@ -378,27 +379,27 @@ export default function CartPage() {
     /**
      * هندلر افزایش تعداد محصول
      */
-    const handleIncrement = (itemId, currentQuantity) => {
-        updateQuantity(itemId, currentQuantity + 1);
+    const handleIncrement = (itemId, currentQuantity, type) => {
+        updateQuantity(itemId, currentQuantity + 1, type);
     };
 
     /**
      * هندلر کاهش تعداد محصول
      * اگر تعداد به 0 برسد، آیتم حذف می‌شود
      */
-    const handleDecrement = (itemId, currentQuantity) => {
+    const handleDecrement = (itemId, currentQuantity, type) => {
         if (currentQuantity > 1) {
-            updateQuantity(itemId, currentQuantity - 1);
+            updateQuantity(itemId, currentQuantity - 1, type);
         } else {
-            removeItem(itemId);
+            removeItem(itemId, type);
         }
     };
 
     /**
      * هندلر حذف آیتم از سبد
      */
-    const handleRemove = (itemId) => {
-        removeItem(itemId);
+    const handleRemove = (itemId, type) => {
+        removeItem(itemId, type);
     };
 
     /**
@@ -512,7 +513,7 @@ export default function CartPage() {
                             <h2 className={styles.sectionTitle}>محصولات ({products.length})</h2>
                             <div className={styles.itemsList}>
                                 {products.map((item) => (
-                                    <div key={item.id} className={styles.cartItem}>
+                                    <div key={cartItemKey(item)} className={styles.cartItem}>
                                         {/* تصویر محصول - لینک به صفحه جزئیات */}
                                         <Link href={constructProductUrl(item)} className={styles.itemImage}>
                                             <Image
@@ -535,7 +536,7 @@ export default function CartPage() {
                                         {/* کنترلر تعداد */}
                                         <div className={styles.quantityController}>
                                             <button
-                                                onClick={() => handleDecrement(item.id, item.quantity)}
+                                                onClick={() => handleDecrement(item.id, item.quantity, item.type)}
                                                 className={styles.quantityButton}
                                                 aria-label="کاهش تعداد"
                                             >
@@ -543,7 +544,7 @@ export default function CartPage() {
                                             </button>
                                             <span className={styles.quantityDisplay}>{item.quantity}</span>
                                             <button
-                                                onClick={() => handleIncrement(item.id, item.quantity)}
+                                                onClick={() => handleIncrement(item.id, item.quantity, item.type)}
                                                 className={styles.quantityButton}
                                                 disabled={typeof item.stock === 'number' && item.quantity >= item.stock}
                                                 style={typeof item.stock === 'number' && item.quantity >= item.stock ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
@@ -560,7 +561,7 @@ export default function CartPage() {
 
                                         {/* دکمه حذف */}
                                         <button
-                                            onClick={() => handleRemove(item.id)}
+                                            onClick={() => handleRemove(item.id, item.type)}
                                             className={styles.removeButton}
                                             aria-label="حذف از سبد"
                                         >
@@ -599,7 +600,7 @@ export default function CartPage() {
                                     const itemTitle = getCartItemDisplayTitle(item, quote);
 
                                     return (
-                                        <div key={item.id} className={`${styles.cartItem} ${isOwned ? styles.ownedItemRow : ''}`}>
+                                        <div key={cartItemKey(item)} className={`${styles.cartItem} ${isOwned ? styles.ownedItemRow : ''}`}>
                                             {/* تصویر دوره/فصل - لینک به صفحه جزئیات */}
                                             <Link href={itemHref} className={styles.itemImage}>
                                                 <Image
@@ -658,7 +659,7 @@ export default function CartPage() {
 
                                             {/* دکمه حذف */}
                                             <button
-                                                onClick={() => handleRemove(item.id)}
+                                                onClick={() => handleRemove(item.id, item.type)}
                                                 className={styles.removeButton}
                                                 aria-label="حذف از سبد"
                                             >

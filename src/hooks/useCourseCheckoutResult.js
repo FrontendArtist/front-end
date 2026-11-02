@@ -206,7 +206,7 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                             : (item.documentId || item.externalCourseId);
                         return itemExternalId === course.externalCourseId;
                     });
-                    matching.forEach(item => useCartStore.getState().removeItem(item.id));
+                    matching.forEach(item => useCartStore.getState().removeItem(item.id, item.type));
                 }
                 if (phase === 'completed') {
                     triggerLightUpdate();

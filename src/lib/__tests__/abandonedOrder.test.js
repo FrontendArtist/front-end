@@ -62,7 +62,7 @@ test('حذف دستی قلم پس از رهاکردن پرداخت، افزود�
     useCartStore.setState({ items: [], appliedCoupon: null });
     useCartStore.getState().addItem(item);
     // سفارش در انتظار پرداخت باقی مانده، اما کاربر قلم را از سبد حذف کرده است.
-    useCartStore.getState().removeItem(42);
+    useCartStore.getState().removeItem(42, 'course');
     expect(useCartStore.getState().items).toEqual([]);
     const access = await loadOrders([pendingOrder()]);
     expect(access.hasAccess).toBe(false);
