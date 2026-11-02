@@ -179,7 +179,7 @@ function CopyButton({ text, label = 'کپی' }) {
 /**
  * OrderExpandedRow – ردیف کشویی با جزئیات کامل و غیرتکراری سفارش
  */
-function OrderExpandedRow({ order, colSpan, onOpenReceipt, onAttemptSummary }) {
+function OrderExpandedRow({ order, colSpan, onOpenReceipt, onOpenStatus, onAttemptSummary }) {
     const isPaid = isPaidOrder(order);
     const isCanceled = isCanceledOrder(order);
     const isByeMoney = Boolean(order.isByeMoney || order.source === 'byemoney');
@@ -206,6 +206,12 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt, onAttemptSummary }) {
                         <ByeMoneyOrderPanel order={order} onSummary={onAttemptSummary} />
                     ) : (
                         <>
+                            <div className={styles.expanded_section} style={{ gridColumn: '1 / -1', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span className={styles.expanded_field__label}>مدیریت سفارش</span>
+                                <AdminButton variant="default" onClick={() => onOpenStatus && onOpenStatus(order)} title="تغییر وضعیت سفارش">
+                                    تغییر وضعیت
+                                </AdminButton>
+                            </div>
                             {/* ── سفارش‌های سنتی استراپی: جزئیات پرداخت ── */}
                             <div className={`${styles.expanded_section} ${styles.expanded_section_online}`}>
                                 <h4 className={styles.expanded_section__title}>
@@ -1116,6 +1122,7 @@ export default function OrdersTable({
                                                 <span className={styles.expanded_empty} title="برای مشاهده جزئیات روی ردیف کلیک کنید">—</span>
                                             ) : (
                                                 <>
+                                                    {!needsReceiptApproval && <span className={styles.expanded_empty}>—</span>}
                                                     {needsReceiptApproval && (
                                                         <AdminButton
                                                             variant="edit"
@@ -1129,16 +1136,6 @@ export default function OrdersTable({
                                                         </AdminButton>
                                                     )}
 
-                                                    <AdminButton
-                                                        variant="default"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setStatusModal(order);
-                                                        }}
-                                                        title="تغییر وضعیت سفارش"
-                                                    >
-                                                        وضعیت
-                                                    </AdminButton>
                                                 </>
                                             )}
                                         </div>
@@ -1152,6 +1149,7 @@ export default function OrdersTable({
                                         order={order}
                                         colSpan={COL_SPAN}
                                         onOpenReceipt={(ord) => setReceiptModal(ord)}
+                                        onOpenStatus={(ord) => setStatusModal(ord)}
                                         onAttemptSummary={(summary) => handleOrderUpdate(order.id, { attemptSummary: summary })}
                                     />
                                 )}

@@ -12,10 +12,9 @@
 
 import { useEffect, useState } from 'react';
 import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
-import { canShowReceipt, getFinancialStatusConfig } from '@/lib/admin/orderTracking';
+import { canShowReceipt } from '@/lib/admin/orderTracking';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import PhysicalDeliveryControl from './PhysicalDeliveryControl';
-import AdminBadge from '../Shared/AdminBadge';
 import AdminButton from '../Shared/AdminButton';
 import styles from './OrdersTable.module.scss';
 
@@ -56,29 +55,47 @@ function ResultBadge({ result }) {
     );
 }
 
+const TIMELINE_VISIBLE = 2;
+
+/** آخرین رویدادها همیشه دیده می‌شوند؛ قدیمی‌ترها پشت دکمهٔ «نمایش بیشتر» می‌مانند */
 function Timeline({ events }) {
+    const [showAll, setShowAll] = useState(false);
+    const hiddenCount = Math.max(0, events.length - TIMELINE_VISIBLE);
+    const visible = showAll ? events : events.slice(hiddenCount);
     return (
-        <ol className={styles.timeline} aria-label="خط زمانی تلاش‌های خرید">
-            {events.map((ev, i) => (
-                <li key={`${ev.kind}-${i}`} className={`${styles.timeline__item} ${styles[`timeline__item--${ev.kind}`] || ''}`}>
-                    <div className={styles.timeline__head}>
-                        <strong>{ev.title}</strong>
-                        <ResultBadge result={ev.result} />
-                        <span className={styles.timeline__time}>{formatTime(ev.at)}</span>
-                    </div>
-                    {ev.details?.length > 0 && (
-                        <ul className={styles.timeline__details}>
-                            {ev.details.map((d) => (
-                                <li key={d.label}>
-                                    <span className={styles.expanded_field__label}>{d.label}: </span>
-                                    <span>{d.isTime ? formatTime(d.value) : (DELIVERY_LABELS[d.value] || d.value)}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </li>
-            ))}
-        </ol>
+        <>
+            <ol className={styles.timeline} aria-label="خط زمانی تلاش‌های خرید">
+                {visible.map((ev, i) => (
+                    <li key={`${ev.kind}-${i}`} className={`${styles.timeline__item} ${styles[`timeline__item--${ev.kind}`] || ''}`}>
+                        <div className={styles.timeline__head}>
+                            <strong>{ev.title}</strong>
+                            <ResultBadge result={ev.result} />
+                            <span className={styles.timeline__time}>{formatTime(ev.at)}</span>
+                        </div>
+                        {ev.details?.length > 0 && (
+                            <ul className={styles.timeline__details}>
+                                {ev.details.map((d) => (
+                                    <li key={d.label}>
+                                        <span className={styles.expanded_field__label}>{d.label}: </span>
+                                        <span>{d.isTime ? formatTime(d.value) : (DELIVERY_LABELS[d.value] || d.value)}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </li>
+                ))}
+            </ol>
+            {hiddenCount > 0 && (
+                <button
+                    type="button"
+                    className={styles.moreLink}
+                    onClick={() => setShowAll((v) => !v)}
+                    aria-expanded={showAll}
+                >
+                    {showAll ? 'کمتر' : `موارد بیشتر (${fa(hiddenCount)})`}
+                </button>
+            )}
+        </>
     );
 }
 
@@ -126,43 +143,33 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
         );
     }
 
-    const { order: detail, buyer, timeline, warnings = [], receipt } = state.data;
-    const fin = getFinancialStatusConfig(detail.financialStatus);
+    const { order: detail, timeline, warnings = [], receipt } = state.data;
     const isPaid = canShowReceipt(detail);
 
     return (
         <>
-            {warnings.map((w) => (
-                <div key={w} className={styles.byemoneyWarningAlert} role="status">
-                    <span>⚠️ {w}</span>
+            {warnings.length > 0 && (
+                <div className={styles.byemoneyWarningAlert} role="status">
+                    <ul style={{ margin: 0, paddingInlineStart: '1rem' }}>
+                        {warnings.map((w) => (<li key={w}>⚠️ {w}</li>))}
+                    </ul>
                 </div>
-            ))}
+            )}
 
             <div className={`${styles.expanded_section} ${styles.expanded_section_online}`}>
-                <h4 className={styles.expanded_section__title}>🧾 وضعیت سفارش (بای‌مانی)</h4>
+                <h4 className={styles.expanded_section__title}>🧾 خلاصهٔ سفارش</h4>
                 <div className={styles.onlinePayDetails}>
-                    <div className={styles.onlinePayStatusRow}>
-                        <span className={styles.expanded_field__label}>وضعیت مالی:</span>
-                        <AdminBadge text={fin.label} variant={fin.variant} />
+                    <div className={styles.expanded_field}>
+                        <span className={styles.expanded_field__label}>شناسهٔ سفارش</span>
+                        <span className={styles.expanded_field__value} dir="ltr">{detail.orderId}</span>
                     </div>
+                    <div className={styles.summaryGrid}>
                     <div className={styles.expanded_field}>
                         <span className={styles.expanded_field__label}>وضعیت تحویل</span>
                         <span className={styles.expanded_field__value}>
                             {DELIVERY_LABELS[detail.deliveryStatus] || detail.deliveryStatus || '—'}
                         </span>
                     </div>
-                    <div className={styles.expanded_field}>
-                        <span className={styles.expanded_field__label}>شناسهٔ سفارش</span>
-                        <span className={styles.expanded_field__value} dir="ltr">{detail.orderId}</span>
-                    </div>
-                    {buyer?.displayName || buyer?.externalUserId ? (
-                        <div className={styles.expanded_field}>
-                            <span className={styles.expanded_field__label}>خریدار</span>
-                            <span className={styles.expanded_field__value}>
-                                {buyer.displayName || buyer.externalUserId}
-                            </span>
-                        </div>
-                    ) : null}
                     {!(isPaid && receipt) && (
                         <div className={styles.expanded_field}>
                             <span className={styles.expanded_field__label}>مبلغ نهایی</span>
@@ -170,7 +177,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                         </div>
                     )}
                     {isPaid && receipt && (
-                        <div data-testid="order-receipt" className={styles.onlinePayDetails}>
+                        <div data-testid="order-receipt" className={styles.summaryContents}>
                             <div className={styles.expanded_field}>
                                 <span className={styles.expanded_field__label}>زمان خرید</span>
                                 <span className={styles.expanded_field__value}>{formatTime(receipt.purchasedAtUtc)}</span>
@@ -201,6 +208,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                             </div>
                         </div>
                     )}
+                    </div>
                     <div>
                         <AdminButton variant="default" onClick={() => setReloadKey((k) => k + 1)} title="دریافت دوباره از سرور">
                             تازه‌سازی
@@ -226,10 +234,17 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                                         {item.quantity > 1 && (
                                             <span className={styles.item_card__meta}>تعداد: {fa(item.quantity)}</span>
                                         )}
-                                        {isProduct && item.physicalDeliveryStatus && (
+                                        {isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus && (
                                             <span className={styles.item_card__meta}>
                                                 ارسال: {getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}
                                             </span>
+                                        )}
+                                        {isProduct && isPaid && item.purchaseId && (
+                                            <PhysicalDeliveryControl
+                                                purchaseId={item.purchaseId}
+                                                cartId={detail.cartId}
+                                                initialStatus={item.physicalDeliveryStatus || null}
+                                            />
                                         )}
                                     </div>
                                     <span className={styles.item_card__price}>{fa(item.finalAmountInNoor ?? item.priceInNoor)} نور</span>
@@ -238,19 +253,12 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                         })}
                     </div>
                 )}
-                {isPaid && detail.items
-                    .filter((i) => String(i.itemType || '').toLowerCase() === 'product' && i.purchaseId)
-                    .map((i) => (
-                        <PhysicalDeliveryControl key={i.purchaseId} purchaseId={i.purchaseId} cartId={detail.cartId} />
-                    ))}
             </div>
 
-            <details className={styles.expanded_section}>
-                <summary className={styles.expanded_section__title} style={{ cursor: 'pointer' }}>
-                    ⏱️ خط زمانی تلاش‌های خرید ({fa(timeline.length)} رویداد)
-                </summary>
+            <div className={styles.expanded_section}>
+                <h4 className={styles.expanded_section__title}>⏱️ خط زمانی تلاش‌های خرید</h4>
                 <Timeline events={timeline} />
-            </details>
+            </div>
         </>
     );
 }

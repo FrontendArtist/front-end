@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ByeMoneyOrderPanel from '../ByeMoneyOrderPanel';
 import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
@@ -41,7 +41,9 @@ describe('ByeMoneyOrderPanel', () => {
 
         expect(await screen.findByText('دورهٔ React')).toBeInTheDocument();
         const list = screen.getByRole('list', { name: 'خط زمانی تلاش‌های خرید' });
-        expect(list).toHaveTextContent('ساخت سبد خرید');
+        expect(list).not.toHaveTextContent('ساخت سبد خرید');
+        fireEvent.click(screen.getByRole('button', { name: /موارد بیشتر/ }));
+        expect(screen.getByRole('list', { name: 'خط زمانی تلاش‌های خرید' })).toHaveTextContent('ساخت سبد خرید');
         expect(list).toHaveTextContent('تلاش درگاه ۱');
         expect(list).toHaveTextContent('لغو توسط کاربر');
         expect(list).toHaveTextContent('نتیجهٔ نهایی سفارش');

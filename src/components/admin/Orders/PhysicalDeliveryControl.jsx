@@ -15,15 +15,16 @@ import { CourseOrderId, getAdminCourseOrderReceipt } from '@/lib/byeMoneyApi';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import AdminButton from '../Shared/AdminButton';
 
-export default function PhysicalDeliveryControl({ purchaseId, cartId }) {
+export default function PhysicalDeliveryControl({ purchaseId, cartId, initialStatus = null }) {
     const { data: session } = useSession();
-    const [status, setStatus] = useState(null);
+    const [status, setStatus] = useState(initialStatus);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState(null);
 
     // وضعیت فعلی از رسید سفارش ادمین خوانده می‌شود (فقط خواندن؛ شکست آن مانع ثبت نیست)
     useEffect(() => {
-        if (!purchaseId || !session?.user?.jwt) return;
+        // اگر وضعیت از جزئیات سفارش آمده، رسید دوباره از مرورگر خوانده نمی‌شود
+        if (initialStatus || !purchaseId || !session?.user?.jwt) return;
         const controller = new AbortController();
         let mounted = true;
         const orderId = cartId ? CourseOrderId.for('Cart', cartId) : CourseOrderId.for('Purchase', purchaseId);
@@ -38,7 +39,7 @@ export default function PhysicalDeliveryControl({ purchaseId, cartId }) {
             mounted = false;
             controller.abort();
         };
-    }, [purchaseId, cartId, session?.user?.jwt]);
+    }, [purchaseId, cartId, initialStatus, session?.user?.jwt]);
 
     const submit = async (next) => {
         setBusy(true);
