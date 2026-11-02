@@ -143,7 +143,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
         );
     }
 
-    const { order: detail, timeline, warnings = [], receipt } = state.data;
+    const { order: detail, timeline, warnings = [], receipt, shippingAddress } = state.data;
     const isPaid = canShowReceipt(detail);
 
     return (
@@ -254,6 +254,17 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                     </div>
                 )}
             </div>
+
+            {shippingAddress && (
+                <div className={styles.expanded_section} data-testid="shipping-address">
+                    <h4 className={styles.expanded_section__title}>📍 آدرس تحویل</h4>
+                    <p>{shippingAddress.recipientName} — {shippingAddress.recipientPhone}</p>
+                    <p>
+                        {[shippingAddress.province, shippingAddress.city, shippingAddress.fullAddress].filter(Boolean).join('، ')}
+                        {shippingAddress.postalCode ? ` — کد پستی: ${shippingAddress.postalCode}` : ''}
+                    </p>
+                </div>
+            )}
 
             <div className={styles.expanded_section}>
                 <h4 className={styles.expanded_section__title}>⏱️ خط زمانی تلاش‌های خرید</h4>

@@ -53,6 +53,23 @@ describe('ByeMoneyOrderPanel', () => {
         await waitFor(() => expect(onSummary).toHaveBeenCalledWith(expect.objectContaining({ label: 'لغو توسط کاربر' })));
     });
 
+    test('آدرس تحویل فقط وقتی هست نمایش داده می‌شود', async () => {
+        fetchOrderTracking.mockResolvedValue(payload({
+            shippingAddress: { recipientName: 'علی رضایی', recipientPhone: '09120000000', province: 'قم', city: 'قم', fullAddress: 'خیابان ۱', postalCode: '12345' },
+        }));
+        const { unmount } = render(<ByeMoneyOrderPanel order={ORDER} />);
+        const box = await screen.findByTestId('shipping-address');
+        expect(box).toHaveTextContent('علی رضایی');
+        expect(box).toHaveTextContent('قم، قم، خیابان ۱');
+        expect(box).toHaveTextContent('کد پستی: 12345');
+        unmount();
+
+        fetchOrderTracking.mockResolvedValue(payload());
+        render(<ByeMoneyOrderPanel order={ORDER} />);
+        await screen.findByText('دورهٔ React');
+        expect(screen.queryByTestId('shipping-address')).not.toBeInTheDocument();
+    });
+
     test('سقوط به حالت بدون استرپی: هشدار + وضعیت بای‌مانی، بدون شکستن پنل', async () => {
         fetchOrderTracking.mockResolvedValue(payload({
             warnings: ['رکورد تلاش‌های درگاه از استرپی در دسترس نیست؛ فقط وضعیت ثبت‌شده در بای‌مانی نمایش داده می‌شود.'],

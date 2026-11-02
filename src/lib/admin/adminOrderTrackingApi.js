@@ -59,6 +59,39 @@ export async function fetchGatewayAttempts(topUpRequestIds) {
     }
 }
 
+export const ADDRESS_UNAVAILABLE_WARNING =
+    'آدرس تحویل از استرپی در دسترس نیست؛ وضعیت و رسید سفارش از بای‌مانی نمایش داده می‌شود.';
+
+export const ADDRESS_FORBIDDEN_WARNING =
+    'آدرس تحویل: استرپی با ۴۰۳ پاسخ داد؛ STRAPI_API_TOKEN باید full-access باشد یا مجوز action «byemoney-cart.address» را داشته باشد.';
+
+const ADDRESS_FIELDS = ['recipientName', 'recipientPhone', 'province', 'city', 'postalCode', 'fullAddress'];
+
+/**
+ * نسخهٔ ثابت آدرس رزرو (I09-PH) را از استرپی می‌خواند؛ فقط‌خواندنی و فقط فیلدهای نمایشی.
+ * @returns {Promise<{ address: object|null, status: 'ok'|'not_found'|'forbidden'|'error'|'no_token' }>}
+ */
+export async function fetchCartAddress(cartId) {
+    const token = process.env.STRAPI_API_TOKEN;
+    if (!token) return { address: null, status: 'no_token' };
+    try {
+        const res = await fetch(`${STRAPI_API_URL}/api/byemoney-carts/${encodeURIComponent(cartId)}/address`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+        });
+        if (res.status === 404) return { address: null, status: 'not_found' };
+        if (res.status === 403) return { address: null, status: 'forbidden' };
+        if (!res.ok) return { address: null, status: 'error' };
+        const snapshot = (await res.json())?.addressSnapshot;
+        if (!snapshot || typeof snapshot !== 'object') return { address: null, status: 'not_found' };
+        const address = {};
+        ADDRESS_FIELDS.forEach((f) => { address[f] = snapshot[f] ?? null; });
+        return { address, status: 'ok' };
+    } catch {
+        return { address: null, status: 'error' };
+    }
+}
+
 function sanitizeItem(i) {
     return {
         purchaseId: i.purchaseId ?? null,
@@ -121,6 +154,16 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
     else if (attempts === null) warnings.push(STRAPI_UNAVAILABLE_WARNING);
     if (receipt && !receipt.success) warnings.push('رسید سفارش در دسترس نیست.');
 
+    // آدرس فقط برای سفارش دارای کالا و با cartId خوانده می‌شود؛ شکستش مانع بقیه نیست
+    const hasProduct = (order.items || []).some((i) => String(i?.itemType || '').toLowerCase() === 'product');
+    let shippingAddress = null;
+    if (hasProduct && order.cartId) {
+        const { address, status: addressStatus } = await fetchCartAddress(order.cartId);
+        shippingAddress = address;
+        if (addressStatus === 'forbidden') warnings.push(ADDRESS_FORBIDDEN_WARNING);
+        else if (addressStatus !== 'ok' && addressStatus !== 'not_found') warnings.push(ADDRESS_UNAVAILABLE_WARNING);
+    }
+
     const timeline = buildTimeline({ order, topUps, attempts, now });
 
     return {
@@ -148,6 +191,7 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
             attemptsAvailable: attempts !== null,
             attemptsStatus,
             receipt: receipt?.success ? sanitizeReceipt(receipt.data) : null,
+            shippingAddress,
             warnings,
         },
     };
