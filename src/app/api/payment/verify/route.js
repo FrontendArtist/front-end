@@ -343,6 +343,20 @@ async function handlePaymentVerification(params, request) {
     };
 
     const updateSuccess = await updateOrderInStrapi(orderDocId, orderUpdatePayload, order.id);
+
+    // بک‌اند ممکن است نوشتن paid را برای سفارش لغوشده نپذیرد و آن را به بررسی دستی ببرد؛
+    // در این حالت نتیجهٔ ذخیره‌شده ملاک است و دسترسی/کوپن/موفقیت نمایش داده نمی‌شود.
+    if (updateSuccess && typeof updateSuccess === 'object' && !isOrderPaid(updateSuccess)) {
+        console.warn(`[SEP Callback] Order ${orderDocId} was not saved as paid by backend (late payment on canceled order).`);
+        return redirectToResult({
+            status: 'financial_review',
+            orderId: orderDocId,
+            refNum: refNum,
+            traceNo: finalTraceNo,
+            message: 'پرداخت شما از بانک تأیید شد، اما این سفارش پیش‌تر لغو شده بود و در صف بررسی مالی قرار گرفت. نتیجه (تأیید یا بازگشت وجه) پس از بررسی اعلام می‌شود.',
+        }, request);
+    }
+
     if (!updateSuccess) {
         console.error(`[SEP Callback] Critical: Failed to update order status for order ${orderDocId}`);
     } else {
@@ -418,7 +432,8 @@ async function updateOrderInStrapi(documentId, data, numericId = null) {
 
             if (res.ok) {
                 console.log(`[updateOrderInStrapi] Successfully updated order ${id}.`);
-                return true;
+                const body = await res.json?.().catch(() => null);
+                return body?.data || true;
             }
 
             const errText = await res.text().catch(() => '');
