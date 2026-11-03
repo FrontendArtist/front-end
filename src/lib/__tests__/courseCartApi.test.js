@@ -146,3 +146,35 @@ test('مسدودبودن حافظه مرورگر مانع ساخت و تثبیت
         await expect(prepareCourseCart({ cartId: id, externalCourseIds: ['storage-denied'], couponCode: 'COUPON' }, 'jwt')).resolves.toEqual(expect.objectContaining({ status: 'Ready' }));
     } finally { get.mockRestore(); set.mockRestore(); remove.mockRestore(); }
 });
+
+test('سبد Paid دارای کالای فیزیکی دوباره استفاده نمی‌شود اما سبد Paid دوره محافظت می‌ماند', async () => {
+    global.fetch = jest.fn();
+    const product = [{ externalId: 'p1', type: 'product', quantity: 1 }];
+    const productId = getCourseCartId(9, [], null, 0, product);
+    fetch.mockResolvedValueOnce(response({ cartId: productId, status: 'Paid' }));
+    await getCourseCart(productId, 'jwt');
+    expect(getExistingCourseCartId(9, [], null, 0, product)).toBeNull();
+    expect(getCourseCartId(9, [], null, 0, product)).not.toBe(productId);
+
+    const courseId = getCourseCartId(9, ['c1'], null);
+    fetch.mockResolvedValueOnce(response({ cartId: courseId, status: 'Paid' }));
+    await getCourseCart(courseId, 'jwt');
+    expect(getCourseCartId(9, ['c1'], null)).toBe(courseId);
+});
+
+test('خرید دوبارهٔ کالا پس از سبد Paid قبلی، سبد Paid قبلی را برنمی‌گرداند', async () => {
+    const product = [{ externalId: 'p2', type: 'product', quantity: 1 }];
+    const firstId = getCourseCartId(11, [], null, 0, product);
+    global.fetch = jest.fn().mockResolvedValueOnce(response(ready(firstId)));
+    await prepareCourseCart({ cartId: firstId, items: product, externalCourseIds: [], couponCode: null }, 'jwt');
+    fetch.mockResolvedValueOnce(response({ cartId: firstId, status: 'Paid' }));
+    await getCourseCart(firstId, 'jwt');
+
+    const secondId = getCourseCartId(11, [], null, 0, product);
+    expect(secondId).not.toBe(firstId);
+    fetch.mockResolvedValueOnce(response({ cartId: firstId, status: 'Paid' }));
+    fetch.mockResolvedValueOnce(response({ cartId: secondId, status: 'AwaitingTopUp' }));
+    const data = await prepareCourseCart({ cartId: secondId, items: product, externalCourseIds: [], couponCode: null }, 'jwt');
+    expect(data.cartId).toBe(secondId);
+    expect(fetch.mock.calls.at(-1)[0]).toMatch(/\/checkout$/);
+});

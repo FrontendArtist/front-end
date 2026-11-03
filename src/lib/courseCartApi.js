@@ -51,6 +51,13 @@ function buildCartIdentityItems(items, externalCourseIds) {
     }));
 }
 
+// سبد Paid فقط برای دوره/فصل محافظت می‌شود (جلوگیری از خرید تکراری)؛
+// کالای فیزیکی را می‌شود دوباره خرید، پس سبد Paid آن نباید دوباره استفاده شود.
+function protectedStatuses(canonicalItems) {
+    const hasProduct = canonicalItems.some(item => item.type === 'product');
+    return hasProduct ? ['AwaitingTopUp', 'UnderReview'] : ['AwaitingTopUp', 'Paid', 'UnderReview'];
+}
+
 // شناسه برای تکرار همان درخواست ثابت می‌ماند؛ مبلغ تنها از سرور خوانده می‌شود.
 export function getExistingCourseCartId(userId, externalCourseIds, couponCode, revision = 0, items = null) {
     const canonicalItems = buildCartIdentityItems(items, externalCourseIds);
@@ -59,16 +66,17 @@ export function getExistingCourseCartId(userId, externalCourseIds, couponCode, r
     if (!id) return null;
     const status = readStored('course-cart-status:' + id);
     const sameRevision = (readStored('course-cart-revision:' + id) || '0') === String(revision);
-    return ['AwaitingTopUp', 'Paid', 'UnderReview'].includes(status) || (sameRevision && status === 'Ready') ? id : null;
+    return protectedStatuses(canonicalItems).includes(status) || (sameRevision && status === 'Ready') ? id : null;
 }
 
 export function getCourseCartId(userId, externalCourseIds, couponCode, revision = 0, items = null) {
     const canonicalItems = buildCartIdentityItems(items, externalCourseIds);
     const key = `course-cart:${JSON.stringify([userId, canonicalItems, couponCode || null])}`;
     const previous = readStored(key);
-    const protectedCart = previous && ['AwaitingTopUp', 'Paid', 'UnderReview'].includes(readStored('course-cart-status:' + previous));
+    const protectedCart = previous && protectedStatuses(canonicalItems).includes(readStored('course-cart-status:' + previous));
     const sameRevision = !previous || (readStored('course-cart-revision:' + previous) || '0') === String(revision);
-    if (previous && (protectedCart || sameRevision)) {
+    const paidProductCart = previous && !protectedCart && readStored('course-cart-status:' + previous) === 'Paid';
+    if (previous && !paidProductCart && (protectedCart || sameRevision)) {
         cartKeys.set(previous, key);
         cartOwners.set(previous, String(userId));
         return previous;
@@ -109,7 +117,10 @@ export function prepareCourseCart(body, jwt, signal) {
                     const closed = await requestCart(`/${encodeURIComponent(previous.cartId)}/cancel`, jwt, { method: 'POST' });
                     if (previous.key) cartKeys.set(previous.cartId, previous.key);
                     rememberCart({ cartId: previous.cartId }, closed);
-                    if (['AwaitingTopUp', 'Paid'].includes(closed.status) && previous.key) {
+                    // سبد Paid دارای کالا قابل استفادهٔ دوباره نیست؛ خرید تازه باید سبد جدید بسازد.
+                    const keepClosedCart = closed.status === 'AwaitingTopUp'
+                        || (closed.status === 'Paid' && !canonicalItems.some(item => item.type === 'product'));
+                    if (keepClosedCart && previous.key) {
                         writeStored(previous.key, previous.cartId);
                         if (previous.key === cartKeys.get(body.cartId)) return closed;
                     }
