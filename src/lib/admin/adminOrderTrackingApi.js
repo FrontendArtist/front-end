@@ -115,11 +115,16 @@ function sanitizeReceipt(r) {
         cartSummary: r.cartSummary ?? null,
         items: (r.items || []).map((i) => ({
             purchaseId: i.purchaseId ?? null,
+            externalId: i.externalId ?? null,
             title: i.title ?? null,
+            itemType: i.itemType ?? null,
             quantity: i.quantity ?? 1,
+            unitPriceInNoor: i.unitPriceInNoor ?? null,
             baseAmountInNoor: i.baseAmountInNoor ?? null,
             discountAmountInNoor: i.discountAmountInNoor ?? null,
             finalAmountInNoor: i.finalAmountInNoor ?? null,
+            deliveryStatus: i.deliveryStatus ?? null,
+            physicalDeliveryStatus: i.physicalDeliveryStatus ?? null,
         })),
     };
 }

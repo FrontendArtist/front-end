@@ -241,6 +241,8 @@ export default function OrderDetailPage() {
 
     const items = Array.isArray(order.items) ? order.items : [];
     const isByeMoney = order.source === 'byemoney';
+    const hasProduct = items.some((i) => i.type === 'product' || String(i.itemType || '').toLowerCase() === 'product');
+    const hasCourse = items.some((i) => i.type === 'course' || i.type === 'chapter' || ['course', 'coursechapter'].includes(String(i.itemType || '').toLowerCase()));
     const isCardToCard = !isByeMoney && order.paymentMethod === 'card_to_card';
     const isOnline = !isByeMoney && order.paymentMethod === 'online';
     const isPaid = isByeMoney
@@ -284,7 +286,7 @@ export default function OrderDetailPage() {
             <div className={styles.orderHeader}>
                 <div className={styles.orderHeaderTop}>
                     <h1 className={styles.orderTitle}>
-                        {isByeMoney ? (isPaid ? 'جزئیات و رسید سفارش دوره' : 'جزئیات سفارش دوره') : 'جزئیات سفارش'}
+                        {isByeMoney ? (isPaid ? (hasCourse && !hasProduct ? 'جزئیات و رسید سفارش دوره' : 'جزئیات و رسید سفارش') : (hasCourse && !hasProduct ? 'جزئیات سفارش دوره' : 'جزئیات سفارش')) : 'جزئیات سفارش'}
                     </h1>
                 </div>
                 <div className={styles.orderMeta}>
@@ -337,10 +339,10 @@ export default function OrderDetailPage() {
                                         order.deliveryStatus === 'PartiallyDelivered' ? styles.badgeWarning :
                                         order.deliveryStatus === 'Pending' ? styles.badgeInfo : styles.badgeDefault
                                     }`}>
-                                        {order.deliveryStatus === 'Delivered' ? 'دسترسی فعال شد ✓' :
+                                        {order.deliveryStatus === 'Delivered' ? (hasProduct && !hasCourse ? 'تحویل داده شد ✓' : 'دسترسی فعال شد ✓') :
                                          order.deliveryStatus === 'PartiallyDelivered' ? 'دسترسی بخشی از اقلام فعال شد' :
-                                         order.deliveryStatus === 'Pending' ? 'در انتظار فعال‌سازی' :
-                                         order.deliveryStatus === 'NotStarted' ? 'فعال‌سازی آغاز نشده' :
+                                         order.deliveryStatus === 'Pending' ? (hasProduct && !hasCourse ? 'در انتظار تحویل' : 'در انتظار فعال‌سازی') :
+                                         order.deliveryStatus === 'NotStarted' ? (hasProduct && !hasCourse ? 'تحویل آغاز نشده' : 'فعال‌سازی آغاز نشده') :
                                          (order.deliveryStatus || 'وضعیت دسترسی نامشخص')}
                                     </span>
                                 </>
@@ -379,7 +381,7 @@ export default function OrderDetailPage() {
                                 <line x1="2" y1="10" x2="22" y2="10" />
                             </svg>
                             <h2 className={styles.onlineReceiptTitle}>
-                                {isPaid ? 'مشخصات مالی و رسید دوره (سامانه بای‌مانی)' : 'خلاصه مبالغ سفارش (سامانه بای‌مانی)'}
+                                {isPaid ? (hasCourse && !hasProduct ? 'مشخصات مالی و رسید دوره (سامانه بای‌مانی)' : 'مشخصات مالی و رسید سفارش (سامانه بای‌مانی)') : 'خلاصه مبالغ سفارش (سامانه بای‌مانی)'}
                             </h2>
                         </div>
                         <span className={isPaid ? styles.receiptStatusSuccess : (isFailedOrCanceled ? styles.receiptStatusFailed : styles.receiptStatusPending)}>
@@ -853,6 +855,20 @@ export default function OrderDetailPage() {
                                         <span className={styles.receiptFieldValue}>{formatPrice(it.finalAmountInNoor)} نور</span>
                                     </div>
                                 ))}
+                                {orderReceipt.data.cartSummary?.originalTotalInNoor != null && (
+                                    <div className={styles.receiptField}>
+                                        <span className={styles.receiptFieldLabel}>جمع کل اقلام (پایه)</span>
+                                        <span className={styles.receiptFieldValue}>{formatPrice(orderReceipt.data.cartSummary.originalTotalInNoor)} نور</span>
+                                    </div>
+                                )}
+                                {((orderReceipt.data.cartSummary?.itemDiscountInNoor || 0) + (orderReceipt.data.cartSummary?.couponDiscountInNoor || 0)) > 0 && (
+                                    <div className={styles.receiptField}>
+                                        <span className={styles.receiptFieldLabel}>مجموع تخفیف</span>
+                                        <span className={styles.receiptFieldValue}>
+                                            {formatPrice((orderReceipt.data.cartSummary.itemDiscountInNoor || 0) + (orderReceipt.data.cartSummary.couponDiscountInNoor || 0))} نور
+                                        </span>
+                                    </div>
+                                )}
                                 {orderReceipt.data.couponCode && (
                                     <div className={styles.receiptField}>
                                         <span className={styles.receiptFieldLabel}>کد تخفیف</span>

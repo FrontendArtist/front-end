@@ -1687,7 +1687,13 @@ async function fetchCourseOrderReceipt({ jwt, orderId, signal, scope }) {
       return { success: false, unauthorized: true, error: 'نشست کاربری منقضی شده است.' };
     }
     if (res.status === 403) {
-      return { success: false, forbidden: true, error: 'دسترسی به رسید سفارش مجاز نیست.' };
+      return {
+        success: false,
+        forbidden: true,
+        error: scope === 'admin'
+          ? 'دسترسی به رسید سفارش نیازمند مجوز Purchases.View است.'
+          : 'دسترسی به رسید سفارش مجاز نیست.',
+      };
     }
     let errorMsg = `خطای دریافت رسید سفارش (${res.status})`;
     try {

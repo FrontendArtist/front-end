@@ -194,6 +194,14 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                                         <span className={styles.expanded_field__label}>جمع قیمت اقلام</span>
                                         <span className={styles.expanded_field__value}>{fa(receipt.cartSummary.originalTotalInNoor)} نور</span>
                                     </div>
+                                    {((receipt.cartSummary.itemDiscountInNoor || 0) + (receipt.cartSummary.couponDiscountInNoor || 0)) > 0 && (
+                                        <div className={styles.expanded_field}>
+                                            <span className={styles.expanded_field__label}>مجموع تخفیف</span>
+                                            <span className={styles.expanded_field__value}>
+                                                {fa((receipt.cartSummary.itemDiscountInNoor || 0) + (receipt.cartSummary.couponDiscountInNoor || 0))} نور
+                                            </span>
+                                        </div>
+                                    )}
                                     {receipt.cartSummary.shippingAmountInNoor > 0 && (
                                         <div className={styles.expanded_field}>
                                             <span className={styles.expanded_field__label}>هزینهٔ ارسال</span>
@@ -232,7 +240,10 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                                         <span className={styles.item_card__title}>{item.title || (isProduct ? 'کالا' : 'دوره آموزشی')}</span>
                                         <span className={styles.item_card__type}>{isProduct ? 'کالای فیزیکی' : 'دوره آموزشی'}</span>
                                         {item.quantity > 1 && (
-                                            <span className={styles.item_card__meta}>تعداد: {fa(item.quantity)}</span>
+                                            <span className={styles.item_card__meta}>
+                                                تعداد: {fa(item.quantity)}
+                                                {item.priceInNoor != null && ` (قیمت واحد: ${fa(item.priceInNoor)} نور)`}
+                                            </span>
                                         )}
                                         {isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus && (
                                             <span className={styles.item_card__meta}>
@@ -244,6 +255,23 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                                                 purchaseId={item.purchaseId}
                                                 cartId={detail.cartId}
                                                 initialStatus={item.physicalDeliveryStatus || null}
+                                                onStatusChange={(newStatus) => {
+                                                    setState((prev) => {
+                                                        if (!prev?.data?.order?.items) return prev;
+                                                        const updated = prev.data.order.items.map((it) =>
+                                                            it.purchaseId === item.purchaseId
+                                                                ? { ...it, physicalDeliveryStatus: newStatus }
+                                                                : it
+                                                        );
+                                                        return {
+                                                            ...prev,
+                                                            data: {
+                                                                ...prev.data,
+                                                                order: { ...prev.data.order, items: updated },
+                                                            },
+                                                        };
+                                                    });
+                                                }}
                                             />
                                         )}
                                     </div>

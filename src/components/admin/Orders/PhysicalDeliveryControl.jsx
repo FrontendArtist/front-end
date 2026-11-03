@@ -15,11 +15,17 @@ import { CourseOrderId, getAdminCourseOrderReceipt } from '@/lib/byeMoneyApi';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import AdminButton from '../Shared/AdminButton';
 
-export default function PhysicalDeliveryControl({ purchaseId, cartId, initialStatus = null }) {
+export default function PhysicalDeliveryControl({ purchaseId, cartId, initialStatus = null, onStatusChange = null }) {
     const { data: session } = useSession();
     const [status, setStatus] = useState(initialStatus);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState(null);
+
+    useEffect(() => {
+        if (initialStatus) {
+            setStatus(initialStatus);
+        }
+    }, [initialStatus]);
 
     // وضعیت فعلی از رسید سفارش ادمین خوانده می‌شود (فقط خواندن؛ شکست آن مانع ثبت نیست)
     useEffect(() => {
@@ -54,6 +60,9 @@ export default function PhysicalDeliveryControl({ purchaseId, cartId, initialSta
             if (res.ok && json?.data?.deliveryStatus) {
                 setStatus(json.data.deliveryStatus);
                 setMessage({ ok: true, text: `وضعیت ارسال: ${getPhysicalDeliveryLabel(json.data.deliveryStatus)}` });
+                if (typeof onStatusChange === 'function') {
+                    onStatusChange(json.data.deliveryStatus);
+                }
             } else {
                 setMessage({ ok: false, text: json?.error || 'ثبت وضعیت ارسال ناموفق بود.' });
             }
