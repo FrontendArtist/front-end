@@ -66,7 +66,7 @@ describe('PhysicalDeliveryControl', () => {
     await screen.findByText('در حال آماده‌سازی');
     global.fetch.mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ success: false, error: 'پرش از آماده‌سازی به تحویل مجاز نیست.' }) });
     fireEvent.click(screen.getByText('ثبت تحویل‌شده'));
-    expect(await screen.findByRole('alert')).toHaveTextContent('پرش از آماده‌سازی به تحویل مجاز نیست.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('انتقال از «در حال آماده‌سازی» به «تحویل‌شده» مجاز نیست.');
     expect(getAdminCourseOrderReceipt).toHaveBeenCalledWith(expect.objectContaining({ orderId: `purchase:${PID}` }));
   });
 

@@ -17,11 +17,11 @@ npm run dev
 
 ## راهنمای اسناد
 
-- [نقشهٔ مشترک اسناد سه پروژه](../../ByeMoney/docs/README.md)
+- [نقشهٔ مشترک اسناد سه پروژه](../ByeMoney/docs/README.md)
 - [راهنمای فنی فرانت](docs/Technical-Guide.md): ساختار و نقطهٔ شروع هر بخش
-- [قرارداد اتصال](../../ByeMoney/docs/integration/ByeMoney-Strapi-Integration.md): API، DTO و هویت
-- [تصمیم‌های بای‌مانی](../../ByeMoney/docs/architecture/ByeMoney-Decisions.md): فقط برای بخش‌های مرتبط با اتصال
-- [کارهای باز اتصال](../../ByeMoney/TASKS.md) و [باگ‌های سایت فعلی](../../ByeMoney/HOTFIXES.md)
-- [شواهد آزمون مشترک](../../ByeMoney/docs/testing/Verification-Summary.md)
+- [قرارداد اتصال](../ByeMoney/docs/integration/ByeMoney-Strapi-Integration.md): API، DTO و هویت
+- [تصمیم‌های بای‌مانی](../ByeMoney/docs/architecture/ByeMoney-Decisions.md): فقط برای بخش‌های مرتبط با اتصال
+- [کارهای باز اتصال](../ByeMoney/TASKS.md) و [باگ‌های سایت فعلی](../ByeMoney/HOTFIXES.md)
+- [شواهد آزمون مشترک](../ByeMoney/docs/testing/Verification-Summary.md)
 
 تاریخچهٔ تغییرات جزئی در Git قابل بازیابی است؛ CHANGELOG قدیمی فهرست کار فعال یا قرارداد امروز نیست. راهنمای فنی، تصمیم و فهرست تسک برای شاخه‌ها تکثیر نشوند. `CLAUDE.md` فقط ورودی ابزار برای ارجاع به `AGENTS.md` است و سند موازی محسوب نمی‌شود.

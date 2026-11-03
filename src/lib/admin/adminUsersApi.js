@@ -91,6 +91,8 @@ export async function getUsers(jwt, { page, pageSize, start, limit = 20 } = {}) 
                             }
                         }
                     });
+                } else {
+                    console.warn('[getUsers] ByeMoney batch-balances failed:', batchRes.status, batchRes.error);
                 }
             } catch (err) {
                 console.warn('[getUsers] ByeMoney balances enrichment failed, keeping default light:', err.message || err);

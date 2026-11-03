@@ -109,7 +109,14 @@ const OrderStatusBadge = ({ status, paymentStatus, paymentMethod }) => {
 
 // ─── کامپوننت اصلی ────────────────────────────────────────────────────────────
 export default function OrderDetailPage() {
-    const { id } = useParams();   // id = Strapi documentId یا ByeMoney orderId
+    const { id: rawId } = useParams();   // id = Strapi documentId یا ByeMoney orderId
+    // شناسهٔ بای‌مانی (cart:guid) در URL به‌صورت cart%3Aguid می‌آید و باید دیکد شود
+    let id = rawId;
+    try {
+        id = rawId ? decodeURIComponent(rawId) : rawId;
+    } catch {
+        id = rawId;
+    }
     const router = useRouter();
     const { data: session } = useSession();
 

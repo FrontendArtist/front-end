@@ -28,17 +28,20 @@ const ROLE_OPTIONS = [
 import styles from './Users.module.scss';
 
 function LightCell({ user }) {
-    const lightFormatted = new Intl.NumberFormat('fa-IR').format(user.light ?? 0);
-    const hasGift =
+    const isGiftKnown =
         user.giftBalance !== undefined &&
         user.giftBalance !== null &&
-        !Number.isNaN(Number(user.giftBalance)) &&
-        Number(user.giftBalance) > 0;
+        !Number.isNaN(Number(user.giftBalance));
+    const giftAmount = isGiftKnown ? Number(user.giftBalance) : 0;
+    const hasGift = giftAmount > 0;
 
-    const giftFormatted =
-        user.giftBalance !== undefined && user.giftBalance !== null && !Number.isNaN(Number(user.giftBalance))
-            ? new Intl.NumberFormat('fa-IR').format(user.giftBalance)
-            : '۰';
+    // user.light موجودی کل (عادی + هدیه) از بای‌مانی است؛ سهم عادی = کل − هدیه
+    const regularAmount = Math.max(Number(user.light ?? 0) - giftAmount, 0);
+    const lightFormatted = new Intl.NumberFormat('fa-IR').format(regularAmount);
+
+    const giftFormatted = isGiftKnown
+        ? new Intl.NumberFormat('fa-IR').format(giftAmount)
+        : '۰';
 
     return (
         <div className={styles.lightCellWrap}>

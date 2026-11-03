@@ -59,12 +59,20 @@ export default function PhysicalDeliveryControl({ purchaseId, cartId, initialSta
             const json = await res.json().catch(() => ({}));
             if (res.ok && json?.data?.deliveryStatus) {
                 setStatus(json.data.deliveryStatus);
-                setMessage({ ok: true, text: `وضعیت ارسال: ${getPhysicalDeliveryLabel(json.data.deliveryStatus)}` });
+                setMessage({ ok: true, text: 'ثبت شد.' });
                 if (typeof onStatusChange === 'function') {
                     onStatusChange(json.data.deliveryStatus);
                 }
             } else {
-                setMessage({ ok: false, text: json?.error || 'ثبت وضعیت ارسال ناموفق بود.' });
+                const from = getPhysicalDeliveryLabel(status);
+                const to = getPhysicalDeliveryLabel(next);
+                const invalidTransition = res.status === 400 && from && to;
+                setMessage({
+                    ok: false,
+                    text: invalidTransition
+                        ? `انتقال از «${from}» به «${to}» مجاز نیست.`
+                        : json?.error || 'ثبت وضعیت ارسال ناموفق بود.',
+                });
             }
         } catch {
             setMessage({ ok: false, text: 'خطا در ارتباط با سرور.' });
@@ -95,7 +103,7 @@ export default function PhysicalDeliveryControl({ purchaseId, cartId, initialSta
                 </div>
             )}
             {message && (
-                <p role={message.ok ? 'status' : 'alert'} style={{ marginTop: '6px', color: message.ok ? '#34d399' : '#f87171' }}>
+                <p role={message.ok ? 'status' : 'alert'} style={{ marginTop: '6px', fontSize: '0.8rem', color: message.ok ? '#34d399' : '#f87171' }}>
                     {message.text}
                 </p>
             )}
