@@ -22,6 +22,8 @@ import OrderReceiptUpload from '@/components/profile/OrderReceiptUpload';
 import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import { getCoursePurchaseReceipt, getMyCourseOrderReceipt } from '@/lib/byeMoneyApi';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
+import { isGuid } from '@/lib/physicalCancel';
+import PhysicalCancelFlow from '@/components/physicalCancel/PhysicalCancelFlow';
 import styles from './orderDetail.module.scss';
 
 // ─── فرمت‌کننده‌ها و ابزارها ──────────────────────────────────────────
@@ -248,6 +250,11 @@ export default function OrderDetailPage() {
 
     const items = Array.isArray(order.items) ? order.items : [];
     const isByeMoney = order.source === 'byemoney';
+    // لغو فقط برای کل بخش فیزیکی و تا پیش از ارسال؛ سرور تصمیم نهایی را می‌گیرد
+    const physicalItems = items.filter((i) => i.type === 'product');
+    const physicalCartId = String(order.cartId || order.orderId || '').replace(/^cart:/, '');
+    const canCancelPhysical = isByeMoney && order.financialStatus === 'Paid' && isGuid(physicalCartId)
+        && physicalItems.length > 0 && physicalItems.every((i) => i.physicalDeliveryStatus === 'Preparing');
     const hasProduct = items.some((i) => i.type === 'product' || String(i.itemType || '').toLowerCase() === 'product');
     const hasCourse = items.some((i) => i.type === 'course' || i.type === 'chapter' || ['course', 'coursechapter'].includes(String(i.itemType || '').toLowerCase()));
     const isCardToCard = !isByeMoney && order.paymentMethod === 'card_to_card';
@@ -650,14 +657,21 @@ export default function OrderDetailPage() {
                             </span>
                         </div>
                     )}
-                    {isByeMoney && isPaid && (
-                        <button
-                            type="button"
-                            className={styles.viewReceiptBtn}
-                            onClick={() => handleViewOrderReceipt(order.orderId || order.documentId || id)}
-                        >
-                            مشاهده رسید کل سفارش
-                        </button>
+                    {(canCancelPhysical || (isByeMoney && isPaid)) && (
+                        <div className={styles.orderActionsRow}>
+                            {canCancelPhysical && (
+                                <PhysicalCancelFlow mode="user" targetId={physicalCartId} />
+                            )}
+                            {isByeMoney && isPaid && (
+                                <button
+                                    type="button"
+                                    className={styles.viewReceiptBtn}
+                                    onClick={() => handleViewOrderReceipt(order.orderId || order.documentId || id)}
+                                >
+                                    مشاهده رسید کل سفارش
+                                </button>
+                            )}
+                        </div>
                     )}
                 </div>
             )}

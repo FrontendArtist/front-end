@@ -152,4 +152,19 @@ describe('صفحهٔ جزئیات سفارش – کالای فیزیکی (I11-O)
     fireEvent.click(await screen.findByText('مشاهده رسید کل سفارش'));
     await waitFor(() => expect(screen.getByText('خرید پیدا نشد.')).toBeInTheDocument());
   });
+
+  it.each([
+    ['Preparing', true],
+    ['Shipped', false],
+    ['Delivered', false],
+  ])('دکمهٔ لغو بخش فیزیکی برای وضعیت %s: %s', async (status, visible) => {
+    mockOrder({ ...baseOrder, items: [productItem(status)] });
+    render(<OrderDetailPage />);
+    await screen.findByText('کتاب تفسیر');
+    const btn = screen.queryByText('لغو بخش فیزیکی سفارش');
+    if (visible) expect(btn).toBeInTheDocument();
+    else expect(btn).not.toBeInTheDocument();
+    // کاربر هیچ‌وقت لغو قلم/تعداد نمی‌بیند
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+  });
 });

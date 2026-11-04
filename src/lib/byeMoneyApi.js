@@ -2048,3 +2048,44 @@ export async function sendNoorGiftWithByeMoney({
     };
   }
 }
+
+/**
+ * فراخوانی مسیرهای لغو کالای فیزیکی (I09-PC). فقط از routeهای سروری Next.js صدا زده شود.
+ * خطا با `code` ساختاریافتهٔ بای‌مانی برگردانده می‌شود تا لایهٔ بالاتر روی متن تطبیق ندهد.
+ */
+async function callPhysicalCancel({ jwt, path, method, body, signal }) {
+  if (!jwt) return { success: false, status: 401, error: 'نشست نامعتبر است.' };
+  try {
+    const res = await fetch(`${BYEMONEY_API_URL}${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${jwt}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: 'no-store',
+      signal,
+    });
+    if (res.ok) return { success: true, data: await res.json() };
+    let errJson = null;
+    try { errJson = await res.json(); } catch {}
+    return {
+      success: false,
+      status: res.status,
+      code: typeof errJson?.code === 'string' ? errJson.code : undefined,
+      error: typeof errJson?.error === 'string' ? errJson.error : undefined,
+    };
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    return { success: false, status: 502, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+  }
+}
+
+export const getMyPhysicalCancelPreview = ({ jwt, cartId, signal }) =>
+  callPhysicalCancel({ jwt, method: 'GET', path: `/api/me/physical-orders/${encodeURIComponent(cartId)}/cancellation-preview`, signal });
+
+export const cancelMyPhysicalOrder = ({ jwt, cartId, operationId, reason, signal }) =>
+  callPhysicalCancel({ jwt, method: 'POST', path: `/api/me/physical-orders/${encodeURIComponent(cartId)}/cancel`, body: { operationId, reason }, signal });
+
+export const getAdminPhysicalCancelPreview = ({ jwt, purchaseId, quantity, signal }) =>
+  callPhysicalCancel({ jwt, method: 'GET', path: `/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/cancellation-preview?quantity=${encodeURIComponent(quantity)}`, signal });
+
+export const cancelAdminPhysicalPurchase = ({ jwt, purchaseId, operationId, quantity, reason, signal }) =>
+  callPhysicalCancel({ jwt, method: 'POST', path: `/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/cancel`, body: { operationId, quantity, reason }, signal });

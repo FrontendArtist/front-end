@@ -15,6 +15,7 @@ import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
 import { canShowReceipt } from '@/lib/admin/orderTracking';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import PhysicalDeliveryControl from './PhysicalDeliveryControl';
+import PhysicalCancelFlow from '@/components/physicalCancel/PhysicalCancelFlow';
 import AdminButton from '../Shared/AdminButton';
 import styles from './OrdersTable.module.scss';
 
@@ -273,6 +274,9 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                                                     });
                                                 }}
                                             />
+                                        )}
+                                        {isProduct && isPaid && item.purchaseId && (
+                                            <PhysicalCancelFlow mode="admin" targetId={item.purchaseId} maxQuantity={item.quantity || 1} />
                                         )}
                                     </div>
                                     <span className={styles.item_card__price}>{fa(item.finalAmountInNoor ?? item.priceInNoor)} نور</span>

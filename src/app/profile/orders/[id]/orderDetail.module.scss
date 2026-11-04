@@ -943,6 +943,21 @@
     }
 }
 
+.orderActionsRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+    padding-top: 14px;
+    border-top: 1px dashed fade(var(--color-primary), 15%);
+
+    @include respond(sm) {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
 .topUpsSection {
     background: var(--gradient-card-horizontal-rtl);
     border: 1px solid fade(var(--color-primary), 20%);
