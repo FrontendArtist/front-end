@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useAccountOrders } from '@/hooks/useAccountOrders';
 import { fetchProfileCartData } from '@/lib/client/profileClientApi';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
-import { resolvePurchasedCourseHref, resolvePurchasedCourseTitle } from '@/lib/courseTitleUtils';
+import { findPurchasedCourseInCatalog, resolvePurchasedCourseHref, resolvePurchasedCourseTitle } from '@/lib/courseTitleUtils';
 import { isChapterOrderItem } from '@/lib/courseAccessUtils';
 import CardSkeletonHorizontal from '@/components/ui/Skeleton/CardSkeletonHorizontal';
 import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
@@ -121,7 +121,12 @@ export default function PurchasesList() {
             item.__component === 'order.course-order-item' ||
             item.type === 'course' ||
             item.type === 'course_chapter';
-        const identity = item.integrationId || item.chapterId || item.slug ||
+        // اقلام بای‌مانی اسلاگ ندارند و ردیف‌های پروفایل دارند؛ برای یکی‌شدن کلید یک دوره،
+        // هویت دوره (نه فصل) از documentId کاتالوگ گرفته می‌شود.
+        const catalogDocumentId = isCourseItem && !isChapter
+            ? findPurchasedCourseInCatalog(item, courseCatalog)?.documentId
+            : null;
+        const identity = catalogDocumentId || item.integrationId || item.chapterId || item.slug ||
             item.courseSlug || item.courseDocumentId || item.documentId || item.courseId || item.id;
 
         // ردیف‌های خلاصهٔ سفارش بای‌مانی که نه هویت دارند و نه عنوان، قابل نمایش یا لینک‌دهی نیستند.

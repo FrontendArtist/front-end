@@ -13,6 +13,23 @@ import {
 const NOW = new Date('2026-11-01T12:00:00Z');
 const TOPUP = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
+describe('isPhysicalFullyCancelled', () => {
+    const { isPhysicalFullyCancelled } = require('../orderTracking');
+    const product = (quantity, cancelledQuantity) => ({ itemType: 'Product', quantity, cancelledQuantity });
+
+    test('همهٔ کالاها کامل لغو شده‌اند', () => {
+        expect(isPhysicalFullyCancelled([product(2, 2), product(1, 1), { itemType: 'Course' }])).toBe(true);
+    });
+    test('لغو جزئی یا بدون لغو false است', () => {
+        expect(isPhysicalFullyCancelled([product(2, 1)])).toBe(false);
+        expect(isPhysicalFullyCancelled([product(1, 1), product(1, 0)])).toBe(false);
+    });
+    test('سفارش بدون کالا false است', () => {
+        expect(isPhysicalFullyCancelled([{ itemType: 'Course' }])).toBe(false);
+        expect(isPhysicalFullyCancelled(undefined)).toBe(false);
+    });
+});
+
 describe('نگاشت financialStatus واقعی', () => {
     const row = (financialStatus) => mapByeMoneyOrderRow({
         orderId: 'cart:11111111-1111-1111-1111-111111111111',
@@ -50,6 +67,7 @@ describe('نگاشت financialStatus واقعی', () => {
         expect(m.isByeMoney).toBe(true);
         expect(m.itemCount).toBe(2);
         expect(m.totalPrice).toBe(50);
+        expect(m.refundedAmountInNoor).toBeNull();
         expect(m.paymentMethod).toBe('noor');
     });
 

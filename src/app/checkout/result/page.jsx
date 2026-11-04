@@ -65,12 +65,18 @@ function CheckoutResultContent() {
         (status === 'success' && ['incomplete', 'paymentPending', 'unknown'].includes(checkout.phase))
     );
     const isVerifiedCourse = isCoursePurchase && checkout.phase === 'completed';
+    // سفارش دارای کالای فیزیکی (فقط‌کالا یا مختلط) متن کلی و بی‌طرف می‌گیرد؛ فقط‌دوره متن دوره‌محور فعلی را نگه می‌دارد
+    const isPhysicalEntry = (entry) => entry?.itemType === 'Product' || entry?.type === 'product';
+    const hasPhysicalItem = isCoursePurchase && (
+        (checkout.courses || []).some(isPhysicalEntry) ||
+        (Array.isArray(checkout.receipts) ? checkout.receipts : []).some(isPhysicalEntry)
+    );
     const reviewNoticeText = 'در حال بررسی؛ در صورت کسر وجه، نور به کیف پول اضافه می‌شود؛ می‌توانید حدود ۳۰ دقیقه صبر کنید یا دوباره پرداخت کنید.';
-    const courseMessage = checkout.phase === 'checking' ? 'در حال بررسی نتیجه خرید و فعال‌سازی دوره‌ها…'
-        : checkout.phase === 'completed' ? 'خرید با موفقیت انجام شد و دسترسی همه دوره‌ها برای شما فعال است.'
+    const courseMessage = checkout.phase === 'checking' ? (hasPhysicalItem ? 'در حال بررسی نتیجه خرید…' : 'در حال بررسی نتیجه خرید و فعال‌سازی دوره‌ها…')
+        : checkout.phase === 'completed' ? (hasPhysicalItem ? 'خرید شما با موفقیت ثبت شد.' : 'خرید با موفقیت انجام شد و دسترسی همه دوره‌ها برای شما فعال است.')
         : checkout.phase === 'accessMissing' ? 'سابقه خرید در بای‌مانی وجود دارد، اما دسترسی دوره در حساب شما فعال نیست. برای بررسی و بازیابی دسترسی با پشتیبانی تماس بگیرید.'
         : checkout.phase === 'incomplete' ? (checkout.paid ? 'پرداخت یا شارژ ثبت شده است، اما خرید دوره تکمیل نشده است. وضعیت را از کیف پول و پشتیبانی پیگیری کنید.' : 'خرید دوره تکمیل نشده است. وضعیت را از حساب کاربری پیگیری کنید.')
-        : checkout.phase === 'activating' ? 'پرداخت ثبت شد؛ در حال فعال‌سازی دوره هستیم.'
+        : checkout.phase === 'activating' ? (hasPhysicalItem ? 'پرداخت ثبت شد؛ در حال تکمیل سفارش هستیم.' : 'پرداخت ثبت شد؛ در حال فعال‌سازی دوره هستیم.')
         : isReviewOrPending ? reviewNoticeText
         : checkout.phase === 'paymentFailed' ? (status === 'cancel' ? 'پرداخت لغو شد؛ دوره خریداری نشده و سبد شما حفظ شده است.' : 'پرداخت تأیید نشد؛ دوره خریداری نشده و سبد شما حفظ شده است.')
         : 'در حال حاضر تأیید وضعیت خرید ممکن نیست. وضعیت را از کیف پول و حساب کاربری پیگیری کنید.';
@@ -328,12 +334,12 @@ function CheckoutResultContent() {
     };
 
     const paymentStatusBadgeClass = isSuccess ? styles.successBadge : isReviewOrPending ? styles.pendingBadge : isPending ? styles.pendingBadge : styles.failedBadge;
-    const paymentStatusText = isCoursePurchase ? (isVerifiedCourse ? 'خرید و فعال‌سازی تأیید شد'
+    const paymentStatusText = isCoursePurchase ? (isVerifiedCourse ? (hasPhysicalItem ? 'خرید تأیید شد' : 'خرید و فعال‌سازی تأیید شد')
         : isFinancialReview ? 'در انتظار بررسی مالی'
         : isPendingSync ? 'در حال همگام‌سازی پرداخت'
         : isReviewOrPending ? 'در انتظار بررسی مالی'
         : checkout.phase === 'paymentFailed' ? (isCancel ? 'لغو شده توسط کاربر' : 'پرداخت تأیید نشد')
-        : checkout.phase === 'activating' ? 'پرداخت ثبت شد؛ در حال فعال‌سازی'
+        : checkout.phase === 'activating' ? (hasPhysicalItem ? 'پرداخت ثبت شد؛ در حال تکمیل سفارش' : 'پرداخت ثبت شد؛ در حال فعال‌سازی')
         : checkout.paid ? 'پرداخت ثبت شد؛ خرید در حال پیگیری' : 'در حال پیگیری')
         : isPendingTopUp ? (status === 'success' ? 'پرداخت موفق؛ در حال فعال‌سازی' : 'در حال پیگیری')
         : isFinancialReview ? 'در انتظار بررسی مالی'
@@ -371,7 +377,7 @@ function CheckoutResultContent() {
                     {/* عنوان نتیجه */}
                     <h1 className={styles.title}>
                         {isCoursePurchase
-                            ? isVerifiedCourse ? 'خرید موفق؛ دوره‌ها فعال شدند' : isFinancialReview ? 'پرداخت در صف بررسی مالی قرار گرفت' : isPendingSync ? 'پرداخت در حال بررسی و همگام‌سازی است' : isReviewOrPending ? 'پرداخت در صف بررسی مالی قرار گرفت' : isCheckingPurchase ? 'در حال بررسی و فعال‌سازی دوره‌ها…' : 'وضعیت خرید دوره'
+                            ? isVerifiedCourse ? (hasPhysicalItem ? 'خرید شما با موفقیت ثبت شد' : 'خرید موفق؛ دوره‌ها فعال شدند') : isFinancialReview ? 'پرداخت در صف بررسی مالی قرار گرفت' : isPendingSync ? 'پرداخت در حال بررسی و همگام‌سازی است' : isReviewOrPending ? 'پرداخت در صف بررسی مالی قرار گرفت' : isCheckingPurchase ? (hasPhysicalItem ? 'در حال بررسی نتیجه خرید…' : 'در حال بررسی و فعال‌سازی دوره‌ها…') : (hasPhysicalItem ? 'وضعیت خرید' : 'وضعیت خرید دوره')
                             : isFinancialReview ? 'پرداخت در صف بررسی مالی قرار گرفت'
                             : isPendingSync ? 'پرداخت در حال بررسی و همگام‌سازی است'
                             : isReviewOrPending ? 'پرداخت در صف بررسی مالی قرار گرفت'
@@ -405,7 +411,7 @@ function CheckoutResultContent() {
                     {isPending && (
                         <div className={styles.pendingProgress}>
                             <div className={styles.pendingProgressBar} />
-                            <span>در حال استعلام پرداخت و فعال‌سازی دوره…</span>
+                            <span>{hasPhysicalItem ? 'در حال استعلام پرداخت…' : 'در حال استعلام پرداخت و فعال‌سازی دوره…'}</span>
                         </div>
                     )}
 
@@ -664,10 +670,10 @@ function CheckoutResultContent() {
                     {/* راهنمای کاربر */}
                     {isCoursePurchase ? (
                         <div className={styles.notice}>
-                            {isVerifiedCourse ? 'دوره را از بخش «دوره‌های من» مشاهده کنید.'
+                            {isVerifiedCourse ? (hasPhysicalItem ? 'وضعیت سفارش را از بخش «سفارش‌های من» پیگیری کنید.' : 'دوره را از بخش «دوره‌های من» مشاهده کنید.')
                                 : isReviewOrPending ? reviewNoticeText
                                 : checkout.phase === 'paymentFailed' ? 'سبد شما حفظ شده است؛ می‌توانید از سبد خرید دوباره اقدام کنید.'
-                                : isCheckingPurchase ? 'پرداخت شما با موفقیت ثبت شد؛ در حال فعال‌سازی دسترسی دوره هستیم. لطفاً چند لحظه شکیبا باشید…'
+                                : isCheckingPurchase ? (hasPhysicalItem ? 'پرداخت شما با موفقیت ثبت شد؛ در حال تکمیل سفارش هستیم. لطفاً چند لحظه شکیبا باشید…' : 'پرداخت شما با موفقیت ثبت شد؛ در حال فعال‌سازی دسترسی دوره هستیم. لطفاً چند لحظه شکیبا باشید…')
                                 : 'برای پیگیری نتیجه، کیف پول و دوره‌های من را بررسی کنید.'}
                         </div>
                     ) : isPendingTopUp ? (

@@ -104,6 +104,7 @@ function sanitizeItem(i) {
         financialStatus: i.financialStatus ?? null,
         deliveryStatus: i.deliveryStatus ?? null,
         physicalDeliveryStatus: i.physicalDeliveryStatus ?? null,
+        cancelledQuantity: Number(i.cancelledQuantity) || 0,
     };
 }
 
@@ -125,6 +126,7 @@ function sanitizeReceipt(r) {
             finalAmountInNoor: i.finalAmountInNoor ?? null,
             deliveryStatus: i.deliveryStatus ?? null,
             physicalDeliveryStatus: i.physicalDeliveryStatus ?? null,
+            cancelledQuantity: Number(i.cancelledQuantity) || 0,
         })),
     };
 }

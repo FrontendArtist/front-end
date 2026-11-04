@@ -51,6 +51,12 @@
     opacity: 0.9;
 }
 
+.qtyMax {
+    font-size: var(--font-xs);
+    opacity: 0.65;
+    white-space: nowrap;
+}
+
 .qtyInput {
     width: 60px;
     height: 30px;

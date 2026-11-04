@@ -68,6 +68,7 @@ export default function OrdersList({ limit }) {
             Preparing: { label: 'در حال آماده‌سازی', cls: styles.orders__badgeDefault },
             Failed: { label: 'پرداخت ناموفق ⚠️', cls: styles.orders__badgeDanger },
             Expired: { label: 'منقضی شده', cls: styles.orders__badgeDanger },
+            Cancelled: { label: 'لغو شده', cls: styles.orders__badgeDanger },
             RequiresReview: { label: 'نیازمند بررسی مالی', cls: styles.orders__badgePaymentFailed },
         };
 
@@ -76,6 +77,7 @@ export default function OrdersList({ limit }) {
             PartiallyDelivered: { label: 'تحویل بخشی از اقلام', cls: styles.orders__badgeWarning },
             Pending: { label: 'در انتظار تحویل', cls: styles.orders__badgeDefault },
             NotStarted: { label: 'تحویل آغاز نشده', cls: styles.orders__badgeDefault },
+            Cancelled: { label: 'لغو شده', cls: styles.orders__badgeDanger },
         };
 
         const finEntry = financialMap[finStatus] ?? { label: finStatus || 'وضعیت مالی نامشخص', cls: styles.orders__badgeDefault };

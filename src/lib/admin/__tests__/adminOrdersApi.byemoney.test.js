@@ -163,6 +163,27 @@ describe('getOrdersStats – شمارندهٔ تب‌ها و درآمد', () => 
         expect(stats.totalRevenue).toBe(0);
     });
 
+    test('درآمد بای‌مانی خالص است: برگشتی لغو کالا کم می‌شود و منفی نمی‌شود', async () => {
+        getAdminCourseOrders.mockImplementation(async ({ page, pageSize, financialStatus }) => {
+            const data = {
+                Paid: [
+                    { ...row(1, 'Paid', 30), refundedAmountInNoor: 12 },
+                    { ...row(2, 'Paid', 20), refundedAmountInNoor: 25 },
+                    row(3, 'Paid', 10),
+                ],
+            }[financialStatus] || [];
+            return { success: true, data: { items: data.slice((page - 1) * pageSize, page * pageSize), totalCount: data.length } };
+        });
+        adminFetch.mockImplementation(async (endpoint) => {
+            if (endpoint.includes('settlements')) return { meta: { pagination: { total: 0 } } };
+            return { data: [], meta: { pagination: { pageCount: 1, total: 0 } } };
+        });
+
+        const stats = await getOrdersStats('jwt');
+        // (۳۰−۱۲) + max(0، ۲۰−۲۵) + ۱۰
+        expect(stats.byemoney.revenueNoor).toBe(28);
+    });
+
     test('اگر بای‌مانی در دسترس نباشد آمار استرپی مثل قبل برمی‌گردد', async () => {
         getAdminCourseOrders.mockResolvedValue({ success: false, forbidden: true, error: 'x' });
         adminFetch.mockResolvedValue({ data: [], meta: { pagination: { pageCount: 1, total: 0 } } });

@@ -179,7 +179,7 @@ function CopyButton({ text, label = 'کپی' }) {
 /**
  * OrderExpandedRow – ردیف کشویی با جزئیات کامل و غیرتکراری سفارش
  */
-function OrderExpandedRow({ order, colSpan, onOpenReceipt, onOpenStatus, onAttemptSummary }) {
+function OrderExpandedRow({ order, colSpan, onOpenReceipt, onOpenStatus, onAttemptSummary, onPhysicalCancelled }) {
     const isPaid = isPaidOrder(order);
     const isCanceled = isCanceledOrder(order);
     const isByeMoney = Boolean(order.isByeMoney || order.source === 'byemoney');
@@ -203,7 +203,7 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt, onOpenStatus, onAttem
                 <div className={styles.expanded_content}>
 
                     {isByeMoney ? (
-                        <ByeMoneyOrderPanel order={order} onSummary={onAttemptSummary} />
+                        <ByeMoneyOrderPanel order={order} onSummary={onAttemptSummary} onPhysicalCancelled={onPhysicalCancelled} />
                     ) : (
                         <>
                             <div className={styles.expanded_section} style={{ gridColumn: '1 / -1', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1093,7 +1093,9 @@ export default function OrdersTable({
 
                                     {/* وضعیت ارسال */}
                                     <td>
-                                        {isByeMoneyRow && isPaidOrder(order) && DELIVERY_COLUMN_CONFIG[order.deliveryStatus] ? (
+                                        {isByeMoneyRow && isPaidOrder(order) && (order.physicalCancelled || order.deliveryStatus === 'Cancelled') ? (
+                                            <AdminBadge text="کالا لغو شده" variant="error" />
+                                        ) : isByeMoneyRow && isPaidOrder(order) && DELIVERY_COLUMN_CONFIG[order.deliveryStatus] ? (
                                             <AdminBadge
                                                 text={DELIVERY_COLUMN_CONFIG[order.deliveryStatus].label}
                                                 variant={DELIVERY_COLUMN_CONFIG[order.deliveryStatus].variant}
@@ -1106,7 +1108,20 @@ export default function OrdersTable({
                                     {/* مبلغ */}
                                     <td className={styles.table__amount}>
                                         {order.isByeMoney || order.source === 'byemoney' ? (
-                                            <span title="پرداخت با نور">{formatPriceRaw(order.totalPrice)} نور</span>
+                                            Number(order.refundedAmountInNoor) > 0 ? (
+                                                <span title="مبلغ پرداخت‌شده و برگشتی لغو کالا">
+                                                    <span className={styles.amount__struck}>{formatPriceRaw(order.totalPrice)}</span>
+                                                    {' '}
+                                                    <span data-testid="order-net-amount">
+                                                        {formatPriceRaw(Math.max(0, Number(order.totalPrice || 0) - Number(order.refundedAmountInNoor)))} نور
+                                                    </span>
+                                                    <span className={styles.amount__refund} data-testid="order-refunded-amount">
+                                                        برگشتی: {formatPriceRaw(order.refundedAmountInNoor)} نور
+                                                    </span>
+                                                </span>
+                                            ) : (
+                                                <span title="پرداخت با نور">{formatPriceRaw(order.totalPrice)} نور</span>
+                                            )
                                         ) : (
                                             formatPrice(order.totalPrice)
                                         )}
@@ -1153,6 +1168,7 @@ export default function OrdersTable({
                                         onOpenReceipt={(ord) => setReceiptModal(ord)}
                                         onOpenStatus={(ord) => setStatusModal(ord)}
                                         onAttemptSummary={(summary) => handleOrderUpdate(order.id, { attemptSummary: summary })}
+                                        onPhysicalCancelled={(cancelled) => handleOrderUpdate(order.id, { physicalCancelled: cancelled })}
                                     />
                                 )}
                             </Fragment>

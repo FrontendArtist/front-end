@@ -86,7 +86,7 @@ describe('PhysicalCancelFlow', () => {
       .mockResolvedValueOnce(fail(409, 'PHYSICAL_CANCEL_MANUAL_REVIEW'));
     render(<PhysicalCancelFlow mode="admin" targetId={ID} maxQuantity={5} />);
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '2' } });
-    await openAndType('لغو قلم / تعداد');
+    await openAndType('لغو تعداد انتخابی');
     expect(fetch.mock.calls[0][0]).toBe(`/api/admin/physical-purchases/${ID}/cancellation-preview?quantity=2`);
     fireEvent.click(screen.getByText('تأیید و لغو'));
     const err = await screen.findByTestId('cancel-error');

@@ -12,7 +12,7 @@
 
 import { useEffect, useState } from 'react';
 import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
-import { canShowReceipt } from '@/lib/admin/orderTracking';
+import { canShowReceipt, isPhysicalFullyCancelled } from '@/lib/admin/orderTracking';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import PhysicalDeliveryControl from './PhysicalDeliveryControl';
 import PhysicalCancelFlow from '@/components/physicalCancel/PhysicalCancelFlow';
@@ -101,9 +101,10 @@ function Timeline({ events }) {
 }
 
 /**
- * @param {{ order: object, onSummary?: (summary: object|null) => void }} props
+ * @param {{ order: object, onSummary?: (summary: object|null) => void, onPhysicalCancelled?: (cancelled: boolean) => void }} props
+ * onPhysicalCancelled پس از هر بارگذاری (از جمله بعد از لغو) وضعیت «لغو کامل کالا» را به گرید خبر می‌دهد.
  */
-export default function ByeMoneyOrderPanel({ order, onSummary }) {
+export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancelled }) {
     const [state, setState] = useState({ loading: true, error: null, data: null });
     const [reloadKey, setReloadKey] = useState(0);
     const orderId = order.orderId || order.id;
@@ -117,6 +118,10 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                 if (!mounted) return;
                 setState({ loading: false, error: null, data });
                 if (onSummary) onSummary(data.attemptSummary || null);
+                if (onPhysicalCancelled) {
+                    const cancelled = isPhysicalFullyCancelled(data.items);
+                    if (cancelled !== Boolean(order.physicalCancelled)) onPhysicalCancelled(cancelled);
+                }
             })
             .catch((err) => {
                 if (!mounted || err.name === 'AbortError') return;
@@ -235,12 +240,20 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                         {detail.items.map((item, idx) => {
                             const isProduct = String(item.itemType || '').toLowerCase() === 'product';
                             const isShippedOrDelivered = item.physicalDeliveryStatus === 'Shipped' || item.physicalDeliveryStatus === 'Delivered';
-                            const cancelDisabledReason = item.physicalDeliveryStatus === 'Delivered'
-                                ? 'امکان لغو پس از تحویل کالا وجود ندارد'
-                                : 'امکان لغو پس از ارسال مرسوله وجود ندارد';
+                            const totalQty = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
+                            const cancelledQty = Math.min(Number(item.cancelledQuantity) || 0, totalQty);
+                            const remainingQty = totalQty - cancelledQty;
+                            const fullyCancelled = isProduct && cancelledQty >= totalQty;
+                            const partlyCancelled = isProduct && cancelledQty > 0 && !fullyCancelled;
+                            const canCancel = isProduct && isPaid && Boolean(item.purchaseId)
+                                && !fullyCancelled && !isShippedOrDelivered;
 
                             return (
-                                <div key={`${item.externalCourseId || item.purchaseId || idx}`} className={styles.item_card}>
+                                <div
+                                    key={`${item.externalCourseId || item.purchaseId || idx}`}
+                                    className={`${styles.item_card} ${fullyCancelled ? styles['item_card--cancelled'] : ''}`}
+                                    data-cancelled={fullyCancelled ? 'full' : partlyCancelled ? 'partial' : undefined}
+                                >
                                     <div className={styles.item_card__main}>
                                         <span className={styles.item_card__icon}>{isProduct ? '📦' : '📚'}</span>
                                         <div className={styles.item_card__info}>
@@ -252,16 +265,28 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                                                     {item.priceInNoor != null && ` (قیمت واحد: ${fa(item.priceInNoor)} نور)`}
                                                 </span>
                                             )}
+                                            {fullyCancelled && (
+                                                <span className={`${styles.item_card__badge} ${styles['item_card__badge--danger']}`} data-testid="item-cancelled-badge">
+                                                    ⛔ این کالا لغو شده است{totalQty > 1 ? ` (${fa(cancelledQty)} از ${fa(totalQty)} عدد)` : ''}
+                                                </span>
+                                            )}
+                                            {partlyCancelled && (
+                                                <span className={`${styles.item_card__badge} ${styles['item_card__badge--warning']}`} data-testid="item-cancelled-badge">
+                                                    ⚠️ {fa(cancelledQty)} از {fa(totalQty)} عدد لغو شده — {fa(remainingQty)} عدد باقی‌مانده
+                                                </span>
+                                            )}
                                             {isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus && (
                                                 <span className={styles.item_card__meta}>
                                                     ارسال: {getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}
                                                 </span>
                                             )}
                                         </div>
-                                        <span className={styles.item_card__price}>{fa(item.finalAmountInNoor ?? item.priceInNoor)} نور</span>
+                                        <span className={`${styles.item_card__price} ${fullyCancelled ? styles['item_card__price--struck'] : ''}`}>
+                                            {fa(item.finalAmountInNoor ?? item.priceInNoor)} نور
+                                        </span>
                                     </div>
 
-                                    {isProduct && isPaid && item.purchaseId && (
+                                    {isProduct && isPaid && item.purchaseId && !fullyCancelled && (
                                         <div className={styles.item_card__actions}>
                                             <PhysicalDeliveryControl
                                                 purchaseId={item.purchaseId}
@@ -285,14 +310,14 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                                                     });
                                                 }}
                                             />
-                                            <PhysicalCancelFlow
-                                                mode="admin"
-                                                targetId={item.purchaseId}
-                                                maxQuantity={item.quantity || 1}
-                                                disabled={isShippedOrDelivered}
-                                                disabledReason={cancelDisabledReason}
-                                                onCancelled={() => setReloadKey((k) => k + 1)}
-                                            />
+                                            {canCancel && (
+                                                <PhysicalCancelFlow
+                                                    mode="admin"
+                                                    targetId={item.purchaseId}
+                                                    maxQuantity={remainingQty}
+                                                    onCancelled={() => setReloadKey((k) => k + 1)}
+                                                />
+                                            )}
                                         </div>
                                     )}
                                 </div>

@@ -23,7 +23,14 @@ async function countByeMoneyOrders(jwt, financialStatus) {
     return res.data?.totalCount ?? 0;
 }
 
-/** جمع مبلغ (نور) فقط سفارش‌های Paid؛ اگر هر صفحه‌ای خطا بدهد null تا عدد ناقص نمایش داده نشود */
+/** مبلغ خالص یک سفارش بای‌مانی: پرداخت‌شده منهای برگشتی لغو کالا (هیچ‌وقت منفی نمی‌شود) */
+function netByeMoneyAmount(order) {
+    const paid = Number(order.finalAmountInNoor || 0);
+    const refunded = Number(order.refundedAmountInNoor || 0);
+    return Math.max(0, paid - refunded);
+}
+
+/** جمع مبلغ خالص (نور) فقط سفارش‌های Paid؛ اگر هر صفحه‌ای خطا بدهد null تا عدد ناقص نمایش داده نشود */
 async function sumPaidByeMoneyRevenue(jwt, paidCount) {
     if (!paidCount) return 0;
     const pageCount = Math.min(Math.ceil(paidCount / BYEMONEY_REVENUE_PAGE_SIZE), BYEMONEY_REVENUE_MAX_PAGES);
@@ -42,7 +49,7 @@ async function sumPaidByeMoneyRevenue(jwt, paidCount) {
         (sum, p) =>
             sum +
             (p.data?.items || []).reduce(
-                (s, o) => (o.financialStatus === 'Paid' ? s + Number(o.finalAmountInNoor || 0) : s),
+                (s, o) => (o.financialStatus === 'Paid' ? s + netByeMoneyAmount(o) : s),
                 0
             ),
         0

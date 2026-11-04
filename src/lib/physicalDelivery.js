@@ -6,6 +6,7 @@ export const PHYSICAL_DELIVERY_LABELS = {
     Preparing: 'در حال آماده‌سازی',
     Shipped: 'ارسال‌شده',
     Delivered: 'تحویل‌شده',
+    Cancelled: 'لغو شده',
 };
 
 export function getPhysicalDeliveryLabel(status) {

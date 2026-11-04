@@ -68,6 +68,8 @@ export function mapByeMoneyOrderRow(row) {
         paymentStatus: cfg.paymentStatus,
         orderStatus: cfg.orderStatus,
         totalPrice: row.finalAmountInNoor,
+        // مبلغ برگشت‌خورده از لغو کالا؛ تا زمانی که بک‌اند فیلد را نفرستد null می‌ماند (نه صفر)
+        refundedAmountInNoor: row.refundedAmountInNoor ?? null,
         financialStatus: row.financialStatus,
         deliveryStatus: row.deliveryStatus,
         itemCount: row.itemCount ?? 0,
@@ -90,6 +92,19 @@ export function mapByeMoneyOrderRow(row) {
         settlement: null,
         settledAt: null,
     };
+}
+
+/**
+ * آیا همهٔ اقلام فیزیکی سفارش کامل لغو شده‌اند؟ (سفارش بدون کالا false است)
+ * ورودی: اقلام جزئیات سفارش با itemType، quantity و cancelledQuantity.
+ */
+export function isPhysicalFullyCancelled(items) {
+    const products = (items || []).filter((i) => String(i?.itemType || '').toLowerCase() === 'product');
+    if (products.length === 0) return false;
+    return products.every((i) => {
+        const qty = Number(i.quantity) > 0 ? Number(i.quantity) : 1;
+        return (Number(i.cancelledQuantity) || 0) >= qty;
+    });
 }
 
 /** رسید فقط برای سفارش Paid وجود دارد؛ برای بقیه ۴۰۴ است */

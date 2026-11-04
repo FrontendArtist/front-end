@@ -103,7 +103,7 @@ export default function PhysicalCancelFlow({
     };
 
     const reasonOk = reason.trim().length >= 1 && reason.length <= CANCEL_REASON_MAX;
-    const qtyOk = !isAdmin || (Number.isInteger(quantity) && quantity >= 1 && quantity <= maxQuantity);
+    const qtyOk = !isAdmin || (maxQuantity >= 1 && Number.isInteger(quantity) && quantity >= 1 && quantity <= maxQuantity);
     const warnings = Array.isArray(preview?.warnings) ? preview.warnings : [];
 
     const containerClass = `${styles.container} ${isAdmin ? styles.containerAdmin : styles.containerUser} ${className}`.trim();
@@ -112,18 +112,21 @@ export default function PhysicalCancelFlow({
         <div data-testid="physical-cancel" className={containerClass}>
             {isAdmin && !result && (
                 <div className={styles.adminControls}>
-                    <label className={styles.qtyLabel}>
-                        <span>تعداد لغو:</span>
-                        <input
-                            type="number"
-                            min={1}
-                            max={maxQuantity}
-                            value={quantity}
-                            disabled={open || disabled}
-                            onChange={(e) => setQuantity(Number(e.target.value))}
-                            className={styles.qtyInput}
-                        />
-                    </label>
+                    {maxQuantity > 1 && (
+                        <label className={styles.qtyLabel}>
+                            <span>تعداد لغو:</span>
+                            <input
+                                type="number"
+                                min={1}
+                                max={maxQuantity}
+                                value={quantity}
+                                disabled={open || disabled}
+                                onChange={(e) => setQuantity(Number(e.target.value))}
+                                className={styles.qtyInput}
+                            />
+                            <span className={styles.qtyMax}>از {fa(maxQuantity)} عدد قابل لغو</span>
+                        </label>
+                    )}
                     <button
                         type="button"
                         onClick={openDialog}
@@ -131,7 +134,7 @@ export default function PhysicalCancelFlow({
                         className={styles.triggerBtnAdmin}
                         title={disabled ? disabledReason : undefined}
                     >
-                        {label || 'لغو قلم / تعداد'}
+                        {label || (maxQuantity > 1 ? 'لغو تعداد انتخابی' : 'لغو این کالا')}
                     </button>
                     {disabled && disabledReason && (
                         <span className={styles.disabledNotice} title={disabledReason}>

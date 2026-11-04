@@ -434,6 +434,41 @@ $transition: 0.2s ease;
         white-space: nowrap;
         direction: ltr;
         flex-shrink: 0;
+
+        &--struck {
+            color: $muted;
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+    }
+
+    &--cancelled {
+        border-color: fade(var(--color-error), 35%);
+        background: fade(var(--color-error), 6%);
+    }
+
+    &__badge {
+        align-self: flex-start;
+        margin-top: 4px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-family: inherit;
+        font-size: var(--font-xs);
+        font-weight: var(--font-weight-medium);
+        line-height: 1.7;
+        border: 1px solid transparent;
+
+        &--danger {
+            color: var(--color-error);
+            background: fade(var(--color-error), 12%);
+            border-color: fade(var(--color-error), 35%);
+        }
+
+        &--warning {
+            color: var(--color-warning-amber);
+            background: fade(var(--color-warning-amber), 12%);
+            border-color: fade(var(--color-warning-amber), 35%);
+        }
     }
 
     &__actions {
@@ -1746,4 +1781,16 @@ $transition: 0.2s ease;
 
 .summaryContents {
     display: contents;
+}
+
+// مبلغ سفارش بای‌مانی پس از لغو کالا: مبلغ اولیه خط‌خورده، مبلغ خالص و برگشتی
+.amount__struck {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.amount__refund {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-error, #c0392b);
 }

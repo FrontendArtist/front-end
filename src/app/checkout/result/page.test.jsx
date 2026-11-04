@@ -531,3 +531,35 @@ test('برای خرید فصلی در صورت ارسال عنوان خام فص
 
     expect(screen.getByText('طرح الهی (فصل 2)')).toBeTruthy();
 });
+
+describe('متن نتیجهٔ خرید بر اساس نوع اقلام سفارش', () => {
+    const cartParams = 'cartId=cart-kind&status=success';
+    const product = { externalCourseId: 'p-1', title: 'کتاب', itemType: 'Product', purchaseStatus: 'Completed' };
+    const course = { externalCourseId: 'c-1', title: 'دوره', itemType: 'Course', purchaseStatus: 'Completed' };
+
+    test('سفارش فقط‌کالا پیام دوره‌ای نمی‌بیند', () => {
+        useSearchParams.mockReturnValue(new URLSearchParams(cartParams));
+        useCourseCheckoutResult.mockReturnValue({ phase: 'completed', paid: true, courses: [product], receipts: [] });
+        render(<CheckoutResultPage />);
+        expect(screen.getByText('خرید شما با موفقیت ثبت شد')).toBeTruthy();
+        expect(screen.queryByText('خرید موفق؛ دوره‌ها فعال شدند')).toBeNull();
+        expect(screen.queryByText('دوره را از بخش «دوره‌های من» مشاهده کنید.')).toBeNull();
+        expect(screen.queryByText(/دسترسی همه دوره‌ها/)).toBeNull();
+    });
+
+    test('سفارش فقط‌دوره متن فعلی را نگه می‌دارد', () => {
+        useSearchParams.mockReturnValue(new URLSearchParams(cartParams));
+        useCourseCheckoutResult.mockReturnValue({ phase: 'completed', paid: true, courses: [course], receipts: [] });
+        render(<CheckoutResultPage />);
+        expect(screen.getByText('خرید موفق؛ دوره‌ها فعال شدند')).toBeTruthy();
+        expect(screen.getByText('دوره را از بخش «دوره‌های من» مشاهده کنید.')).toBeTruthy();
+    });
+
+    test('سفارش مختلط متن کلی می‌گیرد', () => {
+        useSearchParams.mockReturnValue(new URLSearchParams(cartParams));
+        useCourseCheckoutResult.mockReturnValue({ phase: 'completed', paid: true, courses: [course, product], receipts: [] });
+        render(<CheckoutResultPage />);
+        expect(screen.getByText('خرید شما با موفقیت ثبت شد')).toBeTruthy();
+        expect(screen.queryByText('خرید موفق؛ دوره‌ها فعال شدند')).toBeNull();
+    });
+});
