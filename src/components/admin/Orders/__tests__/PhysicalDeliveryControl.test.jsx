@@ -11,9 +11,6 @@ jest.mock('@/lib/byeMoneyApi', () => ({
   CourseOrderId: { for: (s, id) => `${s === 'Cart' ? 'cart' : 'purchase'}:${id}` },
   getAdminCourseOrderReceipt: jest.fn(),
 }));
-jest.mock('../../Shared/AdminButton', () => ({ children, onClick, disabled }) => (
-  <button onClick={onClick} disabled={disabled}>{children}</button>
-));
 
 const PID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const CART = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
@@ -30,13 +27,22 @@ beforeEach(() => {
 });
 
 describe('PhysicalDeliveryControl', () => {
-  it('ارسال‌شده و سپس تحویل‌شده را فقط از route سروری ثبت می‌کند', async () => {
+  it('ارسال‌شده و سپس تحویل‌شده را فقط از طریق دراپ‌داون و route سروری ثبت می‌کند', async () => {
     mockStatus('Preparing');
     render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
     expect(await screen.findByText('در حال آماده‌سازی')).toBeInTheDocument();
 
-    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: { purchaseId: PID, deliveryStatus: 'Shipped' } }) });
-    fireEvent.click(screen.getByText('ثبت ارسال‌شده'));
+    const select = screen.getByTestId('delivery-status-select');
+    // در وضعیت Preparing، گزینه تحویل‌شده غیرفعال است
+    expect(screen.getByRole('option', { name: /تحویل‌شده/ })).toBeDisabled();
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: { purchaseId: PID, deliveryStatus: 'Shipped' } }),
+    });
+
+    fireEvent.change(select, { target: { value: 'Shipped' } });
+
     await waitFor(() => expect(screen.getAllByText('ارسال‌شده').length).toBeGreaterThan(0));
     expect(global.fetch).toHaveBeenCalledWith(
       `/api/admin/physical-purchases/${PID}/delivery-status`,
@@ -44,29 +50,44 @@ describe('PhysicalDeliveryControl', () => {
     );
     // توکن بای‌مانی در درخواست مرورگر نیست
     expect(JSON.stringify(global.fetch.mock.calls[0][1])).not.toContain('admin-jwt');
-    expect(screen.queryByText('ثبت ارسال‌شده')).not.toBeInTheDocument();
 
-    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: { purchaseId: PID, deliveryStatus: 'Delivered' } }) });
-    fireEvent.click(screen.getByText('ثبت تحویل‌شده'));
-    await waitFor(() => expect(screen.queryByText('ثبت تحویل‌شده')).not.toBeInTheDocument());
-    expect(screen.getByText('تحویل‌شده', { selector: 'strong' })).toBeInTheDocument();
+    // در وضعیت Shipped، گزینه بازگشت به Preparing غیرفعال است
+    expect(screen.getByRole('option', { name: /در حال آماده‌سازی/ })).toBeDisabled();
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: { purchaseId: PID, deliveryStatus: 'Delivered' } }),
+    });
+
+    fireEvent.change(select, { target: { value: 'Delivered' } });
+
+    await waitFor(() => expect(screen.getByText('تحویل کالا نهایی شده است.')).toBeInTheDocument());
+    expect(screen.getByText('تحویل‌شده')).toBeInTheDocument();
   });
 
   it('وضعیت فعلی از رسید سفارش ادمین با شناسهٔ cart خوانده می‌شود', async () => {
     mockStatus('Shipped');
     render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
-    await screen.findByText('ارسال‌شده', { selector: 'strong' });
+    await screen.findByText('ارسال‌شده');
     expect(getAdminCourseOrderReceipt).toHaveBeenCalledWith(expect.objectContaining({ orderId: `cart:${CART}` }));
-    expect(screen.queryByText('ثبت ارسال‌شده')).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /در حال آماده‌سازی/ })).toBeDisabled();
   });
 
-  it('پیام دامنهٔ ۴۰۰ به ادمین نشان داده می‌شود', async () => {
+  it('پیام خطای ۴۰۰ به ادمین نشان داده می‌شود', async () => {
     mockStatus('Preparing');
     render(<PhysicalDeliveryControl purchaseId={PID} cartId={null} />);
     await screen.findByText('در حال آماده‌سازی');
-    global.fetch.mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ success: false, error: 'پرش از آماده‌سازی به تحویل مجاز نیست.' }) });
-    fireEvent.click(screen.getByText('ثبت تحویل‌شده'));
-    expect(await screen.findByRole('alert')).toHaveTextContent('انتقال از «در حال آماده‌سازی» به «تحویل‌شده» مجاز نیست.');
+
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ success: false, error: 'پرش از آماده‌سازی به تحویل مجاز نیست.' }),
+    });
+
+    const select = screen.getByTestId('delivery-status-select');
+    fireEvent.change(select, { target: { value: 'Shipped' } });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('انتقال از «در حال آماده‌سازی» به «ارسال‌شده» مجاز نیست.');
     expect(getAdminCourseOrderReceipt).toHaveBeenCalledWith(expect.objectContaining({ orderId: `purchase:${PID}` }));
   });
 
@@ -74,8 +95,16 @@ describe('PhysicalDeliveryControl', () => {
     mockStatus('Preparing');
     render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
     await screen.findByText('در حال آماده‌سازی');
-    global.fetch.mockResolvedValueOnce({ ok: false, status: 403, json: async () => ({ success: false, error: 'ادمین مجوز مدیریت دوره‌ها و کالاها (Courses.Manage) را ندارد.' }) });
-    fireEvent.click(screen.getByText('ثبت ارسال‌شده'));
+
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      json: async () => ({ success: false, error: 'ادمین مجوز مدیریت دوره‌ها و کالاها (Courses.Manage) را ندارد.' }),
+    });
+
+    const select = screen.getByTestId('delivery-status-select');
+    fireEvent.change(select, { target: { value: 'Shipped' } });
+
     expect(await screen.findByRole('alert')).toHaveTextContent('Courses.Manage');
   });
 
@@ -83,6 +112,6 @@ describe('PhysicalDeliveryControl', () => {
     getAdminCourseOrderReceipt.mockResolvedValue({ success: false, error: 'x' });
     render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
     expect(await screen.findByText('نامشخص')).toBeInTheDocument();
-    expect(screen.getByText('ثبت ارسال‌شده')).toBeEnabled();
+    expect(screen.getByTestId('delivery-status-select')).toBeEnabled();
   });
 });

@@ -38,9 +38,18 @@ function RefundSummary({ data }) {
 }
 
 /**
- * @param {{ mode: 'user'|'admin', targetId: string, maxQuantity?: number, label?: string, className?: string, onCancelled?: (data: object) => void }} props
+ * @param {{ mode: 'user'|'admin', targetId: string, maxQuantity?: number, label?: string, className?: string, disabled?: boolean, disabledReason?: string, onCancelled?: (data: object) => void }} props
  */
-export default function PhysicalCancelFlow({ mode, targetId, maxQuantity = 1, label, className = '', onCancelled }) {
+export default function PhysicalCancelFlow({
+    mode,
+    targetId,
+    maxQuantity = 1,
+    label,
+    className = '',
+    disabled = false,
+    disabledReason = '',
+    onCancelled,
+}) {
     const isAdmin = mode === 'admin';
     const [open, setOpen] = useState(false);
     const [quantity, setQuantity] = useState(1);
@@ -110,7 +119,7 @@ export default function PhysicalCancelFlow({ mode, targetId, maxQuantity = 1, la
                             min={1}
                             max={maxQuantity}
                             value={quantity}
-                            disabled={open}
+                            disabled={open || disabled}
                             onChange={(e) => setQuantity(Number(e.target.value))}
                             className={styles.qtyInput}
                         />
@@ -118,11 +127,17 @@ export default function PhysicalCancelFlow({ mode, targetId, maxQuantity = 1, la
                     <button
                         type="button"
                         onClick={openDialog}
-                        disabled={open || !qtyOk}
+                        disabled={open || !qtyOk || disabled}
                         className={styles.triggerBtnAdmin}
+                        title={disabled ? disabledReason : undefined}
                     >
                         {label || 'لغو قلم / تعداد'}
                     </button>
+                    {disabled && disabledReason && (
+                        <span className={styles.disabledNotice} title={disabledReason}>
+                            ⚠️ {disabledReason}
+                        </span>
+                    )}
                 </div>
             )}
             {!isAdmin && !result && (

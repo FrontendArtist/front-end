@@ -351,7 +351,8 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt, onOpenStatus, onAttem
                                             const typeConfig = ITEM_TYPE_LABELS[item.__component] || { icon: '📌', label: 'قلم' };
                                             return (
                                                 <div key={idx} className={styles.item_card}>
-                                                    <span className={styles.item_card__icon}>{typeConfig.icon}</span>
+                                                    <div className={styles.item_card__main}>
+                                                        <span className={styles.item_card__icon}>{typeConfig.icon}</span>
                                                     <div className={styles.item_card__info}>
                                                         <span className={styles.item_card__title}>{item.title || '—'}</span>
                                                         <span className={styles.item_card__type}>{typeConfig.label}</span>
@@ -364,7 +365,8 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt, onOpenStatus, onAttem
                                                     </div>
                                                     <span className={styles.item_card__price}>
                                                         {formatPrice(item.price)}
-                                                    </span>
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             );
                                         })}

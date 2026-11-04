@@ -321,6 +321,28 @@ describe('دریافت سفارشات و رسیدها (I11-T و I11-P)', () => {
     expect(res.body.data[0].topUps[0].status).toBe('Confirmed');
   });
 
+  it('سفارش دارای کالا آدرس تحویل را از استرپی می‌گیرد و خطای آدرس جزئیات را خراب نمی‌کند', async () => {
+    const cartId = '11111111-1111-1111-1111-111111111111';
+    const detail = {
+      orderId: 'cart:' + cartId, sourceType: 'Cart', cartId, financialStatus: 'Paid', deliveryStatus: 'Pending',
+      finalAmountInNoor: 9, itemCount: 1, createdAtUtc: '2026-10-20T10:00:00Z',
+      items: [{ externalCourseId: 'p1', itemType: 'Product', title: 'کتاب', quantity: 1, finalAmountInNoor: 9, physicalDeliveryStatus: 'Preparing' }],
+      topUps: [],
+    };
+    getMyCourseOrderDetails.mockResolvedValue({ success: true, data: detail });
+    global.fetch = jest.fn(async url => (url.includes('/address')
+      ? jsonResponse({ addressSnapshot: { recipientName: 'علی', city: 'قم', fullAddress: 'خیابان ۱', secret: 'x' } })
+      : jsonResponse({})));
+    const ok = await GET({ url: 'http://site.test/api/orders?documentId=cart:' + cartId });
+    expect(ok.body.data[0].shippingAddress).toMatchObject({ recipientName: 'علی', city: 'قم', fullAddress: 'خیابان ۱' });
+    expect(ok.body.data[0].shippingAddress).not.toHaveProperty('secret');
+
+    global.fetch = jest.fn(async () => jsonResponse({}, 500));
+    const failed = await GET({ url: 'http://site.test/api/orders?documentId=cart:' + cartId });
+    expect(failed.status).toBe(200);
+    expect(failed.body.data[0]).not.toHaveProperty('shippingAddress');
+  });
+
   it('دریافت رسید خرید شخصی از پارامتر purchaseId فقط با توکن نشست انجام می‌شود', async () => {
     const receiptData = {
       purchaseId: '55555555-5555-5555-5555-555555555555',

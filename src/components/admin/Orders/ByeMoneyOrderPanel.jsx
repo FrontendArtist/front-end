@@ -234,24 +234,35 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                     <div className={styles.items_list}>
                         {detail.items.map((item, idx) => {
                             const isProduct = String(item.itemType || '').toLowerCase() === 'product';
+                            const isShippedOrDelivered = item.physicalDeliveryStatus === 'Shipped' || item.physicalDeliveryStatus === 'Delivered';
+                            const cancelDisabledReason = item.physicalDeliveryStatus === 'Delivered'
+                                ? 'امکان لغو پس از تحویل کالا وجود ندارد'
+                                : 'امکان لغو پس از ارسال مرسوله وجود ندارد';
+
                             return (
                                 <div key={`${item.externalCourseId || item.purchaseId || idx}`} className={styles.item_card}>
-                                    <span className={styles.item_card__icon}>{isProduct ? '📦' : '📚'}</span>
-                                    <div className={styles.item_card__info}>
-                                        <span className={styles.item_card__title}>{item.title || (isProduct ? 'کالا' : 'دوره آموزشی')}</span>
-                                        <span className={styles.item_card__type}>{isProduct ? 'کالای فیزیکی' : 'دوره آموزشی'}</span>
-                                        {item.quantity > 1 && (
-                                            <span className={styles.item_card__meta}>
-                                                تعداد: {fa(item.quantity)}
-                                                {item.priceInNoor != null && ` (قیمت واحد: ${fa(item.priceInNoor)} نور)`}
-                                            </span>
-                                        )}
-                                        {isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus && (
-                                            <span className={styles.item_card__meta}>
-                                                ارسال: {getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}
-                                            </span>
-                                        )}
-                                        {isProduct && isPaid && item.purchaseId && (
+                                    <div className={styles.item_card__main}>
+                                        <span className={styles.item_card__icon}>{isProduct ? '📦' : '📚'}</span>
+                                        <div className={styles.item_card__info}>
+                                            <span className={styles.item_card__title}>{item.title || (isProduct ? 'کالا' : 'دوره آموزشی')}</span>
+                                            <span className={styles.item_card__type}>{isProduct ? 'کالای فیزیکی' : 'دوره آموزشی'}</span>
+                                            {item.quantity > 1 && (
+                                                <span className={styles.item_card__meta}>
+                                                    تعداد: {fa(item.quantity)}
+                                                    {item.priceInNoor != null && ` (قیمت واحد: ${fa(item.priceInNoor)} نور)`}
+                                                </span>
+                                            )}
+                                            {isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus && (
+                                                <span className={styles.item_card__meta}>
+                                                    ارسال: {getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className={styles.item_card__price}>{fa(item.finalAmountInNoor ?? item.priceInNoor)} نور</span>
+                                    </div>
+
+                                    {isProduct && isPaid && item.purchaseId && (
+                                        <div className={styles.item_card__actions}>
                                             <PhysicalDeliveryControl
                                                 purchaseId={item.purchaseId}
                                                 cartId={detail.cartId}
@@ -274,12 +285,16 @@ export default function ByeMoneyOrderPanel({ order, onSummary }) {
                                                     });
                                                 }}
                                             />
-                                        )}
-                                        {isProduct && isPaid && item.purchaseId && (
-                                            <PhysicalCancelFlow mode="admin" targetId={item.purchaseId} maxQuantity={item.quantity || 1} />
-                                        )}
-                                    </div>
-                                    <span className={styles.item_card__price}>{fa(item.finalAmountInNoor ?? item.priceInNoor)} نور</span>
+                                            <PhysicalCancelFlow
+                                                mode="admin"
+                                                targetId={item.purchaseId}
+                                                maxQuantity={item.quantity || 1}
+                                                disabled={isShippedOrDelivered}
+                                                disabledReason={cancelDisabledReason}
+                                                onCancelled={() => setReloadKey((k) => k + 1)}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}

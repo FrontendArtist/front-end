@@ -20,10 +20,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import OrderReceiptUpload from '@/components/profile/OrderReceiptUpload';
 import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
-import { getCoursePurchaseReceipt, getMyCourseOrderReceipt } from '@/lib/byeMoneyApi';
-import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
-import { isGuid } from '@/lib/physicalCancel';
-import PhysicalCancelFlow from '@/components/physicalCancel/PhysicalCancelFlow';
+import ByeMoneyOrderView from '@/components/profile/ByeMoneyOrderView/ByeMoneyOrderView';
 import styles from './orderDetail.module.scss';
 
 // ─── فرمت‌کننده‌ها و ابزارها ──────────────────────────────────────────
@@ -34,7 +31,7 @@ const extractFromNotes = (notes, label) => {
     return match ? match[1].trim() : null;
 };
 
-function CopyBtn({ text, label = 'کپی' }) {
+function CopyBtn({ text, label = 'کپی', buttonText }) {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
@@ -55,7 +52,7 @@ function CopyBtn({ text, label = 'کپی' }) {
             onClick={handleCopy}
             title={copied ? 'کپی شد!' : `کپی ${label}`}
         >
-            {copied ? '✓ کپی شد' : 'کپی'}
+            {copied ? '✓ کپی شد' : (buttonText || 'کپی')}
         </button>
     );
 }
@@ -125,64 +122,6 @@ export default function OrderDetailPage() {
     const [order, setOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [receiptModal, setReceiptModal] = useState({ isOpen: false, isLoading: false, data: null, error: null });
-
-    const [orderReceipt, setOrderReceipt] = useState({ isOpen: false, isLoading: false, data: null, error: null });
-
-    // رسید کل سفارش (I11-O): مبالغ فقط از پاسخ بای‌مانی خوانده می‌شوند
-    const handleViewOrderReceipt = async (orderId) => {
-        if (!orderId) return;
-        setOrderReceipt({ isOpen: true, isLoading: true, data: null, error: null });
-        try {
-            if (!session?.user?.jwt) throw new Error('نشست کاربری شما منقضی شده است. لطفاً مجدداً وارد شوید.');
-            const res = await getMyCourseOrderReceipt({ jwt: session.user.jwt, orderId });
-            if (res.success && res.data) {
-                setOrderReceipt({ isOpen: true, isLoading: false, data: res.data, error: null });
-                return;
-            }
-            throw new Error(res.error || 'خطا در دریافت رسید سفارش.');
-        } catch (err) {
-            setOrderReceipt({ isOpen: true, isLoading: false, data: null, error: err.message });
-        }
-    };
-
-    const handleViewReceipt = async (purchaseId) => {
-        if (!purchaseId) return;
-        setReceiptModal({ isOpen: true, isLoading: true, data: null, error: null });
-        try {
-            if (session?.user?.jwt) {
-                const res = await getCoursePurchaseReceipt({
-                    jwt: session.user.jwt,
-                    purchaseId
-                });
-                if (res.success && res.data) {
-                    setReceiptModal({ isOpen: true, isLoading: false, data: res.data, error: null });
-                    return;
-                }
-                if (res.unauthorized) {
-                    throw new Error('نشست کاربری شما منقضی شده است. لطفاً مجدداً وارد شوید.');
-                }
-                if (res.notFound) {
-                    throw new Error('رسید خرید پیدا نشد یا متعلق به شما نیست.');
-                }
-                throw new Error(res.error || 'خطا در دریافت رسید خرید.');
-            }
-            // fallback از مسیر داخلی سرور
-            const response = await fetch(`/api/orders?purchaseId=${encodeURIComponent(purchaseId)}`);
-            if (response.status === 401) throw new Error('نشست کاربری شما منقضی شده است.');
-            if (response.status === 404) throw new Error('رسید خرید پیدا نشد.');
-            if (!response.ok) throw new Error('خطا در دریافت رسید خرید.');
-            const json = await response.json();
-            if (json.data) {
-                setReceiptModal({ isOpen: true, isLoading: false, data: json.data, error: null });
-            } else {
-                throw new Error(json.message || 'خطا در دریافت رسید');
-            }
-        } catch (err) {
-            setReceiptModal({ isOpen: true, isLoading: false, data: null, error: err.message });
-        }
-    };
-
 
     // ── دریافت سفارش از API Proxy ─────────────────────────────────────────────
     const fetchOrder = useCallback(async () => {
@@ -248,28 +187,30 @@ export default function OrderDetailPage() {
         );
     }
 
-    const items = Array.isArray(order.items) ? order.items : [];
-    const isByeMoney = order.source === 'byemoney';
-    // لغو فقط برای کل بخش فیزیکی و تا پیش از ارسال؛ سرور تصمیم نهایی را می‌گیرد
-    const physicalItems = items.filter((i) => i.type === 'product');
-    const physicalCartId = String(order.cartId || order.orderId || '').replace(/^cart:/, '');
-    const canCancelPhysical = isByeMoney && order.financialStatus === 'Paid' && isGuid(physicalCartId)
-        && physicalItems.length > 0 && physicalItems.every((i) => i.physicalDeliveryStatus === 'Preparing');
-    const hasProduct = items.some((i) => i.type === 'product' || String(i.itemType || '').toLowerCase() === 'product');
-    const hasCourse = items.some((i) => i.type === 'course' || i.type === 'chapter' || ['course', 'coursechapter'].includes(String(i.itemType || '').toLowerCase()));
-    const isCardToCard = !isByeMoney && order.paymentMethod === 'card_to_card';
-    const isOnline = !isByeMoney && order.paymentMethod === 'online';
-    const isPaid = isByeMoney
-        ? order.financialStatus === 'Paid'
-        : ['paid', 'shipped', 'delivered'].includes(order.orderStatus?.trim()?.toLowerCase()) || order.paymentStatus === 'paid';
-    const isFailedOrCanceled = isByeMoney
-        ? ['Failed', 'Expired'].includes(order.financialStatus)
-        : !isByeMoney && (
-            order.paymentStatus === 'failed' || 
-            order.paymentStatus === 'rejected' ||
-            order.orderStatus === 'canceled' ||
-            order.orderStatus === 'cancelled'
+    // سفارش بای‌مانی نمای جدا و ساده دارد (FE-ORDER-01)
+    if (order.source === 'byemoney') {
+        return (
+            <div className={styles.page}>
+                <Link href="/profile/orders" className={styles.backBtn} aria-label="بازگشت به لیست سفارشات">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    بازگشت به سفارشات
+                </Link>
+                <ByeMoneyOrderView order={order} />
+            </div>
         );
+    }
+
+    const items = Array.isArray(order.items) ? order.items : [];
+    const isCardToCard = order.paymentMethod === 'card_to_card';
+    const isOnline = order.paymentMethod === 'online';
+    const isPaid = ['paid', 'shipped', 'delivered'].includes(order.orderStatus?.trim()?.toLowerCase()) || order.paymentStatus === 'paid';
+    const isFailedOrCanceled = order.paymentStatus === 'failed'
+        || order.paymentStatus === 'rejected'
+        || order.orderStatus === 'canceled'
+        || order.orderStatus === 'cancelled';
     const isRejected = isCardToCard && isFailedOrCanceled;
     const needsReceiptUpload = isCardToCard && order.paymentStatus === 'pending_payment' && !isRejected;
 
@@ -299,9 +240,7 @@ export default function OrderDetailPage() {
             {/* ─── هدر سفارش ──────────────────────────────────────────────── */}
             <div className={styles.orderHeader}>
                 <div className={styles.orderHeaderTop}>
-                    <h1 className={styles.orderTitle}>
-                        {isByeMoney ? (isPaid ? (hasCourse && !hasProduct ? 'جزئیات و رسید سفارش دوره' : 'جزئیات و رسید سفارش') : (hasCourse && !hasProduct ? 'جزئیات سفارش دوره' : 'جزئیات سفارش')) : 'جزئیات سفارش'}
-                    </h1>
+                    <h1 className={styles.orderTitle}>جزئیات سفارش</h1>
                 </div>
                 <div className={styles.orderMeta}>
                     <span className={styles.metaItem}>
@@ -315,14 +254,14 @@ export default function OrderDetailPage() {
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>روش پرداخت:</span>
                         <span className={styles.metaValue}>
-                            {isByeMoney ? 'کیف نور (بای‌مانی)' : (isCardToCard ? 'کارت به کارت' : (order.paymentMethod === 'free' ? 'رایگان' : 'پرداخت آنلاین (درگاه سامان)'))}
+                            {isCardToCard ? 'کارت به کارت' : (order.paymentMethod === 'free' ? 'رایگان' : 'پرداخت آنلاین (درگاه سامان)')}
                         </span>
                     </span>
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>مبلغ کل:</span>
                         <span className={`${styles.metaValue} ${styles.metaPrice}`}>
                             {order.totalPrice != null ? (
-                                <PriceWithHint price={order.totalPrice} hideHint={isByeMoney} size="sm" />
+                                <PriceWithHint price={order.totalPrice} size="sm" />
                             ) : (
                                 '—'
                             )}
@@ -331,45 +270,12 @@ export default function OrderDetailPage() {
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>وضعیت سفارش:</span>
                         <span className={styles.metaValue} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            {isByeMoney ? (
-                                <>
-                                    <span className={`${styles.badge} ${
-                                        order.financialStatus === 'Paid' ? styles.badgeSuccess :
-                                        ['Failed', 'Expired'].includes(order.financialStatus) ? styles.badgeDanger :
-                                        order.financialStatus === 'RequiresReview' ? styles.badgeWarning :
-                                        order.financialStatus === 'AwaitingPayment' ? styles.badgeWarning : styles.badgeDefault
-                                    }`}>
-                                        {order.financialStatus === 'Paid' ? 'پرداخت شده ✓' :
-                                         order.financialStatus === 'AwaitingPayment' ? 'در انتظار پرداخت' :
-                                         order.financialStatus === 'Processing' ? 'در حال پردازش' :
-                                         order.financialStatus === 'Preparing' ? 'در حال آماده‌سازی' :
-                                         order.financialStatus === 'Failed' ? 'پرداخت ناموفق ⚠️' :
-                                         order.financialStatus === 'Expired' ? 'منقضی شده' :
-                                         order.financialStatus === 'RequiresReview' ? 'نیازمند بررسی مالی' :
-                                         (order.financialStatus || 'وضعیت مالی نامشخص')}
-                                    </span>
-                                    <span className={`${styles.badge} ${
-                                        order.deliveryStatus === 'Delivered' ? styles.badgeSuccess :
-                                        order.deliveryStatus === 'PartiallyDelivered' ? styles.badgeWarning :
-                                        order.deliveryStatus === 'Pending' ? styles.badgeInfo : styles.badgeDefault
-                                    }`}>
-                                        {order.deliveryStatus === 'Delivered' ? (hasProduct && !hasCourse ? 'تحویل داده شد ✓' : 'دسترسی فعال شد ✓') :
-                                         order.deliveryStatus === 'PartiallyDelivered' ? 'دسترسی بخشی از اقلام فعال شد' :
-                                         order.deliveryStatus === 'Pending' ? (hasProduct && !hasCourse ? 'در انتظار تحویل' : 'در انتظار فعال‌سازی') :
-                                         order.deliveryStatus === 'NotStarted' ? (hasProduct && !hasCourse ? 'تحویل آغاز نشده' : 'فعال‌سازی آغاز نشده') :
-                                         (order.deliveryStatus || 'وضعیت دسترسی نامشخص')}
-                                    </span>
-                                </>
-                            ) : (
-                                <>
-                                    <OrderStatusBadge status={isOnline && isPaid ? 'paid' : order.orderStatus} paymentStatus={order.paymentStatus} paymentMethod={order.paymentMethod} />
-                                    {isCardToCard && <PaymentStatusBadge status={order.paymentStatus} />}
-                                    {isOnline && isPaid && (
-                                        <span className={`${styles.badge} ${styles.badgeSuccess}`}>
-                                            پرداخت آنلاین موفق
-                                        </span>
-                                    )}
-                                </>
+                            <OrderStatusBadge status={isOnline && isPaid ? 'paid' : order.orderStatus} paymentStatus={order.paymentStatus} paymentMethod={order.paymentMethod} />
+                            {isCardToCard && <PaymentStatusBadge status={order.paymentStatus} />}
+                            {isOnline && isPaid && (
+                                <span className={`${styles.badge} ${styles.badgeSuccess}`}>
+                                    پرداخت آنلاین موفق
+                                </span>
                             )}
                         </span>
                     </span>
@@ -383,118 +289,6 @@ export default function OrderDetailPage() {
                     )}
                 </div>
             </div>
-
-            {/* ─── مشخصات رسید پرداخت با نور (سامانه مالی بای‌مانی) ────────── */}
-            {isByeMoney && (isPaid || order.cartSummary || order.baseAmountInNoor != null || order.totalPrice != null) && (
-                <div className={styles.onlineReceiptCard}>
-                    <div className={styles.onlineReceiptHeader}>
-                        <div className={styles.onlineReceiptTitleWrap}>
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="2" y="5" width="20" height="14" rx="2" />
-                                <line x1="2" y1="10" x2="22" y2="10" />
-                            </svg>
-                            <h2 className={styles.onlineReceiptTitle}>
-                                {isPaid ? (hasCourse && !hasProduct ? 'مشخصات مالی و رسید دوره (سامانه بای‌مانی)' : 'مشخصات مالی و رسید سفارش (سامانه بای‌مانی)') : 'خلاصه مبالغ سفارش (سامانه بای‌مانی)'}
-                            </h2>
-                        </div>
-                        <span className={isPaid ? styles.receiptStatusSuccess : (isFailedOrCanceled ? styles.receiptStatusFailed : styles.receiptStatusPending)}>
-                            {isPaid ? '✓ پرداخت قطعی و موفق' : (isFailedOrCanceled ? '✕ پرداخت ناموفق' : '⏳ در انتظار پرداخت')}
-                        </span>
-                    </div>
-
-                    <div className={styles.onlineReceiptGrid}>
-                        <div className={styles.receiptField}>
-                            <span className={styles.receiptFieldLabel}>شناسه سفارش</span>
-                            <div className={styles.copyableWrapper}>
-                                <span className={styles.receiptFieldValue} dir="ltr">{order.orderId || order.documentId || id}</span>
-                                <CopyBtn text={order.orderId || order.documentId || id} label="شناسه سفارش" />
-                            </div>
-                        </div>
-
-                        {order.cartId && (
-                            <div className={styles.receiptField}>
-                                <span className={styles.receiptFieldLabel}>شناسه سبد خرید (Cart ID)</span>
-                                <div className={styles.copyableWrapper}>
-                                    <span className={styles.receiptFieldValue} dir="ltr">{order.cartId}</span>
-                                    <CopyBtn text={order.cartId} label="شناسه سبد" />
-                                </div>
-                            </div>
-                        )}
-
-                        {order.transactionId && (
-                            <div className={styles.receiptField}>
-                                <span className={styles.receiptFieldLabel}>شناسه تراکنش مالی (Transaction ID)</span>
-                                <div className={styles.copyableWrapper}>
-                                    <span className={styles.receiptFieldValue} dir="ltr">{order.transactionId}</span>
-                                    <CopyBtn text={order.transactionId} label="شناسه تراکنش" />
-                                </div>
-                            </div>
-                        )}
-
-                        {(order.cartSummary?.originalTotalInNoor != null || order.baseAmountInNoor != null) && (
-                            <div className={styles.receiptField}>
-                                <span className={styles.receiptFieldLabel}>جمع کل اقلام (پایه)</span>
-                                <span className={styles.receiptFieldValue}>
-                                    {Number(order.cartSummary?.originalTotalInNoor ?? order.baseAmountInNoor).toLocaleString('fa-IR')} نور
-                                </span>
-                            </div>
-                        )}
-
-                        {((order.cartSummary?.itemDiscountInNoor != null && order.cartSummary.itemDiscountInNoor > 0) ||
-                          (order.cartSummary?.couponDiscountInNoor != null && order.cartSummary.couponDiscountInNoor > 0) ||
-                          (order.discountAmountInNoor != null && order.discountAmountInNoor > 0)) && (
-                            <div className={styles.receiptField}>
-                                <span className={styles.receiptFieldLabel}>مجموع تخفیف</span>
-                                <span className={styles.receiptFieldValue}>
-                                    {Number(
-                                        (order.cartSummary?.itemDiscountInNoor || 0) + (order.cartSummary?.couponDiscountInNoor || 0) ||
-                                        (order.discountAmountInNoor || 0)
-                                    ).toLocaleString('fa-IR')} نور
-                                </span>
-                            </div>
-                        )}
-
-                        {order.couponCode && (
-                            <div className={styles.receiptField}>
-                                <span className={styles.receiptFieldLabel}>کد تخفیف اعمال‌شده</span>
-                                <span className={styles.receiptFieldValue} dir="ltr">{order.couponCode}</span>
-                            </div>
-                        )}
-
-                        <div className={styles.receiptField}>
-                            <span className={styles.receiptFieldLabel}>مبلغ قابل پرداخت / نهایی</span>
-                            <span className={styles.receiptFieldValue}>
-                                {order.totalPrice != null ? `${Number(order.totalPrice).toLocaleString('fa-IR')} نور` : '—'}
-                            </span>
-                        </div>
-
-                        {order.referenceRialPerNoorAtPurchaseTime != null && (
-                            <div className={styles.receiptField}>
-                                <span className={styles.receiptFieldLabel}>نرخ مرجع ریالی هنگام خرید</span>
-                                <span className={styles.receiptFieldValue} dir="ltr">
-                                    {Number(order.referenceRialPerNoorAtPurchaseTime).toLocaleString('fa-IR')} ریال
-                                </span>
-                            </div>
-                        )}
-
-                        <div className={styles.receiptField}>
-                            <span className={styles.receiptFieldLabel}>تاریخ ثبت سفارش</span>
-                            <span className={styles.receiptFieldValue}>{formatDate(order.createdAt)}</span>
-                        </div>
-
-                        <div className={styles.receiptField}>
-                            <span className={styles.receiptFieldLabel}>وضعیت دسترسی</span>
-                            <span className={styles.receiptFieldValue}>
-                                {order.deliveryStatus === 'Delivered' ? 'دسترسی فعال شد' :
-                                 order.deliveryStatus === 'PartiallyDelivered' ? 'بخشی از اقلام تحویل شد' :
-                                 order.deliveryStatus === 'Pending' ? 'در حال فعال‌سازی دسترسی' : 'تحویل آغاز نشده'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
 
             {/* ─── مشخصات رسید پرداخت آنلاین (درگاه سامان کیش - سپ) ────── */}
             {isOnline && (
@@ -575,7 +369,7 @@ export default function OrderDetailPage() {
                 </div>
             )}
 
-            {/* ─── اقلام سفارش ────────────────────────────────────────────── */}
+            {/* ─── اقلام سفارش (سفارش‌های عادی / لایبرری استراپی) ───────────── */}
             {items.length > 0 && (
                 <div className={styles.orderItemsSection}>
                     <h2 className={styles.sectionTitle}>
@@ -613,114 +407,21 @@ export default function OrderDetailPage() {
                                         <span className={styles.itemType}>
                                             {isCourse ? 'دوره آموزشی' : 'محصول'}
                                         </span>
-                                        {isByeMoney && item.type === 'product' && (
-                                            <>
-                                                {item.unitPrice != null && (
-                                                    <span className={styles.itemType}>
-                                                        قیمت واحد: {formatPrice(item.unitPrice)} نور
-                                                    </span>
-                                                )}
-                                                {getPhysicalDeliveryLabel(item.physicalDeliveryStatus) && (
-                                                    <span className={styles.itemType} data-testid="physical-delivery-status">
-                                                        وضعیت ارسال: {getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}
-                                                    </span>
-                                                )}
-                                            </>
-                                        )}
                                     </div>
                                     <div className={styles.itemMeta}>
-                                        {isByeMoney && item.purchaseId && (
-                                            <button
-                                                type="button"
-                                                className={styles.viewReceiptBtn}
-                                                onClick={() => handleViewReceipt(item.purchaseId)}
-                                            >
-                                                مشاهده رسید خرید
-                                            </button>
-                                        )}
                                         {item.quantity > 1 && (
                                             <span className={styles.itemQty}>× {item.quantity}</span>
                                         )}
                                         <span className={styles.itemPrice}>
-                                            <PriceWithHint price={isByeMoney ? (item.price ?? 0) : (item.price ?? 0) * (item.quantity ?? 1)} hideHint={isByeMoney} size="sm" />
+                                            <PriceWithHint price={(item.price ?? 0) * (item.quantity ?? 1)} size="sm" />
                                         </span>
                                     </div>
                                 </li>
                             );
                         })}
                     </ul>
-                    {isByeMoney && Number(order.cartSummary?.shippingAmountInNoor) > 0 && (
-                        <div className={styles.receiptField} data-testid="shipping-row">
-                            <span className={styles.receiptFieldLabel}>هزینهٔ ارسال</span>
-                            <span className={styles.receiptFieldValue}>
-                                {formatPrice(order.cartSummary.shippingAmountInNoor)} نور
-                            </span>
-                        </div>
-                    )}
-                    {(canCancelPhysical || (isByeMoney && isPaid)) && (
-                        <div className={styles.orderActionsRow}>
-                            {canCancelPhysical && (
-                                <PhysicalCancelFlow mode="user" targetId={physicalCartId} />
-                            )}
-                            {isByeMoney && isPaid && (
-                                <button
-                                    type="button"
-                                    className={styles.viewReceiptBtn}
-                                    onClick={() => handleViewOrderReceipt(order.orderId || order.documentId || id)}
-                                >
-                                    مشاهده رسید کل سفارش
-                                </button>
-                            )}
-                        </div>
-                    )}
                 </div>
             )}
-
-            {/* ─── تراکنش‌های شارژ مرتبط (TopUp Requests) ────────────────── */}
-            {isByeMoney && Array.isArray(order.topUps) && order.topUps.length > 0 && (
-                <div className={styles.topUpsSection}>
-                    <h2 className={styles.sectionTitle}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="2" y="5" width="20" height="14" rx="2" />
-                            <line x1="2" y1="10" x2="22" y2="10" />
-                        </svg>
-                        تراکنش‌ها و تلاش‌های شارژ مرتبط
-                    </h2>
-                    <div className={styles.topUpsList}>
-                        {order.topUps.map((topUp, idx) => {
-                            const isConfirmed = topUp.status === 'Confirmed';
-                            const isRejected = topUp.status === 'Rejected';
-                            const isPending = topUp.status === 'Pending';
-                            return (
-                                <div key={idx} className={styles.topUpItem}>
-                                    <div className={styles.topUpItemInfo}>
-                                        <span className={styles.topUpRef}>کد پیگیری شارژ: <strong dir="ltr">{topUp.clientReferenceCode || topUp.topUpRequestId}</strong></span>
-                                        <span className={styles.topUpDate}>{formatDate(topUp.createdAtUtc)}</span>
-                                    </div>
-                                    <div className={styles.topUpItemDetails}>
-                                        <span className={styles.topUpAmount}>
-                                            {Number(topUp.amountNoor || 0).toLocaleString('fa-IR')} نور
-                                            {topUp.amountRial != null && (
-                                                <span className={styles.rialNote}>({Number(topUp.amountRial).toLocaleString('fa-IR')} ریال)</span>
-                                            )}
-                                        </span>
-                                        <span className={`${styles.badge} ${
-                                            isConfirmed ? styles.badgeSuccess : (isRejected ? styles.badgeDanger : styles.badgeWarning)
-                                        }`}>
-                                            {isConfirmed ? 'شارژ تأیید شد ✓' : (isRejected ? 'شارژ رد شد' : 'در انتظار تأیید شارژ')}
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                    <p className={styles.topUpExplanation}>
-                        * توجه: تأیید شارژ به منزله افزایش اعتبار کیف پول نور است؛ وضعیت نهایی خرید دوره و تحویل دسترسی به‌صورت مستقل در بالای صفحه نمایش داده شده‌اند.
-                    </p>
-                </div>
-            )}
-
 
             {/* ─── پیام لغو یا عدم موفقیت پرداخت آنلاین ─────────────────── */}
             {isOnline && isFailedOrCanceled && (
@@ -835,199 +536,6 @@ export default function OrderDetailPage() {
                             <span className={styles.trackingInfo}>
                                 کد پیگیری: <strong dir="ltr">{order.trackingNumber}</strong>
                             </span>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* ─── مدال رسید کل سفارش (I11-O) ────── */}
-            {orderReceipt.isOpen && (
-                <div className={styles.receiptModalOverlay} onClick={() => setOrderReceipt({ isOpen: false, isLoading: false, data: null, error: null })}>
-                    <div className={styles.receiptModal} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.receiptModalHeader}>
-                            <h3 className={styles.receiptModalTitle}>رسید کل سفارش (سامانه بای‌مانی)</h3>
-                            <button
-                                type="button"
-                                className={styles.receiptModalClose}
-                                onClick={() => setOrderReceipt({ isOpen: false, isLoading: false, data: null, error: null })}
-                                aria-label="بستن رسید"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        {orderReceipt.isLoading && (
-                            <div style={{ textAlign: 'center', padding: '24px' }}>در حال دریافت رسید سفارش...</div>
-                        )}
-                        {orderReceipt.error && (
-                            <div className={styles.errorState} style={{ margin: 0 }}>
-                                <p>{orderReceipt.error}</p>
-                            </div>
-                        )}
-                        {orderReceipt.data && (
-                            <div className={styles.onlineReceiptGrid} data-testid="order-receipt">
-                                {(orderReceipt.data.items || []).map((it, idx) => (
-                                    <div key={it.purchaseId || idx} className={styles.receiptField}>
-                                        <span className={styles.receiptFieldLabel}>
-                                            {it.title || '—'}
-                                            {Number(it.quantity) > 1 ? ` × ${Number(it.quantity).toLocaleString('fa-IR')}` : ''}
-                                            {it.unitPriceInNoor != null && Number(it.quantity) > 1 ? ` (قیمت واحد ${formatPrice(it.unitPriceInNoor)})` : ''}
-                                            {getPhysicalDeliveryLabel(it.physicalDeliveryStatus) ? ` — ${getPhysicalDeliveryLabel(it.physicalDeliveryStatus)}` : ''}
-                                        </span>
-                                        <span className={styles.receiptFieldValue}>{formatPrice(it.finalAmountInNoor)} نور</span>
-                                    </div>
-                                ))}
-                                {orderReceipt.data.cartSummary?.originalTotalInNoor != null && (
-                                    <div className={styles.receiptField}>
-                                        <span className={styles.receiptFieldLabel}>جمع کل اقلام (پایه)</span>
-                                        <span className={styles.receiptFieldValue}>{formatPrice(orderReceipt.data.cartSummary.originalTotalInNoor)} نور</span>
-                                    </div>
-                                )}
-                                {((orderReceipt.data.cartSummary?.itemDiscountInNoor || 0) + (orderReceipt.data.cartSummary?.couponDiscountInNoor || 0)) > 0 && (
-                                    <div className={styles.receiptField}>
-                                        <span className={styles.receiptFieldLabel}>مجموع تخفیف</span>
-                                        <span className={styles.receiptFieldValue}>
-                                            {formatPrice((orderReceipt.data.cartSummary.itemDiscountInNoor || 0) + (orderReceipt.data.cartSummary.couponDiscountInNoor || 0))} نور
-                                        </span>
-                                    </div>
-                                )}
-                                {orderReceipt.data.couponCode && (
-                                    <div className={styles.receiptField}>
-                                        <span className={styles.receiptFieldLabel}>کد تخفیف</span>
-                                        <span className={styles.receiptFieldValue} dir="ltr">{orderReceipt.data.couponCode}</span>
-                                    </div>
-                                )}
-                                {Number(orderReceipt.data.cartSummary?.shippingAmountInNoor) > 0 && (
-                                    <div className={styles.receiptField}>
-                                        <span className={styles.receiptFieldLabel}>هزینهٔ ارسال</span>
-                                        <span className={styles.receiptFieldValue}>{formatPrice(orderReceipt.data.cartSummary.shippingAmountInNoor)} نور</span>
-                                    </div>
-                                )}
-                                <div className={styles.receiptField}>
-                                    <span className={styles.receiptFieldLabel}>مبلغ نهایی سفارش</span>
-                                    <span className={styles.receiptFieldValue} style={{ color: 'var(--color-primary)' }}>
-                                        {formatPrice(orderReceipt.data.finalAmountInNoor)} نور
-                                    </span>
-                                </div>
-                                {orderReceipt.data.transactionId && (
-                                    <div className={styles.receiptField}>
-                                        <span className={styles.receiptFieldLabel}>شناسه تراکنش مالی</span>
-                                        <span className={styles.receiptFieldValue} dir="ltr">{orderReceipt.data.transactionId}</span>
-                                    </div>
-                                )}
-                                <div className={styles.receiptField}>
-                                    <span className={styles.receiptFieldLabel}>زمان خرید</span>
-                                    <span className={styles.receiptFieldValue}>{formatDate(orderReceipt.data.purchasedAtUtc)}</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* ─── مدال مشاهده رسید رسمی خرید از سامانه بای‌مانی (I11-P) ────── */}
-            {receiptModal.isOpen && (
-                <div className={styles.receiptModalOverlay} onClick={() => setReceiptModal({ isOpen: false, isLoading: false, data: null, error: null })}>
-                    <div className={styles.receiptModal} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.receiptModalHeader}>
-                            <h3 className={styles.receiptModalTitle}>رسید رسمی خرید دوره (سامانه بای‌مانی)</h3>
-                            <button
-                                type="button"
-                                className={styles.receiptModalClose}
-                                onClick={() => setReceiptModal({ isOpen: false, isLoading: false, data: null, error: null })}
-                                aria-label="بستن رسید"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        {receiptModal.isLoading && (
-                            <div style={{ textAlign: 'center', padding: '24px', color: 'var(--color-card-text)' }}>
-                                در حال دریافت اطلاعات رسید خرید از بای‌مانی...
-                            </div>
-                        )}
-
-                        {receiptModal.error && (
-                            <div className={styles.errorState} style={{ margin: 0 }}>
-                                <p>{receiptModal.error}</p>
-                            </div>
-                        )}
-
-                        {receiptModal.data && (
-                            <div className={styles.onlineReceiptGrid}>
-                                <div className={styles.receiptField}>
-                                    <span className={styles.receiptFieldLabel}>عنوان دوره</span>
-                                    <span className={styles.receiptFieldValue} style={{ fontWeight: 'bold' }}>{receiptModal.data.courseTitle}</span>
-                                </div>
-
-                                <div className={styles.receiptField}>
-                                    <span className={styles.receiptFieldLabel}>شناسه خرید (Purchase ID)</span>
-                                    <div className={styles.copyableWrapper}>
-                                        <span className={styles.receiptFieldValue} dir="ltr">{receiptModal.data.purchaseId}</span>
-                                        <CopyBtn text={receiptModal.data.purchaseId} label="شناسه خرید" />
-                                    </div>
-                                </div>
-
-                                {receiptModal.data.transactionId && (
-                                    <div className={styles.receiptField}>
-                                        <span className={styles.receiptFieldLabel}>شناسه تراکنش مالی (Transaction ID)</span>
-                                        <div className={styles.copyableWrapper}>
-                                            <span className={styles.receiptFieldValue} dir="ltr">{receiptModal.data.transactionId}</span>
-                                            <CopyBtn text={receiptModal.data.transactionId} label="شناسه تراکنش" />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {receiptModal.data.baseAmountInNoor != null && (
-                                    <div className={styles.receiptField}>
-                                        <span className={styles.receiptFieldLabel}>مبلغ پایه</span>
-                                        <span className={styles.receiptFieldValue}>{Number(receiptModal.data.baseAmountInNoor).toLocaleString('fa-IR')} نور</span>
-                                    </div>
-                                )}
-
-                                {receiptModal.data.discountAmountInNoor != null && receiptModal.data.discountAmountInNoor > 0 && (
-                                    <div className={styles.receiptField}>
-                                        <span className={styles.receiptFieldLabel}>مبلغ تخفیف</span>
-                                        <span className={styles.receiptFieldValue}>{Number(receiptModal.data.discountAmountInNoor).toLocaleString('fa-IR')} نور</span>
-                                    </div>
-                                )}
-
-                                {receiptModal.data.couponCode && (
-                                    <div className={styles.receiptField}>
-                                        <span className={styles.receiptFieldLabel}>کد تخفیف</span>
-                                        <span className={styles.receiptFieldValue} dir="ltr">{receiptModal.data.couponCode}</span>
-                                    </div>
-                                )}
-
-                                <div className={styles.receiptField}>
-                                    <span className={styles.receiptFieldLabel}>مبلغ نهایی پرداختی</span>
-                                    <span className={styles.receiptFieldValue} style={{ color: 'var(--color-primary)' }}>
-                                        {Number(receiptModal.data.finalAmountInNoor || 0).toLocaleString('fa-IR')} نور
-                                    </span>
-                                </div>
-
-                                {receiptModal.data.referenceRialPerNoorAtPurchaseTime != null && (
-                                    <div className={styles.receiptField}>
-                                        <span className={styles.receiptFieldLabel}>نرخ مرجع ریالی هنگام خرید</span>
-                                        <span className={styles.receiptFieldValue} dir="ltr">
-                                            {Number(receiptModal.data.referenceRialPerNoorAtPurchaseTime).toLocaleString('fa-IR')} ریال
-                                        </span>
-                                    </div>
-                                )}
-
-                                <div className={styles.receiptField}>
-                                    <span className={styles.receiptFieldLabel}>زمان خرید</span>
-                                    <span className={styles.receiptFieldValue}>{formatDate(receiptModal.data.purchasedAtUtc)}</span>
-                                </div>
-
-                                <div className={styles.receiptField}>
-                                    <span className={styles.receiptFieldLabel}>وضعیت مالی و تحویل</span>
-                                    <span className={styles.receiptFieldValue}>
-                                        {receiptModal.data.financialStatus === 'Paid' ? 'پرداخت شده ✓' : receiptModal.data.financialStatus}
-                                        {' — '}
-                                        {receiptModal.data.deliveryStatus === 'Delivered' ? 'دسترسی فعال شد ✓' : 'در حال فعال‌سازی'}
-                                    </span>
-                                </div>
-                            </div>
                         )}
                     </div>
                 </div>

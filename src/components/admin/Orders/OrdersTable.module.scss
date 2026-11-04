@@ -371,16 +371,28 @@ $transition: 0.2s ease;
 
 .item_card {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 12px 14px;
     background: fade(var(--color-black), 15%);
     border: 1px solid fade(var(--color-primary), 8%);
     border-radius: 8px;
     transition: background $transition;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 
     &:hover {
         background: fade(var(--color-primary), 8%);
+    }
+
+    &__main {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     &__icon {
@@ -393,12 +405,16 @@ $transition: 0.2s ease;
         display: flex;
         flex-direction: column;
         gap: 2px;
+        min-width: 0;
     }
 
     &__title {
         font-size: var(--font-sm);
         font-weight: var(--font-weight-medium);
         color: $text;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     &__type {
@@ -417,6 +433,19 @@ $transition: 0.2s ease;
         color: var(--color-success);
         white-space: nowrap;
         direction: ltr;
+        flex-shrink: 0;
+    }
+
+    &__actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        margin-top: 4px;
+        padding-top: 8px;
+        border-top: 1px dashed fade(var(--color-primary), 12%);
     }
 }
 
