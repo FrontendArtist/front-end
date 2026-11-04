@@ -127,17 +127,10 @@
         }
     }
 }
-footer{
-    .cardBackground {
-        overflow: visible !important;
-    }
-    .cardContent{
-        overflow: visible !important;
-    }
-}
 
-// footer variant — از 1024 به پایین گرادیانت عمودی
-.footer {
+// roadmap variant — در سایز lg گرادیانت عمودی
+.roadmap {
+
     &.borderHorizontal,
     &.borderHorizontalRtl {
         @include respond(lg) {
@@ -148,6 +141,7 @@ footer{
     }
 
     .cardContent {
+
         &.gradientHorizontal,
         &.gradientHorizontalRtl {
             @include respond(lg) {
@@ -156,6 +150,42 @@ footer{
         }
     }
 }
+
+footer {
+    .cardBackground {
+        overflow: visible !important;
+    }
+
+    .cardContent {
+        overflow: visible !important;
+    }
+}
+
+// footer variant — از 1024 به پایین گرادیانت عمودی
+.footer {
+
+    &.borderHorizontal,
+    &.borderHorizontalRtl {
+        @include respond(lg) {
+            background: linear-gradient(to bottom,
+                    var(--color-text-primary),
+                    transparent);
+        }
+    }
+
+    .cardContent {
+
+        &.gradientHorizontal,
+        &.gradientHorizontalRtl {
+            @include respond(lg) {
+                background: var(--gradient-card-vertical);
+            }
+        }
+    }
+}
+
+
+
 
 .gradientHorizontal {
     border-radius: var(--border-radius);

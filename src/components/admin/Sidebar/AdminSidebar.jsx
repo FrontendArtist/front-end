@@ -32,6 +32,7 @@ import {
     MessageSquare,    // Comments icon
     Ticket,           // Discount coupons icon
     Megaphone,        // Announcement top banner icon
+    Compass,          // Salek guide mascot icon
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
@@ -57,6 +58,7 @@ const NAV_LINKS = [
     { href: '/admin/comments', label: 'نظرات', icon: MessageSquare },
     { href: '/admin/coupons', label: 'کد تخفیف', icon: Ticket },
     { href: '/admin/top-banner', label: 'نوار اعلان', icon: Megaphone },
+    { href: '/admin/salek-guide', label: 'راهنمای سالک', icon: Compass },
 ];
 
 /**

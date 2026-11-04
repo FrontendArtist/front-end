@@ -9,6 +9,7 @@ export default function RoadmapSection() {
         <GradientBorderCard
           gradient="horizontal-rtl"
           enableHover={true}
+          variant="roadmap"
           className={styles.card}
         >
           <div className={styles.innerWrapper}>
