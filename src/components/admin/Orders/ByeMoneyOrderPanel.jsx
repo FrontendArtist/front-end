@@ -24,6 +24,7 @@ const DELIVERY_LABELS = {
     Pending: 'در انتظار تحویل',
     PartiallyDelivered: 'تحویل ناقص',
     Delivered: 'تحویل شده',
+    Cancelled: 'لغو شده',
 };
 
 const fa = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString('fa-IR'));
@@ -243,6 +244,9 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
                             const totalQty = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
                             const cancelledQty = Math.min(Number(item.cancelledQuantity) || 0, totalQty);
                             const remainingQty = totalQty - cancelledQty;
+                            const refundedRegular = Number(item.refundedRegularInNoor) || 0;
+                            const refundedGift = Number(item.refundedGiftInNoor) || 0;
+                            const refundedTotal = refundedRegular + refundedGift;
                             const fullyCancelled = isProduct && cancelledQty >= totalQty;
                             const partlyCancelled = isProduct && cancelledQty > 0 && !fullyCancelled;
                             const canCancel = isProduct && isPaid && Boolean(item.purchaseId)
@@ -273,6 +277,12 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
                                             {partlyCancelled && (
                                                 <span className={`${styles.item_card__badge} ${styles['item_card__badge--warning']}`} data-testid="item-cancelled-badge">
                                                     ⚠️ {fa(cancelledQty)} از {fa(totalQty)} عدد لغو شده — {fa(remainingQty)} عدد باقی‌مانده
+                                                </span>
+                                            )}
+                                            {(fullyCancelled || partlyCancelled) && refundedTotal > 0 && (
+                                                <span className={styles.item_card__meta} data-testid="item-refunded">
+                                                    برگشتی: {fa(refundedRegular)} نور عادی
+                                                    {refundedGift > 0 && ` و ${fa(refundedGift)} نور هدیه`}
                                                 </span>
                                             )}
                                             {isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus && (

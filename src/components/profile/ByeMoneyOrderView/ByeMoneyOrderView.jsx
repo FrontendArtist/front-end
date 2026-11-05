@@ -56,6 +56,8 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
     const qty = Number(item.quantity) || 1;
     const fullyCancelled = isProduct && (view.physicalCancelled || cancelledQty >= qty);
     const partlyCancelled = isProduct && !fullyCancelled && cancelledQty > 0;
+    const refundedRegular = Number(item.refundedRegularInNoor) || 0;
+    const refundedGift = Number(item.refundedGiftInNoor) || 0;
     const typeLabel = isProduct ? 'کالای فیزیکی' : item.type === 'chapter' ? 'فصل' : 'دوره آموزشی';
     const physicalLabel = getPhysicalDeliveryLabel(item.physicalDeliveryStatus);
 
@@ -75,6 +77,12 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
                     {partlyCancelled && (
                         <span className={`${styles.pill} ${styles.warning}`}>
                             {cancelledQty.toLocaleString('fa-IR')} از {qty.toLocaleString('fa-IR')} عدد لغو شد
+                        </span>
+                    )}
+                    {(fullyCancelled || partlyCancelled) && refundedRegular + refundedGift > 0 && (
+                        <span className={styles.itemHint} data-testid="physical-item-refunded">
+                            برگشتی: {formatNoor(refundedRegular)}
+                            {refundedGift > 0 && ` + ${formatNoor(refundedGift)} هدیه`}
                         </span>
                     )}
                     {isProduct && !fullyCancelled && showItemPhysicalStatus && physicalLabel && (

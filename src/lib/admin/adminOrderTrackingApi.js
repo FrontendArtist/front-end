@@ -105,6 +105,8 @@ function sanitizeItem(i) {
         deliveryStatus: i.deliveryStatus ?? null,
         physicalDeliveryStatus: i.physicalDeliveryStatus ?? null,
         cancelledQuantity: Number(i.cancelledQuantity) || 0,
+        refundedRegularInNoor: Number(i.refundedRegularInNoor) || 0,
+        refundedGiftInNoor: Number(i.refundedGiftInNoor) || 0,
     };
 }
 
@@ -127,6 +129,8 @@ function sanitizeReceipt(r) {
             deliveryStatus: i.deliveryStatus ?? null,
             physicalDeliveryStatus: i.physicalDeliveryStatus ?? null,
             cancelledQuantity: Number(i.cancelledQuantity) || 0,
+            refundedRegularInNoor: Number(i.refundedRegularInNoor) || 0,
+            refundedGiftInNoor: Number(i.refundedGiftInNoor) || 0,
         })),
     };
 }

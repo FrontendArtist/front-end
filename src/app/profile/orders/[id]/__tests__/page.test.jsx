@@ -237,6 +237,17 @@ describe('جزئیات سفارش بای‌مانی – لغو', () => {
     expect(screen.getByTestId('order-status-badge')).toHaveTextContent('سفارش لغو شد');
   });
 
+  it('مبلغ برگشتی عادی و هدیه کنار نشان «لغو شد» می‌آید', async () => {
+    mockOrder({ ...baseOrder, items: [productItem('Preparing', {
+      cancelledQuantity: 3, refundedRegularInNoor: 20, refundedGiftInNoor: 7,
+    })] });
+    render(<OrderDetailPage />);
+    const refunded = await screen.findByTestId('physical-item-refunded');
+    expect(refunded).toHaveTextContent(fa(20));
+    expect(refunded).toHaveTextContent(fa(7));
+    expect(refunded).toHaveTextContent('هدیه');
+  });
+
   it('اگر بک‌اند تعداد لغوشده را برگرداند، دکمهٔ لغو از ابتدا دیده نمی‌شود', async () => {
     mockOrder({ ...baseOrder, items: [productItem('Preparing', { cancelledQuantity: 3 })] });
     render(<OrderDetailPage />);

@@ -6,6 +6,9 @@ import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
 
 jest.mock('@/lib/client/admin/ordersClient', () => ({ fetchOrderTracking: jest.fn() }));
 jest.mock('../PhysicalDeliveryControl', () => ({ purchaseId }) => <div data-testid="delivery-control">{purchaseId}</div>);
+jest.mock('@/components/physicalCancel/PhysicalCancelFlow', () => ({ mode, targetId, maxQuantity }) => (
+    <div data-testid="cancel-flow" data-mode={mode} data-target-id={targetId} data-max-quantity={maxQuantity} />
+));
 jest.mock('../../Shared/AdminBadge', () => ({ text }) => <span>{text}</span>);
 
 const ORDER = { id: 'cart:11111111-1111-1111-1111-111111111111', orderId: 'cart:11111111-1111-1111-1111-111111111111' };
@@ -109,6 +112,70 @@ describe('ByeMoneyOrderPanel', () => {
         const controls = screen.getAllByTestId('delivery-control');
         expect(controls).toHaveLength(1);
         expect(controls[0]).toHaveTextContent('p1');
+    });
+
+    describe('دکمهٔ لغو کالای فیزیکی (PhysicalCancelFlow)', () => {
+        const paidWith = (itemOver) => payload({
+            order: {
+                ...payload().order,
+                financialStatus: 'Paid',
+                items: [{ title: 'کتاب', itemType: 'Product', quantity: 3, finalAmountInNoor: 20, purchaseId: 'p1', ...itemOver }],
+            },
+            receipt: { purchasedAtUtc: '2026-11-01T10:20:00Z', couponCode: null, finalAmountInNoor: 20, cartSummary: { originalTotalInNoor: 20 }, items: [] },
+        });
+
+        test('برای قلم پرداخت‌شدهٔ عادی نمایش داده می‌شود', async () => {
+            fetchOrderTracking.mockResolvedValue(paidWith({ physicalDeliveryStatus: 'Preparing' }));
+            render(<ByeMoneyOrderPanel order={ORDER} />);
+            const flow = await screen.findByTestId('cancel-flow');
+            expect(flow).toHaveAttribute('data-target-id', 'p1');
+            expect(flow).toHaveAttribute('data-mode', 'admin');
+        });
+
+        test.each(['Shipped', 'Delivered'])('با وضعیت ارسال %s پنهان است', async (status) => {
+            fetchOrderTracking.mockResolvedValue(paidWith({ physicalDeliveryStatus: status }));
+            render(<ByeMoneyOrderPanel order={ORDER} />);
+            await screen.findByTestId('delivery-control');
+            expect(screen.queryByTestId('cancel-flow')).not.toBeInTheDocument();
+        });
+
+        test('وقتی cancelledQuantity >= quantity پنهان است', async () => {
+            fetchOrderTracking.mockResolvedValue(paidWith({ quantity: 2, cancelledQuantity: 2 }));
+            render(<ByeMoneyOrderPanel order={ORDER} />);
+            await screen.findByTestId('item-cancelled-badge');
+            expect(screen.queryByTestId('cancel-flow')).not.toBeInTheDocument();
+        });
+
+        test('مبلغ برگشتی عادی و هدیه کنار نشان لغو دیده می‌شود', async () => {
+            fetchOrderTracking.mockResolvedValue(paidWith({
+                quantity: 2, cancelledQuantity: 2, refundedRegularInNoor: 14, refundedGiftInNoor: 6,
+            }));
+            render(<ByeMoneyOrderPanel order={ORDER} />);
+            const refunded = await screen.findByTestId('item-refunded');
+            expect(refunded).toHaveTextContent(Number(14).toLocaleString('fa-IR'));
+            expect(refunded).toHaveTextContent('نور هدیه');
+            expect(refunded).toHaveTextContent(Number(6).toLocaleString('fa-IR'));
+        });
+
+        test('بدون برگشتی یا بدون لغو، سطر برگشتی نیست و هدیهٔ صفر نمایش داده نمی‌شود', async () => {
+            fetchOrderTracking.mockResolvedValue(paidWith({ quantity: 2, cancelledQuantity: 0, refundedRegularInNoor: 0 }));
+            const { unmount } = render(<ByeMoneyOrderPanel order={ORDER} />);
+            await screen.findByTestId('cancel-flow');
+            expect(screen.queryByTestId('item-refunded')).not.toBeInTheDocument();
+            unmount();
+
+            fetchOrderTracking.mockResolvedValue(paidWith({ quantity: 2, cancelledQuantity: 1, refundedRegularInNoor: 5 }));
+            render(<ByeMoneyOrderPanel order={ORDER} />);
+            const refunded = await screen.findByTestId('item-refunded');
+            expect(refunded).not.toHaveTextContent('هدیه');
+        });
+
+        test('در لغو جزئی maxQuantity برابر تعداد باقی‌مانده است', async () => {
+            fetchOrderTracking.mockResolvedValue(paidWith({ quantity: 5, cancelledQuantity: 2 }));
+            render(<ByeMoneyOrderPanel order={ORDER} />);
+            const flow = await screen.findByTestId('cancel-flow');
+            expect(flow).toHaveAttribute('data-max-quantity', '3');
+        });
     });
 
     test('خطای دریافت جزئیات فقط در همین پنل پیام می‌دهد', async () => {

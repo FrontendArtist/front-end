@@ -33,6 +33,8 @@ function mapByeMoneyProductItem(item) {
         deliveryStatus: item.deliveryStatus || null,
         physicalDeliveryStatus: item.physicalDeliveryStatus || null,
         cancelledQuantity: Number(item.cancelledQuantity) || 0,
+        refundedRegularInNoor: Number(item.refundedRegularInNoor) || 0,
+        refundedGiftInNoor: Number(item.refundedGiftInNoor) || 0,
         type: 'product',
         itemType: 'Product',
         __component: 'order.product-order-item',
