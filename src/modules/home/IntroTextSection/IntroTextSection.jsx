@@ -4,7 +4,7 @@ export default function IntroTextSection() {
   return (
     <section id="intro-section" className={styles.introSection}>
       <div className={styles.container}>
-        <p className={styles.introText}>
+        <p className={styles.introText} id="intro-text">
           اینجا خانه‌ی عاشقان حقیقت است. <br /> مسیر بیداری، نور و آرامش را با آموزه‌های مولانا توسط استاد سعیدیان آغاز کنید.
         </p>
       </div>

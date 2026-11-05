@@ -1,0 +1,320 @@
+.guideContainer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  z-index: 950;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+  direction: rtl;
+  user-select: none;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* حالت سرک کشیدن (بسته) */
+
+/* حالت باز (نمایش کامل و گفت‌وگو) */
+.stateOpen {
+  transform: translateX(0);
+}
+
+/* کانتینر مسکات / کاراکتر */
+.mascotWrapper {
+  position: relative;
+  width: 175px;
+  height: 245px;
+  pointer-events: auto;
+  cursor: pointer;
+  flex-shrink: 0;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.4));
+  transition: transform 0.25s ease;
+
+  &:hover {
+    filter: drop-shadow(0 10px 28px rgba(246, 217, 130, 0.25));
+  }
+}
+
+/* تصاویر روی هم برای جابه‌جایی نرم */
+.characterImg {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom left;
+  transition: opacity 0.28s ease-in-out, transform 0.35s ease;
+}
+
+.activeImg {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.inactiveImg {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* نشانگر کوچک و درخشان در زمان سرک کشیدن */
+.peekIndicator {
+  position: absolute;
+  top: 25px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(6, 24, 24, 0.92);
+  border: 1px solid rgba(246, 217, 130, 0.5);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 10px rgba(246, 217, 130, 0.3);
+  color: #F6D982;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  animation: gentlePulse 2.4s infinite ease-in-out;
+  pointer-events: auto;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+.sparkleIcon {
+  color: #F6D982;
+  animation: spinSlow 6s infinite linear;
+}
+
+/* بالن گفت‌وگو */
+.speechBubble {
+  position: absolute;
+  left: calc(100% - 15px);
+  bottom: 45px;
+  width: 260px;
+  max-width: calc(100vw - 140px);
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(6, 24, 24, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(246, 217, 130, 0.35);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 22px rgba(246, 217, 130, 0.12);
+  color: #FFFAEA;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: opacity 0.32s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom left;
+  z-index: 10;
+}
+
+.bubbleVisible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1) translateY(0);
+}
+
+.bubbleHidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.88) translateY(12px);
+}
+
+/* نشانگر مثلثی متصل به بالن */
+.bubbleTail {
+  position: absolute;
+  left: -8px;
+  bottom: 24px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-right: 8px solid rgba(6, 24, 24, 0.94);
+  filter: drop-shadow(-2px 0 1px rgba(246, 217, 130, 0.3));
+}
+
+/* هدر بالن */
+.bubbleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #F6D982;
+  background: rgba(246, 217, 130, 0.12);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(246, 217, 130, 0.2);
+}
+
+.badgeIcon {
+  color: #F6D982;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #F6D982;
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* بدنه بالن */
+.bubbleBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.questionText {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #F6D982;
+  line-height: 1.45;
+}
+
+.subText {
+  margin: 0;
+  font-size: 11.5px;
+  color: rgba(255, 250, 234, 0.75);
+  line-height: 1.4;
+}
+
+/* دکمه اکشن نقشه راه */
+.bubbleFooter {
+  display: flex;
+  margin-top: 2px;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #F6D982 0%, #D4A338 100%);
+  color: #061818;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(246, 217, 130, 0.3);
+  transition: all 0.22s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(246, 217, 130, 0.45);
+    background: linear-gradient(135deg, #FFF0B8 0%, #E2B246 100%);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btnIcon {
+  transition: transform 0.2s ease;
+}
+
+.actionBtn:hover .btnIcon {
+  transform: translateX(-3px);
+}
+
+/* انیمیشن پالس ملایم */
+@keyframes gentlePulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 10px rgba(246, 217, 130, 0.3);
+  }
+
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 18px rgba(246, 217, 130, 0.55);
+  }
+}
+
+@keyframes spinSlow {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* واکنش‌گرایی برای تبلت */
+@media (max-width: 992px) {
+  .mascotWrapper {
+    width: 145px;
+    height: 203px;
+  }
+
+  .speechBubble {
+    width: 240px;
+    bottom: 35px;
+    padding: 12px 14px;
+  }
+
+  .questionText {
+    font-size: 13.5px;
+  }
+}
+
+/* واکنش‌گرایی برای موبایل */
+@media (max-width: 576px) {
+  .mascotWrapper {
+    width: 120px;
+    height: 168px;
+  }
+
+
+  .speechBubble {
+    left: calc(100% - 20px);
+    bottom: 40px;
+    width: 215px;
+    max-width: calc(100vw - 110px);
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .questionText {
+    font-size: 13px;
+  }
+
+  .subText {
+    font-size: 10.5px;
+  }
+
+  .actionBtn {
+    padding: 6px 10px;
+    font-size: 11.5px;
+  }
+
+  .peekIndicator {
+    top: 15px;
+    right: -8px;
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+}
