@@ -226,6 +226,7 @@
   outline: none;
   transition: all 0.2s ease;
   font-family: var(--font-iransans);
+
   &::placeholder {
     color: rgba(255, 250, 234, 0.4);
   }

@@ -7,6 +7,7 @@ import Navbar from "@/components/layout/Navbar/Navbar";
 import AuthModal from "@/components/auth/AuthModal";
 import PopupModal from "@/components/popup/PopupModal";
 import VpnModal from "@/components/common/VpnModal/VpnModal";
+import SalekGuide from "@/components/common/SalekGuide/SalekGuide";
 import { Providers } from "./providers";
 import Script from 'next/script';
 import localFont from 'next/font/local';
@@ -126,6 +127,7 @@ export default function RootLayout({ children }) {
           <AuthModal />
           <PopupModal />
           <VpnModal />
+          <SalekGuide />
         </Providers>
       </body>
     </html>

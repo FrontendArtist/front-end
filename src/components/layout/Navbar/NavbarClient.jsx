@@ -266,6 +266,7 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
           {activeMobileTab === 'menu' && (
             <ul className={styles.mobileNavList}>
               <li><Link href="/" onClick={closeMobileMenu}>صفحه اصلی</Link></li>
+              <li><Link href="/roadmap" onClick={closeMobileMenu}>نقشه راه سالک</Link></li>
               <li><Link href="/products" onClick={closeMobileMenu}>محصولات</Link></li>
               <li><Link href="/courses" onClick={closeMobileMenu}>دوره‌ها</Link></li>
               <li><Link href="/articles" onClick={closeMobileMenu}>مقالات</Link></li>

@@ -62,8 +62,8 @@ $breakpoint-sm: 440px;
 }
 
 @mixin section-spacing {
-  padding-top: var(--space-section-top-desktop);
-  padding-bottom: var(--space-section-top-desktop);
+  padding-top: var(--space-section-vertical);
+  padding-bottom: var(--space-section-vertical);
 
   @include respond(2xl) {
     padding-top: 60px;

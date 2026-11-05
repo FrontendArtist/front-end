@@ -1,0 +1,168 @@
+@use '../../../styles/base/mixins' as *;
+
+.roadmapSection {
+  @include section-spacing;
+  background-color: var(--color-bg-primary);
+}
+
+.container {
+  @include container;
+}
+
+.card {
+  width: 100%;
+}
+
+.innerWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 32px 44px;
+  direction: rtl;
+  overflow: hidden;
+
+  @include respond(lg) {
+    flex-direction: column;
+    text-align: center;
+    padding: 28px 24px;
+    gap: 20px;
+  }
+
+  @include respond(sm) {
+    padding: 24px 18px;
+    gap: 16px;
+  }
+}
+
+.decorativeGlow {
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle,
+      fade(var(--color-text-primary), 14%) 0%,
+      transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.iconBadge {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  background: linear-gradient(135deg,
+      fade(var(--color-text-primary), 18%) 0%,
+      fade(var(--color-overlay), 80%) 100%);
+  border: 1px solid fade(var(--color-text-primary), 35%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25),
+    inset 0 0 15px fade(var(--color-text-primary), 12%);
+
+  @include respond(sm) {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+  }
+}
+
+.compassIcon {
+  width: 34px;
+  height: 34px;
+
+  @include respond(sm) {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.textContent {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  @include respond(lg) {
+    align-items: center;
+  }
+}
+
+
+.title {
+  font-family: var(--font-shafigh), 'Far Shafigh', serif;
+  font-size: var(--font-2xl);
+  font-weight: 400;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.4;
+
+  @include respond(md) {
+    font-size: var(--font-xl);
+  }
+}
+
+.description {
+  font-size: var(--font-sm);
+  color: var(--color-card-text);
+  line-height: 1.85;
+  margin: 0;
+  opacity: 0.92;
+  max-width: 680px;
+}
+
+.actionWrapper {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+
+  @include respond(sm) {
+    width: 100%;
+  }
+}
+
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-title-hover) 100%);
+  color: var(--color-bg-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-bold);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 18px fade(var(--color-text-primary), 28%);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px fade(var(--color-text-primary), 45%);
+    color: var(--color-bg-primary);
+  }
+
+  @include respond(sm) {
+    width: 100%;
+    padding: 12px 20px;
+  }
+}
+
+.ctaArrow {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.25s ease;
+
+  .ctaButton:hover & {
+    transform: translateX(-4px);
+  }
+}

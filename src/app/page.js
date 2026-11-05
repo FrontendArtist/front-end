@@ -2,6 +2,7 @@ import ProductsSection from "@/modules/home/ProductsSection/ProductsSection";
 import styles from "./page.module.css";
 import HeroSection from "@/modules/home/HeroSection/HeroSection";
 import IntroTextSection from "@/modules/home/IntroTextSection/IntroTextSection";
+import RoadmapSection from "@/modules/home/RoadmapSection/RoadmapSection";
 import AboutMentorSection from "@/modules/home/AboutMentorSection/AboutMentorSection";
 import CoursesSection from "@/modules/home/CoursesSection/CoursesSection";
 import HakimElahiSection from "@/modules/home/HakimElahiSection/HakimElahiSection";
@@ -105,6 +106,7 @@ export default async function HomePage() {
       <HeroSection />
       <IntroTextSection />
       <AboutMentorSection />
+      <RoadmapSection />
       <CoursesSection data={courses} serverError={coursesResult.status === 'rejected'} />
       {/* <HakimElahiSection /> */}
       <ProductCategoriesSection data={categories} serverError={categoriesResult.status === 'rejected'} />
