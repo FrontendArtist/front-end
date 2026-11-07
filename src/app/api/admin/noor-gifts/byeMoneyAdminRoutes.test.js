@@ -9,7 +9,7 @@ import {
 import { POST as postGift } from './route';
 import { POST as postAssisted } from '../topups/assisted/route';
 import { POST as postBalances } from '../wallets/batch-balances/route';
-import { GET as getReceipt } from '../course-orders/[orderId]/receipt/route';
+import { GET as getReceipt } from '../byemoney-orders/[orderId]/receipt/route';
 
 jest.mock('next-auth/next', () => ({ getServerSession: jest.fn() }));
 jest.mock('@/lib/auth', () => ({ authOptions: {} }));
@@ -60,7 +60,7 @@ const routes = [
         expectedArgs: { userIds: ['doc-1'], jwt: JWT },
     },
     {
-        name: 'GET /api/admin/course-orders/[orderId]/receipt',
+        name: 'GET /api/admin/byemoney-orders/[orderId]/receipt',
         lib: getAdminCourseOrderReceipt,
         call: () => getReceipt({}, { params: Promise.resolve({ orderId: ORDER_ID }) }),
         expectedArgs: { jwt: JWT, orderId: ORDER_ID },

@@ -17,12 +17,12 @@ function isProductLike(item) {
  * finalAmountInNoor از قبل مبلغ کل همهٔ تعداد است؛ price همان را نگه می‌دارد و unitPrice قیمت واحد است.
  */
 function mapByeMoneyProductItem(item) {
-    const externalId = item.externalCourseId || item.externalId || item.courseExternalId || item.purchaseId || null;
+    const externalId = item.externalItemId || item.purchaseId || null;
     const quantity = Number(item.quantity);
     return {
         id: externalId,
         productExternalId: externalId,
-        title: item.title || item.courseTitle || null,
+        title: item.title || item.itemTitle || null,
         price: item.finalAmountInNoor ?? item.price ?? item.priceInNoor ?? null,
         unitPrice: item.unitPriceInNoor ?? item.priceInNoor ?? null,
         quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
@@ -45,9 +45,9 @@ export function mapByeMoneyLineItem(item) {
     if (!item || typeof item !== 'object') return null;
     if (isProductLike(item)) return mapByeMoneyProductItem(item);
     const isChapter = isChapterLike(item);
-    const externalId = item.externalCourseId || item.courseExternalId || item.purchaseId || null;
+    const externalId = item.externalItemId || item.purchaseId || null;
     const parentExternalId = item.parentExternalId || item.courseDocumentId || null;
-    const title = item.title || item.courseTitle || null;
+    const title = item.title || item.itemTitle || null;
 
     return {
         id: externalId,
@@ -59,7 +59,7 @@ export function mapByeMoneyLineItem(item) {
         integrationId: isChapter ? externalId : null,
         parentExternalId: isChapter ? parentExternalId : null,
         title,
-        courseTitle: item.courseTitle || (isChapter ? null : title),
+        courseTitle: item.itemTitle || (isChapter ? null : title),
         chapterTitle: item.chapterTitle || null,
         slug: item.slug || null,
         courseSlug: item.courseSlug || null,
@@ -77,12 +77,7 @@ export function mapByeMoneyLineItem(item) {
 
 export function mapByeMoneyPurchaseItem(purchase) {
     if (!purchase || typeof purchase !== 'object') return null;
-    return mapByeMoneyLineItem({
-        ...purchase,
-        title: purchase.courseTitle || purchase.title,
-        externalCourseId: purchase.courseExternalId || purchase.externalCourseId,
-        courseExternalId: purchase.courseExternalId || purchase.externalCourseId,
-    });
+    return mapByeMoneyLineItem(purchase);
 }
 
 function cartKey(value) {

@@ -95,7 +95,7 @@ export async function fetchCartAddress(reservationId) {
 function sanitizeItem(i) {
     return {
         purchaseId: i.purchaseId ?? null,
-        externalCourseId: i.externalCourseId ?? null,
+        externalItemId: i.externalItemId ?? null,
         title: i.title ?? null,
         itemType: i.itemType ?? null,
         quantity: i.quantity ?? 1,
@@ -118,7 +118,7 @@ function sanitizeReceipt(r) {
         cartSummary: r.cartSummary ?? null,
         items: (r.items || []).map((i) => ({
             purchaseId: i.purchaseId ?? null,
-            externalId: i.externalId ?? null,
+            externalItemId: i.externalItemId ?? null,
             title: i.title ?? null,
             itemType: i.itemType ?? null,
             quantity: i.quantity ?? 1,

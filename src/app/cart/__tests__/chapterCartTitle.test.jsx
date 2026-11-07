@@ -9,7 +9,8 @@ jest.mock('next-auth/react', () => ({ useSession: jest.fn() }));
 jest.mock('@/hooks/useAccountOrders', () => ({ useAccountOrderItems: jest.fn() }));
 jest.mock('@/lib/courseCartPreviewApi', () => ({
     previewCourseCart: jest.fn(),
-    sameCourseCartPrice: jest.fn(() => true)
+    sameCourseCartPrice: jest.fn(() => true),
+    cartRowExternalId: jest.requireActual('@/lib/courseCartPreviewApi').cartRowExternalId
 }));
 jest.mock('@/lib/courseCartApi', () => ({
     prepareCourseCart: jest.fn(),

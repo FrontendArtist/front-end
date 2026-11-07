@@ -309,11 +309,11 @@ export async function executeNoorCartPurchase({ cartId, jwt, router, payOnline =
         }
     }
     // فقط اقلام خرید تکمیل‌شده از سبد حذف شوند و اقلام تازه‌اضافه‌شده حفظ گردند.
-    if (data?.courses && Array.isArray(data.courses)) {
+    if (Array.isArray(data?.items)) {
         const completedCourseIds = new Set(
-            data.courses
+            data.items
                 .filter(c => ['Completed', 'Activating', 'DeliveryPending'].includes(c.purchaseStatus))
-                .map(c => c.externalCourseId)
+                .map(c => c.externalItemId)
         );
         if (completedCourseIds.size > 0) {
             const currentItems = useCartStore.getState().items;

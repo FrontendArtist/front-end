@@ -42,7 +42,7 @@ test('شارژ موفق بدون خرید، پس از فرصت پردازش به
 });
 
 test('حذف دسترسی در استرپی با وجود سابقه تحویل، موفقیت فعال‌سازی اعلام نمی‌کند', async () => {
-    getCourseCart.mockResolvedValue({ status: 'Paid', courses: [{ externalCourseId: 'course-1', purchaseStatus: 'Completed' }] });
+    getCourseCart.mockResolvedValue({ status: 'Paid', items: [{ externalItemId: 'course-1', purchaseStatus: 'Completed' }] });
     getCurrentCourseAccess.mockResolvedValue(new Set());
     const { result } = renderHook(() => useCourseCheckoutResult('', '', 'old-cart'));
     await waitFor(() => expect(result.current.phase).toBe('accessMissing'));
@@ -52,7 +52,7 @@ test('حذف دسترسی در استرپی با وجود سابقه تحویل�
 });
 
 test('خطای بررسی دسترسی فعلی، سابقه تحویل را به موفقیت تبدیل نمی‌کند', async () => {
-    getCourseCart.mockResolvedValue({ status: 'Paid', courses: [{ externalCourseId: 'course-1', purchaseStatus: 'Completed' }] });
+    getCourseCart.mockResolvedValue({ status: 'Paid', items: [{ externalItemId: 'course-1', purchaseStatus: 'Completed' }] });
     getCurrentCourseAccess.mockRejectedValue(new Error('قطع ارتباط استرپی'));
     const { result } = renderHook(() => useCourseCheckoutResult('', '', 'old-cart'));
     await waitFor(() => expect(result.current.phase).toBe('unknown'));
@@ -93,9 +93,9 @@ test('نتیجه خرید مستقیم هم از سرور تأیید می‌شو
  test('بازگشت بانک بدون حافظه مرورگر، سبد را از شناسه شارژ پیدا می‌کند و فقط استعلام می‌زند', async () => {
     sessionStorage.clear();
     getTopUpCheckout.mockResolvedValue({ cartId: 'cart-1', topUpStatus: 'Confirmed', courses: [] });
-    getCourseCart.mockResolvedValue({ status: 'Paid', courses: [
-        { externalCourseId: 'course-1', title: 'اول', purchaseStatus: 'Completed' },
-        { externalCourseId: 'course-2', title: 'دوم', purchaseStatus: 'DeliveryPending' },
+    getCourseCart.mockResolvedValue({ status: 'Paid', items: [
+        { externalItemId: 'course-1', title: 'اول', purchaseStatus: 'Completed' },
+        { externalItemId: 'course-2', title: 'دوم', purchaseStatus: 'DeliveryPending' },
     ] });
     const added = { id: 99, documentId: 'new-course', type: 'course' };
     useCartStore.setState({ items: [course, otherCourse, added], hydratedUserId: 7 });
@@ -117,9 +117,9 @@ test('خرید همزمان دوره و فصل با اعتبارسنجی فصل 
 
     getCourseCart.mockResolvedValue({
         status: 'Paid',
-        courses: [
-            { externalCourseId: 'course-1', title: 'دوره ازدواج کائناتی', purchaseStatus: 'Completed', itemType: 'Course' },
-            { externalCourseId: 'chapter-uuid-1', title: 'فصل 6', purchaseStatus: 'Completed', itemType: 'CourseChapter', parentExternalId: 'course-parent' },
+        items: [
+            { externalItemId: 'course-1', title: 'دوره ازدواج کائناتی', purchaseStatus: 'Completed', itemType: 'Course' },
+            { externalItemId: 'chapter-uuid-1', title: 'فصل 6', purchaseStatus: 'Completed', itemType: 'CourseChapter', parentExternalId: 'course-parent' },
         ]
     });
 
@@ -141,9 +141,9 @@ test('بازکردن صفحه نتیجه با سبد خالی، دسترسی ف�
 
     getCourseCart.mockResolvedValue({
         status: 'Paid',
-        courses: [
-            { externalCourseId: 'course-1', title: 'دوره ازدواج کائناتی', purchaseStatus: 'Completed', itemType: 'Course' },
-            { externalCourseId: 'chapter-uuid-1', title: 'فصل 6', purchaseStatus: 'Completed', itemType: 'CourseChapter', parentExternalId: 'course-parent' },
+        items: [
+            { externalItemId: 'course-1', title: 'دوره ازدواج کائناتی', purchaseStatus: 'Completed', itemType: 'Course' },
+            { externalItemId: 'chapter-uuid-1', title: 'فصل 6', purchaseStatus: 'Completed', itemType: 'CourseChapter', parentExternalId: 'course-parent' },
         ]
     });
 
@@ -159,12 +159,12 @@ test('شارژ تأییدشده با سبد AwaitingTopUp، سبد را خرید
     getCourseCart.mockResolvedValue({
         status: 'AwaitingTopUp',
         topUpStatus: 'Confirmed',
-        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }],
+        items: [{ externalItemId: 'course-1', purchaseStatus: 'NotPurchased' }],
     });
     purchaseCourseCart.mockResolvedValue({
         status: 'Paid',
         topUpStatus: 'Confirmed',
-        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'Completed' }],
+        items: [{ externalItemId: 'course-1', purchaseStatus: 'Completed' }],
     });
     const { result } = renderHook(() => useCourseCheckoutResult('', 'topup-cart'));
     await waitFor(() => expect(result.current.phase).toBe('completed'));
@@ -178,7 +178,7 @@ test('تغییر hydratedUserId حین فعال‌سازی، فراخوانی خ
     getCourseCart.mockResolvedValue({
         status: 'AwaitingTopUp',
         topUpStatus: 'Confirmed',
-        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }],
+        items: [{ externalItemId: 'course-1', purchaseStatus: 'NotPurchased' }],
     });
     purchaseCourseCart.mockImplementation(async () => {
         // شبیه‌سازی تغییر hydratedUserId در حین اجرای خرید توسط useCartSync
@@ -186,7 +186,7 @@ test('تغییر hydratedUserId حین فعال‌سازی، فراخوانی خ
         return {
             status: 'Paid',
             topUpStatus: 'Confirmed',
-            courses: [{ externalCourseId: 'course-1', purchaseStatus: 'Completed' }],
+            items: [{ externalItemId: 'course-1', purchaseStatus: 'Completed' }],
         };
     });
     useCartStore.setState({ items: [course, otherCourse], hydratedUserId: null });
@@ -204,7 +204,7 @@ test('ارجاع به رسیدگی مالی با پرچم isUnderReview در پ�
         isUnderReview: true,
         reviewCaseId: 'case-sep-6',
         reviewReasonCode: 'VERIFY_UNKNOWN',
-        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }],
+        items: [{ externalItemId: 'course-1', purchaseStatus: 'NotPurchased' }],
     });
     const { result } = renderHook(() => useCourseCheckoutResult('', '', 'cart-under-review'));
     await act(async () => {});
@@ -229,7 +229,7 @@ test('تراکنش‌های عادی در حال پردازش بدون پرچم 
         status: 'AwaitingTopUp',
         topUpStatus: 'Pending',
         isUnderReview: false,
-        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }],
+        items: [{ externalItemId: 'course-1', purchaseStatus: 'NotPurchased' }],
     });
     const { result } = renderHook(() => useCourseCheckoutResult('', '', 'cart-pending-normal'));
     await act(async () => {});
@@ -309,7 +309,7 @@ test('وضعیت failed از URL پس از یک دور استعلام متوقف
     getCourseCart.mockResolvedValue({
         status: 'Failed',
         topUpStatus: 'Rejected',
-        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }],
+        items: [{ externalItemId: 'course-1', purchaseStatus: 'NotPurchased' }],
     });
     const { result } = renderHook(() => useCourseCheckoutResult('', '', 'cart-failed', 'failed'));
     await act(async () => {});

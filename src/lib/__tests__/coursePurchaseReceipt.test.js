@@ -15,7 +15,7 @@ test.each([
   const controller = new AbortController();
   await expect(readReceipt({ jwt: 'session-token', purchaseId: 'purchase/one', signal: controller.signal }))
     .resolves.toEqual({ success: true, data });
-  expect(fetch).toHaveBeenCalledWith(`https://byemoney.test/api/${scope}/course-purchases/purchase%2Fone`, {
+  expect(fetch).toHaveBeenCalledWith(`https://byemoney.test${scope === "admin" ? "/api/admin/purchases" : "/api/purchases"}/purchase%2Fone`, {
     method: 'GET', headers: { Authorization: 'Bearer session-token', 'Content-Type': 'application/json' },
     cache: 'no-store', signal: controller.signal,
   });

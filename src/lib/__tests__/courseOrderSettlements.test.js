@@ -18,7 +18,7 @@ describe('ByeMoney course-order settlements client (I11-S)', () => {
     const r = await getCourseOrderSettlementPreview({ jwt: 'j', page: 2, pageSize: 50 });
     expect(r).toEqual({ success: true, status: 200, data: { orderCount: 2, previewToken: TOKEN } });
     const [url, init] = global.fetch.mock.calls[0];
-    expect(url).toBe('https://byemoney.test/api/admin/course-order-settlements/preview?page=2&pageSize=50');
+    expect(url).toBe('https://byemoney.test/api/admin/order-settlements/preview?page=2&pageSize=50');
     expect(init.headers.Authorization).toBe('Bearer j');
   });
 
@@ -28,7 +28,7 @@ describe('ByeMoney course-order settlements client (I11-S)', () => {
     expect(r.success).toBe(true);
     expect(r.status).toBe(201);
     const [url, init] = global.fetch.mock.calls[0];
-    expect(url).toBe('https://byemoney.test/api/admin/course-order-settlements');
+    expect(url).toBe('https://byemoney.test/api/admin/order-settlements');
     expect(init.method).toBe('POST');
     expect(JSON.parse(init.body)).toEqual({ title: 'آبان', note: null, previewToken: TOKEN });
   });

@@ -21,7 +21,7 @@ import shared from '../../Shared/AdminShared.module.scss';
 import modal from '../OrdersTable.module.scss';
 import styles from './CourseOrderSettlements.module.scss';
 
-const BASE = '/api/admin/course-order-settlements';
+const BASE = '/api/admin/order-settlements';
 const PAGE_SIZE = 20;
 const TITLE_MAX = 200;
 const NOTE_MAX = 1000;

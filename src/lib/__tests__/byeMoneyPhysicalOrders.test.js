@@ -66,11 +66,11 @@ describe('mapByeMoneyLineItem – کالای فیزیکی (I11-O)', () => {
   });
 
   test('قلم دوره و فصل بدون تغییر می‌ماند', () => {
-    const course = mapByeMoneyLineItem({ externalCourseId: 'c1', itemType: 'Course', title: 'دوره', finalAmountInNoor: 5, quantity: 1 });
+    const course = mapByeMoneyLineItem({ externalItemId: 'c1', itemType: 'Course', title: 'دوره', finalAmountInNoor: 5, quantity: 1 });
     expect(course.type).toBe('course');
     expect(course.__component).toBe('order.course-order-item');
     expect(course.documentId).toBe('c1');
-    const chapter = mapByeMoneyLineItem({ externalCourseId: 'ch1', itemType: 'CourseChapter', parentExternalId: 'c1', title: 'فصل' });
+    const chapter = mapByeMoneyLineItem({ externalItemId: 'ch1', itemType: 'CourseChapter', parentExternalId: 'c1', title: 'فصل' });
     expect(chapter.type).toBe('chapter');
     expect(chapter.parentExternalId).toBe('c1');
   });
@@ -86,7 +86,7 @@ describe.each([
     const r = await fn({ jwt: 'tok', orderId: ORDER_ID });
     expect(r).toEqual({ success: true, data });
     expect(fetch).toHaveBeenCalledWith(
-      `https://byemoney.test/api/${scope}/course-orders/${encodeURIComponent(ORDER_ID)}/receipt`,
+      `https://byemoney.test/api/${scope}/orders/${encodeURIComponent(ORDER_ID)}/receipt`,
       expect.objectContaining({ method: 'GET', headers: { Authorization: 'Bearer tok', 'Content-Type': 'application/json' } })
     );
   });

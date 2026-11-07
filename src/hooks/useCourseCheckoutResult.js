@@ -118,7 +118,12 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                     }
                 }
                 if (controller.signal.aborted) return;
-                let courses = resolvedCartId || topUpId ? (Array.isArray(data?.courses) ? data.courses : []) : [{ externalCourseId: courseId, purchaseStatus: data?.purchaseStatus }];
+                // سبد بای‌مانی اقلام عام (items/externalItemId) دارد؛ شارژ قدیمی TopUpCheckout ذاتاً دوره‌ای است (courses/externalCourseId).
+                let courses = resolvedCartId
+                    ? (Array.isArray(data?.items) ? data.items : [])
+                    : topUpId
+                        ? (Array.isArray(data?.courses) ? data.courses.map(course => ({ ...course, externalItemId: course.externalCourseId })) : [])
+                        : [{ externalItemId: courseId, purchaseStatus: data?.purchaseStatus }];
                 // سابقهٔ تحویل مالی، دسترسی فعلی پس از حذف دستی در استرپی را ثابت نمی‌کند.
                 if (courses.some(course => course.purchaseStatus === 'Completed' && (course.itemType !== 'Product' && course.type !== 'product'))) {
                     const access = await getCurrentCourseAccess(userId, controller.signal);
@@ -130,8 +135,8 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                         if (isProduct || course.purchaseStatus !== 'Completed') return course;
                         const isChapter = course.itemType === 'CourseChapter' || course.type === 'course_chapter' || Boolean(course.parentExternalId);
                         const hasAccess = isChapter
-                            ? (access.hasChapterAccess ? access.hasChapterAccess(course.externalCourseId, course.parentExternalId) : (access.has(course.externalCourseId) || (course.parentExternalId && access.has(course.parentExternalId))))
-                            : access.has(course.externalCourseId);
+                            ? (access.hasChapterAccess ? access.hasChapterAccess(course.externalItemId, course.parentExternalId) : (access.has(course.externalItemId) || (course.parentExternalId && access.has(course.parentExternalId))))
+                            : access.has(course.externalItemId);
                         return hasAccess ? course : { ...course, purchaseStatus: 'AccessMissing' };
                     });
                 }
@@ -161,8 +166,8 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                             }
                             if (matchingItems.length === 0 && courseId) {
                                 matchingItems = purchasesRes.data.items.filter(item =>
-                                    item.courseExternalId === courseId ||
-                                    courses.some(c => c.externalCourseId === courseId)
+                                    item.externalItemId === courseId ||
+                                    courses.some(c => c.externalItemId === courseId)
                                 );
                             }
                             if (matchingItems.length === 0 && (resolvedCartId || courseId)) {
@@ -204,7 +209,7 @@ export default function useCourseCheckoutResult(courseId, topUpId, requestedCart
                         const itemExternalId = item.type === 'chapter'
                             ? (item.integrationId || item.externalCourseId)
                             : (item.documentId || item.externalCourseId);
-                        return itemExternalId === course.externalCourseId;
+                        return itemExternalId === course.externalItemId;
                     });
                     matching.forEach(item => useCartStore.getState().removeItem(item.id, item.type));
                 }

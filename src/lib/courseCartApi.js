@@ -18,7 +18,7 @@ function writeStored(key, value) {
 }
 
 async function requestCart(path, jwt, { body, method = 'GET', signal } = {}) {
-    const response = await fetch(`${BYEMONEY_API_URL}/api/course-carts${path}`, {
+    const response = await fetch(`${BYEMONEY_API_URL}/api/carts${path}`, {
         method, headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
         ...(body ? { body: JSON.stringify(body) } : {}), cache: 'no-store', signal,
     });
@@ -129,7 +129,9 @@ export function prepareCourseCart(body, jwt, signal) {
                 }
             }
             if (activeKey) writeStored(activeKey, JSON.stringify({ cartId: body.cartId, key: cartKeys.get(body.cartId) }));
-            const data = await requestCart('/checkout', jwt, { method: 'POST', body });
+            // بای‌مانی فقط اقلام تایپ‌دار می‌پذیرد (BND-09)؛ externalCourseIds فقط برای شناسهٔ محلی سبد است.
+            const checkoutBody = { cartId: body.cartId, items: canonicalItems, couponCode: body.couponCode };
+            const data = await requestCart('/checkout', jwt, { method: 'POST', body: checkoutBody });
             rememberCart(body, data);
             return data;
         });

@@ -37,7 +37,7 @@ beforeEach(() => {
 });
 
 test('شارژ موفق با تحویل ناموفق، دوره را فعال‌شده نمایش نمی‌دهد', () => {
-    useCourseCheckoutResult.mockReturnValue({ phase: 'activating', paid: true, courses: [{ externalCourseId: 'course-1', purchaseStatus: 'DeliveryPending' }] });
+    useCourseCheckoutResult.mockReturnValue({ phase: 'activating', paid: true, courses: [{ externalItemId: 'course-1', purchaseStatus: 'DeliveryPending' }] });
     render(<CheckoutResultPage />);
     expect(screen.getByText('در حال بررسی و فعال‌سازی دوره‌ها…')).toBeTruthy();
     expect(screen.getByRole('heading').closest('.card').className).not.toContain('success');
@@ -46,7 +46,7 @@ test('شارژ موفق با تحویل ناموفق، دوره را فعال‌
 });
 
 test('شکست خرید پس از شارژ، تکمیل‌نشدن خرید را صریح نمایش می‌دهد', () => {
-    useCourseCheckoutResult.mockReturnValue({ phase: 'incomplete', paid: true, courses: [{ externalCourseId: 'course-1', purchaseStatus: 'PurchaseIncomplete' }] });
+    useCourseCheckoutResult.mockReturnValue({ phase: 'incomplete', paid: true, courses: [{ externalItemId: 'course-1', purchaseStatus: 'PurchaseIncomplete' }] });
     render(<CheckoutResultPage />);
     expect(screen.getByText(/اما خرید دوره تکمیل نشده است/)).toBeTruthy();
     expect(screen.queryByText('خرید موفق؛ دوره‌ها فعال شدند')).toBeNull();
@@ -55,7 +55,7 @@ test('شکست خرید پس از شارژ، تکمیل‌نشدن خرید را
 test('سابقه پرداخت با دسترسی حذف‌شده، پیام موفقیت و ظاهر موفق ندارد', () => {
     useSearchParams.mockReturnValue(new URLSearchParams('source=noor&cartId=bea58246-fa9b-4366-9f90-acf871a4244a'));
     useCourseCheckoutResult.mockReturnValue({ phase: 'accessMissing', paid: true,
-        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'AccessMissing' }] });
+        courses: [{ externalItemId: 'course-1', purchaseStatus: 'AccessMissing' }] });
     render(<CheckoutResultPage />);
     expect(screen.getByText(/سابقه خرید در بای‌مانی وجود دارد/)).toBeTruthy();
     expect(screen.queryByText('خرید موفق؛ دوره‌ها فعال شدند')).toBeNull();
@@ -71,14 +71,14 @@ test('پارامتر موفق در نشانی بدون استعلام موفق �
 });
 
 test('فقط تحویل تأییدشده، موفقیت فعال‌سازی نشان می‌دهد', () => {
-    useCourseCheckoutResult.mockReturnValue({ phase: 'completed', paid: true, courses: [{ externalCourseId: 'course-1', purchaseStatus: 'Completed' }] });
+    useCourseCheckoutResult.mockReturnValue({ phase: 'completed', paid: true, courses: [{ externalItemId: 'course-1', purchaseStatus: 'Completed' }] });
     render(<CheckoutResultPage />);
     expect(screen.getByText('خرید موفق؛ دوره‌ها فعال شدند')).toBeTruthy();
 });
 
 test('شکست قطعی خرید دوره راه بازگشت به همان سبد و پرداخت مجدد دارد', () => {
     useCourseCheckoutResult.mockReturnValue({ phase: 'paymentFailed', paid: false,
-        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'PurchaseIncomplete' }] });
+        courses: [{ externalItemId: 'course-1', purchaseStatus: 'PurchaseIncomplete' }] });
     render(<CheckoutResultPage />);
     expect(screen.getByRole('link', { name: 'بازگشت به سبد خرید و پرداخت مجدد' }).getAttribute('href')).toBe('/cart');
     expect(screen.getByText('پرداخت تأیید نشد')).toBeTruthy();
@@ -88,7 +88,7 @@ test('شکست قطعی خرید دوره راه بازگشت به همان سب
 test('انصراف تأییدشده با پیام پرداخت نامعلوم نمایش داده نمی‌شود', () => {
     useSearchParams.mockReturnValue(new URLSearchParams('status=cancel&orderType=light_topup&topUpId=topup-1'));
     useCourseCheckoutResult.mockReturnValue({ phase: 'paymentFailed', paid: false,
-        courses: [{ externalCourseId: 'course-1', purchaseStatus: 'NotPurchased' }] });
+        courses: [{ externalItemId: 'course-1', purchaseStatus: 'NotPurchased' }] });
     render(<CheckoutResultPage />);
     expect(screen.getByText('لغو شده توسط کاربر')).toBeTruthy();
     expect(screen.queryByText('در حال پیگیری')).toBeNull();
@@ -117,7 +117,7 @@ test('بازگشت از پرداخت موفق با استعلام در حال پ
 
 test('مرحله فعال‌سازی دوره ظاهر ناموفق ندارد و وضعیت در حال فعال‌سازی نشان می‌دهد', () => {
     useSearchParams.mockReturnValue(new URLSearchParams('orderType=light_topup&topUpId=topup-1&status=success&refNum=mock-ref'));
-    useCourseCheckoutResult.mockReturnValue({ phase: 'activating', paid: true, courses: [{ externalCourseId: 'course-1', purchaseStatus: 'DeliveryPending' }] });
+    useCourseCheckoutResult.mockReturnValue({ phase: 'activating', paid: true, courses: [{ externalItemId: 'course-1', purchaseStatus: 'DeliveryPending' }] });
     render(<CheckoutResultPage />);
     expect(screen.getByRole('heading').closest('.card').className).not.toContain('failed');
     expect(screen.getByRole('heading').closest('.card').className).toContain('pending');
@@ -131,11 +131,11 @@ test('خرید با ۱ قلم به صورت پیش‌فرض آکاردئون ر�
     useCourseCheckoutResult.mockReturnValue({
         phase: 'completed',
         paid: true,
-        courses: [{ externalCourseId: 'course-1', title: 'دوره جامع زیست‌شناسی', purchaseStatus: 'Completed' }],
+        courses: [{ externalItemId: 'course-1', title: 'دوره جامع زیست‌شناسی', purchaseStatus: 'Completed' }],
         receipts: [{
             purchaseId: 'order-item-999',
-            courseExternalId: 'course-1',
-            courseTitle: 'دوره جامع زیست‌شناسی',
+            externalItemId: 'course-1',
+            itemTitle: 'دوره جامع زیست‌شناسی',
             baseAmountInNoor: 1500,
             finalAmountInNoor: 1200,
             discountAmountInNoor: 300,
@@ -159,21 +159,21 @@ test('خرید با چند قلم به صورت پیش‌فرض آکاردئون
         phase: 'completed',
         paid: true,
         courses: [
-            { externalCourseId: 'course-1', title: 'دوره فیزیک دوازدهم', purchaseStatus: 'Completed' },
-            { externalCourseId: 'course-2', title: 'دوره ریاضی تجربی', purchaseStatus: 'Completed' }
+            { externalItemId: 'course-1', title: 'دوره فیزیک دوازدهم', purchaseStatus: 'Completed' },
+            { externalItemId: 'course-2', title: 'دوره ریاضی تجربی', purchaseStatus: 'Completed' }
         ],
         receipts: [
             {
                 purchaseId: 'pch-101',
-                courseExternalId: 'course-1',
-                courseTitle: 'دوره فیزیک دوازدهم',
+                externalItemId: 'course-1',
+                itemTitle: 'دوره فیزیک دوازدهم',
                 finalAmountInNoor: 5000,
                 deliveryStatus: 'Delivered'
             },
             {
                 purchaseId: 'pch-102',
-                courseExternalId: 'course-2',
-                courseTitle: 'دوره ریاضی تجربی',
+                externalItemId: 'course-2',
+                itemTitle: 'دوره ریاضی تجربی',
                 finalAmountInNoor: 7000,
                 deliveryStatus: 'Delivered'
             }
@@ -208,7 +208,7 @@ test('کارت درگاه و مشخصات پرداخت اطلاعات و وضع�
     useCourseCheckoutResult.mockReturnValue({
         phase: 'completed',
         paid: true,
-        courses: [{ externalCourseId: 'c1', title: 'دوره آزمایشی', purchaseStatus: 'Completed' }],
+        courses: [{ externalItemId: 'c1', title: 'دوره آزمایشی', purchaseStatus: 'Completed' }],
         receipts: []
     });
     render(<CheckoutResultPage />);
@@ -227,7 +227,7 @@ test('چیدمان جدید اقدام‌ها در خرید موفق: دکمه �
     useCourseCheckoutResult.mockReturnValue({
         phase: 'completed',
         paid: true,
-        courses: [{ externalCourseId: 'c1', title: 'دوره فیزیک', purchaseStatus: 'Completed' }],
+        courses: [{ externalItemId: 'c1', title: 'دوره فیزیک', purchaseStatus: 'Completed' }],
         receipts: [{ purchaseId: 'pch-1', finalAmountInNoor: 1000 }]
     });
     render(<CheckoutResultPage />);
@@ -261,7 +261,7 @@ test('چیدمان جدید اقدام‌ها در خرید ناموفق یا د
     useCourseCheckoutResult.mockReturnValue({
         phase: 'incomplete',
         paid: false,
-        courses: [{ externalCourseId: 'c1', title: 'دوره شیمی', purchaseStatus: 'PurchaseIncomplete' }],
+        courses: [{ externalItemId: 'c1', title: 'دوره شیمی', purchaseStatus: 'PurchaseIncomplete' }],
         receipts: []
     });
     render(<CheckoutResultPage />);
@@ -285,7 +285,7 @@ test('فیلد رسید دیجیتال (RefNum) و شناسه‌ها به درس
     useCourseCheckoutResult.mockReturnValue({
         phase: 'completed',
         paid: true,
-        courses: [{ externalCourseId: 'c1', title: 'دوره فیزیک', purchaseStatus: 'Completed' }],
+        courses: [{ externalItemId: 'c1', title: 'دوره فیزیک', purchaseStatus: 'Completed' }],
         receipts: []
     });
     render(<CheckoutResultPage />);
@@ -304,7 +304,7 @@ test('بازگشت از درگاه با status=success در صورت ارجاع 
         reviewCaseId: 'case-financial-789',
         reviewReasonCode: 'VERIFY_UNKNOWN',
         paid: false,
-        courses: [{ externalCourseId: 'course-1', title: 'دوره جامع نورانی', purchaseStatus: 'NotPurchased' }],
+        courses: [{ externalItemId: 'course-1', title: 'دوره جامع نورانی', purchaseStatus: 'NotPurchased' }],
         receipts: []
     });
     render(<CheckoutResultPage />);
@@ -338,7 +338,7 @@ test('برای خرید فصلی، عنوان به شکل «عنوان دوره 
         paid: true,
         courses: [
             {
-                externalCourseId: 'ch-int-1',
+                externalItemId: 'ch-int-1',
                 title: 'دوره هفت آسمان (فصل 1)',
                 purchaseStatus: 'Completed',
                 itemType: 'CourseChapter',
@@ -348,8 +348,8 @@ test('برای خرید فصلی، عنوان به شکل «عنوان دوره 
         receipts: [
             {
                 purchaseId: 'p-1',
-                courseExternalId: 'ch-int-1',
-                courseTitle: 'دوره هفت آسمان (فصل 1)',
+                externalItemId: 'ch-int-1',
+                itemTitle: 'دوره هفت آسمان (فصل 1)',
                 finalAmountInNoor: 50,
                 itemType: 'CourseChapter'
             }
@@ -374,7 +374,7 @@ test('برای خرید فصلی در صورت ارسال عنوان خام فص
         paid: true,
         courses: [
             {
-                externalCourseId: 'ch-int-2',
+                externalItemId: 'ch-int-2',
                 title: 'فصل 2',
                 purchaseStatus: 'Completed',
                 itemType: 'CourseChapter',
@@ -416,7 +416,7 @@ test('برای خرید فصلی، عنوان به شکل «عنوان دوره 
         paid: true,
         courses: [
             {
-                externalCourseId: 'ch-int-1',
+                externalItemId: 'ch-int-1',
                 title: 'دوره هفت آسمان (فصل 1)',
                 purchaseStatus: 'Completed',
                 itemType: 'CourseChapter',
@@ -426,8 +426,8 @@ test('برای خرید فصلی، عنوان به شکل «عنوان دوره 
         receipts: [
             {
                 purchaseId: 'p-1',
-                courseExternalId: 'ch-int-1',
-                courseTitle: 'دوره هفت آسمان (فصل 1)',
+                externalItemId: 'ch-int-1',
+                itemTitle: 'دوره هفت آسمان (فصل 1)',
                 finalAmountInNoor: 50,
                 itemType: 'CourseChapter'
             }
@@ -452,7 +452,7 @@ test('برای خرید فصلی در صورت ارسال عنوان خام فص
         paid: true,
         courses: [
             {
-                externalCourseId: 'ch-int-2',
+                externalItemId: 'ch-int-2',
                 title: 'فصل 2',
                 purchaseStatus: 'Completed',
                 itemType: 'CourseChapter',
@@ -495,7 +495,7 @@ test('برای خرید فصلی، عنوان به شکل «عنوان دوره 
         paid: true,
         courses: [
             {
-                externalCourseId: 'ch-int-1',
+                externalItemId: 'ch-int-1',
                 title: 'دوره هفت آسمان (فصل 1)',
                 purchaseStatus: 'Completed',
                 itemType: 'CourseChapter',
@@ -505,8 +505,8 @@ test('برای خرید فصلی، عنوان به شکل «عنوان دوره 
         receipts: [
             {
                 purchaseId: 'p-1',
-                courseExternalId: 'ch-int-1',
-                courseTitle: 'دوره هفت آسمان (فصل 1)',
+                externalItemId: 'ch-int-1',
+                itemTitle: 'دوره هفت آسمان (فصل 1)',
                 finalAmountInNoor: 50,
                 itemType: 'CourseChapter'
             }
@@ -531,7 +531,7 @@ test('برای خرید فصلی در صورت ارسال عنوان خام فص
         paid: true,
         courses: [
             {
-                externalCourseId: 'ch-int-2',
+                externalItemId: 'ch-int-2',
                 title: 'فصل 2',
                 purchaseStatus: 'Completed',
                 itemType: 'CourseChapter',
@@ -547,8 +547,8 @@ test('برای خرید فصلی در صورت ارسال عنوان خام فص
 
 describe('متن نتیجهٔ خرید بر اساس نوع اقلام سفارش', () => {
     const cartParams = 'cartId=cart-kind&status=success';
-    const product = { externalCourseId: 'p-1', title: 'کتاب', itemType: 'Product', purchaseStatus: 'Completed' };
-    const course = { externalCourseId: 'c-1', title: 'دوره', itemType: 'Course', purchaseStatus: 'Completed' };
+    const product = { externalItemId: 'p-1', title: 'کتاب', itemType: 'Product', purchaseStatus: 'Completed' };
+    const course = { externalItemId: 'c-1', title: 'دوره', itemType: 'Course', purchaseStatus: 'Completed' };
 
     test('سفارش فقط‌کالا پیام دوره‌ای نمی‌بیند', () => {
         useSearchParams.mockReturnValue(new URLSearchParams(cartParams));

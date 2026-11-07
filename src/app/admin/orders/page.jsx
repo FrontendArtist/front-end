@@ -3,7 +3,7 @@
  * @description صفحهٔ «سفارش‌ها»: فقط سفارش‌های بای‌مانی (ADMIN-ORDERS-REDESIGN) – Server Component
  *
  * دادهٔ اولیه برای همان فیلترهای آدرس (?tab&q&view) خوانده می‌شود تا رفرش و لینک اشتراکی همان نما را
- * نشان دهند؛ تغییرهای بعدی را کامپوننت کلاینت از /api/admin/course-orders می‌گیرد.
+ * نشان دهند؛ تغییرهای بعدی را کامپوننت کلاینت از /api/admin/byemoney-orders می‌گیرد.
  * سفارش‌های قدیمی استرپی در /admin/orders/legacy هستند. Authorization در layout والد است.
  */
 

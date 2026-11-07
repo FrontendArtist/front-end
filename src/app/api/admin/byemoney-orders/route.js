@@ -1,5 +1,5 @@
 /**
- * @file src/app/api/admin/course-orders/route.js
+ * @file src/app/api/admin/byemoney-orders/route.js
  * @description فهرست سفارش‌های بای‌مانی صفحهٔ «سفارش‌ها» (فقط GET؛ JWT فقط از نشست سروری، BND-07)
  *
  * query: tab، q، view=restock، start، limit و counts=1 برای افزودن شمارندهٔ تب‌ها.

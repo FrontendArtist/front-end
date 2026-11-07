@@ -131,11 +131,7 @@ export async function GET(request) {
                             cartSummary: r.cartSummary,
                             transactionId: r.transactionId,
                             itemCount: 1,
-                            items: [mapByeMoneyLineItem({
-                                ...r,
-                                title: r.courseTitle,
-                                externalCourseId: r.courseExternalId,
-                            })].filter(Boolean),
+                            items: [mapByeMoneyLineItem(r)].filter(Boolean),
                             topUps: []
                         };
                         return NextResponse.json({ data: [mappedOrder] });

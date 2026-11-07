@@ -51,5 +51,5 @@ export async function getAdminBatchBalances({ userIds }) {
 }
 
 export function getAdminOrderReceipt({ orderId, signal }) {
-    return callAdminRoute(`/api/admin/course-orders/${encodeURIComponent(orderId)}/receipt`, { signal });
+    return callAdminRoute(`/api/admin/byemoney-orders/${encodeURIComponent(orderId)}/receipt`, { signal });
 }

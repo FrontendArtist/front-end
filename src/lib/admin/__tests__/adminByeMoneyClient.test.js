@@ -20,7 +20,7 @@ describe('adminByeMoneyClient (BND-07)', () => {
             '/api/admin/noor-gifts',
             '/api/admin/topups/assisted',
             '/api/admin/wallets/batch-balances',
-            '/api/admin/course-orders/cart%3A1/receipt',
+            '/api/admin/byemoney-orders/cart%3A1/receipt',
         ]);
         global.fetch.mock.calls.forEach(([, init]) => expect(init.headers?.Authorization).toBeUndefined());
         expect(global.fetch.mock.calls[0][1].headers['Idempotency-Key']).toBe('k');

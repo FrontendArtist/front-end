@@ -29,7 +29,7 @@ import { checkPaymentConnection, invalidatePaymentConnection } from '@/lib/clien
 import { cartItemKey } from '@/lib/cartItemKey';
 import styles from './Cart.module.scss';
 import { prepareCourseCart, getCourseCartId, getExistingCourseCartId, getCourseCart } from '@/lib/courseCartApi';
-import { previewCourseCart, sameCourseCartPrice } from '@/lib/courseCartPreviewApi';
+import { cartRowExternalId, previewCourseCart, sameCourseCartPrice } from '@/lib/courseCartPreviewApi';
 import { getWalletBalanceWithByeMoney } from '@/lib/byeMoneyApi';
 import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isCartItemPurchasedByUser } from '@/lib/courseAccessUtils';
@@ -589,8 +589,8 @@ export default function CartPage() {
                                     const itemExternalId = item.type === 'chapter'
                                         ? (item.integrationId || item.externalCourseId)
                                         : (item.documentId || item.externalCourseId);
-                                    const quote = isCartEligible ? (preview?.data?.courses || preview?.data?.items)?.find(course =>
-                                        (course.externalCourseId === itemExternalId || course.externalId === itemExternalId)) : null;
+                                    const quote = isCartEligible ? (preview?.data?.items || preview?.data?.courses)?.find(course =>
+                                        cartRowExternalId(course) === itemExternalId) : null;
                                     // قیمت پایه هر دوره/فصل ثابت است؛ تخفیف دوره و کوپن فقط در خلاصهٔ سبد نمایش داده می‌شوند.
                                     const price = isCartEligible
                                         ? (quote ? (quote.basePriceInNoor != null ? quote.basePriceInNoor : quote.priceInNoor) : undefined)

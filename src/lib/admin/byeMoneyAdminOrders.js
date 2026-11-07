@@ -2,7 +2,7 @@
  * @file src/lib/admin/byeMoneyAdminOrders.js
  * @description دادهٔ صفحهٔ «سفارش‌ها» (فقط بای‌مانی) در پنل ادمین — ADMIN-ORDERS-REDESIGN
  *
- * فقط از APIهای موجود می‌خواند (GET /api/admin/course-orders، جزئیات سفارش و فهرست برگشت موجودی)
+ * فقط از APIهای موجود می‌خواند (GET /api/admin/orders (بای‌مانی)، جزئیات سفارش و فهرست برگشت موجودی)
  * و هیچ منطق مالی یا تغییر وضعیتی ندارد. API در هر فراخوانی فقط یک financialStatus/deliveryStatus
  * می‌پذیرد؛ تب‌های چندوضعیتی با چند فراخوانی ترتیبی صفحه‌بندی می‌شوند.
  *

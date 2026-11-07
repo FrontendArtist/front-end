@@ -22,7 +22,7 @@ jest.mock('@/components/ui/BreadCrumb/Breadcrumb', () => () => null);
 jest.mock('next/image', () => () => null);
 
 const course = (id = 'course-1', price = 150) => ({ externalCourseId: id, title: 'عنوان معتبر', basePriceInNoor: price, itemDiscountInNoor: 0, couponDiscountInNoor: 0, priceInNoor: price });
-const byeMoneyCourse = (id = 'course-1', price = 150) => ({ externalCourseId: id, title: 'عنوان معتبر', priceInNoor: price, purchaseStatus: 'NotPurchased' });
+const byeMoneyCourse = (id = 'course-1', price = 150) => ({ externalItemId: id, title: 'عنوان معتبر', priceInNoor: price, purchaseStatus: 'NotPurchased' });
 const quote = (price = 150) => ({ couponCode: null, originalTotalInNoor: price, itemDiscountInNoor: 0, couponDiscountInNoor: 0, priceInNoor: price, courses: [course('course-1', price)] });
 const ready = (price = 150, shortfall = 0, courses = [byeMoneyCourse('course-1', price)]) => ({
     cartId: 'cart-1', status: 'Ready', couponCode: null,

@@ -194,7 +194,7 @@ export function OrderItemsList({ detail, isPaid, onReload, onItemStatus }) {
 
                 return (
                     <div
-                        key={`${item.externalCourseId || item.purchaseId || idx}`}
+                        key={`${item.externalItemId || item.purchaseId || idx}`}
                         className={`${styles.item_card} ${fullyCancelled ? styles['item_card--cancelled'] : ''}`}
                         data-cancelled={fullyCancelled ? 'full' : partlyCancelled ? 'partial' : undefined}
                     >

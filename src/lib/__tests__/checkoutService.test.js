@@ -199,7 +199,7 @@ describe('خرید سبد با قیمت تثبیت‌شده', () => {
   test('فقط شناسه سبد را ارسال می‌کند و تا تأیید GET اقلام را نگه می‌دارد', async () => {
     const items = [{ id: 1, type: 'course', documentId: 'one' }, { id: 2, type: 'course', documentId: 'two' }];
     useCartStore.setState({ items });
-    purchaseCourseCart.mockResolvedValue({ cartId: 'cart-1', status: 'Paid', courses: [] });
+    purchaseCourseCart.mockResolvedValue({ cartId: 'cart-1', status: 'Paid', items: [] });
     const router = { push: jest.fn() };
     await executeNoorCartPurchase({ cartId: 'cart-1', jwt: 'jwt', router });
     expect(purchaseCourseCart).toHaveBeenCalledWith('cart-1', 'jwt');
@@ -217,9 +217,9 @@ describe('خرید سبد با قیمت تثبیت‌شده', () => {
     purchaseCourseCart.mockResolvedValue({
       cartId: 'cart-1',
       status: 'Paid',
-      courses: [
-        { externalCourseId: 'c-10', purchaseStatus: 'Completed' },
-        { externalCourseId: 'c-20', purchaseStatus: 'Pending' },
+      items: [
+        { externalItemId: 'c-10', purchaseStatus: 'Completed' },
+        { externalItemId: 'c-20', purchaseStatus: 'Pending' },
       ],
     });
     const router = { push: jest.fn() };

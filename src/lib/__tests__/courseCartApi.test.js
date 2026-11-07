@@ -111,11 +111,16 @@ test('پس از انقضای قیمت، بررسی مجدد شناسه همان 
     expect(getCourseCartId(7, ['one'], null)).toBe(oldId);
 });
 
-test('فقط انتخاب دوره و کوپن برای محاسبه معتبر به سرور فرستاده می‌شود', async () => {
+test('فقط اقلام تایپ‌دار و کوپن به مسیر عام سبد بای‌مانی فرستاده می‌شود (BND-09)', async () => {
     const body = { cartId: 'cart-1', externalCourseIds: ['one', 'two'], couponCode: 'ALL10' };
     global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ status: 'Ready', priceInNoor: 189 }) });
     expect((await prepareCourseCart(body, 'jwt')).priceInNoor).toBe(189);
-    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual(body);
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
+        cartId: 'cart-1',
+        items: [{ externalId: 'one', type: 'course', quantity: 1 }, { externalId: 'two', type: 'course', quantity: 1 }],
+        couponCode: 'ALL10',
+    });
+    expect(fetch.mock.calls[0][0]).toMatch(/\/api\/carts\/checkout$/);
     expect(fetch.mock.calls[0][1].headers.Authorization).toBe('Bearer jwt');
 });
 

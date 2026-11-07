@@ -31,7 +31,7 @@ describe('نمایش عنوان خرید فصلی در صفحه نتیجه پر�
             paid: true,
             courses: [
                 {
-                    externalCourseId: 'ch-int-1',
+                    externalItemId: 'ch-int-1',
                     title: 'دوره هفت آسمان (فصل 1)',
                     purchaseStatus: 'Completed',
                     itemType: 'CourseChapter',
@@ -41,8 +41,8 @@ describe('نمایش عنوان خرید فصلی در صفحه نتیجه پر�
             receipts: [
                 {
                     purchaseId: 'p-1',
-                    courseExternalId: 'ch-int-1',
-                    courseTitle: 'دوره هفت آسمان (فصل 1)',
+                    externalItemId: 'ch-int-1',
+                    itemTitle: 'دوره هفت آسمان (فصل 1)',
                     finalAmountInNoor: 50,
                     itemType: 'CourseChapter'
                 }
@@ -67,7 +67,7 @@ describe('نمایش عنوان خرید فصلی در صفحه نتیجه پر�
             paid: true,
             courses: [
                 {
-                    externalCourseId: 'ch-int-2',
+                    externalItemId: 'ch-int-2',
                     title: 'فصل 2',
                     purchaseStatus: 'Completed',
                     itemType: 'CourseChapter',

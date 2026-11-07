@@ -70,7 +70,7 @@ async function fetchOrders({ tab, q, view, start = 0, counts = false }) {
     if (q) params.set('q', q);
     if (view) params.set('view', view);
     if (counts) params.set('counts', '1');
-    const res = await fetch(`/api/admin/course-orders?${params.toString()}`);
+    const res = await fetch(`/api/admin/byemoney-orders?${params.toString()}`);
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json.error || 'خطا در دریافت سفارش‌ها');
     return json;

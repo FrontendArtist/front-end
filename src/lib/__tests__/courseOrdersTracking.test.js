@@ -68,7 +68,7 @@ describe('getMyCourseOrders (I11-T)', () => {
 
     const res = await getMyCourseOrders({ jwt: 'user-token' });
     expect(res).toEqual({ success: true, data: responseData });
-    expect(fetch).toHaveBeenCalledWith('https://byemoney.test/api/me/course-orders?page=1&pageSize=20', {
+    expect(fetch).toHaveBeenCalledWith('https://byemoney.test/api/me/orders?page=1&pageSize=20', {
       method: 'GET',
       headers: {
         Authorization: 'Bearer user-token',
@@ -175,7 +175,7 @@ describe('getMyCourseOrderDetails (I11-T)', () => {
     });
     expect(res).toEqual({ success: true, data: sampleOrder });
     expect(fetch).toHaveBeenCalledWith(
-      'https://byemoney.test/api/me/course-orders/cart%3A11111111-1111-1111-1111-111111111111',
+      'https://byemoney.test/api/me/orders/cart%3A11111111-1111-1111-1111-111111111111',
       {
         method: 'GET',
         headers: {

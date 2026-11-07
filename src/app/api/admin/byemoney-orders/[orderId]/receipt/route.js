@@ -1,5 +1,5 @@
 /**
- * @file src/app/api/admin/course-orders/[orderId]/receipt/route.js
+ * @file src/app/api/admin/byemoney-orders/[orderId]/receipt/route.js
  * @description رسید سفارش برای ادمین (I11-O) از route سروری (BND-07)؛ JWT فقط از نشست سروری.
  */
 

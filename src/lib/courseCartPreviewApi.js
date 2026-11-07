@@ -26,6 +26,11 @@ export function previewCourseCart(body, jwt, signal) {
     });
 }
 
+// شناسهٔ ردیف: سبد بای‌مانی externalItemId دارد و پیش‌نمایش استرپی (قرارداد خود استرپی) externalCourseId/externalId.
+export function cartRowExternalId(row) {
+    return row?.externalItemId || row?.externalCourseId || row?.externalId || '';
+}
+
 // مقایسهٔ مبلغ کل، هزینه ارسال و ردیف‌ها بین پیش‌نمایش استراپی و سبد بایمانی، بدون هشدار کاذب ناشی از فیلدهای اختیاری
 export function sameCourseCartPrice(left, right) {
     if (!left || !right) return false;
@@ -34,8 +39,8 @@ export function sameCourseCartPrice(left, right) {
             ? data.items
             : (Array.isArray(data.courses) ? data.courses : []);
         const rows = [...rawRows].sort((a, b) => {
-            const idA = a.externalCourseId || a.externalId || '';
-            const idB = b.externalCourseId || b.externalId || '';
+            const idA = cartRowExternalId(a);
+            const idB = cartRowExternalId(b);
             return idA.localeCompare(idB);
         });
         const originalTotal = Number(data.originalTotalInNoor != null ? data.originalTotalInNoor : 0);
@@ -52,7 +57,7 @@ export function sameCourseCartPrice(left, right) {
             shippingAmount,
             price,
             rows.map(item => {
-                const id = item.externalCourseId || item.externalId || '';
+                const id = cartRowExternalId(item);
                 const unitPrice = Number(item.basePriceInNoor != null ? item.basePriceInNoor : item.unitPriceInNoor != null ? item.unitPriceInNoor : item.priceInNoor || 0);
                 const quantity = Number(item.quantity != null ? item.quantity : 1);
                 const lineTotal = Number(item.lineTotalInNoor != null ? item.lineTotalInNoor : (unitPrice * quantity));

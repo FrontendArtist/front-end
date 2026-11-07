@@ -1151,7 +1151,7 @@ export async function purchaseCoursesAsAdminWithByeMoney({ beneficiaryExternalUs
 
 /**
  * دریافت فهرست خریدهای دوره کاربر جاری از بای‌مانی
- * اندپوینت: GET /api/me/course-purchases?page=1&pageSize=20
+ * اندپوینت: GET /api/purchases?page=1&pageSize=20
  *
  * @param {object} params
  * @param {string} params.jwt - توکن احراز هویت
@@ -1160,7 +1160,7 @@ export async function purchaseCoursesAsAdminWithByeMoney({ beneficiaryExternalUs
  * @param {AbortSignal} [params.signal]
  * @returns {Promise<{
  *   success: boolean,
- *   data?: { items: Array<{ purchaseId: string, cartId: string|null, courseTitle: string, finalAmountInNoor: number, purchasedAtUtc: string, financialStatus: string, deliveryStatus: string }>, page: number, pageSize: number, totalCount: number },
+ *   data?: { items: Array<{ purchaseId: string, cartId: string|null, itemTitle: string, finalAmountInNoor: number, purchasedAtUtc: string, financialStatus: string, deliveryStatus: string }>, page: number, pageSize: number, totalCount: number },
  *   error?: string,
  *   unauthorized?: boolean,
  *   forbidden?: boolean,
@@ -1171,7 +1171,7 @@ export async function getMyCoursePurchases({ jwt, page = 1, pageSize = 20, signa
   if (!jwt) {
     return { success: false, unauthorized: true, error: 'نشست کاربری نامعتبر است.' };
   }
-  const url = `${BYEMONEY_API_URL}/api/me/course-purchases?page=${encodeURIComponent(page)}&pageSize=${encodeURIComponent(pageSize)}`;
+  const url = `${BYEMONEY_API_URL}/api/purchases?page=${encodeURIComponent(page)}&pageSize=${encodeURIComponent(pageSize)}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -1223,7 +1223,7 @@ export const CourseOrderId = {
 
 /**
  * دریافت فهرست پیگیری سفارش‌های کاربر جاری از بای‌مانی
- * اندپوینت: GET /api/me/course-orders
+ * اندپوینت: GET /api/me/orders
  *
  * @param {object} params
  * @param {string} params.jwt - توکن احراز هویت
@@ -1283,7 +1283,7 @@ export async function getMyCourseOrders({
   if (deliveryStatus) params.set('deliveryStatus', String(deliveryStatus));
   if (sourceType) params.set('sourceType', String(sourceType));
 
-  const url = `${BYEMONEY_API_URL}/api/me/course-orders?${params.toString()}`;
+  const url = `${BYEMONEY_API_URL}/api/me/orders?${params.toString()}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -1321,7 +1321,7 @@ export async function getMyCourseOrders({
 
 /**
  * دریافت جزئیات یک سفارش کاربر از بای‌مانی
- * اندپوینت: GET /api/me/course-orders/{orderId}
+ * اندپوینت: GET /api/me/orders/{orderId}
  *
  * @param {object} params
  * @param {string} params.jwt - توکن احراز هویت
@@ -1350,7 +1350,7 @@ export async function getMyCourseOrders({
  *       finalAmountInNoor: number
  *     }|null,
  *     items: Array<{
- *       externalCourseId: string,
+ *       externalItemId: string,
  *       itemType?: string,
  *       quantity?: number,
  *       physicalDeliveryStatus?: 'Preparing'|'Shipped'|'Delivered'|null,
@@ -1387,7 +1387,7 @@ export async function getMyCourseOrderDetails({ jwt, orderId, signal } = {}) {
   if (!jwt || !orderId) {
     return { success: false, error: 'شناسه سفارش یا توکن نامعتبر است.' };
   }
-  const url = `${BYEMONEY_API_URL}/api/me/course-orders/${encodeURIComponent(orderId)}`;
+  const url = `${BYEMONEY_API_URL}/api/me/orders/${encodeURIComponent(orderId)}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -1425,7 +1425,7 @@ export async function getMyCourseOrderDetails({ jwt, orderId, signal } = {}) {
 
 /**
  * دریافت رسید خرید یک دوره مشخص از بای‌مانی
- * اندپوینت: GET /api/me/course-purchases/{purchaseId}
+ * اندپوینت: GET /api/purchases/{purchaseId}
  *
  * @param {object} params
  * @param {string} params.jwt - توکن کاربر
@@ -1437,8 +1437,8 @@ export async function getMyCourseOrderDetails({ jwt, orderId, signal } = {}) {
  *     purchaseId: string,
  *     cartId: string|null,
  *     transactionId: string|null,
- *     courseExternalId: string,
- *     courseTitle: string,
+ *     externalItemId: string,
+ *     itemTitle: string,
  *     baseAmountInNoor: number|null,
  *     discountAmountInNoor: number|null,
  *     couponCode: string|null,
@@ -1466,7 +1466,7 @@ export async function getCoursePurchaseReceipt({ jwt, purchaseId, signal } = {})
 
 /**
  * دریافت رسید خرید مشتری توسط ادمین دارای مجوز Purchases.View.
- * GET /api/admin/course-purchases/{purchaseId} — همان DTO رسید کاربر.
+ * GET /api/admin/purchases/{purchaseId} — همان DTO رسید کاربر.
  * @param {{ jwt: string, purchaseId: string, signal?: AbortSignal }} params
  * @returns {ReturnType<typeof getCoursePurchaseReceipt>}
  */
@@ -1478,7 +1478,7 @@ async function fetchCoursePurchaseReceipt({ jwt, purchaseId, signal, scope }) {
   if (!jwt || !purchaseId) {
     return { success: false, error: 'شناسه خرید یا توکن نامعتبر است.' };
   }
-  const url = `${BYEMONEY_API_URL}/api/${scope}/course-purchases/${encodeURIComponent(purchaseId)}`;
+  const url = `${BYEMONEY_API_URL}${scope === 'admin' ? '/api/admin/purchases' : '/api/purchases'}/${encodeURIComponent(purchaseId)}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -1515,7 +1515,7 @@ async function fetchCoursePurchaseReceipt({ jwt, purchaseId, signal, scope }) {
 }
 
 /**
- * رسید کل سفارش کاربر (I11-O): GET /api/me/course-orders/{orderId}/receipt
+ * رسید کل سفارش کاربر (I11-O): GET /api/me/orders/{orderId}/receipt
  * فقط سفارش Paid رسید دارد؛ ناموجود، متعلق به دیگری و پرداخت‌نشده همگی 404 «خرید پیدا نشد.» هستند.
  * مبالغ فقط از پاسخ خوانده می‌شوند و در فرانت محاسبه نمی‌شوند.
  *
@@ -1531,7 +1531,7 @@ async function fetchCoursePurchaseReceipt({ jwt, purchaseId, signal, scope }) {
  *     financialStatus: string, deliveryStatus: string,
  *     cartSummary: { originalTotalInNoor: number, itemDiscountInNoor: number, couponDiscountInNoor: number, shippingAmountInNoor?: number, finalAmountInNoor: number }|null,
  *     items: Array<{
- *       purchaseId: string, externalId: string, title: string, itemType: string, parentExternalId: string|null,
+ *       purchaseId: string, externalItemId: string, title: string, itemType: string, parentExternalId: string|null,
  *       quantity: number, unitPriceInNoor: number, baseAmountInNoor: number, discountAmountInNoor: number,
  *       finalAmountInNoor: number, referenceRialPerNoorAtPurchaseTime: number|null,
  *       deliveryStatus: string, physicalDeliveryStatus: 'Preparing'|'Shipped'|'Delivered'|null,
@@ -1547,7 +1547,7 @@ export async function getMyCourseOrderReceipt({ jwt, orderId, signal } = {}) {
 }
 
 /**
- * رسید کل سفارش برای ادمین دارای Purchases.View: GET /api/admin/course-orders/{orderId}/receipt
+ * رسید کل سفارش برای ادمین دارای Purchases.View: GET /api/admin/orders/{orderId}/receipt
  * همان DTO رسید کاربر؛ بدون مجوز 403.
  * @param {{ jwt: string, orderId: string, signal?: AbortSignal }} params
  * @returns {ReturnType<typeof getMyCourseOrderReceipt>}
@@ -1558,7 +1558,7 @@ export async function getAdminCourseOrderReceipt({ jwt, orderId, signal } = {}) 
 
 /**
  * فهرست پیگیری سفارش‌های همهٔ کاربران برای ادمین دارای Purchases.View (I11-T)
- * GET /api/admin/course-orders — هر ردیف یک سفارش (سبد/شارژ/خرید) با هر وضعیت مالی.
+ * GET /api/admin/orders — هر ردیف یک سفارش (سبد/شارژ/خرید) با هر وضعیت مالی.
  * financialStatus فقط یک مقدار می‌پذیرد؛ بدون مجوز 403.
  * @param {{ jwt: string, page?: number, pageSize?: number, financialStatus?: string, deliveryStatus?: string,
  *   sourceType?: string, buyerExternalUserId?: string, fromUtc?: string, toUtc?: string, signal?: AbortSignal }} params
@@ -1594,7 +1594,7 @@ export async function getAdminCourseOrders({
   if (fromUtc) params.set('fromUtc', String(fromUtc));
   if (toUtc) params.set('toUtc', String(toUtc));
   return fetchAdminCourseOrdersEndpoint(
-    `${BYEMONEY_API_URL}/api/admin/course-orders?${params.toString()}`,
+    `${BYEMONEY_API_URL}/api/admin/orders?${params.toString()}`,
     jwt,
     signal,
     'خطای دریافت فهرست سفارش‌های ادمین',
@@ -1602,8 +1602,8 @@ export async function getAdminCourseOrders({
 }
 
 /**
- * جزئیات یک سفارش برای ادمین دارای Purchases.View: GET /api/admin/course-orders/{orderId}
- * پاسخ { buyerExternalUserId, buyerDisplayName, order }؛ order همان DTO جزئیات /api/me/course-orders/{orderId}
+ * جزئیات یک سفارش برای ادمین دارای Purchases.View: GET /api/admin/orders/{orderId}
+ * پاسخ { buyerExternalUserId, buyerDisplayName, order }؛ order همان DTO جزئیات /api/me/orders/{orderId}
  * (items[]، topUps[] و cartSummary) است و برای سفارش پرداخت‌نشده هم کار می‌کند.
  * @param {{ jwt: string, orderId: string, signal?: AbortSignal }} params
  */
@@ -1612,7 +1612,7 @@ export async function getAdminCourseOrderDetails({ jwt, orderId, signal } = {}) 
     return { success: false, error: 'شناسه سفارش یا توکن نامعتبر است.' };
   }
   return fetchAdminCourseOrdersEndpoint(
-    `${BYEMONEY_API_URL}/api/admin/course-orders/${encodeURIComponent(orderId)}`,
+    `${BYEMONEY_API_URL}/api/admin/orders/${encodeURIComponent(orderId)}`,
     jwt,
     signal,
     'خطای دریافت جزئیات سفارش',
@@ -1662,7 +1662,7 @@ async function fetchCourseOrderReceipt({ jwt, orderId, signal, scope }) {
   if (!jwt || !orderId) {
     return { success: false, error: 'شناسه سفارش یا توکن نامعتبر است.' };
   }
-  const url = `${BYEMONEY_API_URL}/api/${scope}/course-orders/${encodeURIComponent(orderId)}/receipt`;
+  const url = `${BYEMONEY_API_URL}/api/${scope}/orders/${encodeURIComponent(orderId)}/receipt`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -1823,7 +1823,7 @@ export async function getPendingPhysicalRestocks({ jwt, signal } = {}) {
 
 /**
  * دریافت فهرست خریدهای بای‌مانی در پنل ادمین
- * اندپوینت: GET /api/admin/course-purchases
+ * اندپوینت: GET /api/admin/purchases
  *
  * @param {object} params
  * @param {string} params.jwt - توکن ادمین
@@ -1841,7 +1841,7 @@ export async function getPendingPhysicalRestocks({ jwt, signal } = {}) {
  *     items: Array<{
  *       purchaseId: string,
  *       cartId: string|null,
- *       courseTitle: string,
+ *       itemTitle: string,
  *       finalAmountInNoor: number,
  *       purchasedAtUtc: string,
  *       financialStatus: string,
@@ -1881,7 +1881,7 @@ export async function getAdminCoursePurchases({
   if (financialStatus) params.set('financialStatus', String(financialStatus));
   if (deliveryStatus) params.set('deliveryStatus', String(deliveryStatus));
 
-  const url = `${BYEMONEY_API_URL}/api/admin/course-purchases?${params.toString()}`;
+  const url = `${BYEMONEY_API_URL}/api/admin/purchases?${params.toString()}`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -2139,7 +2139,7 @@ export const resolveAdminPhysicalRestock = ({ jwt, operationId, signal }) =>
 // فقط از route سروری Next صدا زده شود (BND-07). تسویه برچسب گزارشی است و نوری جابه‌جا نمی‌کند.
 // خواندن با Purchases.View و بستن با Purchases.Settle؛ خطاهای بستن 409 با { code, error } فارسی.
 
-const SETTLEMENTS_PATH = '/api/admin/course-order-settlements';
+const SETTLEMENTS_PATH = '/api/admin/order-settlements';
 
 async function callCourseOrderSettlements({ jwt, method = 'GET', path = '', body, signal }) {
   if (!jwt) {

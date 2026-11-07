@@ -106,7 +106,7 @@ function CheckoutResultContent() {
                 item?.type === 'course_chapter' ||
                 Boolean(item?.parentExternalId);
             const parentId = item?.parentExternalId;
-            const title = item?.title || item?.courseTitle || '';
+            const title = item?.title || item?.itemTitle || '';
             if (isChapter && parentId && !title.includes('(') && !remoteCourseTitles[parentId]) {
                 missingParentIds.push(parentId);
             }
@@ -143,7 +143,7 @@ function CheckoutResultContent() {
             receipt?.itemType === 'CourseChapter' ||
             Boolean(course?.parentExternalId || receipt?.parentExternalId);
 
-        const rawTitle = course?.title || receipt?.courseTitle || course?.externalCourseId || `قلم ${defaultIdx + 1}`;
+        const rawTitle = course?.title || receipt?.itemTitle || course?.externalItemId || `قلم ${defaultIdx + 1}`;
 
         if (!isChapter) {
             return rawTitle;
@@ -153,7 +153,7 @@ function CheckoutResultContent() {
             return rawTitle;
         }
 
-        const chapterKey = course?.externalCourseId || receipt?.courseExternalId;
+        const chapterKey = course?.externalItemId || receipt?.externalItemId;
         const parentKey = course?.parentExternalId || receipt?.parentExternalId;
 
         let courseName = (parentKey && remoteCourseTitles[parentKey]) ||
@@ -185,9 +185,8 @@ function CheckoutResultContent() {
             const list = courses.map((course, idx) => {
                 let matchedReceipt = receipts.find(r =>
                     !usedReceiptIds.has(r.purchaseId) &&
-                    ((r.courseExternalId && r.courseExternalId === course.externalCourseId) ||
-                     (r.externalCourseId && r.externalCourseId === course.externalCourseId) ||
-                     (r.courseTitle && course.title && r.courseTitle.trim() === course.title.trim()))
+                    ((r.externalItemId && r.externalItemId === course.externalItemId) ||
+                     (r.itemTitle && course.title && r.itemTitle.trim() === course.title.trim()))
                 );
                 if (!matchedReceipt && receipts[idx] && !usedReceiptIds.has(receipts[idx].purchaseId)) {
                     matchedReceipt = receipts[idx];
@@ -196,7 +195,7 @@ function CheckoutResultContent() {
                     usedReceiptIds.add(matchedReceipt.purchaseId);
                 }
                 return {
-                    id: course.externalCourseId || matchedReceipt?.purchaseId || `item-${idx}`,
+                    id: course.externalItemId || matchedReceipt?.purchaseId || `item-${idx}`,
                     title: resolveResultItemTitle(course, matchedReceipt, idx),
                     course,
                     receipt: matchedReceipt || null,
@@ -485,11 +484,11 @@ function CheckoutResultContent() {
                                                     </span>
                                                     <span
                                                         className={styles.valueWithCopy}
-                                                        onClick={() => handleCopy(item.receipt?.purchaseId || item.course?.externalCourseId, `purchaseId-${item.id}`)}
+                                                        onClick={() => handleCopy(item.receipt?.purchaseId || item.course?.externalItemId, `purchaseId-${item.id}`)}
                                                         title="برای کپی کلیک کنید"
                                                     >
                                                         <span className={styles.truncatedValue} dir="ltr">
-                                                            {item.receipt?.purchaseId || item.course?.externalCourseId}
+                                                            {item.receipt?.purchaseId || item.course?.externalItemId}
                                                         </span>
                                                         {copiedKey === `purchaseId-${item.id}` ? <Check size={14} color="#34d399" /> : <Copy size={14} opacity={0.6} />}
                                                     </span>
