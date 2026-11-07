@@ -10,9 +10,9 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { useSession } from 'next-auth/react';
 import { ChevronDown, Loader2, CheckCircle2, Truck, Package } from 'lucide-react';
-import { CourseOrderId, getAdminCourseOrderReceipt } from '@/lib/byeMoneyApi';
+import { CourseOrderId } from '@/lib/byeMoneyApi';
+import { getAdminOrderReceipt } from '@/lib/admin/adminByeMoneyClient';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import AdminBadge from '../Shared/AdminBadge';
 import styles from './PhysicalDeliveryControl.module.scss';
@@ -29,7 +29,6 @@ export default function PhysicalDeliveryControl({
     initialStatus = null,
     onStatusChange = null,
 }) {
-    const { data: session } = useSession();
     const [status, setStatus] = useState(initialStatus);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState(null);
@@ -58,13 +57,13 @@ export default function PhysicalDeliveryControl({
         };
     }, [isOpen]);
 
-    // وضعیت فعلی از رسید سفارش ادمین خوانده می‌شود (فقط خواندن؛ شکست آن مانع ثبت نیست)
+    // وضعیت فعلی از رسید سفارش ادمین (route سروری) خوانده می‌شود (فقط خواندن؛ شکست آن مانع ثبت نیست)
     useEffect(() => {
-        if (initialStatus || !purchaseId || !session?.user?.jwt) return;
+        if (initialStatus || !purchaseId) return;
         const controller = new AbortController();
         let mounted = true;
         const orderId = cartId ? CourseOrderId.for('Cart', cartId) : CourseOrderId.for('Purchase', purchaseId);
-        getAdminCourseOrderReceipt({ jwt: session.user.jwt, orderId, signal: controller.signal })
+        getAdminOrderReceipt({ orderId, signal: controller.signal })
             .then((res) => {
                 if (!mounted || !res?.success) return;
                 const item = (res.data?.items || []).find((i) => i?.purchaseId === purchaseId);
@@ -80,7 +79,7 @@ export default function PhysicalDeliveryControl({
             mounted = false;
             controller.abort();
         };
-    }, [purchaseId, cartId, initialStatus, session?.user?.jwt, onStatusChange]);
+    }, [purchaseId, cartId, initialStatus, onStatusChange]);
 
     const submit = async (next) => {
         if (!next || next === status || busy) return;

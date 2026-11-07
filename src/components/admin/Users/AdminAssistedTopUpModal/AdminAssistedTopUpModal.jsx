@@ -15,13 +15,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useSession } from 'next-auth/react';
 import { CreditCard, UploadCloud, Trash2, X, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { createAdminAssistedTopUpWithByeMoney, getConversionRateWithByeMoney, convertRialToTomanExact } from '@/lib/byeMoneyApi';
+import { getConversionRateWithByeMoney, convertRialToTomanExact } from '@/lib/byeMoneyApi';
+import { createAdminAssistedTopUp } from '@/lib/admin/adminByeMoneyClient';
+import { invalidateConversionRateCache } from '@/context/DisplayRateContext';
 import styles from './AdminAssistedTopUpModal.module.scss';
 
 export default function AdminAssistedTopUpModal({ user, conversionRate: initialConversionRate, onClose, onSuccess }) {
-  const { data: session } = useSession();
   const fileInputRef = useRef(null);
   const idempotencyKeyRef = useRef(null);
   const lastSubmissionParamsRef = useRef(null);
@@ -66,7 +66,7 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
     let isMounted = true;
     if (!initialConversionRate || initialConversionRate <= 0) {
       setRateLoading(true);
-      getConversionRateWithByeMoney({ jwt: session?.user?.jwt })
+      getConversionRateWithByeMoney()
         .then((res) => {
           if (!isMounted) return;
           if (res.success && res.rialPerNoor > 0) {
@@ -90,7 +90,7 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
     return () => {
       isMounted = false;
     };
-  }, [initialConversionRate, session?.user?.jwt]);
+  }, [initialConversionRate]);
 
   const rawAmount = Number(amountRial);
   const calculatedTomanStr = convertRialToTomanExact(amountRial);
@@ -158,12 +158,6 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
       return;
     }
 
-    const jwt = session?.user?.jwt;
-    if (!jwt) {
-      setError('نشست کاربری شما نامعتبر یا منقضی شده است. لطفاً مجدداً وارد شوید.');
-      return;
-    }
-
     const beneficiaryExternalUserId = user.documentId || String(user.id);
     const currentParams = {
       beneficiaryId: beneficiaryExternalUserId,
@@ -194,19 +188,20 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
     setLoading(true);
 
     try {
-      const res = await createAdminAssistedTopUpWithByeMoney({
+      const res = await createAdminAssistedTopUp({
         beneficiaryExternalUserId,
         amountToman: calculatedTomanStr,
         amountRial: rawAmount,
         receipt: receiptFile || null,
         externalTransactionId: externalTransactionId.trim() || undefined,
         idempotencyKey: keyToUse,
-        jwt,
       });
 
       if (!res.success) {
         throw new Error(res.error || 'خطا در ثبت شارژ در سامانه مالی بای‌مانی.');
       }
+
+      invalidateConversionRateCache();
 
       // پس از ثبت موفق، متغیرهای تلاش مجدد باطل می‌شوند
       idempotencyKeyRef.current = null;

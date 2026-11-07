@@ -86,9 +86,9 @@ export async function GET(request) {
                             items: (d.items || []).map(item => mapByeMoneyLineItem(item)).filter(Boolean),
                             topUps: d.topUps || []
                         };
-                        // آدرس تحویل فقط برای سبد دارای کالا؛ نبودن آن صفحه را خراب نمی‌کند
-                        if (d.cartId && mappedOrder.items.some(i => i.type === 'product')) {
-                            const { address } = await fetchCartAddress(d.cartId);
+                        // آدرس تحویل فقط برای سبد پرداخت‌شدهٔ دارای کالا و با رزرو commit‌شده؛ reservationId به مرورگر نمی‌رود
+                        if (d.reservationId && mappedOrder.items.some(i => i.type === 'product')) {
+                            const { address } = await fetchCartAddress(d.reservationId);
                             if (address) mappedOrder.shippingAddress = address;
                         }
                         return NextResponse.json({ data: [mappedOrder] });

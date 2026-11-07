@@ -2,15 +2,13 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import PhysicalDeliveryControl from '../PhysicalDeliveryControl';
-import { getAdminCourseOrderReceipt } from '@/lib/byeMoneyApi';
+import { getAdminOrderReceipt as getAdminCourseOrderReceipt } from '@/lib/admin/adminByeMoneyClient';
 
-jest.mock('next-auth/react', () => ({
-  useSession: () => ({ data: { user: { jwt: 'admin-jwt' } } }),
-}));
 jest.mock('@/lib/byeMoneyApi', () => ({
   CourseOrderId: { for: (s, id) => `${s === 'Cart' ? 'cart' : 'purchase'}:${id}` },
-  getAdminCourseOrderReceipt: jest.fn(),
 }));
+// رسید از route سروری خوانده می‌شود (BND-07)
+jest.mock('@/lib/admin/adminByeMoneyClient', () => ({ getAdminOrderReceipt: jest.fn() }));
 
 const PID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const CART = 'cccccccc-cccc-cccc-cccc-cccccccccccc';

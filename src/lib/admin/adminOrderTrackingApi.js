@@ -68,14 +68,14 @@ export const ADDRESS_FORBIDDEN_WARNING =
 const ADDRESS_FIELDS = ['recipientName', 'recipientPhone', 'province', 'city', 'postalCode', 'fullAddress'];
 
 /**
- * نسخهٔ ثابت آدرس رزرو (I09-PH) را از استرپی می‌خواند؛ فقط‌خواندنی و فقط فیلدهای نمایشی.
+ * نسخهٔ ثابت آدرس رزرو (I09-PH) را با شناسهٔ رزرو commit‌شده (`reservationId` جزئیات سفارش، نه `cartId`) از استرپی می‌خواند.
  * @returns {Promise<{ address: object|null, status: 'ok'|'not_found'|'forbidden'|'error'|'no_token' }>}
  */
-export async function fetchCartAddress(cartId) {
+export async function fetchCartAddress(reservationId) {
     const token = process.env.STRAPI_API_TOKEN;
     if (!token) return { address: null, status: 'no_token' };
     try {
-        const res = await fetch(`${STRAPI_API_URL}/api/byemoney-carts/${encodeURIComponent(cartId)}/address`, {
+        const res = await fetch(`${STRAPI_API_URL}/api/byemoney-carts/${encodeURIComponent(reservationId)}/address`, {
             headers: { Authorization: `Bearer ${token}` },
             cache: 'no-store',
         });
@@ -165,11 +165,11 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
     else if (attempts === null) warnings.push(STRAPI_UNAVAILABLE_WARNING);
     if (receipt && !receipt.success) warnings.push('رسید سفارش در دسترس نیست.');
 
-    // آدرس فقط برای سفارش دارای کالا و با cartId خوانده می‌شود؛ شکستش مانع بقیه نیست
+    // آدرس فقط برای سفارش دارای کالا و با reservationId خوانده می‌شود (برگشت به cartId آدرس رزرو قدیمی را نشان می‌دهد)؛ شکستش مانع بقیه نیست
     const hasProduct = (order.items || []).some((i) => String(i?.itemType || '').toLowerCase() === 'product');
     let shippingAddress = null;
-    if (hasProduct && order.cartId) {
-        const { address, status: addressStatus } = await fetchCartAddress(order.cartId);
+    if (hasProduct && order.reservationId) {
+        const { address, status: addressStatus } = await fetchCartAddress(order.reservationId);
         shippingAddress = address;
         if (addressStatus === 'forbidden') warnings.push(ADDRESS_FORBIDDEN_WARNING);
         else if (addressStatus !== 'ok' && addressStatus !== 'not_found') warnings.push(ADDRESS_UNAVAILABLE_WARNING);

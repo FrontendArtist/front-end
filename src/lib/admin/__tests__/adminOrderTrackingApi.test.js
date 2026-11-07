@@ -118,6 +118,7 @@ describe('getOrderTracking', () => {
         const withProduct = () => {
             const d = detail('Paid');
             d.data.order.items = [{ title: 'کالا', itemType: 'Product', purchaseId: 'p1' }];
+            d.data.order.reservationId = '22222222-2222-2222-2222-222222222222';
             d.data.order.topUps = [];
             return d;
         };
@@ -132,11 +133,22 @@ describe('getOrderTracking', () => {
             });
             const res = await getOrderTracking({ jwt: 'admin', orderId: ORDER_ID, now: NOW });
             const [url, init] = addressCall();
-            expect(url).toBe('http://strapi.test/api/byemoney-carts/11111111-1111-1111-1111-111111111111/address');
+            expect(url).toBe('http://strapi.test/api/byemoney-carts/22222222-2222-2222-2222-222222222222/address');
             expect(init.method).toBeUndefined();
             expect(init.headers.Authorization).toBe('Bearer server-token');
             expect(res.data.shippingAddress).toMatchObject({ city: 'قم', recipientName: 'علی', postalCode: null });
             expect(JSON.stringify(res.data.shippingAddress)).not.toContain('secret');
+            expect(JSON.stringify(res.data)).not.toContain('22222222-2222');
+        });
+
+        test('بدون reservationId (سبد پرداخت‌نشده) آدرس با cartId خوانده نمی‌شود', async () => {
+            const d = withProduct();
+            delete d.data.order.reservationId;
+            getAdminCourseOrderDetails.mockResolvedValue(d);
+            getAdminCourseOrderReceipt.mockResolvedValue({ success: false });
+            const res = await getOrderTracking({ jwt: 'admin', orderId: ORDER_ID, now: NOW });
+            expect(addressCall()).toBeUndefined();
+            expect(res.data.shippingAddress).toBeNull();
         });
 
         test('برای سفارش بدون کالا خوانده نمی‌شود', async () => {

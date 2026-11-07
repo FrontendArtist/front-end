@@ -20,9 +20,8 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useSession } from 'next-auth/react';
 import { Gift, X, AlertCircle, CheckCircle2, AlertTriangle, Copy, Check } from 'lucide-react';
-import { sendNoorGiftWithByeMoney } from '@/lib/byeMoneyApi';
+import { sendAdminNoorGift } from '@/lib/admin/adminByeMoneyClient';
 import { numberToPersianWords } from '@/utils/numberToPersianWords';
 import AdminBadge from '@/components/admin/Shared/AdminBadge';
 import styles from './AdminNoorGiftModal.module.scss';
@@ -32,7 +31,6 @@ export default function AdminNoorGiftModal({
   onClose,
   onSuccess,
 }) {
-  const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
 
   // پالایش اولیه: فقط کاربرانی که documentId دارند مجاز هستند
@@ -143,12 +141,6 @@ export default function AdminNoorGiftModal({
       return;
     }
 
-    const jwt = session?.user?.jwt;
-    if (!jwt) {
-      setError('نشست کاربری شما نامعتبر یا منقضی شده است. لطفاً مجدداً وارد شوید.');
-      return;
-    }
-
     const cleanReason = reason.trim();
     const targetDocIds = currentUsers.map((u) => u.documentId).filter(Boolean);
 
@@ -170,12 +162,11 @@ export default function AdminNoorGiftModal({
     setLoading(true);
 
     try {
-      const res = await sendNoorGiftWithByeMoney({
+      const res = await sendAdminNoorGift({
         externalUserIds: targetDocIds,
         amountNoor: numericAmount,
         reason: cleanReason,
         idempotencyKey: keyToUse,
-        jwt,
       });
 
       if (!res.success) {

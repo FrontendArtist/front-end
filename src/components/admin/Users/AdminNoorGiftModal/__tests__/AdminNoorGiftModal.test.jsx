@@ -2,24 +2,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AdminNoorGiftModal from '../AdminNoorGiftModal';
-import * as byeMoneyApi from '@/lib/byeMoneyApi';
 
-jest.mock('next-auth/react', () => ({
-  useSession: () => ({
-    data: {
-      user: {
-        name: 'Admin User',
-        email: 'admin@example.com',
-        jwt: 'admin-jwt-token-123',
-      },
-    },
-  }),
-}));
-
-jest.mock('@/lib/byeMoneyApi', () => ({
-  ...jest.requireActual('@/lib/byeMoneyApi'),
-  sendNoorGiftWithByeMoney: jest.fn(),
-}));
+// مودال فقط route سروری نسبی را صدا می‌زند (BND-07)؛ sendGift پاسخ نرمال‌شدهٔ همان route را شبیه‌سازی می‌کند.
+const sendGift = jest.fn();
+const fetchCalls = [];
 
 const mockUsers = [
   { id: 1, documentId: 'doc-user-1', username: 'user1' },
@@ -39,6 +25,25 @@ describe('AdminNoorGiftModal Component', () => {
       global.crypto = {};
     }
     global.crypto.randomUUID = jest.fn(() => `uuid-${++uuidCounter}`);
+    sendGift.mockReset();
+    fetchCalls.length = 0;
+    global.fetch = jest.fn(async (url, init) => {
+      fetchCalls.push({ url, init });
+      const result = await sendGift({ ...JSON.parse(init.body), idempotencyKey: init.headers['Idempotency-Key'] });
+      return { ok: !!result.success, status: result.status ?? (result.success ? 200 : 500), json: async () => result };
+    });
+  });
+
+  test('هدیه فقط به route سروری نسبی و بدون توکن ارسال می‌شود', async () => {
+    sendGift.mockResolvedValueOnce({ success: true, status: 200, data: { batchId: 'b1', results: [] } });
+    render(<AdminNoorGiftModal users={mockUsers} onClose={jest.fn()} onSuccess={jest.fn()} />);
+    fireEvent.change(screen.getByLabelText(/مقدار نور برای هر کاربر/i), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText(/علت ثبت هدیه/i), { target: { value: 'آزمون' } });
+    fireEvent.click(await screen.findByRole('button', { name: /تأیید و ارسال هدیه/i }));
+    await waitFor(() => expect(fetchCalls).toHaveLength(1));
+    expect(fetchCalls[0].url).toBe('/api/admin/noor-gifts');
+    expect(fetchCalls[0].init.headers.Authorization).toBeUndefined();
+    expect(JSON.parse(fetchCalls[0].init.body)).toEqual({ externalUserIds: ['doc-user-1', 'doc-user-2'], amountNoor: 10, reason: 'آزمون' });
   });
 
   afterEach(() => {
@@ -47,10 +52,10 @@ describe('AdminNoorGiftModal Component', () => {
     }
   });
 
-  test('validates amount and reason: disables "مرحله بعد" button until valid values are entered', () => {
+  test('validates amount and reason: disables submit button until valid values are entered', () => {
     render(<AdminNoorGiftModal users={mockUsers} onClose={jest.fn()} onSuccess={jest.fn()} />);
 
-    const nextBtn = screen.getByRole('button', { name: /مرحله بعد: بررسی و تأیید/i });
+    const nextBtn = screen.getByRole('button', { name: /تأیید و ارسال هدیه/i });
     expect(nextBtn).toBeDisabled();
 
     const amountInput = screen.getByLabelText(/مقدار نور برای هر کاربر/i);
@@ -80,13 +85,13 @@ describe('AdminNoorGiftModal Component', () => {
       screen.getByText(/بیشتر از سقف مجاز ۱۰۰ نفر است/i)
     ).toBeInTheDocument();
 
-    const nextBtn = screen.getByRole('button', { name: /مرحله بعد: بررسی و تأیید/i });
+    const nextBtn = screen.getByRole('button', { name: /تأیید و ارسال هدیه/i });
     expect(nextBtn).toBeDisabled();
   });
 
-  test('shows confirmation summary with total amount before submitting, and disables button during loading', async () => {
+  test('shows live total summary before submitting, and disables button during loading', async () => {
     let resolveApi;
-    byeMoneyApi.sendNoorGiftWithByeMoney.mockReturnValueOnce(
+    sendGift.mockReturnValueOnce(
       new Promise((res) => {
         resolveApi = res;
       })
@@ -100,14 +105,11 @@ describe('AdminNoorGiftModal Component', () => {
     fireEvent.change(amountInput, { target: { value: '20' } });
     fireEvent.change(reasonInput, { target: { value: 'عید غدیر' } });
 
-    const nextBtn = screen.getByRole('button', { name: /مرحله بعد: بررسی و تأیید/i });
-    fireEvent.click(nextBtn);
-
-    // Now in confirm step: 2 users * 20 = 40 total
-    expect(screen.getByText('تأیید نهایی هدیه نور')).toBeInTheDocument();
+    // پیش‌نمایش زندهٔ جمع کل: ۲ کاربر × ۲۰ = ۴۰ نور
+    expect(screen.getByText('جمع کل نور اهدایی:')).toBeInTheDocument();
     expect(screen.getByText(/۴۰ نور/i)).toBeInTheDocument();
 
-    const submitBtn = screen.getByRole('button', { name: /تأیید و ارسال نهایی هدیه/i });
+    const submitBtn = screen.getByRole('button', { name: /تأیید و ارسال هدیه/i });
     fireEvent.click(submitBtn);
 
     // Verify submit button is disabled while loading
@@ -129,13 +131,13 @@ describe('AdminNoorGiftModal Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/هدیه نور با موفقیت ثبت شد/i)).toBeInTheDocument();
+      expect(screen.getByText(/هدیه نور با موفقیت به کاربران اعطا شد/i)).toBeInTheDocument();
     });
   });
 
   test('Idempotency-Key stays the same on retry of exact same request, but changes when parameters change', async () => {
     // 1st call fails with network/server error
-    byeMoneyApi.sendNoorGiftWithByeMoney.mockResolvedValueOnce({
+    sendGift.mockResolvedValueOnce({
       success: false,
       status: 500,
       error: 'خطای سرور',
@@ -149,36 +151,34 @@ describe('AdminNoorGiftModal Component', () => {
     fireEvent.change(amountInput, { target: { value: '30' } });
     fireEvent.change(reasonInput, { target: { value: 'علت اول' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: بررسی و تأیید/i }));
-    fireEvent.click(screen.getByRole('button', { name: /تأیید و ارسال نهایی هدیه/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /تأیید و ارسال هدیه/i }));
 
     await waitFor(() => {
-      expect(byeMoneyApi.sendNoorGiftWithByeMoney).toHaveBeenCalledTimes(1);
+      expect(sendGift).toHaveBeenCalledTimes(1);
     });
 
-    const firstKey = byeMoneyApi.sendNoorGiftWithByeMoney.mock.calls[0][0].idempotencyKey;
+    const firstKey = sendGift.mock.calls[0][0].idempotencyKey;
     expect(firstKey).toBeDefined();
 
     // 2nd call: user retries WITHOUT changing any parameter (exact same payload)
-    byeMoneyApi.sendNoorGiftWithByeMoney.mockResolvedValueOnce({
+    sendGift.mockResolvedValueOnce({
       success: false,
       status: 500,
       error: 'خطای مجدد سرور',
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: بررسی و تأیید/i }));
-    fireEvent.click(screen.getByRole('button', { name: /تأیید و ارسال نهایی هدیه/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /تأیید و ارسال هدیه/i }));
 
     await waitFor(() => {
-      expect(byeMoneyApi.sendNoorGiftWithByeMoney).toHaveBeenCalledTimes(2);
+      expect(sendGift).toHaveBeenCalledTimes(2);
     });
 
-    const secondKey = byeMoneyApi.sendNoorGiftWithByeMoney.mock.calls[1][0].idempotencyKey;
+    const secondKey = sendGift.mock.calls[1][0].idempotencyKey;
     // Same payload => SAME idempotency key!
     expect(secondKey).toBe(firstKey);
 
     // 3rd call: user changes reason or amount -> key MUST change
-    byeMoneyApi.sendNoorGiftWithByeMoney.mockResolvedValueOnce({
+    sendGift.mockResolvedValueOnce({
       success: true,
       status: 200,
       data: { batchId: 'batch-999', totalRecipients: 2, totalAmountNoor: 80 },
@@ -187,19 +187,18 @@ describe('AdminNoorGiftModal Component', () => {
     const reasonInputAfterError = screen.getByLabelText(/علت ثبت هدیه/i);
     fireEvent.change(reasonInputAfterError, { target: { value: 'علت تغییر یافته' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: بررسی و تأیید/i }));
-    fireEvent.click(screen.getByRole('button', { name: /تأیید و ارسال نهایی هدیه/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /تأیید و ارسال هدیه/i }));
 
     await waitFor(() => {
-      expect(byeMoneyApi.sendNoorGiftWithByeMoney).toHaveBeenCalledTimes(3);
+      expect(sendGift).toHaveBeenCalledTimes(3);
     });
 
-    const thirdKey = byeMoneyApi.sendNoorGiftWithByeMoney.mock.calls[2][0].idempotencyKey;
+    const thirdKey = sendGift.mock.calls[2][0].idempotencyKey;
     expect(thirdKey).not.toBe(firstKey);
   });
 
   test('handles 400 error with invalidUsers: shows notice, allows removing invalid users, and generates new key for retry', async () => {
-    byeMoneyApi.sendNoorGiftWithByeMoney.mockResolvedValueOnce({
+    sendGift.mockResolvedValueOnce({
       success: false,
       status: 400,
       invalidUsers: [{ externalUserId: 'doc-user-2', reason: 'کاربر مسدود است' }],
@@ -214,15 +213,14 @@ describe('AdminNoorGiftModal Component', () => {
     fireEvent.change(amountInput, { target: { value: '15' } });
     fireEvent.change(reasonInput, { target: { value: 'تست خطای ۴۰۰' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: بررسی و تأیید/i }));
-    fireEvent.click(screen.getByRole('button', { name: /تأیید و ارسال نهایی هدیه/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /تأیید و ارسال هدیه/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/هیچ هدیه‌ای ثبت نشد. کاربران زیر دارای اشکال هستند/i)).toBeInTheDocument();
       expect(screen.getByText(/کاربر مسدود است/i)).toBeInTheDocument();
     });
 
-    const firstKey = byeMoneyApi.sendNoorGiftWithByeMoney.mock.calls[0][0].idempotencyKey;
+    const firstKey = sendGift.mock.calls[0][0].idempotencyKey;
 
     // Click "حذف کاربران مشکل‌دار (1) از انتخاب و تلاش مجدد"
     const cleanBtn = screen.getByRole('button', { name: /حذف کاربران مشکل‌دار/i });
@@ -232,7 +230,7 @@ describe('AdminNoorGiftModal Component', () => {
     expect(screen.queryByText(/کاربر مسدود است/i)).not.toBeInTheDocument();
 
     // Prepare success for retry
-    byeMoneyApi.sendNoorGiftWithByeMoney.mockResolvedValueOnce({
+    sendGift.mockResolvedValueOnce({
       success: true,
       status: 200,
       data: {
@@ -243,21 +241,20 @@ describe('AdminNoorGiftModal Component', () => {
       },
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: بررسی و تأیید/i }));
-    fireEvent.click(screen.getByRole('button', { name: /تأیید و ارسال نهایی هدیه/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /تأیید و ارسال هدیه/i }));
 
     await waitFor(() => {
-      expect(byeMoneyApi.sendNoorGiftWithByeMoney).toHaveBeenCalledTimes(2);
+      expect(sendGift).toHaveBeenCalledTimes(2);
     });
 
-    const retryCallArgs = byeMoneyApi.sendNoorGiftWithByeMoney.mock.calls[1][0];
+    const retryCallArgs = sendGift.mock.calls[1][0];
     expect(retryCallArgs.externalUserIds).toEqual(['doc-user-1']);
     // Since user list changed, a NEW idempotency key is generated!
     expect(retryCallArgs.idempotencyKey).not.toBe(firstKey);
   });
 
   test('displays clear error on 409 conflict and directs user to reopen form', async () => {
-    byeMoneyApi.sendNoorGiftWithByeMoney.mockResolvedValueOnce({
+    sendGift.mockResolvedValueOnce({
       success: false,
       status: 409,
       conflict: true,
@@ -269,8 +266,7 @@ describe('AdminNoorGiftModal Component', () => {
     fireEvent.change(screen.getByLabelText(/مقدار نور برای هر کاربر/i), { target: { value: '10' } });
     fireEvent.change(screen.getByLabelText(/علت ثبت هدیه/i), { target: { value: 'تست ۴۰۹' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /مرحله بعد: بررسی و تأیید/i }));
-    fireEvent.click(screen.getByRole('button', { name: /تأیید و ارسال نهایی هدیه/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /تأیید و ارسال هدیه/i }));
 
     await waitFor(() => {
       expect(

@@ -11,8 +11,8 @@ import AdminLazyLoad from '../Shared/AdminLazyLoad';
 import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
 import { fetchAdminUsers } from '@/lib/client/admin/usersClient';
 import { triggerLightUpdate } from '@/store/useLightStore';
-import { useSession } from 'next-auth/react';
-import { getConversionRateWithByeMoney, getBatchBalancesWithByeMoney } from '@/lib/byeMoneyApi';
+import { getConversionRateWithByeMoney } from '@/lib/byeMoneyApi';
+import { getAdminBatchBalances } from '@/lib/admin/adminByeMoneyClient';
 import Can from '@/components/admin/Permissions/Can';
 import { ADMIN_PERMISSIONS } from '@/config/adminPermissions';
 import AdminAssistedTopUpModal from './AdminAssistedTopUpModal/AdminAssistedTopUpModal';
@@ -79,7 +79,6 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
         idKey: 'id',
     });
 
-    const { data: session } = useSession();
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [selectedUserId, setSelectedUserId] = useState(null);
@@ -104,12 +103,9 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
 
     // پیش‌بارگذاری نرخ رسمی تبدیل از دیتابیس بای‌مانی جهت استفاده در مودال شارژ
     useEffect(() => {
-        const jwt = session?.user?.jwt;
-        if (!jwt) return;
-
         let isMounted = true;
 
-        getConversionRateWithByeMoney({ jwt })
+        getConversionRateWithByeMoney()
             .then((res) => {
                 if (isMounted && res.success && res.rialPerNoor > 0) {
                     setConversionRate(res.rialPerNoor);
@@ -120,7 +116,7 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
         return () => {
             isMounted = false;
         };
-    }, [session?.user?.jwt]);
+    }, []);
 
     const handleSingleLightUpdated = (userId, newLight) => {
         setUsersList(prev => prev.map(u => u.id === userId ? { ...u, light: newLight } : u));
@@ -205,14 +201,11 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
 
     // بازخوانی دسته‌جمعی موجودی‌ها پس از موفقیت ثبت هدیه
     const refreshAllBalances = async () => {
-        const jwt = session?.user?.jwt;
-        if (!jwt) return;
-
         const userIds = usersList.map((u) => u.documentId).filter(Boolean);
         if (userIds.length === 0) return;
 
         try {
-            const batchRes = await getBatchBalancesWithByeMoney({ userIds, jwt });
+            const batchRes = await getAdminBatchBalances({ userIds });
             if (batchRes.success) {
                 setUsersList((prev) =>
                     prev.map((u) => {

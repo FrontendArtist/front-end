@@ -8,7 +8,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 import {
     UserPlus,
     Users,
@@ -27,7 +26,8 @@ import {
     Gift,
 } from 'lucide-react';
 import { createManualOrder, searchAdminUsers } from '@/lib/client/admin/ordersClient';
-import { getConversionRateWithByeMoney, getBatchBalancesWithByeMoney } from '@/lib/byeMoneyApi';
+import { getConversionRateWithByeMoney } from '@/lib/byeMoneyApi';
+import { getAdminBatchBalances } from '@/lib/admin/adminByeMoneyClient';
 import AdminAssistedTopUpModal from '@/components/admin/Users/AdminAssistedTopUpModal/AdminAssistedTopUpModal';
 import Can from '@/components/admin/Permissions/Can';
 import { ADMIN_PERMISSIONS } from '@/config/adminPermissions';
@@ -50,7 +50,6 @@ const formatPrice = (p) =>
 
 export default function ManualOrderForm({ initialCourses = [] }) {
     const router = useRouter();
-    const { data: session } = useSession();
     const { toasts, addToast } = useToast();
 
     // ── فیلدهای انتخاب کاربر ─────────────────────────────────────────────────
@@ -83,7 +82,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
     useEffect(() => {
         let isMounted = true;
         setRateLoading(true);
-        getConversionRateWithByeMoney({ jwt: session?.user?.jwt })
+        getConversionRateWithByeMoney()
             .then(res => {
                 if (!isMounted) return;
                 if (res.success && res.rialPerNoor > 0) {
@@ -98,7 +97,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
             });
 
         return () => { isMounted = false; };
-    }, [session?.user?.jwt]);
+    }, []);
 
     // ── تابع استعلام موجودی زنده نور کاربر از ByeMoney ──────────────────
     const fetchUserBalance = useCallback(async (userObj) => {
@@ -111,9 +110,8 @@ export default function ManualOrderForm({ initialCourses = [] }) {
 
         setBalanceLoading(true);
         try {
-            const batchRes = await getBatchBalancesWithByeMoney({
+            const batchRes = await getAdminBatchBalances({
                 userIds: [userExternalId],
-                jwt: session?.user?.jwt,
             });
             if (batchRes && batchRes.success && batchRes.balances) {
                 const docBal = batchRes.balances[userExternalId];
@@ -129,7 +127,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
         } finally {
             setBalanceLoading(false);
         }
-    }, [session?.user?.jwt]);
+    }, []);
 
     // به‌روزرسانی موجودی هنگام تغییر یا انتخاب کاربر
     useEffect(() => {
