@@ -102,7 +102,7 @@ export async function getOrdersStats(jwt) {
     return { ...strapiStats, statusCounts, strapiStatusCounts: strapiCounts, byemoney };
 }
 
-async function getStrapiOrdersStats(jwt) {
+export async function getStrapiOrdersStats(jwt) {
     const countData = await adminFetch('/api/orders?pagination[limit]=1', jwt);
     const totalOrders = countData?.meta?.pagination?.total ?? null;
 
@@ -230,7 +230,7 @@ async function getStrapiOrdersStats(jwt) {
     };
 }
 
-async function findStrapiUserIdForByeMoney(jwt, search) {
+export async function findStrapiUserIdForByeMoney(jwt, search) {
     if (!search || !search.trim()) return null;
     const raw = search.trim();
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)) {

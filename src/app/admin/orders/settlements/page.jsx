@@ -7,6 +7,7 @@
  */
 
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import CourseOrderSettlements from '@/components/admin/Orders/Settlements/CourseOrderSettlements';
 import styles from '../orders.module.scss';
 
@@ -20,7 +21,10 @@ export default function AdminCourseOrderSettlementsPage() {
         <div className={styles.page}>
             <header className={styles.page__header}>
                 <h1 className={styles.page__title}>تسویه و آرشیو سفارش‌های بای‌مانی</h1>
-                <Link href="/admin/orders">بازگشت به سفارش‌ها</Link>
+                <Link href="/admin/orders" className={styles.backLink}>
+                    <ArrowRight size={16} aria-hidden="true" />
+                    بازگشت به سفارش‌ها
+                </Link>
             </header>
             <CourseOrderSettlements />
         </div>

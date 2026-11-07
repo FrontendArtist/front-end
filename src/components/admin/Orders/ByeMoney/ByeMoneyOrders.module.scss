@@ -1,0 +1,599 @@
+@use '@/styles/base/mixins' as *;
+
+/**
+ * @file ByeMoneyOrders.module.scss
+ * @description صفحهٔ «سفارش‌ها» (فقط بای‌مانی): سرصفحه، خط هشدار، تب‌های قرصی، جستجو و جدول شش‌ستونه.
+ * زبان بصری همان صفحهٔ «تسویه و آرشیو» است و فقط از متغیرهای پوسته استفاده می‌کند.
+ */
+
+$line: fade(var(--color-primary), 12%);
+$muted: fade(var(--color-card-text), 62%);
+$gold: var(--color-gold);
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* ─── سرصفحه ───────────────────────────────────────────────────────────── */
+
+.header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 6px;
+
+    &__title {
+        margin: 0;
+        font-size: var(--font-xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-primary);
+
+        @include respond(lg) {
+            font-size: var(--font-lg);
+        }
+    }
+
+    &__subtitle {
+        margin: 4px 0 0;
+        font-size: var(--font-sm);
+        color: $muted;
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+}
+
+%btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    font: inherit;
+    font-size: var(--font-sm);
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.15s, box-shadow 0.2s;
+
+    &:focus-visible {
+        outline: 2px solid var(--color-title-hover);
+        outline-offset: 2px;
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: default;
+    }
+}
+
+.primaryBtn {
+    @extend %btn;
+    border: 1px solid transparent;
+    background: var(--color-title-hover);
+    color: var(--color-bg-primary);
+    font-weight: var(--font-weight-bold);
+    box-shadow: 0 4px 14px fade(var(--color-title-hover), 25%);
+
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px fade(var(--color-title-hover), 35%);
+    }
+}
+
+.ghostBtn {
+    @extend %btn;
+    border: 1px solid $line;
+    background: fade(var(--color-primary), 5%);
+    color: var(--color-card-text);
+
+    &:hover:not(:disabled) {
+        border-color: fade($gold, 45%);
+        background: fade($gold, 10%);
+        color: var(--color-text-primary);
+    }
+}
+
+/* ─── خط هشدار ─────────────────────────────────────────────────────────── */
+
+.alertLine {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.alertChip {
+    --tone: var(--color-warning-amber);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border-radius: 10px;
+    border: 1px solid fade(var(--tone), 35%);
+    background: fade(var(--tone), 9%);
+    color: var(--color-card-text);
+    font: inherit;
+    font-size: var(--font-sm);
+    text-align: right;
+    line-height: 1.6;
+
+    > svg:first-child {
+        flex-shrink: 0;
+        color: var(--tone);
+    }
+
+    &--warning { --tone: var(--color-warning-amber); }
+    &--error { --tone: var(--color-error); }
+    &--muted { --tone: var(--color-card-text); opacity: 0.85; }
+
+    @at-root button#{&} {
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+            background: fade(var(--tone), 16%);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--tone);
+            outline-offset: 2px;
+        }
+    }
+
+    &__cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        margin-inline-start: 4px;
+        color: var(--tone);
+        font-weight: var(--font-weight-bold);
+        white-space: nowrap;
+    }
+}
+
+/* ─── نوار ابزار ───────────────────────────────────────────────────────── */
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 14px;
+    background: fade(var(--color-black), 18%);
+    border: 1px solid $line;
+    overflow-x: auto;
+    scrollbar-width: none;
+    max-width: 100%;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: none;
+    color: $muted;
+    font: inherit;
+    font-size: var(--font-sm);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+
+    &:hover {
+        color: var(--color-card-text);
+        background: fade(var(--color-primary), 6%);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--color-title-hover);
+        outline-offset: -2px;
+    }
+
+    &--active {
+        color: var(--color-text-primary);
+        font-weight: var(--font-weight-bold);
+        background: fade($gold, 14%);
+        border-color: fade($gold, 35%);
+
+        &:hover {
+            background: fade($gold, 18%);
+        }
+    }
+
+    &__count {
+        min-width: 22px;
+        padding: 0 7px;
+        border-radius: 11px;
+        background: fade(var(--color-primary), 12%);
+        color: var(--color-card-text);
+        font-size: var(--font-xs);
+        font-weight: var(--font-weight-medium);
+        line-height: 22px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+
+        &--hot {
+            background: var(--color-warning-amber);
+            color: var(--color-black);
+            font-weight: var(--font-weight-bold);
+        }
+    }
+}
+
+.search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 0 1 340px;
+    min-width: 240px;
+
+    @include respond(md) {
+        flex-basis: 100%;
+    }
+
+    &__icon {
+        position: absolute;
+        right: 12px;
+        color: $muted;
+        pointer-events: none;
+    }
+
+    &__input {
+        width: 100%;
+        padding: 10px 38px;
+        border-radius: 12px;
+        border: 1px solid $line;
+        background: fade(var(--color-black), 15%);
+        color: var(--color-card-text);
+        font: inherit;
+        font-size: var(--font-sm);
+        transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+
+        &::placeholder {
+            color: $muted;
+        }
+
+        &::-webkit-search-cancel-button {
+            display: none;
+        }
+
+        &:focus {
+            outline: none;
+            border-color: var(--color-title-hover);
+            background: fade(var(--color-black), 22%);
+            box-shadow: 0 0 0 3px fade(var(--color-title-hover), 14%);
+        }
+    }
+
+    &__clear {
+        position: absolute;
+        left: 8px;
+        display: inline-flex;
+        padding: 5px;
+        border: none;
+        border-radius: 8px;
+        background: fade(var(--color-primary), 8%);
+        color: var(--color-card-text);
+        cursor: pointer;
+
+        &:hover {
+            background: fade(var(--color-primary), 16%);
+        }
+    }
+}
+
+/* ─── زیرعنوان فیلتر ──────────────────────────────────────────────────── */
+
+.context {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 28px;
+    margin-top: -4px;
+}
+
+.hint {
+    font-size: var(--font-xs);
+    color: $muted;
+}
+
+.resultCount {
+    flex-shrink: 0;
+    font-size: var(--font-xs);
+    color: $muted;
+    font-variant-numeric: tabular-nums;
+}
+
+.filterChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px 4px 12px;
+    border-radius: 16px;
+    background: fade(var(--color-warning-amber), 12%);
+    border: 1px solid fade(var(--color-warning-amber), 35%);
+    font-size: var(--font-xs);
+    color: var(--color-card-text);
+
+    svg {
+        color: var(--color-warning-amber);
+    }
+
+    button {
+        display: inline-flex;
+        padding: 3px;
+        border: none;
+        border-radius: 50%;
+        background: fade(var(--color-warning-amber), 18%);
+        color: inherit;
+        cursor: pointer;
+
+        &:hover {
+            background: fade(var(--color-warning-amber), 30%);
+        }
+    }
+}
+
+.note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: var(--font-xs);
+    color: $muted;
+}
+
+/* ─── جدول ─────────────────────────────────────────────────────────────── */
+
+.tableWrap {
+    overflow-x: auto;
+    margin: -6px -4px 0;
+    padding: 0 4px;
+    transition: opacity 0.2s;
+
+    &--busy {
+        opacity: 0.55;
+        pointer-events: none;
+    }
+}
+
+.table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+
+    th {
+        padding: 4px 16px 2px;
+        text-align: right;
+        font-size: var(--font-xs);
+        font-weight: var(--font-weight-medium);
+        color: $muted;
+        white-space: nowrap;
+    }
+
+    td {
+        padding: 14px 16px;
+        vertical-align: middle;
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+        background: fade(var(--color-black), 15%);
+        border-top: 1px solid $line;
+        border-bottom: 1px solid $line;
+        transition: background-color 0.18s, border-color 0.18s;
+
+        &:first-child {
+            border-right: 3px solid fade($gold, 35%);
+            border-radius: 0 12px 12px 0;
+        }
+
+        &:last-child {
+            border-left: 1px solid $line;
+            border-radius: 12px 0 0 12px;
+        }
+    }
+}
+
+.row {
+    cursor: pointer;
+    outline: none;
+
+    &:hover td {
+        background: fade(var(--color-black), 24%);
+        border-color: fade($gold, 22%);
+    }
+
+    &:hover td:first-child,
+    &:focus-visible td:first-child {
+        border-right-color: var(--color-title-hover);
+    }
+
+    &:focus-visible td {
+        border-top-color: var(--color-title-hover);
+        border-bottom-color: var(--color-title-hover);
+    }
+
+    &:hover .chevronCell {
+        color: var(--color-text-primary);
+        transform: translateX(-3px);
+    }
+
+    &--alert td:first-child {
+        border-right-color: var(--color-warning-amber);
+    }
+
+    &--selected td {
+        background: fade($gold, 10%);
+        border-color: fade($gold, 35%);
+    }
+}
+
+.orderNo {
+    font-family: monospace;
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.5px;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+}
+
+.buyer {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    &__name {
+        font-weight: var(--font-weight-medium);
+        color: var(--color-card-text);
+    }
+
+    &__phone {
+        font-size: var(--font-xs);
+        color: $muted;
+        text-align: right;
+    }
+}
+
+.badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.amount {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-card-text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+
+    small {
+        font-size: var(--font-xs);
+        font-weight: normal;
+        color: $muted;
+    }
+}
+
+.amountStack {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.amountRefund {
+    font-size: var(--font-xs);
+    color: $muted;
+    white-space: nowrap;
+
+    s {
+        opacity: 0.8;
+    }
+}
+
+.date {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    white-space: nowrap;
+
+    &__time {
+        font-size: var(--font-xs);
+        color: $muted;
+    }
+}
+
+.muted {
+    color: $muted;
+}
+
+.chevronCell {
+    width: 40px;
+    color: $muted;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.skeletonRow td span {
+    display: block;
+    height: 14px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, fade(var(--color-primary), 6%) 25%, fade(var(--color-primary), 13%) 50%, fade(var(--color-primary), 6%) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.3s ease-in-out infinite;
+}
+
+/* ─── حالت‌ها ──────────────────────────────────────────────────────────── */
+
+.empty,
+.errorBox {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 48px 16px;
+    border-radius: 16px;
+    border: 1px dashed $line;
+    background: fade(var(--color-black), 10%);
+    text-align: center;
+    color: $muted;
+
+    p {
+        margin: 0;
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+    }
+}
+
+.empty--ok {
+    border-color: fade(var(--color-success), 35%);
+    background: fade(var(--color-success), 5%);
+
+    svg {
+        color: var(--color-success);
+    }
+}
+
+.errorBox {
+    border-color: fade(var(--color-error), 40%);
+
+    svg {
+        color: var(--color-error);
+    }
+}
+
+.more {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0 24px;
+}
+
+@keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeletonRow td span {
+        animation: none;
+    }
+}

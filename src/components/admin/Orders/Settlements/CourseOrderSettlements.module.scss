@@ -166,14 +166,19 @@ $border: fade(var(--color-primary), 12%);
         background: fade(var(--color-primary), 6%);
     }
 
-    &[aria-expanded='true'] td {
-        background: fade(var(--color-primary), 9%);
+    &[aria-current='true'] td {
+        background: fade(var(--color-gold), 10%);
     }
-}
 
-.detailRow td {
-    padding: 0 0 12px;
-    border: none;
+    &:focus-visible {
+        outline: 2px solid var(--color-title-hover);
+        outline-offset: -2px;
+    }
+
+    &:hover .chevron {
+        opacity: 1;
+        transform: translateX(-3px);
+    }
 }
 
 .orderNo {
@@ -229,7 +234,7 @@ $border: fade(var(--color-primary), 12%);
 
 .chevron {
     opacity: 0.6;
-    transition: transform 0.2s;
+    transition: transform 0.2s, opacity 0.2s;
 
     &--open {
         transform: rotate(180deg);

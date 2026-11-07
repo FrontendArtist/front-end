@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { PackageX } from 'lucide-react';
 import AdminButton from '../Shared/AdminButton';
 import styles from './PendingRestockNotice.module.scss';
 
@@ -22,7 +23,7 @@ const fa = (n) => Number(n).toLocaleString('fa-IR');
 /** علت را از کد ساختاریافتهٔ بای‌مانی به جملهٔ قابل‌فهم برای ادمین برمی‌گرداند. */
 export function describeRestockCause(code) {
     if (code === 'CART_CONFLICT') {
-        return 'سایت کالا را پیدا نکرد یا درخواست را نپذیرفت؛ معمولاً یعنی کالا حذف یا عوض شده است.';
+        return 'سایت کالا را پیدا نکرد؛ احتمالاً کالا حذف یا عوض شده است.';
     }
     if (code === 'CART_UNAVAILABLE') {
         return 'سایت در زمان تلاش‌ها در دسترس نبود.';
@@ -33,7 +34,7 @@ export function describeRestockCause(code) {
 function describeItems(restock, items) {
     return (restock.items || []).map((line) => {
         const found = (items || []).find((i) => i.purchaseId === line.purchaseId);
-        return { key: line.purchaseId, text: `${found?.title || 'کالا'} (${fa(line.quantity)} عدد)` };
+        return { key: line.purchaseId, title: found?.title || 'کالا', quantity: fa(line.quantity) };
     });
 }
 
@@ -99,28 +100,45 @@ export default function PendingRestockNotice({ cartId, items, onCleared }) {
     return (
         <div className={styles.notice} role="alert" data-testid="pending-restock-notice">
             {restocks.map((restock) => (
-                <div key={restock.operationId} className={styles.notice__item}>
-                    <strong>موجودی این سفارش پس از لغو برنگشته است.</strong>
-                    <ul>
-                        {describeItems(restock, items).map((line) => (<li key={line.key}>{line.text}</li>))}
+                <section key={restock.operationId} className={styles.notice__item}>
+                    <header className={styles.notice__head}>
+                        <span className={styles.notice__icon} aria-hidden="true"><PackageX size={18} /></span>
+                        <div>
+                            <strong className={styles.notice__title}>موجودی برنگشته</strong>
+                            <p className={styles.notice__cause}>{describeRestockCause(restock.lastErrorCode)}</p>
+                        </div>
+                    </header>
+
+                    <ul className={styles.notice__items} aria-label="کالاهای لغوشده">
+                        {describeItems(restock, items).map((line) => (
+                            <li key={line.key}>
+                                <span className={styles.notice__itemTitle}>{line.title}</span>
+                                <span className={styles.notice__qty}>{line.quantity} عدد</span>
+                            </li>
+                        ))}
                     </ul>
-                    <p>{describeRestockCause(restock.lastErrorCode)}</p>
-                    <p>موجودی کالا را در سایت دستی اصلاح کنید و سپس دکمهٔ «موجودی را دستی اصلاح کردم» را بزنید؛ یا اگر مشکل سایت رفع شده، دوباره تلاش کنید.</p>
+
+                    <ol className={styles.notice__steps}>
+                        <li>موجودی این کالا را در بخش محصولات دستی اصلاح کنید.</li>
+                        <li>دکمهٔ «موجودی را دستی اصلاح کردم» را بزنید.</li>
+                    </ol>
+
                     <div className={styles.notice__actions}>
-                        <AdminButton variant="default" disabled={Boolean(busyId)} onClick={() => run(restock, 'retry')}>
-                            تلاش دوباره
-                        </AdminButton>
-                        <AdminButton variant="default" disabled={Boolean(busyId)} onClick={() => resolve(restock)}>
+                        <AdminButton variant="approve" disabled={Boolean(busyId)} onClick={() => resolve(restock)}>
                             موجودی را دستی اصلاح کردم
                         </AdminButton>
+                        <AdminButton variant="default" disabled={Boolean(busyId)} onClick={() => run(restock, 'retry')}
+                            title="اگر مشکل سایت رفع شده، برگشت خودکار دوباره امتحان می‌شود">
+                            تلاش دوباره
+                        </AdminButton>
+                        <details className={styles.notice__tech}>
+                            <summary>جزئیات فنی</summary>
+                            <span dir="ltr">{restock.lastErrorCode || '—'} · {fa(restock.attempts)} / {fa(restock.maxAttempts)}</span>
+                        </details>
                     </div>
-                    <details className={styles.notice__tech}>
-                        <summary>جزئیات فنی</summary>
-                        <span dir="ltr">{restock.lastErrorCode || '—'} · {fa(restock.attempts)} / {fa(restock.maxAttempts)}</span>
-                    </details>
-                </div>
+                </section>
             ))}
-            {message && <p className={styles.notice__message}>{message}</p>}
+            {message && <p className={styles.notice__message} role="status">{message}</p>}
         </div>
     );
 }

@@ -61,8 +61,9 @@ describe('PhysicalDeliveryControl', () => {
 
     fireEvent.change(select, { target: { value: 'Delivered' } });
 
-    await waitFor(() => expect(screen.getByText('تحویل کالا نهایی شده است.')).toBeInTheDocument());
-    expect(screen.getByText('تحویل‌شده')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('تحویل‌شده')).toBeInTheDocument());
+    expect(screen.queryByText('تحویل کالا نهایی شده است.')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('delivery-status-select')).not.toBeInTheDocument();
   });
 
   it('وضعیت فعلی از رسید سفارش ادمین با شناسهٔ cart خوانده می‌شود', async () => {

@@ -1,35 +1,161 @@
-.notice {
-    padding: 14px 18px;
-    margin-bottom: 12px;
-    background: rgba(255, 170, 60, 0.08);
-    border: 1px solid rgba(255, 170, 60, 0.3);
-    border-radius: 12px;
-    font-size: var(--font-sm);
+@use '@/styles/base/mixins' as *;
 
-    p,
-    ul {
-        margin: 6px 0;
+/**
+ * اعلان «موجودی برنگشته» (BND-05): کارت هشدار با علت کوتاه، کالاها، دو گام اصلاح و دکمه‌ها.
+ * رنگ‌ها از متغیرهای پوسته‌اند.
+ */
+
+$tone: var(--color-warning-amber);
+$muted: fade(var(--color-card-text), 65%);
+
+.notice {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 4px;
+
+    &__item {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: fade($tone, 7%);
+        border: 1px solid fade($tone, 30%);
+        border-inline-start: 4px solid $tone;
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
     }
 
-    &__item + &__item {
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid rgba(255, 170, 60, 0.2);
+    &__head {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    &__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: fade($tone, 16%);
+        color: $tone;
+    }
+
+    &__title {
+        display: block;
+        font-size: var(--font-md);
+        color: var(--color-text-primary);
+    }
+
+    &__cause {
+        margin: 2px 0 0;
+        font-size: var(--font-xs);
+        line-height: 1.8;
+        color: $muted;
+    }
+
+    &__items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        li {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 6px 5px 12px;
+            border-radius: 10px;
+            background: fade(var(--color-black), 15%);
+            border: 1px solid fade(var(--color-primary), 12%);
+        }
+    }
+
+    &__itemTitle {
+        font-weight: var(--font-weight-medium);
+    }
+
+    &__qty {
+        padding: 1px 8px;
+        border-radius: 8px;
+        background: fade($tone, 16%);
+        color: $tone;
+        font-size: var(--font-xs);
+        white-space: nowrap;
+    }
+
+    &__steps {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: step;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: var(--font-xs);
+            color: var(--color-card-text);
+            counter-increment: step;
+
+            &::before {
+                content: counter(step, persian);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                width: 22px;
+                height: 22px;
+                border-radius: 50%;
+                border: 1px solid fade($tone, 45%);
+                color: $tone;
+                font-size: var(--font-xs);
+                font-weight: var(--font-weight-bold);
+            }
+        }
     }
 
     &__actions {
         display: flex;
+        align-items: center;
         flex-wrap: wrap;
         gap: 8px;
-        margin-top: 8px;
+        padding-top: 12px;
+        border-top: 1px dashed fade($tone, 25%);
     }
 
     &__tech {
-        margin-top: 8px;
-        opacity: 0.7;
+        margin-inline-start: auto;
+        font-size: var(--font-xs);
+        color: $muted;
+
+        summary {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        span {
+            display: block;
+            margin-top: 4px;
+        }
     }
 
     &__message {
-        color: #ff9999;
+        margin: 0;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: fade(var(--color-error), 10%);
+        border: 1px solid fade(var(--color-error), 30%);
+        font-size: var(--font-xs);
+        color: var(--color-card-text);
     }
 }

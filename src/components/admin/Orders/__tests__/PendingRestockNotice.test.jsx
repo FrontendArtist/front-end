@@ -37,7 +37,8 @@ describe('PendingRestockNotice (BND-05)', () => {
   test('نام کالا، تعداد و علت را به زبان ساده نشان می‌دهد و فقط سبد همین سفارش را', async () => {
     mockFetch({});
     render(<PendingRestockNotice cartId={CART} items={items} />);
-    expect(await screen.findByText('کتاب هندسه (۳ عدد)')).toBeInTheDocument();
+    expect(await screen.findByText('کتاب هندسه')).toBeInTheDocument();
+    expect(screen.getByText('۳ عدد')).toBeInTheDocument();
     expect(screen.getByText(/کالا حذف یا عوض شده/)).toBeInTheDocument();
     expect(screen.getAllByTestId('pending-restock-notice')).toHaveLength(1);
   });

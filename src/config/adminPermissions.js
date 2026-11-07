@@ -30,6 +30,7 @@ export const ROUTE_PERMISSIONS = {
     '/admin/orders': null,
     '/admin/orders/new': [ADMIN_PERMISSIONS.COURSES_MANAGE],
     '/admin/orders/settlements': [ADMIN_PERMISSIONS.PURCHASES_VIEW],
+    '/admin/orders/legacy': null,
     '/admin/gateway-reviews': [ADMIN_PERMISSIONS.TOPUP_REVIEW],
     '/admin/users': null,
     '/admin/courses': null,

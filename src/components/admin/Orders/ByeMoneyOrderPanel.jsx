@@ -8,6 +8,9 @@
  * می‌آید. اگر استرپی در دسترس نباشد فقط وضعیت بای‌مانی با هشدار نمایش داده می‌شود و پنل نمی‌شکند.
  * وضعیت شارژ با وضعیت خرید یکی نمایش داده نمی‌شود (TRACK-04): خط «شارژ» جدا از «نتیجهٔ نهایی سفارش» است.
  * کنترل وضعیت ارسال کالا (PhysicalDeliveryControl) دست‌نخورده و فقط برای قلم کالای سفارش Paid نمایش داده می‌شود.
+ *
+ * هوک داده (useOrderTracking) و بخش‌ها (OrderItemsList، Timeline، OrderWarnings) جدا صادر می‌شوند تا
+ * کشوی جزئیات سفارش (OrderDrawer) همان رفتار را در تب‌های جدا نشان دهد (ADMIN-ORDERS-REDESIGN).
  */
 
 import { useEffect, useState } from 'react';
@@ -20,7 +23,7 @@ import PhysicalCancelFlow from '@/components/physicalCancel/PhysicalCancelFlow';
 import AdminButton from '../Shared/AdminButton';
 import styles from './OrdersTable.module.scss';
 
-const DELIVERY_LABELS = {
+export const DELIVERY_LABELS = {
     NotStarted: 'شروع نشده',
     Pending: 'در انتظار تحویل',
     PartiallyDelivered: 'تحویل ناقص',
@@ -30,7 +33,7 @@ const DELIVERY_LABELS = {
 
 const fa = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString('fa-IR'));
 
-function formatTime(d) {
+export function formatTime(d) {
     if (!d) return '—';
     try {
         return new Intl.DateTimeFormat('fa-IR', {
@@ -61,9 +64,9 @@ function ResultBadge({ result }) {
 const TIMELINE_VISIBLE = 2;
 
 /** آخرین رویدادها همیشه دیده می‌شوند؛ قدیمی‌ترها پشت دکمهٔ «نمایش بیشتر» می‌مانند */
-function Timeline({ events }) {
+export function Timeline({ events, visibleCount = TIMELINE_VISIBLE }) {
     const [showAll, setShowAll] = useState(false);
-    const hiddenCount = Math.max(0, events.length - TIMELINE_VISIBLE);
+    const hiddenCount = Math.max(0, events.length - visibleCount);
     const visible = showAll ? events : events.slice(hiddenCount);
     return (
         <>
@@ -103,10 +106,10 @@ function Timeline({ events }) {
 }
 
 /**
- * @param {{ order: object, onSummary?: (summary: object|null) => void, onPhysicalCancelled?: (cancelled: boolean) => void }} props
- * onPhysicalCancelled پس از هر بارگذاری (از جمله بعد از لغو) وضعیت «لغو کامل کالا» را به گرید خبر می‌دهد.
+ * داده و بارگذاری جزئیات یک سفارش؛ بین پنل درون‌خطی و کشوی جزئیات مشترک است.
+ * onPhysicalCancelled پس از هر بارگذاری (از جمله بعد از لغو) وضعیت «لغو کامل کالا» را خبر می‌دهد.
  */
-export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancelled, onRestockCleared }) {
+export function useOrderTracking(order, { onSummary, onPhysicalCancelled } = {}) {
     const [state, setState] = useState({ loading: true, error: null, data: null });
     const [reloadKey, setReloadKey] = useState(0);
     const orderId = order.orderId || order.id;
@@ -121,7 +124,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
                 setState({ loading: false, error: null, data });
                 if (onSummary) onSummary(data.attemptSummary || null);
                 if (onPhysicalCancelled) {
-                    const cancelled = isPhysicalFullyCancelled(data.items);
+                    const cancelled = isPhysicalFullyCancelled(data.order?.items);
                     if (cancelled !== Boolean(order.physicalCancelled)) onPhysicalCancelled(cancelled);
                 }
             })
@@ -137,6 +140,134 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [orderId, reloadKey]);
 
+    const reload = () => setReloadKey((k) => k + 1);
+
+    /** به‌روزرسانی محلی وضعیت ارسال یک قلم پس از ثبت در PhysicalDeliveryControl */
+    const setItemDeliveryStatus = (purchaseId, newStatus) => {
+        setState((prev) => {
+            if (!prev?.data?.order?.items) return prev;
+            const updated = prev.data.order.items.map((it) =>
+                it.purchaseId === purchaseId ? { ...it, physicalDeliveryStatus: newStatus } : it
+            );
+            return { ...prev, data: { ...prev.data, order: { ...prev.data.order, items: updated } } };
+        });
+    };
+
+    return { state, reload, setItemDeliveryStatus };
+}
+
+export function OrderWarnings({ warnings }) {
+    if (!warnings?.length) return null;
+    return (
+        <div className={styles.byemoneyWarningAlert} role="status">
+            <ul style={{ margin: 0, paddingInlineStart: '1rem' }}>
+                {warnings.map((w) => (<li key={w}>⚠️ {w}</li>))}
+            </ul>
+        </div>
+    );
+}
+
+/**
+ * فهرست اقلام با کنترل ارسال و لغو کالا (همان رفتار قبلی پنل).
+ * @param {{ detail: object, isPaid: boolean, onReload: () => void,
+ *   onItemStatus: (purchaseId: string, status: string) => void }} props
+ */
+export function OrderItemsList({ detail, isPaid, onReload, onItemStatus }) {
+    if (detail.items.length === 0) {
+        return <p className={styles.expanded_empty}>اطلاعات اقلام در دسترس نیست.</p>;
+    }
+    return (
+        <div className={styles.items_list}>
+            {detail.items.map((item, idx) => {
+                const isProduct = String(item.itemType || '').toLowerCase() === 'product';
+                const isShippedOrDelivered = item.physicalDeliveryStatus === 'Shipped' || item.physicalDeliveryStatus === 'Delivered';
+                const totalQty = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
+                const cancelledQty = Math.min(Number(item.cancelledQuantity) || 0, totalQty);
+                const remainingQty = totalQty - cancelledQty;
+                const refundedRegular = Number(item.refundedRegularInNoor) || 0;
+                const refundedGift = Number(item.refundedGiftInNoor) || 0;
+                const refundedTotal = refundedRegular + refundedGift;
+                const fullyCancelled = isProduct && cancelledQty >= totalQty;
+                const partlyCancelled = isProduct && cancelledQty > 0 && !fullyCancelled;
+                const canCancel = isProduct && isPaid && Boolean(item.purchaseId)
+                    && !fullyCancelled && !isShippedOrDelivered;
+
+                return (
+                    <div
+                        key={`${item.externalCourseId || item.purchaseId || idx}`}
+                        className={`${styles.item_card} ${fullyCancelled ? styles['item_card--cancelled'] : ''}`}
+                        data-cancelled={fullyCancelled ? 'full' : partlyCancelled ? 'partial' : undefined}
+                    >
+                        <div className={styles.item_card__main}>
+                            <span className={styles.item_card__icon}>{isProduct ? '📦' : '📚'}</span>
+                            <div className={styles.item_card__info}>
+                                <span className={styles.item_card__title}>{item.title || (isProduct ? 'کالا' : 'دوره آموزشی')}</span>
+                                <span className={styles.item_card__type}>{isProduct ? 'کالای فیزیکی' : 'دوره آموزشی'}</span>
+                                {item.quantity > 1 && (
+                                    <span className={styles.item_card__meta}>
+                                        تعداد: {fa(item.quantity)}
+                                        {item.priceInNoor != null && ` (قیمت واحد: ${fa(item.priceInNoor)} نور)`}
+                                    </span>
+                                )}
+                                {fullyCancelled && (
+                                    <span className={`${styles.item_card__badge} ${styles['item_card__badge--danger']}`} data-testid="item-cancelled-badge">
+                                        ⛔ این کالا لغو شده است{totalQty > 1 ? ` (${fa(cancelledQty)} از ${fa(totalQty)} عدد)` : ''}
+                                    </span>
+                                )}
+                                {partlyCancelled && (
+                                    <span className={`${styles.item_card__badge} ${styles['item_card__badge--warning']}`} data-testid="item-cancelled-badge">
+                                        ⚠️ {fa(cancelledQty)} از {fa(totalQty)} عدد لغو شده — {fa(remainingQty)} عدد باقی‌مانده
+                                    </span>
+                                )}
+                                {(fullyCancelled || partlyCancelled) && refundedTotal > 0 && (
+                                    <span className={styles.item_card__meta} data-testid="item-refunded">
+                                        برگشتی: {fa(refundedRegular)} نور عادی
+                                        {refundedGift > 0 && ` و ${fa(refundedGift)} نور هدیه`}
+                                    </span>
+                                )}
+                                {isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus && (
+                                    <span className={styles.item_card__meta}>
+                                        ارسال: {getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}
+                                    </span>
+                                )}
+                            </div>
+                            <span className={`${styles.item_card__price} ${fullyCancelled ? styles['item_card__price--struck'] : ''}`}>
+                                {fa(item.finalAmountInNoor ?? item.priceInNoor)} نور
+                            </span>
+                        </div>
+
+                        {isProduct && isPaid && item.purchaseId && !fullyCancelled && (
+                            <div className={styles.item_card__actions}>
+                                <PhysicalDeliveryControl
+                                    purchaseId={item.purchaseId}
+                                    cartId={detail.cartId}
+                                    initialStatus={item.physicalDeliveryStatus || null}
+                                    onStatusChange={(newStatus) => onItemStatus(item.purchaseId, newStatus)}
+                                />
+                                {canCancel && (
+                                    <PhysicalCancelFlow
+                                        mode="admin"
+                                        targetId={item.purchaseId}
+                                        maxQuantity={remainingQty}
+                                        onCancelled={onReload}
+                                    />
+                                )}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+/**
+ * @param {{ order: object, onSummary?: (summary: object|null) => void, onPhysicalCancelled?: (cancelled: boolean) => void }} props
+ * onPhysicalCancelled پس از هر بارگذاری (از جمله بعد از لغو) وضعیت «لغو کامل کالا» را به گرید خبر می‌دهد.
+ */
+export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancelled, onRestockCleared }) {
+    const { state, reload, setItemDeliveryStatus } = useOrderTracking(order, { onSummary, onPhysicalCancelled });
+
     if (state.loading) {
         return <p className={styles.expanded_empty}>در حال دریافت اقلام و خط زمانی سفارش...</p>;
     }
@@ -144,7 +275,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
         return (
             <div className={`${styles.expanded_section}`} role="alert">
                 <p className={styles.expanded_empty}>⚠️ {state.error || 'جزئیات سفارش در دسترس نیست.'}</p>
-                <AdminButton variant="default" onClick={() => setReloadKey((k) => k + 1)}>
+                <AdminButton variant="default" onClick={reload}>
                     تلاش مجدد
                 </AdminButton>
             </div>
@@ -156,13 +287,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
 
     return (
         <>
-            {warnings.length > 0 && (
-                <div className={styles.byemoneyWarningAlert} role="status">
-                    <ul style={{ margin: 0, paddingInlineStart: '1rem' }}>
-                        {warnings.map((w) => (<li key={w}>⚠️ {w}</li>))}
-                    </ul>
-                </div>
-            )}
+            <OrderWarnings warnings={warnings} />
 
             {detail.cartId && (
                 <PendingRestockNotice cartId={detail.cartId} items={detail.items} onCleared={onRestockCleared} />
@@ -230,7 +355,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
                     )}
                     </div>
                     <div>
-                        <AdminButton variant="default" onClick={() => setReloadKey((k) => k + 1)} title="دریافت دوباره از سرور">
+                        <AdminButton variant="default" onClick={reload} title="دریافت دوباره از سرور">
                             تازه‌سازی
                         </AdminButton>
                     </div>
@@ -239,107 +364,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
 
             <div className={styles.expanded_section}>
                 <h4 className={styles.expanded_section__title}>🛒 اقلام سفارش</h4>
-                {detail.items.length === 0 ? (
-                    <p className={styles.expanded_empty}>اطلاعات اقلام در دسترس نیست.</p>
-                ) : (
-                    <div className={styles.items_list}>
-                        {detail.items.map((item, idx) => {
-                            const isProduct = String(item.itemType || '').toLowerCase() === 'product';
-                            const isShippedOrDelivered = item.physicalDeliveryStatus === 'Shipped' || item.physicalDeliveryStatus === 'Delivered';
-                            const totalQty = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
-                            const cancelledQty = Math.min(Number(item.cancelledQuantity) || 0, totalQty);
-                            const remainingQty = totalQty - cancelledQty;
-                            const refundedRegular = Number(item.refundedRegularInNoor) || 0;
-                            const refundedGift = Number(item.refundedGiftInNoor) || 0;
-                            const refundedTotal = refundedRegular + refundedGift;
-                            const fullyCancelled = isProduct && cancelledQty >= totalQty;
-                            const partlyCancelled = isProduct && cancelledQty > 0 && !fullyCancelled;
-                            const canCancel = isProduct && isPaid && Boolean(item.purchaseId)
-                                && !fullyCancelled && !isShippedOrDelivered;
-
-                            return (
-                                <div
-                                    key={`${item.externalCourseId || item.purchaseId || idx}`}
-                                    className={`${styles.item_card} ${fullyCancelled ? styles['item_card--cancelled'] : ''}`}
-                                    data-cancelled={fullyCancelled ? 'full' : partlyCancelled ? 'partial' : undefined}
-                                >
-                                    <div className={styles.item_card__main}>
-                                        <span className={styles.item_card__icon}>{isProduct ? '📦' : '📚'}</span>
-                                        <div className={styles.item_card__info}>
-                                            <span className={styles.item_card__title}>{item.title || (isProduct ? 'کالا' : 'دوره آموزشی')}</span>
-                                            <span className={styles.item_card__type}>{isProduct ? 'کالای فیزیکی' : 'دوره آموزشی'}</span>
-                                            {item.quantity > 1 && (
-                                                <span className={styles.item_card__meta}>
-                                                    تعداد: {fa(item.quantity)}
-                                                    {item.priceInNoor != null && ` (قیمت واحد: ${fa(item.priceInNoor)} نور)`}
-                                                </span>
-                                            )}
-                                            {fullyCancelled && (
-                                                <span className={`${styles.item_card__badge} ${styles['item_card__badge--danger']}`} data-testid="item-cancelled-badge">
-                                                    ⛔ این کالا لغو شده است{totalQty > 1 ? ` (${fa(cancelledQty)} از ${fa(totalQty)} عدد)` : ''}
-                                                </span>
-                                            )}
-                                            {partlyCancelled && (
-                                                <span className={`${styles.item_card__badge} ${styles['item_card__badge--warning']}`} data-testid="item-cancelled-badge">
-                                                    ⚠️ {fa(cancelledQty)} از {fa(totalQty)} عدد لغو شده — {fa(remainingQty)} عدد باقی‌مانده
-                                                </span>
-                                            )}
-                                            {(fullyCancelled || partlyCancelled) && refundedTotal > 0 && (
-                                                <span className={styles.item_card__meta} data-testid="item-refunded">
-                                                    برگشتی: {fa(refundedRegular)} نور عادی
-                                                    {refundedGift > 0 && ` و ${fa(refundedGift)} نور هدیه`}
-                                                </span>
-                                            )}
-                                            {isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus && (
-                                                <span className={styles.item_card__meta}>
-                                                    ارسال: {getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span className={`${styles.item_card__price} ${fullyCancelled ? styles['item_card__price--struck'] : ''}`}>
-                                            {fa(item.finalAmountInNoor ?? item.priceInNoor)} نور
-                                        </span>
-                                    </div>
-
-                                    {isProduct && isPaid && item.purchaseId && !fullyCancelled && (
-                                        <div className={styles.item_card__actions}>
-                                            <PhysicalDeliveryControl
-                                                purchaseId={item.purchaseId}
-                                                cartId={detail.cartId}
-                                                initialStatus={item.physicalDeliveryStatus || null}
-                                                onStatusChange={(newStatus) => {
-                                                    setState((prev) => {
-                                                        if (!prev?.data?.order?.items) return prev;
-                                                        const updated = prev.data.order.items.map((it) =>
-                                                            it.purchaseId === item.purchaseId
-                                                                ? { ...it, physicalDeliveryStatus: newStatus }
-                                                                : it
-                                                        );
-                                                        return {
-                                                            ...prev,
-                                                            data: {
-                                                                ...prev.data,
-                                                                order: { ...prev.data.order, items: updated },
-                                                            },
-                                                        };
-                                                    });
-                                                }}
-                                            />
-                                            {canCancel && (
-                                                <PhysicalCancelFlow
-                                                    mode="admin"
-                                                    targetId={item.purchaseId}
-                                                    maxQuantity={remainingQty}
-                                                    onCancelled={() => setReloadKey((k) => k + 1)}
-                                                />
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                <OrderItemsList detail={detail} isPaid={isPaid} onReload={reload} onItemStatus={setItemDeliveryStatus} />
             </div>
 
             {shippingAddress && (

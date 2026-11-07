@@ -1,0 +1,83 @@
+@use '@/styles/base/mixins' as *;
+
+.viewport {
+    position: fixed;
+    left: 24px;
+    bottom: 24px;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(360px, calc(100vw - 32px));
+    pointer-events: none;
+
+    @include respond(md) {
+        left: 16px;
+        bottom: 16px;
+    }
+}
+
+.toast {
+    --tone: var(--color-blue-light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--color-bg-primary) 92%, var(--tone));
+    border: 1px solid fade(var(--tone), 35%);
+    border-inline-start: 4px solid var(--tone);
+    box-shadow: 0 10px 30px fade(var(--color-black), 35%);
+    color: var(--color-card-text);
+    font-size: var(--font-sm);
+    pointer-events: auto;
+    animation: toastIn 0.25s ease-out;
+
+    &--success { --tone: var(--color-success); }
+    &--error { --tone: var(--color-error); }
+    &--info { --tone: var(--color-blue-light); }
+
+    &__icon {
+        flex-shrink: 0;
+        color: var(--tone);
+    }
+
+    &__text {
+        flex: 1;
+        line-height: 1.7;
+    }
+
+    &__close {
+        display: inline-flex;
+        padding: 4px;
+        border: none;
+        border-radius: 6px;
+        background: none;
+        color: inherit;
+        opacity: 0.6;
+        cursor: pointer;
+        transition: opacity 0.2s, background-color 0.2s;
+
+        &:hover {
+            opacity: 1;
+            background: fade(var(--color-primary), 10%);
+        }
+    }
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast {
+        animation: none;
+    }
+}

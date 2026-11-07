@@ -10,12 +10,13 @@
  * نام خریدار و ادمین را route سروری از استرپی اضافه می‌کند؛ جزئیات زندهٔ سفارش با کلیک روی ردیف باز می‌شود.
  */
 
-import { Fragment, useCallback, useEffect, useState } from 'react';
-import { Bookmark, ChevronDown, Gift, Lock, PackageCheck, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Bookmark, ChevronDown, ChevronLeft, Gift, Lock, PackageCheck, X } from 'lucide-react';
 import { usePermissions } from '@/context/PermissionsContext';
 import { ADMIN_PERMISSIONS } from '@/config/adminPermissions';
 import AdminButton from '../../Shared/AdminButton';
-import ByeMoneyOrderPanel from '../ByeMoneyOrderPanel';
+import { useAdminToast, AdminToastViewport } from '../../Shared/AdminToast';
+import OrderDrawer from '../OrderDrawer/OrderDrawer';
 import shared from '../../Shared/AdminShared.module.scss';
 import modal from '../OrdersTable.module.scss';
 import styles from './CourseOrderSettlements.module.scss';
@@ -108,10 +109,20 @@ function Buyer({ order }) {
 }
 
 function OrdersTable({ items }) {
-    const [openId, setOpenId] = useState(null);
+    const [openOrder, setOpenOrder] = useState(null);
+    const { toasts, toast, dismiss } = useAdminToast();
+    const closeDrawer = useCallback(() => setOpenOrder(null), []);
     if (!items?.length) return <p className={styles.empty}>سفارشی وجود ندارد.</p>;
     return (
         <div className={styles.tableWrap}>
+            {openOrder && (
+                <OrderDrawer
+                    order={{ orderId: openOrder.orderId, buyerName: openOrder.buyerName, buyerPhone: openOrder.buyerPhone }}
+                    onClose={closeDrawer}
+                    onToast={toast}
+                />
+            )}
+            <AdminToastViewport toasts={toasts} onDismiss={dismiss} />
             <table className={`${shared.table} ${styles.table}`}>
                 <thead>
                     <tr>
@@ -121,25 +132,22 @@ function OrdersTable({ items }) {
                 </thead>
                 <tbody>
                     {items.map((o) => {
-                        const open = openId === o.orderId;
+                        const open = openOrder?.orderId === o.orderId;
                         return (
-                            <Fragment key={o.orderId}>
-                                <tr className={styles.row} onClick={() => setOpenId(open ? null : o.orderId)} aria-expanded={open}
-                                    title="نمایش جزئیات سفارش">
-                                    <td className={styles.orderNo}>#{shortOrderNumber(o.orderId)}</td>
-                                    <td><Buyer order={o} /></td>
-                                    <td><DateTime utc={o.orderCreatedAtUtc} /></td>
-                                    <td className={styles['amount--regular']}>{fa(o.regularNetAmountInNoor)}</td>
-                                    <td className={styles['amount--gift']}>{fa(o.giftNetAmountInNoor)}</td>
-                                    <td className={styles['amount--total']}>{fa(o.netAmountInNoor)}</td>
-                                    <td><ChevronDown size={16} className={`${styles.chevron} ${open ? styles['chevron--open'] : ''}`} /></td>
-                                </tr>
-                                {open && (
-                                    <tr className={styles.detailRow}>
-                                        <td colSpan={7}><ByeMoneyOrderPanel order={{ orderId: o.orderId }} /></td>
-                                    </tr>
-                                )}
-                            </Fragment>
+                            <tr key={o.orderId} className={styles.row} tabIndex={0} aria-haspopup="dialog"
+                                aria-current={open || undefined} title="نمایش جزئیات سفارش"
+                                onClick={() => setOpenOrder(o)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenOrder(o); }
+                                }}>
+                                <td className={styles.orderNo}>#{shortOrderNumber(o.orderId)}</td>
+                                <td><Buyer order={o} /></td>
+                                <td><DateTime utc={o.orderCreatedAtUtc} /></td>
+                                <td className={styles['amount--regular']}>{fa(o.regularNetAmountInNoor)}</td>
+                                <td className={styles['amount--gift']}>{fa(o.giftNetAmountInNoor)}</td>
+                                <td className={styles['amount--total']}>{fa(o.netAmountInNoor)}</td>
+                                <td><ChevronLeft size={16} className={styles.chevron} aria-hidden="true" /></td>
+                            </tr>
                         );
                     })}
                 </tbody>

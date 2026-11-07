@@ -172,12 +172,8 @@ export default function PhysicalDeliveryControl({
                 <AdminBadge variant={badgeVariant} text={statusLabel} />
             </div>
 
-            {isDelivered ? (
-                <div className={styles.completedBadge}>
-                    <CheckCircle2 size={16} />
-                    <span>تحویل کالا نهایی شده است.</span>
-                </div>
-            ) : (
+            {/* پس از «تحویل‌شده» وضعیت نهایی است و نشان بالا کافی است؛ کنترلی برای پیشبرد نمی‌ماند */}
+            {!isDelivered && (
                 <div ref={dropdownRef} className={styles.customSelectContainer}>
                     <button
                         type="button"

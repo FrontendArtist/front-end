@@ -22,6 +22,7 @@ import {
     LayoutDashboard,  // Dashboard overview icon
     ShoppingCart,     // Orders icon
     Scale,            // Settlements & archive icon
+    History,          // Legacy (Strapi) orders icon
     Users,            // Users management icon
     Package,          // Products icon
     FileText,         // Articles icon
@@ -61,6 +62,7 @@ const NAV_LINKS = [
         icon: ShoppingCart,
         children: [
             { href: '/admin/orders/settlements', label: 'تسویه و آرشیو', icon: Scale },
+            { href: '/admin/orders/legacy', label: 'سفارش‌های قدیمی', icon: History },
         ],
     },
     { href: '/admin/gateway-reviews', label: 'رسیدگی پرداخت‌ها', icon: ShieldAlert },

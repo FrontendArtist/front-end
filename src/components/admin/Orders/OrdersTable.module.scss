@@ -22,11 +22,6 @@ $transition: 0.2s ease;
 /* CONTAINER & TOOLBAR                                                        */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-.container {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
 
 .toolbar {
     display: flex;
@@ -68,12 +63,6 @@ $transition: 0.2s ease;
 /* TABLE                                                                      */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-.table_wrapper {
-    overflow-x: auto;
-    border: 1px solid $border;
-    border-radius: $radius-md;
-    background: $bg;
-}
 
 .table {
     width: 100%;
@@ -250,19 +239,6 @@ $transition: 0.2s ease;
     padding: 0 !important;
 }
 
-.expanded_content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 16px;
-    padding: 20px 20px 24px;
-    background: fade(var(--color-black), 25%);
-    border-top: 1px solid fade(var(--color-primary), 8%);
-    animation: expandDown 0.2s ease;
-
-    @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-    }
-}
 
 @keyframes expandDown {
     from {
@@ -295,24 +271,12 @@ $transition: 0.2s ease;
     }
 }
 
-.expanded_grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 16px;
-
-    @media (max-width: 480px) {
-        grid-template-columns: 1fr;
-    }
-}
 
 .expanded_field {
     display: flex;
     flex-direction: column;
     gap: 3px;
 
-    &--full {
-        grid-column: 1 / -1;
-    }
 
     &__label {
         font-size: var(--font-xs);
@@ -328,30 +292,6 @@ $transition: 0.2s ease;
     }
 }
 
-.receipt_link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: fade(var(--color-primary), 12%);
-    border: 1px solid fade(var(--color-primary), 30%);
-    border-radius: 8px;
-    color: var(--color-text-primary);
-    font-size: var(--font-xs);
-    font-weight: var(--font-weight-bold);
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    width: fit-content;
-
-    &:hover {
-        background: fade(var(--color-primary), 25%);
-        border-color: var(--color-primary);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px fade(var(--color-primary), 15%);
-    }
-}
 
 .expanded_empty {
     color: $muted;
@@ -484,44 +424,9 @@ $transition: 0.2s ease;
     }
 }
 
-.items_total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 12px;
-    border-top: 1px solid fade(var(--color-primary), 10%);
-    margin-top: 4px;
-    font-size: var(--font-sm);
-    color: $muted;
-
-    strong {
-        color: var(--color-success);
-        font-weight: var(--font-weight-bold);
-    }
-}
 
 /* ─── Notes ──────────────────────────────────────────────────────────────── */
 
-.expanded_notes {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: 8px;
-    padding-top: 10px;
-    border-top: 1px solid fade(var(--color-primary), 8%);
-
-    &__text {
-        font-family: inherit;
-        font-size: var(--font-xs);
-        color: $muted;
-        white-space: pre-wrap;
-        margin: 0;
-        line-height: 1.7;
-        background: fade(var(--color-black), 15%);
-        padding: 10px 12px;
-        border-radius: 8px;
-    }
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* BADGE                                                                      */
@@ -547,40 +452,6 @@ $transition: 0.2s ease;
     flex-wrap: wrap;
 }
 
-.action_btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 12px;
-    border-radius: $radius-sm;
-    font-size: var(--font-xs);
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all $transition;
-    white-space: nowrap;
-    font-family: inherit;
-
-    &--receipt {
-        background: fade(var(--color-warning), 15%);
-        color: var(--color-warning-amber);
-        border-color: fade(var(--color-warning), 30%);
-
-        &:hover {
-            background: fade(var(--color-warning), 30%);
-        }
-    }
-
-    &--status {
-        background: fade(var(--color-blue), 15%);
-        color: var(--color-blue-light);
-        border-color: fade(var(--color-blue), 35%);
-
-        &:hover {
-            background: fade(var(--color-blue-alt), 20%);
-        }
-    }
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* EMPTY STATE                                                                */
@@ -953,15 +824,6 @@ $transition: 0.2s ease;
 /* LAZY LOADING & PAGINATION                                                   */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
-.lazy_container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-top: 20px;
-    padding: 12px 0 24px;
-    position: relative;
-}
 
 .sentinel {
     position: absolute;
@@ -972,28 +834,7 @@ $transition: 0.2s ease;
     opacity: 0;
 }
 
-.loading_indicator {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 24px;
-    background: fade(var(--color-bg-primary), 60%);
-    border: 1px solid fade(var(--color-primary), 15%);
-    border-radius: 30px;
-    backdrop-filter: blur(8px);
-    font-size: var(--font-sm);
-    color: var(--color-card-text);
-    animation: fadeIn 0.3s ease;
-}
 
-.spinner {
-    width: 20px;
-    height: 20px;
-    border: 2.5px solid fade(var(--color-text-primary), 20%);
-    border-top-color: var(--color-text-primary);
-    border-radius: 50%;
-    animation: spin 0.75s linear infinite;
-}
 
 @keyframes spin {
     to {
@@ -1012,63 +853,9 @@ $transition: 0.2s ease;
     }
 }
 
-.load_more_btn {
-    padding: 10px 24px;
-    background: fade(var(--color-text-primary), 10%);
-    color: var(--color-text-primary);
-    border: 1px solid fade(var(--color-text-primary), 30%);
-    border-radius: 24px;
-    font-size: var(--font-sm);
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.2s ease;
 
-    &:hover {
-        background: fade(var(--color-text-primary), 20%);
-        border-color: var(--color-text-primary);
-        transform: translateY(-1px);
-    }
-}
 
-.all_loaded {
-    padding: 8px 16px;
-    font-size: var(--font-xs);
-    color: rgba(255, 250, 234, 0.4);
-    background: fade(var(--color-black), 15%);
-    border-radius: 20px;
-    border: 1px solid fade(var(--color-primary), 5%);
-    letter-spacing: 0.2px;
-}
 
-.error_indicator {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 20px;
-    background: fade(var(--color-error), 10%);
-    border: 1px solid fade(var(--color-error), 25%);
-    border-radius: 24px;
-    font-size: var(--font-sm);
-    color: var(--color-error);
-}
-
-.retry_btn {
-    background: transparent;
-    border: 1px solid var(--color-error);
-    color: var(--color-error);
-    padding: 4px 12px;
-    border-radius: 16px;
-    font-size: var(--font-xs);
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: var(--color-error);
-        color: #fff;
-    }
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* FILTER TABS & SORT HEADER                                                   */
@@ -1482,49 +1269,7 @@ $transition: 0.2s ease;
     }
 }
 
-.bulkDeleteBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: var(--color-error);
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: var(--font-xs);
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
-    transition: all $transition;
 
-    &:hover {
-        background: var(--color-error);
-        color: #ffffff;
-        border-color: var(--color-error);
-        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
-    }
-}
-
-.bulkDeletePendingBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(234, 179, 8, 0.12);
-    border: 1px solid rgba(234, 179, 8, 0.3);
-    color: var(--color-warning);
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: var(--font-xs);
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
-    transition: all $transition;
-
-    &:hover {
-        background: var(--color-warning);
-        color: #000000;
-        border-color: var(--color-warning);
-        box-shadow: 0 2px 8px rgba(234, 179, 8, 0.35);
-    }
-}
 
 /* ─── مشخصات پرداخت آنلاین در پنل ادمین ──────────────────────── */
 .expanded_section_online {
@@ -1539,14 +1284,6 @@ $transition: 0.2s ease;
     gap: 10px;
 }
 
-.onlinePayStatusRow {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid fade(var(--color-primary), 8%);
-}
 
 .onlinePayBadgeSuccess {
     display: inline-flex;
@@ -1587,44 +1324,9 @@ $transition: 0.2s ease;
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-.expanded_address_block {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px dashed fade(var(--color-primary), 15%);
-}
 
-.expanded_address_title {
-    font-size: var(--font-xs);
-    font-weight: var(--font-weight-bold);
-    color: var(--color-title-hover);
-    margin: 0 0 4px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
 
-.expanded_notes_card {
-    background: fade(var(--color-black), 20%);
-    border: 1px solid fade(var(--color-primary), 8%);
-    border-radius: 8px;
-    padding: 10px 12px;
-    max-height: 280px;
-    overflow-y: auto;
-}
 
-.copyableField {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    background: rgba(0, 0, 0, 0.25);
-    padding: 4px 8px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
 
 .copyBtn {
     background: rgba(255, 255, 255, 0.08);
@@ -1649,12 +1351,6 @@ $transition: 0.2s ease;
     }
 }
 
-.rialEquivalent {
-    font-size: var(--font-xs);
-    color: var(--color-text-secondary);
-    margin-right: 6px;
-    opacity: 0.8;
-}
 
 .byemoneyWarningAlert {
     display: flex;
@@ -1670,24 +1366,7 @@ $transition: 0.2s ease;
     margin-bottom: 12px;
     animation: slideDown 0.25s ease;
 
-    &__content {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
 
-    &__close {
-        background: none;
-        border: none;
-        color: var(--color-warning-amber);
-        font-size: 1.2rem;
-        cursor: pointer;
-        padding: 0 4px;
-        opacity: 0.7;
-        &:hover {
-            opacity: 1;
-        }
-    }
 }
 
 
@@ -1784,13 +1463,4 @@ $transition: 0.2s ease;
 }
 
 // مبلغ سفارش بای‌مانی پس از لغو کالا: مبلغ اولیه خط‌خورده، مبلغ خالص و برگشتی
-.amount__struck {
-    text-decoration: line-through;
-    opacity: 0.6;
-}
-
-.amount__refund {
-    display: block;
-    font-size: 0.75rem;
-    color: var(--color-error, #c0392b);
-}
+
