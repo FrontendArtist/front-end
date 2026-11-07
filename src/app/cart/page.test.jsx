@@ -590,3 +590,31 @@ test('خطای عدم تنظیم هزینه ارسال برای کالای فی�
     expect(screen.getByRole('button', { name: 'بررسی دوباره' })).toBeTruthy();
 });
 
+
+test('کمبود موجودی کالا هنگام آماده‌سازی: پیام با نام کالا و تعداد مجاز نمایش داده می‌شود و سبد تغییر نمی‌کند', async () => {
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ address: { recipientName: 'گیرنده', fullAddress: 'تهران، خیابان آزادی' } }),
+    });
+    const cartItems = [{ id: 10, documentId: 'prod-doc-1', type: 'product', title: 'کتاب فیزیکی', price: 100, quantity: 3, slug: 'book' }];
+    useCartStore.setState({ items: cartItems });
+    previewCourseCart.mockResolvedValue({
+        couponCode: null, originalTotalInNoor: 300, itemDiscountInNoor: 0, couponDiscountInNoor: 0,
+        shippingAmountInNoor: 0, priceInNoor: 300,
+        items: [{ externalId: 'prod-doc-1', externalCourseId: 'prod-doc-1', title: 'کتاب فیزیکی', type: 'product', basePriceInNoor: 100, priceInNoor: 300, quantity: 3 }],
+    });
+    const stockError = Object.assign(new Error('پیام عمومی بای‌مانی'), {
+        code: 'CART_STOCK_UNAVAILABLE',
+        lineError: { externalId: 'prod-doc-1', reason: 'INSUFFICIENT_STOCK', availableQuantity: 1 },
+    });
+    prepareCourseCart.mockRejectedValue(stockError);
+
+    render(<CartPage />);
+    fireEvent.click(await purchaseButton());
+
+    expect(await screen.findByText('از «کتاب فیزیکی» فقط 1 عدد موجود است؛ تعداد را در سبد کم کنید.')).toBeTruthy();
+    expect(executeNoorCartPurchase).not.toHaveBeenCalled();
+    expect(useCartStore.getState().items).toEqual(cartItems);
+    global.fetch = originalFetch;
+});

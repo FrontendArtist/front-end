@@ -26,6 +26,7 @@ async function requestCart(path, jwt, { body, method = 'GET', signal } = {}) {
     if (!response.ok) {
         const error = new Error(data.error || data.message || (typeof data.errors?.[0] === 'string' ? data.errors[0] : 'دریافت وضعیت سبد ممکن نیست. دوباره تلاش کنید.'));
         error.code = data.code;
+        if (data.lineError) error.lineError = data.lineError;
         throw error;
     }
     return data;

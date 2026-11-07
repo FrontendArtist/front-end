@@ -34,6 +34,7 @@ import { getWalletBalanceWithByeMoney } from '@/lib/byeMoneyApi';
 import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isCartItemPurchasedByUser } from '@/lib/courseAccessUtils';
 import { getCartItemDisplayTitle } from '@/lib/courseTitleUtils';
+import { cartStockErrorMessage } from '@/lib/cartStockError';
 
 /**
  * صفحه سبد خرید
@@ -324,7 +325,7 @@ export default function CartPage() {
         } catch (err) {
             if (currentPreviewKey.current !== paymentKey) return;
             console.error('Payment Error:', err);
-            setErrorMessage(err.message || 'خطا در فرآیند پرداخت. لطفاً مجدداً تلاش کنید.');
+            setErrorMessage(cartStockErrorMessage(err, items) || err.message || 'خطا در فرآیند پرداخت. لطفاً مجدداً تلاش کنید.');
         } finally {
             paymentLock.current = false;
             setIsProcessing(false);

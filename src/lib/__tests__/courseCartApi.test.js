@@ -183,3 +183,14 @@ test('خرید دوبارهٔ کالا پس از سبد Paid قبلی، سبد P
     expect(data.cartId).toBe(secondId);
     expect(fetch.mock.calls.at(-1)[0]).toMatch(/\/checkout$/);
 });
+
+test('خطای موجودی بای‌مانی کد و جزئیات قلم را به فراخوان می‌رساند', async () => {
+    const id = getCourseCartId(8, ['stock'], null);
+    const lineError = { externalId: 'prod-1', reason: 'OUT_OF_STOCK', availableQuantity: 0 };
+    global.fetch = jest.fn().mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ code: 'CART_STOCK_UNAVAILABLE', error: 'موجودی تمام شده است.', lineError }),
+    });
+    await expect(prepareCourseCart({ cartId: id, externalCourseIds: ['stock'], couponCode: null }, 'jwt'))
+        .rejects.toMatchObject({ code: 'CART_STOCK_UNAVAILABLE', message: 'موجودی تمام شده است.', lineError });
+});
