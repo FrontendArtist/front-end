@@ -24,6 +24,7 @@ import {
 import useAuthStore from '@/store/authStore';
 import { executeOnlinePayment, executeNoorCartPurchase } from '@/lib/checkoutService';
 import usePaymentProcessing from '@/hooks/usePaymentProcessing';
+import useReviewNoticeText from '@/hooks/useReviewNoticeText';
 import { checkPaymentConnection, invalidatePaymentConnection } from '@/lib/client/paymentConnection';
 import { cartItemKey } from '@/lib/cartItemKey';
 import styles from './Cart.module.scss';
@@ -145,6 +146,7 @@ export default function CartPage() {
         preview?.data?.topUpStatus === 'Pending' ||
         preview?.data?.topUpStatus === 'Unresolved'
     );
+    const reviewNoticeText = useReviewNoticeText(isCartUnderReview);
     const currentPreviewKey = useRef(previewKey);
     currentPreviewKey.current = previewKey;
     useEffect(() => {
@@ -770,7 +772,7 @@ export default function CartPage() {
                                         <div className={styles.awaitingTopUpNotice}>
                                             <span>
                                                 {isCartUnderReview
-                                                    ? 'در حال بررسی؛ در صورت کسر وجه، نور به کیف پول اضافه می‌شود؛ می‌توانید حدود ۳۰ دقیقه صبر کنید یا دوباره پرداخت کنید.'
+                                                    ? reviewNoticeText
                                                     : 'پرداخت قبلی شما ناتمام ماند یا لغو شد. در صورتی که وجه از حسابتان کسر نشده است، می‌توانید مجدداً پرداخت را انجام دهید.'}
                                             </span>
                                             <div style={{ marginTop: '4px' }}>

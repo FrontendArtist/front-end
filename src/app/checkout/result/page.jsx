@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import useCompletedOrderCart from '@/hooks/useCompletedOrderCart';
 import useCourseCheckoutResult from '@/hooks/useCourseCheckoutResult';
+import useReviewNoticeText from '@/hooks/useReviewNoticeText';
 import { formatChapterDisplayTitle, getRememberedChapterCourse } from '@/lib/courseTitleUtils';
 
 import { 
@@ -71,7 +72,7 @@ function CheckoutResultContent() {
         (checkout.courses || []).some(isPhysicalEntry) ||
         (Array.isArray(checkout.receipts) ? checkout.receipts : []).some(isPhysicalEntry)
     );
-    const reviewNoticeText = 'در حال بررسی؛ در صورت کسر وجه، نور به کیف پول اضافه می‌شود؛ می‌توانید حدود ۳۰ دقیقه صبر کنید یا دوباره پرداخت کنید.';
+    const reviewNoticeText = useReviewNoticeText(isReviewOrPending);
     const courseMessage = checkout.phase === 'checking' ? (hasPhysicalItem ? 'در حال بررسی نتیجه خرید…' : 'در حال بررسی نتیجه خرید و فعال‌سازی دوره‌ها…')
         : checkout.phase === 'completed' ? (hasPhysicalItem ? 'خرید شما با موفقیت ثبت شد.' : 'خرید با موفقیت انجام شد و دسترسی همه دوره‌ها برای شما فعال است.')
         : checkout.phase === 'accessMissing' ? 'سابقه خرید در بای‌مانی وجود دارد، اما دسترسی دوره در حساب شما فعال نیست. برای بررسی و بازیابی دسترسی با پشتیبانی تماس بگیرید.'

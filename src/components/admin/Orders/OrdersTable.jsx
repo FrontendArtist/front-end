@@ -179,7 +179,7 @@ function CopyButton({ text, label = 'کپی' }) {
 /**
  * OrderExpandedRow – ردیف کشویی با جزئیات کامل و غیرتکراری سفارش
  */
-function OrderExpandedRow({ order, colSpan, onOpenReceipt, onOpenStatus, onAttemptSummary, onPhysicalCancelled }) {
+function OrderExpandedRow({ order, colSpan, onOpenReceipt, onOpenStatus, onAttemptSummary, onPhysicalCancelled, onRestockCleared }) {
     const isPaid = isPaidOrder(order);
     const isCanceled = isCanceledOrder(order);
     const isByeMoney = Boolean(order.isByeMoney || order.source === 'byemoney');
@@ -203,7 +203,7 @@ function OrderExpandedRow({ order, colSpan, onOpenReceipt, onOpenStatus, onAttem
                 <div className={styles.expanded_content}>
 
                     {isByeMoney ? (
-                        <ByeMoneyOrderPanel order={order} onSummary={onAttemptSummary} onPhysicalCancelled={onPhysicalCancelled} />
+                        <ByeMoneyOrderPanel order={order} onSummary={onAttemptSummary} onPhysicalCancelled={onPhysicalCancelled} onRestockCleared={onRestockCleared} />
                     ) : (
                         <>
                             <div className={styles.expanded_section} style={{ gridColumn: '1 / -1', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -406,8 +406,11 @@ export default function OrdersTable({
     initialStats = null,
     settlementStats = null,
     initialByemoneyWarning = false,
+    restockedOrderIds = [],
 }) {
     // ── State ──────────────────────────────────────────────────────────────────
+    // سفارش‌هایی که برگشت موجودی‌شان رها شده؛ پس از بستن یا موفقیت در پنل سفارش از این مجموعه خارج می‌شوند
+    const [pendingRestockIds, setPendingRestockIds] = useState(() => new Set(restockedOrderIds));
     const [orders, setOrders] = useState(initialOrders);
     const [receiptModalOrder, setReceiptModal] = useState(null);
     const [statusModalOrder, setStatusModal] = useState(null);
@@ -718,6 +721,15 @@ export default function OrdersTable({
         setOrders((prev) =>
             prev.map((o) => (o.id === orderId ? { ...o, ...changes } : o))
         );
+    }
+
+    function clearPendingRestock(order) {
+        const key = String(order.orderId || order.id).toLowerCase();
+        setPendingRestockIds((prev) => {
+            const next = new Set(prev);
+            next.delete(key);
+            return next;
+        });
     }
 
     function toggleExpand(orderId) {
@@ -1093,6 +1105,9 @@ export default function OrdersTable({
 
                                     {/* وضعیت ارسال */}
                                     <td>
+                                        {isByeMoneyRow && pendingRestockIds.has(String(order.orderId || order.id).toLowerCase()) && (
+                                            <AdminBadge text="موجودی برنگشته" variant="warning" />
+                                        )}
                                         {isByeMoneyRow && isPaidOrder(order) && (order.physicalCancelled || order.deliveryStatus === 'Cancelled') ? (
                                             <AdminBadge text="کالا لغو شده" variant="error" />
                                         ) : isByeMoneyRow && isPaidOrder(order) && DELIVERY_COLUMN_CONFIG[order.deliveryStatus] ? (
@@ -1169,6 +1184,7 @@ export default function OrdersTable({
                                         onOpenStatus={(ord) => setStatusModal(ord)}
                                         onAttemptSummary={(summary) => handleOrderUpdate(order.id, { attemptSummary: summary })}
                                         onPhysicalCancelled={(cancelled) => handleOrderUpdate(order.id, { physicalCancelled: cancelled })}
+                                        onRestockCleared={() => clearPendingRestock(order)}
                                     />
                                 )}
                             </Fragment>

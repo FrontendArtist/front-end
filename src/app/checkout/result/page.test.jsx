@@ -19,6 +19,19 @@ jest.mock('./page.module.scss', () => ({
     itemsSectionHeader: 'itemsSectionHeader'
 }));
 
+test('پیام در حال بررسی عدد آستانهٔ غیر ۳۰ را از تنظیم می‌گیرد', async () => {
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ noCallbackMinutes: 45 }) });
+    useSearchParams.mockReturnValue(new URLSearchParams('status=financial_review'));
+    useCourseCheckoutResult.mockReturnValue({ phase: 'financialReview', isUnderReview: true, paid: false, courses: [], receipts: [] });
+    render(<CheckoutResultPage />);
+    try {
+        expect((await screen.findAllByText(/حدود ۴۵ دقیقه صبر کنید/)).length).toBeGreaterThanOrEqual(1);
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
 beforeEach(() => {
     useSearchParams.mockReturnValue(new URLSearchParams('status=success&orderType=light_topup&topUpId=topup-1'));
 });

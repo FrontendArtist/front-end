@@ -12,7 +12,9 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getOrders, getOrdersStats } from '@/lib/admin/adminOrdersApi';
+import { CourseOrderId, getPendingPhysicalRestocks } from '@/lib/byeMoneyApi';
 import OrdersTable from '@/components/admin/Orders/OrdersTable';
+import AbandonedRestocksAlert from '@/components/admin/Orders/AbandonedRestocksAlert';
 import Link from 'next/link';
 import styles from './orders.module.scss';
 
@@ -26,12 +28,18 @@ export default async function AdminOrdersPage() {
     const jwt = session?.user?.jwt;
 
     // ── واکشی اولیه سفارش‌ها از Strapi (صفحه اول) و آمار وضعیت‌ها ────────
-    const [{ orders, meta, error, byemoneyWarning }, statsData] = await Promise.all([
+    const [{ orders, meta, error, byemoneyWarning }, statsData, restocks] = await Promise.all([
         getOrders(jwt, { start: 0, limit: 20 }),
         getOrdersStats(jwt),
+        getPendingPhysicalRestocks({ jwt }),
     ]);
 
-    const totalCount = meta?.pagination?.total ?? statsData?.totalOrders ?? (orders?.length || 0);
+    // شناسهٔ سفارش سبد همان `cart:<cartId>` است؛ برای برچسب «موجودی برنگشته» در جدول
+    const restockedOrderIds = (restocks.data || [])
+        .filter((r) => r.abandoned)
+        .map((r) => CourseOrderId.for('Cart', r.cartId));
+
+    const totalCount =meta?.pagination?.total ?? statsData?.totalOrders ?? (orders?.length || 0);
 
     return (
         <div className={styles.page}>
@@ -73,6 +81,12 @@ export default async function AdminOrdersPage() {
                 </div>
             )}
 
+            {/* ── شکست دائمی برگشت موجودی لغوها (BND-05) ─────────────── */}
+            <AbandonedRestocksAlert
+                restocks={restocks.data}
+                error={restocks.success ? null : restocks.error}
+            />
+
             {/* ── جدول سفارش‌ها همراه با Lazy Load و مرتب‌سازی سروری ─────── */}
             {!error && (
                 <OrdersTable
@@ -81,6 +95,7 @@ export default async function AdminOrdersPage() {
                     initialStats={statsData?.statusCounts || null}
                     settlementStats={statsData}
                     initialByemoneyWarning={Boolean(byemoneyWarning)}
+                    restockedOrderIds={restockedOrderIds}
                 />
             )}
         </div>

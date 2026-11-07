@@ -143,6 +143,21 @@ test('سبد در انتظار شارژ امکان پرداخت مجدد آنل�
     })));
 });
 
+test('پیام در حال بررسی سبد عدد آستانهٔ غیر ۳۰ را از تنظیم می‌گیرد', async () => {
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ noCallbackMinutes: 45 }) });
+    try {
+        getExistingCourseCartId.mockReturnValue('cart-under-review');
+        const underReviewCart = { ...ready(150, 50), cartId: 'cart-under-review', status: 'Ready', isUnderReview: true, topUpStatus: 'UnderReview' };
+        getCourseCart.mockResolvedValue(underReviewCart);
+        prepareCourseCart.mockResolvedValue(underReviewCart);
+        render(<CartPage />);
+        expect(await screen.findByText(/حدود ۴۵ دقیقه صبر کنید/)).toBeTruthy();
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
 test('سبد در حالت در حال بررسی دکمه پرداخت مجدد آنلاین را فعال نگه می‌دارد و امکان پرداخت مجدد را فراهم می‌کند', async () => {
     getExistingCourseCartId.mockReturnValue('cart-under-review');
     const underReviewCart = { ...ready(150, 50), cartId: 'cart-under-review', status: 'Ready', isUnderReview: true, topUpStatus: 'UnderReview' };

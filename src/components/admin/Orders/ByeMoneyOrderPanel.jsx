@@ -15,6 +15,7 @@ import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
 import { canShowReceipt, isPhysicalFullyCancelled } from '@/lib/admin/orderTracking';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import PhysicalDeliveryControl from './PhysicalDeliveryControl';
+import PendingRestockNotice from './PendingRestockNotice';
 import PhysicalCancelFlow from '@/components/physicalCancel/PhysicalCancelFlow';
 import AdminButton from '../Shared/AdminButton';
 import styles from './OrdersTable.module.scss';
@@ -105,7 +106,7 @@ function Timeline({ events }) {
  * @param {{ order: object, onSummary?: (summary: object|null) => void, onPhysicalCancelled?: (cancelled: boolean) => void }} props
  * onPhysicalCancelled پس از هر بارگذاری (از جمله بعد از لغو) وضعیت «لغو کامل کالا» را به گرید خبر می‌دهد.
  */
-export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancelled }) {
+export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancelled, onRestockCleared }) {
     const [state, setState] = useState({ loading: true, error: null, data: null });
     const [reloadKey, setReloadKey] = useState(0);
     const orderId = order.orderId || order.id;
@@ -161,6 +162,10 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
                         {warnings.map((w) => (<li key={w}>⚠️ {w}</li>))}
                     </ul>
                 </div>
+            )}
+
+            {detail.cartId && (
+                <PendingRestockNotice cartId={detail.cartId} items={detail.items} onCleared={onRestockCleared} />
             )}
 
             <div className={`${styles.expanded_section} ${styles.expanded_section_online}`}>

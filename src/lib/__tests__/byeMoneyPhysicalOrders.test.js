@@ -2,6 +2,7 @@ import {
   getMyCourseOrderReceipt,
   getAdminCourseOrderReceipt,
   updatePhysicalPurchaseDeliveryStatus,
+  getPendingPhysicalRestocks,
 } from '../byeMoneyApi';
 import { mapByeMoneyLineItem } from '../byeMoneyOrderItems';
 
@@ -178,5 +179,35 @@ describe('updatePhysicalPurchaseDeliveryStatus', () => {
     const r = await updatePhysicalPurchaseDeliveryStatus({ jwt: 'adm', purchaseId: PURCHASE_ID, status: 'Shipped' });
     expect(r.success).toBe(false);
     expect(typeof r.error).toBe('string');
+  });
+});
+
+describe('getPendingPhysicalRestocks (BND-05)', () => {
+  test('بدون jwt درخواست نمی‌فرستد', async () => {
+    const r = await getPendingPhysicalRestocks({});
+    expect(r.unauthorized).toBe(true);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('۲۰۰ فهرست را برمی‌گرداند و توکن را در هدر می‌فرستد', async () => {
+    global.fetch.mockResolvedValue(res(200, [{ operationId: 'op', abandoned: true }]));
+    const r = await getPendingPhysicalRestocks({ jwt: 'jwt' });
+    expect(r).toEqual({ success: true, data: [{ operationId: 'op', abandoned: true }] });
+    const [url, init] = global.fetch.mock.calls[0];
+    expect(url).toBe('https://byemoney.test/api/admin/physical-purchases/pending-restocks');
+    expect(init.headers.Authorization).toBe('Bearer jwt');
+  });
+
+  test('۴۰۳ به forbidden نگاشت می‌شود', async () => {
+    global.fetch.mockResolvedValue(res(403, {}));
+    const r = await getPendingPhysicalRestocks({ jwt: 'jwt' });
+    expect(r.success).toBe(false);
+    expect(r.forbidden).toBe(true);
+  });
+
+  test('قطع شبکه networkError می‌دهد', async () => {
+    global.fetch.mockRejectedValue(new Error('down'));
+    const r = await getPendingPhysicalRestocks({ jwt: 'jwt' });
+    expect(r.networkError).toBe(true);
   });
 });

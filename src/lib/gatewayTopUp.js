@@ -12,8 +12,10 @@ function strapiHeaders() {
 }
 
 function byeMoneyHeaders(jwt) {
-  const key = process.env.STRAPI_TO_BYEMONEY_SERVICE_KEY || process.env.BYEMONEY_SERVICE_KEY;
-  if (!key || Buffer.byteLength(key, 'utf8') < 32) throw new Error('کلید سرویس بای‌مانی تنظیم نشده است.');
+  // فقط سمت سرور و فقط همین متغیر؛ بدون پیشوند NEXT_PUBLIC و بدون فال‌بک.
+  const key = process.env.FRONTEND_TO_BYEMONEY_SERVICE_KEY;
+  if (!key || Buffer.byteLength(key, 'utf8') < 32)
+    throw new Error('متغیر محیطی FRONTEND_TO_BYEMONEY_SERVICE_KEY تنظیم نشده یا نامعتبر است.');
   return { 'Content-Type': 'application/json', 'X-Service-Key': key, ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}) };
 }
 

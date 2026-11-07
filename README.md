@@ -13,7 +13,7 @@ npm run dev
 
 ساخت و اجرای نسخهٔ ساخته‌شده: `npm run build` و `npm start`. آزمون تعاملی `npm test` است؛ برای اجرای یک‌باره از `npm test -- --watch=false --runInBand` استفاده کنید. فرمان‌های موجود در [package.json](package.json) مرجع‌اند.
 
-آدرس‌های `NEXT_PUBLIC_STRAPI_URL`، `NEXT_PUBLIC_STRAPI_API_URL` و `NEXT_PUBLIC_BYEMONEY_API_URL` باید به محیط انتخاب‌شده اشاره کنند. `STRAPI_API_TOKEN` و `NEXTAUTH_SECRET` در تنظیمات محرمانهٔ سرور نگهداری شوند. پیشوند `NEXT_PUBLIC_` برای کلید محرمانه مناسب نیست. روش پیکربندی و آزمون درگاه در [SEP محلی](docs/testing/sep-local-mock.md) است.
+آدرس‌های `NEXT_PUBLIC_STRAPI_URL`، `NEXT_PUBLIC_STRAPI_API_URL` و `NEXT_PUBLIC_BYEMONEY_API_URL` باید به محیط انتخاب‌شده اشاره کنند. `STRAPI_API_TOKEN` و `NEXTAUTH_SECRET` در تنظیمات محرمانهٔ سرور نگهداری شوند. پیشوند `NEXT_PUBLIC_` برای کلید محرمانه مناسب نیست. سرور Next برای ارسال نتیجهٔ درگاه و استعلام تأیید شارژ به بای‌مانی فقط با متغیر محرمانهٔ سروری `FRONTEND_TO_BYEMONEY_SERVICE_KEY` (هدر `X-Service-Key`، دست‌کم ۳۲ بایت) احراز هویت می‌کند؛ فال‌بکی به `STRAPI_TO_BYEMONEY_SERVICE_KEY` یا `BYEMONEY_SERVICE_KEY` وجود ندارد و بدون این متغیر درخواست ارسال نمی‌شود. روش پیکربندی و آزمون درگاه در [SEP محلی](docs/testing/sep-local-mock.md) است.
 
 ## راهنمای اسناد
 

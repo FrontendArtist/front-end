@@ -6,6 +6,7 @@ import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
 
 jest.mock('@/lib/client/admin/ordersClient', () => ({ fetchOrderTracking: jest.fn() }));
 jest.mock('../PhysicalDeliveryControl', () => ({ purchaseId }) => <div data-testid="delivery-control">{purchaseId}</div>);
+jest.mock('../PendingRestockNotice', () => () => null);
 jest.mock('@/components/physicalCancel/PhysicalCancelFlow', () => ({ mode, targetId, maxQuantity }) => (
     <div data-testid="cancel-flow" data-mode={mode} data-target-id={targetId} data-max-quantity={maxQuantity} />
 ));

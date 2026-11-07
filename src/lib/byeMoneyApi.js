@@ -1785,6 +1785,43 @@ export async function updatePhysicalPurchaseDeliveryStatus({ jwt, purchaseId, st
 }
 
 /**
+ * عملیات‌های لغو کالای فیزیکی که برگشت موجودی‌شان در استرپی هنوز تأیید نشده (BND-05).
+ * اندپوینت: GET /api/admin/physical-purchases/pending-restocks (مجوز Noor.Inject)
+ * `abandoned=true` یعنی خطای دائمی و رسیدن به سقف تلاش؛ سرویس پس‌زمینه دیگر تلاش نمی‌کند.
+ *
+ * @returns {Promise<{ success: boolean, data?: Array<{
+ *   operationId: string, cartId: string, attempts: number, maxAttempts: number,
+ *   abandoned: boolean, lastErrorCode: string|null, createdAtUtc: string,
+ *   lastAttemptAtUtc: string|null, items: Array<{ purchaseId: string, quantity: number }>
+ * }>, forbidden?: boolean, error?: string }>}
+ */
+export async function getPendingPhysicalRestocks({ jwt, signal } = {}) {
+  if (!jwt) {
+    return { success: false, unauthorized: true, error: 'نشست ادمین نامعتبر است.' };
+  }
+  try {
+    const res = await fetch(`${BYEMONEY_API_URL}/api/admin/physical-purchases/pending-restocks`, {
+      headers: { Authorization: `Bearer ${jwt}` },
+      cache: 'no-store',
+      signal,
+    });
+    if (res.status === 200) {
+      return { success: true, data: await res.json() };
+    }
+    if (res.status === 401) {
+      return { success: false, unauthorized: true, error: 'نشست ادمین منقضی شده است.' };
+    }
+    if (res.status === 403) {
+      return { success: false, forbidden: true, error: 'ادمین مجوز Noor.Inject را ندارد.' };
+    }
+    return { success: false, error: `خطای دریافت برگشت‌های موجودی (${res.status})` };
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+  }
+}
+
+/**
  * دریافت فهرست خریدهای بای‌مانی در پنل ادمین
  * اندپوینت: GET /api/admin/course-purchases
  *
@@ -2089,3 +2126,11 @@ export const getAdminPhysicalCancelPreview = ({ jwt, purchaseId, quantity, signa
 
 export const cancelAdminPhysicalPurchase = ({ jwt, purchaseId, operationId, quantity, reason, signal }) =>
   callPhysicalCancel({ jwt, method: 'POST', path: `/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/cancel`, body: { operationId, quantity, reason }, signal });
+
+/** تلاش فوری ادمین برای برگشت موجودی عملیات رهاشده (BND-05). */
+export const retryAdminPhysicalRestock = ({ jwt, operationId, signal }) =>
+  callPhysicalCancel({ jwt, method: 'POST', path: `/api/admin/physical-purchases/restocks/${encodeURIComponent(operationId)}/retry`, signal });
+
+/** بستن دستی برگشت موجودی پس از اصلاح موجودی کالا توسط ادمین (BND-05). */
+export const resolveAdminPhysicalRestock = ({ jwt, operationId, signal }) =>
+  callPhysicalCancel({ jwt, method: 'POST', path: `/api/admin/physical-purchases/restocks/${encodeURIComponent(operationId)}/resolve`, signal });
