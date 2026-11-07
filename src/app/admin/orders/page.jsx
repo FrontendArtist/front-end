@@ -69,9 +69,8 @@ export default async function AdminOrdersPage() {
                         transition: 'opacity 0.2s',
                     }}
                 >
-                    ➕ ثبت دستی 
-                </Link>
-            </header>
+                    ➕ ثبت دستی
+                </Link>            </header>
 
             {/* ── خطای عدم اتصال ──────────────────────────────────────── */}
             {error && (

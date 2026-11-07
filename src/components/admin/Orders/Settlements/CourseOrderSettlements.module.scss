@@ -1,0 +1,357 @@
+@use '@/styles/base/mixins' as *;
+
+/**
+ * @file CourseOrderSettlements.module.scss
+ * @description استایل صفحهٔ تسویهٔ سفارش‌های بای‌مانی
+ *
+ * سه عدد نور هر کدام رنگ ثابت خود را دارند (عادی طلایی، هدیه بنفش، جمع سبز) تا در کارت‌ها،
+ * جدول و آرشیو با یک نگاه از هم جدا شوند. رنگ‌ها از متغیرهای پوسته‌اند و در هر دو تم کار می‌کنند.
+ */
+
+$regular: var(--color-gold);
+$gift: var(--color-accent-indigo);
+$total: var(--color-success);
+$border: fade(var(--color-primary), 12%);
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+/* ─── کارت هر بخش ───────────────────────────────────────────────────────── */
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 22px 24px;
+    border-radius: 16px;
+    background: fade(var(--color-black), 15%);
+    border: 1px solid $border;
+
+    @include respond(md) {
+        padding: 16px;
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    &__title {
+        margin: 0;
+        font-size: var(--font-lg);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-primary);
+    }
+
+    &__subtitle {
+        margin: 4px 0 0;
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+        opacity: 0.7;
+    }
+}
+
+/* ─── نکته‌های تسویه ──────────────────────────────────────────────────────── */
+// سطر آرام زیر سه عدد: بدون کادر رنگی، تا اعداد و جدول دیده شوند و نکته‌ها مزاحم نباشند.
+
+.notes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--font-xs, 0.8rem);
+    color: var(--color-card-text);
+
+    li {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        opacity: 0.75;
+    }
+
+    &__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: fade(var(--color-gold), 12%);
+        color: var(--color-text-primary);
+    }
+}
+
+/* ─── سه عدد نور ───────────────────────────────────────────────────────── */
+
+.totals {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+
+    @include respond(md) {
+        grid-template-columns: 1fr;
+    }
+
+    > div {
+        --accent: #{$regular};
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--accent) 9%, transparent);
+        border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+        border-inline-start: 4px solid var(--accent);
+    }
+
+    dt {
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+        opacity: 0.8;
+    }
+
+    dd {
+        margin: 6px 0 0;
+        font-size: var(--font-xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--accent);
+
+        small {
+            font-size: var(--font-sm);
+            font-weight: normal;
+            opacity: 0.8;
+        }
+    }
+
+    &--regular { --accent: #{$regular}; }
+    &--gift { --accent: #{$gift}; }
+    &--total { --accent: #{$total}; }
+
+    &--compact {
+        gap: 8px;
+
+        > div {
+            padding: 8px 12px;
+        }
+
+        dd {
+            margin-top: 2px;
+            font-size: var(--font-md, 1rem);
+        }
+    }
+}
+
+/* ─── جدول سفارش‌ها ─────────────────────────────────────────────────────── */
+
+.tableWrap {
+    overflow-x: auto;
+}
+
+.table {
+    min-width: 760px;
+}
+
+.row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover td {
+        background: fade(var(--color-primary), 6%);
+    }
+
+    &[aria-expanded='true'] td {
+        background: fade(var(--color-primary), 9%);
+    }
+}
+
+.detailRow td {
+    padding: 0 0 12px;
+    border: none;
+}
+
+.orderNo {
+    font-family: monospace;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    direction: ltr;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.buyer {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    &__name {
+        font-weight: var(--font-weight-medium, 500);
+        color: var(--color-card-text);
+    }
+
+    &__phone {
+        font-size: var(--font-xs, 0.75rem);
+        color: var(--color-card-text);
+        opacity: 0.65;
+        direction: ltr;
+        text-align: right;
+    }
+}
+
+.dateTime {
+    display: inline-flex;
+    gap: 6px;
+    white-space: nowrap;
+
+    &__time {
+        opacity: 0.65;
+    }
+}
+
+.amount {
+    &--regular,
+    &--gift,
+    &--total {
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &--regular { color: $regular; }
+    &--gift { color: $gift; }
+    &--total { color: $total; font-weight: var(--font-weight-bold); }
+}
+
+.chevron {
+    opacity: 0.6;
+    transition: transform 0.2s;
+
+    &--open {
+        transform: rotate(180deg);
+    }
+}
+
+/* ─── آرشیو ─────────────────────────────────────────────────────────────── */
+
+.periods {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.period {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: fade(var(--color-primary), 4%);
+    border: 1px solid $border;
+    transition: border-color 0.2s;
+
+    &--open {
+        border-color: fade(var(--color-gold), 40%);
+    }
+
+    &__head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 0;
+        background: none;
+        border: none;
+        color: inherit;
+        font: inherit;
+        text-align: right;
+        cursor: pointer;
+    }
+
+    &__title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-primary);
+    }
+
+    &__badge {
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: var(--font-xs, 0.75rem);
+        background: fade(var(--color-gold), 12%);
+        border: 1px solid fade(var(--color-gold), 25%);
+        color: var(--color-card-text);
+        white-space: nowrap;
+    }
+}
+
+.meta,
+.note,
+.empty,
+.dialogText {
+    margin: 0;
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+}
+
+.meta {
+    opacity: 0.8;
+}
+
+.note {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: fade(var(--color-black), 10%);
+    white-space: pre-wrap;
+}
+
+.empty {
+    opacity: 0.7;
+}
+
+.dialogText {
+    line-height: 1.9;
+    margin-bottom: 12px;
+}
+
+/* ─── پیام‌ها ───────────────────────────────────────────────────────────── */
+
+.error,
+.success {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: var(--font-sm);
+    color: var(--color-card-text);
+}
+
+.error {
+    background: fade(var(--color-error), 10%);
+    border: 1px solid fade(var(--color-error), 35%);
+}
+
+.success {
+    background: fade(var(--color-success), 10%);
+    border: 1px solid fade(var(--color-success), 35%);
+}
+
+.dismiss {
+    display: inline-flex;
+    padding: 2px;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.7;
+}

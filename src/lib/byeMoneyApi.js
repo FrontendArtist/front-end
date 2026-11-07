@@ -2134,3 +2134,77 @@ export const retryAdminPhysicalRestock = ({ jwt, operationId, signal }) =>
 /** بستن دستی برگشت موجودی پس از اصلاح موجودی کالا توسط ادمین (BND-05). */
 export const resolveAdminPhysicalRestock = ({ jwt, operationId, signal }) =>
   callPhysicalCancel({ jwt, method: 'POST', path: `/api/admin/physical-purchases/restocks/${encodeURIComponent(operationId)}/resolve`, signal });
+
+// ─── تسویهٔ سفارش‌های بای‌مانی (I11-S) ──────────────────────────────────────
+// فقط از route سروری Next صدا زده شود (BND-07). تسویه برچسب گزارشی است و نوری جابه‌جا نمی‌کند.
+// خواندن با Purchases.View و بستن با Purchases.Settle؛ خطاهای بستن 409 با { code, error } فارسی.
+
+const SETTLEMENTS_PATH = '/api/admin/course-order-settlements';
+
+async function callCourseOrderSettlements({ jwt, method = 'GET', path = '', body, signal }) {
+  if (!jwt) {
+    return { success: false, status: 401, error: 'نشست ادمین نامعتبر است.' };
+  }
+  try {
+    const res = await fetch(`${BYEMONEY_API_URL}${SETTLEMENTS_PATH}${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: 'no-store',
+      signal,
+    });
+    if (res.status === 200 || res.status === 201) {
+      return { success: true, status: res.status, data: await res.json() };
+    }
+    let errJson = null;
+    try { errJson = await res.json(); } catch {}
+    const code = typeof errJson?.code === 'string' ? errJson.code : undefined;
+    if (res.status === 401) return { success: false, status: 401, error: 'نشست ادمین منقضی شده است.' };
+    if (res.status === 403) {
+      return {
+        success: false,
+        status: 403,
+        error: method === 'POST'
+          ? 'مجوز بستن دورهٔ تسویه (Purchases.Settle) را ندارید.'
+          : 'مجوز مشاهدهٔ تسویهٔ سفارش‌ها (Purchases.View) را ندارید.',
+      };
+    }
+    if (res.status === 404) return { success: false, status: 404, error: 'دورهٔ تسویه پیدا نشد.' };
+    if (res.status === 409) {
+      const error = typeof errJson?.error === 'string' && errJson.error.trim()
+        ? errJson.error
+        : 'وضعیت سفارش‌ها تغییر کرده است؛ پیش‌نمایش را دوباره ببینید.';
+      return { success: false, status: 409, code, error };
+    }
+    if (res.status === 400) {
+      return { success: false, status: 400, code, error: extractDomainErrorMessage(errJson, 'اطلاعات واردشده معتبر نیست.') };
+    }
+    return { success: false, status: 502, error: `خطای سرویس تسویه (${res.status})` };
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    return { success: false, status: 502, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+  }
+}
+
+const pageQuery = (page, pageSize) => `page=${encodeURIComponent(page)}&pageSize=${encodeURIComponent(pageSize)}`;
+
+/** پیش‌نمایش دورهٔ جاری؛ تعداد، سه جمع و previewToken روی کل فهرست (نه فقط این صفحه). */
+export const getCourseOrderSettlementPreview = ({ jwt, page = 1, pageSize = 20, signal } = {}) =>
+  callCourseOrderSettlements({ jwt, path: `/preview?${pageQuery(page, pageSize)}`, signal });
+
+/** بستن دوره؛ previewToken عیناً همان مقدار آخرین پیش‌نمایش است و تفسیر نمی‌شود. */
+export const closeCourseOrderSettlementPeriod = ({ jwt, title, note, previewToken, signal } = {}) =>
+  callCourseOrderSettlements({
+    jwt,
+    method: 'POST',
+    body: { title: title || null, note: note || null, previewToken },
+    signal,
+  });
+
+/** فهرست دوره‌های بسته‌شده، جدیدترین اول. */
+export const getCourseOrderSettlementPeriods = ({ jwt, page = 1, pageSize = 20, signal } = {}) =>
+  callCourseOrderSettlements({ jwt, path: `?${pageQuery(page, pageSize)}`, signal });
+
+/** سفارش‌های یک دورهٔ بسته‌شده؛ دورهٔ ناموجود 404. */
+export const getCourseOrderSettlementPeriodOrders = ({ jwt, periodId, page = 1, pageSize = 20, signal } = {}) =>
+  callCourseOrderSettlements({ jwt, path: `/${encodeURIComponent(periodId)}/orders?${pageQuery(page, pageSize)}`, signal });

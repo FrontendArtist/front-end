@@ -16,6 +16,8 @@ export const ADMIN_PERMISSIONS = {
     COURSES_MANAGE: 'Courses.Manage',
     WALLET_VIEW: 'Wallet.View',
     NOOR_GIFT: 'Noor.Gift',
+    PURCHASES_VIEW: 'Purchases.View',
+    PURCHASES_SETTLE: 'Purchases.Settle',
 };
 
 /**
@@ -27,6 +29,7 @@ export const ROUTE_PERMISSIONS = {
     '/admin': null,
     '/admin/orders': null,
     '/admin/orders/new': [ADMIN_PERMISSIONS.COURSES_MANAGE],
+    '/admin/orders/settlements': [ADMIN_PERMISSIONS.PURCHASES_VIEW],
     '/admin/gateway-reviews': [ADMIN_PERMISSIONS.TOPUP_REVIEW],
     '/admin/users': null,
     '/admin/courses': null,

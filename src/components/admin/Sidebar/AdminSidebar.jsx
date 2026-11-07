@@ -21,7 +21,7 @@ import Link from 'next/link';
 import {
     LayoutDashboard,  // Dashboard overview icon
     ShoppingCart,     // Orders icon
-    UserPlus,         // Manual order & course enrollment icon
+    Scale,            // Settlements & archive icon
     Users,            // Users management icon
     Package,          // Products icon
     FileText,         // Articles icon
@@ -47,12 +47,22 @@ import styles from './AdminSidebar.module.scss';
  * Each entry maps to an admin route and carries a display label + Lucide icon.
  * Adding a new section only requires adding an item here – no JSX changes needed.
  *
- * @type {{ href: string, label: string, icon: React.ComponentType }[]}
+ * `children` زیرمنوی همان بخش است و هر فرزند مثل آیتم اصلی با ROUTE_PERMISSIONS فیلتر می‌شود.
+ * ثبت دستی سفارش آیتم منو ندارد و از دکمهٔ سرصفحهٔ سفارش‌ها باز می‌شود (ADMIN-ORDERS-REDESIGN).
+ *
+ * @type {{ href: string, label: string, icon: React.ComponentType,
+ *   children?: { href: string, label: string, icon: React.ComponentType }[] }[]}
  */
 const NAV_LINKS = [
     { href: '/admin', label: 'داشبورد', icon: LayoutDashboard },
-    { href: '/admin/orders', label: 'سفارش‌ها', icon: ShoppingCart },
-    { href: '/admin/orders/new', label: 'ثبت دستی', icon: UserPlus },
+    {
+        href: '/admin/orders',
+        label: 'سفارش‌ها',
+        icon: ShoppingCart,
+        children: [
+            { href: '/admin/orders/settlements', label: 'تسویه و آرشیو', icon: Scale },
+        ],
+    },
     { href: '/admin/gateway-reviews', label: 'رسیدگی پرداخت‌ها', icon: ShieldAlert },
     { href: '/admin/users', label: 'کاربران', icon: Users },
     { href: '/admin/products', label: 'محصولات', icon: Package },
@@ -87,19 +97,20 @@ export default function AdminSidebar({ user, financialOnly = false }) {
      */
     const isActive = (href) => {
         if (href === '/admin') return pathname === '/admin';
-        if (href === '/admin/orders') return pathname === '/admin/orders';
+        // ثبت دستی زیر همان «سفارش‌ها» فعال می‌شود؛ زیرمسیرهای دارای آیتم منو جدا فعال می‌شوند
+        if (href === '/admin/orders') return pathname === '/admin/orders' || pathname.startsWith('/admin/orders/new');
         return pathname.startsWith(href);
     };
 
     // فیلتر کردن هوشمند آیتم‌های منو بر اساس دسترسی‌های کاربر و حالت مالی
-    const visibleNavLinks = NAV_LINKS.filter(({ href }) => {
-        if (financialOnly) {
-            return href === '/admin/gateway-reviews';
-        }
+    const isAllowed = (href) => {
         const required = ROUTE_PERMISSIONS[href];
         if (!required || required.length === 0) return true;
         return hasAllPermissions(required);
-    });
+    };
+    const visibleNavLinks = NAV_LINKS
+        .filter(({ href }) => (financialOnly ? href === '/admin/gateway-reviews' : isAllowed(href)))
+        .map((link) => ({ ...link, children: (link.children || []).filter(({ href }) => isAllowed(href)) }));
 
     const displayRole = roles && roles.length > 0
         ? roles.join(', ')
@@ -136,7 +147,7 @@ export default function AdminSidebar({ user, financialOnly = false }) {
             {/* ── Navigation Links ───────────────────────────────────────────── */}
             <nav className={styles.sidebar__nav} aria-label="Admin Navigation">
                 <ul className={styles.sidebar__nav_list}>
-                    {visibleNavLinks.map(({ href, label, icon: Icon }) => (
+                    {visibleNavLinks.map(({ href, label, icon: Icon, children }) => (
                         <li key={href} className={styles.sidebar__nav_item}>
                             <Link
                                 href={href}
@@ -147,6 +158,23 @@ export default function AdminSidebar({ user, financialOnly = false }) {
                                 <Icon className={styles.sidebar__nav_icon} size={20} />
                                 <span className={styles.sidebar__nav_label}>{label}</span>
                             </Link>
+                            {children.length > 0 && (
+                                <ul className={styles.sidebar__subnav} aria-label={`زیرمنوی ${label}`}>
+                                    {children.map(({ href: childHref, label: childLabel, icon: ChildIcon }) => (
+                                        <li key={childHref}>
+                                            <Link
+                                                href={childHref}
+                                                className={`${styles.sidebar__subnav_link} ${isActive(childHref) ? styles['sidebar__subnav_link--active'] : ''}`}
+                                                aria-current={isActive(childHref) ? 'page' : undefined}
+                                                title={childLabel}
+                                            >
+                                                <ChildIcon className={styles.sidebar__nav_icon} size={16} />
+                                                <span className={styles.sidebar__nav_label}>{childLabel}</span>
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </li>
                     ))}
                 </ul>
