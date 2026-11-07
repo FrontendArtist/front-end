@@ -1,4 +1,6 @@
 // path: front-end/next.config.js
+const { buildContentSecurityPolicy } = require('./src/config/contentSecurityPolicy');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
@@ -54,6 +56,18 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  // CSP ایستا (BND-08). در staging با CSP_REPORT_ONLY=true فقط گزارش می‌شود تا نقض‌ها پیش از اجبار پیدا شوند.
+  async headers() {
+    const headerName = process.env.CSP_REPORT_ONLY === 'true'
+      ? 'Content-Security-Policy-Report-Only'
+      : 'Content-Security-Policy';
+    return [
+      {
+        source: '/:path*',
+        headers: [{ key: headerName, value: buildContentSecurityPolicy(process.env) }],
+      },
+    ];
   },
   async redirects() {
     return [

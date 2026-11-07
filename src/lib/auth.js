@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { STRAPI_API_URL } from './api';
+import { refreshSessionToken } from './strapiTokenRefresh';
 
 // ⚠️ هشدار امنیتی: در production حتماً NEXTAUTH_SECRET را در .env تنظیم کنید
 if (process.env.NODE_ENV === 'production' && (!process.env.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET === 'dev-secret-key-change-this')) {
@@ -221,9 +222,14 @@ export const authOptions = {
                 if (session.lastName !== undefined) token.lastName = session.lastName;
                 if (session.is_foreigner !== undefined) token.is_foreigner = session.is_foreigner;
             }
+            // توکن استرپی کوتاه‌عمر است (BND-08)؛ نشست next-auth با تمدید سروری زنده می‌ماند.
+            if (!user) {
+                return refreshSessionToken(token);
+            }
             return token;
         },
         async session({ session, token }) {
+            if (token?.error) session.error = token.error;
             if (session && session.user && token) {
                 session.user.id = token.id;
                 session.user.jwt = token.jwt;
@@ -277,6 +283,7 @@ export const paymentAuthOptions = {
     callbacks: {
         ...authOptions.callbacks,
         async session({ session, token }) {
+            if (token?.error) session.error = token.error;
             if (session?.user && token) {
                 Object.assign(session.user, {
                     id: token.id,
