@@ -125,8 +125,16 @@ export default async function CoursePage({ params }) {
     },
     chapters: (rawCourse.chapters || []).map((chapter) => {
       const isChapterFree = chapter.price?.toman === 0 || chapter.price === 0 || !chapter.price;
+      const userEnrolledUuids = Array.isArray(session?.user?.enrolledChapterIntegrationIds)
+        ? session.user.enrolledChapterIntegrationIds.map((u) => String(u).toLowerCase())
+        : [];
+      const hasPurchasedByUuid = Boolean(
+        chapter.integrationId && userEnrolledUuids.includes(String(chapter.integrationId).toLowerCase())
+      );
+
       const isChapterPurchased =
         isUserEnrolledInCourse ||
+        hasPurchasedByUuid ||
         purchasedChapterIds.includes(String(chapter.id));
 
       const hasChapterAccess = isFreeCourse || isChapterFree || (session && isChapterPurchased);

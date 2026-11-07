@@ -109,6 +109,19 @@ export function getPurchasedChapterIds(orders, course) {
       if (!isChapterOrderItem(item)) continue;
       if (!doesItemBelongToCourse(item, course)) continue;
 
+      // ۰. شناسه ثابت فصل (UUID / chapterIntegrationId) - بالاترین اولویت و پایدار در برابر بازسازی کامپوننت استراپی
+      const itemIntegrationId = item.chapterIntegrationId || item.integrationId || item.chapterExternalId;
+      if (itemIntegrationId && chapters.length > 0) {
+        const normItemUuid = String(itemIntegrationId).trim().toLowerCase();
+        const matchedChapter = chapters.find(
+          (ch) => ch.integrationId && String(ch.integrationId).trim().toLowerCase() === normItemUuid
+        );
+        if (matchedChapter) {
+          purchasedIds.add(String(matchedChapter.id));
+          continue;
+        }
+      }
+
       // ۱. شناسه خام مستقیم از روی سفارش
       const rawId = getPurchasedChapterId(item, course.id, course.slug);
       if (rawId) {
@@ -133,6 +146,9 @@ export function getPurchasedChapterIds(orders, course) {
           // ب: تطابق عنوان فصل (مثلاً "فصل 5" با "فصل 5")
           const chTitleNorm = normalizeText(ch.title);
           if (extractedTitle && chTitleNorm && extractedTitle === chTitleNorm) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn(`[access-legacy-match] تطابق فصل با عنوان: ${ch.title} (سفارش ${order.id || ''})`);
+            }
             purchasedIds.add(chIdStr);
             continue;
           }
@@ -141,6 +157,9 @@ export function getPurchasedChapterIds(orders, course) {
           if (itemChapterNum) {
             const chNumMatch = /(?:فصل|chapter)\s*([0-9]+)/i.exec(chTitleNorm);
             if (chNumMatch && chNumMatch[1] === itemChapterNum) {
+              if (process.env.NODE_ENV !== 'production') {
+                console.warn(`[access-legacy-match] تطابق فصل با شماره: فصل ${itemChapterNum} (سفارش ${order.id || ''})`);
+              }
               purchasedIds.add(chIdStr);
               continue;
             }

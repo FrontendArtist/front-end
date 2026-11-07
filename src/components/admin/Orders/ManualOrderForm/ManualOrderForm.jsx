@@ -154,6 +154,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                     id: course.id,
                     courseId: course.id,
                     chapterId: chapter.id,
+                    chapterIntegrationId: chapter.integrationId || null,
                     title: course.title,
                     chapterTitle: chapter.title,
                     slug: course.slug,

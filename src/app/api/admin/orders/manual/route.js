@@ -305,6 +305,7 @@ export async function POST(request) {
         // ── 4. آماده‌سازی اقلام سفارش (Items) ──────────────────────────────────
         const courseIdsToActivate = new Set();
         const chapterIdsToActivate = new Set();
+        const chapterUuidsToActivate = new Set();
 
         const itemsPayload = selectedCourses.map((c) => {
             const courseId = Number(c.courseId || c.id);
@@ -315,6 +316,9 @@ export async function POST(request) {
 
             if (chapterId) {
                 chapterIdsToActivate.add(chapterId);
+            }
+            if (c.chapterIntegrationId) {
+                chapterUuidsToActivate.add(String(c.chapterIntegrationId));
             } else if (courseId) {
                 courseIdsToActivate.add(courseId);
             }
@@ -325,6 +329,7 @@ export async function POST(request) {
                 price,
                 courseId,
                 chapterId,
+                chapterIntegrationId: c.chapterIntegrationId || null,
                 slug: itemSlug,
                 itemUrl: slug ? `/courses/${slug}` : '#',
             };
