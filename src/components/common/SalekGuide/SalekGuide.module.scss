@@ -1,3 +1,5 @@
+@use '../../../styles/base/mixins' as *;
+
 .guideContainer {
   position: fixed;
   left: 0;
@@ -60,7 +62,7 @@
 .peekIndicator {
   position: absolute;
   top: 25px;
-  right: 12px;
+  right: 30px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -282,10 +284,10 @@
 }
 
 /* واکنش‌گرایی برای موبایل */
-@media (max-width: 576px) {
+@include respond(md) {
   .mascotWrapper {
-    width: 120px;
-    height: 168px;
+    width: 110px;
+    height: 138px;
   }
 
 
@@ -313,7 +315,7 @@
 
   .peekIndicator {
     top: 15px;
-    right: -8px;
+    right: 0px;
     font-size: 10px;
     padding: 3px 8px;
   }

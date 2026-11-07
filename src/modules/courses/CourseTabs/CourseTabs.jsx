@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { useSession } from 'next-auth/react';
 import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
+import { getPurchasedChapterIds } from '@/lib/courseAccessUtils';
 import CourseContentManager from '../CourseContentManager';
 import ArticleReader from '@/app/articles/[slug]/ArticleReader';
 import styles from './CourseTabs.module.scss';
@@ -68,27 +69,14 @@ export default function CourseTabs({ course, parsedContent, customStyles, isPurc
 
       // بررسی خرید فصل‌های دوره (در صورت فصلی بودن دوره)
       if (course?.chapters && Array.isArray(course.chapters)) {
-        const hasPurchasedChapter = course.chapters.some((ch) => {
+        const purchasedChapterIds = getPurchasedChapterIds(orders, course);
+        if (purchasedChapterIds.length > 0) return true;
+
+        const inSession = course.chapters.some((ch) => {
           const chId = String(ch.id);
-          const inSession = session?.user?.enrolledChapters?.some((ec) => String(ec?.id || ec) === chId);
-          if (inSession) return true;
-
-          return orders.some((order) => {
-            if (!isOrderPaid(order)) return false;
-            const items = order.attributes?.items || order.items || [];
-            return items.some((item) => {
-              if (item.type === 'chapter' || item.chapterId) {
-                return (
-                  String(item.chapterId) === chId ||
-                  String(item.id).replace('chapter-', '') === chId
-                );
-              }
-              return false;
-            });
-          });
+          return session?.user?.enrolledChapters?.some((ec) => String(ec?.id || ec) === chId);
         });
-
-        if (hasPurchasedChapter) return true;
+        if (inSession) return true;
       }
     }
 

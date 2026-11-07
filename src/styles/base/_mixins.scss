@@ -152,7 +152,7 @@ $breakpoint-sm: 440px;
 @mixin card-image-wrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 9;
   flex-shrink: 0;
   overflow: hidden;
 

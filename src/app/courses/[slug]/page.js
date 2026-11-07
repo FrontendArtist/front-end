@@ -83,7 +83,7 @@ export default async function CoursePage({ params }) {
     hasAccess, 
     purchasedChapterIds,
     activeCourseOrder
-  } = await checkCourseAccess(session?.user?.id, rawCourse.id, rawCourse.slug, session?.user);
+  } = await checkCourseAccess(session?.user?.id, rawCourse.id, rawCourse.slug, session?.user, rawCourse);
 
   const isUserEnrolledInCourse = isFreeCourse || Boolean(session && hasAccess);
   const hasPurchasedAnyChapter = (rawCourse.chapters || []).some(ch =>

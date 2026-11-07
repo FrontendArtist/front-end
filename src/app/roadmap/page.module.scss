@@ -269,8 +269,8 @@ $connector-color: #9ec5b5;
 }
 
 .nodeText {
-  font-size: 15px;
-  font-weight: var(--font-weight-bold);
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
   color: #163f2e;
   line-height: 1.65;
 
@@ -280,7 +280,7 @@ $connector-color: #9ec5b5;
   }
 
   @include respond(sm) {
-    font-size: 11.5px;
+    font-size: 11px;
     line-height: 1.5;
   }
 }
