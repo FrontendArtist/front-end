@@ -98,9 +98,9 @@ export default function SalekGuide() {
 
       // پیش‌بارگذاری تصاویر برای انیمیشن و تغییر حالت بدون لکنت و پرش
       const img1 = new Image();
-      img1.src = '/images/w1.png';
+      img1.src = '/images/w1.webp';
       const img2 = new Image();
-      img2.src = '/images/w2.png';
+      img2.src = '/images/w2.webp';
 
       const hasAutoShown = sessionStorage.getItem('salek_guide_auto_shown') === 'true';
       clearAllTimers();
@@ -288,13 +288,13 @@ export default function SalekGuide() {
         aria-label={isOpen ? 'سالک راهنما' : 'باز کردن راهنمای سالک'}
       >
         <img
-          src="/images/w1.png"
+          src="/images/w1.webp"
           alt="سالک در حال سرک کشیدن"
           className={`${styles.characterImg} ${!isOpen ? styles.activeImg : styles.inactiveImg}`}
           draggable={false}
         />
         <img
-          src="/images/w2.png"
+          src="/images/w2.webp"
           alt="سالک راهنما"
           className={`${styles.characterImg} ${isOpen ? styles.activeImg : styles.inactiveImg}`}
           draggable={false}

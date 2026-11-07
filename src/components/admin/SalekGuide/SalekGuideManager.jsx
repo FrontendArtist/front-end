@@ -7,13 +7,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { 
-  Compass, 
-  Sparkles, 
-  Save, 
-  RotateCcw, 
-  CheckCircle2, 
-  AlertCircle, 
+import {
+  Compass,
+  Sparkles,
+  Save,
+  RotateCcw,
+  CheckCircle2,
+  AlertCircle,
   ArrowLeft,
   X,
   ExternalLink
@@ -187,7 +187,7 @@ export default function SalekGuideManager({ initialGuide = null }) {
               {/* کاراکتر باز w2 */}
               <div className={styles.previewMascot}>
                 <img
-                  src="/images/w2.png"
+                  src="/images/w2.webp"
                   alt="پیش‌نمایش سالک"
                   className={styles.mascotImg}
                 />
@@ -290,7 +290,7 @@ export default function SalekGuideManager({ initialGuide = null }) {
             <div>
               <strong>توجه به تجربه کاربری:</strong>
               <p>
-                تصاویر کاراکتر به صورت ثابت از <code>w1.png</code> (حالت سرک‌کشیدن) و <code>w2.png</code> (حالت باز) استفاده می‌کنند و زمان‌بندی‌ها (۲.۵ ثانیه ورود اولیه، ۷ ثانیه نمایش خودکار و ۵ ثانیه بسته‌شدن بعد از لمس) به صورت هوشمند برای بالاترین بازدهی بهینه‌سازی شده‌اند.
+                تصاویر کاراکتر به صورت ثابت از <code>w1.webp</code> (حالت سرک‌کشیدن) و <code>w2.webp</code> (حالت باز) استفاده می‌کنند و زمان‌بندی‌ها (۲.۵ ثانیه ورود اولیه، ۷ ثانیه نمایش خودکار و ۵ ثانیه بسته‌شدن بعد از لمس) به صورت هوشمند برای بالاترین بازدهی بهینه‌سازی شده‌اند.
               </p>
             </div>
           </div>
