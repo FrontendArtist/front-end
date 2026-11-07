@@ -20,7 +20,73 @@ $connector-color: #9ec5b5;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
+}
+
+.downloadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0 0 0;
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: fade(var(--color-text-primary), 10%);
+  border: 1px solid fade(var(--color-text-primary), 30%);
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transition: all 0.25s ease;
+  cursor: pointer;
+
+  &:hover {
+    background: fade(var(--color-text-primary), 20%);
+    border-color: var(--color-text-primary);
+    transform: translateY(-2px);
+  }
+
+  @include respond(sm) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.downloadButtonLarge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  border-radius: 12px;
+  background: fade(var(--color-text-primary), 12%);
+  border: 1px solid fade(var(--color-text-primary), 35%);
+  color: var(--color-text-primary);
+  font-size: var(--font-md);
+  font-weight: var(--font-weight-bold);
+  text-decoration: none;
+  transition: all 0.25s ease;
+  cursor: pointer;
+
+  &:hover {
+    background: fade(var(--color-text-primary), 22%);
+    border-color: var(--color-text-primary);
+    transform: translateY(-2px);
+  }
+
+  @include respond(sm) {
+    width: 100%;
+  }
+}
+
+.downloadIcon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.25s ease;
+
+  .downloadButton:hover &,
+  .downloadButtonLarge:hover & {
+    transform: translateY(2px);
+  }
 }
 
 .backButton {
@@ -58,31 +124,21 @@ $connector-color: #9ec5b5;
 /* ─── Hero Header ─────────────────────────────────────────────────────────── */
 .heroHeader {
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: 22px;
 
   @include respond(md) {
     margin-bottom: 28px;
   }
 }
 
-.badge {
-  display: inline-block;
-  font-size: var(--font-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-title-hover);
-  background: fade(var(--color-text-primary), 12%);
-  border: 1px solid fade(var(--color-text-primary), 28%);
-  padding: 5px 16px;
-  border-radius: 999px;
-  margin-bottom: 12px;
-}
+
 
 .mainTitle {
   font-family: var(--font-shafigh), 'Far Shafigh', serif;
-  font-size: var(--font-3xl);
+  font-size: var(--font-2xl);
   font-weight: 400;
   color: var(--color-text-primary);
-  margin: 0 0 10px;
+  margin: 20px 0;
   line-height: 1.35;
 
   @include respond(md) {
@@ -95,35 +151,32 @@ $connector-color: #9ec5b5;
 }
 
 .subtitle {
-  font-size: var(--font-md);
+  font-size: var(--font-sm);
   color: var(--color-card-text);
   opacity: 0.9;
   max-width: 620px;
   margin: 0 auto;
-  line-height: 1.75;
-
-  @include respond(sm) {
-    font-size: var(--font-sm);
-  }
+  line-height: 1.65;
 }
 
 /* ─── Flowchart Board Container ───────────────────────────────────────────── */
 .boardCard {
   position: relative;
-  max-width: 920px;
+  max-width: 1220px;
   margin: 0 auto;
-  padding: 48px 32px;
-  border-radius: var(--radius-card-xl, 32px);
+  padding: 26px 32px;
+  border-radius: var(--radius-card-xl, 28px);
   background: linear-gradient(180deg,
-      rgba(0, 43, 32, 0.72) 0%,
-      rgba(6, 24, 24, 0.92) 50%,
-      rgba(0, 43, 32, 0.72) 100%);
-  border: 1px solid fade(var(--color-text-primary), 22%);
+      rgba(0, 43, 32, 0.76) 0%,
+      rgba(6, 24, 24, 0.94) 50%,
+      rgba(0, 43, 32, 0.76) 100%);
+  border: 1px solid fade(var(--color-text-primary), 24%);
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45),
     inset 0 1px 0 fade(var(--color-text-primary), 20%);
   overflow: hidden;
 
   @include respond(md) {
+    max-width: 920px;
     padding: 32px 14px;
     border-radius: 22px;
   }
@@ -134,14 +187,293 @@ $connector-color: #9ec5b5;
   }
 }
 
-/* ─── Flowchart Grid (2-Column Exact Tree Structure) ──────────────────────── */
-.flowchart {
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ۱. چیدمان دسکتاپ ۱۶:۹ (متناسب با صفحه ۱۹۲۰×۱۰۸۰ مطابق تصویر مرجع)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.flowchartDesktop {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  direction: ltr;
+
+  @include respond(md) {
+    display: none;
+  }
+}
+
+/* ردیف ۱: گره ریشه در وسط (50%) + بازوهای چپ (22%) و راست (71.5%) */
+.desktopRootRow {
+  position: relative;
+  width: 100%;
+  height: 52px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.desktopRootWingLeft {
+  position: absolute;
+  top: 19px;
+  bottom: 2px;
+  left: 22%;
+  right: calc(50% + 120px);
+  border-top: 2px solid $connector-color;
+  border-left: 2px solid $connector-color;
+  border-top-left-radius: 8px;
+}
+
+.desktopRootWingRight {
+  position: absolute;
+  top: 19px;
+  bottom: 2px;
+  left: calc(50% + 120px);
+  right: 28.5%;
+  /* 100% - 71.5% = 28.5% */
+  border-top: 2px solid $connector-color;
+  border-right: 2px solid $connector-color;
+  border-top-right-radius: 8px;
+}
+
+/* ردیف ۲: همراهی در طول مسیر (چپ: مرکز 22%) و شروع آموزش + قدم‌های ۱ تا ۵ (راست: مرکز 71.5%) */
+.desktopTopBranchesRow {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.desktopTopLeftCol {
+  margin-left: 3%;
+  width: 38%;
+  /* مرکز دقیق: 3% + 19% = 22% */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.desktopTopRightCol {
+  margin-left: 14%;
+  /* شروع در 55%، عرض 33% -> مرکز دقیق: 55% + 16.5% = 71.5% */
+  width: 33%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* انشعاب از قدم‌های ۱ تا ۵ (71.5%) به دو شاخه موازی چپ (45.5%) و راست (81.5%) */
+.desktopSplitConnector {
+  position: relative;
+  width: 100%;
+  height: 24px;
+}
+
+.desktopSplitStem {
+  position: absolute;
+  top: 0;
+  height: calc(50% + 1px);
+  left: 71.5%;
+  width: 2px;
+  transform: translateX(-50%);
+  background-color: $connector-color;
+}
+
+.desktopSplitForkLeft {
+  position: absolute;
+  top: calc(50% - 1px);
+  bottom: 2px;
+  left: 45.5%;
+  width: 26%;
+  /* 71.5% - 45.5% = 26% */
+  border-top: 2px solid $connector-color;
+  border-left: 2px solid $connector-color;
+  border-top-left-radius: 8px;
+}
+
+.desktopSplitForkRight {
+  position: absolute;
+  top: calc(50% - 1px);
+  bottom: 2px;
+  left: 71.5%;
+  width: 10%;
+  /* 81.5% - 71.5% = 10% */
+  border-top: 2px solid $connector-color;
+  border-right: 2px solid $connector-color;
+  border-top-right-radius: 8px;
+}
+
+/* ردیف ۳: دو شاخه آموزشی موازی (چپ در 45.5% و راست در 81.5%) */
+.desktopParallelRow {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.desktopParallelLeftCol {
+  margin-left: 28%;
+  width: 35%;
+  /* مرکز دقیق: 28% + 17.5% = 45.5% */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.desktopParallelRightCol {
+  margin-left: 3%;
+  /* شروع در 66%، عرض 31% -> مرکز دقیق: 66% + 15.5% = 81.5% */
+  width: 31%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* همگرایی از دو شاخه موازی (45.5% و 81.5%) به ستون متمرکز پایین (62%) */
+.desktopMergeConnector {
+  position: relative;
+  width: 100%;
+  height: 26px;
+}
+
+.desktopMergeArmLeft {
+  position: absolute;
+  top: 0;
+  height: calc(50% + 1px);
+  left: 45.5%;
+  width: 16.5%;
+  /* 62% - 45.5% = 16.5% */
+  border-left: 2px solid $connector-color;
+  border-bottom: 2px solid $connector-color;
+  border-bottom-left-radius: 8px;
+}
+
+.desktopMergeArmRight {
+  position: absolute;
+  top: 0;
+  height: calc(50% + 1px);
+  left: 62%;
+  width: 19.5%;
+  /* 81.5% - 62% = 19.5% */
+  border-right: 2px solid $connector-color;
+  border-bottom: 2px solid $connector-color;
+  border-bottom-right-radius: 8px;
+}
+
+.desktopMergeCenterArrow {
+  position: absolute;
+  top: calc(50% - 1px);
+  bottom: 0;
+  left: 62%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 20px;
+}
+
+/* ردیف ۴: ستون متمرکز پایانی در 62% */
+.desktopBottomStack {
+  margin-left: 42%;
+  width: 40%;
+  /* مرکز دقیق: 42% + 20% = 62% */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* کارت‌های فشرده دسکتاپ (تک‌خطی و کپسولی مطابق تصویر ۱۶:۹) */
+.nodeCardDesktop {
+  direction: rtl;
+  width: 100%;
+  min-height: 33px;
+  padding: 10px 18px;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #e5f8ec 0%, #c6e9d5 100%);
+  border: 1.5px solid #86cca9;
+  color: #103827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22),
+    0 1px 0 rgba(255, 255, 255, 0.5) inset;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32),
+      0 0 12px rgba(157, 224, 195, 0.3);
+    border-color: var(--color-text-primary);
+  }
+}
+
+.nodeRootDesktop {
+  width: 240px;
+  min-height: 38px;
+  border-radius: 13px;
+  background: linear-gradient(180deg, #ecfcf2 0%, #c2ebd5 100%);
+  border: 2px solid var(--color-text-primary);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28),
+    0 0 16px fade(var(--color-text-primary), 22%);
+}
+
+.nodeCompanionDesktop,
+.nodeTwoLineDesktop {
+  min-height: 50px;
+  padding: 6px 16px;
+  border-radius: 13px;
+}
+
+.nodeMilestoneDesktop {
+  background: linear-gradient(180deg, #e8faef 0%, #bfe8d2 100%);
+  border-color: #6bc99e;
+}
+
+.nodeFinalDesktop {
+  width: 106%;
+  min-height: 38px;
+  padding: 6px 20px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #165b3f 0%, #0b3926 100%);
+  border: 2px solid var(--color-text-primary);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.38),
+    0 0 18px fade(var(--color-text-primary), 28%);
+}
+
+.nodeTitleDesktop {
+  font-size: 15px;
+  font-weight: var(--font-weight-bold);
+  color: #0b2f20;
+  line-height: 1.35;
+}
+
+.nodeTextDesktop {
+  font-size: 13.5px;
+  font-weight: var(--font-weight-bold);
+  color: #123b29;
+  line-height: 1.45;
+}
+
+.nodeFinalTextDesktop {
+  font-size: 13.5px;
+  font-weight: var(--font-weight-bold);
+  color: #f4fbf7;
+  line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * ۲. چیدمان موبایل و تبلت (دقیقاً همان استایل قبلی بدون تغییر)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.flowchartMobile {
+  display: none;
   position: relative;
   z-index: 1;
   max-width: 780px;
   margin: 0 auto;
-  /* LTR جهت حفظ دقیق جایگاه ستون چپ و ستون راست مطابق تصویر نمودار */
   direction: ltr;
+
+  @include respond(md) {
+    display: block;
+  }
 }
 
 .gridRow {
@@ -168,7 +500,6 @@ $connector-color: #9ec5b5;
   }
 }
 
-/* ─── Parallel Branches Row ───────────────────────────────────────────────── */
 .parallelBranchesRow {
   align-items: stretch;
 }
@@ -190,7 +521,6 @@ $connector-color: #9ec5b5;
   }
 }
 
-/* ─── Node Cards (Matching the soothing Mint-Emerald look + Luxury Glow) ─── */
 .nodeCard {
   direction: rtl;
   width: 100%;
@@ -315,9 +645,17 @@ $connector-color: #9ec5b5;
   }
 }
 
+.inlineArrowCompact {
+  height: 14px;
+}
+
 .inlineArrowStretch {
   flex: 1;
   min-height: 44px;
+
+  &.inlineArrowCompact {
+    min-height: 14px;
+  }
 }
 
 .inlineArrowStem {
@@ -326,7 +664,7 @@ $connector-color: #9ec5b5;
   background-color: $connector-color;
 }
 
-/* ─── Branch & Merge Connectors (2-Column S-Curve with Rounded Elbows) ───── */
+/* ─── Branch & Merge Connectors (Mobile 2-Column S-Curve) ─────────────────── */
 .branchConnector {
   position: relative;
   width: 100%;
@@ -337,7 +675,6 @@ $connector-color: #9ec5b5;
   }
 }
 
-/* خط مستقیم ستون راست در نقطه 75% عرض کل */
 .rightStraightLine {
   position: absolute;
   top: 0;
@@ -350,7 +687,6 @@ $connector-color: #9ec5b5;
   width: 20px;
 }
 
-/* انشعاب از ستون راست (67%) به مرکز ستون چپ (25%) */
 .splitElbowTop {
   position: absolute;
   top: 0;
@@ -380,7 +716,6 @@ $connector-color: #9ec5b5;
   margin-top: 0;
 }
 
-/* همگرایی از مرکز ستون چپ (25%) به ستون راست (67%) */
 .mergeElbowTop {
   position: absolute;
   top: 0;
@@ -417,7 +752,7 @@ $connector-color: #9ec5b5;
   justify-content: center;
   gap: 16px;
   flex-wrap: wrap;
-  margin-top: 40px;
+  margin-top: 28px;
 
   @include respond(sm) {
     flex-direction: column;
