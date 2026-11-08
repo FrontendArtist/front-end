@@ -1,4 +1,4 @@
-import { getOrderTracking, ADDRESS_UNAVAILABLE_WARNING, ADDRESS_FORBIDDEN_WARNING, STRAPI_FORBIDDEN_WARNING, STRAPI_UNAVAILABLE_WARNING } from '../adminOrderTrackingApi';
+import { getOrderTracking, STRAPI_FORBIDDEN_WARNING, STRAPI_UNAVAILABLE_WARNING } from '../adminOrderTrackingApi';
 import { getAdminCourseOrderDetails, getAdminCourseOrderReceipt } from '../../byeMoneyApi';
 
 jest.mock('../../byeMoneyApi', () => ({
@@ -114,72 +114,41 @@ describe('getOrderTracking', () => {
         expect(res.data.attemptsStatus).toBe('no_token');
     });
 
-    describe('آدرس تحویل رزرو', () => {
-        const withProduct = () => {
+    describe('آدرس تحویل (shippingAddress بای‌مانی، I11-O)', () => {
+        const withProduct = (shippingAddress) => {
             const d = detail('Paid');
             d.data.order.items = [{ title: 'کالا', itemType: 'Product', purchaseId: 'p1' }];
-            d.data.order.reservationId = '22222222-2222-2222-2222-222222222222';
             d.data.order.topUps = [];
+            if (shippingAddress !== undefined) d.data.shippingAddress = shippingAddress;
             return d;
         };
-        const addressCall = () => global.fetch.mock.calls.find(([u]) => u.includes('/byemoney-carts/'));
+        const strapiAddressCall = () => global.fetch.mock.calls.find(([u]) => u.includes('/byemoney-carts/'));
 
-        test('برای سفارش دارای کالا با توکن سرور خوانده می‌شود و فقط فیلدهای نمایشی برمی‌گردد', async () => {
-            getAdminCourseOrderDetails.mockResolvedValue(withProduct());
+        test('از پاسخ بای‌مانی خوانده می‌شود، فقط فیلدهای نمایشی برمی‌گردد و به استرپی درخواستی نمی‌رود', async () => {
+            getAdminCourseOrderDetails.mockResolvedValue(withProduct({
+                version: 'v1', city: 'قم', fullAddress: 'خیابان', recipientName: 'علی', recipientPhone: '0912', province: 'قم', postalCode: null, secret: 'X',
+            }));
             getAdminCourseOrderReceipt.mockResolvedValue({ success: false });
-            global.fetch.mockResolvedValue({
-                ok: true, status: 200,
-                json: async () => ({ cartId: 'c', addressVersion: 'v1', addressSnapshot: { city: 'قم', fullAddress: 'خیابان', recipientName: 'علی', recipientPhone: '0912', province: 'قم', postalCode: null, secret: 'X' } }),
-            });
-            const res = await getOrderTracking({ jwt: 'admin', orderId: ORDER_ID, now: NOW });
-            const [url, init] = addressCall();
-            expect(url).toBe('http://strapi.test/api/byemoney-carts/22222222-2222-2222-2222-222222222222/address');
-            expect(init.method).toBeUndefined();
-            expect(init.headers.Authorization).toBe('Bearer server-token');
-            expect(res.data.shippingAddress).toMatchObject({ city: 'قم', recipientName: 'علی', postalCode: null });
-            expect(JSON.stringify(res.data.shippingAddress)).not.toContain('secret');
-            expect(JSON.stringify(res.data)).not.toContain('22222222-2222');
-        });
-
-        test('بدون reservationId (سبد پرداخت‌نشده) آدرس با cartId خوانده نمی‌شود', async () => {
-            const d = withProduct();
-            delete d.data.order.reservationId;
-            getAdminCourseOrderDetails.mockResolvedValue(d);
-            getAdminCourseOrderReceipt.mockResolvedValue({ success: false });
-            const res = await getOrderTracking({ jwt: 'admin', orderId: ORDER_ID, now: NOW });
-            expect(addressCall()).toBeUndefined();
-            expect(res.data.shippingAddress).toBeNull();
-        });
-
-        test('برای سفارش بدون کالا خوانده نمی‌شود', async () => {
-            getAdminCourseOrderDetails.mockResolvedValue(detail('Failed'));
             global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
             const res = await getOrderTracking({ jwt: 'admin', orderId: ORDER_ID, now: NOW });
-            expect(addressCall()).toBeUndefined();
-            expect(res.data.shippingAddress).toBeNull();
+            expect(strapiAddressCall()).toBeUndefined();
+            expect(res.data.shippingAddress).toEqual({
+                recipientName: 'علی', recipientPhone: '0912', province: 'قم', city: 'قم', postalCode: null, fullAddress: 'خیابان',
+            });
+            expect(JSON.stringify(res.data.shippingAddress)).not.toContain('secret');
+            expect(JSON.stringify(res.data.shippingAddress)).not.toContain('v1');
         });
 
         test.each([
-            ['۴۰۳', { ok: false, status: 403, json: async () => ({}) }, ADDRESS_FORBIDDEN_WARNING],
-            ['۵۰۰', { ok: false, status: 500, json: async () => ({}) }, ADDRESS_UNAVAILABLE_WARNING],
-        ])('خطای استرپی %s: هشدار می‌آید و وضعیت و اقلام بای‌مانی سالم می‌ماند', async (_n, response, warning) => {
-            getAdminCourseOrderDetails.mockResolvedValue(withProduct());
+            ['سفارش بدون کالا (فیلد نیست)', () => detail('Failed')],
+            ['shippingAddress=null', () => withProduct(null)],
+        ])('%s: آدرس null و بدون هشدار', async (_n, make) => {
+            getAdminCourseOrderDetails.mockResolvedValue(make());
             getAdminCourseOrderReceipt.mockResolvedValue({ success: false });
-            global.fetch.mockResolvedValue(response);
+            global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
             const res = await getOrderTracking({ jwt: 'admin', orderId: ORDER_ID, now: NOW });
-            expect(res.success).toBe(true);
             expect(res.data.shippingAddress).toBeNull();
-            expect(res.data.warnings).toContain(warning);
-            expect(res.data.order.items).toHaveLength(1);
-        });
-
-        test('۴۰۴ (سبد بدون آدرس) بدون هشدار و بدون آدرس', async () => {
-            getAdminCourseOrderDetails.mockResolvedValue(withProduct());
-            getAdminCourseOrderReceipt.mockResolvedValue({ success: false });
-            global.fetch.mockResolvedValue({ ok: false, status: 404, json: async () => ({}) });
-            const res = await getOrderTracking({ jwt: 'admin', orderId: ORDER_ID, now: NOW });
-            expect(res.data.warnings).not.toContain(ADDRESS_UNAVAILABLE_WARNING);
-            expect(res.data.shippingAddress).toBeNull();
+            expect(res.data.warnings.join(' ')).not.toContain('آدرس');
         });
     });
 

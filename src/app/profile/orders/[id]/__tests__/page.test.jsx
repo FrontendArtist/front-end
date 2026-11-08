@@ -180,19 +180,6 @@ describe('جزئیات سفارش بای‌مانی – ارسال کالا و �
     expect(screen.queryByTestId('physical-progress')).not.toBeInTheDocument();
   });
 
-  it('آدرس تحویل نمایش داده می‌شود', async () => {
-    mockOrder({
-      ...baseOrder,
-      shippingAddress: { recipientName: 'علی', recipientPhone: '0912', province: 'تهران', city: 'تهران', fullAddress: 'خیابان آزادی', postalCode: '1234567890' },
-      items: [productItem('Preparing')],
-    });
-    render(<OrderDetailPage />);
-    const box = await screen.findByTestId('shipping-address');
-    expect(box).toHaveTextContent('علی');
-    expect(box).toHaveTextContent('خیابان آزادی');
-    expect(box).toHaveTextContent('1234567890');
-  });
-
   it('سبد مختلط: دکمهٔ لغو کالا هست و قلم دوره وضعیت فیزیکی ندارد', async () => {
     mockOrder({ ...baseOrder, items: [courseItem(), productItem('Preparing')] });
     render(<OrderDetailPage />);

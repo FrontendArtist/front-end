@@ -8,7 +8,6 @@ import { STRAPI_API_URL } from "@/lib/api";
 import { getConversionRateWithByeMoney, getMyCoursePurchases, getCoursePurchaseReceipt, getMyCourseOrders, getMyCourseOrderDetails, CourseOrderId } from '@/lib/byeMoneyApi';
 import { attachPurchasesToByeMoneyOrder, mapByeMoneyLineItem } from '@/lib/byeMoneyOrderItems';
 import { isIranianPhoneNumber } from '@/lib/phoneUtils';
-import { fetchCartAddress } from '@/lib/admin/adminOrderTrackingApi';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -86,11 +85,6 @@ export async function GET(request) {
                             items: (d.items || []).map(item => mapByeMoneyLineItem(item)).filter(Boolean),
                             topUps: d.topUps || []
                         };
-                        // آدرس تحویل فقط برای سبد پرداخت‌شدهٔ دارای کالا و با رزرو commit‌شده؛ reservationId به مرورگر نمی‌رود
-                        if (d.reservationId && mappedOrder.items.some(i => i.type === 'product')) {
-                            const { address } = await fetchCartAddress(d.reservationId);
-                            if (address) mappedOrder.shippingAddress = address;
-                        }
                         return NextResponse.json({ data: [mappedOrder] });
                     }
                 } catch (bmOrderErr) {

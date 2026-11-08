@@ -144,8 +144,6 @@ export default function ByeMoneyOrderView({ order }) {
     const showItemPhysicalStatus = view.isPaid && !uniformPhysical;
 
     const topUps = Array.isArray(order.topUps) ? order.topUps : [];
-    const address = order.shippingAddress;
-    const addressLine = address ? [address.province, address.city, address.fullAddress].filter(Boolean).join('، ') : '';
     const showMyCourses = view.isPaid && view.hasCourse;
 
     return (
@@ -237,13 +235,6 @@ export default function ByeMoneyOrderView({ order }) {
                         </div>
                     )}
 
-                    {address && (addressLine || address.recipientName) && (
-                        <dl className={styles.address} data-testid="shipping-address">
-                            {address.recipientName && (<div><dt>گیرنده</dt><dd>{address.recipientName}{address.recipientPhone ? ` — ${address.recipientPhone}` : ''}</dd></div>)}
-                            {addressLine && (<div><dt>نشانی</dt><dd>{addressLine}</dd></div>)}
-                            {address.postalCode && (<div><dt>کد پستی</dt><dd dir="ltr">{address.postalCode}</dd></div>)}
-                        </dl>
-                    )}
 
                     {canCancel && (
                         <div className={styles.actions}>

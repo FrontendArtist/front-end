@@ -321,38 +321,11 @@ describe('دریافت سفارشات و رسیدها (I11-T و I11-P)', () => {
     expect(res.body.data[0].topUps[0].status).toBe('Confirmed');
   });
 
-  it('سفارش دارای کالا آدرس تحویل را از استرپی می‌گیرد و خطای آدرس جزئیات را خراب نمی‌کند', async () => {
-    const cartId = '11111111-1111-1111-1111-111111111111';
-    const reservationId = '22222222-2222-2222-2222-222222222222';
-    const detail = {
-      orderId: 'cart:' + cartId, sourceType: 'Cart', cartId, reservationId, financialStatus: 'Paid', deliveryStatus: 'Pending',
-      finalAmountInNoor: 9, itemCount: 1, createdAtUtc: '2026-10-20T10:00:00Z',
-      items: [{ externalCourseId: 'p1', itemType: 'Product', title: 'کتاب', quantity: 1, finalAmountInNoor: 9, physicalDeliveryStatus: 'Preparing' }],
-      topUps: [],
-    };
-    getMyCourseOrderDetails.mockResolvedValue({ success: true, data: detail });
-    global.fetch = jest.fn(async url => (url.includes('/address')
-      ? jsonResponse({ addressSnapshot: { recipientName: 'علی', city: 'قم', fullAddress: 'خیابان ۱', secret: 'x' } })
-      : jsonResponse({})));
-    const ok = await GET({ url: 'http://site.test/api/orders?documentId=cart:' + cartId });
-    expect(ok.body.data[0].shippingAddress).toMatchObject({ recipientName: 'علی', city: 'قم', fullAddress: 'خیابان ۱' });
-    expect(ok.body.data[0].shippingAddress).not.toHaveProperty('secret');
-    const addressUrls = global.fetch.mock.calls.map(([url]) => url).filter(url => url.includes('/address'));
-    expect(addressUrls).toHaveLength(1);
-    expect(addressUrls[0]).toContain(`/byemoney-carts/${reservationId}/address`);
-    expect(JSON.stringify(ok.body)).not.toContain(reservationId);
-
-    global.fetch = jest.fn(async () => jsonResponse({}, 500));
-    const failed = await GET({ url: 'http://site.test/api/orders?documentId=cart:' + cartId });
-    expect(failed.status).toBe(200);
-    expect(failed.body.data[0]).not.toHaveProperty('shippingAddress');
-  });
-
-  it('بدون reservationId آدرس با cartId خوانده نمی‌شود', async () => {
+  it('جزئیات سفارش خریدار آدرس تحویل ندارد و از استرپی هم نمی‌خواند', async () => {
     const cartId = '11111111-1111-1111-1111-111111111111';
     getMyCourseOrderDetails.mockResolvedValue({ success: true, data: {
-      orderId: 'cart:' + cartId, sourceType: 'Cart', cartId, financialStatus: 'Processing', deliveryStatus: 'NotStarted',
-      finalAmountInNoor: 9, itemCount: 1, createdAtUtc: '2026-10-20T10:00:00Z',
+      orderId: 'cart:' + cartId, sourceType: 'Cart', cartId, reservationId: '22222222-2222-2222-2222-222222222222',
+      financialStatus: 'Paid', deliveryStatus: 'Pending', finalAmountInNoor: 9, itemCount: 1, createdAtUtc: '2026-10-20T10:00:00Z',
       items: [{ externalCourseId: 'p1', itemType: 'Product', title: 'کتاب', quantity: 1, finalAmountInNoor: 9, physicalDeliveryStatus: 'Preparing' }],
       topUps: [],
     } });
