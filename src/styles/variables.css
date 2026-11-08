@@ -8,6 +8,7 @@
    --color-text-primary: #F6D982;
    --color-title-hover: #F5C452;
    --color-card-text: #FFFAEA;
+   --color-text-secondary: color-mix(in srgb, var(--color-card-text) 65%, transparent);
    --color-overlay: #002B20;
    --color-bg-primary-transparent: #061818d3;
    --color-overlay-blured: rgba(6, 24, 24, 0.8);
@@ -22,6 +23,7 @@
    --font-xs: 12px;
    --font-sm: 14px;
    --font-md: 16px;
+   --font-base: var(--font-md);
    --font-lg: 18px;
    --font-xl: 24px;
    --font-2xl: 28px;

@@ -35,6 +35,7 @@ import {
     Megaphone,        // Announcement top banner icon
     ShieldAlert,      // Gateway reviews icon
     Compass,          // Salek guide mascot icon
+    Banknote,         // Noor withdrawals icon
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useCartStore } from '@/store/useCartStore';
@@ -66,6 +67,7 @@ const NAV_LINKS = [
         ],
     },
     { href: '/admin/gateway-reviews', label: 'رسیدگی پرداخت‌ها', icon: ShieldAlert },
+    { href: '/admin/noor-withdrawals', label: 'خروج نور', icon: Banknote },
     { href: '/admin/users', label: 'کاربران', icon: Users },
     { href: '/admin/products', label: 'محصولات', icon: Package },
     { href: '/admin/articles', label: 'مقالات', icon: FileText },

@@ -14,6 +14,12 @@ describe('Admin Permissions Configuration', () => {
         expect(ROUTE_PERMISSIONS['/admin/gateway-reviews']).toEqual([ADMIN_PERMISSIONS.TOPUP_REVIEW]);
     });
 
+    test('Noor.Withdraw جدا از Noor.Inject است و صفحهٔ خروج نور را محافظت می‌کند', () => {
+        expect(ADMIN_PERMISSIONS.NOOR_WITHDRAW).toBe('Noor.Withdraw');
+        expect(ADMIN_PERMISSIONS.NOOR_WITHDRAW).not.toBe(ADMIN_PERMISSIONS.NOOR_INJECT);
+        expect(getRequiredPermissionsForRoute('/admin/noor-withdrawals')).toEqual([ADMIN_PERMISSIONS.NOOR_WITHDRAW]);
+    });
+
     test('getRequiredPermissionsForRoute correctly resolves routes', () => {
         expect(getRequiredPermissionsForRoute('/admin/orders/new')).toEqual([ADMIN_PERMISSIONS.COURSES_MANAGE]);
         expect(getRequiredPermissionsForRoute('/admin/gateway-reviews')).toEqual([ADMIN_PERMISSIONS.TOPUP_REVIEW]);

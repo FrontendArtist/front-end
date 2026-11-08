@@ -18,7 +18,8 @@ import { ADMIN_PERMISSIONS } from '@/config/adminPermissions';
 import AdminAssistedTopUpModal from './AdminAssistedTopUpModal/AdminAssistedTopUpModal';
 import AdminNoorGiftModal from './AdminNoorGiftModal/AdminNoorGiftModal';
 import CreateUserModal from './CreateUserModal/CreateUserModal';
-import { UserPlus, Gift, X, AlertCircle, Eye, CreditCard, Filter } from 'lucide-react';
+import CreateNoorWithdrawalModal from '@/components/admin/NoorWithdrawals/CreateNoorWithdrawalModal';
+import { UserPlus, Banknote, Gift, X, AlertCircle, Eye, CreditCard, Filter } from 'lucide-react';
 
 const ROLE_OPTIONS = [
     { value: 'all', label: 'همه نقش‌ها' },
@@ -90,6 +91,7 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
     const [selectedDocIds, setSelectedDocIds] = useState(new Set());
     const [showGiftModal, setShowGiftModal] = useState(false);
     const [giftModalUsers, setGiftModalUsers] = useState([]);
+    const [withdrawalUser, setWithdrawalUser] = useState(null);
     const [refreshNotice, setRefreshNotice] = useState(null);
 
     // پاک‌سازی خودکار پیام اعلان بعد از ۴ ثانیه
@@ -375,6 +377,18 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                                             هدیه نور
                                         </AdminButton>
                                     </Can>
+                                    <Can permission={ADMIN_PERMISSIONS.NOOR_WITHDRAW}>
+                                        <AdminButton
+                                            onClick={() => setWithdrawalUser(user)}
+                                            variant="default"
+                                            title="ثبت خروج نور برای این کاربر"
+                                            className={styles.compactBtn}
+                                            disabled={!user.documentId}
+                                        >
+                                            <Banknote size={14} />
+                                            خروج نور
+                                        </AdminButton>
+                                    </Can>
                                     <Can permission={ADMIN_PERMISSIONS.TOPUP_REVIEW}>
                                         <AdminButton
                                             onClick={() => setAssistedTopUpUser(user)}
@@ -440,6 +454,17 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                         setGiftModalUsers([]);
                     }}
                     onSuccess={async () => {
+                        await refreshAllBalances();
+                    }}
+                />
+            )}
+
+            {withdrawalUser && (
+                <CreateNoorWithdrawalModal
+                    user={withdrawalUser}
+                    onClose={() => setWithdrawalUser(null)}
+                    onSuccess={async () => {
+                        setWithdrawalUser(null);
                         await refreshAllBalances();
                     }}
                 />

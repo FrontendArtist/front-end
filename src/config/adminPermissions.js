@@ -18,6 +18,7 @@ export const ADMIN_PERMISSIONS = {
     NOOR_GIFT: 'Noor.Gift',
     PURCHASES_VIEW: 'Purchases.View',
     PURCHASES_SETTLE: 'Purchases.Settle',
+    NOOR_WITHDRAW: 'Noor.Withdraw',
 };
 
 /**
@@ -32,6 +33,7 @@ export const ROUTE_PERMISSIONS = {
     '/admin/orders/settlements': [ADMIN_PERMISSIONS.PURCHASES_VIEW],
     '/admin/orders/legacy': null,
     '/admin/gateway-reviews': [ADMIN_PERMISSIONS.TOPUP_REVIEW],
+    '/admin/noor-withdrawals': [ADMIN_PERMISSIONS.NOOR_WITHDRAW],
     '/admin/users': null,
     '/admin/courses': null,
     '/admin/products': null,
