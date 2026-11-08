@@ -5,7 +5,7 @@
 // پیش‌فرض با DEFAULT_THRESHOLD_MINUTES بک‌اند (gatewayReviewRecovery.js) یکی است.
 // اگر خواندن آستانه شکست بخورد، همین مقدار نمایش داده می‌شود تا صفحه نشکند و
 // پیام همان عددی را بگوید که تنظیم پیش‌فرض دارد.
-export const DEFAULT_REVIEW_MINUTES = 30;
+export const DEFAULT_REVIEW_MINUTES = 15;
 
 const FA_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
 

@@ -4,6 +4,7 @@ import { useLightStore } from '../useLightStore';
 
 jest.mock('next-auth/react', () => ({ getSession: jest.fn() }));
 jest.mock('@/lib/byeMoneyApi', () => ({ getWalletBalanceWithByeMoney: jest.fn() }));
+jest.mock('@/lib/byeMoneySync', () => ({ syncByeMoneyUser: jest.fn().mockResolvedValue(undefined) }));
 
 describe('موجودی معتبر نور', () => {
     beforeEach(() => {

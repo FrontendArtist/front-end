@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { getSession } from 'next-auth/react';
 import { getWalletBalanceWithByeMoney } from '@/lib/byeMoneyApi';
+import { syncByeMoneyUser } from '@/lib/byeMoneySync';
 
 export const useLightStore = create((set, get) => ({
     lightBalance: null,
@@ -31,6 +32,9 @@ export const useLightStore = create((set, get) => ({
                 set({ lightBalance: null, isLoading: false });
                 return null;
             }
+
+            // کاربر تازه باید پیش از پرسش موجودی در ByeMoney ساخته شده باشد، وگرنه سرور 401 می‌دهد
+            await syncByeMoneyUser(jwt);
 
             const res = await getWalletBalanceWithByeMoney({ jwt });
             if (res.unauthorized) {

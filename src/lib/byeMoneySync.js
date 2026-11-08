@@ -19,6 +19,8 @@ export const BYEMONEY_API_URL = rawBaseUrl
 const syncedTokens = new Set();
 const syncingTokens = new Set();
 const failedTokens = new Set();
+// وعدهٔ سینک در حال اجرا؛ تا درخواست‌های وابسته (مثل موجودی) پیش از ساخته‌شدن کاربر در ByeMoney نروند
+const syncPromises = new Map();
 
 /**
  * ارسال درخواست به اندپوینت سینک ByeMoney با مد CORS صریح
@@ -48,16 +50,15 @@ async function sendSyncRequest(jwt) {
  * @param {string} jwt 
  */
 export function syncByeMoneyUser(jwt) {
-  if (!jwt || typeof jwt !== 'string') return;
+  if (!jwt || typeof jwt !== 'string') return Promise.resolve();
 
-  // گارد: اگر قبلاً سینک شده، در حال سینک است، یا در تلاش مجدد شکست خورده، اجرا نمی‌شود
-  if (syncedTokens.has(jwt) || syncingTokens.has(jwt) || failedTokens.has(jwt)) {
-    return;
-  }
+  // گارد: اگر قبلاً سینک شده یا در تلاش مجدد شکست خورده، اجرا نمی‌شود؛ اگر در حال سینک است، همان را برمی‌گرداند
+  if (syncingTokens.has(jwt)) return syncPromises.get(jwt);
+  if (syncedTokens.has(jwt) || failedTokens.has(jwt)) return Promise.resolve();
 
   syncingTokens.add(jwt);
 
-  (async () => {
+  const promise = (async () => {
     try {
       await sendSyncRequest(jwt);
       syncedTokens.add(jwt);
@@ -76,8 +77,12 @@ export function syncByeMoneyUser(jwt) {
       }
     } finally {
       syncingTokens.delete(jwt);
+      syncPromises.delete(jwt);
     }
   })().catch((unexpectedError) => {
     console.warn('[ByeMoney Sync] Unexpected error during sync:', unexpectedError);
   });
+
+  syncPromises.set(jwt, promise);
+  return promise;
 }
