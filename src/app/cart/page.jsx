@@ -375,7 +375,7 @@ export default function CartPage() {
                                                     {formatPrice(item.price)} تومان
                                                 </p>
                                                 <span className={styles.courseLabel}>
-                                                    {item.type === 'chapter' ? 'فصل آموزشی' : 'دوره آموزشی'}
+                                                    {item.type === 'chapter' ? 'فصل آموزشی' : (item.isChaptered ? 'دوره آموزشی (پکیج کامل)' : 'دوره آموزشی')}
                                                 </span>
                                             </Link>
 

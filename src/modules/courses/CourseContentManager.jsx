@@ -169,27 +169,24 @@ export default function CourseContentManager({ course, styles: propStyles }) {
     });
   }, [orders, course]);
 
-  // بررسی مالکیت کلی دوره (از طریق سفارشات یا رایگان بودن)
-  const hasFullCourseAccess = isFreeCourse || isPurchasedInOrders;
-
-  // هماهنگی بروزرسانی داده‌ها هنگام لاگین کاربر
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      setWasUnauthenticated(true);
-    }
-    if (status === 'authenticated') {
-      if (wasUnauthenticated) {
-        router.refresh();
-        setWasUnauthenticated(false);
-      }
-    }
-  }, [status, wasUnauthenticated, router]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // استخراج لیست شناسه‌های فصل‌های خریداری شده از سفارشات کاربر با useMemo جهت جلوگیری از تغییر reference
   // ⚠️ فقط سفارش‌های پرداخت‌شده و تأییدشده لحاظ می‌شوند
   const purchasedChapterIdsFromOrders = useMemo(() => {
     return getPurchasedChapterIds(orders, course);
   }, [orders, course]);
+
+  // آیا تمام فصل‌های دوره در سفارشات خریداری شده‌اند؟
+  const hasPurchasedAllChaptersInOrders = useMemo(() => {
+    if (!course?.isChaptered || !Array.isArray(course?.chapters) || course.chapters.length === 0) return false;
+    return course.chapters.every((ch) => purchasedChapterIdsFromOrders.includes(String(ch.id)));
+  }, [course, purchasedChapterIdsFromOrders]);
+
+  // بررسی مالکیت کلی دوره (از طریق سفارشات، پراپ‌های ارسالی، خرید تمام فصل‌ها یا رایگان بودن)
+  const hasFullCourseAccess =
+    isFreeCourse ||
+    isPurchasedInOrders ||
+    hasPurchasedAllChaptersInOrders ||
+    Boolean(course?.hasAccess || course?.isPurchased || course?.isEnrolled);
 
   // =========================================================================
   // منطق کنترل دسترسی فصل‌ها (Chapter Access Logic)
@@ -200,12 +197,19 @@ export default function CourseContentManager({ course, styles: propStyles }) {
    * کاربر به فصل دسترسی دارد اگر:
    * 1. کل دوره را خریده باشد (hasFullCourseAccess)
    * 2. فصل رایگان باشد
-   * 3. فصل در سفارشات پرداخت‌شده کاربر (orders) ثبت شده باشد
+   * 3. فصل در سفارشات پرداخت‌شده کاربر (orders) یا UUID ثبت شده باشد
    */
   const checkChapterAccess = (chapter) => {
     if (hasFullCourseAccess) return true;
     const chapterPrice = chapter.price?.toman ?? chapter.price ?? 0;
     if (chapterPrice === 0 || chapter.isFree) return true;
+
+    const userEnrolledUuids = Array.isArray(session?.user?.enrolledChapterIntegrationIds)
+      ? session.user.enrolledChapterIntegrationIds.map((u) => String(u).toLowerCase())
+      : [];
+    if (chapter.integrationId && userEnrolledUuids.includes(String(chapter.integrationId).toLowerCase())) {
+      return true;
+    }
 
     const chapterIdStr = String(chapter.id);
     return purchasedChapterIdsFromOrders.includes(chapterIdStr);
@@ -440,7 +444,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                   onClick={() => setActiveLesson(null)}
                   aria-label="بستن پخش‌کننده صوتی"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                 </button>
                 <PlyrAudioPlayer
                   key={`${activeLesson.id}-audio`}
@@ -471,7 +475,6 @@ export default function CourseContentManager({ course, styles: propStyles }) {
           گام ۲ & ۳: انشعاب رندرینگ سرفصل‌ها (Render Branching: Branch A & Branch B)
           ========================================================================= */}
       <div className={styles.curriculumSection}>
-        {/* <h2 className={styles.sectionTitle}>سرفصل‌های دوره</h2> */}
 
         {isChaptered ? (
           <div className={styles.accordion}>

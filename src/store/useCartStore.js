@@ -111,9 +111,34 @@ export const useCartStore = create(
                         return;
                     }
 
+                    let cleanItems = currentItems;
+
+                    // اگر دوره کامل اضافه شود، فصل‌های تکی همان دوره از سبد حذف می‌شوند تا هزینه مضاعف دریافت نشود
+                    if (item.type === 'course') {
+                        cleanItems = currentItems.filter((cartItem) => {
+                            if (cartItem.type !== 'chapter') return true;
+                            const matchesCourseId = item.id && String(cartItem.courseId) === String(item.id);
+                            const matchesDocId = item.documentId && String(cartItem.courseId) === String(item.documentId);
+                            const matchesSlug = item.slug && cartItem.slug && cartItem.slug.startsWith(`${item.slug}-chapter-`);
+                            return !matchesCourseId && !matchesDocId && !matchesSlug;
+                        });
+                    } else if (item.type === 'chapter') {
+                        // اگر دوره کامل در سبد باشد، افزودن فصل تکی از همان دوره نادیده گرفته می‌شود
+                        const parentCourseInCart = currentItems.some((ci) => {
+                            if (ci.type !== 'course') return false;
+                            const matchesCourseId = item.courseId && String(ci.id) === String(item.courseId);
+                            const matchesDocId = item.courseId && ci.documentId && String(ci.documentId) === String(item.courseId);
+                            const matchesSlug = ci.slug && item.slug && item.slug.startsWith(`${ci.slug}-chapter-`);
+                            return matchesCourseId || matchesDocId || matchesSlug;
+                        });
+                        if (parentCourseInCart) {
+                            return;
+                        }
+                    }
+
                     set({
                         items: [
-                            ...currentItems,
+                            ...cleanItems,
                             {
                                 ...item,
                                 stock: maxStock,

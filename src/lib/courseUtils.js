@@ -72,6 +72,7 @@ export function formatStrapiCourses(apiResponse) {
       const chapters = Array.isArray(item.chapters)
         ? item.chapters.map(ch => ({
             id: ch.id,
+            integrationId: ch.integrationId || null,
             title: ch.title || '',
             // قیمت decimal استراپی ممکن است رشته باشد؛ مقایسهٔ صفر در صفحه به عدد نیاز دارد.
             price: { toman: Number(ch.price ?? 0) },

@@ -11,11 +11,15 @@
   direction: rtl;
   user-select: none;
   transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+
+  @include respond(md) {
+    bottom: 70px;
+  }
 }
 
 /* حالت سرک کشیدن (بسته) */
 
-/* حالت باز (نمایش کامل و گفت‌وگو) */
+/* حالت باز (نمایش کامل و گفتوگو) */
 .stateOpen {
   transform: translateX(0);
 }
@@ -162,7 +166,7 @@
 .closeBtn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-error);
   cursor: pointer;
   padding: 3px;
   border-radius: 6px;

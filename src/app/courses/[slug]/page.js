@@ -72,23 +72,43 @@ export default async function CoursePage({ params }) {
   const session = await getServerSession(authOptions);
 
   const isForeign = Boolean(
-    session?.user?.is_foreigner || 
+    session?.user?.is_foreigner ||
     (session?.user?.phoneNumber && !isIranianPhoneNumber(session.user.phoneNumber))
   );
 
   const isFreeCourse = rawCourse.price?.toman === 0 || rawCourse.price === 0;
-  
+
   // بررسی واحد و متمرکز دسترسی دوره و فصل‌ها (منبع اصلی: سفارش‌های پرداخت‌شده + فال‌بک سشن)
-  const { 
-    hasAccess, 
+  const {
+    hasAccess,
     purchasedChapterIds,
     activeCourseOrder
   } = await checkCourseAccess(session?.user?.id, rawCourse.id, rawCourse.slug, session?.user, rawCourse);
 
-  const isUserEnrolledInCourse = isFreeCourse || Boolean(session && hasAccess);
-  const hasPurchasedAnyChapter = (rawCourse.chapters || []).some(ch =>
-    purchasedChapterIds.includes(String(ch.id))
+  const userEnrolledUuids = Array.isArray(session?.user?.enrolledChapterIntegrationIds)
+    ? session.user.enrolledChapterIntegrationIds.map((u) => String(u).toLowerCase())
+    : [];
+
+  // بررسی دقیق فصل‌های خریداری‌شده کاربر (چه با شناسه چه با UUID)
+  const userPurchasedChapters = (rawCourse.chapters || []).filter(ch => {
+    const byUuid = ch.integrationId && userEnrolledUuids.includes(String(ch.integrationId).toLowerCase());
+    const byId = purchasedChapterIds.includes(String(ch.id));
+    return byUuid || byId;
+  });
+
+  const hasPurchasedAnyChapter = userPurchasedChapters.length > 0;
+
+  // آیا تمام فصل‌های دوره به طور مجزا خریده شده‌اند؟
+  const hasPurchasedAllChapters = Boolean(
+    rawCourse.isChaptered &&
+    Array.isArray(rawCourse.chapters) &&
+    rawCourse.chapters.length > 0 &&
+    rawCourse.chapters.every(ch =>
+      userPurchasedChapters.some(pc => String(pc.id) === String(ch.id))
+    )
   );
+
+  const isUserEnrolledInCourse = isFreeCourse || Boolean(session && hasAccess) || hasPurchasedAllChapters;
   const isUserStudentOfCourse = isUserEnrolledInCourse || Boolean(session && hasPurchasedAnyChapter);
 
   // محاسبه قیمت بر اساس وضعیت کاربر (خارجی یا ایرانی)
@@ -96,6 +116,29 @@ export default async function CoursePage({ params }) {
   const effectivePriceToman = hasIntlPrice ? Number(rawCourse.internationalPrice) : (rawCourse.price?.toman || rawCourse.price || 0);
   const effectiveOriginalPrice = hasIntlPrice ? Number(rawCourse.internationalPrice) : (rawCourse.originalPrice || effectivePriceToman);
   const effectiveDiscountPercent = hasIntlPrice ? 0 : (rawCourse.discountPercent || 0);
+
+  // محاسبه مجموع پرداختی‌های قبلی کاربر برای فصل‌های این دوره
+  const alreadyPaidChaptersTotal = userPurchasedChapters.reduce((sum, ch) => {
+    const chPrice = Number(ch.price?.toman ?? ch.price ?? 0);
+    return sum + (Number.isFinite(chPrice) ? chPrice : 0);
+  }, 0);
+
+  // محاسبه قیمت خالص دوره پس از کسر پرداختی‌های قبلی فصل‌ها
+  const netCoursePriceToman = Math.max(0, effectivePriceToman - alreadyPaidChaptersTotal);
+
+  // محاسبه جمع قیمت تک‌تک فصل‌ها جهت سنجش درصد تخفیف پکیج یکجا
+  const sumOfAllChaptersPrice = (rawCourse.chapters || []).reduce((sum, ch) => {
+    const p = Number(ch.price?.toman ?? ch.price ?? 0);
+    return sum + (Number.isFinite(p) ? p : 0);
+  }, 0);
+
+  const calculatedBulkSavingsPercent = (sumOfAllChaptersPrice > effectivePriceToman && effectivePriceToman > 0)
+    ? Math.round(((sumOfAllChaptersPrice - effectivePriceToman) / sumOfAllChaptersPrice) * 100)
+    : 0;
+
+  const displayBulkDiscountPercent = effectiveDiscountPercent > 0
+    ? effectiveDiscountPercent
+    : calculatedBulkSavingsPercent;
 
   // Fetch comments for this course
   const initialComments = await getComments('course', rawCourse.documentId);
@@ -108,10 +151,14 @@ export default async function CoursePage({ params }) {
     title: rawCourse.title,
     description: rawCourse.shortDescription,
     price: { toman: effectivePriceToman, original: effectiveOriginalPrice },
+    netPriceToman: netCoursePriceToman,
+    alreadyPaidChaptersTotal,
+    userPurchasedChaptersCount: userPurchasedChapters.length,
     originalPrice: effectiveOriginalPrice,
     internationalPrice: rawCourse.internationalPrice || null,
     isInternationalPrice: hasIntlPrice,
     discountPercent: effectiveDiscountPercent,
+    displayBulkDiscountPercent,
     discountUntil: hasIntlPrice ? null : (rawCourse.discountUntil || null),
     content: rawCourse.content,
     teaserUrl: rawCourse.teaserUrl,
@@ -220,9 +267,13 @@ export default async function CoursePage({ params }) {
           <div className={styles.details}>
             <div className={styles.titleWrapper}>
               <h1 className={styles.title}>{course.title}</h1>
-              {isUserStudentOfCourse ? (
+              {isUserEnrolledInCourse ? (
                 <div className={styles.enrolledBadge}>
                   ✓ شما دانشجوی این دوره هستید
+                </div>
+              ) : hasPurchasedAnyChapter ? (
+                <div className={styles.partialBadge}>
+                  ✓ دسترسی به {course.userPurchasedChaptersCount} فصل خریداری‌شده
                 </div>
               ) : activeCourseOrder ? (
                 activeCourseOrder.isPendingVerification ? (
@@ -246,6 +297,13 @@ export default async function CoursePage({ params }) {
             </div >
             <p className={styles.description}>{course.description}</p>
 
+            {/* بنر تخفیف خرید یکجا دوره */}
+            {!isUserEnrolledInCourse && course.isChaptered && course.displayBulkDiscountPercent > 0 && (
+              <div className={styles.bulkDiscountBanner}>
+                🎉 با خرید یکجا دوره، از ٪{course.displayBulkDiscountPercent} تخفیف ویژه پکیج کامل بهره‌مند شوید!
+              </div>
+            )}
+
             {/* شمارش معکوس تخفیف در صفحه دوره */}
             {!isUserEnrolledInCourse && hasDiscount && course.discountUntil && (
               <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
@@ -254,7 +312,7 @@ export default async function CoursePage({ params }) {
             )}
 
             <div className={styles.buyDetail}>
-              {!course.isChaptered && !isFreeCourse && !isUserStudentOfCourse && (
+              {!isUserEnrolledInCourse && !isFreeCourse && (
                 <div className={styles.actionWrapper}>
                   {activeCourseOrder?.isPendingVerification ? (
                     <Link
@@ -281,16 +339,48 @@ export default async function CoursePage({ params }) {
                       <span>در انتظار ارسال فیش واریزی</span>
                     </Link>
                   ) : (
-                    <AddToCartButton course={course} />
+                    <AddToCartButton
+                      course={course}
+                      buttonText={course.isChaptered ? 'خرید یکجا دوره' : 'افزودن به سبد خرید'}
+                      customPrice={course.netPriceToman}
+                    />
                   )}
                 </div>
               )}
-              {course.isChaptered ? (
-                <span className={styles.chapteredNotice}>
-                  خرید به صورت فصلی (از سرفصل‌های زیر انتخاب کنید)
-                </span>
-              ) : isFreeCourse ? (
+
+              {isFreeCourse ? (
                 'رایگان'
+              ) : isUserEnrolledInCourse ? (
+                <span className={styles.price} style={{ color: '#1a995b' }}>
+                  دسترسی کامل فعال است
+                </span>
+              ) : course.alreadyPaidChaptersTotal > 0 ? (
+                <div className={styles.deductionBox}>
+                  <del style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.85rem' }}>
+                    قیمت کل پکیج: {effectivePriceToman.toLocaleString('fa-IR')} تومان
+                  </del>
+                  <div className={styles.deductionRow}>
+                    <span>➖ کسر پرداختی فصل‌های قبلی شما ({course.userPurchasedChaptersCount} فصل):</span>
+                    <strong>{course.alreadyPaidChaptersTotal.toLocaleString('fa-IR')}- تومان</strong>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                    <span className={styles.price}>
+                      {course.netPriceToman === 0 ? 'رایگان (تکمیل دوره)' : `${course.netPriceToman.toLocaleString('fa-IR')} تومان`}
+                    </span>
+                    {course.isChaptered && (
+                      <span style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        color: '#fff',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        fontWeight: 700
+                      }}>
+                        تسویه مابه‌التفاوت
+                      </span>
+                    )}
+                  </div>
+                </div>
               ) : hasDiscount ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <del style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.85rem' }}>
@@ -313,8 +403,14 @@ export default async function CoursePage({ params }) {
               ) : (
                 <span className={styles.price}>{`${course.price?.toman?.toLocaleString('fa-IR')}`} تومان</span>
               )}
-
             </div>
+
+            {/* راهنمای خرید فصلی در صورت فصلی بودن دوره */}
+            {course.isChaptered && !isUserEnrolledInCourse && (
+              <span className={styles.chapterNoticeSecondary}>
+                💡 همچنین امکان خرید مجزای هر فصل از بخش سرفصل‌های پایین فراهم است.
+              </span>
+            )}
 
             {/* لینک گروه تلگرام دوره (نمایش فقط برای خریداران با وضعیت پرداخت شده) */}
             <CourseTelegramLink

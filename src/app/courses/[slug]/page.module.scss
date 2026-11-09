@@ -169,6 +169,25 @@
   }
 }
 
+.partialBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: var(--font-sm, 14px);
+  font-weight: var(--font-weight-bold, 700);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  white-space: nowrap;
+
+  @include respond(sm) {
+    font-size: var(--font-xs);
+    padding: 6px 12px;
+  }
+}
+
 // Course Title - Main heading
 .title {
   // Use extra large font size from design system
@@ -246,6 +265,49 @@
   font-size: var(--font-sm, 14px);
   color: var(--color-text-primary, #F6D982);
   font-weight: var(--font-weight-medium, 500);
+}
+
+.chapterNoticeSecondary {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 6px;
+  display: block;
+}
+
+.bulkDiscountBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(249, 115, 22, 0.15) 100%);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  color: #fb923c;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: var(--font-sm, 14px);
+  font-weight: var(--font-weight-bold, 700);
+  margin-top: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.08);
+
+  @include respond(sm) {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+}
+
+.deductionBox {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.deductionRow {
+  font-size: 0.82rem;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
 }
 
 // Price Display

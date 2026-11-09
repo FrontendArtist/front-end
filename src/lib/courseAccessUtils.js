@@ -68,6 +68,7 @@ export function doesItemBelongToCourse(item, course) {
 export function isChapterOrderItem(item) {
   if (!item || typeof item !== 'object') return false;
   if (item.type === 'product' || item.__component === 'order.product-order-item') return false;
+  if (item.type === 'course' && !item.chapterId) return false;
   return Boolean(
     item.type === 'chapter' ||
     item.chapterId != null ||
