@@ -23,6 +23,8 @@ export default function AddToCartButton({
   course,
   buttonText = 'افزودن به سبد خرید',
   customPrice = null,
+  deductedAmount = 0,
+  size = 'default',
   className = '',
 }) {
   const { id, slug, title, price, image } = course;
@@ -33,6 +35,8 @@ export default function AddToCartButton({
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+
+  const isSmall = size === 'small';
 
   const orders = useAccountOrderItems();
   const pendingOrder = (() => {
@@ -95,16 +99,20 @@ export default function AddToCartButton({
       ? image
       : (image?.url || course.media?.url || '/images/forempties2.png');
 
+    const effectiveDeductedAmount = Number(deductedAmount || course.alreadyPaidChaptersTotal || 0);
+
     addItem({
       id,
       slug,
       title,
       price: formattedPrice,
       originalPrice: numOriginal,
+      deductedAmount: effectiveDeductedAmount,
       internationalPrice: intlPrice,
       discountPercent: (isForeign && intlPrice && intlPrice > 0) ? 0 : (course.discountPercent || 0),
       image: courseImageUrl,
       type: 'course',
+      isChaptered: Boolean(course.isChaptered),
     });
   };
 
@@ -131,7 +139,7 @@ export default function AddToCartButton({
     return (
       <Link
         href={targetUrl}
-        className={`${styles.pendingButton} ${!isVerification ? styles.pendingPayment : ''}`}
+        className={`${styles.pendingButton} ${isSmall ? styles.smallPending : ''} ${!isVerification ? styles.pendingPayment : ''}`}
         title={isVerification ? 'سفارش شما در انتظار تأیید پرداخت توسط پشتیبانی است' : 'برای ارسال فیش واریز کلیک کنید'}
       >
         {isVerification ? (
@@ -160,7 +168,7 @@ export default function AddToCartButton({
 
     return (
       <button
-        className={`${styles.addToCartBtn} ${className}`.trim()}
+        className={`${styles.addToCartBtn} ${isSmall ? styles.small : ''} ${className}`.trim()}
         onClick={handleAddToCart}
         aria-label={ariaText}
       >
@@ -173,7 +181,7 @@ export default function AddToCartButton({
   // بعد از hydration و دوره در سبد است: دکمه غیرفعال
   return (
     <button
-      className={`${styles.addToCartBtn} ${styles.disabled} ${className}`.trim()}
+      className={`${styles.addToCartBtn} ${styles.disabled} ${isSmall ? styles.small : ''} ${className}`.trim()}
       disabled
       aria-label={`${title} در سبد خرید موجود است`}
     >

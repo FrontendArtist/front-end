@@ -352,15 +352,24 @@ export const selectTotalPrice = (state) =>
     (state.items || []).reduce((total, item) => total + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
 
 /**
- * محاسبه مجموع تخفیف‌های مستقیم اعمال‌شده روی تک‌تک آیتم‌ها (تفاوت originalPrice و price)
+ * محاسبه مجموع تخفیف‌های مستقیم اعمال‌شده روی تک‌تک آیتم‌ها (تفاوت originalPrice و قیمت کاتالوگ قبل از کسر پرداختی فصل‌های قبلی)
+ * توجه: هزینه کسر شده بابت فصل‌های قبلی، تخفیف شگفت‌انگیز نیست و نباید در این مقدار لحاظ شود.
  */
 export const selectItemLevelDiscount = (state) =>
     (state.items || []).reduce((sum, item) => {
         const orig = Number(item.originalPrice) || 0;
         const current = Number(item.price) || 0;
+        const deducted = Number(item.deductedAmount) || 0;
         const qty = Number(item.quantity) || 1;
-        return sum + (orig > current ? (orig - current) * qty : 0);
+        const preDeductionPrice = current + deducted;
+        return sum + (orig > preDeductionPrice ? (orig - preDeductionPrice) * qty : 0);
     }, 0);
+
+/**
+ * محاسبه مجموع مبالغ کسر شده بابت فصل‌های قبلاً خریداری شده
+ */
+export const selectDeductedAmount = (state) =>
+    (state.items || []).reduce((sum, item) => sum + (Number(item.deductedAmount) || 0) * (Number(item.quantity) || 1), 0);
 
 /**
  * محاسبه مبلغ تخفیف کد تخفیف

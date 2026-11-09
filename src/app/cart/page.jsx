@@ -17,6 +17,7 @@ import {
     selectFinalTotalPrice,
     selectItemsCount,
     selectItemLevelDiscount,
+    selectDeductedAmount,
 } from '@/store/useCartStore';
 import useAuthStore from '@/store/authStore';
 import { executeOnlinePayment } from '@/lib/checkoutService';
@@ -65,6 +66,7 @@ export default function CartPage() {
     const totalPrice = useCartStore(selectTotalPrice);
     const couponDiscount = useCartStore(selectCouponDiscount);
     const itemLevelDiscount = useCartStore(selectItemLevelDiscount);
+    const deductedAmount = useCartStore(selectDeductedAmount);
     const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
     const removalError = useCartStore((state) => state.removalError);
@@ -377,6 +379,11 @@ export default function CartPage() {
                                                 <span className={styles.courseLabel}>
                                                     {item.type === 'chapter' ? 'فصل آموزشی' : (item.isChaptered ? 'دوره آموزشی (پکیج کامل)' : 'دوره آموزشی')}
                                                 </span>
+                                                {item.deductedAmount > 0 && (
+                                                    <span style={{ fontSize: '0.8rem', color: '#38bdf8', marginTop: '3px', display: 'block' }}>
+                                                        (کسر هزینه {formatPrice(item.deductedAmount)} تومان بابت فصل‌های قبلی)
+                                                    </span>
+                                                )}
                                             </Link>
 
                                             {/* فضای خالی به جای کنترلر تعداد */}
@@ -429,6 +436,16 @@ export default function CartPage() {
                                 <span>تخفیف شگفت‌انگیز:</span>
                                 <strong>
                                     {formatPrice(itemLevelDiscount)} تومان
+                                </strong>
+                            </div>
+                        )}
+
+                        {/* کسر هزینه فصول قبلی در صورت وجود */}
+                        {deductedAmount > 0 && (
+                            <div className={styles.summaryRow} style={{ color: '#38bdf8' }}>
+                                <span>کسر پرداختی فصل‌های قبلی:</span>
+                                <strong>
+                                    -{formatPrice(deductedAmount)} تومان
                                 </strong>
                             </div>
                         )}
