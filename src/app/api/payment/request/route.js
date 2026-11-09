@@ -19,6 +19,9 @@ function getPaymentRedirectUrl(request) {
     if (isSepMockEnabled()) return new URL('/api/payment/verify', request.url).toString();
     let redirectUrl = process.env.SEP_REDIRECT_URL;
     if (!redirectUrl || redirectUrl.includes('yourdomain.com')) {
+        if (process.env.NODE_ENV === 'production') {
+            throw new Error('SEP_REDIRECT_URL در پروداکشن باید با آدرس واقعی تنظیم شود.');
+        }
         const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'tarhelahi.ir';
         const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
         redirectUrl = `${proto}://${host}/api/payment/verify`;
@@ -36,6 +39,14 @@ export async function POST(request) {
     const mockEnvironmentError = getSepMockEnvironmentError();
     if (mockEnvironmentError) {
         return NextResponse.json({ success: false, message: mockEnvironmentError }, { status: 400 });
+    }
+    // آدرس بازگشت پیش از هر اثر جانبی (شارژ، تلاش پرداخت) بررسی می‌شود
+    let redirectUrl;
+    try {
+        redirectUrl = getPaymentRedirectUrl(request);
+    } catch (error) {
+        console.error('[POST /api/payment/request Config Error]:', error);
+        return NextResponse.json({ success: false, message: 'پیکربندی درگاه پرداخت کامل نیست.' }, { status: 500 });
     }
     // 1. بررسی سشن و هویت کاربر
     const session = await getServerSession(paymentAuthOptions);
@@ -97,7 +108,6 @@ export async function POST(request) {
             if (!attempt) {
                 attempt = await createAttempt(topUp);
             }
-            const redirectUrl = getPaymentRedirectUrl(request);
             const tokenResult = await requestSepToken({
                 amount: topUp.amountRial,
                 resNum: topUp.clientReferenceId,
@@ -224,10 +234,7 @@ export async function POST(request) {
         // 5. ساخت شناسه یکتای ResNum برای سپ (از documentId یا شناسه سفارش استفاده می‌شود)
         const resNum = order.documentId || String(order.id);
 
-        // 6. تعیین آدرس بازگشت (RedirectUrl برای شاپرک)
-        // اولویت با SEP_REDIRECT_URL در فایل env، در غیر این صورت ساخت خودکار بر اساس هاست درخواست
-        const redirectUrl = getPaymentRedirectUrl(request);
-
+        // 6. آدرس بازگشت (RedirectUrl) در ابتدای POST تعیین شده است
         const userPhone = order.phone || order.attributes?.phone || session.user.phoneNumber || null;
 
         // 7. فراخوانی وب‌سرویس دریافت توکن سپ

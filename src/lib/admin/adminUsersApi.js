@@ -61,7 +61,8 @@ export async function getUsers(jwt, { page, pageSize, start, limit = 20 } = {}) 
                 email: attrs.email || '—',
                 phoneNumber: attrs.phoneNumber || '—',
                 role: attrs.role?.name || attrs.role?.type || 'نامشخص',
-                light: attrs.light ?? 0,
+                // null = موجودی نامشخص (استعلام ByeMoney ناموفق یا بدون Wallet.View)؛ ۰ نشان داده نشود
+                light: null,
                 giftBalance: attrs.giftBalance ?? null,
                 createdAt: attrs.createdAt
             };
@@ -175,7 +176,7 @@ export async function getUserDetails(userId, jwt) {
         });
 
         const targetExternalId = dataWrap.documentId || String(dataWrap.id);
-        let liveLight = attrs.light ?? 0;
+        let liveLight = null;
         let liveGiftBalance = attrs.giftBalance ?? null;
         try {
             const batchRes = await getBatchBalancesWithByeMoney({ userIds: [targetExternalId], jwt });

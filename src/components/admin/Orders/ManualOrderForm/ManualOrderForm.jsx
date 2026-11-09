@@ -119,11 +119,12 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                 const liveBal = Number(docBal !== undefined ? docBal : (idBal !== undefined ? idBal : 0));
                 setUserBalance(liveBal);
             } else {
-                setUserBalance(Number(userObj.light ?? 0));
+                // نبود Wallet.View یا خطای استعلام: موجودی نامشخص، نه ۰
+                setUserBalance(null);
             }
         } catch (err) {
             console.warn('[ManualOrderForm] Error fetching balance:', err);
-            setUserBalance(Number(userObj.light ?? 0));
+            setUserBalance(null);
         } finally {
             setBalanceLoading(false);
         }
@@ -241,7 +242,11 @@ export default function ManualOrderForm({ initialCourses = [] }) {
     }, [isFreeOrder, calculatedSum]);
 
     const hasSelectedUser = Boolean(selectedUser);
-    const hasEnoughBalance = isFreeOrder || (userBalance !== null && userBalance !== undefined && userBalance >= requiredNoor);
+    const isBalanceKnown = userBalance !== null && userBalance !== undefined;
+    const isBalanceUnknown = hasSelectedUser && !balanceLoading && !isBalanceKnown;
+    const hasEnoughBalance = isFreeOrder || (isBalanceKnown && userBalance >= requiredNoor);
+    // موجودی نامشخص مانع ثبت نیست؛ کفایت را بای‌مانی هنگام خرید بررسی می‌کند
+    const isBalanceInsufficient = !isFreeOrder && requiredNoor > 0 && isBalanceKnown && !hasEnoughBalance;
     const shortfallNoor = isFreeOrder ? 0 : Math.max(0, requiredNoor - (userBalance || 0));
     const shortfallToman = (tomanPerNoor && tomanPerNoor > 0) ? Math.round(shortfallNoor * tomanPerNoor) : null;
     const remainingBalance = userBalance !== null ? (isFreeOrder ? userBalance : userBalance - requiredNoor) : 0;
@@ -283,7 +288,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
         }
 
         // 3. بررسی کفایت موجودی نور (در صورت غیررایگان بودن)
-        if (!isFreeOrder && requiredNoor > 0 && !hasEnoughBalance) {
+        if (isBalanceInsufficient) {
             addToast(`موجودی نور کاربر کافی نیست. کسری: ${shortfallNoor.toLocaleString('fa-IR')} نور. لطفاً ابتدا حساب کاربر را شارژ کنید یا گزینه ثبت رایگان را فعال نمایید.`, 'error');
             return;
         }
@@ -424,7 +429,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                                 <div className={styles.userResults__info}>
                                                     <span className={styles.userResults__name}>{u.fullName}</span>
                                                     <span className={styles.userResults__phone}>{u.phoneNumber}</span>
-                                                    {u.light !== undefined && (
+                                                    {u.light !== null && u.light !== undefined && (
                                                         <span style={{ fontSize: '0.78rem', color: 'var(--color-title-hover)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                                                             <Coins size={12} /> {new Intl.NumberFormat('fa-IR').format(u.light)} نور
                                                         </span>
@@ -661,7 +666,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                             {new Intl.NumberFormat('fa-IR').format(userBalance)} نور
                                         </span>
                                     ) : (
-                                        '—'
+                                        'نامشخص'
                                     )}
                                     {selectedUser && !balanceLoading && (
                                         <button
@@ -717,6 +722,18 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                             </div>
                                         </div>
                                     </div>
+                                ) : isBalanceUnknown ? (
+                                    <div className={`${styles.statusBanner} ${styles['statusBanner--warning']}`}>
+                                        <div className={styles.statusBanner__content}>
+                                            <AlertTriangle size={18} className={styles.statusBanner__icon} />
+                                            <div>
+                                                <h4 className={styles.statusBanner__title}>موجودی کاربر نامشخص است</h4>
+                                                <p className={styles.statusBanner__desc}>
+                                                    دسترسی مشاهدهٔ موجودی (Wallet.View) ندارید یا استعلام ناموفق بود. کفایت موجودی هنگام ثبت توسط سامانه مالی بررسی می‌شود.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ) : hasEnoughBalance ? (
                                     <div className={`${styles.statusBanner} ${styles['statusBanner--success']}`}>
                                         <div className={styles.statusBanner__content}>
@@ -760,7 +777,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                         <button
                             type="submit"
                             className={styles.summaryCard__submitBtn}
-                            disabled={isSubmitting || !selectedUser || Object.keys(selectedItems).length === 0 || (!isFreeOrder && requiredNoor > 0 && !hasEnoughBalance)}
+                            disabled={isSubmitting || !selectedUser || Object.keys(selectedItems).length === 0 || isBalanceInsufficient}
                         >
                             {isSubmitting ? (
                                 'در حال ثبت سفارش و فعال‌سازی...'
@@ -773,7 +790,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                     <Gift size={19} />
                                     ثبت نهایی سفارش رایگان
                                 </>
-                            ) : requiredNoor > 0 && !hasEnoughBalance ? (
+                            ) : isBalanceInsufficient ? (
                                 'موجودی نور کاربر کافی نیست'
                             ) : (
                                 <>

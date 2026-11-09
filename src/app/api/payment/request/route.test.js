@@ -450,3 +450,39 @@ test('سبد در انتظار شارژ توکن تازه برای پرداخت 
     expect(topUpCourseCart).toHaveBeenCalledWith('8e169023-0b44-43fa-80cf-118bfe78fb01', 'jwt');
     expect(requestSepToken).toHaveBeenCalledWith(expect.objectContaining({ amount: 100000 }));
 });
+
+describe('آدرس بازگشت درگاه', () => {
+  const env = process.env;
+  const req = { headers: { get: (h) => (h === 'host' ? 'evil.example' : null) }, json: async () => ({ paymentType: 'light_topup', amountNoor: 50 }) };
+  beforeEach(() => {
+    jest.clearAllMocks();
+    getServerSession.mockResolvedValue({ user: { id: 'u', jwt: 'j' } });
+    createGatewayTopUp.mockResolvedValue({ clientReferenceId: 'R1', amountRial: 1000 });
+    createAttempt.mockResolvedValue({ resNum: 'R1', status: 'created' });
+    updateAttempt.mockResolvedValue({ resNum: 'R1', status: 'token_issued' });
+    requestSepToken.mockResolvedValue({ success: true, token: 't' });
+  });
+  afterEach(() => { process.env = env; });
+  const withEnv = (vars) => { process.env = { ...env, ...vars }; };
+
+  test('متغیر تنظیم‌شده بدون توجه به هدر میزبان استفاده می‌شود', async () => {
+    withEnv({ NODE_ENV: 'production', SEP_REDIRECT_URL: 'https://tarhelahi.ir/api/payment/verify' });
+    expect((await POST(req)).status).toBe(200);
+    expect(requestSepToken.mock.calls[0][0].redirectUrl).toBe('https://tarhelahi.ir/api/payment/verify');
+  });
+
+  test.each([undefined, 'https://yourdomain.com/api/payment/verify'])('در پروداکشن نبود یا نمونه‌بودن متغیر (%s) خطا می‌دهد و اثر جانبی ندارد', async (value) => {
+    withEnv({ NODE_ENV: 'production' });
+    if (value) process.env.SEP_REDIRECT_URL = value; else delete process.env.SEP_REDIRECT_URL;
+    expect((await POST(req)).status).toBe(500);
+    expect(createGatewayTopUp).not.toHaveBeenCalled();
+    expect(requestSepToken).not.toHaveBeenCalled();
+  });
+
+  test('در توسعه نبود متغیر به هدر میزبان برمی‌گردد', async () => {
+    withEnv({ NODE_ENV: 'development' });
+    delete process.env.SEP_REDIRECT_URL;
+    expect((await POST(req)).status).toBe(200);
+    expect(requestSepToken.mock.calls[0][0].redirectUrl).toBe('https://evil.example/api/payment/verify');
+  });
+});

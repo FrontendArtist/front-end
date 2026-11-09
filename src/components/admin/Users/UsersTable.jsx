@@ -36,16 +36,21 @@ function LightCell({ user }) {
     const giftAmount = isGiftKnown ? Number(user.giftBalance) : 0;
     const hasGift = giftAmount > 0;
 
+    const isLightKnown = user.light !== null && user.light !== undefined;
+    const unknownTitle = 'موجودی نامشخص است؛ دسترسی مشاهدهٔ موجودی (Wallet.View) ندارید یا استعلام ناموفق بود.';
+
     // user.light موجودی کل (عادی + هدیه) از بای‌مانی است؛ سهم عادی = کل − هدیه
     const regularAmount = Math.max(Number(user.light ?? 0) - giftAmount, 0);
-    const lightFormatted = new Intl.NumberFormat('fa-IR').format(regularAmount);
+    const lightFormatted = isLightKnown
+        ? new Intl.NumberFormat('fa-IR').format(regularAmount)
+        : 'نامشخص';
 
     const giftFormatted = isGiftKnown
         ? new Intl.NumberFormat('fa-IR').format(giftAmount)
-        : '۰';
+        : 'نامشخص';
 
     return (
-        <div className={styles.lightCellWrap}>
+        <div className={styles.lightCellWrap} title={isLightKnown ? undefined : unknownTitle}>
             <div className={styles.lightRow}>
                 <span className={styles.lightLabel}>عادی:</span>
                 <span className={styles.lightValue}>{lightFormatted}</span>
@@ -438,9 +443,10 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                     conversionRate={conversionRate}
                     onClose={() => setAssistedTopUpUser(null)}
                     onSuccess={({ user: targetUser, amountNoor }) => {
-                        const currentLight = Number(targetUser.light ?? 0);
-                        const added = Number(amountNoor);
-                        handleSingleLightUpdated(targetUser.id, currentLight + added);
+                        // موجودی نامشخص را نمی‌توان با جمع محلی ساخت؛ عدد غلط نشان داده نشود
+                        if (targetUser.light !== null && targetUser.light !== undefined) {
+                            handleSingleLightUpdated(targetUser.id, Number(targetUser.light) + Number(amountNoor));
+                        }
                         triggerLightUpdate();
                     }}
                 />

@@ -80,7 +80,7 @@ export async function GET(request) {
                 lastName: u.lastName || '',
                 fullName,
                 email: u.email || '',
-                light: u.light ?? 0,
+                light: null, // نامشخص تا استعلام ByeMoney موفق شود
                 courses: (u.courses || []).map(c => ({ id: c.id, title: c.title })),
                 enrolledChapters: Array.isArray(u.enrolledChapters) ? u.enrolledChapters : [],
             };

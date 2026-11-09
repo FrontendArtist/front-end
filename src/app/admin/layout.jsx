@@ -35,6 +35,7 @@ import AdminSidebar from '@/components/admin/Sidebar/AdminSidebar';
 // گارد متمرکز مجوزها و کانتکست
 import { PermissionsProvider } from '@/context/PermissionsContext';
 import AdminRouteGuard from '@/components/admin/Permissions/AdminRouteGuard';
+import MissingRoleBanner from '@/components/admin/Permissions/MissingRoleBanner';
 import { getAdminCurrentUserPermissions } from '@/lib/byeMoneyApi';
 
 // Modular SCSS for the dashboard wrapper layout
@@ -81,6 +82,7 @@ export default async function AdminLayout({ children }) {
 
                 {/* Main content area – guarded by AdminRouteGuard */}
                 <main className={styles.dashboard__main}>
+                    <MissingRoleBanner />
                     <AdminRouteGuard>
                         {children}
                     </AdminRouteGuard>
