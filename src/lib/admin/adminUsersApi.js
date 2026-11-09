@@ -61,9 +61,10 @@ export async function getUsers(jwt, { page, pageSize, start, limit = 20 } = {}) 
                 email: attrs.email || '—',
                 phoneNumber: attrs.phoneNumber || '—',
                 role: attrs.role?.name || attrs.role?.type || 'نامشخص',
-                // null = موجودی نامشخص (استعلام ByeMoney ناموفق یا بدون Wallet.View)؛ ۰ نشان داده نشود
-                light: null,
-                giftBalance: attrs.giftBalance ?? null,
+                // موجودی فقط از بای‌مانی؛ null = نامشخص (استعلام ناموفق یا بدون Wallet.View)، نه ۰
+                noorBalance: null,
+                giftBalance: null,
+                balanceUnavailable: true,
                 createdAt: attrs.createdAt
             };
         });
@@ -75,12 +76,13 @@ export async function getUsers(jwt, { page, pageSize, start, limit = 20 } = {}) 
                 const batchRes = await getBatchBalancesWithByeMoney({ userIds, jwt });
                 if (batchRes.success) {
                     users.forEach(u => {
+                        u.balanceUnavailable = false;
                         if (batchRes.balances) {
                             const docBalance = batchRes.balances[u.documentId];
                             const idBalance = batchRes.balances[String(u.id)];
                             const liveBalance = docBalance !== undefined ? docBalance : idBalance;
                             if (liveBalance !== undefined && liveBalance !== null) {
-                                u.light = Number(liveBalance);
+                                u.noorBalance = Number(liveBalance);
                             }
                         }
                         if (batchRes.giftBalances) {
@@ -96,7 +98,7 @@ export async function getUsers(jwt, { page, pageSize, start, limit = 20 } = {}) 
                     console.warn('[getUsers] ByeMoney batch-balances failed:', batchRes.status, batchRes.error);
                 }
             } catch (err) {
-                console.warn('[getUsers] ByeMoney balances enrichment failed, keeping default light:', err.message || err);
+                console.warn('[getUsers] ByeMoney balances enrichment failed, balances unknown:', err.message || err);
             }
         }
 
@@ -176,15 +178,17 @@ export async function getUserDetails(userId, jwt) {
         });
 
         const targetExternalId = dataWrap.documentId || String(dataWrap.id);
-        let liveLight = null;
-        let liveGiftBalance = attrs.giftBalance ?? null;
+        let liveNoorBalance = null;
+        let liveGiftBalance = null;
+        let balanceUnavailable = true;
         try {
             const batchRes = await getBatchBalancesWithByeMoney({ userIds: [targetExternalId], jwt });
             if (batchRes.success) {
+                balanceUnavailable = false;
                 if (batchRes.balances) {
                     const b = batchRes.balances[targetExternalId] ?? batchRes.balances[String(dataWrap.id)];
                     if (b !== undefined && b !== null) {
-                        liveLight = Number(b);
+                        liveNoorBalance = Number(b);
                     }
                 }
                 if (batchRes.giftBalances) {
@@ -202,8 +206,9 @@ export async function getUserDetails(userId, jwt) {
             username: attrs.username || '—',
             email: attrs.email || '—',
             phoneNumber: attrs.phoneNumber || '—',
-            light: liveLight,
+            noorBalance: liveNoorBalance,
             giftBalance: liveGiftBalance,
+            balanceUnavailable,
             createdAt: attrs.createdAt,
             orders: (attrs.orders?.data || attrs.orders || []).map(o => ({
                 id: o.id,

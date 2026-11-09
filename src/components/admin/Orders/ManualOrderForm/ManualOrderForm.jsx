@@ -116,8 +116,9 @@ export default function ManualOrderForm({ initialCourses = [] }) {
             if (batchRes && batchRes.success && batchRes.balances) {
                 const docBal = batchRes.balances[userExternalId];
                 const idBal = batchRes.balances[String(userObj.id)];
-                const liveBal = Number(docBal !== undefined ? docBal : (idBal !== undefined ? idBal : 0));
-                setUserBalance(liveBal);
+                const liveBal = docBal ?? idBal;
+                // نبود مقدار در پاسخ بای‌مانی یعنی نامشخص، نه ۰
+                setUserBalance(liveBal !== null && liveBal !== undefined ? Number(liveBal) : null);
             } else {
                 // نبود Wallet.View یا خطای استعلام: موجودی نامشخص، نه ۰
                 setUserBalance(null);
@@ -429,11 +430,15 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                                 <div className={styles.userResults__info}>
                                                     <span className={styles.userResults__name}>{u.fullName}</span>
                                                     <span className={styles.userResults__phone}>{u.phoneNumber}</span>
-                                                    {u.light !== null && u.light !== undefined && (
-                                                        <span style={{ fontSize: '0.78rem', color: 'var(--color-title-hover)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                                            <Coins size={12} /> {new Intl.NumberFormat('fa-IR').format(u.light)} نور
-                                                        </span>
-                                                    )}
+                                                    <span
+                                                        style={{ fontSize: '0.78rem', color: 'var(--color-title-hover)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                                        title={u.noorBalance === null || u.noorBalance === undefined ? 'دسترسی مشاهدهٔ موجودی (Wallet.View) ندارید یا استعلام بای‌مانی ناموفق بود.' : undefined}
+                                                    >
+                                                        <Coins size={12} />
+                                                        {u.noorBalance !== null && u.noorBalance !== undefined
+                                                            ? `${new Intl.NumberFormat('fa-IR').format(u.noorBalance)} نور`
+                                                            : 'موجودی نامشخص'}
+                                                    </span>
                                                 </div>
                                                 <button
                                                     type="button"

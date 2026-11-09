@@ -22,7 +22,7 @@
  *   تأیید ادمین صرفاً اندپوینت POST /api/admin/topups/{id}/confirm را در بایمانی فراخوانی می‌کند.
  *   بایمانی پس از تأیید شارژ، خودکار دوره معلق را خریداری کرده و با وب‌هوک رسمی
  *   /api/integrations/byemoney/v1/purchases/confirm دسترسی دوره را در استرپی ثبت می‌کند.
- *   کلیه لاجیک‌های موازی افزایش دستی user.light و افزودن مستقیم به user.courses حذف شده‌اند.
+ *   هیچ نوشتن مستقیم موجودی یا دسترسی دوره در استرپی انجام نمی‌شود.
  */
 
 import { getServerSession } from 'next-auth/next';
@@ -127,32 +127,30 @@ export async function PUT(request, { params }) {
 
     // ── ۵. مرحله الف: ارسال تایید به ByeMoney (منوط بودن ثبت پرداخت به موفقیت بایمانی) ──
     if (isBeingConfirmed && topUpId) {
-        // استخراج مقدار نور جهت ارسال confirmedAmount به بایمانی
-        let lightAmount = Number(payload.confirmedAmount || payload.lightAmount || 0);
-        if (!lightAmount && notes) {
-            const tagMatchLight = notes.match(/\[LIGHT_AMOUNT:(\d+)\]/i);
-            if (tagMatchLight) {
-                lightAmount = parseInt(tagMatchLight[1], 10);
-            } else {
-                const textMatchLight = notes.match(/(\d+)\s*نور/);
-                if (textMatchLight) {
-                    lightAmount = parseInt(textMatchLight[1], 10);
-                }
+        // مقدار نور فقط از دادهٔ ساخت‌یافته (ورودی صریح یا تگ ثبت‌شده هنگام ساخت سفارش)؛
+        // حدس از متن آزاد یادداشت یا مبلغ ریالی ممنوع است. بای‌مانی مغایرت با AmountNoor را رد می‌کند.
+        let confirmedAmount = Number(payload.confirmedAmount || 0);
+        if (!confirmedAmount && notes) {
+            const tagMatchAmount = notes.match(/\[LIGHT_AMOUNT:(\d+)\]/i);
+            if (tagMatchAmount) {
+                confirmedAmount = parseInt(tagMatchAmount[1], 10);
             }
         }
-        if (!lightAmount && orderDetails?.data?.totalPrice) {
-            // نرخ تبدیل پیش‌فرض: هر ۱ نور = ۱۰۰۰ تومان
-            lightAmount = Math.round(Number(orderDetails.data.totalPrice) / 1000);
+        if (!Number.isInteger(confirmedAmount) || confirmedAmount <= 0) {
+            return NextResponse.json(
+                { error: 'مقدار نور این فیش در سفارش ثبت نشده است؛ تأیید انجام نشد. شارژ را از مسیر شارژ ادمین ثبت کنید.' },
+                { status: 400 }
+            );
         }
 
         const externalTransactionId = trackingNumber || orderNumber || `TRX-${Date.now()}`;
 
-        console.log(`[AdminOrdersAPI] ⚡ Sending Confirm to ByeMoney: /api/admin/topups/${topUpId}/confirm (amount=${lightAmount}, trx=${externalTransactionId})`);
+        console.log(`[AdminOrdersAPI] ⚡ Sending Confirm to ByeMoney: /api/admin/topups/${topUpId}/confirm (amount=${confirmedAmount}, trx=${externalTransactionId})`);
 
         try {
             const bmConfirmRes = await confirmTopUpWithByeMoney({
                 topUpId,
-                confirmedAmount: lightAmount,
+                confirmedAmount,
                 externalTransactionId,
                 jwt: session.user.jwt,
             });

@@ -36,12 +36,12 @@ function LightCell({ user }) {
     const giftAmount = isGiftKnown ? Number(user.giftBalance) : 0;
     const hasGift = giftAmount > 0;
 
-    const isLightKnown = user.light !== null && user.light !== undefined;
+    const isBalanceKnown = user.noorBalance !== null && user.noorBalance !== undefined;
     const unknownTitle = 'موجودی نامشخص است؛ دسترسی مشاهدهٔ موجودی (Wallet.View) ندارید یا استعلام ناموفق بود.';
 
-    // user.light موجودی کل (عادی + هدیه) از بای‌مانی است؛ سهم عادی = کل − هدیه
-    const regularAmount = Math.max(Number(user.light ?? 0) - giftAmount, 0);
-    const lightFormatted = isLightKnown
+    // noorBalance موجودی کل (عادی + هدیه) از بای‌مانی است؛ سهم عادی = کل − هدیه
+    const regularAmount = isBalanceKnown ? Math.max(Number(user.noorBalance) - giftAmount, 0) : null;
+    const lightFormatted = isBalanceKnown
         ? new Intl.NumberFormat('fa-IR').format(regularAmount)
         : 'نامشخص';
 
@@ -50,7 +50,7 @@ function LightCell({ user }) {
         : 'نامشخص';
 
     return (
-        <div className={styles.lightCellWrap} title={isLightKnown ? undefined : unknownTitle}>
+        <div className={styles.lightCellWrap} title={isBalanceKnown ? undefined : unknownTitle}>
             <div className={styles.lightRow}>
                 <span className={styles.lightLabel}>عادی:</span>
                 <span className={styles.lightValue}>{lightFormatted}</span>
@@ -124,10 +124,6 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
             isMounted = false;
         };
     }, []);
-
-    const handleSingleLightUpdated = (userId, newLight) => {
-        setUsersList(prev => prev.map(u => u.id === userId ? { ...u, light: newLight } : u));
-    };
 
     const filteredUsers = usersList.filter((u) => {
         const query = searchQuery.trim().toLowerCase();
@@ -206,7 +202,7 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
         setShowGiftModal(true);
     };
 
-    // بازخوانی دسته‌جمعی موجودی‌ها پس از موفقیت ثبت هدیه
+    // بازخوانی دسته‌جمعی موجودی‌ها از بای‌مانی پس از هر عملیات مالی (بدون جمع محلی)
     const refreshAllBalances = async () => {
         const userIds = usersList.map((u) => u.documentId).filter(Boolean);
         if (userIds.length === 0) return;
@@ -216,15 +212,14 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
             if (batchRes.success) {
                 setUsersList((prev) =>
                     prev.map((u) => {
-                        const updated = { ...u };
-                        if (batchRes.balances && batchRes.balances[u.documentId] !== undefined) {
-                            updated.light = Number(batchRes.balances[u.documentId]);
-                        }
-                        if (batchRes.giftBalances) {
-                            const gb = batchRes.giftBalances[u.documentId];
-                            updated.giftBalance = gb !== null && gb !== undefined ? Number(gb) : null;
-                        }
-                        return updated;
+                        const b = batchRes.balances?.[u.documentId];
+                        const gb = batchRes.giftBalances?.[u.documentId];
+                        return {
+                            ...u,
+                            noorBalance: b !== null && b !== undefined ? Number(b) : null,
+                            giftBalance: gb !== null && gb !== undefined ? Number(gb) : null,
+                            balanceUnavailable: false,
+                        };
                     })
                 );
                 setRefreshNotice(null);
@@ -232,7 +227,7 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                 setRefreshNotice('به‌روزرسانی خودکار موجودی‌ها با خطا مواجه شد. لطفاً صفحه را تازه‌سازی کنید.');
             }
         } catch (err) {
-            setRefreshNotice('خطا در به‌روزرسانی خودکار موجودی‌ها پس از ثبت هدیه.');
+            setRefreshNotice('خطا در به‌روزرسانی خودکار موجودی‌ها از بای‌مانی.');
         }
     };
 
@@ -442,12 +437,9 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                     user={assistedTopUpUser}
                     conversionRate={conversionRate}
                     onClose={() => setAssistedTopUpUser(null)}
-                    onSuccess={({ user: targetUser, amountNoor }) => {
-                        // موجودی نامشخص را نمی‌توان با جمع محلی ساخت؛ عدد غلط نشان داده نشود
-                        if (targetUser.light !== null && targetUser.light !== undefined) {
-                            handleSingleLightUpdated(targetUser.id, Number(targetUser.light) + Number(amountNoor));
-                        }
+                    onSuccess={async () => {
                         triggerLightUpdate();
+                        await refreshAllBalances();
                     }}
                 />
             )}

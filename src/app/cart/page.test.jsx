@@ -6,6 +6,7 @@ import { prepareCourseCart, getCourseCart, getExistingCourseCartId } from '@/lib
 import { previewCourseCart } from '@/lib/courseCartPreviewApi';
 import { getWalletBalanceWithByeMoney } from '@/lib/byeMoneyApi';
 import { executeNoorCartPurchase } from '@/lib/checkoutService';
+import { buildReviewNoticeText } from '@/lib/reviewNotice';
 
 const mockPush = jest.fn();
 jest.mock('next/navigation', () => ({ useRouter: () => ({ push: mockPush }) }));
@@ -166,7 +167,7 @@ test('سبد در حالت در حال بررسی دکمه پرداخت مجدد
     render(<CartPage />);
     const retryBtn = await screen.findByRole('button', { name: 'پرداخت مجدد آنلاین' });
     expect(retryBtn.disabled).toBe(false);
-    expect(screen.getByText('در حال بررسی؛ در صورت کسر وجه، نور به کیف پول اضافه می‌شود؛ می‌توانید حدود ۳۰ دقیقه صبر کنید یا دوباره پرداخت کنید.')).toBeTruthy();
+    expect(screen.getByText(buildReviewNoticeText())).toBeTruthy();
     fireEvent.click(retryBtn);
     await waitFor(() => expect(executeNoorCartPurchase).toHaveBeenCalledWith(expect.objectContaining({
         cartId: 'cart-under-review',

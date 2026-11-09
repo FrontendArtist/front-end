@@ -130,7 +130,10 @@ export async function POST(request) {
             email: created.email || '—',
             phoneNumber: created.phoneNumber || '—',
             role: 'کاربر تایید شده',
-            light: 0,
+            // موجودی فقط از بای‌مانی خوانده می‌شود؛ تا استعلام بعدی نامشخص
+            noorBalance: null,
+            giftBalance: null,
+            balanceUnavailable: true,
             createdAt: created.createdAt || new Date().toISOString(),
         };
 

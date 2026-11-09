@@ -176,7 +176,7 @@ async function getRestockRows(jwt, ids) {
 
 /** کاندیدهای «منتظر ارسال» (جدیدترین‌ها تا سقف بررسی) و نگه‌داشتن آن‌هایی که کالای ارسال‌نشده دارند */
 async function getAwaitingShipmentRows(jwt, buyer) {
-    const { items, totalCount, warning } = await fetchFiltered(jwt, ACTION_CANDIDATE_FILTERS, {
+    const { items, totalCount, warning, forbidden } = await fetchFiltered(jwt, ACTION_CANDIDATE_FILTERS, {
         start: 0,
         limit: ACTION_SCAN_LIMIT,
         buyer,
@@ -191,6 +191,7 @@ async function getAwaitingShipmentRows(jwt, buyer) {
         rows: keep.filter((k) => k.ok).map((k) => ({ ...k.row, needsShipment: true })),
         warning: warning || keep.some((k) => k.failed),
         truncated: totalCount > ACTION_SCAN_LIMIT,
+        forbidden,
     };
 }
 
@@ -202,7 +203,7 @@ async function getActionRows(jwt, buyer, restockIds) {
     const restockRows = buyer ? restock.rows.filter((r) => r.buyerExternalUserId === buyer) : restock.rows;
     const seen = new Set(restockRows.map((r) => r.orderId));
     const rows = [...restockRows, ...awaiting.rows.filter((r) => !seen.has(r.orderId))];
-    return { rows, warning: restock.warning || awaiting.warning, truncated: awaiting.truncated };
+    return { rows, warning: restock.warning || awaiting.warning, truncated: awaiting.truncated, forbidden: awaiting.forbidden };
 }
 
 async function withPeople(jwt, rows) {
@@ -253,6 +254,7 @@ export async function getByeMoneyAdminOrders(jwt, { tab, q, view, start = 0, lim
             total: r.rows.length,
             warning: r.warning,
             truncated: r.truncated,
+            forbidden: r.forbidden,
         };
     }
 

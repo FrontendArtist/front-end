@@ -1,4 +1,5 @@
-import { hasUnshippedItems, readOrderFilters, normalizeTab } from '../byeMoneyAdminOrders';
+import { hasUnshippedItems, readOrderFilters, normalizeTab, getByeMoneyAdminOrders } from '../byeMoneyAdminOrders';
+import { getAdminCourseOrders, getPendingPhysicalRestocks } from '../../byeMoneyApi';
 import { getRowShippingBadge, getItemsShippingState, shortOrderNumber } from '../orderDisplay';
 
 jest.mock('../../byeMoneyApi', () => ({
@@ -55,5 +56,18 @@ describe('نمایش سفارش', () => {
     });
     test('شمارهٔ کوتاه', () => {
         expect(shortOrderNumber('cart:abcdef12-0000-0000-0000-000000000000')).toBe('ABCDEF12');
+    });
+});
+
+describe('نبود مجوز Purchases.View (RBAC-04)', () => {
+    beforeEach(() => {
+        getPendingPhysicalRestocks.mockResolvedValue({ success: false, forbidden: true, error: 'x' });
+        getAdminCourseOrders.mockResolvedValue({ success: false, forbidden: true, error: 'no perm' });
+    });
+
+    test.each(['action', 'all', 'paid'])('تب %s forbidden را برمی‌گرداند', async (tab) => {
+        const r = await getByeMoneyAdminOrders('jwt', { tab });
+        expect(r.forbidden).toBe(true);
+        expect(r.orders).toEqual([]);
     });
 });

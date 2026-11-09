@@ -80,7 +80,8 @@ export async function GET(request) {
                 lastName: u.lastName || '',
                 fullName,
                 email: u.email || '',
-                light: null, // نامشخص تا استعلام ByeMoney موفق شود
+                noorBalance: null, // فقط از بای‌مانی؛ null = نامشخص
+                balanceUnavailable: true,
                 courses: (u.courses || []).map(c => ({ id: c.id, title: c.title })),
                 enrolledChapters: Array.isArray(u.enrolledChapters) ? u.enrolledChapters : [],
             };
@@ -93,11 +94,12 @@ export async function GET(request) {
                 const batchRes = await getBatchBalancesWithByeMoney({ userIds, jwt: session.user.jwt });
                 if (batchRes.success && batchRes.balances) {
                     users.forEach(u => {
+                        u.balanceUnavailable = false;
                         const docBalance = batchRes.balances[u.documentId];
                         const idBalance = batchRes.balances[String(u.id)];
                         const liveBalance = docBalance !== undefined ? docBalance : idBalance;
                         if (liveBalance !== undefined && liveBalance !== null) {
-                            u.light = Number(liveBalance);
+                            u.noorBalance = Number(liveBalance);
                         }
                     });
                 }

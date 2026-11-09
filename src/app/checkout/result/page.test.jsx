@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import CheckoutResultPage from './page';
 import useCourseCheckoutResult from '@/hooks/useCourseCheckoutResult';
 import { useSearchParams } from 'next/navigation';
+import { buildReviewNoticeText } from '@/lib/reviewNotice';
 
 jest.mock('next/navigation', () => ({ useSearchParams: jest.fn() }));
 jest.mock('@/hooks/useCompletedOrderCart', () => jest.fn());
@@ -315,7 +316,7 @@ test('بازگشت از درگاه با status=success در صورت ارجاع 
 
     // عنوان کارت و وضعیت بررسی مالی
     expect(screen.getByText('پرداخت در صف بررسی مالی قرار گرفت')).toBeTruthy();
-    expect(screen.getAllByText('در حال بررسی؛ در صورت کسر وجه، نور به کیف پول اضافه می‌شود؛ می‌توانید حدود ۳۰ دقیقه صبر کنید یا دوباره پرداخت کنید.').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(buildReviewNoticeText()).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('در انتظار بررسی مالی').length).toBeGreaterThanOrEqual(1);
 
     // نمایش کد پرونده و کدهای پیگیری
@@ -401,7 +402,7 @@ test('بازگشت از درگاه با status=financial_review صریح مست�
 
     expect(screen.queryByText(/در حال استعلام پرداخت و فعال‌سازی دوره/)).toBeNull();
     expect(screen.getByText('پرداخت در صف بررسی مالی قرار گرفت')).toBeTruthy();
-    expect(screen.getAllByText('در حال بررسی؛ در صورت کسر وجه، نور به کیف پول اضافه می‌شود؛ می‌توانید حدود ۳۰ دقیقه صبر کنید یا دوباره پرداخت کنید.').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(buildReviewNoticeText()).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('در انتظار بررسی مالی')).toBeTruthy();
     expect(screen.queryByText('تراکنش پرداخت ناموفق بود')).toBeNull();
     expect(screen.queryByText(/نیازی به پرداخت/)).toBeNull();
@@ -479,7 +480,7 @@ test('بازگشت از درگاه با status=pending_sync پیام در حال
 
     expect(screen.queryByText(/در حال استعلام پرداخت و فعال‌سازی دوره/)).toBeNull();
     expect(screen.getByText('پرداخت در حال بررسی و همگام‌سازی است')).toBeTruthy();
-    expect(screen.getAllByText('در حال بررسی؛ در صورت کسر وجه، نور به کیف پول اضافه می‌شود؛ می‌توانید حدود ۳۰ دقیقه صبر کنید یا دوباره پرداخت کنید.').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(buildReviewNoticeText()).length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText(/بدون نیاز به پرداخت مجدد/)).toBeNull();
     expect(screen.queryByText(/نیازی به پرداخت/)).toBeNull();
     expect(screen.getByText('در حال همگام‌سازی')).toBeTruthy();

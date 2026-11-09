@@ -47,9 +47,7 @@ function extractLightAmount(order) {
     const notes = order.notes || '';
     const match = notes.match(/\[LIGHT_AMOUNT:(\d+)\]/i);
     if (match) return parseInt(match[1], 10);
-    const textMatch = notes.match(/(\d+)\s*نور/);
-    if (textMatch) return parseInt(textMatch[1], 10);
-    if (order.totalPrice) return Math.round(Number(order.totalPrice) / 1000);
+    // حدس از متن آزاد یا مبلغ ریالی ممنوع؛ نبود مقدار ساخت‌یافته را سرور رد می‌کند
     return 0;
 }
 
