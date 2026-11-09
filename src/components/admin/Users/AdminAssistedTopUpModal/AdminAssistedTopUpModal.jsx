@@ -153,6 +153,11 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
       return;
     }
 
+    if (rawAmount < 10000 || rawAmount % 10000 !== 0) {
+      setError('مبلغ باید حداقل ۱۰٬۰۰۰ ریال و مضربی از ۱۰٬۰۰۰ ریال (۱٬۰۰۰ تومان) باشد؛ مثلاً ۵۰۰٬۰۰۰ یا ۵۱۰٬۰۰۰ ریال.');
+      return;
+    }
+
     if (!conversionRate || conversionRate <= 0) {
       setError('نرخ رسمی تبدیل ریال به نور از پایگاه داده دریافت نشده است. ثبت عملیات غیرمجاز است.');
       return;
@@ -242,7 +247,7 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
         </div>
 
         {/* فرم */}
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className={styles.body}>
             {/* ۱. کانتکست کاربر ذینفع (فقط نمایشی) */}
             <div className={styles.beneficiaryCard}>

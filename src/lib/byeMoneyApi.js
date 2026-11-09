@@ -999,153 +999,51 @@ export async function getBatchBalancesWithByeMoney({ userIds, jwt }) {
 }
 
 /**
- * خرید دوره‌های آموزشی به‌نیابت از کاربر توسط ادمین با کسر از موجودی نور کاربر در سامانه ByeMoney
- * اندپوینت: POST /api/admin/courses/purchase
- *
- * @param {object} params
- * @param {string} params.beneficiaryExternalUserId - شناسه پایدار کاربر ذینفع در استراپی (documentId یا id)
- * @param {string[]} params.externalCourseIds - شناسه‌های پایدار دوره‌ها در استراپی (documentId)
- * @param {string} params.jwt - توکن احراز هویت ادمین
- * @returns {Promise<{
- *   success: boolean,
- *   data?: { transactionId: string, totalPriceInNoor: number, items: Array<{ purchaseId: string, externalCourseId: string, courseTitle: string, priceInNoor: number, status: string }>, purchasedAtUtc: string },
- *   error?: string,
- *   conflict?: boolean,
- *   insufficientBalance?: boolean,
- *   unauthorized?: boolean,
- *   notFound?: boolean
- * }>}
+ * سفارش دستی ادمین روی سبد بای‌مانی (I11-AO): فقط دوره و فصل، پرداخت فوری از کیف ذینفع.
+ * اندپوینت: POST /api/admin/carts/orders — فقط از routeهای سروری با JWT نشست سروری صدا زده شود.
+ * cartId را فراخواننده می‌سازد و در تلاش مجدد ثابت می‌ماند (یکتایی مالی).
+ * خطاها: { code, error } سبد؛ 404/400 شکل عمومی پروژه (title/errors).
  */
-export async function purchaseCoursesAsAdminWithByeMoney({ beneficiaryExternalUserId, externalCourseIds, isFree = false, freeReason = null, jwt }) {
+export async function createAdminCartOrderWithByeMoney({ cartId, beneficiaryExternalUserId, items, isFree = false, freeReason = null, jwt }) {
   if (!jwt) {
-    return {
-      success: false,
-      unauthorized: true,
-      error: 'نشست کاربری نامعتبر است. لطفاً مجدداً وارد شوید.',
-    };
+    return { success: false, status: 401, unauthorized: true, error: 'نشست کاربری نامعتبر است. لطفاً مجدداً وارد شوید.' };
   }
-
-  if (!beneficiaryExternalUserId) {
-    return {
-      success: false,
-      error: 'شناسه کاربر ذینفع معتبر نیست.',
-    };
-  }
-
-  let ids = [];
-  if (Array.isArray(externalCourseIds)) {
-    ids = externalCourseIds
-      .map(id => (typeof id === 'string' ? id.trim() : String(id || '')))
-      .filter(Boolean);
-  }
-
-  if (ids.length === 0) {
-    return {
-      success: false,
-      error: 'شناسه دوره‌های انتخابی (documentId) مشخص نشده است.',
-    };
-  }
-
-  // حذف شناسه‌های تکراری جهت انطباق با قوانین یکتایی سبد در سامانه مالی ByeMoney
-  const distinctIds = Array.from(new Set(ids));
-  const endpoint = `${BYEMONEY_API_URL}/api/admin/courses/purchase`;
-
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetch(`${BYEMONEY_API_URL}/api/admin/carts/orders`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwt}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
       body: JSON.stringify({
-        beneficiaryExternalUserId: String(beneficiaryExternalUserId).trim(),
-        externalCourseIds: distinctIds,
+        cartId,
+        beneficiaryExternalUserId,
+        items,
         isFree: Boolean(isFree),
-        freeReason: freeReason ? String(freeReason).trim() : null,
+        freeReason: isFree ? freeReason : null,
       }),
+      cache: 'no-store',
     });
 
     if (response.status === 200) {
-      const data = await response.json();
-      return {
-        success: true,
-        data,
-      };
+      return { success: true, status: 200, data: await response.json() };
     }
 
-    if (response.status === 401) {
-      return {
-        success: false,
-        unauthorized: true,
-        error: 'نشست کاربری شما منقضی شده است. لطفاً مجدداً وارد شوید.',
-      };
-    }
-
-    if (response.status === 403) {
-      return {
-        success: false,
-        error: 'شما دسترسی مدیریت مالی لازم جهت خرید دوره به‌نیابت از کاربر را ندارید.',
-      };
-    }
-
-    let errorJson = null;
-    let errorsList = [];
-    try {
-      errorJson = await response.json();
-      if (Array.isArray(errorJson.errors)) {
-        errorsList = errorJson.errors
-          .map(e => {
-            if (typeof e === 'string') return e;
-            if (typeof e === 'object' && e !== null) {
-              return e.message || e.errorMessage || e.description || '';
-            }
-            return '';
-          })
-          .filter(Boolean);
-      } else if (typeof errorJson.error === 'string') {
-        errorsList = [errorJson.error];
-      } else if (typeof errorJson.message === 'string') {
-        errorsList = [errorJson.message];
-      }
-    } catch {
-      const rawText = await response.text().catch(() => '');
-      if (rawText) errorsList = [rawText];
-    }
-
-    const firstErrorMsg = errorsList[0] || '';
-
+    const body = await response.json().catch(() => ({}));
+    const firstError = Array.isArray(body.errors)
+      ? body.errors.map((e) => (typeof e === 'string' ? e : e?.message || e?.errorMessage || '')).find(Boolean)
+      : '';
+    const message = body.error || firstError || body.title || body.message || `خطا در ثبت سفارش دستی (کد ${response.status})`;
+    const result = { success: false, status: response.status, error: message, code: body.code || null, lineError: body.lineError || null };
     if (response.status === 409) {
-      return {
-        success: false,
-        conflict: true,
-        error: firstErrorMsg || 'این کاربر قبلاً این دوره آموزشی را خریداری کرده است.',
-      };
+      result.conflict = true;
+      result.insufficientBalance = body.code === 'INSUFFICIENT_NOOR_BALANCE';
     }
-
-    if (response.status === 404) {
-      return {
-        success: false,
-        notFound: true,
-        error: firstErrorMsg || 'دوره یا کاربر مورد نظر در سامانه مالی ByeMoney یافت نشد.',
-      };
-    }
-
-    const isInsufficient =
-      firstErrorMsg.includes('موجودی') ||
-      firstErrorMsg.includes('INSUFFICIENT') ||
-      firstErrorMsg.includes('کافی نیست');
-
-    return {
-      success: false,
-      insufficientBalance: isInsufficient,
-      error: errorsList.join(' - ') || errorJson?.title || `خطا در کسر موجودی نور از سامانه ByeMoney (کد خطا: ${response.status})`,
-    };
+    if (response.status === 401) result.unauthorized = true;
+    if (response.status === 403) result.forbidden = true;
+    if (response.status === 404) result.notFound = true;
+    if (response.status === 400) result.badRequest = true;
+    return result;
   } catch (netErr) {
-    console.error('[ByeMoney Admin Purchase Error]:', netErr);
-    return {
-      success: false,
-      error: 'خطا در برقراری ارتباط با سامانه پرداخت ByeMoney.',
-    };
+    console.error('[ByeMoney Admin Cart Order Error]:', netErr);
+    return { success: false, status: 502, error: 'خطا در برقراری ارتباط با سامانه ByeMoney.' };
   }
 }
 

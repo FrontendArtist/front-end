@@ -67,7 +67,7 @@ function AmountRow({ label, value, tone }) {
 }
 
 function SummaryTab({ order, data, isPaid, restockPending, onGoItems }) {
-    const { order: detail, receipt, buyer } = data;
+    const { order: detail, receipt, buyer, adminOrigin } = data;
     const summary = receipt?.cartSummary;
     const discount = (summary?.itemDiscountInNoor || 0) + (summary?.couponDiscountInNoor || 0);
     const refunded = (detail.items || []).reduce(
@@ -109,6 +109,10 @@ function SummaryTab({ order, data, isPaid, restockPending, onGoItems }) {
                     {isPaid && receipt?.purchasedAtUtc && <Field label="زمان پرداخت">{formatTime(receipt.purchasedAtUtc)}</Field>}
                     <Field label="نوع">{SOURCE_LABELS[detail.sourceType] || detail.sourceType || '—'}</Field>
                     <Field label="تعداد اقلام">{fa(detail.items?.length ?? detail.itemCount)}</Field>
+                    {adminOrigin && (
+                        <Field label="ثبت دستی توسط">{adminOrigin.adminName || adminOrigin.adminExternalUserId}</Field>
+                    )}
+                    {adminOrigin?.freeReason && <Field label="علت رایگان">{adminOrigin.freeReason}</Field>}
                     {receipt?.couponCode && <Field label="کد تخفیف" ltr>{receipt.couponCode}</Field>}
                 </dl>
             </section>

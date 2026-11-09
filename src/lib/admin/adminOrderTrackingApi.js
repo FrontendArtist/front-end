@@ -59,6 +59,28 @@ export async function fetchGatewayAttempts(topUpRequestIds) {
     }
 }
 
+/** نام نمایشی ادمین ثبت‌کنندهٔ سفارش دستی (best-effort؛ نبود نام فقط شناسه را می‌گذارد) */
+async function fetchAdminDisplayName(documentId) {
+    const token = process.env.STRAPI_API_TOKEN;
+    if (!token || !documentId) return null;
+    try {
+        const params = new URLSearchParams();
+        params.set('filters[documentId][$eq]', documentId);
+        ['firstName', 'lastName', 'username'].forEach((f, i) => params.set(`fields[${i}]`, f));
+        const res = await fetch(`${STRAPI_API_URL}/api/users?${params.toString()}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+        });
+        if (!res.ok) return null;
+        const body = await res.json();
+        const u = (Array.isArray(body) ? body : body?.data || [])[0];
+        if (!u) return null;
+        return [u.firstName, u.lastName].filter(Boolean).join(' ') || u.username || null;
+    } catch {
+        return null;
+    }
+}
+
 const ADDRESS_FIELDS = ['recipientName', 'recipientPhone', 'province', 'city', 'postalCode', 'fullAddress'];
 
 // آدرس نسخهٔ ثابت ذخیره‌شده در بای‌مانی (I11-O) است؛ فقط فیلدهای نمایشی به مرورگر می‌رسد (version نه).
@@ -145,6 +167,16 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
     // آدرس از پاسخ جزئیات ادمین بای‌مانی می‌آید (سفارش بدون کالا آدرس ندارد → null)
     const shippingAddress = sanitizeAddress(res.data?.shippingAddress);
 
+    // سفارش دستی ادمین (I11-AO): دو فیلد افزودنی جزئیات ادمین
+    const adminId = res.data?.createdByAdminExternalUserId ?? null;
+    const adminOrigin = adminId
+        ? {
+            adminExternalUserId: adminId,
+            adminName: await fetchAdminDisplayName(adminId),
+            freeReason: res.data?.adminFreeReason ?? null,
+        }
+        : null;
+
     const timeline = buildTimeline({ order, topUps, attempts, now });
 
     return {
@@ -173,6 +205,7 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
             attemptsStatus,
             receipt: receipt?.success ? sanitizeReceipt(receipt.data) : null,
             shippingAddress,
+            adminOrigin,
             warnings,
         },
     };

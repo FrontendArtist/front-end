@@ -2,10 +2,10 @@
 
 /**
  * @file src/components/admin/Orders/ManualOrderForm/ManualOrderForm.jsx
- * @description فرم ثبت سفارش دستی و فعال‌سازی دوره بر مبنای بررسی موجودی کیف نور در پنل ادمین
+ * @description فرم ثبت دستی سفارش دوره/فصل روی سبد بای‌مانی (I11-AO)؛ کفایت موجودی را بای‌مانی تعیین می‌کند
  */
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -25,8 +25,7 @@ import {
     Receipt,
     Gift,
 } from 'lucide-react';
-import { createManualOrder, searchAdminUsers } from '@/lib/client/admin/ordersClient';
-import { getConversionRateWithByeMoney } from '@/lib/byeMoneyApi';
+import { createManualOrder, previewManualOrder, searchAdminUsers } from '@/lib/client/admin/ordersClient';
 import { getAdminBatchBalances } from '@/lib/admin/adminByeMoneyClient';
 import AdminAssistedTopUpModal from '@/components/admin/Users/AdminAssistedTopUpModal/AdminAssistedTopUpModal';
 import Can from '@/components/admin/Permissions/Can';
@@ -46,7 +45,12 @@ function useToast() {
 
 // ── ابزارهای کمکی ──────────────────────────────────────────────────────────
 const formatPrice = (p) =>
-    new Intl.NumberFormat('fa-IR').format(Number(p) || 0) + ' تومان';
+    new Intl.NumberFormat('fa-IR').format(Number(p) || 0) + ' نور';
+
+// قلم سفارش دستی: فصل با شناسهٔ خودش (integrationId)، نه documentId دورهٔ والد
+const toOrderItem = (it) => (it.chapterId
+    ? { externalId: it.chapterExternalId, type: 'course_chapter' }
+    : { externalId: it.documentId, type: 'course' });
 
 export default function ManualOrderForm({ initialCourses = [] }) {
     const router = useRouter();
@@ -66,38 +70,20 @@ export default function ManualOrderForm({ initialCourses = [] }) {
     const [openChapters, setOpenChapters] = useState({}); // { [courseId]: boolean }
 
     // ── وضعیت‌های کیف نور و اتصال به سامانه ByeMoney ────────────────────
-    const [conversionRate, setConversionRate] = useState(null);
-    const [rateLoading, setRateLoading] = useState(false);
     const [userBalance, setUserBalance] = useState(null);
     const [balanceLoading, setBalanceLoading] = useState(false);
     const [showTopUpModal, setShowTopUpModal] = useState(false);
-    const [notes, setNotes] = useState('');
     const [isFreeOrder, setIsFreeOrder] = useState(false);
     const [freeReason, setFreeReason] = useState('');
 
     // ── وضعیت لودینگ ارسال ────────────────────────────────────────────────
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // ── دریافت نرخ رسمی تبدیل ریال به نور از بای‌مانی ──────────────────
-    useEffect(() => {
-        let isMounted = true;
-        setRateLoading(true);
-        getConversionRateWithByeMoney()
-            .then(res => {
-                if (!isMounted) return;
-                if (res.success && res.rialPerNoor > 0) {
-                    setConversionRate(res);
-                }
-            })
-            .catch(err => {
-                console.warn('[ManualOrderForm] Conversion rate fetch error:', err);
-            })
-            .finally(() => {
-                if (isMounted) setRateLoading(false);
-            });
-
-        return () => { isMounted = false; };
-    }, []);
+    // کسری موجودی که بای‌مانی اعلام کرده است (۴۰۹ INSUFFICIENT_NOOR_BALANCE)؛ سفارشی ثبت نشده
+    const [insufficientMessage, setInsufficientMessage] = useState('');
+    // cartId یک‌بار برای هر «قصد ثبت» ساخته می‌شود و در تلاش مجدد (مثلاً پس از شارژ) ثابت می‌ماند
+    const cartIdRef = useRef({ signature: null, id: null });
+    // قیمت قطعی از quote استرپی به‌نام ذینفع؛ هیچ قیمتی در مرورگر حساب نمی‌شود
+    const [quote, setQuote] = useState({ status: 'idle', data: null, error: '' });
 
     // ── تابع استعلام موجودی زنده نور کاربر از ByeMoney ──────────────────
     const fetchUserBalance = useCallback(async (userObj) => {
@@ -139,6 +125,11 @@ export default function ManualOrderForm({ initialCourses = [] }) {
             setUserBalance(null);
         }
     }, [selectedUser, fetchUserBalance]);
+
+    // پیام کسری فقط برای همان انتخاب معتبر است
+    useEffect(() => {
+        setInsufficientMessage('');
+    }, [selectedUser, selectedItems, isFreeOrder]);
 
     // ── جستجوی کاربران با دی‌بانس ──────────────────────────────────────────
     useEffect(() => {
@@ -210,6 +201,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                     id: course.id,
                     courseId: course.id,
                     documentId: course.documentId || String(course.id),
+                    chapterExternalId: chapter.integrationId,
                     chapterId: chapter.id,
                     title: course.title,
                     chapterTitle: chapter.title,
@@ -221,36 +213,50 @@ export default function ManualOrderForm({ initialCourses = [] }) {
         });
     };
 
+    // ── پیش‌نمایش قیمت قطعی (quote ذینفع) ──────────────────────────────────
+    const quoteItems = useMemo(() => Object.values(selectedItems).map(toOrderItem), [selectedItems]);
+    const quoteKey = selectedUser && quoteItems.length > 0
+        ? JSON.stringify([selectedUser.id, quoteItems.map((i) => `${i.type}:${i.externalId}`).sort()])
+        : null;
+
+    useEffect(() => {
+        if (!quoteKey) {
+            setQuote({ status: 'idle', data: null, error: '' });
+            return undefined;
+        }
+        setQuote({ status: 'loading', data: null, error: '' });
+        const controller = new AbortController();
+        const timer = setTimeout(async () => {
+            try {
+                const data = await previewManualOrder({ userId: String(selectedUser.id), items: quoteItems }, { signal: controller.signal });
+                setQuote({ status: 'ready', data, error: '' });
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                setQuote({ status: 'error', data: null, error: err.message });
+            }
+        }, 300);
+        return () => { clearTimeout(timer); controller.abort(); };
+        // quoteKey همهٔ ورودی‌های مؤثر را در بر دارد
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [quoteKey]);
+
     // ── محاسبه خودکار مجموع مبلغ و نور مورد نیاز ──────────────────────────
     const calculatedSum = useMemo(() => {
         return Object.values(selectedItems).reduce((sum, item) => sum + (Number(item.price) || 0), 0);
     }, [selectedItems]);
 
-    const tomanPerNoor = useMemo(() => {
-        if (conversionRate?.tomanPerNoor && conversionRate.tomanPerNoor > 0) {
-            return conversionRate.tomanPerNoor;
-        }
-        if (conversionRate?.rialPerNoor && conversionRate.rialPerNoor > 0) {
-            return conversionRate.rialPerNoor / 10;
-        }
-        return null;
-    }, [conversionRate]);
-
-    const requiredNoor = useMemo(() => {
-        if (isFreeOrder) return 0;
-        if (calculatedSum <= 0) return 0;
-        return Number(Number(calculatedSum).toFixed(4));
-    }, [isFreeOrder, calculatedSum]);
-
     const hasSelectedUser = Boolean(selectedUser);
     const isBalanceKnown = userBalance !== null && userBalance !== undefined;
     const isBalanceUnknown = hasSelectedUser && !balanceLoading && !isBalanceKnown;
-    const hasEnoughBalance = isFreeOrder || (isBalanceKnown && userBalance >= requiredNoor);
-    // موجودی نامشخص مانع ثبت نیست؛ کفایت را بای‌مانی هنگام خرید بررسی می‌کند
-    const isBalanceInsufficient = !isFreeOrder && requiredNoor > 0 && isBalanceKnown && !hasEnoughBalance;
-    const shortfallNoor = isFreeOrder ? 0 : Math.max(0, requiredNoor - (userBalance || 0));
-    const shortfallToman = (tomanPerNoor && tomanPerNoor > 0) ? Math.round(shortfallNoor * tomanPerNoor) : null;
-    const remainingBalance = userBalance !== null ? (isFreeOrder ? userBalance : userBalance - requiredNoor) : 0;
+    const quoteReady = quote.status === 'ready';
+    const priceInNoor = quoteReady ? Number(quote.data?.priceInNoor) || 0 : null;
+    const originalInNoor = quoteReady ? Number(quote.data?.originalTotalInNoor) || 0 : calculatedSum;
+    const itemDiscount = quoteReady ? Number(quote.data?.itemDiscountInNoor) || 0 : 0;
+    const knownShortfall = !isFreeOrder && quoteReady && isBalanceKnown && priceInNoor > userBalance
+        ? Number((priceInNoor - userBalance).toFixed(4))
+        : 0;
+    const shortfallMessage = insufficientMessage
+        || (knownShortfall > 0 ? `موجودی نور کاربر کافی نیست. کسری: ${new Intl.NumberFormat('fa-IR').format(knownShortfall)} نور. ابتدا کیف کاربر را شارژ کنید.` : '');
 
     // ── فیلتر دوره‌ها ──────────────────────────────────────────────────────
     const filteredCourses = useMemo(() => {
@@ -288,37 +294,43 @@ export default function ManualOrderForm({ initialCourses = [] }) {
             return;
         }
 
-        // 3. بررسی کفایت موجودی نور (در صورت غیررایگان بودن)
-        if (isBalanceInsufficient) {
-            addToast(`موجودی نور کاربر کافی نیست. کسری: ${shortfallNoor.toLocaleString('fa-IR')} نور. لطفاً ابتدا حساب کاربر را شارژ کنید یا گزینه ثبت رایگان را فعال نمایید.`, 'error');
+        if (isFreeOrder && !freeReason.trim()) {
+            addToast('علت ثبت رایگان الزامی است.', 'error');
             return;
         }
 
         setIsSubmitting(true);
+        setInsufficientMessage('');
 
         try {
-            const payload = {
-                userMode: 'existing',
+            const items = selectedList.map(toOrderItem);
+
+            const signature = JSON.stringify([
+                selectedUser.id,
+                isFreeOrder,
+                isFreeOrder ? freeReason.trim() : '',
+                items.map((i) => `${i.type}:${i.externalId}`).sort(),
+            ]);
+            if (cartIdRef.current.signature !== signature) {
+                cartIdRef.current = { signature, id: crypto.randomUUID() };
+            }
+
+            const result = await createManualOrder({
+                cartId: cartIdRef.current.id,
                 userId: String(selectedUser.id),
-                courses: selectedList,
-                totalPrice: calculatedSum,
+                items,
                 isFree: isFreeOrder,
                 freeReason: isFreeOrder ? freeReason.trim() : '',
-                notes: notes.trim(),
-            };
+            });
 
-            const result = await createManualOrder(payload);
-
-            addToast(result.message || (isFreeOrder ? 'سفارش رایگان با موفقیت ثبت شد و دوره‌ها برای کاربر فعال گردیدند.' : 'سفارش با موفقیت ثبت شد و دوره‌ها برای کاربر فعال گردیدند.'), 'success');
-
-            // انتقال به صفحه سفارشات پس از ۱.۲ ثانیه
-            setTimeout(() => {
-                router.push('/admin/orders');
-                router.refresh();
-            }, 1200);
-
+            addToast(isFreeOrder ? 'سفارش رایگان ثبت شد.' : 'سفارش ثبت شد و مبلغ از کیف نور کاربر کسر گردید.', 'success');
+            router.push(`/admin/orders?order=${encodeURIComponent(result.orderId)}`);
+            router.refresh();
         } catch (err) {
-            console.error('Submit manual order error:', err);
+            if (err.insufficientBalance) {
+                setInsufficientMessage(err.message);
+                fetchUserBalance(selectedUser);
+            }
             addToast(err.message || 'خطا در ثبت سفارش. لطفاً مجدداً تلاش کنید.', 'error');
             setIsSubmitting(false);
         }
@@ -513,6 +525,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                                         type="checkbox"
                                                         className={styles.courseItem__checkbox}
                                                         checked={isCourseSelected}
+                                                        disabled={course.isChaptered && hasChapters}
                                                         onChange={() => handleToggleCourse(course)}
                                                     />
                                                     <span className={styles.courseItem__name}>
@@ -524,6 +537,10 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                                     <span className={styles.courseItem__price}>
                                                         {formatPrice(course.price)}
                                                     </span>
+
+                                                    {course.isChaptered && hasChapters && (
+                                                        <span style={{ fontSize: '0.78rem', color: '#64748b' }}>فروش فصلی؛ فصل را انتخاب کنید</span>
+                                                    )}
 
                                                     {hasChapters && (
                                                         <button
@@ -557,7 +574,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                                                         type="checkbox"
                                                                         className={styles.courseItem__checkbox}
                                                                         checked={isChapterSelected}
-                                                                        disabled={isCourseSelected}
+                                                                        disabled={isCourseSelected || !chapter.integrationId}
                                                                         onChange={() => handleToggleChapter(course, chapter)}
                                                                     />
                                                                     <span>{chapter.title}</span>
@@ -600,7 +617,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
 
                             {isFreeOrder && (
                                 <div className={styles.freeReasonWrap}>
-                                    <label className={styles.field__label}>علت ثبت رایگان (اختیاری)</label>
+                                    <label className={styles.field__label}>علت ثبت رایگان (الزامی)</label>
                                     <input
                                         type="text"
                                         className={styles.input}
@@ -612,16 +629,6 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                             )}
                         </div>
 
-                        <div className={styles.field} style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed fade(var(--color-primary), 15%)' }}>
-                            <label className={styles.field__label}>یادداشت برای سفارش (اختیاری)</label>
-                            <input
-                                type="text"
-                                className={styles.input}
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                placeholder="توضیحات تکمیلی یا علت ثبت دستی توسط ادمین..."
-                            />
-                        </div>
                     </div>
                 </div>
 
@@ -633,11 +640,6 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                 <Receipt size={20} />
                                 خلاصه فاکتور سفارش
                             </h3>
-                            {conversionRate && (
-                                <span className={styles.summaryCard__ratePill}>
-                                    هر ۱ نور = {new Intl.NumberFormat('fa-IR').format(tomanPerNoor)} تومان
-                                </span>
-                            )}
                         </div>
 
                         <div className={styles.summaryCard__list}>
@@ -687,29 +689,50 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                             </div>
 
                             <div className={styles.summaryCard__totalRow}>
-                                <span>{isFreeOrder ? 'ارزش دوره (تومان):' : 'مبلغ نهایی (تومان):'}</span>
+                                <span>قیمت پایهٔ اقلام:</span>
                                 <span className={styles.totalPrice} style={isFreeOrder ? { textDecoration: 'line-through', opacity: 0.65, fontSize: '0.95rem' } : undefined}>
-                                    {formatPrice(calculatedSum)}
+                                    {formatPrice(originalInNoor)}
                                 </span>
                             </div>
 
+                            {!isFreeOrder && itemDiscount > 0 && (
+                                <div className={styles.summaryCard__row}>
+                                    <span>تخفیف:</span>
+                                    <span>− {formatPrice(itemDiscount)}</span>
+                                </div>
+                            )}
+
                             <div className={styles.summaryCard__totalNoorRow} style={isFreeOrder ? { backgroundColor: 'fade(var(--color-title-hover), 14%)', borderColor: 'var(--color-title-hover)' } : undefined}>
-                                <span>مبلغ قابل پرداخت:</span>
+                                <span>مبلغ نهایی:</span>
                                 <span className={styles.totalNoorPrice}>
                                     {isFreeOrder ? (
                                         <>
                                             <Gift size={18} />
                                             رایگان (۰ نور)
                                         </>
-                                    ) : (
+                                    ) : quoteReady ? (
                                         <>
                                             <Coins size={18} />
-                                            {new Intl.NumberFormat('fa-IR').format(requiredNoor)} نور
+                                            {formatPrice(priceInNoor)}
                                         </>
+                                    ) : quote.status === 'loading' ? (
+                                        'در حال محاسبه...'
+                                    ) : (
+                                        '—'
                                     )}
                                 </span>
                             </div>
+
                         </div>
+
+                        {quote.status === 'error' && (
+                            <div className={`${styles.statusBanner} ${styles['statusBanner--warning']}`} role="alert">
+                                <div className={styles.statusBanner__content}>
+                                    <AlertTriangle size={18} className={styles.statusBanner__icon} />
+                                    <p className={styles.statusBanner__desc}>{quote.error}</p>
+                                </div>
+                            </div>
+                        )}
 
                         {/* وضعیت موجودی و امکان شارژ در صورت کسری */}
                         {hasSelectedUser && Object.keys(selectedItems).length > 0 && (
@@ -727,7 +750,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                             </div>
                                         </div>
                                     </div>
-                                ) : isBalanceUnknown ? (
+                                ) : isBalanceUnknown && !insufficientMessage ? (
                                     <div className={`${styles.statusBanner} ${styles['statusBanner--warning']}`}>
                                         <div className={styles.statusBanner__content}>
                                             <AlertTriangle size={18} className={styles.statusBanner__icon} />
@@ -739,50 +762,34 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                             </div>
                                         </div>
                                     </div>
-                                ) : hasEnoughBalance ? (
-                                    <div className={`${styles.statusBanner} ${styles['statusBanner--success']}`}>
-                                        <div className={styles.statusBanner__content}>
-                                            <CheckCircle2 size={18} className={styles.statusBanner__icon} />
-                                            <div>
-                                                <h4 className={styles.statusBanner__title}>موجودی نور کاربر کافی است</h4>
-                                                <p className={styles.statusBanner__desc}>
-                                                    مانده پس از خرید: <strong>{new Intl.NumberFormat('fa-IR').format(remainingBalance)} نور</strong>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
+                                ) : shortfallMessage ? (
                                     <div className={`${styles.statusBanner} ${styles['statusBanner--warning']}`}>
                                         <div className={styles.statusBanner__content}>
                                             <AlertTriangle size={18} className={styles.statusBanner__icon} />
                                             <div>
-                                                <h4 className={styles.statusBanner__title}>کسری موجودی نور کاربر!</h4>
-                                                <p className={styles.statusBanner__desc}>
-                                                    کسری: <strong>{new Intl.NumberFormat('fa-IR').format(shortfallNoor)} نور</strong> ({formatPrice(shortfallToman)})
-                                                </p>
+                                                <h4 className={styles.statusBanner__title}>کسری موجودی نور کاربر</h4>
+                                                <p className={styles.statusBanner__desc}>{shortfallMessage}</p>
                                             </div>
                                         </div>
-                                        {selectedUser && (
-                                            <Can permission={ADMIN_PERMISSIONS.TOPUP_REVIEW}>
-                                                <button
-                                                    type="button"
-                                                    className={styles.chargeBtn}
-                                                    onClick={() => setShowTopUpModal(true)}
-                                                >
-                                                    <Sparkles size={16} />
-                                                    شارژ کارت به کارت کاربر
-                                                </button>
-                                            </Can>
-                                        )}
+                                        <Can permission={ADMIN_PERMISSIONS.TOPUP_REVIEW}>
+                                            <button
+                                                type="button"
+                                                className={styles.chargeBtn}
+                                                onClick={() => setShowTopUpModal(true)}
+                                            >
+                                                <Sparkles size={16} />
+                                                شارژ کارت به کارت کاربر
+                                            </button>
+                                        </Can>
                                     </div>
-                                )}
+                                ) : null}
                             </div>
                         )}
 
                         <button
                             type="submit"
                             className={styles.summaryCard__submitBtn}
-                            disabled={isSubmitting || !selectedUser || Object.keys(selectedItems).length === 0 || isBalanceInsufficient}
+                            disabled={isSubmitting || !selectedUser || Object.keys(selectedItems).length === 0 || !quoteReady || knownShortfall > 0}
                         >
                             {isSubmitting ? (
                                 'در حال ثبت سفارش و فعال‌سازی...'
@@ -790,13 +797,15 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                 'ابتدا کاربر را انتخاب کنید'
                             ) : Object.keys(selectedItems).length === 0 ? (
                                 'دوره یا سرفصلی انتخاب نشده'
+                            ) : !quoteReady ? (
+                                quote.status === 'error' ? 'قیمت قابل محاسبه نیست' : 'در حال محاسبهٔ قیمت...'
+                            ) : knownShortfall > 0 ? (
+                                'موجودی نور کاربر کافی نیست'
                             ) : isFreeOrder ? (
                                 <>
                                     <Gift size={19} />
                                     ثبت نهایی سفارش رایگان
                                 </>
-                            ) : isBalanceInsufficient ? (
-                                'موجودی نور کاربر کافی نیست'
                             ) : (
                                 <>
                                     <CheckCircle2 size={19} />
@@ -812,7 +821,6 @@ export default function ManualOrderForm({ initialCourses = [] }) {
             {showTopUpModal && selectedUser && (
                 <AdminAssistedTopUpModal
                     user={selectedUser}
-                    conversionRate={conversionRate?.rialPerNoor}
                     onClose={() => setShowTopUpModal(false)}
                     onSuccess={handleTopUpSuccess}
                 />

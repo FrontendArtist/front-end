@@ -96,7 +96,11 @@ export async function createManualOrder(payload) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-        throw new Error(data.error || 'خطا در ثبت سفارش دستی');
+        const err = new Error(data.error || 'خطا در ثبت سفارش دستی');
+        err.status = res.status;
+        err.code = data.code || null;
+        err.insufficientBalance = res.status === 409 && data.code === 'INSUFFICIENT_NOOR_BALANCE';
+        throw err;
     }
     return data;
 }
@@ -121,6 +125,23 @@ export async function bulkDeleteOrders(status) {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
         throw new Error(data.error || 'خطا در حذف سفارش‌ها');
+    }
+    return data;
+}
+
+/** پیش‌نمایش قیمت سفارش دستی به‌نام ذینفع؛ قیمت فقط از quote استرپی می‌آید */
+export async function previewManualOrder({ userId, items }, { signal } = {}) {
+    const res = await fetch('/api/admin/orders/manual/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, items }),
+        signal,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+        const err = new Error(data.error || 'پیش‌نمایش قیمت ممکن نیست.');
+        err.status = res.status;
+        throw err;
     }
     return data;
 }

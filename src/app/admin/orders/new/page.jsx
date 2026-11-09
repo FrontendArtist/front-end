@@ -45,6 +45,7 @@ async function getPublishedCourses(jwt) {
                 chapters: Array.isArray(attrs.chapters)
                     ? attrs.chapters.map(ch => ({
                         id: ch.id,
+                        integrationId: ch.integrationId || null,
                         title: ch.title || '',
                         price: ch.price ?? attrs.price ?? 0,
                     }))
