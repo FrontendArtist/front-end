@@ -37,6 +37,7 @@ test.each(['canceled', 'pending'])('cannot start payment on canceled or failed o
 test('successful bank verification still accepts superseded order', async () => {
     process.env.STRAPI_API_TOKEN = 'test-token';
     const { POST: verifyPayment } = require('@/app/api/payment/verify/route');
+    fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [] }) }); // جست‌وجوی تلاش شارژ درگاه: چیزی نیست
     fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [{ id: 1, documentId: 'old-order',
         totalPrice: 100, orderStatus: 'canceled', paymentStatus: 'pending_payment',
         rejectionReason: 'جایگزین‌شده با سفارش جدید', items: [] }] }) })
@@ -47,7 +48,7 @@ test('successful bank verification still accepts superseded order', async () => 
         body: JSON.stringify({ State: 'OK', ResNum: 'old-order', RefNum: 'bank-reference' }),
     }));
     expect(verifySepTransaction).toHaveBeenCalled();
-    const update = JSON.parse(fetch.mock.calls[1][1].body).data;
+    const update = JSON.parse(fetch.mock.calls[2][1].body).data;
     expect(update).toMatchObject({ orderStatus: 'paid', paymentStatus: 'paid', refNum: 'bank-reference', rejectionReason: null });
     expect(response.status).toBe(303);
     expect(new URL(response.headers.get('location')).searchParams.get('status')).toBe('success');
@@ -57,12 +58,12 @@ test.each([
     ['CanceledByUser', 'cancel', false, 0],
     ['Failed', 'failed', false, 0],
     ['OK', 'failed', false, 0],
-    ['OK', 'failed', true, 2000],
 ])('unsuccessful attempt %s keeps order open and permits next payment', async (state, resultStatus, bankSuccess, amount) => {
     process.env.STRAPI_API_TOKEN = 'test-token';
     const { POST: verifyPayment } = require('@/app/api/payment/verify/route');
     const order = { id: 1, documentId: 'same-order', totalPrice: 100, user: { id: 5 },
         orderStatus: 'pending', paymentStatus: 'pending_payment', notes: 'summary', items: [] };
+    fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [] }) }); // جست‌وجوی تلاش شارژ درگاه: چیزی نیست
     fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [order] }) })
         .mockImplementationOnce(async (_, options) => {
             const update = JSON.parse(options.body).data;
@@ -90,4 +91,24 @@ test.each([
     }));
     expect(retry.status).toBe(200);
     expect(requestSepToken).toHaveBeenCalledWith(expect.objectContaining({ resNum: 'same-order' }));
+});
+
+test('amount mismatch reverses the bank payment and cancels the order', async () => {
+    process.env.STRAPI_API_TOKEN = 'test-token';
+    const { POST: verifyPayment } = require('@/app/api/payment/verify/route');
+    const order = { id: 1, documentId: 'mismatch-order', totalPrice: 100, user: { id: 5 },
+        orderStatus: 'pending', paymentStatus: 'pending_payment', notes: 'summary', items: [] };
+    fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [] }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ data: [order] }) })
+        .mockResolvedValueOnce({ ok: true });
+    verifySepTransaction.mockResolvedValue({ success: true, transactionDetail: { OrginalAmount: 2000 } });
+    reverseSepTransaction.mockResolvedValue({ success: true });
+    const result = await verifyPayment(new Request('http://shop.test/api/payment/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ State: 'OK', ResNum: 'mismatch-order', RefNum: 'bank-reference' }),
+    }));
+    expect(reverseSepTransaction).toHaveBeenCalledWith(expect.objectContaining({ refNum: 'bank-reference' }));
+    const update = JSON.parse(fetch.mock.calls[2][1].body).data;
+    expect(update).toMatchObject({ orderStatus: 'canceled', paymentStatus: 'failed' });
+    expect(new URL(result.headers.get('location')).searchParams.get('status')).toBe('failed');
 });

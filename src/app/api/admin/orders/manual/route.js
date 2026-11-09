@@ -285,36 +285,14 @@ export async function POST(request) {
             return NextResponse.json({ error: 'خطا در بازیابی اطلاعات کاربر' }, { status: 500 });
         }
 
-        // ── 3. بررسی موجودی نور کاربر در سامانه ByeMoney ──────────────────────
+        // ── 3. نرخ تبدیل برای یادداشت سفارش ───────────────────────────────────
+        // کفایت موجودی را خودِ ByeMoney در مرحلهٔ خرید بررسی می‌کند (PurchaseCoursesCommandValidator)؛
+        // پیش‌چک اینجا تکراری بود و با نبود Wallet.View موجودی را ۰ فرض می‌کرد.
         const conversionRes = await getConversionRateWithByeMoney({ jwt: session.user.jwt }).catch(() => null);
         const tomanPerNoor = conversionRes?.tomanPerNoor || (conversionRes?.rialPerNoor ? conversionRes.rialPerNoor / 10 : 1000);
         const requiredNoor = (!isFree && totalPrice > 0) ? Math.ceil(totalPrice / tomanPerNoor) : 0;
 
         const userExternalId = targetUser.documentId || String(targetUser.id);
-        let userBalance = 0;
-
-        try {
-            const batchRes = await getBatchBalancesWithByeMoney({ userIds: [userExternalId], jwt: session.user.jwt });
-            if (batchRes && batchRes.success && batchRes.balances) {
-                const docBal = batchRes.balances[userExternalId];
-                const idBal = batchRes.balances[String(targetUser.id)];
-                userBalance = Number(docBal !== undefined ? docBal : (idBal !== undefined ? idBal : 0));
-            }
-        } catch (balErr) {
-            console.warn('[ManualOrderAPI] Error checking user balance from ByeMoney:', balErr.message || balErr);
-        }
-
-        if (!isFree && requiredNoor > 0 && userBalance < requiredNoor) {
-            const shortfall = requiredNoor - userBalance;
-            return NextResponse.json({
-                error: `موجودی نور کاربر برای خرید این دوره‌ها کافی نیست. موجودی فعلی: ${userBalance.toLocaleString('fa-IR')} نور، مبلغ مورد نیاز: ${requiredNoor.toLocaleString('fa-IR')} نور (کسری: ${shortfall.toLocaleString('fa-IR')} نور). لطفاً ابتدا حساب کاربر را شارژ کنید یا گزینه ثبت رایگان را فعال فرمایید.`,
-                insufficientBalance: true,
-                userBalance,
-                requiredNoor,
-                shortfallNoor: shortfall,
-                shortfallToman: shortfall * tomanPerNoor,
-            }, { status: 400 });
-        }
 
         // ── 4. خرید دوره‌ها در سامانه ByeMoney (کسر نور یا ثبت رایگان) ──────────
         // استخراج شناسه‌های یکتای دوره‌ها (documentId) جهت ارسال به سامانه مالی ByeMoney
@@ -341,14 +319,10 @@ export async function POST(request) {
 
         if (!byeMoneyRes.success) {
             if (byeMoneyRes.insufficientBalance && !isFree) {
-                const shortfall = Math.max(0, requiredNoor - userBalance);
                 return NextResponse.json({
                     error: byeMoneyRes.error || `موجودی نور کاربر برای خرید این دوره‌ها کافی نیست. لطفاً ابتدا حساب کاربر را شارژ کنید.`,
                     insufficientBalance: true,
-                    userBalance,
                     requiredNoor,
-                    shortfallNoor: shortfall,
-                    shortfallToman: shortfall * tomanPerNoor,
                 }, { status: 400 });
             }
 
@@ -392,7 +366,7 @@ export async function POST(request) {
             byeMoneyTransaction?.transactionId ? `کد تراکنش مالی: ${byeMoneyTransaction.transactionId}` : null,
             isFree
                 ? `وضعیت مالی: ثبت رایگان (ارزش پایه دوره‌ها: ${Number(totalPrice).toLocaleString('fa-IR')} تومان)`
-                : `موجودی نور پیش از سفارش: ${userBalance.toLocaleString('fa-IR')} نور | مبلغ سفارش: ${requiredNoor.toLocaleString('fa-IR')} نور (${Number(totalPrice).toLocaleString('fa-IR')} تومان)`,
+                : `مبلغ سفارش: ${requiredNoor.toLocaleString('fa-IR')} نور (${Number(totalPrice).toLocaleString('fa-IR')} تومان)`,
             notes ? `توضیحات: ${notes}` : null,
             `اقلام ثبت‌شده: ${selectedCourses.map(c => c.chapterTitle ? `${c.title} (${c.chapterTitle})` : c.title).join('، ')}`
         ].filter(Boolean).join('\n');

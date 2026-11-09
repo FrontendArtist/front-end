@@ -125,6 +125,7 @@ export default function ByeMoneyOrderView({ order }) {
     const [cancelResult, setCancelResult] = useState(null);
 
     const items = Array.isArray(order.items) ? order.items : [];
+    const address = order.shippingAddress;
     const view = getByeMoneyOrderView(order, { cancelledNow: Boolean(cancelResult) });
     const { physicalItems } = view;
     const number = getOrderNumber(order);
@@ -219,6 +220,15 @@ export default function ByeMoneyOrderView({ order }) {
 
                     {showProgress && <Progress state={view.physicalState} />}
 
+                    {address && (
+                        <dl className={styles.address} data-testid="shipping-address">
+                            <div><dt>گیرنده</dt><dd>{address.recipientName}</dd></div>
+                            <div><dt>تلفن</dt><dd dir="ltr">{address.recipientPhone}</dd></div>
+                            <div><dt>نشانی</dt><dd>{[address.province, address.city, address.fullAddress].filter(Boolean).join(" - ")}</dd></div>
+                            {address.postalCode && <div><dt>کد پستی</dt><dd dir="ltr">{address.postalCode}</dd></div>}
+                        </dl>
+                    )}
+
                     {view.physicalCancelled && (
                         <div role="status" data-testid="physical-cancelled-notice" className={styles.notice}>
                             <strong>
@@ -234,7 +244,6 @@ export default function ByeMoneyOrderView({ order }) {
                             )}
                         </div>
                     )}
-
 
                     {canCancel && (
                         <div className={styles.actions}>

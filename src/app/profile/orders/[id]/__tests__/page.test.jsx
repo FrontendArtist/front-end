@@ -193,6 +193,22 @@ describe('جزئیات سفارش بای‌مانی – ارسال کالا و �
     expect(screen.queryByText('لغو بخش فیزیکی سفارش')).not.toBeInTheDocument();
   });
 
+  it('آدرس تحویل در کارت ارسال نمایش داده می‌شود و بدون آن بلوک نیست', async () => {
+    mockOrder({ ...baseOrder, items: [productItem('Preparing')], shippingAddress: {
+      recipientName: 'علی', recipientPhone: '09120000000', province: 'تهران', city: 'کرج', fullAddress: 'خیابان ۱', postalCode: '1234567890',
+    } });
+    const { unmount } = render(<OrderDetailPage />);
+    const box = await screen.findByTestId('shipping-address');
+    expect(box).toHaveTextContent('تهران - کرج - خیابان ۱');
+    expect(box).toHaveTextContent('09120000000');
+    expect(box).toHaveTextContent('1234567890');
+    unmount();
+    mockOrder({ ...baseOrder, items: [productItem('Preparing')] });
+    render(<OrderDetailPage />);
+    await screen.findByTestId('shipping-card');
+    expect(screen.queryByTestId('shipping-address')).not.toBeInTheDocument();
+  });
+
   it('سفارش پرداخت‌نشده: دکمهٔ لغو و نوار پیشرفت نیست', async () => {
     mockOrder({ ...baseOrder, financialStatus: 'AwaitingPayment', items: [productItem('Preparing')] });
     render(<OrderDetailPage />);

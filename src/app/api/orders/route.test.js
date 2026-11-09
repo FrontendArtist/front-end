@@ -321,10 +321,11 @@ describe('دریافت سفارشات و رسیدها (I11-T و I11-P)', () => {
     expect(res.body.data[0].topUps[0].status).toBe('Confirmed');
   });
 
-  it('جزئیات سفارش خریدار آدرس تحویل ندارد و از استرپی هم نمی‌خواند', async () => {
+  it('آدرس تحویل فقط با فیلدهای نمایشی از پاسخ بای‌مانی می‌آید و از استرپی خوانده نمی‌شود', async () => {
     const cartId = '11111111-1111-1111-1111-111111111111';
     getMyCourseOrderDetails.mockResolvedValue({ success: true, data: {
       orderId: 'cart:' + cartId, sourceType: 'Cart', cartId, reservationId: '22222222-2222-2222-2222-222222222222',
+      shippingAddress: { recipientName: 'علی', recipientPhone: '09120000000', province: 'تهران', city: 'تهران', fullAddress: 'خیابان ۱', postalCode: null, version: 'hash-1', extra: 'x' },
       financialStatus: 'Paid', deliveryStatus: 'Pending', finalAmountInNoor: 9, itemCount: 1, createdAtUtc: '2026-10-20T10:00:00Z',
       items: [{ externalCourseId: 'p1', itemType: 'Product', title: 'کتاب', quantity: 1, finalAmountInNoor: 9, physicalDeliveryStatus: 'Preparing' }],
       topUps: [],
@@ -333,7 +334,10 @@ describe('دریافت سفارشات و رسیدها (I11-T و I11-P)', () => {
     const res = await GET({ url: 'http://site.test/api/orders?documentId=cart:' + cartId });
     expect(res.status).toBe(200);
     expect(global.fetch.mock.calls.some(([url]) => url.includes('/address'))).toBe(false);
-    expect(res.body.data[0]).not.toHaveProperty('shippingAddress');
+    expect(res.body.data[0].shippingAddress).toEqual({
+      recipientName: 'علی', recipientPhone: '09120000000', province: 'تهران', city: 'تهران', fullAddress: 'خیابان ۱', postalCode: null,
+    });
+    expect(res.body.data[0]).not.toHaveProperty('reservationId');
   });
 
   it('دریافت رسید خرید شخصی از پارامتر purchaseId فقط با توکن نشست انجام می‌شود', async () => {

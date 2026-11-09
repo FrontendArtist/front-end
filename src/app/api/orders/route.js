@@ -12,6 +12,13 @@ import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
+// فقط فیلدهای نمایشی آدرس تحویل از پاسخ بای‌مانی به مرورگر می‌رسد.
+function pickShippingAddress(address) {
+    if (!address) return null;
+    const { recipientName, recipientPhone, province, city, fullAddress, postalCode } = address;
+    return { recipientName, recipientPhone, province, city, fullAddress, postalCode: postalCode ?? null };
+}
+
 // --------------------------------------------------------------------------
 // GET /api/orders : دریافت لیست سفارشات کاربر همراه با دوره‌های داخل آن
 // --------------------------------------------------------------------------
@@ -82,6 +89,7 @@ export async function GET(request) {
                             expiresAtUtc: d.expiresAtUtc,
                             currentTopUpRequestId: d.currentTopUpRequestId,
                             cartSummary: d.cartSummary,
+                            shippingAddress: pickShippingAddress(d.shippingAddress),
                             items: (d.items || []).map(item => mapByeMoneyLineItem(item)).filter(Boolean),
                             topUps: d.topUps || []
                         };
