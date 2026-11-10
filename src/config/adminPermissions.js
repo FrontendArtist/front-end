@@ -8,6 +8,10 @@
  *   - TopUp.Review
  *   - Courses.Manage
  *   - Wallet.View
+ *   - Purchases.View
+ *   - Purchases.Settle
+ *   - Noor.Gift
+ *   - Noor.Withdraw
  */
 
 export const ADMIN_PERMISSIONS = {
