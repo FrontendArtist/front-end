@@ -179,10 +179,14 @@ export async function PUT(request, { params }) {
                     const items = orderDetails?.data?.items || [];
                     const courseIdsToConnect = new Set();
                     const chapterIdsToConnect = new Set();
+                    const chapterUuidsToConnect = new Set();
 
                     for (const item of items) {
                         if (item.chapterId) {
                             chapterIdsToConnect.add(Number(item.chapterId));
+                        }
+                        if (item.chapterIntegrationId) {
+                            chapterUuidsToConnect.add(String(item.chapterIntegrationId));
                         } else if (item.courseId && !item.slug?.includes('-chapter-')) {
                             courseIdsToConnect.add(Number(item.courseId));
                         } else if (item.type === 'chapter') {
@@ -217,6 +221,8 @@ export async function PUT(request, { params }) {
                                         ? userData.enrolledChapters.map(Number)
                                         : [];
                                     updatePayload.enrolledChapters = [...new Set([...existingChapters, ...Array.from(chapterIdsToConnect)])];
+                                    const existingUuids = Array.isArray(userData.enrolledChapterIntegrationIds) ? userData.enrolledChapterIntegrationIds.map(String) : [];
+                                    updatePayload.enrolledChapterIntegrationIds = [...new Set([...existingUuids, ...Array.from(chapterUuidsToConnect)])];
                                 }
 
                                 const userSyncRes = await fetch(`${STRAPI_API_URL}/api/users/${userId}`, {

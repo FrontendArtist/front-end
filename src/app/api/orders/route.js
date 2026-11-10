@@ -22,23 +22,26 @@ export async function GET(request) {
     }
 
     try {
-        // ── BUG FIX ─────────────────────────────────────────────────────────────
-        // صفحه /profile/orders/[id] می‌تواند ?documentId=xyz بفرستد تا فقط
-        // یک سفارش خاص برگردد. قبلاً این پارامتر کاملاً نادیده گرفته می‌شد.
         const { searchParams } = new URL(request.url);
         const documentId = searchParams.get('documentId');
+
+        const rawPhone = session.user.phoneNumber || session.user.phone;
+        const phone = typeof rawPhone === 'string' && rawPhone.trim().length >= 10 ? rawPhone.trim() : null;
+        const userFilter = phone
+            ? `filters[$or][0][user][id][$eq]=${encodeURIComponent(session.user.id)}&filters[$or][1][phone][$eq]=${encodeURIComponent(phone)}`
+            : `filters[user][id][$eq]=${encodeURIComponent(session.user.id)}`;
 
         let strapiUrl;
         if (documentId) {
             // دریافت یک سفارش خاص با documentId + تأیید مالکیت کاربر
             strapiUrl = `${STRAPI_BASE_URL}/api/orders`
                 + `?filters[documentId][$eq]=${encodeURIComponent(documentId)}`
-                + `&filters[user][id][$eq]=${session.user.id}`
+                + `&${userFilter}`
                 + `&populate=*`;
         } else {
-            // دریافت همه سفارشات کاربر (رفتار قبلی)
+            // دریافت همه سفارشات کاربر
             strapiUrl = `${STRAPI_BASE_URL}/api/orders`
-                + `?filters[user][id][$eq]=${session.user.id}`
+                + `?${userFilter}`
                 + `&pagination[pageSize]=100`
                 + `&sort=createdAt:desc`
                 + `&populate=*`;

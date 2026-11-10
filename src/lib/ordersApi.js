@@ -4,7 +4,7 @@
  */
 import { API_BASE_URL } from './api';
 import { PAYMENT_METHOD, isOrderPaid } from './constants/orderConstants';
-import { getPurchasedChapterId, isChapterOrderItem } from './courseAccessUtils';
+import { getPurchasedChapterId, getPurchasedChapterIds, doesItemBelongToCourse, isChapterOrderItem } from './courseAccessUtils';
 
 /**
  * تابع واحد و استاندارد برای بررسی دسترسی کاربر به دوره و فصل‌ها
@@ -15,9 +15,10 @@ import { getPurchasedChapterId, isChapterOrderItem } from './courseAccessUtils';
  * @param {string|number} courseId - شناسه دوره
  * @param {string} courseSlug - اسلاگ دوره
  * @param {object} sessionUser - آبجکت کاربر در سشن (جهت بررسی fallback)
+ * @param {object} courseData - آبجکت کامل دوره همراه با فصل‌ها (جهت نگاشت هوشمند فصل‌ها)
  * @returns {Promise<{ hasAccess: boolean, purchasedChapterIds: string[] }>}
  */
-export async function checkCourseAccess(userId, courseId, courseSlug, sessionUser = null) {
+export async function checkCourseAccess(userId, courseId, courseSlug, sessionUser = null, courseData = null) {
   if (!userId || !courseId) {
     return { hasAccess: false, purchasedChapterIds: [] };
   }
@@ -27,9 +28,17 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
   let ordersList = [];
   let activeCourseOrder = null;
 
+  const courseObj = courseData ? { ...courseData } : { id: courseId, slug: courseSlug };
+
   try {
     const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
-    const url = `${API_BASE_URL}/api/orders?filters[user][id][$eq]=${encodeURIComponent(userId)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate=*`;
+    const rawPhone = sessionUser?.phoneNumber || sessionUser?.phone;
+    const phone = typeof rawPhone === 'string' && rawPhone.trim().length >= 10 ? rawPhone.trim() : null;
+    let filterQuery = `filters[user][id][$eq]=${encodeURIComponent(userId)}`;
+    if (phone) {
+      filterQuery = `filters[$or][0][user][id][$eq]=${encodeURIComponent(userId)}&filters[$or][1][phone][$eq]=${encodeURIComponent(phone)}`;
+    }
+    const url = `${API_BASE_URL}/api/orders?${filterQuery}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate=*`;
 
     const res = await fetch(url, {
       headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
@@ -40,48 +49,57 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
       const ordersData = await res.json();
       ordersList = ordersData.data || [];
 
+      // فقط در صورتی که در سفارش‌های پرداخت‌شده قلم فصلی متعلق به این دوره وجود داشته باشد و فصل‌ها از قبل پاس داده نشده باشند
+      const hasAnyChapterItem = ordersList.some(o =>
+        isOrderPaid(o) && (o.items || o.attributes?.items || []).some(item =>
+          isChapterOrderItem(item) && doesItemBelongToCourse(item, courseObj)
+        )
+      );
+
+      if (hasAnyChapterItem && (!courseObj.chapters || courseObj.chapters.length === 0) && courseSlug) {
+        try {
+          const courseRes = await fetch(
+            `${API_BASE_URL}/api/courses?filters[slug][$eq]=${encodeURIComponent(courseSlug)}&populate[chapters][fields][0]=title&populate[chapters][fields][1]=id`,
+            { headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` }, next: { revalidate: 60 } }
+          );
+          if (courseRes.ok) {
+            const cJson = await courseRes.json();
+            const fetchedCourse = cJson?.data?.[0];
+            if (fetchedCourse) {
+              if (fetchedCourse.chapters && fetchedCourse.chapters.length > 0) {
+                courseObj.chapters = fetchedCourse.chapters;
+              }
+              if (fetchedCourse.title && !courseObj.title) {
+                courseObj.title = fetchedCourse.title;
+              }
+            }
+          }
+        } catch {}
+      }
+
       for (const order of ordersList) {
         const isPaid = isOrderPaid(order);
         const items = order.items || order.attributes?.items || [];
 
         // بررسی آیا این سفارش به این دوره یا فصلی از آن مربوط است
-        const matchesThisCourse = items.some(item => {
-          const itemCourseId = String(item.courseId ?? '');
-          const itemSlug = String(item.slug ?? '');
-          const itemId = String(item.id ?? '');
-          return (
-            itemCourseId === String(courseId) ||
-            itemSlug === String(courseSlug) ||
-            itemId === String(courseId) ||
-            (item.type === 'chapter' && (itemSlug.startsWith(`${courseSlug}-chapter-`) || itemCourseId === String(courseId)))
-          );
-        });
+        const matchesThisCourse = items.some(item => doesItemBelongToCourse(item, courseObj));
 
         if (isPaid) {
           for (const item of items) {
-            const itemCourseId = String(item.courseId ?? '');
-            const itemSlug = String(item.slug ?? '');
-            const itemId = String(item.id ?? '');
+            if (!doesItemBelongToCourse(item, courseObj)) continue;
 
             const isChapterItem = isChapterOrderItem(item);
 
             // بررسی خرید کامل دوره (فقط در صورتی که قلم مربوط به فصل نباشد)
-            if (
-              !isChapterItem &&
-              (
-                itemCourseId === String(courseId) ||
-                itemSlug === String(courseSlug) ||
-                itemId === String(courseId)
-              )
-            ) {
+            if (!isChapterItem) {
               hasAccess = true;
             }
+          }
 
-            // بررسی خرید فصل‌های مجزا
-            if (isChapterItem) {
-              const chapterId = getPurchasedChapterId(item, courseId, courseSlug);
-              if (chapterId) purchasedChapterIds.push(chapterId);
-            }
+          // بررسی خرید فصل‌های مجزا با نگاشت هوشمند عناوین به فصل‌های جاری
+          const foundChapterIds = getPurchasedChapterIds([order], courseObj);
+          if (foundChapterIds.length > 0) {
+            purchasedChapterIds.push(...foundChapterIds);
           }
         } else if (matchesThisCourse && !activeCourseOrder) {
           // ذخیره وضعیت آخرین سفارش در صورتی که در وضعیت انتظار یا بررسی باشد
@@ -135,12 +153,9 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
 }
 
 /**
- * تابع قدیمی جهت حفظ سازگاری ۱۰۰٪ با کدهای قبلی
+ * بررسی ساده آیا کاربر به کل دوره دسترسی دارد یا خیر
  */
-export async function getUserCoursePurchases(userId, courseId, courseSlug, sessionUser) {
-  const { hasAccess, purchasedChapterIds } = await checkCourseAccess(userId, courseId, courseSlug, sessionUser);
-  return {
-    hasPurchasedServer: hasAccess,
-    purchasedChapterIdsServer: purchasedChapterIds,
-  };
+export async function hasCourseAccess(userId, courseId, courseSlug, sessionUser = null, courseData = null) {
+  const { hasAccess } = await checkCourseAccess(userId, courseId, courseSlug, sessionUser, courseData);
+  return hasAccess;
 }

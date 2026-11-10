@@ -31,6 +31,9 @@ async function fetchUserSessionData(userId, jwt) {
                 enrolledChapters: Array.isArray(userData.enrolledChapters)
                     ? userData.enrolledChapters.map(Number)
                     : [],
+                enrolledChapterIntegrationIds: Array.isArray(userData.enrolledChapterIntegrationIds)
+                    ? userData.enrolledChapterIntegrationIds.map(String)
+                    : [],
                 firstName: userData.firstName || '',
                 lastName: userData.lastName || '',
                 role: userData.role || null,
@@ -238,6 +241,7 @@ export const authOptions = {
                         session.user.enrolledCourses = extraData.enrolledCourses;
                         session.user.enrolledSlugs = extraData.enrolledSlugs;
                         session.user.enrolledChapters = extraData.enrolledChapters;
+                        session.user.enrolledChapterIntegrationIds = extraData.enrolledChapterIntegrationIds || [];
                         if (extraData.firstName !== undefined) session.user.firstName = extraData.firstName;
                         if (extraData.lastName !== undefined) session.user.lastName = extraData.lastName;
                         if (extraData.is_foreigner !== undefined) {

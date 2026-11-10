@@ -58,12 +58,20 @@ async function verifyAccess(session, lessonData, allowFree) {
   const enrolledCourses = session.user?.enrolledCourses || [];
   const enrolledSlugs = session.user?.enrolledSlugs || [];
   const enrolledChapters = session.user?.enrolledChapters || [];
+  const enrolledChapterUuids = Array.isArray(session.user?.enrolledChapterIntegrationIds)
+    ? session.user.enrolledChapterIntegrationIds.map((u) => String(u).toLowerCase())
+    : [];
 
   const isEnrolledInCourse =
     enrolledCourses.some((c) => String(c) === String(courseId) || String(c) === String(course.documentId)) ||
     enrolledSlugs.some((s) => String(s) === String(courseSlug));
 
   if (isEnrolledInCourse) {
+    return { allowed: true };
+  }
+
+  const chapterIntegrationId = lessonData.chapter?.integrationId;
+  if (chapterIntegrationId && enrolledChapterUuids.includes(String(chapterIntegrationId).toLowerCase())) {
     return { allowed: true };
   }
 

@@ -124,9 +124,59 @@
   position: relative;
   z-index: 1;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  @include respond(lg) {
+    justify-content: center;
+  }
+
+  @include respond(sm) {
+    flex-direction: column-reverse;
+    width: 100%;
+    gap: 10px;
+  }
+}
+
+.downloadButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  background: fade(var(--color-text-primary), 8%);
+  border: 1px solid fade(var(--color-text-primary), 28%);
+  color: var(--color-text-primary);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  cursor: pointer;
+
+  &:hover {
+    background: fade(var(--color-text-primary), 16%);
+    border-color: var(--color-text-primary);
+    color: var(--color-text-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px fade(var(--color-text-primary), 18%);
+  }
 
   @include respond(sm) {
     width: 100%;
+    padding: 12px 20px;
+  }
+}
+
+.downloadIcon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.25s ease;
+
+  .downloadButton:hover & {
+    transform: translateY(2px);
   }
 }
 

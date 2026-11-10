@@ -380,9 +380,9 @@ async function grantUserAccessAndCredits(userId, order) {
             .map((i) => i.slug)
             .filter(Boolean);
 
-        const chapterIds = items
-            .filter((i) => (i.__component === 'order.course-order-item' && i.chapterId) || i.type === 'chapter')
-            .map((i) => Number(i.chapterId || (typeof i.id === 'string' ? i.id.replace('chapter-', '') : i.id)))
+        const chapterOrderItems = items.filter((i) => (i.__component === 'order.course-order-item' && (i.chapterId || i.chapterIntegrationId)) || i.type === 'chapter');
+        const chapterIds = chapterOrderItems.map((i) => Number(i.chapterId || (typeof i.id === 'string' ? i.id.replace('chapter-', '') : i.id))).filter(Boolean);
+        const chapterIntegrationIds = chapterOrderItems.map((i) => i.chapterIntegrationId).filter(Boolean).map(String)
             .filter(Boolean);
 
         // واکشی پروفایل کاربر
@@ -405,6 +405,8 @@ async function grantUserAccessAndCredits(userId, order) {
                 ? userData.enrolledChapters.map(Number)
                 : [];
             updatePayload.enrolledChapters = [...new Set([...existingChapters, ...chapterIds])];
+            const existingUuids = Array.isArray(userData.enrolledChapterIntegrationIds) ? userData.enrolledChapterIntegrationIds.map(String) : [];
+            updatePayload.enrolledChapterIntegrationIds = [...new Set([...existingUuids, ...chapterIntegrationIds])];
         }
 
         // بررسی آیتم شارژ نور

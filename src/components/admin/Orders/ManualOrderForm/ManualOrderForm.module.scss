@@ -516,6 +516,10 @@
         font-weight: var(--font-weight-bold);
         color: var(--color-title-hover);
         white-space: nowrap;
+
+        &--free {
+            color: var(--color-success, #10b981);
+        }
     }
 
     &__chaptersToggle {

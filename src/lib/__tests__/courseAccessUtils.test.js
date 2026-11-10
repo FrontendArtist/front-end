@@ -81,3 +81,50 @@ test('خرید کل دوره همچنان دسترسی کامل می‌دهد', 
   global.fetch = jest.fn().mockResolvedValue(new Response(JSON.stringify({ data: [paid([{ courseId: 189, slug: course.slug }])] })));
   expect((await checkCourseAccess(9, course.id, course.slug)).hasAccess).toBe(true);
 });
+
+test('تطابق دقیق بر اساس UUID فصل حتی در صورت بازتولید ID عددی توسط استراپی ۵', () => {
+  const targetUuid = '550e8400-e29b-41d4-a716-446655440000';
+  const regeneratedCourse = {
+    id: 999,
+    slug: 'khak-be-aflak',
+    title: 'خاک به افلاک',
+    chapters: [
+      { id: 140, integrationId: targetUuid, title: 'فصل ۱' },
+      { id: 141, integrationId: 'other-uuid', title: 'فصل ۲' },
+    ],
+  };
+
+  const oldOrderItem = {
+    __component: 'order.course-order-item',
+    type: 'chapter',
+    courseId: 100,
+    chapterId: 78,
+    chapterIntegrationId: targetUuid,
+    slug: 'khak-be-aflak-chapter-78',
+    title: 'خاک به افلاک - فصل ۱',
+  };
+
+  const result = getPurchasedChapterIds([paid([oldOrderItem])], regeneratedCourse);
+  expect(result).toEqual(['140']);
+});
+
+test('UUID فصل متعلق به دوره دیگر مجوز دسترسی به دوره جاری نمی‌دهد', () => {
+  const anotherCourse = {
+    id: 500,
+    slug: 'another-course',
+    title: 'دوره دیگر',
+    chapters: [{ id: 10, integrationId: 'uuid-1', title: 'فصل ۱' }],
+  };
+
+  const orderItemForDifferentCourse = {
+    __component: 'order.course-order-item',
+    type: 'chapter',
+    courseId: 999,
+    chapterIntegrationId: 'uuid-1',
+    slug: 'different-course-chapter-1',
+    title: 'دوره کاملاً متفاوت - فصل ۱',
+  };
+
+  const result = getPurchasedChapterIds([paid([orderItemForDifferentCourse])], anotherCourse);
+  expect(result).toEqual([]);
+});

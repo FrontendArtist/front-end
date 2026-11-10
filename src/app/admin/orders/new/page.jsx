@@ -46,7 +46,8 @@ async function getPublishedCourses(jwt) {
                     ? attrs.chapters.map(ch => ({
                         id: ch.id,
                         title: ch.title || '',
-                        price: ch.price ?? attrs.price ?? 0,
+                        price: Number(ch.price?.toman ?? ch.price) || 0,
+                        integrationId: ch.integrationId || null,
                     }))
                     : [],
             };

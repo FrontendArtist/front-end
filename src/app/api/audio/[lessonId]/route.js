@@ -84,6 +84,8 @@ async function findLessonFromStrapi(lessonId, cid) {
             lesson: l,
             course: c,
             chapterId: ch.id,
+            chapterTitle: ch.title || '',
+            chapter: ch,
             audioUrl: l.audioUrl || null,
             isFree: Boolean(l.isFree) || hasZeroPrice(ch.price),
           };

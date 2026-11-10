@@ -40,8 +40,11 @@ function useToast() {
 }
 
 // ── ابزارهای کمکی ──────────────────────────────────────────────────────────
-const formatPrice = (p) =>
-    new Intl.NumberFormat('fa-IR').format(Number(p) || 0) + ' تومان';
+const formatPrice = (p) => {
+    const num = Number(p);
+    if (!num || num <= 0) return 'رایگان';
+    return new Intl.NumberFormat('fa-IR').format(num) + ' تومان';
+};
 
 export default function ManualOrderForm({ initialCourses = [] }) {
     const router = useRouter();
@@ -154,6 +157,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                     id: course.id,
                     courseId: course.id,
                     chapterId: chapter.id,
+                    chapterIntegrationId: chapter.integrationId || null,
                     title: course.title,
                     chapterTitle: chapter.title,
                     slug: course.slug,
@@ -538,7 +542,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                                 </label>
 
                                                 <div className={styles.courseItem__priceBlock}>
-                                                    <span className={styles.courseItem__price}>
+                                                    <span className={`${styles.courseItem__price} ${course.isFree || Number(course.price) === 0 ? styles['courseItem__price--free'] : ''}`}>
                                                         {formatPrice(course.price)}
                                                     </span>
 
@@ -567,6 +571,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                                     </p>
                                                     {course.chapters.map((chapter) => {
                                                         const isChapterSelected = !!selectedItems[`chapter-${chapter.id}`];
+                                                        const isChapterFree = Number(chapter.price) === 0;
                                                         return (
                                                             <label key={chapter.id} className={styles.courseItem__chapterRow}>
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -579,8 +584,8 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                                                     />
                                                                     <span>{chapter.title}</span>
                                                                 </div>
-                                                                <span className={styles.courseItem__price}>
-                                                                    {formatPrice(chapter.price || course.price)}
+                                                                <span className={`${styles.courseItem__price} ${isChapterFree ? styles['courseItem__price--free'] : ''}`}>
+                                                                    {formatPrice(chapter.price)}
                                                                 </span>
                                                             </label>
                                                         );

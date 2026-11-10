@@ -19,7 +19,14 @@ import styles from './AddToCartButton.module.scss';
  * 
  * @param {{ course: { id: string|number; slug: string; title: string; price: number; image: string; } }} props
  */
-export default function AddToCartButton({ course }) {
+export default function AddToCartButton({
+  course,
+  buttonText = 'افزودن به سبد خرید',
+  customPrice = null,
+  deductedAmount = 0,
+  size = 'default',
+  className = '',
+}) {
   const { id, slug, title, price, image } = course;
 
   const [isHydrated, setIsHydrated] = useState(false);
@@ -28,6 +35,8 @@ export default function AddToCartButton({ course }) {
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+
+  const isSmall = size === 'small';
 
   const orders = useAccountOrderItems();
   const pendingOrder = (() => {
@@ -74,9 +83,13 @@ export default function AddToCartButton({ course }) {
     );
 
     const intlPrice = course.internationalPrice ? Number(course.internationalPrice) : null;
+    const baseTomanPrice = (customPrice !== null && Number.isFinite(Number(customPrice)))
+      ? Number(customPrice)
+      : ((typeof price === 'object' ? price?.toman : price) || 0);
+
     const formattedPrice = (isForeign && intlPrice && intlPrice > 0)
       ? intlPrice
-      : ((typeof price === 'object' ? price?.toman : price) || 0);
+      : baseTomanPrice;
 
     const numOriginal = (isForeign && intlPrice && intlPrice > 0)
       ? intlPrice
@@ -86,16 +99,20 @@ export default function AddToCartButton({ course }) {
       ? image
       : (image?.url || course.media?.url || '/images/forempties2.png');
 
+    const effectiveDeductedAmount = Number(deductedAmount || course.alreadyPaidChaptersTotal || 0);
+
     addItem({
       id,
       slug,
       title,
       price: formattedPrice,
       originalPrice: numOriginal,
+      deductedAmount: effectiveDeductedAmount,
       internationalPrice: intlPrice,
       discountPercent: (isForeign && intlPrice && intlPrice > 0) ? 0 : (course.discountPercent || 0),
       image: courseImageUrl,
       type: 'course',
+      isChaptered: Boolean(course.isChaptered),
     });
   };
 
@@ -122,7 +139,7 @@ export default function AddToCartButton({ course }) {
     return (
       <Link
         href={targetUrl}
-        className={`${styles.pendingButton} ${!isVerification ? styles.pendingPayment : ''}`}
+        className={`${styles.pendingButton} ${isSmall ? styles.smallPending : ''} ${!isVerification ? styles.pendingPayment : ''}`}
         title={isVerification ? 'سفارش شما در انتظار تأیید پرداخت توسط پشتیبانی است' : 'برای ارسال فیش واریز کلیک کنید'}
       >
         {isVerification ? (
@@ -145,14 +162,18 @@ export default function AddToCartButton({ course }) {
 
   // قبل از hydration یا وقتی دوره در سبد نیست: دکمه فعال
   if (!isHydrated || !isInCart) {
+    const ariaText = buttonText === 'افزودن به سبد خرید'
+      ? `افزودن ${title} به سبد خرید`
+      : `${buttonText} - ${title}`;
+
     return (
       <button
-        className={styles.addToCartBtn}
+        className={`${styles.addToCartBtn} ${isSmall ? styles.small : ''} ${className}`.trim()}
         onClick={handleAddToCart}
-        aria-label={`افزودن ${title} به سبد خرید`}
+        aria-label={ariaText}
       >
         <CartIcon />
-        افزودن به سبد خرید
+        {buttonText}
       </button>
     );
   }
@@ -160,7 +181,7 @@ export default function AddToCartButton({ course }) {
   // بعد از hydration و دوره در سبد است: دکمه غیرفعال
   return (
     <button
-      className={`${styles.addToCartBtn} ${styles.disabled}`}
+      className={`${styles.addToCartBtn} ${styles.disabled} ${isSmall ? styles.small : ''} ${className}`.trim()}
       disabled
       aria-label={`${title} در سبد خرید موجود است`}
     >
