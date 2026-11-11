@@ -1,0 +1,180 @@
+@use '@/styles/base/mixins' as *;
+
+.wallet {
+    width: 100%;
+    animation: fadeIn 0.4s ease-out;
+
+    &__title {
+        font-family: var(--font-lalezar);
+        font-size: var(--font-2xl);
+        color: var(--color-text-primary);
+        margin: 0 0 24px 0;
+        padding-bottom: 12px;
+        text-align: center;
+        border-bottom: 1px solid fade(var(--color-primary), 15%);
+
+        @include respond(xl) {
+            font-size: var(--font-xl);
+        }
+    }
+
+    &__balance {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        justify-content: space-around;
+        padding: 20px;
+        margin-bottom: 32px;
+        border-radius: var(--border-radius);
+        border: 1px solid fade(var(--color-primary), 30%);
+        background: fade(var(--color-primary), 6%);
+        color: var(--color-text-primary);
+        text-align: center;
+
+        > div {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        strong {
+            font-size: var(--font-xl);
+        }
+    }
+
+    &__balanceLabel {
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+    }
+
+    &__hint {
+        font-size: var(--font-xs);
+        color: var(--color-card-text);
+    }
+
+    &__sectionTitle {
+        font-size: var(--font-lg);
+        color: var(--color-text-primary);
+        margin-bottom: 16px;
+        font-weight: 600;
+    }
+
+    &__loading,
+    &__empty {
+        text-align: center;
+        padding: 48px 20px;
+        color: var(--color-card-text);
+        font-size: var(--font-md);
+        border-radius: var(--border-radius);
+        border: 1px dashed fade(var(--color-primary), 30%);
+    }
+
+    &__error {
+        color: var(--color-error);
+        background: fade(var(--color-error), 15%);
+        padding: 20px;
+        border-radius: var(--border-radius);
+        text-align: center;
+        border: 1px solid fade(var(--color-error), 40%);
+    }
+
+    &__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    &__row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 18px;
+        border-radius: var(--border-radius);
+        border: 1px solid fade(var(--color-primary), 15%);
+        background: fade(var(--color-bg-primary-overlay), 40%);
+        color: var(--color-text-primary);
+    }
+
+    &__rowInfo,
+    &__amountBox {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    &__amountBox {
+        align-items: flex-end;
+    }
+
+    &__type {
+        font-weight: 600;
+    }
+
+    &__date {
+        font-size: var(--font-sm);
+        color: var(--color-card-text);
+    }
+
+    &__link {
+        font-size: var(--font-sm);
+        color: var(--color-primary);
+    }
+
+    &__credit,
+    &__debit {
+        font-size: var(--font-lg);
+        font-weight: 700;
+    }
+
+    &__credit {
+        color: var(--color-success, #2e9e5b);
+    }
+
+    &__debit {
+        color: var(--color-error);
+    }
+
+    &__unit {
+        font-size: var(--font-xs);
+        color: var(--color-card-text);
+    }
+
+    &__pager {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+        margin-top: 20px;
+        color: var(--color-text-primary);
+
+        button {
+            padding: 6px 16px;
+            border-radius: 8px;
+            border: 1px solid fade(var(--color-primary), 30%);
+            background: fade(var(--color-primary), 10%);
+            color: var(--color-text-primary);
+            cursor: pointer;
+
+            &:disabled {
+                opacity: 0.45;
+                cursor: default;
+            }
+        }
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

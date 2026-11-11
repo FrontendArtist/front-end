@@ -22,7 +22,7 @@ import {
     selectItemLevelDiscount,
 } from '@/store/useCartStore';
 import useAuthStore from '@/store/authStore';
-import { executeOnlinePayment, executeNoorCartPurchase } from '@/lib/checkoutService';
+import { executeNoorCartPurchase } from '@/lib/checkoutService';
 import usePaymentProcessing from '@/hooks/usePaymentProcessing';
 import useReviewNoticeText from '@/hooks/useReviewNoticeText';
 import { checkPaymentConnection, invalidatePaymentConnection } from '@/lib/client/paymentConnection';
@@ -311,16 +311,8 @@ export default function CartPage() {
                     orders,
                 });
             } else {
-                await executeOnlinePayment({
-                    items,
-                    finalTotalPrice,
-                    appliedCoupon,
-                    couponDiscount,
-                    shippingAddress: null,
-                    router,
-                    session,
-                    orders,
-                });
+                // هیچ مسیر سفارش‌سازی استرپی برای خرید جدید وجود ندارد؛ اقلام ناشناخته باید از سبد حذف شوند.
+                throw new Error('سبد شامل قلمی است که قابل پرداخت نیست. لطفاً آن را حذف کنید.');
             }
         } catch (err) {
             if (currentPreviewKey.current !== paymentKey) return;

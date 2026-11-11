@@ -38,6 +38,16 @@ export default function ProfileSidebar() {
             )
         },
         {
+            href: '/profile/wallet',
+            label: 'کیف پول',
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M16 13h2M2 10h20M6 6V4h12v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+            )
+        },
+        {
             href: '/profile/messages',
             label: 'پیام‌های من',
             icon: (

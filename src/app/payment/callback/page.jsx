@@ -353,7 +353,7 @@ function PaymentCallbackContent() {
 
                     {/* دکمه‌های عملیات */}
                     <div className={styles.actions}>
-                        <Link href="/checkout" className={styles.primaryButton}>
+                        <Link href="/cart" className={styles.primaryButton}>
                             تلاش مجدد
                         </Link>
                         <Link href="/cart" className={styles.secondaryButton}>

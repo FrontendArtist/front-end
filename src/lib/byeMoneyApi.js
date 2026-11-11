@@ -336,7 +336,7 @@ export async function createTopUpRequestWithByeMoney({ amountInNoor, pendingItem
  * 
  * @param {object} params
  * @param {string} params.jwt - توکن احراز هویت
- * @returns {Promise<{ success: boolean, balance: number, currency: string, error?: string, unauthorized?: boolean }>}
+ * @returns {Promise<{ success: boolean, balance: number, giftBalance?: number, currency: string, error?: string, unauthorized?: boolean }>}
  */
 export async function getWalletBalanceWithByeMoney({ jwt }) {
   if (!jwt) {
@@ -375,6 +375,7 @@ export async function getWalletBalanceWithByeMoney({ jwt }) {
       return {
         success: true,
         balance: Number(data.balance ?? 0),
+        giftBalance: Number(data.giftBalance ?? 0),
         currency: data.currency || 'Noor',
       };
     }
@@ -2106,3 +2107,67 @@ export const getCourseOrderSettlementPeriods = ({ jwt, page = 1, pageSize = 20, 
 /** سفارش‌های یک دورهٔ بسته‌شده؛ دورهٔ ناموجود 404. */
 export const getCourseOrderSettlementPeriodOrders = ({ jwt, periodId, page = 1, pageSize = 20, signal } = {}) =>
   callCourseOrderSettlements({ jwt, path: `/${encodeURIComponent(periodId)}/orders?${pageQuery(page, pageSize)}`, signal });
+
+/**
+ * گردش کیف پول کاربر جاری از Ledger بای‌مانی (جدیدترین اول)
+ * اندپوینت: GET /api/wallet/transactions?page=&pageSize=  (قرارداد I04-W)
+ *
+ * @param {object} params
+ * @param {string} params.jwt - توکن احراز هویت
+ * @param {number} [params.page=1]
+ * @param {number} [params.pageSize=20] - بین ۱ تا ۱۰۰
+ * @returns {Promise<{
+ *   success: boolean,
+ *   items: Array<{ transactionId: string, type: string, amountNoor: number, giftAmountNoor: number, createdAtUtc: string, orderId: string|null, topUpId: string|null }>,
+ *   page: number, pageSize: number, totalCount: number,
+ *   error?: string, unauthorized?: boolean
+ * }>}
+ */
+export async function getWalletTransactionsWithByeMoney({ jwt, page = 1, pageSize = 20 }) {
+  const empty = { items: [], page, pageSize, totalCount: 0 };
+
+  if (!jwt) {
+    return {
+      success: false,
+      unauthorized: true,
+      ...empty,
+      error: 'نشست کاربری نامعتبر است. لطفاً مجدداً وارد شوید.',
+    };
+  }
+
+  const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  const endpoint = `${BYEMONEY_API_URL}/api/wallet/transactions?${query}`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${jwt}` },
+      cache: 'no-store',
+    });
+
+    if (response.status === 401) {
+      return { success: false, unauthorized: true, ...empty, error: 'نشست کاربری منقضی شده است.' };
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        success: true,
+        items: Array.isArray(data.items) ? data.items : [],
+        page: Number(data.page ?? page),
+        pageSize: Number(data.pageSize ?? pageSize),
+        totalCount: Number(data.totalCount ?? 0),
+      };
+    }
+
+    const errJson = await response.json().catch(() => ({}));
+    return {
+      success: false,
+      ...empty,
+      error: errJson.message || errJson.error || `خطا در دریافت گردش کیف پول (کد ${response.status})`,
+    };
+  } catch (err) {
+    console.error('[ByeMoney Get Wallet Transactions Error]:', err);
+    return { success: false, ...empty, error: 'خطا در برقراری ارتباط با سامانه پرداخت ByeMoney.' };
+  }
+}
