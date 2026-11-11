@@ -1,5 +1,4 @@
 import { act, renderHook } from '@testing-library/react';
-import { executeOnlinePayment } from '@/lib/checkoutService';
 import { invalidatePaymentConnection } from '@/lib/client/paymentConnection';
 import { useCartStore } from '@/store/useCartStore';
 import { useOrdersStore } from '@/store/useOrdersStore';
@@ -29,39 +28,6 @@ afterEach(() => {
     jest.useRealTimers();
     global.fetch = originalFetch;
     document.querySelectorAll('form').forEach((form) => form.remove());
-});
-
-const mockCheckout = (tokenResponse) => {
-    global.fetch = jest.fn()
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, isVpn: false }) })
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { documentId: 'order-one' } }) })
-        .mockResolvedValueOnce(tokenResponse);
-};
-
-test('سفارش رایگان شناسهٔ سفارش را برای پاک‌سازی محدود به نتیجه می‌فرستد', async () => {
-    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ data: {
-        documentId: 'free-one', paymentMethod: 'free', paymentStatus: 'paid', totalPrice: 0,
-    } }) });
-    const router = { push: jest.fn() };
-    await executeOnlinePayment({ items: [item], finalTotalPrice: 0, router });
-    expect(router.push).toHaveBeenCalledWith('/checkout/result?status=success&source=free&orderId=free-one');
-    expect(useCartStore.getState().items).toEqual([item]);
-});
-
-test('ورود به درگاه بدون دریافت نتیجهٔ پرداخت اقلام سبد را حفظ می‌کند', async () => {
-    mockCheckout({ ok: true, json: async () => ({ success: true, token: 'test-token' }) });
-    const submit = jest.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {});
-    await executeOnlinePayment({ items: [item], finalTotalPrice: 100 });
-    expect(submit).toHaveBeenCalledTimes(1);
-    expect(useCartStore.getState().items).toEqual([item]);
-    expect(JSON.parse(localStorage.getItem('cart-storage')).state.items).toEqual([item]);
-    expect(updateProfileCartData).not.toHaveBeenCalled();
-});
-
-test('شکست دریافت توکن، سبد را برای تلاش مجدد نگه می‌دارد', async () => {
-    mockCheckout({ ok: false, json: async () => ({ message: 'خطای درگاه' }) });
-    await expect(executeOnlinePayment({ items: [item], finalTotalPrice: 100 })).rejects.toThrow('خطای درگاه');
-    expect(useCartStore.getState().items).toEqual([item]);
 });
 
 test.each([

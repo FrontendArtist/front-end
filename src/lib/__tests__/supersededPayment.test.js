@@ -24,13 +24,12 @@ beforeEach(() => {
     getServerSession.mockResolvedValue({ user: { id: 5 } });
 });
 
-test.each(['canceled', 'pending'])('cannot start payment on canceled or failed order (%s)', async orderStatus => {
-    fetch.mockResolvedValue({ ok: true, json: async () => ({ data: [{ documentId: 'old-order',
-        user: { id: 5 }, totalPrice: 100, orderStatus, paymentStatus: orderStatus === 'pending' ? 'failed' : 'pending_payment' }] }) });
+test.each(['canceled', 'pending'])('پرداخت تازه با orderId استرپی رد می‌شود و سفارش خوانده نمی‌شود (%s)', async orderStatus => {
     const result = await requestPayment(new Request('http://shop.test/api/payment/request', {
         method: 'POST', body: JSON.stringify({ orderId: 'old-order' }), headers: { 'Content-Type': 'application/json' },
     }));
-    expect(result.status).toBe(400);
+    expect(result.status).toBe(410);
+    expect(fetch).not.toHaveBeenCalled();
     expect(requestSepToken).not.toHaveBeenCalled();
 });
 
@@ -58,7 +57,7 @@ test.each([
     ['CanceledByUser', 'cancel', false, 0],
     ['Failed', 'failed', false, 0],
     ['OK', 'failed', false, 0],
-])('unsuccessful attempt %s keeps order open and permits next payment', async (state, resultStatus, bankSuccess, amount) => {
+])('unsuccessful attempt %s keeps order open', async (state, resultStatus, bankSuccess, amount) => {
     process.env.STRAPI_API_TOKEN = 'test-token';
     const { POST: verifyPayment } = require('@/app/api/payment/verify/route');
     const order = { id: 1, documentId: 'same-order', totalPrice: 100, user: { id: 5 },
@@ -84,13 +83,6 @@ test.each([
     expect(new URL(result.headers.get('location')).searchParams.get('status')).toBe(resultStatus);
     expect(order.orderStatus).toBe('pending');
     expect(order.paymentStatus).toBe('pending_payment');
-    fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [order] }) });
-    requestSepToken.mockResolvedValue({ success: true, token: 'next-attempt' });
-    const retry = await requestPayment(new Request('http://shop.test/api/payment/request', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: 'same-order' }),
-    }));
-    expect(retry.status).toBe(200);
-    expect(requestSepToken).toHaveBeenCalledWith(expect.objectContaining({ resNum: 'same-order' }));
 });
 
 test('amount mismatch reverses the bank payment and cancels the order', async () => {

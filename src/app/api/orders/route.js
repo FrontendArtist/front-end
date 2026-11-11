@@ -1,13 +1,10 @@
 import { getServerSession } from "next-auth";
-import { authOptions, paymentAuthOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
-import { PAYMENT_METHOD } from "@/lib/constants/orderConstants";
 import { STRAPI_API_URL } from "@/lib/api";
 
-import { getConversionRateWithByeMoney, getMyCoursePurchases, getCoursePurchaseReceipt, getMyCourseOrders, getMyCourseOrderDetails, CourseOrderId } from '@/lib/byeMoneyApi';
+import { getMyCoursePurchases, getCoursePurchaseReceipt, getMyCourseOrders, getMyCourseOrderDetails, CourseOrderId } from '@/lib/byeMoneyApi';
 import { attachPurchasesToByeMoneyOrder, mapByeMoneyLineItem } from '@/lib/byeMoneyOrderItems';
-import { isIranianPhoneNumber } from '@/lib/phoneUtils';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -281,87 +278,13 @@ export async function GET(request) {
 }
 
 // --------------------------------------------------------------------------
-// POST /api/orders : ایجاد سفارش جدید (اتصال مستقیم به کاربر و دوره‌ها)
+// POST /api/orders : بسته‌شده (410)
 // --------------------------------------------------------------------------
-// قیمت و وضعیت مالی در Strapi تعیین می‌شوند؛ مرورگر فقط اقلام را انتخاب می‌کند.
-export async function POST(request) {
-    const session = await getServerSession(paymentAuthOptions);
-    if (!session?.user?.id) {
-        return NextResponse.json({ message: 'برای خرید وارد حساب خود شوید.' }, { status: 401 });
-    }
-    if (!STRAPI_TOKEN) {
-        return NextResponse.json({ message: 'سرویس ثبت سفارش در دسترس نیست.' }, { status: 503 });
-    }
-    let body;
-    try {
-        body = await request.json();
-    } catch {
-        return NextResponse.json({ message: 'درخواست سفارش معتبر نیست.' }, { status: 400 });
-    }
-    if (!body || !Array.isArray(body.cartItems) || body.cartItems.length === 0 || body.cartItems.length > 100 ||
-        body.cartItems.some(item => !item || !['course', 'chapter', 'product', 'light_topup'].includes(item.type) ||
-            (item.type === 'course' && item.chapterId != null) || (item.type === 'chapter' && item.courseId == null) ||
-            (item.quantity != null && (!Number.isSafeInteger(Number(item.quantity)) || Number(item.quantity) <= 0 || (item.type !== 'product' && Number(item.quantity) !== 1))))) {
-        return NextResponse.json({ message: 'اقلام یا تعداد سبد معتبر نیست.' }, { status: 400 });
-    }
-    try {
-        const pricingContext = {};
-        if (body.cartItems.some(item => item.type === 'light_topup')) {
-            const rate = await getConversionRateWithByeMoney({ jwt: session.user.jwt });
-            if (!rate.success || !Number.isFinite(rate.tomanPerNoor) || rate.tomanPerNoor <= 0) {
-                return NextResponse.json({ message: 'نرخ رسمی شارژ نور در دسترس نیست.' }, { status: 503 });
-            }
-            pricingContext.lightToTomanRate = rate.tomanPerNoor;
-        }
-        const userRes = await fetch(STRAPI_BASE_URL + '/api/users/' + session.user.id + '?populate[0]=address', {
-            headers: { Authorization: 'Bearer ' + STRAPI_TOKEN }, cache: 'no-store',
-        });
-        if (!userRes.ok) throw new Error('اطلاعات حساب برای ثبت سفارش در دسترس نیست.');
-        const user = await userRes.json();
-        const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-        const recipientName = user.address?.recipientName?.trim();
-        const validRecipient = recipientName && recipientName.length > 1 && !/^\d+$/.test(recipientName);
-        const fullName = name || (validRecipient ? recipientName : null)
-            || (user.username && !/^\d+$/.test(user.username) ? user.username : null)
-            || (user.phoneNumber ? `کاربر (${user.phoneNumber})` : null)
-            || (session.user.phoneNumber ? `کاربر (${session.user.phoneNumber})` : null)
-            || session.user.name || 'کاربر فروشگاه';
-        const orderRes = await fetch(STRAPI_BASE_URL + '/api/orders/checkout', {
-            method: 'POST',
-            headers: { Authorization: 'Bearer ' + STRAPI_TOKEN, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ data: {
-                user: session.user.id,
-                cartItems: body.cartItems.map(item => ({ type: item.type, id: item.id,
-                    documentId: item.documentId, courseId: item.courseId, chapterId: item.chapterId, lightAmount: item.lightAmount, quantity: item.quantity == null ? 1 : Number(item.quantity) })),
-                couponCode: body.couponCode ?? body.coupon?.code ?? null,
-                paymentMethod: body.paymentMethod === PAYMENT_METHOD.CARD_TO_CARD ? PAYMENT_METHOD.CARD_TO_CARD : PAYMENT_METHOD.ONLINE,
-                pricingContext: { ...pricingContext,
-                    isForeign: Boolean(user.is_foreigner || (user.phoneNumber && !isIranianPhoneNumber(user.phoneNumber))) },
-                fullName,
-                address: user.address ? [user.address.province, user.address.city, user.address.fullAddress].filter(Boolean).join(' - ') : (typeof body.shippingAddress === 'string' && body.shippingAddress.trim() ? body.shippingAddress.trim() : 'آدرس وارد نشده است'),
-                postalCode: user.address?.postalCode || '0000000000',
-                phone: user.address?.recipientPhone || user.phoneNumber || session.user.phoneNumber || '00000000000',
-                email: user.email || session.user.email || 'no-email@tarhelahi.com',
-                notes: typeof body.notes === 'string' ? body.notes.trim() : '',
-            } }),
-        });
-        const result = await orderRes.json();
-        if (!orderRes.ok) {
-            return NextResponse.json({ message: result?.error?.message || 'ثبت سفارش انجام نشد.' },
-                { status: orderRes.status });
-        }
-        // Strapi cancels superseded pending online orders atomically; paid cart items are cleared on the result page.
-        try {
-            revalidatePath('/profile/orders');
-            revalidatePath('/products', 'layout');
-            revalidatePath('/product', 'layout');
-        } catch (error) {
-            console.warn('بازخوانی کش سفارش انجام نشد:', error.message);
-        }
-        // Strapi validates current pricing and atomically reuses a matching pending order for 30 minutes.
-        return NextResponse.json(result, { status: orderRes.status === 200 ? 200 : 201 });
-    } catch (error) {
-        console.error('POST Orders Error:', error);
-        return NextResponse.json({ message: 'ثبت سفارش موقتاً در دسترس نیست.' }, { status: 503 });
-    }
+// هیچ خرید جدیدی رکورد order در Strapi نمی‌سازد؛ دوره، فصل، کالا و سبد مختلط فقط از سبد بای‌مانی (/cart) می‌روند.
+// GET همین مسیر برای سفارش‌های قدیمی پروفایل باقی است.
+export async function POST() {
+    return NextResponse.json(
+        { message: 'ثبت سفارش از این مسیر بسته شده است. لطفاً خرید را از سبد خرید انجام دهید.' },
+        { status: 410 }
+    );
 }

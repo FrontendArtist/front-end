@@ -1,6 +1,6 @@
 import { purchaseCourseCart } from '@/lib/courseCartApi';
 jest.mock('@/lib/courseCartApi', () => ({ purchaseCourseCart: jest.fn() }));
-import { executeOnlinePayment, executeNoorCoursePurchase, executeNoorCartPurchase } from '../checkoutService';
+import { executeNoorCoursePurchase, executeNoorCartPurchase } from '../checkoutService';
 import { invalidatePaymentConnection } from '../client/paymentConnection';
 import { purchaseCourseWithByeMoney } from '@/lib/byeMoneyApi';
 import { triggerLightUpdate } from '@/store/useLightStore';
@@ -21,37 +21,6 @@ jest.mock('@/lib/client/profileClientApi', () => ({
   ...jest.requireActual('@/lib/client/profileClientApi'),
   invalidateProfileCache: jest.fn(),
 }));
-
-describe('نتیجهٔ رایگان checkout از سرور تعیین می‌شود', () => {
-  beforeEach(() => { invalidatePaymentConnection(); jest.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {}); });
-  afterEach(() => { jest.restoreAllMocks(); document.body.innerHTML = ''; });
-  const server = order => {
-    global.fetch = jest.fn(async url => ({ ok: true, json: async () =>
-      url === '/api/orders' ? { data: { documentId: 'order-one', ...order } } :
-      url === '/api/payment/request' ? { success: true, token: 'bank-token' } : { success: true, isVpn: false } }));
-  };
-  it('تا پایان بررسی کوپن هیچ سفارش یا پرداختی آغاز نمی‌کند', async () => {
-    global.fetch = jest.fn();
-    await expect(executeOnlinePayment({ items: [{ id: 7 }], finalTotalPrice: 101,
-      appliedCoupon: { code: 'SALE', pending: true } })).rejects.toThrow('بررسی کد تخفیف');
-    expect(fetch).not.toHaveBeenCalled();
-  });
-  it('قیمت صفر مرورگر، سفارش پولی سرور را موفق رایگان نشان نمی‌دهد', async () => {
-    server({ totalPrice: 101, paymentMethod: 'online', paymentStatus: 'pending_payment' });
-    const router = { push: jest.fn() };
-    const result = await executeOnlinePayment({ items: [{ id: 7 }], finalTotalPrice: 0, router });
-    expect(result.isFree).toBe(false);
-    expect(router.push).not.toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledWith('/api/payment/request', expect.anything());
-  });
-  it('رایگان واقعی سرور را حتی با نمایش قدیمی پولی درست ادامه می‌دهد', async () => {
-    server({ totalPrice: 0, paymentMethod: 'free', paymentStatus: 'paid' });
-    const router = { push: jest.fn() };
-    expect((await executeOnlinePayment({ items: [{ id: 7 }], finalTotalPrice: 101, router })).isFree).toBe(true);
-    expect(router.push).toHaveBeenCalledWith('/checkout/result?status=success&source=free&orderId=order-one');
-    expect(fetch.mock.calls.some(([url]) => url === '/api/payment/request')).toBe(false);
-  });
-});
 
 describe('خرید یک دوره با نور (ByeMoney Course Purchase - TASKS/R01)', () => {
   const courseItem = {
@@ -259,16 +228,6 @@ test('پاسخ درحال پردازش به نتیجه خواندنی می‌ر�
 describe('گیت مسدودسازی خرید مجدد در سرویس تسویه', () => {
   const ownedCourse = { id: 101, documentId: 'doc-101', slug: 'owned-course', title: 'دوره خریداری‌شده', type: 'course' };
   const mockSession = { user: { id: 1, courses: [{ documentId: 'doc-101' }] } };
-
-  test('executeOnlinePayment در صورت مالکیت قبلی خطا می‌دهد و درخواست ارسال نمی‌کند', async () => {
-    global.fetch = jest.fn();
-    await expect(executeOnlinePayment({
-      items: [ownedCourse],
-      finalTotalPrice: 500,
-      session: mockSession,
-    })).rejects.toThrow('قبلاً توسط شما خریداری شده است');
-    expect(global.fetch).not.toHaveBeenCalled();
-  });
 
   test('executeNoorCoursePurchase در صورت احراز مالکیت دوره متوقف می‌شود', async () => {
     await expect(executeNoorCoursePurchase({

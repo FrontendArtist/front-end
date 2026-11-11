@@ -4,7 +4,6 @@ jest.mock('@/lib/courseCartApi', () => ({ getCourseCart: jest.fn(), topUpCourseC
 
 import { POST } from './route';
 import { getServerSession } from 'next-auth';
-import { paymentAuthOptions } from '@/lib/auth';
 import { requestSepToken, SEP_GATEWAY_ACTION_URL } from '@/lib/sepPayment';
 import { getCourseCheckout } from '@/lib/courseCheckoutApi';
 import { purchaseCourseWithByeMoney } from '@/lib/byeMoneyApi';
@@ -302,44 +301,17 @@ describe('POST /api/payment/request - Noor Top-up & SEP Token Flow', () => {
     expect(data.token).toBeUndefined();
   });
 
-  test('standard order flow is distinct and does NOT create gateway-payment-attempt', async () => {
-    const mockOrder = {
-      id: 42,
-      documentId: 'order-doc-xyz',
-      totalPrice: 25000,
-      orderStatus: 'pending',
-      paymentStatus: 'pending_payment',
-      user: { id: 'user-123' },
-    };
-
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: [mockOrder] }),
-    });
-
-    requestSepToken.mockResolvedValue({
-      success: true,
-      token: 'order-sep-token-789',
-      gatewayUrl: 'https://sep.shaparak.ir/OnlinePG/OnlinePG',
-    });
-
-    const req = createJsonRequest({
-      orderId: 'order-doc-xyz',
-    });
-
-    const response = await POST(req);
+  test('پرداخت تازه با orderId استرپی رد می‌شود (۴۱۰) و نه سفارش خوانده می‌شود نه توکن صادر می‌شود', async () => {
+    const response = await POST(createJsonRequest({ orderId: 'order-doc-xyz' }));
     const data = await response.json();
 
-    // Distinct: standard order does NOT call createAttempt or updateAttempt
+    expect(response.status).toBe(410);
+    expect(data.success).toBe(false);
+    expect(data.token).toBeUndefined();
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(requestSepToken).not.toHaveBeenCalled();
     expect(createAttempt).not.toHaveBeenCalled();
-    expect(updateAttempt).not.toHaveBeenCalled();
     expect(createGatewayTopUp).not.toHaveBeenCalled();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.token).toBe('order-sep-token-789');
-    expect(data.resNum).toBe('order-doc-xyz');
-    expect(data.amount).toBe(250000); // 25,000 Toman * 10 = 250,000 Rial
   });
 
   test('unauthenticated request is rejected with 401', async () => {
@@ -370,39 +342,6 @@ describe('POST /api/payment/request - Noor Top-up & SEP Token Flow', () => {
     expect(response.status).toBe(400);
     expect(data.success).toBe(false);
     expect(createAttempt).not.toHaveBeenCalled();
-  });
-
-  test('سشن سبک و استعلام محدود، مبلغ سرور را به بانک می‌فرستند', async () => {
-    const order = { id: 1, documentId: 'order-one', totalPrice: 100, orderStatus: 'pending', paymentStatus: 'pending_payment', user: { id: 'user-123' } };
-    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [order] }) });
-    requestSepToken.mockResolvedValueOnce({ success: true, token: 'bank-token' });
-
-    const req = createJsonRequest({ orderId: 'order-one' });
-    const result = await POST(req);
-    expect(result.status).toBe(200);
-    expect(await result.json()).toMatchObject({ success: true, token: 'bank-token', amount: 1000 });
-    expect(getServerSession).toHaveBeenCalledWith(paymentAuthOptions);
-    expect(global.fetch.mock.calls[0][0]).not.toContain('populate=*');
-    expect(global.fetch.mock.calls[0][0]).toContain('populate[user]');
-    expect(requestSepToken).toHaveBeenCalledWith(expect.objectContaining({ amount: 1000, resNum: 'order-one' }));
-  });
-
-  test.each([undefined, { id: 999 }])('مالک نامشخص یا متفاوت اجازهٔ توکن ندارد', async user => {
-    const order = { id: 1, documentId: 'order-one', totalPrice: 100, orderStatus: 'pending', paymentStatus: 'pending_payment', user };
-    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [order] }) });
-
-    const req = createJsonRequest({ orderId: 'order-one' });
-    expect((await POST(req)).status).toBe(403);
-    expect(requestSepToken).not.toHaveBeenCalled();
-  });
-
-  test('سفارش تسویه‌شده دوباره وارد درگاه نمی‌شود', async () => {
-    const order = { id: 1, documentId: 'order-one', totalPrice: 100, orderStatus: 'pending', paymentStatus: 'paid', user: { id: 'user-123' } };
-    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [order] }) });
-
-    const req = createJsonRequest({ orderId: 'order-one' });
-    expect((await POST(req)).status).toBe(400);
-    expect(requestSepToken).not.toHaveBeenCalled();
   });
 });
 

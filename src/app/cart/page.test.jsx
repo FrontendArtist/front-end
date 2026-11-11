@@ -14,7 +14,7 @@ jest.mock('next-auth/react', () => ({ useSession: () => ({ data: { user: { id: 7
 jest.mock('@/lib/courseCartApi', () => ({ prepareCourseCart: jest.fn(), getCourseCartId: () => 'cart-1', getExistingCourseCartId: jest.fn(), getCourseCart: jest.fn() }));
 jest.mock('@/lib/courseCartPreviewApi', () => ({ ...jest.requireActual('@/lib/courseCartPreviewApi'), previewCourseCart: jest.fn() }));
 jest.mock('@/lib/byeMoneyApi', () => ({ getWalletBalanceWithByeMoney: jest.fn() }));
-jest.mock('@/lib/checkoutService', () => ({ executeNoorCartPurchase: jest.fn(), executeOnlinePayment: jest.fn() }));
+jest.mock('@/lib/checkoutService', () => ({ executeNoorCartPurchase: jest.fn() }));
 jest.mock('@/components/cart/DiscountCouponInput/DiscountCouponInput', () => () => null);
 jest.mock('@/components/ui/PriceWithHint/PriceWithHint', () => ({ price, hideHint }) => (
     <span data-testid="price-hint" data-hide-hint={hideHint ? 'true' : 'false'}>{price} نور</span>

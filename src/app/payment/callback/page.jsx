@@ -356,9 +356,6 @@ function PaymentCallbackContent() {
                         <Link href="/cart" className={styles.primaryButton}>
                             تلاش مجدد
                         </Link>
-                        <Link href="/cart" className={styles.secondaryButton}>
-                            بازگشت به سبد خرید
-                        </Link>
                     </div>
                 </div>
             </div>

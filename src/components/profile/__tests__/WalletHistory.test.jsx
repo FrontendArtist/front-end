@@ -54,7 +54,7 @@ describe('WalletHistory', () => {
         expect(screen.getByText('شارژ کیف پول')).toBeInTheDocument();
         expect(screen.getByText('−۵۰')).toBeInTheDocument();
         expect(screen.getByText('+۱۰۰')).toBeInTheDocument();
-        expect(screen.getByText('شامل ۳۰ نور هدیه')).toBeInTheDocument();
+        expect(screen.getByText(/شامل ۳۰ نور هدیه/)).toBeInTheDocument();
         expect(screen.getByTestId('wallet-total')).toHaveTextContent('۵۰ نور');
         expect(screen.queryByTestId('wallet-gift')).not.toBeInTheDocument();
 
@@ -98,17 +98,48 @@ describe('WalletHistory', () => {
         expect(await screen.findByRole('alert')).toHaveTextContent('خطای آزمایشی');
     });
 
-    it('requests the next page', async () => {
+    it('appends the next page and hides load-more when everything is shown', async () => {
+        getWalletTransactionsWithByeMoney
+            .mockResolvedValueOnce({ success: true, items: [topUp], page: 1, pageSize: 20, totalCount: 2 })
+            .mockResolvedValueOnce({ success: true, items: [purchase], page: 2, pageSize: 20, totalCount: 2 });
+
+        render(<WalletHistory />);
+
+        fireEvent.click(await screen.findByText('نمایش بیشتر'));
+
+        await waitFor(() => expect(getWalletTransactionsWithByeMoney)
+            .toHaveBeenLastCalledWith({ jwt: 'user-jwt', page: 2, pageSize: 20 }));
+        expect(await screen.findByText('خرید')).toBeInTheDocument();
+        expect(screen.getByText('شارژ کیف پول')).toBeInTheDocument();
+        await waitFor(() => expect(screen.queryByText('نمایش بیشتر')).not.toBeInTheDocument());
+    });
+
+    it('labels an admin grant as gift only when the whole amount is gift', async () => {
+        const giftGrant = {
+            ...topUp, transactionId: 'tx-gift', type: 'AdminGrant', amountNoor: 20, giftAmountNoor: 20,
+        };
+        const regularGrant = {
+            ...topUp, transactionId: 'tx-regular', type: 'AdminGrant', amountNoor: 40, giftAmountNoor: 0,
+        };
         getWalletTransactionsWithByeMoney.mockResolvedValue({
-            success: true, items: [topUp], page: 1, pageSize: 20, totalCount: 45,
+            success: true, items: [giftGrant, regularGrant], page: 1, pageSize: 20, totalCount: 2,
         });
 
         render(<WalletHistory />);
 
-        fireEvent.click(await screen.findByText('بعدی'));
+        expect(await screen.findByText('نور هدیه')).toBeInTheDocument();
+        expect(screen.getByText('افزایش اعتبار توسط مدیر')).toBeInTheDocument();
+    });
 
-        await waitFor(() => expect(getWalletTransactionsWithByeMoney)
-            .toHaveBeenLastCalledWith({ jwt: 'user-jwt', page: 2, pageSize: 20 }));
+    it('tells the user when the balance cannot be loaded', async () => {
+        getWalletBalanceWithByeMoney.mockResolvedValue({ success: false, balance: 0, error: 'x' });
+        getWalletTransactionsWithByeMoney.mockResolvedValue({
+            success: true, items: [topUp], page: 1, pageSize: 20, totalCount: 1,
+        });
+
+        render(<WalletHistory />);
+
+        expect(await screen.findByRole('status')).toHaveTextContent('موجودی در دسترس نیست');
     });
 
     it('does not call ByeMoney without a session token', () => {
