@@ -113,4 +113,65 @@ describe('PhysicalDeliveryControl', () => {
     expect(await screen.findByText('نامشخص')).toBeInTheDocument();
     expect(screen.getByTestId('delivery-status-select')).toBeEnabled();
   });
+
+  it('دکمهٔ ساخت مرسوله مسیر shipments را صدا می‌زند', async () => {
+    mockStatus('Preparing');
+    render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
+    await screen.findByText('در حال آماده‌سازی');
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          purchaseId: PID,
+          deliveryStatus: 'Shipped',
+          trackingProvider: 'PostEx',
+          providerParcelId: '1319906676294',
+          outcome: 'Created',
+        },
+      }),
+    });
+
+    fireEvent.click(screen.getByTestId('create-provider-shipment'));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/admin/physical-purchases/${PID}/shipments`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ provider: 'PostEx' }),
+      })
+    );
+    expect(await screen.findByText('ارسال‌شده')).toBeInTheDocument();
+  });
+
+  it('کد رهگیری و شناسهٔ ارجاع مرسوله همراه ثبت «ارسال‌شده» فرستاده می‌شود', async () => {
+    mockStatus('Preparing');
+    render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
+    await screen.findByText('در حال آماده‌سازی');
+
+    fireEvent.change(screen.getByTestId('tracking-code-input'), { target: { value: ' PTX-8846884 ' } });
+    fireEvent.change(screen.getByTestId('tracking-provider-select'), { target: { value: 'PostEx' } });
+    const parcel = await screen.findByTestId('provider-parcel-reference-input');
+    fireEvent.change(parcel, { target: { value: '12345' } });
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: { purchaseId: PID, deliveryStatus: 'Shipped', trackingCode: 'PTX-8846884' },
+      }),
+    });
+
+    fireEvent.change(screen.getByTestId('delivery-status-select'), { target: { value: 'Shipped' } });
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual({
+      status: 'Shipped',
+      trackingCode: 'PTX-8846884',
+      trackingProvider: 'PostEx',
+      providerParcelId: '12345',
+    });
+  });
 });

@@ -442,6 +442,64 @@ summary.cardTitle {
     font-size: var(--font-sm);
 }
 
+.noticeOk {
+    border-color: fade(var(--color-success), 35%);
+    background: fade(var(--color-success), 8%);
+}
+
+.noticeError {
+    border-color: fade(var(--color-error), 35%);
+    background: fade(var(--color-error), 8%);
+}
+
+// کد رهگیری هر قلم کالا (SHIP-TRACKING)
+.trackingCode {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-xs);
+    color: var(--color-text-secondary, var(--color-text-primary));
+}
+
+.deliveryConfirm {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px dashed fade(var(--color-primary), 35%);
+    background: fade(var(--color-primary), 6%);
+}
+
+.deliveryHint {
+    margin: 0;
+    font-size: var(--font-sm);
+    line-height: 1.8;
+    color: var(--color-text-primary);
+}
+
+.confirmBtn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid fade(var(--color-primary), 45%);
+    background: fade(var(--color-primary), 18%);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--font-sm);
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover:not(:disabled) {
+        background: fade(var(--color-primary), 28%);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
 .refunds {
     list-style: none;
     margin: 0;

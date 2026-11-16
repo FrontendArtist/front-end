@@ -7,9 +7,9 @@
  * می‌پذیرد؛ تب‌های چندوضعیتی با چند فراخوانی ترتیبی صفحه‌بندی می‌شوند.
  *
  * تب «نیاز به اقدام» = سفارش‌هایی که موجودی لغوشان برنگشته + سفارش‌های پرداخت‌شده‌ای که هنوز کالایی
- * «ارسال‌نشده» دارند. وضعیت تحویل سطح سفارش کالای ارسال‌شده را هم «در انتظار» می‌گیرد، پس کاندیدها
- * (Paid + Pending/PartiallyDelivered) با جزئیات هر سفارش بررسی می‌شوند و فقط آن‌هایی می‌مانند که قلم
- * کالای ارسال‌نشده دارند. بررسی به ACTION_SCAN_LIMIT سفارش اخیر محدود است (محدودیت ثبت‌شده در TASKS).
+ * «ارسال‌نشده» دارند. مورد دوم با پارامتر سروری awaitingShipment=true خوانده می‌شود (SHIP-TRACKING)؛
+ * هیچ اسکن صفحه‌به‌صفحه یا خواندن جزئیات تک‌تک سفارش‌ها لازم نیست و شمارنده همان totalCount سرور است.
+ * سقف ACTION_PAGE_SIZE فقط برای حجم پاسخ است؛ بیشتر از آن با truncated اعلام می‌شود.
  */
 
 import { getAdminCourseOrders, getAdminCourseOrderDetails, getPendingPhysicalRestocks, CourseOrderId } from '../byeMoneyApi';
@@ -28,11 +28,8 @@ const TAB_FILTERS = {
     canceled: [{ financialStatus: 'Failed' }, { financialStatus: 'Expired' }],
 };
 
-const ACTION_CANDIDATE_FILTERS = [
-    { financialStatus: 'Paid', deliveryStatus: 'Pending' },
-    { financialStatus: 'Paid', deliveryStatus: 'PartiallyDelivered' },
-];
-export const ACTION_SCAN_LIMIT = 100;
+const ACTION_CANDIDATE_FILTERS = [{ awaitingShipment: true }];
+export const ACTION_PAGE_SIZE = 100;
 const DETAIL_CONCURRENCY = 8;
 const SHIPPED_STATES = new Set(['Shipped', 'Delivered', 'Cancelled']);
 
@@ -174,23 +171,14 @@ async function getRestockRows(jwt, ids) {
     return { rows: rows.filter(Boolean), warning: rows.some((r) => !r) };
 }
 
-/** کاندیدهای «منتظر ارسال» (جدیدترین‌ها تا سقف بررسی) و نگه‌داشتن آن‌هایی که کالای ارسال‌نشده دارند */
+/** سفارش‌های Paid با قلم کالای ارسال‌نشده؛ فیلتر در سرور اعمال می‌شود و شمارنده واقعی است */
 async function getAwaitingShipmentRows(jwt, buyer) {
-    const { items, totalCount, warning, forbidden } = await fetchFiltered(jwt, ACTION_CANDIDATE_FILTERS, {
-        start: 0,
-        limit: ACTION_SCAN_LIMIT,
-        buyer,
-    });
-    const keep = await mapLimit(items, DETAIL_CONCURRENCY, async (row) => {
-        const res = await getAdminCourseOrderDetails({ jwt, orderId: row.orderId });
-        // اگر جزئیات خوانده نشد، سفارش نگه داشته می‌شود تا کاری از دید ادمین پنهان نماند
-        if (!res.success || !res.data?.order) return { row, ok: true, failed: true };
-        return { row, ok: hasUnshippedItems(res.data.order) };
-    });
+    const { items, totalCount, error, forbidden } = await fetchPage(
+        jwt, ACTION_CANDIDATE_FILTERS[0], 1, ACTION_PAGE_SIZE, buyer);
     return {
-        rows: keep.filter((k) => k.ok).map((k) => ({ ...k.row, needsShipment: true })),
-        warning: warning || keep.some((k) => k.failed),
-        truncated: totalCount > ACTION_SCAN_LIMIT,
+        rows: items.map((row) => ({ ...row, needsShipment: true })),
+        warning: Boolean(error),
+        truncated: totalCount > items.length,
         forbidden,
     };
 }

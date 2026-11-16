@@ -232,3 +232,93 @@
         color: #f87171;
     }
 }
+
+.trackingBox {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.trackingLabel {
+    font-size: var(--font-xs);
+    color: var(--color-card-text);
+    opacity: 0.85;
+}
+
+.trackingRow {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.trackingInput,
+.trackingProvider {
+    padding: 8px 10px;
+    background: fade(var(--color-black), 30%);
+    border: 1px solid fade(var(--color-primary), 20%);
+    border-radius: 8px;
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--font-xs);
+    box-sizing: border-box;
+
+    &:focus {
+        outline: none;
+        border-color: var(--color-title-hover);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.trackingInput {
+    flex: 1;
+    min-width: 0;
+}
+
+.trackingProvider {
+    flex: 0 0 auto;
+    min-width: 96px;
+    cursor: pointer;
+}
+
+.trackingHint {
+    margin: 0;
+    font-size: 11px;
+    color: var(--color-card-text);
+    opacity: 0.7;
+    line-height: 1.5;
+}
+
+.saveCodeBtn,
+.createShipmentBtn {
+    align-self: flex-start;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid fade(var(--color-primary), 35%);
+    background: transparent;
+    color: var(--color-primary);
+    font-family: inherit;
+    font-size: var(--font-xs);
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+        background: fade(var(--color-primary), 12%);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+.createShipmentBtn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+}

@@ -90,6 +90,17 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
                             {physicalLabel}
                         </span>
                     )}
+                    {isProduct && item.trackingCode && (
+                        <span className={styles.trackingCode} data-testid="physical-tracking-code">
+                            کد رهگیری: <bdi dir="ltr">{item.trackingCode}</bdi>
+                            <CopyButton text={item.trackingCode} label="کد رهگیری" />
+                            {item.shippedAtUtc && (
+                                <span className={styles.itemHint} data-testid="physical-shipped-at">
+                                    ارسال: {formatOrderDate(item.shippedAtUtc)}
+                                </span>
+                            )}
+                        </span>
+                    )}
                     {!isProduct && view.isPaid && item.deliveryStatus && (
                         <span className={`${styles.pill} ${item.deliveryStatus === 'Delivered' ? styles.success : styles.warning}`} data-testid="course-delivery-status">
                             {item.deliveryStatus === 'Delivered' ? 'فعال شد' : 'در حال فعال‌سازی'}
@@ -121,8 +132,11 @@ function Progress({ state }) {
     );
 }
 
-export default function ByeMoneyOrderView({ order }) {
+export default function ByeMoneyOrderView({ order, onOrderChanged }) {
     const [cancelResult, setCancelResult] = useState(null);
+    const [confirming, setConfirming] = useState(false);
+    const [confirmMessage, setConfirmMessage] = useState(null);
+    const [confirmedNow, setConfirmedNow] = useState(false);
 
     const items = Array.isArray(order.items) ? order.items : [];
     const address = order.shippingAddress;
@@ -146,6 +160,36 @@ export default function ByeMoneyOrderView({ order }) {
 
     const topUps = Array.isArray(order.topUps) ? order.topUps : [];
     const showMyCourses = view.isPaid && view.hasCourse;
+
+    // تأیید دریافت خریدار (SHIP-TRACKING): فقط وقتی قلم ارسال‌شده‌ای مانده باشد.
+    const shippedProductItems = physicalItems.filter((item) =>
+        item.physicalDeliveryStatus === 'Shipped' &&
+        (Number(item.cancelledQuantity) || 0) < (Number(item.quantity) || 1));
+    const canConfirmDelivery = view.isPaid && !confirmedNow && shippedProductItems.length > 0;
+
+    const confirmDelivery = async () => {
+        if (confirming) return;
+        setConfirming(true);
+        setConfirmMessage(null);
+        try {
+            const orderId = order.orderId || order.id;
+            const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/confirm-delivery`, { method: 'POST' });
+            const json = await res.json().catch(() => ({}));
+            if (res.ok) {
+                setConfirmedNow(true);
+                setConfirmMessage({ ok: true, text: 'دریافت کالا ثبت شد.' });
+                if (typeof onOrderChanged === 'function') {
+                    await onOrderChanged();
+                }
+            } else {
+                setConfirmMessage({ ok: false, text: json?.error || 'ثبت تأیید دریافت ناموفق بود.' });
+            }
+        } catch {
+            setConfirmMessage({ ok: false, text: 'خطا در ارتباط با سرور.' });
+        } finally {
+            setConfirming(false);
+        }
+    };
 
     return (
         <>
@@ -243,6 +287,33 @@ export default function ByeMoneyOrderView({ order }) {
                                 </ul>
                             )}
                         </div>
+                    )}
+
+                    {canConfirmDelivery && (
+                        <div className={styles.deliveryConfirm} data-testid="confirm-delivery-box">
+                            <p className={styles.deliveryHint}>
+                                مرسوله را دریافت کرده‌اید؟ با تأیید شما همهٔ اقلام ارسال‌شدهٔ این سفارش «تحویل‌شده» ثبت می‌شوند.
+                            </p>
+                            <button
+                                type="button"
+                                data-testid="confirm-delivery-btn"
+                                className={styles.confirmBtn}
+                                onClick={confirmDelivery}
+                                disabled={confirming}
+                            >
+                                {confirming ? 'در حال ثبت...' : 'کالا را دریافت کردم'}
+                            </button>
+                        </div>
+                    )}
+
+                    {confirmMessage && (
+                        <p
+                            role={confirmMessage.ok ? 'status' : 'alert'}
+                            className={`${styles.notice} ${confirmMessage.ok ? styles.noticeOk : styles.noticeError}`}
+                            data-testid="confirm-delivery-message"
+                        >
+                            {confirmMessage.text}
+                        </p>
                     )}
 
                     {canCancel && (
