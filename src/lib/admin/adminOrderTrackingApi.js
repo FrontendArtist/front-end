@@ -107,6 +107,11 @@ function sanitizeItem(i) {
         cancelledQuantity: Number(i.cancelledQuantity) || 0,
         refundedRegularInNoor: Number(i.refundedRegularInNoor) || 0,
         refundedGiftInNoor: Number(i.refundedGiftInNoor) || 0,
+        carrierReturnedAtUtc: i.carrierReturnedAtUtc ?? null,
+        carrierReturnResolution: i.carrierReturnResolution ?? null,
+        carrierReturnResolutionNote: i.carrierReturnResolutionNote ?? null,
+        carrierReturnResolvedAtUtc: i.carrierReturnResolvedAtUtc ?? null,
+        carrierReturnResolvedByExternalUserId: i.carrierReturnResolvedByExternalUserId ?? null,
     };
 }
 
@@ -131,6 +136,8 @@ function sanitizeReceipt(r) {
             cancelledQuantity: Number(i.cancelledQuantity) || 0,
             refundedRegularInNoor: Number(i.refundedRegularInNoor) || 0,
             refundedGiftInNoor: Number(i.refundedGiftInNoor) || 0,
+            carrierReturnedAtUtc: i.carrierReturnedAtUtc ?? null,
+            carrierReturnResolution: i.carrierReturnResolution ?? null,
         })),
     };
 }

@@ -295,6 +295,55 @@
     line-height: 1.5;
 }
 
+.resolveForm {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.resolveOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.resolveOption {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: var(--font-xs);
+    line-height: 1.6;
+    color: var(--color-card-text);
+
+    input {
+        margin-top: 3px;
+    }
+}
+
+.resolveNote {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid fade(var(--color-primary), 20%);
+    background: fade(var(--color-black), 30%);
+    color: var(--color-text-primary);
+    font-family: inherit;
+    font-size: var(--font-xs);
+    resize: vertical;
+}
+
+.resolveActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 .saveCodeBtn,
 .createShipmentBtn {
     align-self: flex-start;

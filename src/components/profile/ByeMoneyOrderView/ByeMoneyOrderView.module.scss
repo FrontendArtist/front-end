@@ -442,6 +442,11 @@ summary.cardTitle {
     font-size: var(--font-sm);
 }
 
+.noticeCalm {
+    border-color: fade(var(--color-primary), 28%);
+    background: fade(var(--color-primary), 8%);
+}
+
 .noticeOk {
     border-color: fade(var(--color-success), 35%);
     background: fade(var(--color-success), 8%);

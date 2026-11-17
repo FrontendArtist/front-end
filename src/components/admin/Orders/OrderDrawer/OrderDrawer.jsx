@@ -22,7 +22,7 @@ import { shippingOriginText } from '@/lib/shippingOrigin';
 import PendingRestockNotice from '../PendingRestockNotice';
 import AdminBadge from '../../Shared/AdminBadge';
 import { canShowReceipt, getFinancialStatusConfig } from '@/lib/admin/orderTracking';
-import { shortOrderNumber, getItemsShippingState } from '@/lib/admin/orderDisplay';
+import { shortOrderNumber, getItemsShippingState, getCarrierReturnBadge } from '@/lib/admin/orderDisplay';
 import styles from './OrderDrawer.module.scss';
 
 const fa = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString('fa-IR'));
@@ -137,7 +137,7 @@ function SummaryTab({ order, data, isPaid, restockPending, onGoItems }) {
     );
 }
 
-function ItemsTab({ data, isPaid, onReload, onItemStatus, onRestockCleared }) {
+function ItemsTab({ data, isPaid, onReload, onItemStatus, onRestockCleared, onCarrierResolved }) {
     const { order: detail, shippingAddress, shippingOrigin } = data;
     const originName = shippingOriginText(shippingOrigin);
     return (
@@ -145,7 +145,13 @@ function ItemsTab({ data, isPaid, onReload, onItemStatus, onRestockCleared }) {
             {detail.cartId && (
                 <PendingRestockNotice cartId={detail.cartId} items={detail.items} onCleared={onRestockCleared} />
             )}
-            <OrderItemsList detail={detail} isPaid={isPaid} onReload={onReload} onItemStatus={onItemStatus} />
+            <OrderItemsList
+                detail={detail}
+                isPaid={isPaid}
+                onReload={onReload}
+                onItemStatus={onItemStatus}
+                onCarrierResolved={onCarrierResolved}
+            />
             {shippingAddress && (
                 <section className={styles.card} data-testid="shipping-address" aria-label="آدرس تحویل">
                     <h3 className={styles.card__title}><MapPin size={15} aria-hidden="true" /> آدرس تحویل</h3>
@@ -185,7 +191,7 @@ function DrawerSkeleton() {
  *   restockPending?: boolean, onClose: () => void, onToast?: (msg: string, tone?: string) => void,
  *   onChanged?: () => void, onRestockCleared?: () => void, shareUrl?: string }} props
  */
-export default function OrderDrawer({ order, restockPending = false, onClose, onToast, onChanged, onRestockCleared, shareUrl }) {
+export default function OrderDrawer({ order, restockPending = false, onClose, onToast, onChanged, onRestockCleared, onCarrierResolved, shareUrl }) {
     const [tab, setTab] = useState('summary');
     const [mounted, setMounted] = useState(false);
     const closeRef = useRef(null);
@@ -220,6 +226,11 @@ export default function OrderDrawer({ order, restockPending = false, onClose, on
         setItemDeliveryStatus(purchaseId, status);
         onChanged && onChanged();
     };
+    const handleCarrierResolved = (status) => {
+        reload();
+        if (onCarrierResolved) onCarrierResolved(status);
+    };
+    const carrierBadge = getCarrierReturnBadge(order.carrierReturnStatus);
     const handleReload = () => {
         reload();
         onChanged && onChanged();
@@ -262,6 +273,7 @@ export default function OrderDrawer({ order, restockPending = false, onClose, on
                     <div className={styles.header__badges}>
                         <AdminBadge text={fin.label} variant={fin.variant} />
                         {shipping && <AdminBadge text={shipping.label} variant={shipping.variant} />}
+                        {carrierBadge && <AdminBadge text={carrierBadge.text} variant={carrierBadge.variant} />}
                         {restockPending && <AdminBadge text="موجودی برنگشته" variant="warning" />}
                     </div>
 
@@ -302,6 +314,7 @@ export default function OrderDrawer({ order, restockPending = false, onClose, on
                             {tab === 'items' && (
                                 <ItemsTab data={data} isPaid={isPaid} onReload={() => { handleReload(); notify('لغو کالا ثبت شد.'); }}
                                     onItemStatus={handleItemStatus}
+                                    onCarrierResolved={handleCarrierResolved}
                                     onRestockCleared={() => { onRestockCleared && onRestockCleared(); notify('برگشت موجودی ثبت شد.'); }} />
                             )}
                             {tab === 'timeline' && (

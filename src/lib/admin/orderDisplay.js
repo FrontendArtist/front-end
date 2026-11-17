@@ -17,6 +17,36 @@ const ROW_DELIVERY = {
     Cancelled: { label: 'کالا لغو شده', variant: 'error' },
 };
 
+const CARRIER_RETURN_ROW_BADGES = {
+    PendingReview: { text: 'برگشتی پستکس — در انتظار رسیدگی', variant: 'warning' },
+    ClosedWithoutSettlement: { text: 'بسته‌شده بدون تسویه (برگشتی)', variant: 'default' },
+    DeliveryConfirmed: { text: 'برگشتی پستکس — تحویل تأیید شد', variant: 'info' },
+};
+
+/** نشان ردیف فهرست ادمین؛ None و مقدار ناشناخته نشان نمی‌گیرند */
+export function getCarrierReturnBadge(status) {
+    return CARRIER_RETURN_ROW_BADGES[status] || null;
+}
+
+/**
+ * وضعیت تجمیعی برگشتی سفارش، هم‌معنای OrderCarrierReturnStatus بای‌مانی.
+ * PendingReview بر ClosedWithoutSettlement مقدم است.
+ */
+export function carrierReturnStatusOf(items) {
+    const returned = (items || []).filter((item) => (
+        String(item?.itemType || '').toLowerCase() === 'product' && item.carrierReturnedAtUtc
+    ));
+    if (returned.length === 0) return 'None';
+    if (returned.some((item) => !item.carrierReturnResolution)) return 'PendingReview';
+    if (returned.some((item) => item.carrierReturnResolution === 'ClosedWithoutSettlement')) {
+        return 'ClosedWithoutSettlement';
+    }
+    if (returned.every((item) => item.carrierReturnResolution === 'DeliveryConfirmed')) {
+        return 'DeliveryConfirmed';
+    }
+    return 'None';
+}
+
 /** برچسب ارسال ردیف جدول؛ برای سفارش پرداخت‌نشده یا بدون کالا null */
 export function getRowShippingBadge(row) {
     if (!row || row.financialStatus !== 'Paid') return null;

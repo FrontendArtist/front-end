@@ -163,11 +163,17 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
     const topUps = Array.isArray(order.topUps) ? order.topUps : [];
     const showMyCourses = view.isPaid && view.hasCourse;
 
-    // تأیید دریافت خریدار (SHIP-TRACKING): فقط وقتی قلم ارسال‌شده‌ای مانده باشد.
-    const shippedProductItems = physicalItems.filter((item) =>
+    // تأیید دریافت خریدار: قلم ارسال‌شدهٔ برگشتیِ حل‌نشده یا بسته‌شده بدون تسویه قابل تأیید نیست.
+    const isRemainingShipped = (item) =>
         item.physicalDeliveryStatus === 'Shipped' &&
-        (Number(item.cancelledQuantity) || 0) < (Number(item.quantity) || 1));
-    const canConfirmDelivery = view.isPaid && !confirmedNow && shippedProductItems.length > 0;
+        (Number(item.cancelledQuantity) || 0) < (Number(item.quantity) || 1);
+    const carrierReturnBlocksConfirm = (item) =>
+        item.carrierReturnedAtUtc != null && item.carrierReturnResolution !== 'DeliveryConfirmed';
+    const shippedProductItems = physicalItems.filter(isRemainingShipped);
+    const confirmableShippedItems = shippedProductItems.filter((item) => !carrierReturnBlocksConfirm(item));
+    const canConfirmDelivery = view.isPaid && !confirmedNow && confirmableShippedItems.length > 0;
+    const showCarrierReviewNote = view.isPaid && !confirmedNow && !canConfirmDelivery
+        && shippedProductItems.some(carrierReturnBlocksConfirm);
 
     const confirmDelivery = async () => {
         if (confirming) return;
@@ -295,6 +301,12 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
                                 </ul>
                             )}
                         </div>
+                    )}
+
+                    {showCarrierReviewNote && (
+                        <p className={`${styles.notice} ${styles.noticeCalm}`} role="status" data-testid="carrier-return-review-note">
+                            مرسوله در وضعیت بررسی پستی است
+                        </p>
                     )}
 
                     {canConfirmDelivery && (

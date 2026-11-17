@@ -33,6 +33,7 @@ export default function PhysicalDeliveryControl({
     cartId,
     initialStatus = null,
     onStatusChange = null,
+    carrierReturnLocked = false,
 }) {
     const [status, setStatus] = useState(initialStatus);
     const [busy, setBusy] = useState(false);
@@ -237,8 +238,10 @@ export default function PhysicalDeliveryControl({
         {
             value: 'Delivered',
             label: 'تحویل‌شده',
-            hint: isDelivered ? 'تکمیل شده' : isShipped ? 'پیشبرد مرحله' : 'ابتدا باید ارسال شود',
-            disabled: !isShipped || busy,
+            hint: carrierReturnLocked
+                ? 'برای این برگشتی غیرفعال است'
+                : isDelivered ? 'تکمیل شده' : isShipped ? 'پیشبرد مرحله' : 'ابتدا باید ارسال شود',
+            disabled: !isShipped || busy || carrierReturnLocked,
             icon: <CheckCircle2 size={14} />,
         },
     ];
@@ -343,8 +346,15 @@ export default function PhysicalDeliveryControl({
                 </div>
             )}
 
-            {/* پس از «تحویل‌شده» وضعیت نهایی است و نشان بالا کافی است؛ کنترلی برای پیشبرد نمی‌ماند */}
-            {!isDelivered && (
+            {isShipped && carrierReturnLocked && (
+                <p className={styles.trackingHint} data-testid="delivery-locked-by-return">
+                    تغییر به تحویل‌شده برای این برگشتی غیرفعال است.
+                </p>
+            )}
+
+            {/* پس از «تحویل‌شده» وضعیت نهایی است و نشان بالا کافی است؛ کنترلی برای پیشبرد نمی‌ماند.
+                برگشتیِ باز یا بسته‌شده بدون تسویه هم نباید به تحویل‌شده برود. */}
+            {!isDelivered && !(isShipped && carrierReturnLocked) && (
                 <div ref={dropdownRef} className={styles.customSelectContainer}>
                     <button
                         type="button"

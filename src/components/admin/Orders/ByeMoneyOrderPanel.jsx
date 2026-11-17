@@ -7,7 +7,7 @@
  * فقط‌مشاهده است و هیچ تغییر وضعیت مالی ندارد. داده از route سروری /api/admin/orders/[id]/tracking
  * می‌آید. اگر استرپی در دسترس نباشد فقط وضعیت بای‌مانی با هشدار نمایش داده می‌شود و پنل نمی‌شکند.
  * وضعیت شارژ با وضعیت خرید یکی نمایش داده نمی‌شود (TRACK-04): خط «شارژ» جدا از «نتیجهٔ نهایی سفارش» است.
- * کنترل وضعیت ارسال کالا (PhysicalDeliveryControl) دست‌نخورده و فقط برای قلم کالای سفارش Paid نمایش داده می‌شود.
+ * کنترل وضعیت ارسال کالا فقط برای قلم کالای سفارش Paid است؛ برگشتی باز یا بسته‌شده بدون تسویه، دکمهٔ تحویل را می‌بندد.
  *
  * هوک داده (useOrderTracking) و بخش‌ها (OrderItemsList، Timeline، OrderWarnings) جدا صادر می‌شوند تا
  * کشوی جزئیات سفارش (OrderDrawer) همان رفتار را در تب‌های جدا نشان دهد (ADMIN-ORDERS-REDESIGN).
@@ -18,6 +18,8 @@ import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
 import { canShowReceipt, isPhysicalFullyCancelled } from '@/lib/admin/orderTracking';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import PhysicalDeliveryControl from './PhysicalDeliveryControl';
+import CarrierReturnResolveControl from './CarrierReturnResolveControl';
+import { carrierReturnStatusOf } from '@/lib/admin/orderDisplay';
 import { shippingOriginText } from '@/lib/shippingOrigin';
 import PendingRestockNotice from './PendingRestockNotice';
 import PhysicalCancelFlow from '@/components/physicalCancel/PhysicalCancelFlow';
@@ -33,6 +35,17 @@ export const DELIVERY_LABELS = {
 };
 
 const fa = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString('fa-IR'));
+
+const RESOLUTION_LABELS = {
+    DeliveryConfirmed: 'تحویل تأیید شد (ورود مجدد به تسویه)',
+    ClosedWithoutSettlement: 'بدون تسویه بسته شد (حذف دائمی از تسویه)',
+};
+
+function blocksPrematureDelivery(item) {
+    return Boolean(item?.carrierReturnedAtUtc) && (
+        !item.carrierReturnResolution || item.carrierReturnResolution === 'ClosedWithoutSettlement'
+    );
+}
 
 export function formatTime(d) {
     if (!d) return '—';
@@ -173,7 +186,7 @@ export function OrderWarnings({ warnings }) {
  * @param {{ detail: object, isPaid: boolean, onReload: () => void,
  *   onItemStatus: (purchaseId: string, status: string) => void }} props
  */
-export function OrderItemsList({ detail, isPaid, onReload, onItemStatus }) {
+export function OrderItemsList({ detail, isPaid, onReload, onItemStatus, onCarrierResolved }) {
     if (detail.items.length === 0) {
         return <p className={styles.expanded_empty}>اطلاعات اقلام در دسترس نیست.</p>;
     }
@@ -192,6 +205,8 @@ export function OrderItemsList({ detail, isPaid, onReload, onItemStatus }) {
                 const partlyCancelled = isProduct && cancelledQty > 0 && !fullyCancelled;
                 const canCancel = isProduct && isPaid && Boolean(item.purchaseId)
                     && !fullyCancelled && !isShippedOrDelivered;
+                const returnUnresolved = isProduct && item.carrierReturnedAtUtc && !item.carrierReturnResolution;
+                const deliveryLocked = blocksPrematureDelivery(item);
 
                 return (
                     <div
@@ -226,6 +241,29 @@ export function OrderItemsList({ detail, isPaid, onReload, onItemStatus }) {
                                         {refundedGift > 0 && ` و ${fa(refundedGift)} نور هدیه`}
                                     </span>
                                 )}
+                                {isProduct && item.carrierReturnedAtUtc && (
+                                    <span className={`${styles.item_card__badge} ${styles['item_card__badge--warning']}`} data-testid="carrier-return-badge">
+                                        برگشتی پستکس — {formatTime(item.carrierReturnedAtUtc)}
+                                    </span>
+                                )}
+                                {isProduct && item.carrierReturnResolution && (
+                                    <div className={styles.item_card__resolved} data-testid="carrier-return-resolved">
+                                        <span className={`${styles.item_card__badge} ${item.carrierReturnResolution === 'DeliveryConfirmed' ? styles['item_card__badge--info'] : styles['item_card__badge--neutral']}`}>
+                                            {RESOLUTION_LABELS[item.carrierReturnResolution] || item.carrierReturnResolution}
+                                        </span>
+                                        {item.carrierReturnResolutionNote && (
+                                            <span className={styles.item_card__meta}>{item.carrierReturnResolutionNote}</span>
+                                        )}
+                                        <span className={styles.item_card__meta}>
+                                            زمان رسیدگی: {formatTime(item.carrierReturnResolvedAtUtc)}
+                                        </span>
+                                        {item.carrierReturnResolvedByExternalUserId && (
+                                            <span className={styles.item_card__meta} dir="ltr">
+                                                {item.carrierReturnResolvedByExternalUserId}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                                 {isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus && (
                                     <span className={styles.item_card__meta}>
                                         ارسال: {getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}
@@ -237,14 +275,37 @@ export function OrderItemsList({ detail, isPaid, onReload, onItemStatus }) {
                             </span>
                         </div>
 
-                        {isProduct && isPaid && item.purchaseId && !fullyCancelled && (
+                        {isProduct && isPaid && item.purchaseId && (!fullyCancelled || returnUnresolved) && (
                             <div className={styles.item_card__actions}>
-                                <PhysicalDeliveryControl
-                                    purchaseId={item.purchaseId}
-                                    cartId={detail.cartId}
-                                    initialStatus={item.physicalDeliveryStatus || null}
-                                    onStatusChange={(newStatus) => onItemStatus(item.purchaseId, newStatus)}
-                                />
+                                {!fullyCancelled && (
+                                    <PhysicalDeliveryControl
+                                        purchaseId={item.purchaseId}
+                                        cartId={detail.cartId}
+                                        initialStatus={item.physicalDeliveryStatus || null}
+                                        carrierReturnLocked={deliveryLocked}
+                                        onStatusChange={(newStatus) => onItemStatus(item.purchaseId, newStatus)}
+                                    />
+                                )}
+                                {returnUnresolved && (
+                                    <CarrierReturnResolveControl
+                                        purchaseId={item.purchaseId}
+                                        onResolved={(body) => {
+                                            const nextItems = detail.items.map((it) => (
+                                                it.purchaseId === item.purchaseId
+                                                    ? {
+                                                        ...it,
+                                                        carrierReturnedAtUtc: body?.carrierReturnedAtUtc || it.carrierReturnedAtUtc,
+                                                        carrierReturnResolution: body?.carrierReturnResolution || null,
+                                                        physicalDeliveryStatus: body?.deliveryStatus || it.physicalDeliveryStatus,
+                                                    }
+                                                    : it
+                                            ));
+                                            if (typeof onCarrierResolved === 'function') {
+                                                onCarrierResolved(carrierReturnStatusOf(nextItems));
+                                            }
+                                        }}
+                                    />
+                                )}
                                 {canCancel && (
                                     <PhysicalCancelFlow
                                         mode="admin"
@@ -366,7 +427,13 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
 
             <div className={styles.expanded_section}>
                 <h4 className={styles.expanded_section__title}>🛒 اقلام سفارش</h4>
-                <OrderItemsList detail={detail} isPaid={isPaid} onReload={reload} onItemStatus={setItemDeliveryStatus} />
+                <OrderItemsList
+                    detail={detail}
+                    isPaid={isPaid}
+                    onReload={reload}
+                    onItemStatus={setItemDeliveryStatus}
+                    onCarrierResolved={() => reload()}
+                />
             </div>
 
             {shippingAddress && (

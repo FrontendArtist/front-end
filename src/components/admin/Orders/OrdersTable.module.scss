@@ -409,6 +409,26 @@ $transition: 0.2s ease;
             background: fade(var(--color-warning-amber), 12%);
             border-color: fade(var(--color-warning-amber), 35%);
         }
+
+        &--info {
+            color: var(--color-primary);
+            background: fade(var(--color-primary), 12%);
+            border-color: fade(var(--color-primary), 35%);
+        }
+
+        &--neutral {
+            color: $muted;
+            background: fade(var(--color-card-text), 8%);
+            border-color: fade(var(--color-card-text), 22%);
+        }
+    }
+
+    &__resolved {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        margin-top: 4px;
     }
 
     &__actions {

@@ -38,6 +38,8 @@ function mapByeMoneyProductItem(item) {
         trackingCode: item.trackingCode || null,
         trackingProvider: item.trackingProvider || null,
         shippedAtUtc: item.shippedAtUtc || null,
+        carrierReturnedAtUtc: item.carrierReturnedAtUtc || null,
+        carrierReturnResolution: item.carrierReturnResolution || null,
         type: 'product',
         itemType: 'Product',
         __component: 'order.product-order-item',
