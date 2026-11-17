@@ -8,6 +8,7 @@
  */
 
 import { getAdminCourseOrderDetails, getAdminCourseOrderReceipt } from '../byeMoneyApi';
+import { pickShippingOrigin } from '../shippingOrigin';
 import { STRAPI_API_URL } from '../api';
 import { buildTimeline, sanitizeAttempt, sanitizeTopUp, summarizeAttempts } from './orderTracking';
 
@@ -166,6 +167,7 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
 
     // آدرس از پاسخ جزئیات ادمین بای‌مانی می‌آید (سفارش بدون کالا آدرس ندارد → null)
     const shippingAddress = sanitizeAddress(res.data?.shippingAddress);
+    const shippingOrigin = pickShippingOrigin(res.data?.shippingOrigin);
 
     // سفارش دستی ادمین (I11-AO): دو فیلد افزودنی جزئیات ادمین
     const adminId = res.data?.createdByAdminExternalUserId ?? null;
@@ -205,6 +207,7 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
             attemptsStatus,
             receipt: receipt?.success ? sanitizeReceipt(receipt.data) : null,
             shippingAddress,
+            shippingOrigin,
             adminOrigin,
             warnings,
         },

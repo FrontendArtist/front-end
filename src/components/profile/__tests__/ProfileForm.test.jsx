@@ -11,8 +11,20 @@ jest.mock('next-auth/react', () => ({
 
 const LOCALITIES = {
     data: [
-        { name: 'تهران', cities: ['تهران', 'ری'] },
-        { name: 'اصفهان', cities: ['اصفهان', 'کاشان'] },
+        {
+            name: 'تهران',
+            cities: [
+                { documentId: 'city-tehran', name: 'تهران' },
+                { documentId: 'city-rey', name: 'ری' },
+            ],
+        },
+        {
+            name: 'اصفهان',
+            cities: [
+                { documentId: 'city-isfahan', name: 'اصفهان' },
+                { documentId: 'city-kashan', name: 'کاشان' },
+            ],
+        },
     ],
 };
 
@@ -68,6 +80,13 @@ describe('ProfileForm locality selects', () => {
         expect(screen.getByLabelText(/شهر/).value).toBe('');
 
         fireEvent.change(screen.getByLabelText(/شهر/), { target: { value: 'کاشان' } });
+        expect(screen.getByLabelText(/شهر/).value).toBe('کاشان');
+
+        // قید سخت: شناسه شهر، حتی documentId، در متن صفحه نیاید و فقط نام دیده شود
+        expect(screen.queryByText('city-kashan')).toBeNull();
+        expect(document.body.textContent).not.toContain('city-kashan');
+        expect(document.body.textContent).not.toContain('city-isfahan');
+
         fireEvent.click(screen.getByRole('button', { name: 'ذخیره' }));
 
         await waitFor(() => {
@@ -79,8 +98,79 @@ describe('ProfileForm locality selects', () => {
         expect(JSON.parse(addressCall[1].body).data).toMatchObject({
             province: 'اصفهان',
             city: 'کاشان',
+            cityLink: 'city-kashan',
         });
         expect(JSON.parse(addressCall[1].body).data.provinceId).toBeUndefined();
+        expect(JSON.parse(addressCall[1].body).data.externalId).toBeUndefined();
+    });
+
+    test('آدرس قدیمی وصل‌نشده خطای استرپی می‌دهد تا خریدار شهر را دوباره انتخاب کند', async () => {
+        let updateAttempts = 0;
+        global.fetch = jest.fn(async (url, options = {}) => {
+            if (url === '/api/localities') {
+                return { ok: true, json: async () => LOCALITIES };
+            }
+            if (url === '/api/profile' && options.method !== 'PUT') {
+                return {
+                    ok: true,
+                    json: async () => profileBody({
+                        documentId: 'addr-1',
+                        cityLink: null, // بدون لینک شهر
+                        fullAddress: 'خیابان قدیم',
+                        province: 'تهران',
+                        city: 'تهران',
+                        postalCode: '1111111111',
+                        recipientName: 'رضا',
+                        recipientPhone: '09120000000',
+                    }),
+                };
+            }
+            if (url === '/api/addresses/addr-1') {
+                updateAttempts += 1;
+                if (updateAttempts === 1) {
+                    return {
+                        ok: false,
+                        status: 400,
+                        json: async () => ({ message: 'شهر باید از فهرست شهرها انتخاب شود.' }),
+                    };
+                }
+                return { ok: true, json: async () => ({ data: { documentId: 'addr-1', cityLink: 'city-rey' } }) };
+            }
+            return { ok: true, json: async () => ({}) };
+        });
+
+        render(<ProfileForm />);
+
+        await waitFor(() => {
+            expect(screen.getByLabelText(/استان/).value).toBe('تهران');
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'ویرایش' }));
+
+        // تلاش برای ذخیره بدون انتخاب مجدد شهر -> دریافت خطای استرپی
+        fireEvent.click(screen.getByRole('button', { name: 'ذخیره' }));
+
+        expect(await screen.findByText('شهر باید از فهرست شهرها انتخاب شود.')).toBeTruthy();
+
+        // اکنون خریدار شهر را دوباره انتخاب می‌کند
+        fireEvent.change(screen.getByLabelText(/شهر/), { target: { value: 'ری' } });
+        expect(screen.getByLabelText(/شهر/).value).toBe('ری');
+        expect(screen.queryByText('city-rey')).toBeNull();
+
+        // ذخیره موفق با ارسال شناسه شهر خودمان
+        fireEvent.click(screen.getByRole('button', { name: 'ذخیره' }));
+
+        await waitFor(() => {
+            expect(screen.getByText('اطلاعات با موفقیت ذخیره شد')).toBeTruthy();
+        });
+
+        const addressCalls = global.fetch.mock.calls.filter((c) => c[0] === '/api/addresses/addr-1');
+        const lastAddressCall = addressCalls[addressCalls.length - 1];
+        expect(JSON.parse(lastAddressCall[1].body).data).toMatchObject({
+            province: 'تهران',
+            city: 'ری',
+            cityLink: 'city-rey',
+        });
     });
 
     test('شهر خارج از فهرست مانع ذخیره می‌شود', async () => {

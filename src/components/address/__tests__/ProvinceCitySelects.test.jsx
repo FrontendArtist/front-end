@@ -4,18 +4,35 @@ import ProvinceCitySelects, { resolveOfficialPair } from '../ProvinceCitySelects
 
 const LOCALITIES = {
     data: [
-        { name: 'تهران', cities: ['تهران', 'ری'] },
-        { name: 'اصفهان', cities: ['اصفهان', 'کاشان'] },
+        {
+            name: 'تهران',
+            cities: [
+                { documentId: 'city-tehran', name: 'تهران' },
+                { documentId: 'city-rey', name: 'ری' },
+            ],
+        },
+        {
+            name: 'اصفهان',
+            cities: [
+                { documentId: 'city-isfahan', name: 'اصفهان' },
+                { documentId: 'city-kashan', name: 'کاشان' },
+            ],
+        },
     ],
 };
 
-function Harness({ initial = { province: '', city: '' } }) {
+function Harness({ initial = { province: '', city: '', cityLink: null }, onChange }) {
     const [value, setValue] = useState(initial);
+    const handleChange = (next) => {
+        setValue(next);
+        if (onChange) onChange(next);
+    };
     return (
         <ProvinceCitySelects
             province={value.province}
             city={value.city}
-            onChange={setValue}
+            cityLink={value.cityLink}
+            onChange={handleChange}
         />
     );
 }
@@ -25,14 +42,17 @@ describe('resolveOfficialPair', () => {
         expect(resolveOfficialPair(LOCALITIES.data, 'اصفهان', 'کاشان')).toEqual({
             province: 'اصفهان',
             city: 'کاشان',
+            cityLink: 'city-kashan',
         });
         expect(resolveOfficialPair(LOCALITIES.data, 'اصفهان', 'تهران')).toEqual({
             province: 'اصفهان',
             city: '',
+            cityLink: null,
         });
         expect(resolveOfficialPair(LOCALITIES.data, 'یزد', 'یزد')).toEqual({
             province: '',
             city: '',
+            cityLink: null,
         });
     });
 });
@@ -50,7 +70,8 @@ describe('ProvinceCitySelects', () => {
     });
 
     test('فهرست را یک‌بار می‌گیرد و شهر را با استان فیلتر می‌کند', async () => {
-        render(<Harness />);
+        const handleChange = jest.fn();
+        render(<Harness onChange={handleChange} />);
 
         await waitFor(() => {
             expect(screen.getByLabelText(/استان/).disabled).toBe(false);
@@ -66,6 +87,18 @@ describe('ProvinceCitySelects', () => {
         expect([...city.options].map((option) => option.value)).toEqual(['', 'اصفهان', 'کاشان']);
 
         fireEvent.change(city, { target: { value: 'کاشان' } });
+        expect(city.value).toBe('کاشان');
+        expect(handleChange).toHaveBeenLastCalledWith({
+            province: 'اصفهان',
+            city: 'کاشان',
+            cityLink: 'city-kashan',
+        });
+
+        // قید سخت: شناسه شهر، حتی documentId، در متن صفحه نیاید و فقط نام دیده شود
+        expect(screen.queryByText('city-kashan')).toBeNull();
+        expect(document.body.textContent).not.toContain('city-kashan');
+        expect(document.body.textContent).not.toContain('city-isfahan');
+
         fireEvent.change(screen.getByLabelText(/استان/), { target: { value: 'تهران' } });
         expect(screen.getByLabelText(/شهر/).value).toBe('');
         expect([...screen.getByLabelText(/شهر/).options].map((option) => option.value)).toEqual(['', 'تهران', 'ری']);

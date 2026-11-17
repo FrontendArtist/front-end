@@ -22,8 +22,14 @@ export async function POST(request) {
         });
 
         if (!response.ok) {
-            console.error("Strapi Address Creation Error:", response.status, await response.text());
-            return NextResponse.json({ message: "Strapi Address Creation Error" }, { status: response.status });
+            const rawText = await response.text();
+            let message = "Strapi Address Creation Error";
+            try {
+                const parsed = JSON.parse(rawText);
+                message = parsed?.error?.message || parsed?.message || message;
+            } catch {}
+            console.error("Strapi Address Creation Error:", response.status, rawText);
+            return NextResponse.json({ message }, { status: response.status });
         }
 
         const createdData = await response.json();

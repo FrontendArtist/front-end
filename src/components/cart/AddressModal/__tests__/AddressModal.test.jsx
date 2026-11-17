@@ -7,8 +7,20 @@ jest.mock('next-auth/react', () => ({
 
 const LOCALITIES = {
     data: [
-        { name: 'تهران', cities: ['تهران', 'ری'] },
-        { name: 'اصفهان', cities: ['اصفهان', 'کاشان'] },
+        {
+            name: 'تهران',
+            cities: [
+                { documentId: 'city-tehran', name: 'تهران' },
+                { documentId: 'city-rey', name: 'ری' },
+            ],
+        },
+        {
+            name: 'اصفهان',
+            cities: [
+                { documentId: 'city-isfahan', name: 'اصفهان' },
+                { documentId: 'city-kashan', name: 'کاشان' },
+            ],
+        },
     ],
 };
 
@@ -163,17 +175,24 @@ describe('AddressModal Component', () => {
             recipientPhone: '09121112233',
             province: 'تهران',
             city: 'تهران',
+            cityLink: 'city-tehran',
             fullAddress: 'خیابان آزادی، کوچه مریم، پلاک ۱۰',
             postalCode: '1234567890',
             user: 7,
         });
         expect(sentBody.data.provinceId).toBeUndefined();
         expect(sentBody.data.cityId).toBeUndefined();
+        expect(sentBody.data.externalId).toBeUndefined();
+
+        // قید سخت: شناسه شهر حتی documentId در متن صفحه نیاید و فقط نام دیده شود
+        expect(screen.queryByText('city-tehran')).toBeNull();
+        expect(document.body.textContent).not.toContain('city-tehran');
 
         expect(mockSuccess).toHaveBeenCalledWith(expect.objectContaining({
             recipientName: 'محمد رضایی',
             province: 'تهران',
             city: 'تهران',
+            cityLink: 'city-tehran',
             fullAddress: 'خیابان آزادی، کوچه مریم، پلاک ۱۰',
             documentId: 'addr-doc-12',
         }));
@@ -183,12 +202,13 @@ describe('AddressModal Component', () => {
         const mockSuccess = jest.fn();
         mockFetch({
             ok: true,
-            json: async () => ({ data: { id: 5, documentId: 'existing-doc-5' } }),
+            json: async () => ({ data: { id: 5, documentId: 'existing-doc-5', cityLink: 'city-isfahan' } }),
         });
 
         const existingAddress = {
             id: 5,
             documentId: 'existing-doc-5',
+            cityLink: 'city-isfahan',
             recipientName: 'علی اکبری',
             recipientPhone: '09199998877',
             province: 'اصفهان',
@@ -229,12 +249,91 @@ describe('AddressModal Component', () => {
         expect(JSON.parse(addressCall[1].body).data).toMatchObject({
             province: 'اصفهان',
             city: 'اصفهان',
+            cityLink: 'city-isfahan',
             fullAddress: 'میدان امام علی، کوچه گلها',
         });
         expect(mockSuccess).toHaveBeenCalledWith(expect.objectContaining({
             fullAddress: 'میدان امام علی، کوچه گلها',
             documentId: 'existing-doc-5',
         }));
+    });
+
+    test('آدرس قدیمی وصل‌نشده خطای استرپی می‌دهد تا خریدار شهر را دوباره انتخاب کند', async () => {
+        const mockSuccess = jest.fn();
+        let updateCount = 0;
+        global.fetch = jest.fn(async (url) => {
+            if (url === '/api/localities') {
+                return { ok: true, json: async () => LOCALITIES };
+            }
+            if (url === '/api/addresses/existing-doc-5') {
+                updateCount += 1;
+                if (updateCount === 1) {
+                    return {
+                        ok: false,
+                        status: 400,
+                        json: async () => ({ message: 'شهر باید از فهرست شهرها انتخاب شود.' }),
+                    };
+                }
+                return {
+                    ok: true,
+                    json: async () => ({ data: { id: 5, documentId: 'existing-doc-5', cityLink: 'city-kashan' } }),
+                };
+            }
+            return { ok: true, json: async () => ({}) };
+        });
+
+        const oldUnconnectedAddress = {
+            id: 5,
+            documentId: 'existing-doc-5',
+            cityLink: null, // وصل نشده
+            recipientName: 'رضا',
+            recipientPhone: '09120000000',
+            province: 'اصفهان',
+            city: 'اصفهان',
+            fullAddress: 'خیابان قدیم',
+            postalCode: '1111111111',
+        };
+
+        render(
+            <AddressModal
+                isOpen={true}
+                initialAddress={oldUnconnectedAddress}
+                onClose={jest.fn()}
+                onSuccess={mockSuccess}
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByLabelText(/استان/).value).toBe('اصفهان');
+        });
+
+        // اقدام به ثبت بدون انتخاب مجدد شهر -> دریافت خطای استرپی
+        fireEvent.click(screen.getByRole('button', { name: 'ثبت آدرس و ادامه پرداخت' }));
+
+        expect(await screen.findByText('شهر باید از فهرست شهرها انتخاب شود.')).toBeTruthy();
+        expect(mockSuccess).not.toHaveBeenCalled();
+
+        // اکنون خریدار شهر را دوباره از دراپ‌داون انتخاب می‌کند
+        fireEvent.change(screen.getByLabelText(/شهر/), { target: { value: 'کاشان' } });
+        expect(screen.getByLabelText(/شهر/).value).toBe('کاشان');
+        expect(screen.queryByText('city-kashan')).toBeNull();
+
+        // ثبت مجدد آدرس -> با موفقیت و همراه با شناسه شهر خودمان ذخیره می‌شود
+        fireEvent.click(screen.getByRole('button', { name: 'ثبت آدرس و ادامه پرداخت' }));
+
+        await waitFor(() => {
+            expect(mockSuccess).toHaveBeenCalledWith(expect.objectContaining({
+                city: 'کاشان',
+                cityLink: 'city-kashan',
+            }));
+        });
+
+        const lastCall = global.fetch.mock.calls.filter((c) => c[0] === '/api/addresses/existing-doc-5').pop();
+        expect(JSON.parse(lastCall[1].body).data).toMatchObject({
+            province: 'اصفهان',
+            city: 'کاشان',
+            cityLink: 'city-kashan',
+        });
     });
 
     test('استان ذخیره‌شدهٔ خارج از فهرست خالی می‌ماند و ذخیره مسدود است', async () => {

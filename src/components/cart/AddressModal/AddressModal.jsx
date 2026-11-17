@@ -33,6 +33,7 @@ export default function AddressModal({
         recipientPhone: '',
         province: '',
         city: '',
+        cityLink: null,
         fullAddress: '',
         postalCode: '',
     });
@@ -40,11 +41,13 @@ export default function AddressModal({
     useEffect(() => {
         if (isOpen) {
             setError('');
+            const initialCityLink = initialAddress?.cityLink?.documentId || (typeof initialAddress?.cityLink === 'string' ? initialAddress.cityLink : null);
             setFormData({
                 recipientName: initialAddress?.recipientName || '',
                 recipientPhone: initialAddress?.recipientPhone || '',
                 province: initialAddress?.province || '',
                 city: initialAddress?.city || '',
+                cityLink: initialCityLink || null,
                 fullAddress: initialAddress?.fullAddress || '',
                 postalCode: initialAddress?.postalCode || '',
             });
@@ -78,10 +81,11 @@ export default function AddressModal({
             setError(localityError);
             return;
         }
-        const { province, city } = localityRef.current;
+        const { province, city, cityLink } = localityRef.current || {};
 
         setSaving(true);
         try {
+            const effectiveCityLink = cityLink || formData.cityLink || null;
             const addressPayload = {
                 title: 'آدرس اصلی',
                 recipientName: trimmedName,
@@ -91,6 +95,9 @@ export default function AddressModal({
                 fullAddress: trimmedAddress,
                 postalCode: formData.postalCode?.trim() || '',
             };
+            if (effectiveCityLink) {
+                addressPayload.cityLink = effectiveCityLink;
+            }
 
             const existingId = initialAddress?.documentId || initialAddress?.id;
             let response;
@@ -124,6 +131,7 @@ export default function AddressModal({
                 ...addressPayload,
                 documentId: responseData?.data?.documentId || existingId || null,
                 id: responseData?.data?.id || existingId || null,
+                cityLink: responseData?.data?.cityLink || effectiveCityLink || null,
             };
 
             if (typeof onSuccess === 'function') {
@@ -191,8 +199,9 @@ export default function AddressModal({
                     <ProvinceCitySelects
                         province={formData.province}
                         city={formData.city}
-                        onChange={({ province, city }) => {
-                            setFormData((prev) => ({ ...prev, province, city }));
+                        cityLink={formData.cityLink}
+                        onChange={({ province, city, cityLink }) => {
+                            setFormData((prev) => ({ ...prev, province, city, cityLink }));
                         }}
                         selectionRef={localityRef}
                         disabled={saving}

@@ -28,6 +28,7 @@ export default function ProfileForm() {
         fullAddress: '',     // آدرس کامل (اصلی)
         province: '',        // استان
         city: '',            // شهر
+        cityLink: null,      // شناسه شهر در استرپی (documentId)
         postalCode: '',      // کد پستی
         recipientName: '',   // نام گیرنده
         recipientPhone: '',  // تلفن گیرنده
@@ -68,6 +69,7 @@ export default function ProfileForm() {
                     fullAddress: data.address?.fullAddress || '',
                     province: data.address?.province || '',
                     city: data.address?.city || '',
+                    cityLink: data.address?.cityLink?.documentId || (typeof data.address?.cityLink === 'string' ? data.address.cityLink : null),
                     postalCode: data.address?.postalCode || '',
                     recipientName: data.address?.recipientName || '',
                     recipientPhone: data.address?.recipientPhone || '',
@@ -118,7 +120,7 @@ export default function ProfileForm() {
             setError(localityError);
             return;
         }
-        const { province, city } = localityRef.current;
+        const { province, city, cityLink } = localityRef.current || {};
 
         setSaving(true);
 
@@ -140,6 +142,7 @@ export default function ProfileForm() {
 
             // مرحله 2: ذخیره آدرس (در مدل Address)
             let addressResponse;
+            const effectiveCityLink = cityLink || formData.cityLink || null;
             const addressData = {
                 title: 'آدرس اصلی',
 
@@ -151,6 +154,9 @@ export default function ProfileForm() {
                 recipientName: formData.recipientName,
                 recipientPhone: formData.recipientPhone,
             };
+            if (effectiveCityLink) {
+                addressData.cityLink = effectiveCityLink;
+            }
 
             if (formData.addressDocumentId) {
                 // اگر آدرس وجود دارد، آن را به‌روزرسانی کن
@@ -204,6 +210,7 @@ export default function ProfileForm() {
                 ...formData,
                 province,
                 city,
+                cityLink: effectiveCityLink || null,
                 addressDocumentId: formData.addressDocumentId || createdDocumentId || null
             });
             setSuccess('اطلاعات با موفقیت ذخیره شد');
@@ -357,8 +364,14 @@ export default function ProfileForm() {
                         <ProvinceCitySelects
                             province={formData.province}
                             city={formData.city}
-                            onChange={({ province: nextProvince, city: nextCity }) => {
-                                setFormData((prev) => ({ ...prev, province: nextProvince, city: nextCity }));
+                            cityLink={formData.cityLink}
+                            onChange={({ province: nextProvince, city: nextCity, cityLink: nextCityLink }) => {
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    province: nextProvince,
+                                    city: nextCity,
+                                    cityLink: nextCityLink,
+                                }));
                             }}
                             selectionRef={localityRef}
                             disabled={!isEditing || saving}

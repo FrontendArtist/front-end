@@ -15,6 +15,7 @@ import {
     formatNoor, formatOrderDate, getAmountRows, getByeMoneyOrderView, getOrderNumber,
     getPaidAt, getPaymentRefCode, getPhysicalSteps,
 } from '@/lib/byeMoneyOrderView';
+import { shippingOriginText } from '@/lib/shippingOrigin';
 import styles from './ByeMoneyOrderView.module.scss';
 
 function CopyButton({ text, label }) {
@@ -140,6 +141,7 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
 
     const items = Array.isArray(order.items) ? order.items : [];
     const address = order.shippingAddress;
+    const originName = shippingOriginText(order.shippingOrigin);
     const view = getByeMoneyOrderView(order, { cancelledNow: Boolean(cancelResult) });
     const { physicalItems } = view;
     const number = getOrderNumber(order);
@@ -270,6 +272,12 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
                             <div><dt>تلفن</dt><dd dir="ltr">{address.recipientPhone}</dd></div>
                             <div><dt>نشانی</dt><dd>{[address.province, address.city, address.fullAddress].filter(Boolean).join(" - ")}</dd></div>
                             {address.postalCode && <div><dt>کد پستی</dt><dd dir="ltr">{address.postalCode}</dd></div>}
+                        </dl>
+                    )}
+
+                    {originName && (
+                        <dl className={styles.address} data-testid="shipping-origin">
+                            <div><dt>مبدأ ارسال</dt><dd>{originName}</dd></div>
                         </dl>
                     )}
 

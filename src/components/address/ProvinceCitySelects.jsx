@@ -13,20 +13,29 @@ export function localitySubmitError(selection) {
     return '';
 }
 
+function cityItemName(city) {
+    return typeof city === 'object' && city !== null ? city.name : String(city || '');
+}
+
+function cityItemDocId(city) {
+    return typeof city === 'object' && city !== null ? (city.documentId || null) : null;
+}
+
 export function resolveOfficialPair(localities, province, city) {
-    const provinceName = typeof province === 'string' ? province : '';
-    const cityName = typeof city === 'string' ? city : '';
+    const provinceName = typeof province === 'string' ? province.trim() : '';
+    const cityName = typeof city === 'string' ? city.trim() : '';
     const row = Array.isArray(localities)
         ? localities.find((item) => item?.name === provinceName)
         : undefined;
 
     if (!row || !Array.isArray(row.cities)) {
-        return { province: '', city: '' };
+        return { province: '', city: '', cityLink: null };
     }
-    if (!row.cities.includes(cityName)) {
-        return { province: row.name, city: '' };
+    const matched = row.cities.find((item) => cityItemName(item) === cityName);
+    if (!matched) {
+        return { province: row.name, city: '', cityLink: null };
     }
-    return { province: row.name, city: cityName };
+    return { province: row.name, city: cityName, cityLink: cityItemDocId(matched) };
 }
 
 /**
@@ -36,6 +45,7 @@ export function resolveOfficialPair(localities, province, city) {
 export default function ProvinceCitySelects({
     province,
     city,
+    cityLink = null,
     onChange,
     selectionRef,
     disabled = false,
@@ -84,13 +94,14 @@ export default function ProvinceCitySelects({
         const currentProvince = typeof province === 'string' ? province : '';
         const currentCity = typeof city === 'string' ? city : '';
         if (next.province !== currentProvince || next.city !== currentCity) {
-            onChange(next);
+            onChange({ province: next.province, city: next.city, cityLink: null });
         }
     }, [status, localities, province, city, onChange]);
 
-    const provinceValue = resolveOfficialPair(localities, province, city).province;
+    const resolved = resolveOfficialPair(localities, province, city);
+    const provinceValue = resolved.province;
     const cities = localities.find((item) => item?.name === provinceValue)?.cities ?? [];
-    const cityValue = cities.includes(city) ? city : '';
+    const cityValue = resolved.city;
     const fieldsDisabled = disabled || status !== 'ready';
 
     if (selectionRef) {
@@ -98,15 +109,19 @@ export default function ProvinceCitySelects({
             status,
             province: provinceValue,
             city: cityValue,
+            cityLink: cityLink || null,
         };
     }
 
     const handleProvinceChange = (event) => {
-        onChange({ province: event.target.value, city: '' });
+        onChange({ province: event.target.value, city: '', cityLink: null });
     };
 
     const handleCityChange = (event) => {
-        onChange({ province: provinceValue, city: event.target.value });
+        const nextCityName = event.target.value;
+        const matched = cities.find((item) => cityItemName(item) === nextCityName);
+        const nextCityLink = cityItemDocId(matched);
+        onChange({ province: provinceValue, city: nextCityName, cityLink: nextCityLink });
     };
 
     return (
@@ -159,11 +174,14 @@ export default function ProvinceCitySelects({
                     required
                 >
                     <option value="">{provinceValue ? 'انتخاب شهر' : 'ابتدا استان را انتخاب کنید'}</option>
-                    {cities.map((cityName) => (
-                        <option key={cityName} value={cityName}>
-                            {cityName}
-                        </option>
-                    ))}
+                    {cities.map((item) => {
+                        const cityName = cityItemName(item);
+                        return (
+                            <option key={cityName} value={cityName}>
+                                {cityName}
+                            </option>
+                        );
+                    })}
                 </select>
             </div>
         </>

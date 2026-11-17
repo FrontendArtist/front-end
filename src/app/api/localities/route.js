@@ -1,5 +1,5 @@
 // src/app/api/localities/route.js
-// پروکسی فهرست رسمی استان/شهر. فقط نام‌ها برمی‌گردد؛ شناسهٔ رابطه ارسال نمی‌شود.
+// پروکسی فهرست رسمی استان/شهر شامل نام استان و شهرها به همراه شناسهٔ داخلی استرپی (documentId).
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -21,15 +21,26 @@ function normalizeLocalities(data) {
 
     const rows = [];
     for (const row of data) {
-        if (!row || typeof row.name !== 'string' || row.name.length === 0) return null;
+        if (!row || typeof row.name !== 'string' || row.name.trim().length === 0) return null;
         if (!Array.isArray(row.cities)) return null;
 
         const cities = [];
         for (const city of row.cities) {
-            if (typeof city !== 'string' || city.length === 0) return null;
-            cities.push(city);
+            if (!city) return null;
+            if (typeof city === 'object') {
+                const name = typeof city.name === 'string' ? city.name.trim() : '';
+                const documentId = typeof city.documentId === 'string' ? city.documentId.trim() : '';
+                if (!name || !documentId) return null;
+                cities.push({ documentId, name });
+            } else if (typeof city === 'string') {
+                const name = city.trim();
+                if (!name) return null;
+                cities.push({ documentId: name, name });
+            } else {
+                return null;
+            }
         }
-        rows.push({ name: row.name, cities });
+        rows.push({ name: row.name.trim(), cities });
     }
     return rows;
 }

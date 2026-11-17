@@ -35,6 +35,7 @@ import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isCartItemPurchasedByUser } from '@/lib/courseAccessUtils';
 import { getCartItemDisplayTitle } from '@/lib/courseTitleUtils';
 import { cartStockErrorMessage } from '@/lib/cartStockError';
+import { quotedShippingAddress, quotedShippingOriginText } from '@/lib/shippingOrigin';
 
 /**
  * صفحه سبد خرید
@@ -134,6 +135,8 @@ export default function CartPage() {
     const couponCode = appliedCoupon?.code || null;
     const previewKey = JSON.stringify([session?.user?.id, session?.user?.jwt, itemsKey, couponCode, courseCartRevision, previewRevision]);
     const preview = checkoutPreview?.key === previewKey ? checkoutPreview : null;
+    const deliveryAddress = quotedShippingAddress(preview?.data, userAddress);
+    const shippingOriginName = quotedShippingOriginText(preview?.data);
     const isPreviewLoading = isCartEligible && status === 'authenticated' && !preview;
     const balance = (walletPreview && session?.user?.jwt && walletPreview.jwt === session.user.jwt) ? walletPreview.balance : null;
     const shortfall = preview?.data?.shortfallInNoor != null
@@ -679,7 +682,7 @@ export default function CartPage() {
                     </h2>
                     <div className={styles.summary}>
                         {/* آدرس تحویل سفارش فیزیکی */}
-                        {hasPhysicalProducts && userAddress?.fullAddress && (
+                        {hasPhysicalProducts && deliveryAddress?.fullAddress && (
                             <>
                                 <div className={styles.addressSummaryCard}>
                                     <div className={styles.addressSummaryHeader}>
@@ -693,8 +696,13 @@ export default function CartPage() {
                                         </button>
                                     </div>
                                     <p className={styles.addressSummaryText}>
-                                        {userAddress.recipientName ? `${userAddress.recipientName} - ` : ''}{userAddress.fullAddress}
+                                        {[deliveryAddress.recipientName, deliveryAddress.province, deliveryAddress.city, deliveryAddress.fullAddress].filter(Boolean).join('، ')}
                                     </p>
+                                    {shippingOriginName && (
+                                        <p className={styles.addressSummaryText} data-testid="shipping-origin">
+                                            مبدأ ارسال: {shippingOriginName}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className={styles.divider}></div>
                             </>

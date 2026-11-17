@@ -194,14 +194,21 @@ describe('جزئیات سفارش بای‌مانی – ارسال کالا و �
   });
 
   it('آدرس تحویل در کارت ارسال نمایش داده می‌شود و بدون آن بلوک نیست', async () => {
-    mockOrder({ ...baseOrder, items: [productItem('Preparing')], shippingAddress: {
-      recipientName: 'علی', recipientPhone: '09120000000', province: 'تهران', city: 'کرج', fullAddress: 'خیابان ۱', postalCode: '1234567890',
-    } });
+    mockOrder({
+      ...baseOrder,
+      items: [productItem('Preparing')],
+      shippingAddress: {
+        recipientName: 'علی', recipientPhone: '09120000000', province: 'تهران', city: 'کرج', fullAddress: 'خیابان ۱', postalCode: '1234567890',
+      },
+      shippingOrigin: { id: 'ramsar', label: 'رامسر' },
+    });
     const { unmount } = render(<OrderDetailPage />);
     const box = await screen.findByTestId('shipping-address');
     expect(box).toHaveTextContent('تهران - کرج - خیابان ۱');
     expect(box).toHaveTextContent('09120000000');
     expect(box).toHaveTextContent('1234567890');
+    expect(screen.getByTestId('shipping-origin')).toHaveTextContent('مبدأ ارسال');
+    expect(screen.getByTestId('shipping-origin')).toHaveTextContent('رامسر');
     unmount();
     mockOrder({ ...baseOrder, items: [productItem('Preparing')] });
     render(<OrderDetailPage />);

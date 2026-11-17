@@ -5,6 +5,7 @@ import { STRAPI_API_URL } from "@/lib/api";
 
 import { getMyCoursePurchases, getCoursePurchaseReceipt, getMyCourseOrders, getMyCourseOrderDetails, CourseOrderId } from '@/lib/byeMoneyApi';
 import { attachPurchasesToByeMoneyOrder, mapByeMoneyLineItem } from '@/lib/byeMoneyOrderItems';
+import { pickShippingOrigin } from '@/lib/shippingOrigin';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -87,6 +88,7 @@ export async function GET(request) {
                             currentTopUpRequestId: d.currentTopUpRequestId,
                             cartSummary: d.cartSummary,
                             shippingAddress: pickShippingAddress(d.shippingAddress),
+                            shippingOrigin: pickShippingOrigin(d.shippingOrigin),
                             items: (d.items || []).map(item => mapByeMoneyLineItem(item)).filter(Boolean),
                             topUps: d.topUps || []
                         };

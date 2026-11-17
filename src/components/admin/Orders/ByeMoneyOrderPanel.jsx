@@ -18,6 +18,7 @@ import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
 import { canShowReceipt, isPhysicalFullyCancelled } from '@/lib/admin/orderTracking';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import PhysicalDeliveryControl from './PhysicalDeliveryControl';
+import { shippingOriginText } from '@/lib/shippingOrigin';
 import PendingRestockNotice from './PendingRestockNotice';
 import PhysicalCancelFlow from '@/components/physicalCancel/PhysicalCancelFlow';
 import AdminButton from '../Shared/AdminButton';
@@ -282,7 +283,8 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
         );
     }
 
-    const { order: detail, timeline, warnings = [], receipt, shippingAddress } = state.data;
+    const { order: detail, timeline, warnings = [], receipt, shippingAddress, shippingOrigin } = state.data;
+    const originName = shippingOriginText(shippingOrigin);
     const isPaid = canShowReceipt(detail);
 
     return (
@@ -375,6 +377,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
                         {[shippingAddress.province, shippingAddress.city, shippingAddress.fullAddress].filter(Boolean).join('، ')}
                         {shippingAddress.postalCode ? ` — کد پستی: ${shippingAddress.postalCode}` : ''}
                     </p>
+                    {originName && <p data-testid="shipping-origin">مبدأ ارسال: {originName}</p>}
                 </div>
             )}
 

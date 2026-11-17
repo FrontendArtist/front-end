@@ -7,7 +7,13 @@ jest.mock('next-auth', () => ({ getServerSession: jest.fn() }));
 jest.mock('@/lib/auth', () => ({ authOptions: {} }));
 
 describe('GET /api/localities', () => {
-    const localities = [{ name: 'تهران', cities: ['تهران', 'ری'] }];
+    const localities = [{
+        name: 'تهران',
+        cities: [
+            { documentId: 'city-tehran', name: 'تهران' },
+            { documentId: 'city-rey', name: 'ری' },
+        ],
+    }];
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -18,7 +24,14 @@ describe('GET /api/localities', () => {
             ok: true,
             status: 200,
             text: async () => JSON.stringify({
-                data: [{ name: 'تهران', cities: ['تهران', 'ری'], id: 9 }],
+                data: [{
+                    name: 'تهران',
+                    cities: [
+                        { documentId: 'city-tehran', name: 'تهران' },
+                        { documentId: 'city-rey', name: 'ری' },
+                    ],
+                    id: 9,
+                }],
                 meta: { secret: true },
             }),
         });
@@ -42,7 +55,7 @@ describe('GET /api/localities', () => {
         expect(global.fetch).not.toHaveBeenCalled();
     });
 
-    test('فقط نام استان و شهر را برمی‌گرداند و توکن سرویس را می‌فرستد', async () => {
+    test('فهرست استان و شهرها به همراه شناسه استرپی را برمی‌گرداند و توکن سرویس را می‌فرستد', async () => {
         const response = await GET();
 
         expect(response.status).toBe(200);

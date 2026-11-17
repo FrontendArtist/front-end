@@ -18,6 +18,7 @@ import {
 import {
     useOrderTracking, OrderItemsList, OrderWarnings, Timeline, formatTime,
 } from '../ByeMoneyOrderPanel';
+import { shippingOriginText } from '@/lib/shippingOrigin';
 import PendingRestockNotice from '../PendingRestockNotice';
 import AdminBadge from '../../Shared/AdminBadge';
 import { canShowReceipt, getFinancialStatusConfig } from '@/lib/admin/orderTracking';
@@ -137,7 +138,8 @@ function SummaryTab({ order, data, isPaid, restockPending, onGoItems }) {
 }
 
 function ItemsTab({ data, isPaid, onReload, onItemStatus, onRestockCleared }) {
-    const { order: detail, shippingAddress } = data;
+    const { order: detail, shippingAddress, shippingOrigin } = data;
+    const originName = shippingOriginText(shippingOrigin);
     return (
         <div className={styles.stack}>
             {detail.cartId && (
@@ -157,6 +159,13 @@ function ItemsTab({ data, isPaid, onReload, onItemStatus, onRestockCleared }) {
                     {shippingAddress.postalCode && (
                         <p className={styles.address__postal}>کد پستی: <span dir="ltr">{shippingAddress.postalCode}</span></p>
                     )}
+                    {originName && <p className={styles.address__line} data-testid="shipping-origin">مبدأ ارسال: {originName}</p>}
+                </section>
+            )}
+            {!shippingAddress && originName && (
+                <section className={styles.card} data-testid="shipping-origin" aria-label="مبدأ ارسال">
+                    <h3 className={styles.card__title}>مبدأ ارسال</h3>
+                    <p className={styles.address__line}>{originName}</p>
                 </section>
             )}
         </div>
