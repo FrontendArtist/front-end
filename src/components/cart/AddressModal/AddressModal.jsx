@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Modal from '@/components/ui/Modal/Modal';
+import ProvinceCitySelects, { localitySubmitError } from '@/components/address/ProvinceCitySelects';
 import styles from './AddressModal.module.scss';
 
 /**
@@ -25,6 +26,7 @@ export default function AddressModal({
     const { data: session } = useSession();
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const localityRef = useRef({ status: 'loading', province: '', city: '' });
 
     const [formData, setFormData] = useState({
         recipientName: '',
@@ -71,14 +73,21 @@ export default function AddressModal({
             return;
         }
 
+        const localityError = localitySubmitError(localityRef.current);
+        if (localityError) {
+            setError(localityError);
+            return;
+        }
+        const { province, city } = localityRef.current;
+
         setSaving(true);
         try {
             const addressPayload = {
                 title: 'آدرس اصلی',
                 recipientName: trimmedName,
                 recipientPhone: formData.recipientPhone?.trim() || '',
-                province: formData.province?.trim() || '',
-                city: formData.city?.trim() || '',
+                province,
+                city,
                 fullAddress: trimmedAddress,
                 postalCode: formData.postalCode?.trim() || '',
             };
@@ -179,31 +188,17 @@ export default function AddressModal({
                 </div>
 
                 <div className={styles.row}>
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="province">استان</label>
-                        <input
-                            id="province"
-                            type="text"
-                            name="province"
-                            value={formData.province}
-                            onChange={handleChange}
-                            placeholder="مثال: تهران"
-                            disabled={saving}
-                        />
-                    </div>
-
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="city">شهر</label>
-                        <input
-                            id="city"
-                            type="text"
-                            name="city"
-                            value={formData.city}
-                            onChange={handleChange}
-                            placeholder="مثال: تهران"
-                            disabled={saving}
-                        />
-                    </div>
+                    <ProvinceCitySelects
+                        province={formData.province}
+                        city={formData.city}
+                        onChange={({ province, city }) => {
+                            setFormData((prev) => ({ ...prev, province, city }));
+                        }}
+                        selectionRef={localityRef}
+                        disabled={saving}
+                        groupClassName={styles.inputGroup}
+                        requiredMarkClassName={styles.required}
+                    />
                 </div>
 
                 <div className={styles.inputGroup}>

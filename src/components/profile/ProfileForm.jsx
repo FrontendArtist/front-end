@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
+import ProvinceCitySelects, { localitySubmitError } from '@/components/address/ProvinceCitySelects';
 import styles from './ProfileForm.module.scss';
 
 export default function ProfileForm() {
@@ -11,6 +12,10 @@ export default function ProfileForm() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isEditing, setIsEditing] = useState(false); // Track edit mode
+    const localityRef = useRef({ status: 'loading', province: '', city: '' });
+    const successTimer = useRef(null);
+
+    useEffect(() => () => clearTimeout(successTimer.current), []);
 
     const [initialFormData, setInitialFormData] = useState(null);
     const [formData, setFormData] = useState({
@@ -107,6 +112,14 @@ export default function ProfileForm() {
         e.preventDefault();
         setError('');
         setSuccess('');
+
+        const localityError = localitySubmitError(localityRef.current);
+        if (localityError) {
+            setError(localityError);
+            return;
+        }
+        const { province, city } = localityRef.current;
+
         setSaving(true);
 
         try {
@@ -132,8 +145,8 @@ export default function ProfileForm() {
 
                 // 💡 Using all 7 fields from the new state
                 fullAddress: formData.fullAddress,
-                province: formData.province,
-                city: formData.city,
+                province,
+                city,
                 postalCode: formData.postalCode,
                 recipientName: formData.recipientName,
                 recipientPhone: formData.recipientPhone,
@@ -166,11 +179,13 @@ export default function ProfileForm() {
             }
 
             // اگر ایجاد موفق بود، addressDocumentId را به‌روزرسانی کن
+            let createdDocumentId = null;
             if (!formData.addressDocumentId) {
                 const newAddress = await addressResponse.json();
+                createdDocumentId = newAddress.data.documentId;
                 setFormData(prev => ({
                     ...prev,
-                    addressDocumentId: newAddress.data.documentId // ✅ Use documentId for Strapi V5
+                    addressDocumentId: createdDocumentId // ✅ Use documentId for Strapi V5
                 }));
             }
 
@@ -187,12 +202,15 @@ export default function ProfileForm() {
 
             setInitialFormData({
                 ...formData,
-                addressDocumentId: formData.addressDocumentId || newAddress?.data?.documentId || null
+                province,
+                city,
+                addressDocumentId: formData.addressDocumentId || createdDocumentId || null
             });
             setSuccess('اطلاعات با موفقیت ذخیره شد');
             setIsEditing(false); // Exit edit mode after successful save
 
-            setTimeout(() => {
+            clearTimeout(successTimer.current);
+            successTimer.current = setTimeout(() => {
                 setSuccess('');
             }, 3000);
         } catch (err) {
@@ -264,7 +282,7 @@ export default function ProfileForm() {
                 )}
             </div>
 
-            <form id="profileForm" onSubmit={handleSubmit} className={styles.form}>
+            <form id="profileForm" onSubmit={handleSubmit} className={styles.form} noValidate>
                 <div className={styles.row}>
                     <div className={styles.inputGroup}>
                         <label htmlFor="firstName" className={styles.label}>
@@ -335,38 +353,20 @@ export default function ProfileForm() {
                         />
                     </div>
 
-                    {/* Row 1: Province and City */}
                     <div className={styles.row}>
-                        <div className={styles.inputGroup}>
-                            <label htmlFor="province" className={styles.label}>
-                                استان
-                            </label>
-                            <input
-                                type="text"
-                                id="province"
-                                name="province"
-                                value={formData.province}
-                                onChange={handleChange}
-                                className={styles.input}
-                                placeholder="استان"
-                                disabled={!isEditing || saving}
-                            />
-                        </div>
-                        <div className={styles.inputGroup}>
-                            <label htmlFor="city" className={styles.label}>
-                                شهر
-                            </label>
-                            <input
-                                type="text"
-                                id="city"
-                                name="city"
-                                value={formData.city}
-                                onChange={handleChange}
-                                className={styles.input}
-                                placeholder="شهر"
-                                disabled={!isEditing || saving}
-                            />
-                        </div>
+                        <ProvinceCitySelects
+                            province={formData.province}
+                            city={formData.city}
+                            onChange={({ province: nextProvince, city: nextCity }) => {
+                                setFormData((prev) => ({ ...prev, province: nextProvince, city: nextCity }));
+                            }}
+                            selectionRef={localityRef}
+                            disabled={!isEditing || saving}
+                            groupClassName={styles.inputGroup}
+                            labelClassName={styles.label}
+                            controlClassName={styles.input}
+                            requiredMarkClassName={styles.required}
+                        />
                     </div>
 
                     {/* Row 2: Postal Code and Recipient Name */}

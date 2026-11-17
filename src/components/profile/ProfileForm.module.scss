@@ -235,8 +235,14 @@
     border: 1px solid fade(var(--color-primary), 20%);
 }
 
+.required {
+    color: var(--color-error);
+    margin-right: 4px;
+}
+
 .input,
-.textarea {
+.textarea,
+select.input {
     padding: 10px 16px;
     border-radius: var(--border-radius);
     border: 2px solid fade(var(--color-primary), 30%);
@@ -268,6 +274,10 @@
         padding: 10px 14px;
         font-size: var(--font-xs);
     }
+}
+
+select.input {
+    width: 100%;
 }
 
 .textarea {
