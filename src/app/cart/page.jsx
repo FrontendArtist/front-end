@@ -20,6 +20,7 @@ import {
     selectFinalTotalPrice,
     selectItemsCount,
     selectItemLevelDiscount,
+    selectDeductedAmount,
 } from '@/store/useCartStore';
 import useAuthStore from '@/store/authStore';
 import { executeNoorCartPurchase } from '@/lib/checkoutService';
@@ -92,6 +93,7 @@ export default function CartPage() {
     const couponDiscount = useCartStore(selectCouponDiscount);
     const couponPending = useCartStore(selectCouponPending);
     const itemLevelDiscount = useCartStore(selectItemLevelDiscount);
+    const deductedAmount = useCartStore(selectDeductedAmount);
     const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
     const removalError = useCartStore((state) => state.removalError);
@@ -619,7 +621,7 @@ export default function CartPage() {
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                                     <span className={styles.courseLabel}>
-                                                        {item.type === 'chapter' ? 'فصل آموزشی' : 'دوره آموزشی'}
+                                                        {item.type === 'chapter' ? 'فصل آموزشی' : (item.isChaptered ? 'دوره آموزشی (پکیج کامل)' : 'دوره آموزشی')}
                                                     </span>
                                                     {isOwned && (
                                                         <span className={styles.ownedBadge}>
@@ -627,6 +629,11 @@ export default function CartPage() {
                                                         </span>
                                                     )}
                                                 </div>
+                                                {item.deductedAmount > 0 && (
+                                                    <span style={{ fontSize: '0.8rem', color: '#38bdf8', marginTop: '3px', display: 'block' }}>
+                                                        (کسر هزینه <PriceWithHint price={item.deductedAmount} size="sm" hideHint={true} /> بابت فصل‌های قبلی)
+                                                    </span>
+                                                )}
                                                 {isOwned && (
                                                     <div className={styles.itemOwnedWarning} role="alert">
                                                         این {item.type === 'chapter' ? 'فصل' : 'دوره'} قبلاً خریداری شده است. برای ادامه تسویه، لطفاً این قلم را از سبد حذف کنید.
@@ -723,6 +730,15 @@ export default function CartPage() {
                                 <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
                                     <span>سود شما از خرید:</span>
                                     <PriceWithHint price={preview?.data?.itemDiscountInNoor ?? itemLevelDiscount} size="sm" hideHint={true} />
+                                </div>
+                            )}
+
+                            {deductedAmount > 0 && (
+                                <div className={styles.summaryRow} style={{ color: '#38bdf8' }}>
+                                    <span>کسر پرداختی فصل‌های قبلی:</span>
+                                    <strong>
+                                        - <PriceWithHint price={deductedAmount} size="sm" hideHint={true} />
+                                    </strong>
                                 </div>
                             )}
 

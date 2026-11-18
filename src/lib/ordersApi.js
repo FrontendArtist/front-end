@@ -4,7 +4,7 @@
  */
 import { API_BASE_URL } from './api';
 import { PAYMENT_METHOD, isOrderPaid } from './constants/orderConstants';
-import { getPurchasedChapterId, isChapterOrderItem } from './courseAccessUtils';
+import { getPurchasedChapterId, getPurchasedChapterIds, isChapterOrderItem } from './courseAccessUtils';
 
 /**
  * تابع واحد و استاندارد برای بررسی دسترسی کاربر به دوره و فصل‌ها
@@ -17,10 +17,13 @@ import { getPurchasedChapterId, isChapterOrderItem } from './courseAccessUtils';
  * @param {object} sessionUser - آبجکت کاربر در سشن (جهت بررسی fallback)
  * @returns {Promise<{ hasAccess: boolean, purchasedChapterIds: string[] }>}
  */
-export async function checkCourseAccess(userId, courseId, courseSlug, sessionUser = null, courseDocumentId = null) {
+export async function checkCourseAccess(userId, courseId, courseSlug, sessionUser = null, courseRef = null) {
   if (!userId || !courseId) {
     return { hasAccess: false, purchasedChapterIds: [], activeCourseOrder: null };
   }
+
+  const courseRecord = courseRef && typeof courseRef === 'object' ? courseRef : null;
+  const courseDocumentId = courseRecord ? (courseRecord.documentId || null) : courseRef;
 
   let hasAccess = false;
   const purchasedChapterIds = [];
@@ -68,8 +71,12 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
     const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
     const isNumericUserId = /^\d+$/.test(String(userId));
 
+    const rawPhone = sessionUser?.phoneNumber || sessionUser?.phone;
+    const phone = typeof rawPhone === 'string' && rawPhone.trim().length >= 10 ? rawPhone.trim() : null;
     const ordersUrl = isNumericUserId
-      ? `${API_BASE_URL}/api/orders?filters[user][id][$eq]=${encodeURIComponent(userId)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate=*`
+      ? (phone
+        ? `${API_BASE_URL}/api/orders?filters[$or][0][user][id][$eq]=${encodeURIComponent(userId)}&filters[$or][1][phone][$eq]=${encodeURIComponent(phone)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate=*`
+        : `${API_BASE_URL}/api/orders?filters[user][id][$eq]=${encodeURIComponent(userId)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate=*`)
       : `${API_BASE_URL}/api/orders?filters[user][documentId][$eq]=${encodeURIComponent(userId)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate=*`;
 
     const userUrl = isNumericUserId
@@ -118,11 +125,21 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
               if (!isChapterItem) {
                 hasAccess = true;
               } else {
-                // بررسی خرید فصل‌های مجزا
-                const chapterId = getPurchasedChapterId(item, courseId, courseSlug, courseDocumentId);
-                if (chapterId) purchasedChapterIds.push(chapterId);
-                const integrationId = item.integrationId || item.externalCourseId;
-                if (integrationId) purchasedChapterIds.push(String(integrationId));
+                const foundChapterIds = getPurchasedChapterIds([order], {
+                  id: courseId,
+                  slug: courseSlug,
+                  documentId: courseDocumentId,
+                  title: courseRecord?.title,
+                  chapters: courseRecord?.chapters,
+                });
+                if (foundChapterIds.length > 0) {
+                  purchasedChapterIds.push(...foundChapterIds);
+                } else {
+                  const chapterId = getPurchasedChapterId(item, courseId, courseSlug, courseDocumentId);
+                  if (chapterId) purchasedChapterIds.push(chapterId);
+                  const integrationId = item.integrationId || item.externalCourseId || item.chapterIntegrationId;
+                  if (integrationId) purchasedChapterIds.push(String(integrationId));
+                }
               }
             } else if (!activeCourseOrder) {
               const oStatus = String(order.orderStatus || order.attributes?.orderStatus || '').trim().toLowerCase();

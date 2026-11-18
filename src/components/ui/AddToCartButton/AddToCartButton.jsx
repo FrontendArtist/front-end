@@ -22,7 +22,14 @@ import styles from './AddToCartButton.module.scss';
  * 
  * @param {{ course: { id: string|number; slug: string; title: string; price: number; image: string; documentId?: string; isPurchased?: boolean; } }} props
  */
-export default function AddToCartButton({ course }) {
+export default function AddToCartButton({
+  course,
+  buttonText = 'افزودن به سبد خرید',
+  customPrice = null,
+  deductedAmount = 0,
+  size = 'default',
+  className = '',
+}) {
   const { id, slug, title, price, image } = course;
 
   const [isHydrated, setIsHydrated] = useState(false);
@@ -31,6 +38,8 @@ export default function AddToCartButton({ course }) {
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+
+  const isSmall = size === 'small';
 
   const orders = useAccountOrderItems();
 
@@ -68,29 +77,32 @@ export default function AddToCartButton({ course }) {
   })();
 
   const addItem = useCartStore((state) => state.addItem);
+  const removeItem = useCartStore((state) => state.removeItemManually || state.removeItem);
 
   // بررسی وجود دوره در سبد (فقط بعد از hydration معتبر است)
   const isInCart =
     useCartStore((state) => state.items.some((item) => isSameCartItem(item, { ...course, type: 'course' }))) &&
     isHydrated;
 
-  // اگر دوره فصلی‌فروش باشد، خرید کل دوره مجاز نیست و دکمه نباید نمایش داده شود.
-  if (course.isChaptered === true) {
-    return null;
-  }
+  const handleRemoveFromCart = (e) => {
+    e?.stopPropagation();
+    removeItem(id);
+  };
 
   const handleAddToCart = () => {
-    if (isInCart || course.isChaptered === true || isPurchased) return;
+    if (isInCart || isPurchased) return;
 
     const isForeign = Boolean(
-      session?.user?.is_foreigner || 
+      session?.user?.is_foreigner ||
       (session?.user?.phoneNumber && !isIranianPhoneNumber(session.user.phoneNumber))
     );
 
     const intlPrice = course.internationalPrice ? Number(course.internationalPrice) : null;
+
+    const catalogPrice = course.priceNoor ?? (typeof price === 'object' ? (price?.noor ?? price?.toman) : price) ?? 0;
     const formattedPrice = (isForeign && intlPrice && intlPrice > 0)
       ? intlPrice
-      : (course.priceNoor ?? (typeof price === 'object' ? (price?.noor ?? price?.toman) : price) ?? 0);
+      : (customPrice !== null && Number.isFinite(Number(customPrice)) ? Number(customPrice) : catalogPrice);
 
     const numOriginal = (isForeign && intlPrice && intlPrice > 0)
       ? intlPrice
@@ -101,6 +113,7 @@ export default function AddToCartButton({ course }) {
       : (image?.url || course.media?.url || '/images/forempties2.png');
 
     const docId = course.documentId || course.id || id;
+    const effectiveDeductedAmount = Number(deductedAmount || course.alreadyPaidChaptersTotal || 0);
 
     addItem({
       id,
@@ -112,11 +125,13 @@ export default function AddToCartButton({ course }) {
       originalPrice: numOriginal,
       domesticPrice: course.priceNoor ?? (typeof price === 'object' ? (price?.noor ?? price?.toman) : price),
       domesticOriginalPrice: course.originalPriceNoor ?? course.originalPrice ?? (typeof price === 'object' ? price?.original : price),
+      deductedAmount: effectiveDeductedAmount,
       internationalPrice: intlPrice,
       discountPercent: (isForeign && intlPrice && intlPrice > 0) ? 0 : (course.discountPercent || 0),
       discountUntil: course.discountUntil,
       image: courseImageUrl,
       type: 'course',
+      isChaptered: Boolean(course.isChaptered),
     });
   };
 
@@ -141,6 +156,13 @@ export default function AddToCartButton({ course }) {
     </svg>
   );
 
+  const TrashIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2 2v2" />
+    </svg>
+  );
+
   // نمایش وضعیت سفارش معلق کارت‌به‌کارت
   if (isHydrated && pendingOrder) {
     const pStatus = (pendingOrder.paymentStatus || pendingOrder.attributes?.paymentStatus || '').trim().toLowerCase();
@@ -150,7 +172,7 @@ export default function AddToCartButton({ course }) {
     return (
       <Link
         href={targetUrl}
-        className={`${styles.pendingButton} ${!isVerification ? styles.pendingPayment : ''}`}
+        className={`${styles.pendingButton} ${isSmall ? styles.smallPending : ''} ${!isVerification ? styles.pendingPayment : ''}`}
         title={isVerification ? 'سفارش شما در انتظار تأیید پرداخت توسط پشتیبانی است' : 'برای ارسال فیش واریز کلیک کنید'}
       >
         {isVerification ? (
@@ -198,27 +220,42 @@ export default function AddToCartButton({ course }) {
 
   // قبل از hydration یا وقتی دوره در سبد نیست: دکمه فعال افزودن به سبد
   if (!isHydrated || !isInCart) {
+    const ariaText = buttonText === 'افزودن به سبد خرید'
+      ? `افزودن ${title} به سبد خرید`
+      : `${buttonText} - ${title}`;
+
     return (
       <button
-        className={styles.addToCartBtn}
+        className={`${styles.addToCartBtn} ${isSmall ? styles.small : ''} ${className}`.trim()}
         onClick={handleAddToCart}
-        aria-label={`افزودن ${title} به سبد خرید`}
+        aria-label={ariaText}
       >
         <CartIcon />
-        افزودن به سبد خرید
+        {buttonText}
       </button>
     );
   }
 
-  // بعد از hydration و دوره در سبد است: دکمه غیرفعال
+  // بعد از hydration و دوره در سبد است: دکمه وضعیت سبد + دکمه حذف سریع
   return (
-    <button
-      className={`${styles.addToCartBtn} ${styles.disabled}`}
-      disabled
-      aria-label={`${title} در سبد خرید موجود است`}
-    >
-      <CheckIcon />
-      موجود در سبد خرید
-    </button>
+    <div className={styles.cartActionGroup}>
+      <div
+
+        className={`${styles.addToCartBtn} ${styles.disabled} ${isSmall ? styles.small : ''} ${className}`.trim()}
+
+      >
+        <CheckIcon />
+        موجود در سبد خرید
+      </div>
+      <button
+        type="button"
+        className={`${styles.quickRemoveBtn} ${isSmall ? styles.smallRemove : ''}`}
+        onClick={handleRemoveFromCart}
+        title="حذف از سبد خرید"
+        aria-label={`حذف ${title} از سبد خرید`}
+      >
+        <TrashIcon />
+      </button>
+    </div>
   );
 }

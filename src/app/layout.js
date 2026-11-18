@@ -126,7 +126,7 @@ export default function RootLayout({ children }) {
           <Footer />
           <AuthModal />
           <PopupModal />
-          <VpnModal />
+          {/* <VpnModal /> */}
           <SalekGuide />
         </Providers>
       </body>
