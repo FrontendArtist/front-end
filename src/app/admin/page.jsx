@@ -44,7 +44,7 @@ export const metadata = {
  */
 function formatCurrency(amount) {
     if (amount === null || amount === undefined) return '—';
-    return new Intl.NumberFormat('fa-IR').format(amount) ;
+    return `${new Intl.NumberFormat('fa-IR').format(amount)} تومان`;
 }
 
 /**
@@ -137,7 +137,7 @@ export default async function AdminDashboardPage() {
             title: 'محصولات',
             value: formatCount(totalProducts),
             icon: '📦',
-            accentColor: 'var(--color-error)', // بنفش برای محصولات (تغییر به ارور/قرمز برای تم)
+            accentColor: 'var(--color-indigo)', // بنفش سازگار برای محصولات
             subtitle: 'موجود در فروشگاه',
             isError: totalProducts === null,
         },

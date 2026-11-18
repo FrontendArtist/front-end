@@ -82,6 +82,17 @@
     margin-right: 4px;
 }
 
+.inputError {
+    border-color: var(--color-error, #ff6b6b) !important;
+    background: rgba(255, 107, 107, 0.08) !important;
+}
+
+.fieldError {
+    font-size: var(--font-xs, 12px);
+    color: #fca5a5;
+    line-height: 1.4;
+}
+
 .error {
     padding: 10px 14px;
     background-color: rgba(239, 68, 68, 0.15);

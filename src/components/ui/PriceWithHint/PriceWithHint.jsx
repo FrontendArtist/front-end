@@ -18,7 +18,7 @@ import styles from './PriceWithHint.module.scss';
 export default function PriceWithHint({
   price,
   originalPrice = null,
-  hideHint = false,
+  hideHint = true,
   size = 'md',
   className = '',
 }) {
@@ -35,7 +35,7 @@ export default function PriceWithHint({
   if (numericPrice <= 0 && (!numericOriginal || numericOriginal <= 0)) {
     return (
       <div className={`${styles.priceContainer} ${sizeClass} ${className}`.trim()}>
-        <span className={styles.currentPrice} style={{ color: '#4ade80' }}>
+        <span className={styles.currentPrice} >
           رایگان
         </span>
       </div>

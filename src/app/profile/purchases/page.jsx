@@ -1,7 +1,7 @@
 import PurchasesList from '@/components/profile/PurchasesList';
 
 export const metadata = {
-    title: 'خریدهای من',
+    title: 'دوره‌ها و محصولات',
     description: 'مشاهده دوره‌ها و محصولات خریداری شده',
     robots: { index: false, follow: false },
 };

@@ -475,3 +475,71 @@ $connector-color: #9ec5b5;
     width: 100%;
   }
 }
+
+/* ─── ریسپانسیو موبایل (< 576px): تک‌ستونه عمودی خطی با رابط مرکزی ─── */
+@media (max-width: 576px) {
+  .boardCard {
+    padding: 24px 12px;
+  }
+
+  .flowchart {
+    direction: rtl;
+  }
+
+  .gridRow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .colLeft:empty {
+    display: none;
+  }
+
+  .colLeft,
+  .colRight,
+  .colLeftParallel,
+  .colRightParallel {
+    padding: 0;
+  }
+
+  .parallelBranchesRow {
+    gap: 16px;
+  }
+
+  .colLeftParallel,
+  .colRightParallel {
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px dashed fade(var(--color-text-primary), 25%);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .nodeCard {
+    max-width: 100%;
+    padding: 12px 14px;
+  }
+
+  .nodeTitle {
+    font-size: var(--font-md);
+  }
+
+  .nodeText {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .branchConnector {
+    height: 40px;
+  }
+
+  .splitElbowTop,
+  .splitElbowBottom,
+  .mergeElbowTop,
+  .mergeElbowBottom {
+    display: none;
+  }
+
+  .rightStraightLine {
+    left: 50%;
+  }
+}

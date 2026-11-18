@@ -164,33 +164,35 @@ const ProductCard = ({ product }) => {
 
   return (
     <GradientBorderCard
-      as={Link}
-      wrapperProps={{ href: productUrl }}
       gradient="vertical"
       contentClassName={`${styles.productCard} card vertical-gradient`}
     >
-      <div className={styles.imageWrapper}>
-        <Image
-          src={image?.url || '/images/placeholder.png'}
-          alt={image?.alt || title}
-          fill
-          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-          className={styles.productImage}
-        />
-        {hasDiscount && (
-          <div className={styles.topBadges}>
-            <span className={styles.discountBadge}>
-              ٪{discountPercent} تخفیف
-            </span>
-            {discountUntil && (
-              <DiscountCountdown targetDate={discountUntil} compact={true} />
-            )}
-          </div>
-        )}
-      </div>
+      <Link href={productUrl} className={styles.imageLink}>
+        <div className={styles.imageWrapper}>
+          <Image
+            src={image?.url || '/images/placeholder.png'}
+            alt={image?.alt || title}
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            className={styles.productImage}
+          />
+          {hasDiscount && (
+            <div className={styles.topBadges}>
+              <span className={styles.discountBadge}>
+                ٪{discountPercent} تخفیف
+              </span>
+              {discountUntil && (
+                <DiscountCountdown targetDate={discountUntil} compact={true} />
+              )}
+            </div>
+          )}
+        </div>
+      </Link>
 
       <div className={styles.cardContent}>
-        <h3 className={`${styles.cardTitle} card-title`}>{title}</h3>
+        <Link href={productUrl} className={styles.titleLink}>
+          <h3 className={`${styles.cardTitle} card-title`}>{title}</h3>
+        </Link>
 
         <div className={styles.footer}>
           <PriceWithHint
@@ -201,14 +203,15 @@ const ProductCard = ({ product }) => {
 
           {isOutOfStock ? (
             <button
-              className={styles.addToCartButton}
+              type="button"
+              className={`${styles.addToCartButton} ${styles.outOfStockButton}`}
               disabled
-              style={{ color: '#ffffff73', background: '#ffffff0d', borderColor: '#ffffff1f', boxShadow: 'none' }}
             >
               ناموجود
             </button>
           ) : !isHydrated || !isInCart ? (
             <button
+              type="button"
               className={styles.addToCartButton}
               onClick={handleAddToCart}
               aria-label={`افزودن ${title} به سبد خرید`}
@@ -219,6 +222,7 @@ const ProductCard = ({ product }) => {
           ) : (
             <div className={styles.quantityController}>
               <button
+                type="button"
                 className={styles.quantityButton}
                 onClick={handleIncrement}
                 disabled={isMaxStockReached}
@@ -227,8 +231,9 @@ const ProductCard = ({ product }) => {
               >
                 <PlusIcon />
               </button>
-              <span className={styles.quantityDisplay}>{currentQuantity}</span>
+              <span className={styles.quantityDisplay}>{currentQuantity.toLocaleString('fa-IR')}</span>
               <button
+                type="button"
                 className={styles.quantityButton}
                 onClick={handleDecrement}
                 aria-label={currentQuantity === 1 ? "حذف از سبد خرید" : "کاهش تعداد"}

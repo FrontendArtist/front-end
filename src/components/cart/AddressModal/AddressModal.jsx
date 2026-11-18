@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Modal from '@/components/ui/Modal/Modal';
+import Alert from '@/components/ui/Alert/Alert';
 import styles from './AddressModal.module.scss';
 
 /**
@@ -25,6 +26,7 @@ export default function AddressModal({
     const { data: session } = useSession();
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
 
     const [formData, setFormData] = useState({
         recipientName: '',
@@ -38,6 +40,7 @@ export default function AddressModal({
     useEffect(() => {
         if (isOpen) {
             setError('');
+            setFieldErrors({});
             setFormData({
                 recipientName: initialAddress?.recipientName || '',
                 recipientPhone: initialAddress?.recipientPhone || '',
@@ -52,6 +55,13 @@ export default function AddressModal({
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+        if (fieldErrors[name]) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next[name];
+                return next;
+            });
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -60,16 +70,26 @@ export default function AddressModal({
 
         const trimmedName = formData.recipientName?.trim();
         const trimmedAddress = formData.fullAddress?.trim();
+        const trimmedPostalCode = formData.postalCode?.trim();
+        const nextErrors = {};
 
         if (!trimmedName) {
-            setError('لطفاً نام و نام خانوادگی تحویل‌گیرنده را وارد کنید.');
-            return;
+            nextErrors.recipientName = 'لطفاً نام و نام خانوادگی تحویل‌گیرنده را وارد کنید.';
         }
 
         if (!trimmedAddress) {
-            setError('لطفاً آدرس پستی کامل را وارد کنید.');
+            nextErrors.fullAddress = 'لطفاً آدرس پستی کامل را وارد کنید.';
+        }
+
+        if (trimmedPostalCode && !/^\d{10}$/.test(trimmedPostalCode)) {
+            nextErrors.postalCode = 'کد پستی باید دقیقاً ۱۰ رقم عددی باشد.';
+        }
+
+        if (Object.keys(nextErrors).length > 0) {
+            setFieldErrors(nextErrors);
             return;
         }
+        setFieldErrors({});
 
         setSaving(true);
         try {
@@ -141,9 +161,9 @@ export default function AddressModal({
                 </p>
 
                 {error && (
-                    <div className={styles.error} role="alert">
+                    <Alert variant="error">
                         {error}
-                    </div>
+                    </Alert>
                 )}
 
                 <div className={styles.row}>
@@ -158,9 +178,19 @@ export default function AddressModal({
                             value={formData.recipientName}
                             onChange={handleChange}
                             placeholder="مثال: علی محمدی"
+                            className={fieldErrors.recipientName ? styles.inputError : ''}
+                            aria-invalid={Boolean(fieldErrors.recipientName)}
                             disabled={saving}
                             required
                         />
+                        {fieldErrors.recipientName && (
+                            <span
+                                className={styles.fieldError}
+                                role={!error ? 'alert' : undefined}
+                            >
+                                {fieldErrors.recipientName}
+                            </span>
+                        )}
                     </div>
 
                     <div className={styles.inputGroup}>
@@ -216,10 +246,20 @@ export default function AddressModal({
                         value={formData.fullAddress}
                         onChange={handleChange}
                         placeholder="خیابان، کوچه، پلاک، واحد..."
+                        className={fieldErrors.fullAddress ? styles.inputError : ''}
+                        aria-invalid={Boolean(fieldErrors.fullAddress)}
                         rows={3}
                         disabled={saving}
                         required
                     />
+                    {fieldErrors.fullAddress && (
+                        <span
+                            className={styles.fieldError}
+                            role={!error && !fieldErrors.recipientName ? 'alert' : undefined}
+                        >
+                            {fieldErrors.fullAddress}
+                        </span>
+                    )}
                 </div>
 
                 <div className={styles.inputGroup}>
@@ -231,10 +271,20 @@ export default function AddressModal({
                         value={formData.postalCode}
                         onChange={handleChange}
                         placeholder="کد پستی ۱۰ رقمی بدون خط تیره"
+                        className={fieldErrors.postalCode ? styles.inputError : ''}
+                        aria-invalid={Boolean(fieldErrors.postalCode)}
                         dir="ltr"
                         maxLength={10}
                         disabled={saving}
                     />
+                    {fieldErrors.postalCode && (
+                        <span
+                            className={styles.fieldError}
+                            role={!error && !fieldErrors.recipientName && !fieldErrors.fullAddress ? 'alert' : undefined}
+                        >
+                            {fieldErrors.postalCode}
+                        </span>
+                    )}
                 </div>
 
                 <div className={styles.formActions}>

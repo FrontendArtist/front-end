@@ -7,7 +7,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getAdminCoupons } from '@/lib/admin/adminCouponsApi';
 import CouponsTable from '@/components/admin/Coupons/CouponsTable';
-import Link from 'next/link';
+import AdminButton from '@/components/admin/Shared/AdminButton';
 import { Plus, Ticket } from 'lucide-react';
 import styles from '../orders/orders.module.scss';
 
@@ -56,26 +56,10 @@ export default async function AdminCouponsPage() {
                             {new Intl.NumberFormat('fa-IR').format(meta.pagination.total)} کد تخفیف
                         </span>
                     )}
-                    <Link
-                        href="/admin/coupons/new"
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.4rem',
-                            padding: '0.6rem 1.25rem',
-                            borderRadius: '8px',
-                            background: 'linear-gradient(135deg, #ffd166, #f59e0b)',
-                            color: '#0f172a',
-                            fontWeight: 'bold',
-                            fontSize: '0.875rem',
-                            textDecoration: 'none',
-                            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.25)',
-                            transition: 'opacity 0.2s',
-                        }}
-                    >
+                    <AdminButton href="/admin/coupons/new" variant="primary">
                         <Plus size={16} />
                         کد تخفیف جدید
-                    </Link>
+                    </AdminButton>
                 </div>
             </header>
 
@@ -83,7 +67,7 @@ export default async function AdminCouponsPage() {
             {error && (
                 <div className={styles.page__error}>
                     <span>⚠️</span>
-                    <p>اتصال به سرور جهت دریافت کدهای تخفیف ناموفق بود. لطفاً مطمئن شوید Strapi در حال اجراست.</p>
+                    <p>خطا در برقراری ارتباط با سرویس‌دهنده داده‌ها جهت دریافت کدهای تخفیف.</p>
                 </div>
             )}
 

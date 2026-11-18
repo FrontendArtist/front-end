@@ -68,6 +68,25 @@
   }
 }
 
+.outOfStockButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 32px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  font-size: var(--font-md, 16px);
+  font-weight: 700;
+  cursor: not-allowed;
+
+  @include respond(md) {
+    padding: 12px 24px;
+    font-size: var(--font-sm, 14px);
+  }
+}
+
 @keyframes buttonShine {
   0% {
     left: -100%;

@@ -1,9 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn, useSession, getSession } from 'next-auth/react';
 import { validatePhoneNumber, normalizeDigits } from '@/lib/phoneUtils';
 import styles from './AuthForm.module.scss';
+
+const OTP_RESEND_SECONDS = 120;
+
+const formatCountdown = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`.replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]);
+};
+
+const mapAuthError = (err, fallback = 'خطایی رخ داد. لطفاً دوباره تلاش کنید.') => {
+    const raw = typeof err === 'string' ? err : err?.message || '';
+    if (!raw) return fallback;
+    // اگر پیام از قبل فارسی است، مستقیماً نمایش داده شود
+    if (/[\u0600-\u06FF]/.test(raw) && !/fetch|network|timeout|error|prisma|sql|econnrefused/i.test(raw)) {
+        return raw;
+    }
+    const lower = raw.toLowerCase();
+    if (lower.includes('failed to fetch') || lower.includes('network') || lower.includes('econnrefused')) {
+        return 'خطا در برقراری ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.';
+    }
+    if (lower.includes('timeout')) {
+        return 'پاسخ‌گویی سرور زمان‌بر شد. لطفاً دوباره تلاش کنید.';
+    }
+    return fallback;
+};
 
 /**
  * کامپوننت مشترک و مستقل فرم احراز هویت
@@ -25,9 +50,19 @@ export default function AuthForm({
     const [lastName, setLastName] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [resendingOtp, setResendingOtp] = useState(false);
+    const [otpTimer, setOtpTimer] = useState(0);
     const [error, setError] = useState('');
 
     const { update: updateSession } = useSession();
+
+    useEffect(() => {
+        if (authStep !== 'otp' || otpTimer <= 0) return;
+        const id = setInterval(() => {
+            setOtpTimer((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => clearInterval(id);
+    }, [authStep, otpTimer]);
 
     const handlePhoneSubmit = async (e) => {
         e.preventDefault();
@@ -69,6 +104,7 @@ export default function AuthForm({
                 }
 
                 setOtp('');
+                setOtpTimer(OTP_RESEND_SECONDS);
                 setAuthStep('otp');
             } else {
                 if (checkData.userExists && checkData.hasPassword) {
@@ -83,9 +119,33 @@ export default function AuthForm({
                 }
             }
         } catch (err) {
-            setError(err.message);
+            setError(mapAuthError(err, 'خطا در بررسی شماره موبایل. لطفاً دوباره تلاش کنید.'));
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleResendOtp = async () => {
+        if (otpTimer > 0 || resendingOtp || loading) return;
+        setError('');
+        setResendingOtp(true);
+        try {
+            const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+            const sendRes = await fetch(`${strapiUrl}/api/auth/otp/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phoneNumber: phone }),
+            });
+            const sendData = await sendRes.json().catch(() => ({}));
+            if (!sendRes.ok) {
+                throw new Error(sendData?.error?.message || sendData?.error || 'خطا در ارسال مجدد کد تایید');
+            }
+            setOtp('');
+            setOtpTimer(OTP_RESEND_SECONDS);
+        } catch (err) {
+            setError(mapAuthError(err, 'خطا در ارسال مجدد کد تایید. لطفاً دوباره تلاش کنید.'));
+        } finally {
+            setResendingOtp(false);
         }
     };
 
@@ -125,7 +185,7 @@ export default function AuthForm({
                 if (onSuccess) onSuccess();
             }
         } catch (err) {
-            setError(err.message);
+            setError(mapAuthError(err, 'کد تایید نامعتبر یا منقضی شده است'));
         } finally {
             setLoading(false);
         }
@@ -167,7 +227,7 @@ export default function AuthForm({
                 if (onSuccess) onSuccess();
             }
         } catch (err) {
-            setError(err.message);
+            setError(mapAuthError(err, 'خطا در ورود با رمز عبور. لطفاً دوباره تلاش کنید.'));
         } finally {
             setLoading(false);
         }
@@ -216,7 +276,7 @@ export default function AuthForm({
                 if (onSuccess) onSuccess();
             }
         } catch (err) {
-            setError(err.message);
+            setError(mapAuthError(err, 'خطا در ثبت‌نام. لطفاً دوباره تلاش کنید.'));
         } finally {
             setLoading(false);
         }
@@ -264,7 +324,7 @@ export default function AuthForm({
 
             if (onSuccess) onSuccess();
         } catch (err) {
-            setError(err.message);
+            setError(mapAuthError(err, 'خطا در ذخیره اطلاعات کاربری. لطفاً دوباره تلاش کنید.'));
         } finally {
             setLoading(false);
         }
@@ -273,6 +333,7 @@ export default function AuthForm({
     const handleBackToPhone = () => {
         setAuthStep('phone');
         setOtp('');
+        setOtpTimer(0);
         setPassword('');
         setConfirmPassword('');
         setFirstName('');
@@ -300,7 +361,7 @@ export default function AuthForm({
                                 id="auth-phone"
                                 name="phone_number_input"
                                 autoComplete="off"
-                                className={styles.input}
+                                className={`${styles.input} ${styles.codeInput}`}
                                 placeholder="09123456789"
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
@@ -335,7 +396,7 @@ export default function AuthForm({
                                 id="auth-otp"
                                 name="otp_code_input"
                                 autoComplete="one-time-code"
-                                className={styles.input}
+                                className={`${styles.input} ${styles.codeInput}`}
                                 placeholder="123456"
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
@@ -352,14 +413,29 @@ export default function AuthForm({
                             {loading ? 'در حال تایید...' : 'تایید و ورود'}
                         </button>
 
-                        <button
-                            type="button"
-                            className={styles.backButton}
-                            onClick={handleBackToPhone}
-                            disabled={loading}
-                        >
-                            بازگشت به وارد کردن شماره
-                        </button>
+                        <div className={styles.otpActions}>
+                            <button
+                                type="button"
+                                className={styles.resendButton}
+                                onClick={handleResendOtp}
+                                disabled={otpTimer > 0 || resendingOtp || loading}
+                            >
+                                {resendingOtp
+                                    ? 'در حال ارسال مجدد...'
+                                    : otpTimer > 0
+                                        ? `ارسال مجدد کد تا ${formatCountdown(otpTimer)}`
+                                        : 'ارسال مجدد کد تایید'}
+                            </button>
+
+                            <button
+                                type="button"
+                                className={styles.backButton}
+                                onClick={handleBackToPhone}
+                                disabled={loading || resendingOtp}
+                            >
+                                بازگشت به وارد کردن شماره
+                            </button>
+                        </div>
                     </form>
                 </div>
             )}
@@ -393,7 +469,7 @@ export default function AuthForm({
                                     type="button"
                                     className={styles.eyeButton}
                                     onClick={() => setShowPassword(!showPassword)}
-                                    tabIndex={-1}
+                                    aria-label={showPassword ? 'مخفی‌سازی رمز عبور' : 'نمایش رمز عبور'}
                                 >
                                     {showPassword ? (
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -486,7 +562,7 @@ export default function AuthForm({
                                     type="button"
                                     className={styles.eyeButton}
                                     onClick={() => setShowPassword(!showPassword)}
-                                    tabIndex={-1}
+                                    aria-label={showPassword ? 'مخفی‌سازی رمز عبور' : 'نمایش رمز عبور'}
                                 >
                                     {showPassword ? (
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

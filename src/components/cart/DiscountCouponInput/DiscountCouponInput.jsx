@@ -23,7 +23,7 @@ export default function DiscountCouponInput() {
         const code = inputCode.trim();
 
         if (!code) {
-            setErrorMessage('لطفاً کد تخفیف را وارد نمایید.');
+            setErrorMessage('لطفاً کد تخفیف را وارد کنید.');
             return;
         }
 
@@ -110,7 +110,7 @@ export default function DiscountCouponInput() {
                             if (errorMessage) setErrorMessage('');
                         }}
                         placeholder="کد تخفیف دارید؟ وارد کنید..."
-                        className={`${styles.couponInput} ${errorMessage ? styles.hasError : ''}`}
+                        className={`${styles.couponInput} ${(errorMessage || couponError) ? styles.hasError : ''}`}
                         disabled={isLoading || items.length === 0}
                         autoFocus
                     />

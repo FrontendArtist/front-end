@@ -272,6 +272,27 @@
             color: var(--color-black);
         }
     }
+
+    &--primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.6rem 1.25rem;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--color-gold, #ffd166), var(--color-warning-amber, #f59e0b));
+        color: var(--color-bg-primary, #061818);
+        font-weight: var(--font-weight-bold);
+        font-size: var(--font-sm);
+        border: none;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+        text-decoration: none;
+
+        &:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            color: var(--color-bg-primary, #061818);
+        }
+    }
 }
 
 .pagination {

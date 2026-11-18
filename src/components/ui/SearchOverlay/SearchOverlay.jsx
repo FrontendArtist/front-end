@@ -14,10 +14,11 @@ export default function SearchOverlay() {
 
     const quickTags = [
         { label: 'همه دسته‌ها', type: 'all' },
-        { label: 'محصولات', type: 'محصولات' },
-        { label: 'مقالات', type: 'مقالات' },
-        { label: 'دوره‌ها', type: 'دوره‌ها' },
+        { label: 'محصولات', type: 'product' },
+        { label: 'مقالات', type: 'article' },
+        { label: 'دوره‌ها', type: 'course' },
     ];
+    const selectedTagLabel = quickTags.find((t) => t.type === selectedType)?.label || '';
 
     useEffect(() => {
         const handleOpen = () => {
@@ -97,7 +98,7 @@ export default function SearchOverlay() {
                 <div className={styles.modalHeader}>
                     <h3 className={styles.modalTitle}>جستجو در طرح الهی</h3>
                     <p className={styles.modalSubtitle}>
-                        {selectedType !== 'all' ? `جستجو اختصاصی در بخش «${selectedType}»` : 'عبارت مورد نظر خود را وارد کنید'}
+                        {selectedType !== 'all' ? `جستجو اختصاصی در بخش «${selectedTagLabel}»` : 'عبارت مورد نظر خود را وارد کنید'}
                     </p>
                 </div>
 
@@ -111,7 +112,7 @@ export default function SearchOverlay() {
                             ref={inputRef}
                             type="text"
                             className={styles.input}
-                            placeholder={selectedType !== 'all' ? `جستجو در ${selectedType}...` : 'جستجو کنید...'}
+                            placeholder={selectedType !== 'all' ? `جستجو در ${selectedTagLabel}...` : 'جستجو کنید...'}
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                         />

@@ -9,9 +9,21 @@
   }
 }
 
+.imageLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
 .imageWrapper {
   @include card-image-wrapper;
   position: relative;
+}
+
+.titleLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
 
 .topBadges {
@@ -165,6 +177,23 @@
   @include respond(md) {
     padding: 6px 12px;
     font-size: var(--font-xs);
+  }
+}
+
+.outOfStockButton {
+  color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  cursor: not-allowed;
+
+  &:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  &::before {
+    display: none;
   }
 }
 

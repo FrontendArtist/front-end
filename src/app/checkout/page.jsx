@@ -19,9 +19,12 @@ export default function CheckoutPage() {
     return (
         <div className={styles.checkoutPage}>
             <div className={styles.container}>
-                <p className={styles.redirectNotice} role="status">
-                    در حال انتقال به سبد خرید...
-                </p>
+                <div className={styles.redirectCard} role="status" aria-live="polite">
+                    <div className={styles.spinner} aria-hidden="true" />
+                    <p className={styles.redirectNotice}>
+                        در حال انتقال به سبد خرید...
+                    </p>
+                </div>
             </div>
         </div>
     );

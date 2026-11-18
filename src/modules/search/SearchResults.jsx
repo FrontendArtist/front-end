@@ -1,6 +1,7 @@
 'use client';
 
 import { getDiscountedCoursePrice } from '@/lib/coursePricing';
+import { normalizeSearchType } from '@/lib/searchApi';
 
 import { useState } from 'react';
 import clsx from 'clsx';
@@ -22,6 +23,8 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
     const availableCategoriesCount = [hasProducts, hasArticles, hasCourses].filter(Boolean).length;
 
     const [activeTab, setActiveTab] = useState(() => {
+        const normalizedInitial = normalizeSearchType(initialType);
+        if (normalizedInitial !== 'all') return normalizedInitial;
         if (availableCategoriesCount === 1) {
             if (hasProducts) return 'product';
             if (hasArticles) return 'article';
@@ -151,7 +154,7 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
             <div className={styles.header}>
                 <div className={styles.titleBadge}>
                     <span className={styles.badgeLabel}>نتایج جستجو</span>
-                    {hasResults && <span className={styles.countBadge}>{totalResults} مورد یافت شد</span>}
+                    {hasResults && <span className={styles.countBadge}>{totalResults.toLocaleString('fa-IR')} مورد یافت شد</span>}
                 </div>
                 {query ? (
                     <h1 className={styles.title}>
@@ -189,7 +192,7 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
                                     onClick={() => setActiveTab('all')}
                                 >
                                     <span>همه موارد</span>
-                                    <span className={styles.tabCount}>{totalResults}</span>
+                                    <span className={styles.tabCount}>{totalResults.toLocaleString('fa-IR')}</span>
                                 </button>
                             )}
                             {hasProducts && (
@@ -198,7 +201,7 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
                                     onClick={() => setActiveTab('product')}
                                 >
                                     <span>محصولات</span>
-                                    <span className={styles.tabCount}>{products.length}</span>
+                                    <span className={styles.tabCount}>{products.length.toLocaleString('fa-IR')}</span>
                                 </button>
                             )}
                             {hasArticles && (
@@ -207,7 +210,7 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
                                     onClick={() => setActiveTab('article')}
                                 >
                                     <span>مقالات</span>
-                                    <span className={styles.tabCount}>{articles.length}</span>
+                                    <span className={styles.tabCount}>{articles.length.toLocaleString('fa-IR')}</span>
                                 </button>
                             )}
                             {hasCourses && (
@@ -216,7 +219,7 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
                                     onClick={() => setActiveTab('course')}
                                 >
                                     <span>دوره‌ها</span>
-                                    <span className={styles.tabCount}>{courses.length}</span>
+                                    <span className={styles.tabCount}>{courses.length.toLocaleString('fa-IR')}</span>
                                 </button>
                             )}
                         </div>
@@ -231,4 +234,4 @@ export default function SearchResults({ data, query, initialType = 'all' }) {
             )}
         </div>
     );
-}
+}

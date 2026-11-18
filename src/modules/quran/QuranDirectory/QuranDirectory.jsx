@@ -157,14 +157,14 @@ export default function QuranDirectory({ tafsirSurahs = [], quranSubjects = [] }
           <span className={styles.statPill}>
             <Sparkles size={14} aria-hidden="true" />
             <span>سوره‌های دارای تفسیر:</span>
-            <strong>{tafsirSurahsList.length} سوره</strong>
+            <strong>{tafsirSurahsList.length.toLocaleString('fa-IR')} سوره</strong>
           </span>
 
           {quranSubjects.length > 0 && (
             <span className={styles.statPill}>
               <Tag size={14} aria-hidden="true" />
               <span>موضوعات قرآنی:</span>
-              <strong>{quranSubjects.length} موضوع</strong>
+              <strong>{quranSubjects.length.toLocaleString('fa-IR')} موضوع</strong>
             </span>
           )}
         </div>
@@ -184,7 +184,7 @@ export default function QuranDirectory({ tafsirSurahs = [], quranSubjects = [] }
           >
             <BookOpen size={15} aria-hidden="true" />
             <span>تفسیر سوره به سوره</span>
-            <span className={styles.badgeCount}>{tafsirSurahsList.length}</span>
+            <span className={styles.badgeCount}>{tafsirSurahsList.length.toLocaleString('fa-IR')}</span>
           </button>
 
           <button
@@ -198,7 +198,7 @@ export default function QuranDirectory({ tafsirSurahs = [], quranSubjects = [] }
           >
             <Layers size={15} aria-hidden="true" />
             <span>تفسیر موضوعی</span>
-            <span className={styles.badgeCount}>{quranSubjects.length}</span>
+            <span className={styles.badgeCount}>{quranSubjects.length.toLocaleString('fa-IR')}</span>
           </button>
         </div>
       </div>
@@ -253,10 +253,10 @@ export default function QuranDirectory({ tafsirSurahs = [], quranSubjects = [] }
                     <div className={styles.cardHeader}>
                       <div
                         className={styles.octagramBadge}
-                        aria-label={`شماره سوره ${surah.number}`}
+                        aria-label={`شماره سوره ${Number(surah.number).toLocaleString('fa-IR')}`}
                       >
                         <IslamicOctagramSvg />
-                        <span className={styles.numberText}>{surah.number}</span>
+                        <span className={styles.numberText}>{Number(surah.number).toLocaleString('fa-IR')}</span>
                       </div>
 
                       <div className={styles.badgesGroup}>
@@ -270,7 +270,7 @@ export default function QuranDirectory({ tafsirSurahs = [], quranSubjects = [] }
                           {surah.revelationType === 'Meccan' ? 'مکی' : 'مدنی'}
                         </span>
                         <span className={styles.tagBadge}>
-                          {surah.numberOfAyahs} آیه
+                          {Number(surah.numberOfAyahs).toLocaleString('fa-IR')} آیه
                         </span>
                       </div>
                     </div>
@@ -355,7 +355,7 @@ export default function QuranDirectory({ tafsirSurahs = [], quranSubjects = [] }
                     </span>
                     {typeof sub.versesCount === 'number' && (
                       <span className={styles.tagBadge}>
-                        {sub.versesCount} آیه
+                        {sub.versesCount.toLocaleString('fa-IR')} آیه
                       </span>
                     )}
                   </div>
@@ -394,7 +394,7 @@ export default function QuranDirectory({ tafsirSurahs = [], quranSubjects = [] }
               <Tag size={48} aria-hidden="true" color="var(--color-text-primary)" />
               <h3>هنوز موضوعی ثبت نشده است</h3>
               <p>
-                می‌توانید از پنل مدیریت استراپی در بخش QuranSubject موضوعات جدید اضافه کرده و به آیات متصل نمایید.
+                در حال حاضر موضوع قرآنی فعالی ثبت نشده است.
               </p>
             </div>
           )}

@@ -244,7 +244,7 @@ test('چیدمان جدید اقدام‌ها در خرید موفق: دکمه �
     expect(ordersLink.className).toContain('textLink');
 
     const walletLink = screen.getByRole('link', { name: 'کیف پول' });
-    expect(walletLink.getAttribute('href')).toBe('/profile');
+    expect(walletLink.getAttribute('href')).toBe('/profile/wallet');
     expect(walletLink.className).toContain('textLink');
 
     // لینک راهنمای پشتیبانی در انتهای کارت
@@ -269,7 +269,7 @@ test('چیدمان جدید اقدام‌ها در خرید ناموفق یا د
 
     // دکمه اصلی در حالت ناموفق/استعلام: کیف پول و حساب کاربری
     const primaryBtn = screen.getByRole('link', { name: 'کیف پول و حساب کاربری' });
-    expect(primaryBtn.getAttribute('href')).toBe('/profile');
+    expect(primaryBtn.getAttribute('href')).toBe('/profile/wallet');
     expect(primaryBtn.className).toContain('primaryButton');
 
     // لینک متنی مشاهده دوره‌های من

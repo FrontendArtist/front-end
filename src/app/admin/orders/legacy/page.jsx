@@ -46,7 +46,7 @@ export default async function AdminLegacyOrdersPage() {
             {error && (
                 <div className={styles.page__error}>
                     <span>⚠️</span>
-                    <p>اتصال به سرور ناموفق بود. لطفاً مطمئن شوید Strapi در حال اجراست.</p>
+                    <p>خطا در برقراری ارتباط با سرویس‌دهنده داده‌ها. لطفاً دوباره تلاش کنید.</p>
                 </div>
             )}
 

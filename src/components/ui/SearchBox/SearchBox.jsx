@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { normalizeSearchType } from '@/lib/searchApi';
 import styles from './SearchBox.module.scss';
 import clsx from 'clsx';
 
 export default function SearchBox({ initialQuery = '', initialType = 'all', className }) {
     const [query, setQuery] = useState(initialQuery);
-    const [type, setType] = useState(initialType);
+    const [type, setType] = useState(() => normalizeSearchType(initialType));
     const router = useRouter();
 
     useEffect(() => {
@@ -15,7 +16,7 @@ export default function SearchBox({ initialQuery = '', initialType = 'all', clas
     }, [initialQuery]);
 
     useEffect(() => {
-        setType(initialType);
+        setType(normalizeSearchType(initialType));
     }, [initialType]);
 
     const handleSearch = (e) => {
@@ -40,9 +41,9 @@ export default function SearchBox({ initialQuery = '', initialType = 'all', clas
                     aria-label="انتخاب دسته‌بندی"
                 >
                     <option value="all">همه دسته‌ها</option>
-                    <option value="محصولات">محصولات</option>
-                    <option value="مقالات">مقالات</option>
-                    <option value="دوره‌ها">دوره‌ها</option>
+                    <option value="product">محصولات</option>
+                    <option value="article">مقالات</option>
+                    <option value="course">دوره‌ها</option>
                 </select>
             </div>
 

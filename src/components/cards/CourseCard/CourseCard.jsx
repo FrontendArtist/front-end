@@ -33,7 +33,7 @@ const CourseCard = ({ course }) => {
   } = course;
 
   const isForeign = Boolean(
-    session?.user?.is_foreigner || 
+    session?.user?.is_foreigner ||
     (session?.user?.phoneNumber && !isIranianPhoneNumber(session.user.phoneNumber))
   );
 
@@ -85,9 +85,11 @@ const CourseCard = ({ course }) => {
       <div className={styles.cardContent}>
         <h3 className={styles.cardTitle}>{title}</h3>
         <p className={styles.cardText}>{shortDescription}</p>
-        <Link href={`/courses/${slug}`} className={`${styles.ctaButton} card-button`}>
-          {isHydrated && isPurchased ? 'مشاهده دوره' : 'بیشتر بدانید'}
-        </Link>
+        <div className={styles.footer}>
+          <Link href={`/courses/${slug}`} className={`${styles.ctaButton} card-button`}>
+            {isHydrated && isPurchased ? 'مشاهده دوره' : 'بیشتر بدانید'}
+          </Link>
+        </div>
       </div>
     </GradientBorderCard>
   );

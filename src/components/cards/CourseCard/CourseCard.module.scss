@@ -17,6 +17,7 @@
 .imageWrapper {
   @include card-image-wrapper;
   position: relative;
+
   @include respond(xl) {
     aspect-ratio: 16 / 9;
   }
@@ -78,6 +79,7 @@
 
 .cardContent {
   @include card-content;
+
   @include respond(xl) {
     gap: 10px;
   }
@@ -97,16 +99,34 @@
   }
 }
 
+.footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 14px;
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
+}
+
+.chapteredLabel {
+  color: var(--color-primary, #f6d982);
+  font-size: var(--font-xs, 12px);
+  font-weight: 600;
+}
+
 .ctaButton {
   display: inline-block;
   align-self: center;
-  padding: 12px 32px;
+  padding: 10px 22px;
   color: var(--color-text-primary);
-  font-size: var(--font-md);
+  font-size: var(--font-sm);
   font-weight: var(--font-weight-medium);
   text-decoration: none;
   border: 2px solid var(--color-text-primary);
   border-radius: 8px;
+  white-space: nowrap;
   @include hover-transition;
 
   &:hover {
@@ -117,19 +137,16 @@
 
   @include respond(xl) {
     margin-top: 0;
-    padding: 10px 18px;
+    padding: 8px 16px;
     font-size: var(--font-sm);
   }
 
   @include respond(md) {
-    margin-top: 16px;
-    padding: 10px 24px;
- 
+    padding: 8px 18px;
   }
 
   @include respond(sm) {
-    margin-top: 12px;
-    padding: 8px 20px;
+    padding: 7px 16px;
   }
 }
 
@@ -168,11 +185,12 @@
 .price {
   color: var(--color-text-primary);
   font-size: var(--font-md);
-  
+
   display: block;
 
   @include respond(xl) {
-font-weight: var(--font-weight-regular);  }
+    font-weight: var(--font-weight-regular);
+  }
 }
 
 .purchasedText {

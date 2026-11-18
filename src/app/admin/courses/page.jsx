@@ -7,7 +7,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getAdminCoursesAll } from '@/lib/admin/adminCoursesApi';
 import CoursesTable from '@/components/admin/Courses/CoursesTable';
-import Link from 'next/link';
+import AdminButton from '@/components/admin/Shared/AdminButton';
+import { Plus } from 'lucide-react';
 import styles from '../orders/orders.module.scss';
 
 export const metadata = {
@@ -34,24 +35,10 @@ export default async function AdminCoursesPage() {
                             {new Intl.NumberFormat('fa-IR').format(meta.pagination.total)} دوره
                         </span>
                     )}
-                    <Link
-                        href="/admin/courses/new"
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.4rem',
-                            padding: '0.6rem 1.25rem',
-                            borderRadius: '8px',
-                            background: 'var(--color-title-hover)',
-                            color: 'var(--color-bg-primary)',
-                            fontWeight: 'var(--font-weight-bold)',
-                            fontSize: 'var(--font-sm)',
-                            textDecoration: 'none',
-                            transition: 'opacity 0.2s',
-                        }}
-                    >
-                        ➕ دوره جدید
-                    </Link>
+                    <AdminButton href="/admin/courses/new" variant="primary">
+                        <Plus size={16} />
+                        دوره جدید
+                    </AdminButton>
                 </div>
             </header>
 
@@ -59,7 +46,7 @@ export default async function AdminCoursesPage() {
             {error && (
                 <div className={styles.page__error}>
                     <span>⚠️</span>
-                    <p>اتصال به سرور ناموفق بود. لطفاً مطمئن شوید Strapi در حال اجراست.</p>
+                    <p>خطا در برقراری ارتباط با سرویس‌دهنده داده‌ها. لطفاً دوباره تلاش کنید.</p>
                 </div>
             )}
 
