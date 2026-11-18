@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AddressModal from '../AddressModal';
+import { SHORT_FULL_ADDRESS_MESSAGE } from '@/lib/fullAddress';
 
 jest.mock('next-auth/react', () => ({
     useSession: () => ({ data: { user: { id: 7 } }, status: 'authenticated' }),
@@ -104,6 +105,28 @@ describe('AddressModal Component', () => {
             expect(screen.getByRole('alert')).toBeTruthy();
         });
         expect(screen.getByText('لطفاً نام و نام خانوادگی تحویل‌گیرنده را وارد کنید.')).toBeTruthy();
+        expect(global.fetch.mock.calls.some((call) => String(call[0]).startsWith('/api/addresses'))).toBe(false);
+    });
+
+    test('نشانی کوتاه‌تر از ده نویسه ذخیره نمی‌شود', async () => {
+        render(
+            <AddressModal
+                isOpen={true}
+                onClose={jest.fn()}
+                onSuccess={jest.fn()}
+            />
+        );
+
+        fireEvent.change(screen.getByLabelText(/نام و نام خانوادگی گیرنده/), {
+            target: { value: 'محمد رضایی' },
+        });
+        fireEvent.change(screen.getByLabelText(/نشانی پستی کامل/), {
+            target: { value: 'مشهد' },
+        });
+        await chooseLocality('تهران', 'تهران');
+        fireEvent.click(screen.getByRole('button', { name: 'ثبت آدرس و ادامه پرداخت' }));
+
+        expect(await screen.findByText(SHORT_FULL_ADDRESS_MESSAGE)).toBeTruthy();
         expect(global.fetch.mock.calls.some((call) => String(call[0]).startsWith('/api/addresses'))).toBe(false);
     });
 

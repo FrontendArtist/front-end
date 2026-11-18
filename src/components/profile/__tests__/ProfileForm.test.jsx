@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ProfileForm from '../ProfileForm';
+import { SHORT_FULL_ADDRESS_MESSAGE } from '@/lib/fullAddress';
 
 jest.mock('next-auth/react', () => ({
     useSession: () => ({
@@ -203,6 +204,21 @@ describe('ProfileForm locality selects', () => {
         fireEvent.click(screen.getByRole('button', { name: 'ذخیره' }));
 
         expect(await screen.findByText('لطفاً استان و شهر را انتخاب کنید.')).toBeTruthy();
+        expect(global.fetch.mock.calls.some((call) => String(call[0]).includes('/api/addresses'))).toBe(false);
+    });
+
+    test('نشانی کوتاه‌تر از ده نویسه ذخیره نمی‌شود', async () => {
+        render(<ProfileForm />);
+
+        await waitFor(() => {
+            expect(screen.getByLabelText(/آدرس کامل/).value).toBe('خیابان آزادی');
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'ویرایش' }));
+        fireEvent.change(screen.getByLabelText(/آدرس کامل/), { target: { value: 'مشهد' } });
+        fireEvent.click(screen.getByRole('button', { name: 'ذخیره' }));
+
+        expect(await screen.findByText(SHORT_FULL_ADDRESS_MESSAGE)).toBeTruthy();
         expect(global.fetch.mock.calls.some((call) => String(call[0]).includes('/api/addresses'))).toBe(false);
     });
 });

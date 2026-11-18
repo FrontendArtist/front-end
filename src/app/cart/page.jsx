@@ -36,6 +36,7 @@ import { isCartItemPurchasedByUser } from '@/lib/courseAccessUtils';
 import { getCartItemDisplayTitle } from '@/lib/courseTitleUtils';
 import { cartStockErrorMessage } from '@/lib/cartStockError';
 import { quotedShippingAddress, quotedShippingOriginText } from '@/lib/shippingOrigin';
+import { isFullAddressLongEnough } from '@/lib/fullAddress';
 
 /**
  * صفحه سبد خرید
@@ -257,7 +258,7 @@ export default function CartPage() {
                 // اگر کالای فیزیکی در سبد است، ابتدا کنترل وجود آدرس کامل بدون ساخت رزرو
                 if (hasPhysicalProducts) {
                     let addr = addressOverride || userAddress;
-                    if (!addr || !addr.fullAddress?.trim() || !addr.recipientName?.trim()) {
+                    if (!addr || !isFullAddressLongEnough(addr.fullAddress) || !addr.recipientName?.trim()) {
                         if (typeof fetch === 'function') {
                             try {
                                 const profileRes = await fetch('/api/profile');
@@ -269,7 +270,7 @@ export default function CartPage() {
                             }
                         }
                     }
-                    if (!addr || !addr.fullAddress?.trim() || !addr.recipientName?.trim()) {
+                    if (!addr || !isFullAddressLongEnough(addr.fullAddress) || !addr.recipientName?.trim()) {
                         paymentLock.current = false;
                         setIsProcessing(false);
                         setIsAddressModalOpen(true);

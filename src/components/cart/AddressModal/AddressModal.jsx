@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Modal from '@/components/ui/Modal/Modal';
 import ProvinceCitySelects, { localitySubmitError } from '@/components/address/ProvinceCitySelects';
+import { isFullAddressLongEnough, SHORT_FULL_ADDRESS_MESSAGE } from '@/lib/fullAddress';
 import styles from './AddressModal.module.scss';
 
 /**
@@ -79,6 +80,10 @@ export default function AddressModal({
         const localityError = localitySubmitError(localityRef.current);
         if (localityError) {
             setError(localityError);
+            return;
+        }
+        if (!isFullAddressLongEnough(trimmedAddress)) {
+            setError(SHORT_FULL_ADDRESS_MESSAGE);
             return;
         }
         const { province, city, cityLink } = localityRef.current || {};
