@@ -17,4 +17,12 @@ test('پیش‌نمایش استرپی و پاسخ سبد بای‌مانی هر
         { fullAddress: 'پروفایل' },
     ).fullAddress).toBe('خیابان ثابت');
     expect(quotedShippingAddress({}, { fullAddress: 'پروفایل' }).fullAddress).toBe('پروفایل');
+    expect(quotedShippingAddress(
+        { shippingAddress: { fullAddress: 'ثبت‌نشده', city: 'مشهد' } },
+        { fullAddress: 'خیابان پروفایل' },
+    ).fullAddress).toBe('خیابان پروفایل');
+    expect(quotedShippingAddress(
+        { addressSnapshot: { fullAddress: ' ثبت‌نشده ' } },
+        { fullAddress: 'ثبت‌نشده' },
+    )).toBeNull();
 });

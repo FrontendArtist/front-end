@@ -31,8 +31,8 @@ const BADGE_VARIANTS = {
 
 /** مقادیر مجاز I11-O برای بدنهٔ ساخت مرسوله */
 const COLLECTION_TYPES = [
-    { value: 'pick_up', label: 'پیک بیاید' },
     { value: 'courier_drop_off', label: 'تحویل توسط خودمان' },
+    { value: 'pick_up', label: 'پیک بیاید' },
 ];
 
 export default function PhysicalDeliveryControl({
@@ -50,7 +50,7 @@ export default function PhysicalDeliveryControl({
     const [trackingProvider, setTrackingProvider] = useState('Manual');
     const [providerParcelId, setProviderParcelId] = useState('');
     const [loadedProvider, setLoadedProvider] = useState(null);
-    const [collectionType, setCollectionType] = useState('pick_up');
+    const [collectionType, setCollectionType] = useState('courier_drop_off');
     const dropdownRef = useRef(null);
 
     useEffect(() => {

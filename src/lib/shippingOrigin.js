@@ -21,8 +21,11 @@ export function quotedShippingOriginText(data) {
         || null;
 }
 
+const UNSET_STREET = 'ثبت‌نشده';
+
 function hasStreet(address) {
-    return Boolean(address && typeof address.fullAddress === 'string' && address.fullAddress.trim());
+    const street = typeof address?.fullAddress === 'string' ? address.fullAddress.trim() : '';
+    return street.length > 0 && street !== UNSET_STREET;
 }
 
 export function quotedShippingAddress(data, profileAddress) {
