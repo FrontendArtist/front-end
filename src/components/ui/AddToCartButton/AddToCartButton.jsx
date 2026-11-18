@@ -68,17 +68,23 @@ export default function AddToCartButton({
   })();
 
   const addItem = useCartStore((state) => state.addItem);
+  const removeItem = useCartStore((state) => state.removeItemManually || state.removeItem);
 
   // بررسی وجود دوره در سبد (فقط بعد از hydration معتبر است)
   const isInCart =
     useCartStore((state) => state.items.some((item) => item.id === id)) &&
     isHydrated;
 
+  const handleRemoveFromCart = (e) => {
+    e?.stopPropagation();
+    removeItem(id);
+  };
+
   const handleAddToCart = () => {
     if (isInCart) return;
 
     const isForeign = Boolean(
-      session?.user?.is_foreigner || 
+      session?.user?.is_foreigner ||
       (session?.user?.phoneNumber && !isIranianPhoneNumber(session.user.phoneNumber))
     );
 
@@ -130,6 +136,13 @@ export default function AddToCartButton({
     </svg>
   );
 
+  const TrashIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2 2v2" />
+    </svg>
+  );
+
   // نمایش وضعیت سفارش معلق کارت‌به‌کارت
   if (isHydrated && pendingOrder) {
     const pStatus = (pendingOrder.paymentStatus || pendingOrder.attributes?.paymentStatus || '').trim().toLowerCase();
@@ -178,15 +191,26 @@ export default function AddToCartButton({
     );
   }
 
-  // بعد از hydration و دوره در سبد است: دکمه غیرفعال
+  // بعد از hydration و دوره در سبد است: دکمه وضعیت سبد + دکمه حذف سریع
   return (
-    <button
-      className={`${styles.addToCartBtn} ${styles.disabled} ${isSmall ? styles.small : ''} ${className}`.trim()}
-      disabled
-      aria-label={`${title} در سبد خرید موجود است`}
-    >
-      <CheckIcon />
-      موجود در سبد خرید
-    </button>
+    <div className={styles.cartActionGroup}>
+      <div
+
+        className={`${styles.addToCartBtn} ${styles.disabled} ${isSmall ? styles.small : ''} ${className}`.trim()}
+
+      >
+        <CheckIcon />
+        موجود در سبد خرید
+      </div>
+      <button
+        type="button"
+        className={`${styles.quickRemoveBtn} ${isSmall ? styles.smallRemove : ''}`}
+        onClick={handleRemoveFromCart}
+        title="حذف از سبد خرید"
+        aria-label={`حذف ${title} از سبد خرید`}
+      >
+        <TrashIcon />
+      </button>
+    </div>
   );
 }

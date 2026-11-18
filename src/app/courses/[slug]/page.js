@@ -122,14 +122,45 @@ export default async function CoursePage({ params }) {
     effectiveOriginalPrice = Math.round(effectivePriceToman / (1 - effectiveDiscountPercent / 100));
   }
 
-  // محاسبه مجموع پرداختی‌های قبلی کاربر برای فصل‌های این دوره
+  // تفکیک فصل‌های خریداری‌شده و باقیمانده (خریداری‌نشده)
+  const unpurchasedChapters = (rawCourse.chapters || []).filter(
+    (ch) => !userPurchasedChapters.some((pc) => String(pc.id) === String(ch.id))
+  );
+  const unpurchasedCount = unpurchasedChapters.length;
+  const isPartiallyPurchased = userPurchasedChapters.length > 0 && unpurchasedCount > 0;
+
+  // جمع قیمت فصل‌های باقیمانده (خریداری‌نشده)
+  const remainingChaptersBasePrice = unpurchasedChapters.reduce((sum, ch) => {
+    const chPrice = Number(ch.price?.toman ?? ch.price ?? 0);
+    return sum + (Number.isFinite(chPrice) ? chPrice : 0);
+  }, 0);
+
+  // جمع قیمت فصل‌های قبلاً خریداری‌شده
   const alreadyPaidChaptersTotal = userPurchasedChapters.reduce((sum, ch) => {
     const chPrice = Number(ch.price?.toman ?? ch.price ?? 0);
     return sum + (Number.isFinite(chPrice) ? chPrice : 0);
   }, 0);
 
-  // محاسبه قیمت خالص دوره پس از کسر پرداختی‌های قبلی فصل‌ها
-  const netCoursePriceToman = Math.max(0, effectivePriceToman - alreadyPaidChaptersTotal);
+  // محاسبه هوشمند قیمت نهایی دوره فصلی
+  // ۱. اگر همه فصل‌ها خریده شده باشد: ۰
+  // ۲. اگر کاربر هیچ فصلی نخریده باشد: قیمت کامل پکیج (با تخفیف کاتالوگ اگر موجود باشد)
+  // ۳. اگر بخشی از فصل‌ها باقی مانده باشد (چه ۱ فصل و چه چند فصل): درصد تخفیف دوره روی مجموع قیمت فصل‌های باقیمانده اعمال می‌شود
+  let netCoursePriceToman = effectivePriceToman;
+  let activeDiscountPercentForRemaining = effectiveDiscountPercent;
+
+  if (rawCourse.isChaptered && Array.isArray(rawCourse.chapters) && rawCourse.chapters.length > 0) {
+    if (unpurchasedCount === 0) {
+      netCoursePriceToman = 0;
+      activeDiscountPercentForRemaining = 0;
+    } else if (userPurchasedChapters.length === 0) {
+      netCoursePriceToman = effectivePriceToman;
+    } else {
+      // چه ۱ فصل و چه چند فصل باقی مانده باشد: تخفیف روی جمع قیمت فصل‌های باقیمانده اعمال می‌شود
+      netCoursePriceToman = effectiveDiscountPercent > 0
+        ? Math.round(remainingChaptersBasePrice * (1 - effectiveDiscountPercent / 100))
+        : remainingChaptersBasePrice;
+    }
+  }
 
   // Fetch comments for this course
   const initialComments = await getComments('course', rawCourse.documentId);
@@ -144,11 +175,14 @@ export default async function CoursePage({ params }) {
     price: { toman: effectivePriceToman, original: effectiveOriginalPrice },
     netPriceToman: netCoursePriceToman,
     alreadyPaidChaptersTotal,
+    remainingChaptersBasePrice,
     userPurchasedChaptersCount: userPurchasedChapters.length,
+    unpurchasedChaptersCount: unpurchasedCount,
     originalPrice: effectiveOriginalPrice,
     internationalPrice: rawCourse.internationalPrice || null,
     isInternationalPrice: hasIntlPrice,
     discountPercent: effectiveDiscountPercent,
+    activeDiscountPercentForRemaining,
     discountUntil: hasIntlPrice ? null : (rawCourse.discountUntil || null),
     content: rawCourse.content,
     teaserUrl: rawCourse.teaserUrl,
@@ -208,8 +242,15 @@ export default async function CoursePage({ params }) {
 
   const hasDiscount = !hasIntlPrice && (course.discountPercent > 0) && (course.originalPrice > (course.price?.toman || 0));
 
-  // مبلغ تخفیف کاتالوگ (discountPercent) و مجموع کاهش‌ها (تخفیف + کسر فصول قبلی) برای نمایش جزئیات قیمت
-  const catalogDiscountToman = hasDiscount ? Math.max(0, effectiveOriginalPrice - effectivePriceToman) : 0;
+  // محاسبه مبلغ تخفیف برای نمایش در جزئیات قیمت
+  let catalogDiscountToman = 0;
+  if (userPurchasedChapters.length === 0) {
+    catalogDiscountToman = hasDiscount ? Math.max(0, effectiveOriginalPrice - effectivePriceToman) : 0;
+  } else if (unpurchasedCount > 0 && effectiveDiscountPercent > 0) {
+    catalogDiscountToman = Math.round(remainingChaptersBasePrice * (effectiveDiscountPercent / 100));
+  }
+
+  // مجموع کاهش‌ها (هزینه فصل‌های قبلی + تخفیف پکیج دوره)
   const totalReductionToman = catalogDiscountToman + (alreadyPaidChaptersTotal || 0);
 
   const jsonLd = {
@@ -323,22 +364,19 @@ export default async function CoursePage({ params }) {
                         <span className={styles.colLabel}>
                           {totalReductionToman > 0 ? 'قیمت تمام‌شده برای شما' : 'قیمت کل پکیج'}
                         </span>
-
-                      )}
-                      {hasDiscount && (
-                        <span className={styles.discountPill}>
-                          ٪{course.discountPercent} تخفیف
-                        </span>
                       )}
                       <div className={styles.discountPriceStack}>
-
                         <div className={styles.priceWithBadge}>
                           <span className={styles.price}>
                             {course.netPriceToman === 0
                               ? 'رایگان (تکمیل دوره)'
                               : `${course.netPriceToman.toLocaleString('fa-IR')} تومان`}
                           </span>
-
+                          {hasDiscount && course.activeDiscountPercentForRemaining > 0 && (
+                            <span className={styles.discountPill}>
+                              ٪{course.activeDiscountPercentForRemaining} تخفیف
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -396,22 +434,26 @@ export default async function CoursePage({ params }) {
                       </summary>
 
                       <div className={styles.priceDetailsBody}>
-                        <div className={styles.detailRow}>
-                          <span>قیمت کامل پکیج</span>
-                          <span>{effectiveOriginalPrice.toLocaleString('fa-IR')} تومان</span>
-                        </div>
-
-                        {catalogDiscountToman > 0 && (
-                          <div className={`${styles.detailRow} ${styles.detailDiscount}`}>
-                            <span>تخفیف خرید یکجا (٪{course.discountPercent})</span>
-                            <span>−{catalogDiscountToman.toLocaleString('fa-IR')} تومان</span>
+                        {course.alreadyPaidChaptersTotal > 0 ? (
+                          <div className={styles.detailRow}>
+                            <span>هزینه ({course.unpurchasedChaptersCount} فصل) باقی مانده</span>
+                            <span>{course.remainingChaptersBasePrice.toLocaleString('fa-IR')} تومان</span>
+                          </div>
+                        ) : (
+                          <div className={styles.detailRow}>
+                            <span>قیمت کامل پکیج</span>
+                            <span>{effectiveOriginalPrice.toLocaleString('fa-IR')} تومان</span>
                           </div>
                         )}
 
-                        {course.alreadyPaidChaptersTotal > 0 && (
-                          <div className={`${styles.detailRow} ${styles.detailDeduction}`}>
-                            <span>هزینه ({course.userPurchasedChaptersCount} فصل) خریداری شده کم شد.</span>
-                            <span>−{course.alreadyPaidChaptersTotal.toLocaleString('fa-IR')} تومان</span>
+                        {catalogDiscountToman > 0 && (
+                          <div className={`${styles.detailRow} ${styles.detailDiscount}`}>
+                            <span>
+                              {course.alreadyPaidChaptersTotal > 0
+                                ? `تخفیف خرید یکجا (٪${course.discountPercent} روی فصول باقیمانده)`
+                                : `تخفیف خرید یکجا (٪${course.discountPercent})`}
+                            </span>
+                            <span>−{catalogDiscountToman.toLocaleString('fa-IR')} تومان</span>
                           </div>
                         )}
 
