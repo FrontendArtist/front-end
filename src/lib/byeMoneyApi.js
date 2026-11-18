@@ -1748,16 +1748,18 @@ export async function updatePhysicalPurchaseDeliveryStatus({
 }
 
 /**
- * ساخت مرسوله نزد واسط پستی و ثبت وضعیت ارسال‌شده (SHIP-TRACKING-B).
+ * ساخت مرسوله نزد واسط پستی (SHIP-TRACKING-B / SHIP-ADMIN-DISPATCH).
  * POST /api/admin/physical-purchases/{purchaseId}/shipments
  * فقط از route سروری Next.js صدا زده شود.
+ * «ارسال‌شده» فقط وقتی برمی‌گردد که کد پستی واقعی آمده باشد؛ وگرنه Preparing + warning.
  *
  * @param {object} params
  * @param {string} params.jwt
  * @param {string} params.purchaseId
+ * @param {string} params.collectionType - pick_up | courier_drop_off (I11-O)
  * @param {string} [params.provider] - مثلاً PostEx؛ خالی = پیش‌فرض سرور
  */
-export async function createPhysicalShipment({ jwt, purchaseId, provider, signal } = {}) {
+export async function createPhysicalShipment({ jwt, purchaseId, collectionType, provider, signal } = {}) {
   if (!jwt) {
     return { success: false, unauthorized: true, error: 'نشست ادمین نامعتبر است.' };
   }
@@ -1765,6 +1767,10 @@ export async function createPhysicalShipment({ jwt, purchaseId, provider, signal
     return { success: false, badRequest: true, error: 'شناسه خرید نامعتبر است.' };
   }
   const url = `${BYEMONEY_API_URL}/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/shipments`;
+  const body = {
+    ...(collectionType ? { collectionType } : {}),
+    ...(provider ? { provider } : {}),
+  };
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -1772,7 +1778,7 @@ export async function createPhysicalShipment({ jwt, purchaseId, provider, signal
         Authorization: `Bearer ${jwt}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(provider ? { provider } : {}),
+      body: JSON.stringify(body),
       cache: 'no-store',
       signal,
     });

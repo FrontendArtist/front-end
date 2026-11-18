@@ -28,6 +28,7 @@ export async function POST(request, { params }) {
     const result = await createPhysicalShipment({
         jwt: session.user.jwt,
         purchaseId,
+        collectionType: body?.collectionType,
         provider: body?.provider,
     });
 

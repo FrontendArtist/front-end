@@ -2,15 +2,16 @@
 
 /**
  * @file src/components/admin/Orders/PhysicalDeliveryControl.jsx
- * @description مدیریت و پیشبرد وضعیت ارسال کالای فیزیکی در پنل ادمین (I11-O)
+ * @description مدیریت و پیشبرد وضعیت ارسال کالای فیزیکی در پنل ادمین (I11-O / SHIP-ADMIN-DISPATCH)
  *
- * تغییر وضعیت فقط از route سروری Next.js انجام می‌شود (JWT ادمین از session سروری)؛
- * مرورگر توکن بای‌مانی را برای PUT نمی‌فرستد و هیچ درخواستی به استراپی زده نمی‌شود.
- * وضعیت فقط در بای‌مانی نگهداری می‌شود و با ماشین وضعیت مجاز (Preparing -> Shipped -> Delivered) کنترل می‌شود.
+ * در «در حال آماده‌سازی» فقط دو کار می‌ماند: ارسال با پستکس (با collectionType) و
+ * ثبت کد رهگیری دستی. پیشبرد جدا به «ارسال‌شده» بدون کد حذف شده است.
+ * نشان «ارسال‌شده» فقط وقتی عوض می‌شود که بای‌مانی واقعاً Shipped با کد برگرداند.
+ * تغییر وضعیت فقط از route سروری Next.js؛ توکن بای‌مانی به مرورگر نمی‌رسد.
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { ChevronDown, Loader2, CheckCircle2, Truck, Package } from 'lucide-react';
+import { ChevronDown, Loader2, CheckCircle2, Package } from 'lucide-react';
 import { CourseOrderId } from '@/lib/byeMoneyApi';
 import { getAdminOrderReceipt } from '@/lib/admin/adminByeMoneyClient';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
@@ -28,6 +29,12 @@ const BADGE_VARIANTS = {
     Delivered: 'success',
 };
 
+/** مقادیر مجاز I11-O برای بدنهٔ ساخت مرسوله */
+const COLLECTION_TYPES = [
+    { value: 'pick_up', label: 'پیک بیاید' },
+    { value: 'courier_drop_off', label: 'تحویل توسط خودمان' },
+];
+
 export default function PhysicalDeliveryControl({
     purchaseId,
     cartId,
@@ -42,8 +49,8 @@ export default function PhysicalDeliveryControl({
     const [trackingCode, setTrackingCode] = useState('');
     const [trackingProvider, setTrackingProvider] = useState('Manual');
     const [providerParcelId, setProviderParcelId] = useState('');
-    // منبعِ ذخیره‌شدهٔ قلم؛ برای تشخیص تغییر منبع توسط ادمین نگه داشته می‌شود.
     const [loadedProvider, setLoadedProvider] = useState(null);
+    const [collectionType, setCollectionType] = useState('pick_up');
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -52,7 +59,6 @@ export default function PhysicalDeliveryControl({
         }
     }, [initialStatus]);
 
-    // بستن دراپ‌داون هنگام کلیک در خارج از کامپوننت
     useEffect(() => {
         if (!isOpen) return;
         const handleClickOutside = (e) => {
@@ -68,7 +74,6 @@ export default function PhysicalDeliveryControl({
         };
     }, [isOpen]);
 
-    // وضعیت فعلی از رسید سفارش ادمین (route سروری) خوانده می‌شود (فقط خواندن؛ شکست آن مانع ثبت نیست)
     useEffect(() => {
         if (initialStatus || !purchaseId) return;
         const controller = new AbortController();
@@ -99,14 +104,56 @@ export default function PhysicalDeliveryControl({
         };
     }, [purchaseId, cartId, initialStatus, onStatusChange]);
 
+    const applyDeliveryPayload = (data, { fallbackOkText } = {}) => {
+        const newStatus = data?.deliveryStatus;
+        if (data?.trackingCode) {
+            setTrackingCode(data.trackingCode);
+        }
+        if (data?.trackingProvider) {
+            setTrackingProvider(data.trackingProvider);
+            setLoadedProvider(data.trackingProvider);
+        }
+        if (data?.providerParcelId) {
+            setProviderParcelId(String(data.providerParcelId));
+        }
+
+        const warning = typeof data?.warning === 'string' ? data.warning.trim() : '';
+        const stillPreparing =
+            newStatus === 'Preparing' ||
+            data?.outcome === 'AwaitingTrackingCode';
+
+        if (stillPreparing) {
+            // نشان وضعیت عوض نمی‌شود؛ پیام «کد پستی هنوز نیامده» (یا warning سرور) نمایش داده می‌شود.
+            setMessage({
+                ok: false,
+                text: warning || 'کد پستی هنوز نیامده.',
+            });
+            return;
+        }
+
+        if (newStatus) {
+            setStatus(newStatus);
+            setMessage({
+                ok: true,
+                text: fallbackOkText
+                    ? fallbackOkText(getPhysicalDeliveryLabel(newStatus))
+                    : `وضعیت ارسال به «${getPhysicalDeliveryLabel(newStatus)}» تغییر کرد.`,
+            });
+            if (typeof onStatusChange === 'function') {
+                onStatusChange(newStatus);
+            }
+        }
+    };
+
     const createShipment = async () => {
         if (!purchaseId || busy || !isPreparing) return;
-        const provider =
-            getPhysicalDeliveryProvider(trackingProvider)?.supportsCreate
-                ? trackingProvider
-                : getCreatablePhysicalDeliveryProviders()[0]?.value;
+        const provider = getCreatablePhysicalDeliveryProviders()[0]?.value;
         if (!provider) {
             setMessage({ ok: false, text: 'هیچ واسط پستی برای ساخت مرسوله فعال نیست.' });
+            return;
+        }
+        if (!COLLECTION_TYPES.some((item) => item.value === collectionType)) {
+            setMessage({ ok: false, text: 'روش جمع‌آوری را انتخاب کنید.' });
             return;
         }
         setBusy(true);
@@ -117,31 +164,14 @@ export default function PhysicalDeliveryControl({
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ provider }),
+                    body: JSON.stringify({ provider, collectionType }),
                 }
             );
             const json = await res.json().catch(() => ({}));
-            if (res.ok && json?.data?.deliveryStatus) {
-                const newStatus = json.data.deliveryStatus;
-                setStatus(newStatus);
-                if (json.data.trackingCode) {
-                    setTrackingCode(json.data.trackingCode);
-                }
-                if (json.data.trackingProvider) {
-                    setTrackingProvider(json.data.trackingProvider);
-                    setLoadedProvider(json.data.trackingProvider);
-                }
-                if (json.data.providerParcelId) {
-                    setProviderParcelId(String(json.data.providerParcelId));
-                }
-                const warning = json.data.warning ? ` ${json.data.warning}` : '';
-                setMessage({
-                    ok: true,
-                    text: `مرسوله ثبت و وضعیت به «${getPhysicalDeliveryLabel(newStatus)}» تغییر کرد.${warning}`,
+            if (res.ok && json?.data) {
+                applyDeliveryPayload(json.data, {
+                    fallbackOkText: (label) => `مرسوله ثبت و وضعیت به «${label}» تغییر کرد.`,
                 });
-                if (typeof onStatusChange === 'function') {
-                    onStatusChange(newStatus);
-                }
             } else {
                 setMessage({
                     ok: false,
@@ -155,8 +185,50 @@ export default function PhysicalDeliveryControl({
         }
     };
 
+    const registerManualTracking = async () => {
+        if (!purchaseId || busy || !isPreparing) return;
+        const code = trackingCode.trim();
+        if (!code) {
+            setMessage({ ok: false, text: 'کد رهگیری را وارد کنید.' });
+            return;
+        }
+        setBusy(true);
+        setMessage(null);
+        try {
+            const res = await fetch(
+                `/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/delivery-status`,
+                {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'Shipped',
+                        trackingCode: code,
+                        trackingProvider: 'Manual',
+                    }),
+                }
+            );
+            const json = await res.json().catch(() => ({}));
+            if (res.ok && json?.data) {
+                applyDeliveryPayload(json.data);
+            } else {
+                setMessage({
+                    ok: false,
+                    text: json?.error || 'ثبت کد رهگیری ناموفق بود.',
+                });
+            }
+        } catch {
+            setMessage({ ok: false, text: 'خطا در ارتباط با سرور.' });
+        } finally {
+            setBusy(false);
+        }
+    };
+
     const submit = async (next, { force = false } = {}) => {
         if (!next || (!force && next === status) || busy) return;
+        // از Preparing دیگر پیشبرد جدا به Shipped بدون کد مجاز نیست.
+        if (next === 'Shipped' && (!status || status === 'Preparing') && !force) {
+            return;
+        }
         setIsOpen(false);
         setBusy(true);
         setMessage(null);
@@ -168,8 +240,6 @@ export default function PhysicalDeliveryControl({
                 const reference = providerParcelId.trim();
                 const requiresReference =
                     getPhysicalDeliveryProvider(trackingProvider)?.requiresProviderReference;
-                // منبع فقط وقتی فرستاده می‌شود که تغییر کرده یا شناسهٔ ارجاع تازه‌ای وارد شده باشد؛
-                // در اصلاح کد، منبع و شناسهٔ ذخیره‌شده دست‌نخورده می‌مانند و اعتبارسنج رد نمی‌کند.
                 if (trackingProvider !== loadedProvider || (requiresReference && reference)) {
                     body.trackingProvider = trackingProvider;
                     if (requiresReference && reference) {
@@ -184,15 +254,7 @@ export default function PhysicalDeliveryControl({
             });
             const json = await res.json().catch(() => ({}));
             if (res.ok && json?.data?.deliveryStatus) {
-                const newStatus = json.data.deliveryStatus;
-                setStatus(newStatus);
-                if (json.data.trackingCode) {
-                    setTrackingCode(json.data.trackingCode);
-                }
-                setMessage({ ok: true, text: `وضعیت ارسال به «${getPhysicalDeliveryLabel(newStatus)}» تغییر کرد.` });
-                if (typeof onStatusChange === 'function') {
-                    onStatusChange(newStatus);
-                }
+                applyDeliveryPayload(json.data);
             } else {
                 const from = getPhysicalDeliveryLabel(status);
                 const to = getPhysicalDeliveryLabel(next);
@@ -218,23 +280,9 @@ export default function PhysicalDeliveryControl({
     const isDelivered = status === 'Delivered';
     const requiresProviderReference =
         getPhysicalDeliveryProvider(trackingProvider)?.requiresProviderReference || false;
+    const canCreateProviderShipment = getCreatablePhysicalDeliveryProviders().length > 0;
 
-    // تنظیمات گزینه‌های دراپ‌داون بر اساس وضعیت فعلی
     const options = [
-        {
-            value: 'Preparing',
-            label: 'در حال آماده‌سازی',
-            hint: isPreparing ? 'وضعیت فعلی' : 'امکان بازگشت نیست',
-            disabled: isPreparing || isShipped || isDelivered,
-            icon: <Package size={14} />,
-        },
-        {
-            value: 'Shipped',
-            label: 'ارسال‌شده',
-            hint: isShipped ? 'وضعیت فعلی' : isPreparing ? 'پیشبرد مرحله' : 'ارسال شده',
-            disabled: !isPreparing || busy,
-            icon: <Truck size={14} />,
-        },
         {
             value: 'Delivered',
             label: 'تحویل‌شده',
@@ -249,9 +297,6 @@ export default function PhysicalDeliveryControl({
     const getTriggerInfo = () => {
         if (busy) {
             return { icon: <Loader2 size={14} className="spin" />, text: 'در حال ثبت تغییر وضعیت...' };
-        }
-        if (isPreparing) {
-            return { icon: <Truck size={14} />, text: 'پیشبرد به: ارسال‌شده' };
         }
         if (isShipped) {
             return { icon: <CheckCircle2 size={14} />, text: 'پیشبرد به: تحویل‌شده' };
@@ -268,24 +313,76 @@ export default function PhysicalDeliveryControl({
                 <AdminBadge variant={badgeVariant} text={statusLabel} />
             </div>
 
-            {/* ساخت مرسوله از واسط پستی؛ ثبت دستی کد همچنان جایگزین است (SHIP-TRACKING-B) */}
-            {isPreparing && getCreatablePhysicalDeliveryProviders().length > 0 && (
-                <button
-                    type="button"
-                    data-testid="create-provider-shipment"
-                    className={styles.createShipmentBtn}
-                    onClick={createShipment}
-                    disabled={busy}
-                >
-                    ثبت مرسوله در واسط پستی
-                </button>
+            {isPreparing && (
+                <>
+                    {canCreateProviderShipment && (
+                        <div className={styles.dispatchBox} data-testid="postex-dispatch-box">
+                            <p className={styles.trackingLabel}>ارسال با پستکس</p>
+                            <fieldset
+                                className={styles.resolveOptions}
+                                data-testid="collection-type-fieldset"
+                                aria-label="روش جمع‌آوری"
+                            >
+                                {COLLECTION_TYPES.map((item) => (
+                                    <label key={item.value} className={styles.resolveOption}>
+                                        <input
+                                            type="radio"
+                                            name={`collection-type-${purchaseId}`}
+                                            data-testid={`collection-type-${item.value}`}
+                                            value={item.value}
+                                            checked={collectionType === item.value}
+                                            onChange={() => setCollectionType(item.value)}
+                                            disabled={busy}
+                                        />
+                                        <span>{item.label}</span>
+                                    </label>
+                                ))}
+                            </fieldset>
+                            <button
+                                type="button"
+                                data-testid="create-provider-shipment"
+                                className={styles.createShipmentBtn}
+                                onClick={createShipment}
+                                disabled={busy}
+                            >
+                                ارسال با پستکس
+                            </button>
+                        </div>
+                    )}
+
+                    <div className={styles.trackingBox} data-testid="manual-tracking-box">
+                        <label className={styles.trackingLabel} htmlFor={`tracking-code-${purchaseId}`}>
+                            ثبت کد رهگیری دستی
+                        </label>
+                        <input
+                            id={`tracking-code-${purchaseId}`}
+                            data-testid="tracking-code-input"
+                            className={styles.trackingInput}
+                            value={trackingCode}
+                            onChange={(event) => setTrackingCode(event.target.value)}
+                            placeholder="بارکد یا کد رهگیری پستی"
+                            maxLength={50}
+                            dir="ltr"
+                            disabled={busy}
+                        />
+                        <button
+                            type="button"
+                            data-testid="register-manual-tracking"
+                            className={styles.saveCodeBtn}
+                            onClick={registerManualTracking}
+                            disabled={busy}
+                        >
+                            ثبت کد رهگیری دستی
+                        </button>
+                    </div>
+                </>
             )}
 
-            {/* کد رهگیری اختیاری است؛ منابعی که شناسهٔ ارجاع دارند، وضعیت را خودکار استعلام می‌کنند (SHIP-TRACKING) */}
-            {!isDelivered && (
+            {/* پس از ارسال: اصلاح کد/منبع و پیشبرد به تحویل‌شده */}
+            {isShipped && (
                 <div className={styles.trackingBox}>
                     <label className={styles.trackingLabel} htmlFor={`tracking-code-${purchaseId}`}>
-                        کد رهگیری مرسوله (اختیاری)
+                        کد رهگیری مرسوله
                     </label>
                     <div className={styles.trackingRow}>
                         <input
@@ -332,17 +429,15 @@ export default function PhysicalDeliveryControl({
                             </p>
                         </>
                     )}
-                    {isShipped && (
-                        <button
-                            type="button"
-                            data-testid="save-tracking-code"
-                            className={styles.saveCodeBtn}
-                            onClick={() => submit('Shipped', { force: true })}
-                            disabled={busy}
-                        >
-                            ذخیرهٔ کد رهگیری
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        data-testid="save-tracking-code"
+                        className={styles.saveCodeBtn}
+                        onClick={() => submit('Shipped', { force: true })}
+                        disabled={busy}
+                    >
+                        ذخیرهٔ کد رهگیری
+                    </button>
                 </div>
             )}
 
@@ -352,9 +447,7 @@ export default function PhysicalDeliveryControl({
                 </p>
             )}
 
-            {/* پس از «تحویل‌شده» وضعیت نهایی است و نشان بالا کافی است؛ کنترلی برای پیشبرد نمی‌ماند.
-                برگشتیِ باز یا بسته‌شده بدون تسویه هم نباید به تحویل‌شده برود. */}
-            {!isDelivered && !(isShipped && carrierReturnLocked) && (
+            {isShipped && !carrierReturnLocked && (
                 <div ref={dropdownRef} className={styles.customSelectContainer}>
                     <button
                         type="button"
@@ -399,48 +492,20 @@ export default function PhysicalDeliveryControl({
                         </div>
                     )}
 
-                    {/* سلکت مخفی استاندارد جهت حفظ دسترسی‌پذیری و سازگاری با تست‌های خودکار */}
                     <select
                         id={`delivery-select-${purchaseId}`}
                         data-testid="delivery-status-select"
                         aria-label="پیشبرد وضعیت ارسال مرسوله (تست)"
-                        value={status || 'Preparing'}
+                        value={status || 'Shipped'}
                         disabled={busy}
                         onChange={(e) => submit(e.target.value)}
                         className={styles.visuallyHiddenSelect}
                         tabIndex={-1}
                     >
-                        {isPreparing && (
-                            <>
-                                <option value="Preparing" disabled>
-                                    در حال آماده‌سازی (وضعیت فعلی)
-                                </option>
-                                <option value="Shipped">🚚 تغییر به: ارسال‌شده</option>
-                                <option value="Delivered" disabled>
-                                    تحویل‌شده (ابتدا باید ارسال شود)
-                                </option>
-                            </>
-                        )}
-                        {isShipped && (
-                            <>
-                                <option value="Preparing" disabled>
-                                    در حال آماده‌سازی (امکان بازگشت نیست)
-                                </option>
-                                <option value="Shipped" disabled>
-                                    ارسال‌شده (وضعیت فعلی)
-                                </option>
-                                <option value="Delivered">✅ تغییر به: تحویل‌شده</option>
-                            </>
-                        )}
-                        {!isPreparing && !isShipped && (
-                            <>
-                                <option value="" disabled>
-                                    انتخاب تغییر وضعیت...
-                                </option>
-                                <option value="Shipped">🚚 ثبت ارسال‌شده</option>
-                                <option value="Delivered">✅ ثبت تحویل‌شده</option>
-                            </>
-                        )}
+                        <option value="Shipped" disabled>
+                            ارسال‌شده (وضعیت فعلی)
+                        </option>
+                        <option value="Delivered">تغییر به: تحویل‌شده</option>
                     </select>
                 </div>
             )}
@@ -449,6 +514,7 @@ export default function PhysicalDeliveryControl({
                 <p
                     role={message.ok ? 'status' : 'alert'}
                     className={`${styles.message} ${message.ok ? styles['message--ok'] : styles['message--error']}`}
+                    data-testid={message.ok ? 'delivery-message-ok' : 'delivery-message-alert'}
                 >
                     {message.text}
                 </p>
