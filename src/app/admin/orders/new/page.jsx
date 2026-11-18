@@ -47,7 +47,8 @@ async function getPublishedCourses(jwt) {
                         id: ch.id,
                         integrationId: ch.integrationId || null,
                         title: ch.title || '',
-                        price: ch.price ?? attrs.price ?? 0,
+                        price: Number(ch.price?.toman ?? ch.price) || 0,
+                        integrationId: ch.integrationId || null,
                     }))
                     : [],
             };

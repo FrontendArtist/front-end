@@ -21,6 +21,7 @@ import {
     selectFinalTotalPrice,
     selectItemsCount,
     selectItemLevelDiscount,
+    selectDeductedAmount,
 } from '@/store/useCartStore';
 import useAuthStore from '@/store/authStore';
 import { executeNoorCartPurchase } from '@/lib/checkoutService';
@@ -36,6 +37,8 @@ import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { isCartItemPurchasedByUser } from '@/lib/courseAccessUtils';
 import { getCartItemDisplayTitle } from '@/lib/courseTitleUtils';
 import { cartStockErrorMessage } from '@/lib/cartStockError';
+import { quotedShippingAddress, quotedShippingOriginText } from '@/lib/shippingOrigin';
+import { isFullAddressLongEnough } from '@/lib/fullAddress';
 
 /**
  * صفحه سبد خرید
@@ -91,6 +94,7 @@ export default function CartPage() {
     const couponDiscount = useCartStore(selectCouponDiscount);
     const couponPending = useCartStore(selectCouponPending);
     const itemLevelDiscount = useCartStore(selectItemLevelDiscount);
+    const deductedAmount = useCartStore(selectDeductedAmount);
     const finalTotalPrice = useCartStore(selectFinalTotalPrice);
     const itemsCount = useCartStore(selectItemsCount);
     const removalError = useCartStore((state) => state.removalError);
@@ -135,6 +139,8 @@ export default function CartPage() {
     const couponCode = appliedCoupon?.code || null;
     const previewKey = JSON.stringify([session?.user?.id, session?.user?.jwt, itemsKey, couponCode, courseCartRevision, previewRevision]);
     const preview = checkoutPreview?.key === previewKey ? checkoutPreview : null;
+    const deliveryAddress = quotedShippingAddress(preview?.data, userAddress);
+    const shippingOriginName = quotedShippingOriginText(preview?.data);
     const isPreviewLoading = isCartEligible && status === 'authenticated' && !preview;
     const balance = (walletPreview && session?.user?.jwt && walletPreview.jwt === session.user.jwt) ? walletPreview.balance : null;
     const shortfall = preview?.data?.shortfallInNoor != null
@@ -255,7 +261,7 @@ export default function CartPage() {
                 // اگر کالای فیزیکی در سبد است، ابتدا کنترل وجود آدرس کامل بدون ساخت رزرو
                 if (hasPhysicalProducts) {
                     let addr = addressOverride || userAddress;
-                    if (!addr || !addr.fullAddress?.trim() || !addr.recipientName?.trim()) {
+                    if (!addr || !isFullAddressLongEnough(addr.fullAddress) || !addr.recipientName?.trim()) {
                         if (typeof fetch === 'function') {
                             try {
                                 const profileRes = await fetch('/api/profile');
@@ -267,7 +273,7 @@ export default function CartPage() {
                             }
                         }
                     }
-                    if (!addr || !addr.fullAddress?.trim() || !addr.recipientName?.trim()) {
+                    if (!addr || !isFullAddressLongEnough(addr.fullAddress) || !addr.recipientName?.trim()) {
                         paymentLock.current = false;
                         setIsProcessing(false);
                         setIsAddressModalOpen(true);
@@ -624,7 +630,7 @@ export default function CartPage() {
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                                     <span className={styles.courseLabel}>
-                                                        {item.type === 'chapter' ? 'فصل آموزشی' : 'دوره آموزشی'}
+                                                        {item.type === 'chapter' ? 'فصل آموزشی' : (item.isChaptered ? 'دوره آموزشی (پکیج کامل)' : 'دوره آموزشی')}
                                                     </span>
                                                     {isOwned && (
                                                         <span className={styles.ownedBadge}>
@@ -632,6 +638,11 @@ export default function CartPage() {
                                                         </span>
                                                     )}
                                                 </div>
+                                                {item.deductedAmount > 0 && (
+                                                    <span style={{ fontSize: '0.8rem', color: '#38bdf8', marginTop: '3px', display: 'block' }}>
+                                                        (کسر هزینه <PriceWithHint price={item.deductedAmount} size="sm" hideHint={true} /> بابت فصل‌های قبلی)
+                                                    </span>
+                                                )}
                                                 {isOwned && (
                                                     <div className={styles.itemOwnedWarning} role="alert">
                                                         این {item.type === 'chapter' ? 'فصل' : 'دوره'} قبلاً خریداری شده است. برای ادامه تسویه، لطفاً این قلم را از سبد حذف کنید.
@@ -679,7 +690,7 @@ export default function CartPage() {
                     </h2>
                     <div className={styles.summary}>
                         {/* آدرس تحویل سفارش فیزیکی */}
-                        {hasPhysicalProducts && userAddress?.fullAddress && (
+                        {hasPhysicalProducts && deliveryAddress?.fullAddress && (
                             <>
                                 <div className={styles.addressSummaryCard}>
                                     <div className={styles.addressSummaryHeader}>
@@ -693,8 +704,13 @@ export default function CartPage() {
                                         </button>
                                     </div>
                                     <p className={styles.addressSummaryText}>
-                                        {userAddress.recipientName ? `${userAddress.recipientName} - ` : ''}{userAddress.fullAddress}
+                                        {[deliveryAddress.recipientName, deliveryAddress.province, deliveryAddress.city, deliveryAddress.fullAddress].filter(Boolean).join('، ')}
                                     </p>
+                                    {shippingOriginName && (
+                                        <p className={styles.addressSummaryText} data-testid="shipping-origin">
+                                            مبدأ ارسال: {shippingOriginName}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className={styles.divider}></div>
                             </>
@@ -714,6 +730,15 @@ export default function CartPage() {
                                 <div className={`${styles.summaryRow} ${styles.discountRowItem}`}>
                                     <span>سود شما از خرید:</span>
                                     <PriceWithHint price={preview?.data?.itemDiscountInNoor ?? itemLevelDiscount} size="sm" hideHint={true} />
+                                </div>
+                            )}
+
+                            {deductedAmount > 0 && (
+                                <div className={styles.summaryRow} style={{ color: '#38bdf8' }}>
+                                    <span>کسر پرداختی فصل‌های قبلی:</span>
+                                    <strong>
+                                        - <PriceWithHint price={deductedAmount} size="sm" hideHint={true} />
+                                    </strong>
                                 </div>
                             )}
 

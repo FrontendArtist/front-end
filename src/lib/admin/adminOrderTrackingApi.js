@@ -8,6 +8,7 @@
  */
 
 import { getAdminCourseOrderDetails, getAdminCourseOrderReceipt } from '../byeMoneyApi';
+import { pickShippingOrigin } from '../shippingOrigin';
 import { STRAPI_API_URL } from '../api';
 import { buildTimeline, sanitizeAttempt, sanitizeTopUp, summarizeAttempts } from './orderTracking';
 
@@ -106,6 +107,11 @@ function sanitizeItem(i) {
         cancelledQuantity: Number(i.cancelledQuantity) || 0,
         refundedRegularInNoor: Number(i.refundedRegularInNoor) || 0,
         refundedGiftInNoor: Number(i.refundedGiftInNoor) || 0,
+        carrierReturnedAtUtc: i.carrierReturnedAtUtc ?? null,
+        carrierReturnResolution: i.carrierReturnResolution ?? null,
+        carrierReturnResolutionNote: i.carrierReturnResolutionNote ?? null,
+        carrierReturnResolvedAtUtc: i.carrierReturnResolvedAtUtc ?? null,
+        carrierReturnResolvedByExternalUserId: i.carrierReturnResolvedByExternalUserId ?? null,
     };
 }
 
@@ -130,6 +136,8 @@ function sanitizeReceipt(r) {
             cancelledQuantity: Number(i.cancelledQuantity) || 0,
             refundedRegularInNoor: Number(i.refundedRegularInNoor) || 0,
             refundedGiftInNoor: Number(i.refundedGiftInNoor) || 0,
+            carrierReturnedAtUtc: i.carrierReturnedAtUtc ?? null,
+            carrierReturnResolution: i.carrierReturnResolution ?? null,
         })),
     };
 }
@@ -166,6 +174,7 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
 
     // آدرس از پاسخ جزئیات ادمین بای‌مانی می‌آید (سفارش بدون کالا آدرس ندارد → null)
     const shippingAddress = sanitizeAddress(res.data?.shippingAddress);
+    const shippingOrigin = pickShippingOrigin(res.data?.shippingOrigin);
 
     // سفارش دستی ادمین (I11-AO): دو فیلد افزودنی جزئیات ادمین
     const adminId = res.data?.createdByAdminExternalUserId ?? null;
@@ -205,6 +214,7 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
             attemptsStatus,
             receipt: receipt?.success ? sanitizeReceipt(receipt.data) : null,
             shippingAddress,
+            shippingOrigin,
             adminOrigin,
             warnings,
         },

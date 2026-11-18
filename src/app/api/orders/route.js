@@ -5,6 +5,7 @@ import { STRAPI_API_URL } from "@/lib/api";
 
 import { getMyCoursePurchases, getCoursePurchaseReceipt, getMyCourseOrders, getMyCourseOrderDetails, CourseOrderId } from '@/lib/byeMoneyApi';
 import { attachPurchasesToByeMoneyOrder, mapByeMoneyLineItem } from '@/lib/byeMoneyOrderItems';
+import { pickShippingOrigin } from '@/lib/shippingOrigin';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -30,6 +31,12 @@ export async function GET(request) {
         const { searchParams } = new URL(request.url);
         const documentId = searchParams.get('documentId') || searchParams.get('orderId');
         const purchaseId = searchParams.get('purchaseId');
+
+        const rawPhone = session.user.phoneNumber || session.user.phone;
+        const phone = typeof rawPhone === 'string' && rawPhone.trim().length >= 10 ? rawPhone.trim() : null;
+        const userFilter = phone
+            ? `filters[$or][0][user][id][$eq]=${encodeURIComponent(session.user.id)}&filters[$or][1][phone][$eq]=${encodeURIComponent(phone)}`
+            : `filters[user][id][$eq]=${encodeURIComponent(session.user.id)}`;
 
         // حالت ۱-الف: دریافت مستقیم رسید یک خرید شخصی طبق I11-P
         if (purchaseId) {
@@ -87,6 +94,7 @@ export async function GET(request) {
                             currentTopUpRequestId: d.currentTopUpRequestId,
                             cartSummary: d.cartSummary,
                             shippingAddress: pickShippingAddress(d.shippingAddress),
+                            shippingOrigin: pickShippingOrigin(d.shippingOrigin),
                             items: (d.items || []).map(item => mapByeMoneyLineItem(item)).filter(Boolean),
                             topUps: d.topUps || []
                         };
@@ -143,9 +151,8 @@ export async function GET(request) {
             // ۳. اگر در بای‌مانی نبود، جستجو در استراپی
             const strapiUrl = `${STRAPI_BASE_URL}/api/orders`
                 + `?filters[documentId][$eq]=${encodeURIComponent(documentId)}`
-                + `&filters[user][id][$eq]=${session.user.id}`
+                + `&${userFilter}`
                 + `&populate=*`;
-
             const res = await fetch(strapiUrl, {
                 headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
                 cache: 'no-store'
@@ -167,7 +174,7 @@ export async function GET(request) {
 
         // فراخوانی استراپی
         const strapiUrl = `${STRAPI_BASE_URL}/api/orders`
-            + `?filters[user][id][$eq]=${session.user.id}`
+            + `?${userFilter}`
             + `&pagination[pageSize]=100`
             + `&sort=createdAt:desc`
             + `&populate=*`;

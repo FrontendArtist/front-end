@@ -146,9 +146,34 @@ export const useCartStore = create(
                         return;
                     }
 
+                    let cleanItems = currentItems;
+
+                    // اگر دوره کامل اضافه شود، فصل‌های تکی همان دوره از سبد حذف می‌شوند تا هزینه مضاعف دریافت نشود
+                    if (item.type === 'course') {
+                        cleanItems = currentItems.filter((cartItem) => {
+                            if (cartItem.type !== 'chapter') return true;
+                            const matchesCourseId = item.id && String(cartItem.courseId) === String(item.id);
+                            const matchesDocId = item.documentId && String(cartItem.courseId) === String(item.documentId);
+                            const matchesSlug = item.slug && cartItem.slug && cartItem.slug.startsWith(`${item.slug}-chapter-`);
+                            return !matchesCourseId && !matchesDocId && !matchesSlug;
+                        });
+                    } else if (item.type === 'chapter') {
+                        // اگر دوره کامل در سبد باشد، افزودن فصل تکی از همان دوره نادیده گرفته می‌شود
+                        const parentCourseInCart = currentItems.some((ci) => {
+                            if (ci.type !== 'course') return false;
+                            const matchesCourseId = item.courseId && String(ci.id) === String(item.courseId);
+                            const matchesDocId = item.courseId && ci.documentId && String(ci.documentId) === String(item.courseId);
+                            const matchesSlug = ci.slug && item.slug && item.slug.startsWith(`${ci.slug}-chapter-`);
+                            return matchesCourseId || matchesDocId || matchesSlug;
+                        });
+                        if (parentCourseInCart) {
+                            return;
+                        }
+                    }
+
                     set({
                         items: [
-                            ...currentItems,
+                            ...cleanItems,
                             {
                                 ...item,
                                 stock: maxStock,
@@ -423,17 +448,25 @@ export const selectTotalPrice = (state) => {
 };
 
 /**
- * محاسبه مجموع تخفیف‌های مستقیم اعمال‌شده روی تک‌تک آیتم‌ها به واحد نور
+ * تخفیف مستقیم اقلام به نور. کسر فصل‌های قبلی تخفیف نیست و در این مقدار نمی‌آید.
  */
 export const selectItemLevelDiscount = (state) => {
     const sum = (state.items || []).reduce((total, item) => {
         const orig = Number(item.originalPriceNoor ?? item.originalPrice ?? item.normalPrice) || 0;
         const current = Number(item.priceNoor ?? item.price) || 0;
+        const deducted = Number(item.deductedAmount) || 0;
         const qty = Number(item.quantity) || 1;
-        return total + (orig > current ? (orig - current) * qty : 0);
+        const preDeductionPrice = current + deducted;
+        return total + (orig > preDeductionPrice ? (orig - preDeductionPrice) * qty : 0);
     }, 0);
     return Number(sum.toFixed(4));
 };
+
+/**
+ * محاسبه مجموع مبالغ کسر شده بابت فصل‌های قبلاً خریداری شده
+ */
+export const selectDeductedAmount = (state) =>
+    (state.items || []).reduce((sum, item) => sum + (Number(item.deductedAmount) || 0) * (Number(item.quantity) || 1), 0);
 
 /**
  * محاسبه مبلغ تخفیف کد تخفیف

@@ -60,12 +60,14 @@ describe('ByeMoneyOrderPanel', () => {
     test('آدرس تحویل فقط وقتی هست نمایش داده می‌شود', async () => {
         fetchOrderTracking.mockResolvedValue(payload({
             shippingAddress: { recipientName: 'علی رضایی', recipientPhone: '09120000000', province: 'قم', city: 'قم', fullAddress: 'خیابان ۱', postalCode: '12345' },
+            shippingOrigin: { id: 'ramsar', label: 'رامسر' },
         }));
         const { unmount } = render(<ByeMoneyOrderPanel order={ORDER} />);
         const box = await screen.findByTestId('shipping-address');
         expect(box).toHaveTextContent('علی رضایی');
         expect(box).toHaveTextContent('قم، قم، خیابان ۱');
         expect(box).toHaveTextContent('کد پستی: 12345');
+        expect(screen.getByTestId('shipping-origin')).toHaveTextContent('مبدأ ارسال: رامسر');
         unmount();
 
         fetchOrderTracking.mockResolvedValue(payload());

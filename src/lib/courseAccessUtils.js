@@ -7,9 +7,11 @@ export function isChapterOrderItem(item) {
     rawType === 'chapter' ||
     rawType === 'coursechapter' ||
     item.chapterId ||
+    item.chapterIntegrationId ||
     item.parentExternalId ||
     String(item.slug || '').includes('-chapter-') ||
-    String(item.id || '').startsWith('chapter-')
+    String(item.id || '').startsWith('chapter-') ||
+    (item.title && /فصل\s*[\d۰-۹]+/i.test(String(item.title)))
   );
 }
 
@@ -58,25 +60,80 @@ export function getPurchasedChapterId(item, courseId, courseSlug, courseDocument
  */
 export function getPurchasedChapterIntegrationId(item, courseId, courseSlug, courseDocumentId = null) {
   if (!chapterItemBelongsToCourse(item, courseId, courseSlug, courseDocumentId)) return null;
-  const integrationId = normalizeIdentity(item.integrationId || item.externalCourseId || item.chapterExternalId);
+  const integrationId = normalizeIdentity(
+    item.integrationId || item.externalCourseId || item.chapterExternalId || item.chapterIntegrationId
+  );
   if (!integrationId) return null;
   if (/^chapter-[1-9]\d*$/.test(integrationId)) return null;
   return integrationId;
+}
+
+function legacyNormalize(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+    .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function legacyChapterTitle(itemTitle, courseTitle) {
+  if (!itemTitle) return '';
+  let str = String(itemTitle).trim();
+  if (courseTitle) {
+    const normCourse = legacyNormalize(courseTitle);
+    const normItem = legacyNormalize(str);
+    if (normCourse && normItem.startsWith(normCourse)) {
+      str = str.slice(courseTitle.length).replace(/^[\s\-–—]+/, '').trim();
+      return str;
+    }
+  }
+  const parts = str.split(/\s*[-–—]\s*/);
+  return parts.length > 1 ? parts[parts.length - 1].trim() : str;
 }
 
 export function getPurchasedChapterIds(orders, course) {
   if (!Array.isArray(orders) || !course) return [];
   if (course.id == null && !course.documentId && !course.slug) return [];
 
+  const chapters = Array.isArray(course.chapters) ? course.chapters : [];
   const ids = [];
   orders.filter(isOrderPaid).forEach(order => {
     const items = order.items || order.attributes?.items;
     if (!Array.isArray(items)) return;
     items.forEach(item => {
+      if (!chapterItemBelongsToCourse(item, course.id, course.slug, course.documentId)) return;
+
+      const integrationId = getPurchasedChapterIntegrationId(item, course.id, course.slug, course.documentId);
+      const matchedByUuid = integrationId && chapters.find((ch) =>
+        ch.integrationId && String(ch.integrationId).trim().toLowerCase() === integrationId.toLowerCase()
+      );
+      if (matchedByUuid) {
+        ids.push(String(matchedByUuid.id));
+        if (matchedByUuid.integrationId) ids.push(String(matchedByUuid.integrationId));
+        return;
+      }
+
       const numericId = getPurchasedChapterId(item, course.id, course.slug, course.documentId);
       if (numericId) ids.push(numericId);
-      const integrationId = getPurchasedChapterIntegrationId(item, course.id, course.slug, course.documentId);
       if (integrationId) ids.push(integrationId);
+      if (chapters.length === 0) return;
+
+      const extractedTitle = legacyNormalize(legacyChapterTitle(item.title, course.title));
+      const itemChapterNumMatch = /(?:فصل|chapter)\s*([0-9]+)/i.exec(extractedTitle || legacyNormalize(item.title));
+      const itemChapterNum = itemChapterNumMatch ? itemChapterNumMatch[1] : null;
+      for (const ch of chapters) {
+        const chTitleNorm = legacyNormalize(ch.title);
+        if (extractedTitle && chTitleNorm && extractedTitle === chTitleNorm) {
+          ids.push(String(ch.id));
+          continue;
+        }
+        if (itemChapterNum) {
+          const chNumMatch = /(?:فصل|chapter)\s*([0-9]+)/i.exec(chTitleNorm);
+          if (chNumMatch && chNumMatch[1] === itemChapterNum) ids.push(String(ch.id));
+        }
+      }
     });
   });
 

@@ -23,8 +23,14 @@ export async function PUT(request, { params }) {
         });
 
         if (!response.ok) {
-            console.error(`Strapi Address Update Error on ID ${id}:`, response.status, await response.text());
-            return NextResponse.json({ message: "Strapi Address Update Error" }, { status: response.status });
+            const rawText = await response.text();
+            let message = "Strapi Address Update Error";
+            try {
+                const parsed = JSON.parse(rawText);
+                message = parsed?.error?.message || parsed?.message || message;
+            } catch {}
+            console.error(`Strapi Address Update Error on ID ${id}:`, response.status, rawText);
+            return NextResponse.json({ message }, { status: response.status });
         }
 
         const updatedData = await response.json();

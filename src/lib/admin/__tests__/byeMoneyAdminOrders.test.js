@@ -1,5 +1,6 @@
 import { hasUnshippedItems, readOrderFilters, normalizeTab, getByeMoneyAdminOrders } from '../byeMoneyAdminOrders';
-import { getAdminCourseOrders, getPendingPhysicalRestocks } from '../../byeMoneyApi';
+import { getAdminCourseOrders, getAdminCourseOrderDetails, getPendingPhysicalRestocks } from '../../byeMoneyApi';
+import { lookupPeople } from '../../courseOrderSettlementRoute';
 import { getRowShippingBadge, getItemsShippingState, shortOrderNumber } from '../orderDisplay';
 
 jest.mock('../../byeMoneyApi', () => ({
@@ -69,5 +70,56 @@ describe('نبود مجوز Purchases.View (RBAC-04)', () => {
         const r = await getByeMoneyAdminOrders('jwt', { tab });
         expect(r.forbidden).toBe(true);
         expect(r.orders).toEqual([]);
+    });
+});
+
+describe('تب «نیاز به اقدام» با فیلتر سروری (SHIP-TRACKING)', () => {
+    const orderId = 'cart:11111111-1111-1111-1111-111111111111';
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        getPendingPhysicalRestocks.mockResolvedValue({ success: true, data: [] });
+        lookupPeople.mockResolvedValue(new Map());
+    });
+
+    test('awaitingShipment=true صدا زده می‌شود و جزئیات تک‌تک سفارش‌ها خوانده نمی‌شود', async () => {
+        getAdminCourseOrders.mockResolvedValue({
+            success: true,
+            data: {
+                items: [{
+                    orderId,
+                    sourceType: 'Cart',
+                    cartId: '11111111-1111-1111-1111-111111111111',
+                    createdAtUtc: '2026-11-10T10:00:00Z',
+                    financialStatus: 'Paid',
+                    deliveryStatus: 'Pending',
+                    finalAmountInNoor: 100,
+                    itemCount: 1,
+                }],
+                totalCount: 1,
+            },
+        });
+
+        const result = await getByeMoneyAdminOrders('jwt', { tab: 'action' });
+
+        expect(getAdminCourseOrders).toHaveBeenCalledWith(
+            expect.objectContaining({ awaitingShipment: true, page: 1 })
+        );
+        expect(getAdminCourseOrderDetails).not.toHaveBeenCalled();
+        expect(result.orders).toHaveLength(1);
+        expect(result.orders[0].needsShipment).toBe(true);
+        expect(result.total).toBe(1);
+        expect(result.truncated).toBe(false);
+    });
+
+    test('بیشتر از سقف صفحه با truncated اعلام می‌شود', async () => {
+        getAdminCourseOrders.mockResolvedValue({
+            success: true,
+            data: { items: [{ orderId, sourceType: 'Cart', financialStatus: 'Paid' }], totalCount: 250 },
+        });
+
+        const result = await getByeMoneyAdminOrders('jwt', { tab: 'action' });
+
+        expect(result.truncated).toBe(true);
     });
 });

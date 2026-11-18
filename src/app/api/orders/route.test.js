@@ -237,6 +237,7 @@ describe('دریافت سفارشات و رسیدها (I11-T و I11-P)', () => {
     getMyCourseOrderDetails.mockResolvedValue({ success: true, data: {
       orderId: 'cart:' + cartId, sourceType: 'Cart', cartId, reservationId: '22222222-2222-2222-2222-222222222222',
       shippingAddress: { recipientName: 'علی', recipientPhone: '09120000000', province: 'تهران', city: 'تهران', fullAddress: 'خیابان ۱', postalCode: null, version: 'hash-1', extra: 'x' },
+      shippingOrigin: { id: 'ramsar', label: 'رامسر', cityDocumentId: 'no' },
       financialStatus: 'Paid', deliveryStatus: 'Pending', finalAmountInNoor: 9, itemCount: 1, createdAtUtc: '2026-10-20T10:00:00Z',
       items: [{ externalCourseId: 'p1', itemType: 'Product', title: 'کتاب', quantity: 1, finalAmountInNoor: 9, physicalDeliveryStatus: 'Preparing' }],
       topUps: [],
@@ -248,6 +249,7 @@ describe('دریافت سفارشات و رسیدها (I11-T و I11-P)', () => {
     expect(res.body.data[0].shippingAddress).toEqual({
       recipientName: 'علی', recipientPhone: '09120000000', province: 'تهران', city: 'تهران', fullAddress: 'خیابان ۱', postalCode: null,
     });
+    expect(res.body.data[0].shippingOrigin).toEqual({ id: 'ramsar', label: 'رامسر' });
     expect(res.body.data[0]).not.toHaveProperty('reservationId');
   });
 

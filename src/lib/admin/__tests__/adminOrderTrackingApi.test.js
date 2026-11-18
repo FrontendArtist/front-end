@@ -125,9 +125,11 @@ describe('getOrderTracking', () => {
         const strapiAddressCall = () => global.fetch.mock.calls.find(([u]) => u.includes('/byemoney-carts/'));
 
         test('از پاسخ بای‌مانی خوانده می‌شود، فقط فیلدهای نمایشی برمی‌گردد و به استرپی درخواستی نمی‌رود', async () => {
-            getAdminCourseOrderDetails.mockResolvedValue(withProduct({
+            const response = withProduct({
                 version: 'v1', city: 'قم', fullAddress: 'خیابان', recipientName: 'علی', recipientPhone: '0912', province: 'قم', postalCode: null, secret: 'X',
-            }));
+            });
+            response.data.shippingOrigin = { id: 'ramsar', label: 'رامسر', extra: 'no' };
+            getAdminCourseOrderDetails.mockResolvedValue(response);
             getAdminCourseOrderReceipt.mockResolvedValue({ success: false });
             global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
             const res = await getOrderTracking({ jwt: 'admin', orderId: ORDER_ID, now: NOW });
@@ -137,6 +139,7 @@ describe('getOrderTracking', () => {
             });
             expect(JSON.stringify(res.data.shippingAddress)).not.toContain('secret');
             expect(JSON.stringify(res.data.shippingAddress)).not.toContain('v1');
+            expect(res.data.shippingOrigin).toEqual({ id: 'ramsar', label: 'رامسر' });
         });
 
         test.each([

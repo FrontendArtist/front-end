@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Modal from '@/components/ui/Modal/Modal';
 import Alert from '@/components/ui/Alert/Alert';
+import ProvinceCitySelects, { localitySubmitError } from '@/components/address/ProvinceCitySelects';
+import { isFullAddressLongEnough, SHORT_FULL_ADDRESS_MESSAGE } from '@/lib/fullAddress';
 import styles from './AddressModal.module.scss';
 
 /**
@@ -27,12 +29,14 @@ export default function AddressModal({
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
+    const localityRef = useRef({ status: 'loading', province: '', city: '' });
 
     const [formData, setFormData] = useState({
         recipientName: '',
         recipientPhone: '',
         province: '',
         city: '',
+        cityLink: null,
         fullAddress: '',
         postalCode: '',
     });
@@ -41,11 +45,13 @@ export default function AddressModal({
         if (isOpen) {
             setError('');
             setFieldErrors({});
+            const initialCityLink = initialAddress?.cityLink?.documentId || (typeof initialAddress?.cityLink === 'string' ? initialAddress.cityLink : null);
             setFormData({
                 recipientName: initialAddress?.recipientName || '',
                 recipientPhone: initialAddress?.recipientPhone || '',
                 province: initialAddress?.province || '',
                 city: initialAddress?.city || '',
+                cityLink: initialCityLink || null,
                 fullAddress: initialAddress?.fullAddress || '',
                 postalCode: initialAddress?.postalCode || '',
             });
@@ -91,17 +97,33 @@ export default function AddressModal({
         }
         setFieldErrors({});
 
+        const localityError = localitySubmitError(localityRef.current);
+        if (localityError) {
+            setError(localityError);
+            return;
+        }
+
+        if (!isFullAddressLongEnough(trimmedAddress)) {
+            setFieldErrors({ fullAddress: SHORT_FULL_ADDRESS_MESSAGE });
+            return;
+        }
+        const { province, city, cityLink } = localityRef.current || {};
+
         setSaving(true);
         try {
+            const effectiveCityLink = cityLink || formData.cityLink || null;
             const addressPayload = {
                 title: 'آدرس اصلی',
                 recipientName: trimmedName,
                 recipientPhone: formData.recipientPhone?.trim() || '',
-                province: formData.province?.trim() || '',
-                city: formData.city?.trim() || '',
+                province,
+                city,
                 fullAddress: trimmedAddress,
                 postalCode: formData.postalCode?.trim() || '',
             };
+            if (effectiveCityLink) {
+                addressPayload.cityLink = effectiveCityLink;
+            }
 
             const existingId = initialAddress?.documentId || initialAddress?.id;
             let response;
@@ -135,6 +157,7 @@ export default function AddressModal({
                 ...addressPayload,
                 documentId: responseData?.data?.documentId || existingId || null,
                 id: responseData?.data?.id || existingId || null,
+                cityLink: responseData?.data?.cityLink || effectiveCityLink || null,
             };
 
             if (typeof onSuccess === 'function') {
@@ -209,31 +232,18 @@ export default function AddressModal({
                 </div>
 
                 <div className={styles.row}>
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="province">استان</label>
-                        <input
-                            id="province"
-                            type="text"
-                            name="province"
-                            value={formData.province}
-                            onChange={handleChange}
-                            placeholder="مثال: تهران"
-                            disabled={saving}
-                        />
-                    </div>
-
-                    <div className={styles.inputGroup}>
-                        <label htmlFor="city">شهر</label>
-                        <input
-                            id="city"
-                            type="text"
-                            name="city"
-                            value={formData.city}
-                            onChange={handleChange}
-                            placeholder="مثال: تهران"
-                            disabled={saving}
-                        />
-                    </div>
+                    <ProvinceCitySelects
+                        province={formData.province}
+                        city={formData.city}
+                        cityLink={formData.cityLink}
+                        onChange={({ province, city, cityLink }) => {
+                            setFormData((prev) => ({ ...prev, province, city, cityLink }));
+                        }}
+                        selectionRef={localityRef}
+                        disabled={saving}
+                        groupClassName={styles.inputGroup}
+                        requiredMarkClassName={styles.required}
+                    />
                 </div>
 
                 <div className={styles.inputGroup}>

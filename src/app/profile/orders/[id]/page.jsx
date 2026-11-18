@@ -198,7 +198,7 @@ export default function OrderDetailPage() {
                     </svg>
                     بازگشت به سفارشات
                 </Link>
-                <ByeMoneyOrderView order={order} />
+                <ByeMoneyOrderView order={order} onOrderChanged={fetchOrder} />
             </div>
         );
     }

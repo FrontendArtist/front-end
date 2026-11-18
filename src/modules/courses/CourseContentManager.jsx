@@ -9,7 +9,7 @@ import useAuthStore from '@/store/authStore';
 import { useAccountOrderItems } from '@/hooks/useAccountOrders';
 import { useCartStore } from '@/store/useCartStore';
 import { isOrderPaid } from '@/lib/constants/orderConstants';
-import { isChapterPurchasedByUser } from '@/lib/courseAccessUtils';
+import { getPurchasedChapterIds, isChapterPurchasedByUser } from '@/lib/courseAccessUtils';
 import Modal from '@/components/ui/Modal/Modal';
 import VideoJSPlayer from './VideoJSPlayer';
 import PlyrAudioPlayer from './PlyrAudioPlayer';
@@ -51,6 +51,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
 
   // اکشن افزوده به سبد خرید و لیست آیتم‌ها از Zustand useCartStore
   const addItem = useCartStore((state) => state.addItem);
+  const removeItem = useCartStore((state) => state.removeItemManually || state.removeItem);
   const cartItems = useCartStore((state) => state.items);
 
   const isChapterInCart = (chapterOrId) => {
@@ -65,11 +66,28 @@ export default function CourseContentManager({ course, styles: propStyles }) {
     });
   };
 
+  // بررسی اینکه آیا پکیج کامل این دوره در سبد خرید موجود است
+  const isParentCourseInCart = useMemo(() => {
+    return cartItems.some((ci) => {
+      if (ci.type !== 'course') return false;
+      const matchesId = course.id && String(ci.id) === String(course.id);
+      const matchesDoc = course.documentId && String(ci.documentId || ci.id) === String(course.documentId);
+      const matchesSlug = course.slug && ci.slug === course.slug;
+      return matchesId || matchesDoc || matchesSlug;
+    });
+  }, [cartItems, course]);
+
+  const handleRemoveChapterFromCart = (chapter, event) => {
+    event?.stopPropagation();
+    removeItem(`chapter-${chapter.id}`);
+  };
+
   // استیت‌های محلی برای پخش‌کننده ویدیو/صوت و آکوردئون
   const [activeLesson, setActiveLesson] = useState(null);
   const [playMode, setPlayMode] = useState('audio'); // 'audio' یا 'video'
   const [openChapterId, setOpenChapterId] = useState(null); // مدیریت باز بودن آکوردئون فصل‌ها
   const [addedChapterModal, setAddedChapterModal] = useState(null); // مودال تایید اضافه شدن فصل به سبد
+  const [parentCourseNoticeModal, setParentCourseNoticeModal] = useState(false); // مودال اخطار وجود دوره کامل در سبد
   const [wasUnauthenticated, setWasUnauthenticated] = useState(false);
   const [lastListenedLessonId, setLastListenedLessonId] = useState(null); // ذخیره و نمایش آخرین جلسه گوش‌داده شده
   const listRef = useRef(null);
@@ -174,6 +192,18 @@ export default function CourseContentManager({ course, styles: propStyles }) {
     });
   }, [orders, course]);
 
+  const purchasedChapterIdsFromOrders = useMemo(() => {
+    return getPurchasedChapterIds(orders, course);
+  }, [orders, course]);
+
+  const hasPurchasedAllChaptersInOrders = useMemo(() => {
+    if (!course?.isChaptered || !Array.isArray(course?.chapters) || course.chapters.length === 0) return false;
+    return course.chapters.every((ch) => {
+      const ids = [ch?.id, ch?.integrationId].filter((id) => id != null).map(String);
+      return ids.some((id) => purchasedChapterIdsFromOrders.includes(id));
+    });
+  }, [course, purchasedChapterIdsFromOrders]);
+
   // بررسی مالکیت کلی دوره (از طریق سفارشات، سشن یا رایگان بودن)
   const isEnrolledInSession = Boolean(
     session?.user?.courses?.some((c) =>
@@ -185,7 +215,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
     enrolledSlugs.some((s) => s === course.slug)
   );
 
-  const hasFullCourseAccess = isFreeCourse || course.isPurchased === true || isPurchasedInOrders || isEnrolledInSession;
+  const hasFullCourseAccess = isFreeCourse || course.isPurchased === true || isPurchasedInOrders || isEnrolledInSession || hasPurchasedAllChaptersInOrders;
 
   // هماهنگی بروزرسانی داده‌ها هنگام لاگین کاربر
   useEffect(() => {
@@ -209,7 +239,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
    * کاربر به فصل دسترسی دارد اگر:
    * 1. کل دوره را خریده باشد (hasFullCourseAccess)
    * 2. فصل رایگان باشد
-   * 3. فصل در سفارشات پرداخت‌شده کاربر (orders) یا سشن (enrolledChapters) ثبت شده باشد
+   * 3. فصل در سفارشات پرداخت‌شده کاربر (orders) یا سشن (شناسه عددی یا UUID) ثبت شده باشد
    */
   const checkChapterAccess = (chapter) => {
     if (hasFullCourseAccess) return true;
@@ -219,7 +249,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
     const chapterPrice = chapter.priceNoor ?? (typeof chapter.price === 'object' ? (chapter.price?.noor ?? chapter.price?.toman) : chapter.price) ?? 0;
     if (chapterPrice === 0 || chapter.isFree) return true;
 
-    return isChapterPurchasedByUser(chapter, { session, orders, course });
+    return isChapterPurchasedByUser(chapter, { session, orders, course, purchasedChapterIds: purchasedChapterIdsFromOrders });
   };
 
   /**
@@ -467,7 +497,7 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                   onClick={() => setActiveLesson(null)}
                   aria-label="بستن پخش‌کننده صوتی"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                 </button>
                 <PlyrAudioPlayer
                   key={`${activeLesson.id}-audio`}
@@ -498,7 +528,6 @@ export default function CourseContentManager({ course, styles: propStyles }) {
           گام ۲ & ۳: انشعاب رندرینگ سرفصل‌ها (Render Branching: Branch A & Branch B)
           ========================================================================= */}
       <div className={styles.curriculumSection}>
-        {/* <h2 className={styles.sectionTitle}>سرفصل‌های دوره</h2> */}
 
         {isChaptered ? (
           <div className={styles.accordion}>
@@ -535,21 +564,46 @@ export default function CourseContentManager({ course, styles: propStyles }) {
                       {!isUnlocked && chapterPrice > 0 ? (
                         <div className={styles.chapterBuyAction}>
                           <PriceWithHint price={chapterPrice} size="sm" />
-                          {isChapterInCart(chapter) ? (
+                          {isParentCourseInCart ? (
                             <button
                               type="button"
-                              className={clsx(styles.headerBuyChapterBtn, styles.inCartBtn)}
+                              className={clsx(styles.headerBuyChapterBtn, styles.parentInCartBtn)}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                router.push('/cart');
+                                setParentCourseNoticeModal(true);
                               }}
-                              title="مشاهده در سبد خرید"
+                              title="دوره کامل در سبد خرید شماست"
                             >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
                               </svg>
-                              <span>در سبد خرید</span>
+                              <span>دوره کامل در سبد است</span>
                             </button>
+                          ) : isChapterInCart(chapter.id) ? (
+                            <div className={styles.chapterCartGroup}>
+                              <div
+                                className={clsx(styles.headerBuyChapterBtn, styles.inCartBtn)}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <span>در سبد خرید</span>
+                              </div>
+                              <button
+                                type="button"
+                                className={styles.chapterRemoveBtn}
+                                onClick={(e) => handleRemoveChapterFromCart(chapter, e)}
+                                title="حذف فصل از سبد خرید"
+                                aria-label="حذف این فصل از سبد خرید"
+                              >
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6"></polyline>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                              </button>
+                            </div>
                           ) : (
                             <button
                               type="button"
@@ -759,14 +813,36 @@ export default function CourseContentManager({ course, styles: propStyles }) {
             فصل <strong>«{addedChapterModal?.title}»</strong> با موفقیت به سبد خرید شما اضافه شد.
           </p>
           <div className={styles.modalActions}>
-            <Link href="/cart" className={styles.goToCartBtn}>
-              مشاهده سبد خرید و پرداخت
-            </Link>
             <button
               className={styles.continueBtn}
               onClick={() => setAddedChapterModal(null)}
             >
               ادامه مشاهده دوره
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* =========================================================================
+          مودال راهنمای وجود دوره کامل در سبد خرید (Parent Course In Cart Modal)
+          ========================================================================= */}
+      <Modal
+        isOpen={parentCourseNoticeModal}
+        onClose={() => setParentCourseNoticeModal(false)}
+        title="دوره کامل در سبد خرید شماست"
+      >
+        <div className={styles.modalBody}>
+          <p style={{ lineHeight: '1.7', fontSize: '0.95rem' }}>
+            شما پکیج کامل این دوره را به سبد خرید اضافه کرده‌اید. برای خرید جداگانهٔ این فصل، ابتدا دوره کامل را از سبد خرید حذف کنید.
+          </p>
+          <div className={styles.modalActions}>
+
+            <button
+              type="button"
+              className={styles.continueBtn}
+              onClick={() => setParentCourseNoticeModal(false)}
+            >
+              متوجه شدم
             </button>
           </div>
         </div>

@@ -434,12 +434,28 @@ test('سبد فقط دوره‌ای: بدون باز شدن مدال آدرس و
 
 test('سبد کالای فیزیکی بدون آدرس: کلیک روی پرداخت، مدال آدرس را باز می‌کند و پس از ثبت، پرداخت ادامه می‌یابد', async () => {
     const originalFetch = global.fetch;
-    global.fetch = jest.fn();
-
-    // 1. پروفایل اولیه فاقد آدرس است
-    global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ address: null }),
+    global.fetch = jest.fn((url) => {
+        if (url === '/api/localities') {
+            return Promise.resolve({
+                ok: true,
+                json: async () => ({
+                    data: [{
+                        name: 'خراسان رضوی',
+                        cities: [{ documentId: 'city-mashhad', name: 'مشهد' }],
+                    }],
+                }),
+            });
+        }
+        if (url === '/api/addresses') {
+            return Promise.resolve({
+                ok: true,
+                json: async () => ({ data: { id: 1, documentId: 'new-addr-doc', cityLink: 'city-mashhad' } }),
+            });
+        }
+        return Promise.resolve({
+            ok: true,
+            json: async () => ({ address: null }),
+        });
     });
 
     useCartStore.setState({
@@ -482,13 +498,17 @@ test('سبد کالای فیزیکی بدون آدرس: کلیک روی پردا
     expect(prepareCourseCart).not.toHaveBeenCalled();
 
     // ۲. ثبت آدرس در مدال با متد POST
-    global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: { id: 1, documentId: 'new-addr-doc' } }),
-    });
-
     fireEvent.change(screen.getByLabelText(/نام و نام خانوادگی گیرنده/), {
         target: { value: 'رضا حسینی' },
+    });
+    await waitFor(() => {
+        expect(screen.getByLabelText(/استان/).disabled).toBe(false);
+    });
+    fireEvent.change(screen.getByLabelText(/استان/), {
+        target: { value: 'خراسان رضوی' },
+    });
+    fireEvent.change(screen.getByLabelText(/شهر/), {
+        target: { value: 'مشهد' },
     });
     fireEvent.change(screen.getByLabelText(/نشانی پستی کامل/), {
         target: { value: 'مشهد، بلوار سجاد، پلاک ۱۲' },
@@ -501,7 +521,8 @@ test('سبد کالای فیزیکی بدون آدرس: کلیک روی پردا
         expect(prepareCourseCart).toHaveBeenCalledTimes(1);
     });
 
-    global.fetch = originalFetch;
+    if (originalFetch) global.fetch = originalFetch;
+    else delete global.fetch;
 });
 
 test('سبد کالای فیزیکی دارای آدرس: نمایش آدرس در سایدبار و پرداخت مستقیم بدون باز شدن مدال', async () => {
@@ -532,6 +553,13 @@ test('سبد کالای فیزیکی دارای آدرس: نمایش آدرس د
         couponDiscountInNoor: 0,
         shippingAmountInNoor: 20,
         priceInNoor: 120,
+        shippingOriginLabel: 'اصفهان',
+        addressSnapshot: {
+            recipientName: 'مهدی احمدی',
+            province: 'اصفهان',
+            city: 'اصفهان',
+            fullAddress: 'اصفهان، خیابان چهارباغ، کوچه نسیم',
+        },
         items: [
             { externalId: 'prod-doc-1', externalCourseId: 'prod-doc-1', title: 'کتاب فیزیکی', type: 'product', basePriceInNoor: 100, priceInNoor: 100, quantity: 1 },
         ],
@@ -551,6 +579,7 @@ test('سبد کالای فیزیکی دارای آدرس: نمایش آدرس د
     // بررسی نمایش آدرس در سایدبار
     await waitFor(() => {
         expect(screen.getByText(/اصفهان، خیابان چهارباغ/)).toBeTruthy();
+        expect(screen.getByText('مبدأ ارسال: اصفهان')).toBeTruthy();
         expect(screen.getByRole('button', { name: 'تغییر آدرس' })).toBeTruthy();
     });
 

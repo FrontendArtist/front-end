@@ -31,6 +31,9 @@ export async function PUT(request, { params }) {
         jwt: session.user.jwt,
         purchaseId,
         status: body?.status,
+        trackingCode: body?.trackingCode,
+        trackingProvider: body?.trackingProvider,
+        providerParcelId: body?.providerParcelId,
     });
 
     if (result.success) {

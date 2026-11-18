@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Alert from '@/components/ui/Alert/Alert';
+import ProvinceCitySelects, { localitySubmitError } from '@/components/address/ProvinceCitySelects';
+import { isFullAddressLongEnough, SHORT_FULL_ADDRESS_MESSAGE } from '@/lib/fullAddress';
 import styles from './ProfileForm.module.scss';
 
 export default function ProfileForm() {
@@ -13,6 +15,10 @@ export default function ProfileForm() {
     const [success, setSuccess] = useState('');
     const [isEditing, setIsEditing] = useState(false); // Track edit mode
     const feedbackRef = useRef(null);
+    const localityRef = useRef({ status: 'loading', province: '', city: '' });
+    const successTimer = useRef(null);
+
+    useEffect(() => () => clearTimeout(successTimer.current), []);
 
     const [initialFormData, setInitialFormData] = useState(null);
     const [formData, setFormData] = useState({
@@ -25,6 +31,7 @@ export default function ProfileForm() {
         fullAddress: '',     // آدرس کامل (اصلی)
         province: '',        // استان
         city: '',            // شهر
+        cityLink: null,      // شناسه شهر در استرپی (documentId)
         postalCode: '',      // کد پستی
         recipientName: '',   // نام گیرنده
         recipientPhone: '',  // تلفن گیرنده
@@ -65,6 +72,7 @@ export default function ProfileForm() {
                     fullAddress: data.address?.fullAddress || '',
                     province: data.address?.province || '',
                     city: data.address?.city || '',
+                    cityLink: data.address?.cityLink?.documentId || (typeof data.address?.cityLink === 'string' ? data.address.cityLink : null),
                     postalCode: data.address?.postalCode || '',
                     recipientName: data.address?.recipientName || '',
                     recipientPhone: data.address?.recipientPhone || '',
@@ -109,6 +117,18 @@ export default function ProfileForm() {
         e.preventDefault();
         setError('');
         setSuccess('');
+
+        const localityError = localitySubmitError(localityRef.current);
+        if (localityError) {
+            setError(localityError);
+            return;
+        }
+        if (!isFullAddressLongEnough(formData.fullAddress)) {
+            setError(SHORT_FULL_ADDRESS_MESSAGE);
+            return;
+        }
+        const { province, city, cityLink } = localityRef.current || {};
+
         setSaving(true);
 
         try {
@@ -129,17 +149,21 @@ export default function ProfileForm() {
 
             // مرحله 2: ذخیره آدرس (در مدل Address)
             let addressResponse;
+            const effectiveCityLink = cityLink || formData.cityLink || null;
             const addressData = {
                 title: 'آدرس اصلی',
 
                 // 💡 Using all 7 fields from the new state
                 fullAddress: formData.fullAddress,
-                province: formData.province,
-                city: formData.city,
+                province,
+                city,
                 postalCode: formData.postalCode,
                 recipientName: formData.recipientName,
                 recipientPhone: formData.recipientPhone,
             };
+            if (effectiveCityLink) {
+                addressData.cityLink = effectiveCityLink;
+            }
 
             if (formData.addressDocumentId) {
                 // اگر آدرس وجود دارد، آن را به‌روزرسانی کن
@@ -191,18 +215,24 @@ export default function ProfileForm() {
 
             setInitialFormData({
                 ...formData,
-                addressDocumentId: resolvedAddressDocId
+                province,
+                city,
+                cityLink: effectiveCityLink || null,
+                addressDocumentId: resolvedAddressDocId || null
             });
             setSuccess('اطلاعات با موفقیت ذخیره شد');
             setIsEditing(false); // Exit edit mode after successful save
 
-            setTimeout(() => {
+            clearTimeout(successTimer.current);
+            successTimer.current = setTimeout(() => {
                 setSuccess('');
             }, 3000);
         } catch (err) {
             setError(err.message);
             setTimeout(() => {
-                feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (typeof feedbackRef.current?.scrollIntoView === 'function') {
+                    feedbackRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             }, 50);
         } finally {
             setSaving(false);
@@ -271,7 +301,7 @@ export default function ProfileForm() {
                 )}
             </div>
 
-            <form id="profileForm" onSubmit={handleSubmit} className={styles.form}>
+            <form id="profileForm" onSubmit={handleSubmit} className={styles.form} noValidate>
                 <div className={styles.row}>
                     <div className={styles.inputGroup}>
                         <label htmlFor="firstName" className={styles.label}>
@@ -342,38 +372,26 @@ export default function ProfileForm() {
                         />
                     </div>
 
-                    {/* Row 1: Province and City */}
                     <div className={styles.row}>
-                        <div className={styles.inputGroup}>
-                            <label htmlFor="province" className={styles.label}>
-                                استان
-                            </label>
-                            <input
-                                type="text"
-                                id="province"
-                                name="province"
-                                value={formData.province}
-                                onChange={handleChange}
-                                className={styles.input}
-                                placeholder="استان"
-                                disabled={!isEditing || saving}
-                            />
-                        </div>
-                        <div className={styles.inputGroup}>
-                            <label htmlFor="city" className={styles.label}>
-                                شهر
-                            </label>
-                            <input
-                                type="text"
-                                id="city"
-                                name="city"
-                                value={formData.city}
-                                onChange={handleChange}
-                                className={styles.input}
-                                placeholder="شهر"
-                                disabled={!isEditing || saving}
-                            />
-                        </div>
+                        <ProvinceCitySelects
+                            province={formData.province}
+                            city={formData.city}
+                            cityLink={formData.cityLink}
+                            onChange={({ province: nextProvince, city: nextCity, cityLink: nextCityLink }) => {
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    province: nextProvince,
+                                    city: nextCity,
+                                    cityLink: nextCityLink,
+                                }));
+                            }}
+                            selectionRef={localityRef}
+                            disabled={!isEditing || saving}
+                            groupClassName={styles.inputGroup}
+                            labelClassName={styles.label}
+                            controlClassName={styles.input}
+                            requiredMarkClassName={styles.required}
+                        />
                     </div>
 
                     {/* Row 2: Postal Code and Recipient Name */}

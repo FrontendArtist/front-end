@@ -1478,6 +1478,7 @@ export async function getAdminCourseOrders({
   buyerExternalUserId,
   fromUtc,
   toUtc,
+  awaitingShipment,
   signal,
 } = {}) {
   if (!jwt) {
@@ -1492,6 +1493,7 @@ export async function getAdminCourseOrders({
   if (buyerExternalUserId) params.set('buyerExternalUserId', String(buyerExternalUserId));
   if (fromUtc) params.set('fromUtc', String(fromUtc));
   if (toUtc) params.set('toUtc', String(toUtc));
+  if (awaitingShipment) params.set('awaitingShipment', 'true');
   return fetchAdminCourseOrdersEndpoint(
     `${BYEMONEY_API_URL}/api/admin/orders?${params.toString()}`,
     jwt,
@@ -1621,6 +1623,57 @@ function extractDomainErrorMessage(errJson, fallback) {
 }
 
 /**
+ * تأیید دریافت کالا توسط خریدار برای همهٔ اقلام «ارسال‌شده» همان سفارش (SHIP-TRACKING).
+ * POST /api/me/orders/{orderId}/confirm-delivery
+ * فقط سفارش خود خریدار؛ تکرار بی‌اثر است و تعداد تأییدشده را برمی‌گرداند.
+ *
+ * @param {object} params
+ * @param {string} params.jwt
+ * @param {string} params.orderId - شناسهٔ سفارش با قالب I11-T (cart:... یا purchase:...)
+ * @returns {Promise<{ success: boolean, data?: { orderId: string, confirmedCount: number, purchaseIds: string[] },
+ *   badRequest?: boolean, notFound?: boolean, unauthorized?: boolean, error?: string, networkError?: boolean }>}
+ */
+export async function confirmMyCourseOrderDelivery({ jwt, orderId, signal } = {}) {
+  if (!jwt) {
+    return { success: false, unauthorized: true, error: 'نشست کاربری نامعتبر است.' };
+  }
+  if (!CourseOrderId.isValid(orderId)) {
+    return { success: false, badRequest: true, error: 'شناسهٔ سفارش نامعتبر است.' };
+  }
+  try {
+    const res = await fetch(
+      `${BYEMONEY_API_URL}/api/me/orders/${encodeURIComponent(orderId)}/confirm-delivery`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${jwt}` },
+        cache: 'no-store',
+        signal,
+      }
+    );
+    if (res.status === 200) {
+      return { success: true, data: await res.json() };
+    }
+    if (res.status === 401) {
+      return { success: false, unauthorized: true, error: 'نشست کاربری منقضی شده است.' };
+    }
+    if (res.status === 404) {
+      return { success: false, notFound: true, error: 'سفارش یافت نشد.' };
+    }
+    let errJson = null;
+    try {
+      errJson = await res.json();
+    } catch {}
+    if (res.status === 400) {
+      return { success: false, badRequest: true, error: extractDomainErrorMessage(errJson, 'درخواست نامعتبر است.') };
+    }
+    return { success: false, error: extractDomainErrorMessage(errJson, 'ثبت تأیید دریافت کالا ناموفق بود.') };
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+  }
+}
+
+/**
  * ثبت وضعیت ارسال کالای فیزیکی در بای‌مانی (فقط ادمین دارای Courses.Manage).
  * PUT /api/admin/physical-purchases/{purchaseId}/delivery-status
  * فقط رو به جلو: Preparing→Shipped→Delivered؛ تکرار همان وضعیت 200 بی‌اثر است.
@@ -1630,6 +1683,9 @@ function extractDomainErrorMessage(errJson, fallback) {
  * @param {string} params.jwt
  * @param {string} params.purchaseId - items[].purchaseId قلم کالا
  * @param {'Shipped'|'Delivered'} params.status - حساس به حروف؛ Preparing پذیرفته نمی‌شود
+ * @param {string} [params.trackingCode] - کد رهگیری پستی مرسوله
+ * @param {string} [params.trackingProvider] - منبع ثبت کد رهگیری (از فهرست منابع مجاز)
+ * @param {string} [params.providerParcelId] - شناسهٔ ارجاع مرسوله نزد همان منبع (متن)
  * @returns {Promise<{
  *   success: boolean,
  *   data?: { purchaseId: string, deliveryStatus: string, shippedAtUtc: string|null, deliveredAtUtc: string|null },
@@ -1637,7 +1693,9 @@ function extractDomainErrorMessage(errJson, fallback) {
  *   error?: string, networkError?: boolean
  * }>}
  */
-export async function updatePhysicalPurchaseDeliveryStatus({ jwt, purchaseId, status, signal } = {}) {
+export async function updatePhysicalPurchaseDeliveryStatus({
+  jwt, purchaseId, status, trackingCode, trackingProvider, providerParcelId, signal
+} = {}) {
   if (!jwt) {
     return { success: false, unauthorized: true, error: 'نشست ادمین نامعتبر است.' };
   }
@@ -1645,6 +1703,7 @@ export async function updatePhysicalPurchaseDeliveryStatus({ jwt, purchaseId, st
     return { success: false, badRequest: true, error: 'شناسه خرید یا وضعیت نامعتبر است.' };
   }
   const url = `${BYEMONEY_API_URL}/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/delivery-status`;
+  const providerReference = providerParcelId ? String(providerParcelId).trim() : '';
   try {
     const res = await fetch(url, {
       method: 'PUT',
@@ -1652,7 +1711,12 @@ export async function updatePhysicalPurchaseDeliveryStatus({ jwt, purchaseId, st
         Authorization: `Bearer ${jwt}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({
+        status,
+        ...(trackingCode ? { trackingCode } : {}),
+        ...(trackingProvider ? { trackingProvider } : {}),
+        ...(providerReference ? { providerParcelId: providerReference } : {}),
+      }),
       cache: 'no-store',
       signal,
     });
@@ -1677,6 +1741,68 @@ export async function updatePhysicalPurchaseDeliveryStatus({ jwt, purchaseId, st
       return { success: false, badRequest: true, error: extractDomainErrorMessage(errJson, 'تغییر وضعیت ارسال مجاز نیست.') };
     }
     return { success: false, error: extractDomainErrorMessage(errJson, `خطای ثبت وضعیت ارسال (${res.status})`) };
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+  }
+}
+
+/**
+ * ساخت مرسوله نزد واسط پستی (SHIP-TRACKING-B / SHIP-ADMIN-DISPATCH).
+ * POST /api/admin/physical-purchases/{purchaseId}/shipments
+ * فقط از route سروری Next.js صدا زده شود.
+ * «ارسال‌شده» فقط وقتی برمی‌گردد که کد پستی واقعی آمده باشد؛ وگرنه Preparing + warning.
+ *
+ * @param {object} params
+ * @param {string} params.jwt
+ * @param {string} params.purchaseId
+ * @param {string} params.collectionType - pick_up | courier_drop_off (I11-O)
+ * @param {string} [params.provider] - مثلاً PostEx؛ خالی = پیش‌فرض سرور
+ */
+export async function createPhysicalShipment({ jwt, purchaseId, collectionType, provider, signal } = {}) {
+  if (!jwt) {
+    return { success: false, unauthorized: true, error: 'نشست ادمین نامعتبر است.' };
+  }
+  if (!purchaseId) {
+    return { success: false, badRequest: true, error: 'شناسه خرید نامعتبر است.' };
+  }
+  const url = `${BYEMONEY_API_URL}/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/shipments`;
+  const body = {
+    ...(collectionType ? { collectionType } : {}),
+    ...(provider ? { provider } : {}),
+  };
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+      signal,
+    });
+    if (res.status === 200) {
+      const data = await res.json();
+      return { success: true, data };
+    }
+    if (res.status === 401) {
+      return { success: false, unauthorized: true, error: 'نشست ادمین منقضی شده است.' };
+    }
+    if (res.status === 403) {
+      return { success: false, forbidden: true, error: 'ادمین مجوز مدیریت دوره‌ها و کالاها (Courses.Manage) را ندارد.' };
+    }
+    let errJson = null;
+    try {
+      errJson = await res.json();
+    } catch {}
+    if (res.status === 404) {
+      return { success: false, notFound: true, error: extractDomainErrorMessage(errJson, 'خرید کالای فیزیکی یافت نشد.') };
+    }
+    if (res.status === 400) {
+      return { success: false, badRequest: true, error: extractDomainErrorMessage(errJson, 'ساخت مرسوله مجاز نیست.') };
+    }
+    return { success: false, error: extractDomainErrorMessage(errJson, `خطای ساخت مرسوله (${res.status})`) };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
     return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
