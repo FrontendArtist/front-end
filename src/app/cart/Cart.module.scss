@@ -233,11 +233,13 @@
 }
 
 .itemPrice {
+    display: none;
     font-size: var(--font-sm);
     color: var(--color-card-text);
     margin: 0;
 
     @include respond(md) {
+        display: block;
         font-size: var(--font-xs);
     }
 }
