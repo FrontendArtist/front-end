@@ -49,17 +49,25 @@ export function formatStrapiSalekGuide(rawItem) {
 export async function getSalekGuide() {
   return withErrorHandling(
     async () => {
-      const response = await apiClient('/api/salek-guide', {
-        cache: 'no-store',
-        suppressErrorLog: true,
-      });
+      try {
+        const response = await apiClient('/api/salek-guide', {
+          cache: 'no-store',
+          suppressErrorLog: true,
+        });
 
-      if (!response || response.error || !response.data) {
-        return DEFAULT_SALEK_GUIDE;
+        if (!response || response.error || !response.data) {
+          return DEFAULT_SALEK_GUIDE;
+        }
+
+        const guide = formatStrapiSalekGuide(response.data);
+        return guide || DEFAULT_SALEK_GUIDE;
+      } catch (err) {
+        // در Strapi، اگر Single Type هنوز در دیتابیس ذخیره نشده باشد 404 برمی‌گردد
+        if (err?.message === 'API_ERROR_404') {
+          return DEFAULT_SALEK_GUIDE;
+        }
+        throw err;
       }
-
-      const guide = formatStrapiSalekGuide(response.data);
-      return guide || DEFAULT_SALEK_GUIDE;
     },
     'واکشی تنظیمات راهنمای سالک',
     DEFAULT_SALEK_GUIDE
