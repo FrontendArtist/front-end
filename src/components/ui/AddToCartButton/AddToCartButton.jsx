@@ -80,15 +80,13 @@ export default function AddToCartButton({
   const removeItem = useCartStore((state) => state.removeItemManually || state.removeItem);
 
   // بررسی وجود دوره در سبد (فقط بعد از hydration معتبر است)
-  const cartItem = useCartStore((state) =>
-    state.items.find((item) => isSameCartItem(item, { ...course, type: 'course' }))
-  );
-  const isInCart = Boolean(cartItem) && isHydrated;
+  const isInCart =
+    useCartStore((state) => state.items.some((item) => isSameCartItem(item, { ...course, type: 'course' }))) &&
+    isHydrated;
 
   const handleRemoveFromCart = (e) => {
-    e?.preventDefault();
     e?.stopPropagation();
-    removeItem(cartItem?.id ?? id, 'course');
+    removeItem(id);
   };
 
   const handleAddToCart = () => {
