@@ -11,8 +11,8 @@
         padding-bottom: 60px;
     }
 
-    @include respond(md) {
-        padding-bottom: 40px;
+    @include respond(md) {     
+           padding-bottom: 40px;
     }
 
 
@@ -856,8 +856,7 @@
     line-height: 1.4;
     word-break: break-word;
     font-size: 0.775rem;
-}
-
+}
 
 // اقلام خریداری‌شده در سبد
 .ownedItemRow {
@@ -911,65 +910,5 @@
 
     span {
         flex: 1;
-    }
-}
-
-.removalAlert {
-    margin-bottom: 16px;
-}
-
-.legacyChapterWarning {
-    margin-top: 6px;
-    padding: 5px 10px;
-    background-color: rgba(255, 107, 107, 0.12);
-    border: 1px solid rgba(255, 107, 107, 0.35);
-    border-radius: 6px;
-    color: #fca5a5;
-    font-size: var(--font-xs, 12px);
-    line-height: 1.4;
-}
-
-.discountRowItem {
-    color: var(--color-success-light, #86efac);
-}
-
-.discountRowCoupon {
-    color: var(--color-success-light, #86efac);
-}
-
-.couponDiscountValue {
-    direction: ltr;
-    display: inline-flex;
-}
-
-.freeShippingBadge {
-    color: var(--color-success-light, #86efac);
-    font-weight: 600;
-}
-
-.sidebarAlert {
-    font-size: 0.78rem;
-    padding: 9px 12px;
-}
-
-.alertRetryBtn {
-    padding: 4px 10px;
-    font-size: 0.75rem;
-    font-family: inherit;
-    background: rgba(255, 107, 107, 0.25);
-    border: 1px solid rgba(255, 107, 107, 0.55);
-    border-radius: 6px;
-    color: var(--color-white, #fff);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
-
-    &:hover:not(:disabled) {
-        background: rgba(255, 107, 107, 0.4);
-    }
-
-    &:disabled {
-        opacity: 0.65;
-        cursor: wait;
     }
 }

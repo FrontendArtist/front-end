@@ -578,6 +578,20 @@ function CheckoutResultContent() {
                             <span>مشخصات پرداخت و تراکنش</span>
                         </div>
                         <div className={styles.receiptFooterGrid}>
+                            {isTopUp && topUpId && (
+                                <div className={styles.receiptRow}>
+                                    <span className={styles.receiptLabel}>شناسه شارژ:</span>
+                                    <span
+                                        className={styles.receiptValueWithCopy}
+                                        onClick={() => handleCopy(topUpId, 'topUpId')}
+                                        title="برای کپی کلیک کنید"
+                                    >
+                                        <span className={styles.truncateText} dir="ltr">{topUpId}</span>
+                                        {copiedKey === 'topUpId' ? <Check size={14} color="#34d399" /> : <Copy size={14} opacity={0.6} />}
+                                    </span>
+                                </div>
+                            )}
+
                             {orderId && (
                                 <div className={styles.receiptRow}>
                                     <span className={styles.receiptLabel}>
@@ -595,6 +609,48 @@ function CheckoutResultContent() {
                                 </div>
                             )}
 
+                            {refNum && (
+                                <div className={styles.receiptRow}>
+                                    <span className={styles.receiptLabel}>رسید دیجیتال (RefNum):</span>
+                                    <span
+                                        className={styles.receiptValueWithCopy}
+                                        onClick={() => handleCopy(refNum, 'refNum')}
+                                        title="برای کپی کلیک کنید"
+                                    >
+                                        <span className={styles.truncateText} dir="ltr">{refNum}</span>
+                                        {copiedKey === 'refNum' ? <Check size={14} color="#34d399" /> : <Copy size={14} opacity={0.6} />}
+                                    </span>
+                                </div>
+                            )}
+
+                            {traceNo && traceNo !== refNum && (
+                                <div className={styles.receiptRow}>
+                                    <span className={styles.receiptLabel}>کد رهگیری بانک (TraceNo):</span>
+                                    <span
+                                        className={styles.receiptValueWithCopy}
+                                        onClick={() => handleCopy(traceNo, 'traceNo')}
+                                        title="برای کپی کلیک کنید"
+                                    >
+                                        <span className={styles.truncateText} dir="ltr">{traceNo}</span>
+                                        {copiedKey === 'traceNo' ? <Check size={14} color="#34d399" /> : <Copy size={14} opacity={0.6} />}
+                                    </span>
+                                </div>
+                            )}
+
+                            {checkout.reviewCaseId && (
+                                <div className={styles.receiptRow}>
+                                    <span className={styles.receiptLabel}>کد پرونده رسیدگی مالی:</span>
+                                    <span
+                                        className={styles.receiptValueWithCopy}
+                                        onClick={() => handleCopy(checkout.reviewCaseId, 'reviewCaseId')}
+                                        title="برای کپی کلیک کنید"
+                                    >
+                                        <span className={styles.truncateText} dir="ltr">{checkout.reviewCaseId}</span>
+                                        {copiedKey === 'reviewCaseId' ? <Check size={14} color="#34d399" /> : <Copy size={14} opacity={0.6} />}
+                                    </span>
+                                </div>
+                            )}
+
                             <div className={styles.receiptRow}>
                                 <span className={styles.receiptLabel}>درگاه پرداخت:</span>
                                 <span className={styles.receiptValue} style={{ direction: 'rtl', fontFamily: 'inherit' }}>
@@ -608,72 +664,6 @@ function CheckoutResultContent() {
                                     {paymentStatusText}
                                 </span>
                             </div>
-
-                            {((isTopUp && topUpId) || refNum || (traceNo && traceNo !== refNum) || checkout.reviewCaseId) && (
-                                <details className={styles.techDetails}>
-                                    <summary className={styles.techDetailsSummary}>
-                                        <span>اطلاعات فنی تراکنش</span>
-                                        <ChevronDown size={15} />
-                                    </summary>
-                                    <div className={styles.techDetailsBody}>
-                                        {isTopUp && topUpId && (
-                                            <div className={styles.receiptRow}>
-                                                <span className={styles.receiptLabel}>شناسه شارژ:</span>
-                                                <span
-                                                    className={styles.receiptValueWithCopy}
-                                                    onClick={() => handleCopy(topUpId, 'topUpId')}
-                                                    title="برای کپی کلیک کنید"
-                                                >
-                                                    <span className={styles.truncateText} dir="ltr">{topUpId}</span>
-                                                    {copiedKey === 'topUpId' ? <Check size={14} color="#34d399" /> : <Copy size={14} opacity={0.6} />}
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {refNum && (
-                                            <div className={styles.receiptRow}>
-                                                <span className={styles.receiptLabel}>رسید دیجیتال (RefNum):</span>
-                                                <span
-                                                    className={styles.receiptValueWithCopy}
-                                                    onClick={() => handleCopy(refNum, 'refNum')}
-                                                    title="برای کپی کلیک کنید"
-                                                >
-                                                    <span className={styles.truncateText} dir="ltr">{refNum}</span>
-                                                    {copiedKey === 'refNum' ? <Check size={14} color="#34d399" /> : <Copy size={14} opacity={0.6} />}
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {traceNo && traceNo !== refNum && (
-                                            <div className={styles.receiptRow}>
-                                                <span className={styles.receiptLabel}>کد رهگیری بانک (TraceNo):</span>
-                                                <span
-                                                    className={styles.receiptValueWithCopy}
-                                                    onClick={() => handleCopy(traceNo, 'traceNo')}
-                                                    title="برای کپی کلیک کنید"
-                                                >
-                                                    <span className={styles.truncateText} dir="ltr">{traceNo}</span>
-                                                    {copiedKey === 'traceNo' ? <Check size={14} color="#34d399" /> : <Copy size={14} opacity={0.6} />}
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {checkout.reviewCaseId && (
-                                            <div className={styles.receiptRow}>
-                                                <span className={styles.receiptLabel}>کد پرونده رسیدگی مالی:</span>
-                                                <span
-                                                    className={styles.receiptValueWithCopy}
-                                                    onClick={() => handleCopy(checkout.reviewCaseId, 'reviewCaseId')}
-                                                    title="برای کپی کلیک کنید"
-                                                >
-                                                    <span className={styles.truncateText} dir="ltr">{checkout.reviewCaseId}</span>
-                                                    {copiedKey === 'reviewCaseId' ? <Check size={14} color="#34d399" /> : <Copy size={14} opacity={0.6} />}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </details>
-                            )}
                         </div>
                     </div>
 
@@ -732,7 +722,7 @@ function CheckoutResultContent() {
                                             سفارش‌های من
                                         </Link>
                                         <span className={styles.textLinkDot}>•</span>
-                                        <Link href="/profile/wallet" className={styles.textLink}>
+                                        <Link href="/profile" className={styles.textLink}>
                                             کیف پول
                                         </Link>
                                     </div>
@@ -744,7 +734,7 @@ function CheckoutResultContent() {
                                             <RotateCcw size={18} />
                                             بازگشت به سبد و پرداخت مجدد
                                         </Link>
-                                        <Link href="/profile/wallet" className={styles.secondaryButton}>
+                                        <Link href="/profile" className={styles.secondaryButton}>
                                             <Wallet size={18} />
                                             کیف پول و حساب کاربری
                                         </Link>
@@ -765,7 +755,7 @@ function CheckoutResultContent() {
                                 </>
                             ) : (
                                 <>
-                                    <Link href="/profile/wallet" className={styles.primaryButton}>
+                                    <Link href="/profile" className={styles.primaryButton}>
                                         <Wallet size={18} />
                                         کیف پول و حساب کاربری
                                     </Link>
@@ -792,7 +782,7 @@ function CheckoutResultContent() {
                         ) : isSuccess ? (
                             isTopUp ? (
                                 <>
-                                    <Link href="/profile/wallet" className={styles.primaryButton}>
+                                    <Link href="/profile" className={styles.primaryButton}>
                                         <Wallet size={18} />
                                         کیف پول و حساب کاربری
                                     </Link>
@@ -817,8 +807,8 @@ function CheckoutResultContent() {
                                         </Link>
                                     )}
                                     <div className={styles.textLinks}>
-                                        <Link href={orderId ? '/profile/purchases' : '/profile/orders'} className={styles.textLink}>
-                                            {orderId ? 'دوره‌های من' : 'سفارش‌های من'}
+                                        <Link href="/profile/purchases" className={styles.textLink}>
+                                            دوره‌های من
                                         </Link>
                                         <span className={styles.textLinkDot}>•</span>
                                         <Link href="/" className={styles.textLink}>
@@ -834,7 +824,7 @@ function CheckoutResultContent() {
                                         <RotateCcw size={18} />
                                         بازگشت به سبد و پرداخت مجدد
                                     </Link>
-                                    <Link href="/profile/wallet" className={styles.secondaryButton}>
+                                    <Link href="/profile" className={styles.secondaryButton}>
                                         <Wallet size={18} />
                                         کیف پول و حساب کاربری
                                     </Link>
@@ -851,7 +841,7 @@ function CheckoutResultContent() {
                             </>
                         ) : isPending ? (
                             <>
-                                <Link href="/profile/wallet" className={styles.primaryButton}>
+                                <Link href="/profile" className={styles.primaryButton}>
                                     <Wallet size={18} />
                                     کیف پول و حساب کاربری
                                 </Link>
@@ -868,7 +858,7 @@ function CheckoutResultContent() {
                         ) : (
                             isTopUp ? (
                                 <>
-                                    <Link href="/profile/wallet" className={styles.primaryButton}>
+                                    <Link href="/profile" className={styles.primaryButton}>
                                         <Wallet size={18} />
                                         کیف پول و حساب کاربری
                                     </Link>

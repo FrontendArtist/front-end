@@ -4,11 +4,8 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
 import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
-import Alert from '@/components/ui/Alert/Alert';
 import { useAccountOrders } from '@/hooks/useAccountOrders';
 import styles from './OrdersList.module.scss';
-
-const PARTIAL_ORDERS_WARNING = 'در دریافت بخشی از تاریخچه سفارش‌ها خطایی رخ داده است؛ برخی سفارش‌های اخیر ممکن است نمایش داده نشوند.';
 
 export default function OrdersList({ limit }) {
     const { orders, isLoading, error, fetchOrders, hasFetched, byemoneyWarning } = useAccountOrders();
@@ -153,9 +150,21 @@ export default function OrdersList({ limit }) {
         return (
             <div className={styles.orders}>
                 {byemoneyWarning && (
-                    <Alert variant="warning" className={styles.orders__warning}>
-                        {PARTIAL_ORDERS_WARNING}
-                    </Alert>
+                    <div style={{
+                        backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                        border: '1px solid rgba(234, 179, 8, 0.3)',
+                        color: '#facc15',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        marginBottom: '20px',
+                        fontSize: '0.9rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <span>⚠️</span>
+                        <span>امکان دریافت خریدهای جدید از بای‌مانی وجود ندارد؛ در حال حاضر فقط سفارش‌های استراپی نمایش داده می‌شوند.</span>
+                    </div>
                 )}
                 <div className={styles.orders__empty}>
                     <div className={styles.orders__emptyIcon}>
@@ -178,13 +187,25 @@ export default function OrdersList({ limit }) {
     return (
         <div className={styles.orders}>
             <h2 className={styles.orders__title}>
-                {limit ? 'سفارش‌های اخیر' : 'سفارش‌های من'}
+                {limit ? 'سفارش‌های اخیر' : 'تاریخچه سفارشات'}
             </h2>
 
             {byemoneyWarning && (
-                <Alert variant="warning" className={styles.orders__warning}>
-                    {PARTIAL_ORDERS_WARNING}
-                </Alert>
+                <div style={{
+                    backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                    border: '1px solid rgba(234, 179, 8, 0.3)',
+                    color: '#facc15',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    marginBottom: '20px',
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                }}>
+                    <span>⚠️</span>
+                    <span>امکان دریافت خریدهای جدید از بای‌مانی وجود ندارد؛ در حال حاضر فقط سفارش‌های استراپی نمایش داده می‌شوند.</span>
+                </div>
             )}
 
             <div className={styles.orders__list}>
@@ -222,7 +243,7 @@ export default function OrdersList({ limit }) {
                                 </div>
                                 <div className={styles.orders__detailItem}>
                                     <span className={styles.orders__label}>تعداد اقلام:</span>
-                                    <span className={styles.orders__value}>{Number(itemCount || 0).toLocaleString('fa-IR')} کالا</span>
+                                    <span className={styles.orders__value}>{itemCount} آیتم</span>
                                 </div>
                                 {(order.traceNo || order.trackingNumber || order.refNum) && (
                                     <div className={styles.orders__detailItem}>

@@ -11,7 +11,6 @@ import DiscountCouponInput from '@/components/cart/DiscountCouponInput/DiscountC
 import EmptyCartState from '@/components/cart/EmptyCartState/EmptyCartState';
 import AddressModal from '@/components/cart/AddressModal/AddressModal';
 import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
-import Alert from '@/components/ui/Alert/Alert';
 import { formatPrice } from '@/lib/formatters';
 import {
     useCartStore,
@@ -483,15 +482,11 @@ export default function CartPage() {
             <div className={styles.cartPage}>
                 <div className={styles.container}>
                     <Breadcrumb items={breadcrumbItems} />
-                    {removalError && (
-                        <Alert variant="error" className={styles.removalAlert}>
-                            {removalError}
-                        </Alert>
-                    )}
+                    {removalError && <p role="alert">{removalError}</p>}
                     <EmptyCartState
                         title="سبد خرید شما خالی است"
                         description="هنوز محصول یا دوره‌ای به سبد خرید خود اضافه نکرده‌اید."
-                        buttonText="مشاهده دوره‌ها"
+                        buttonText="بازگشت به دوره"
                         buttonHref="/courses"
                     />
                 </div>
@@ -506,12 +501,8 @@ export default function CartPage() {
     return (
         <div className={styles.cartPage}>
             <div className={styles.container}>
+                {removalError && <p role="alert">{removalError}</p>}
                 <Breadcrumb items={breadcrumbItems} />
-                {removalError && (
-                    <Alert variant="error" className={styles.removalAlert}>
-                        {removalError}
-                    </Alert>
-                )}
 
                 <div className={styles.cartGrid}>
                 {/* ستون اصلی: لیست آیتم‌ها */}
@@ -520,7 +511,7 @@ export default function CartPage() {
                     {/* بخش محصولات */}
                     {products.length > 0 && (
                         <div className={styles.section}>
-                            <h2 className={styles.sectionTitle}>محصولات ({products.length.toLocaleString('fa-IR')})</h2>
+                            <h2 className={styles.sectionTitle}>محصولات ({products.length})</h2>
                             <div className={styles.itemsList}>
                                 {products.map((item) => (
                                     <div key={cartItemKey(item)} className={styles.cartItem}>
@@ -552,7 +543,7 @@ export default function CartPage() {
                                             >
                                                 -
                                             </button>
-                                            <span className={styles.quantityDisplay}>{Number(item.quantity || 1).toLocaleString('fa-IR')}</span>
+                                            <span className={styles.quantityDisplay}>{item.quantity}</span>
                                             <button
                                                 onClick={() => handleIncrement(item.id, item.quantity, item.type)}
                                                 className={styles.quantityButton}
@@ -590,7 +581,7 @@ export default function CartPage() {
                     {coursesAndChapters.length > 0 && (
                         <div className={styles.section}>
                             <h2 className={styles.sectionTitle}>
-                                دوره‌ها و فصل‌های آموزشی ({coursesAndChapters.length.toLocaleString('fa-IR')})
+                                دوره‌ها و فصل‌های آموزشی ({coursesAndChapters.length})
                             </h2>
                             <div className={styles.itemsList}>
                                 {coursesAndChapters.map((item) => {
@@ -649,7 +640,16 @@ export default function CartPage() {
                                                     </div>
                                                 )}
                                                 {isLegacyChapter && (
-                                                    <div className={styles.legacyChapterWarning} role="alert">
+                                                    <div style={{
+                                                        marginTop: '6px',
+                                                        padding: '4px 8px',
+                                                        backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                                                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                                                        borderRadius: '6px',
+                                                        color: '#fca5a5',
+                                                        fontSize: '0.75rem',
+                                                        lineHeight: '1.4',
+                                                    }}>
                                                         شناسهٔ این فصل به‌روزرسانی شده است؛ لطفاً این قلم را حذف کرده و مجدداً از صفحهٔ دوره انتخاب کنید.
                                                     </div>
                                                 )}
@@ -727,7 +727,7 @@ export default function CartPage() {
 
                             {/* سود تخفیف خود محصولات در صورت وجود */}
                             {(preview?.data?.itemDiscountInNoor ?? (isCartEligible ? 0 : itemLevelDiscount)) > 0 && (
-                                <div className={`${styles.summaryRow} ${styles.discountRowItem}`}>
+                                <div className={styles.summaryRow} style={{ color: '#4ade80' }}>
                                     <span>سود شما از خرید:</span>
                                     <PriceWithHint price={preview?.data?.itemDiscountInNoor ?? itemLevelDiscount} size="sm" hideHint={true} />
                                 </div>
@@ -744,9 +744,9 @@ export default function CartPage() {
 
                             {/* نمایش ردیف تخفیف کوپن در صورت اعمال */}
                             {(preview?.data?.couponDiscountInNoor ?? (isCartEligible ? 0 : couponDiscount)) > 0 && (
-                                <div className={`${styles.summaryRow} ${styles.discountRowCoupon}`}>
+                                <div className={styles.summaryRow} style={{ color: '#86efac' }}>
                                     <span>تخفیف کوپن ({appliedCoupon?.code}):</span>
-                                    <span className={styles.couponDiscountValue}>
+                                    <span style={{ direction: 'ltr', display: 'inline-flex' }}>
                                         - <PriceWithHint price={preview?.data?.couponDiscountInNoor ?? couponDiscount} size="sm" hideHint={true} />
                                     </span>
                                 </div>
@@ -758,7 +758,7 @@ export default function CartPage() {
                                     <span>هزینه ارسال:</span>
                                     {isCartEligible && !preview?.data ? 'در انتظار بررسی' :
                                         (preview?.data?.shippingAmountInNoor === 0 ? (
-                                            <span className={styles.freeShippingBadge}>رایگان</span>
+                                            <span style={{ color: '#4ade80', fontWeight: 600 }}>رایگان</span>
                                         ) : (
                                             <PriceWithHint price={preview?.data?.shippingAmountInNoor ?? 0} size="sm" hideHint={true} />
                                         ))}
@@ -822,48 +822,59 @@ export default function CartPage() {
                         {/* خط جداکننده دوم */}
                         <div className={styles.divider}></div>
 
-                        {/* بخش سوم (اقدام نهایی): پنل اعلان یکپارچه با اولویت‌بندی، هشدار VPN و دکمه پرداخت */}
+                        {/* بخش سوم (اقدام نهایی): هشدار VPN، دکمه پرداخت و نشان امنیت */}
                         <div className={styles.summaryGroup}>
-                            {hasOwnedCartItems ? (
-                                <Alert variant="error" className={styles.sidebarAlert}>
-                                    یک یا چند دوره در سبد خرید قبلاً توسط شما خریداری شده است. لطفاً آن‌ها را از سبد حذف کنید.
-                                </Alert>
-                            ) : isCartEligible && preview?.error ? (
-                                <Alert
-                                    variant="error"
-                                    className={styles.sidebarAlert}
-                                    action={
-                                        <button
-                                            type="button"
-                                            className={styles.alertRetryBtn}
-                                            onClick={() => setPreviewRevision(value => value + 1)}
-                                        >
-                                            بررسی دوباره
-                                        </button>
-                                    }
+                            {hasOwnedCartItems && (
+                                <div className={styles.ownedItemsNotice} role="alert">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    <span>
+                                        یک یا چند دوره در سبد خرید قبلاً توسط شما خریداری شده است. لطفاً آن‌ها را از سبد حذف کنید.
+                                    </span>
+                                </div>
+                            )}
+
+                            {isCartEligible && preview?.error && (
+                                <div className={styles.previewError} role="alert">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    <p>{preview.error}</p>
+                                    <button type="button" onClick={() => setPreviewRevision(value => value + 1)}>بررسی دوباره</button>
+                                </div>
+                            )}
+
+                            {errorMessage && errorMessage !== preview?.error && (
+                                <div
+                                    className={`${styles.cartErrorMessage} ${errorMessage.includes('فیلترشکن') ? styles.vpnError : ''}`}
+                                    role="alert"
                                 >
-                                    {preview.error}
-                                </Alert>
-                            ) : errorMessage ? (
-                                <Alert
-                                    variant="error"
-                                    className={styles.sidebarAlert}
-                                    action={
-                                        errorMessage.includes('فیلترشکن') ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    {errorMessage.includes('فیلترشکن') ? (
+                                        <>
+                                            <span>فیلترشکن شما روشن است</span>
                                             <button
                                                 type="button"
-                                                className={styles.alertRetryBtn}
                                                 onClick={handleRecheckVpn}
                                                 disabled={isCheckingVpn}
                                             >
                                                 {isCheckingVpn ? 'در حال بررسی...' : 'بررسی مجدد'}
                                             </button>
-                                        ) : null
-                                    }
-                                >
-                                    {errorMessage.includes('فیلترشکن') ? 'فیلترشکن شما روشن است' : errorMessage}
-                                </Alert>
-                            ) : null}
+                                        </>
+                                    ) : (
+                                        <span>{errorMessage}</span>
+                                    )}
+                                </div>
+                            )}
 
                             {/* پیام هشدار خاموش بودن VPN برای پرداخت آنلاین شتاب */}
                             {(!isCartEligible || needsOnlinePayment) && finalTotalPrice > 0 && (
@@ -901,7 +912,7 @@ export default function CartPage() {
                                 ) : isCartEligible && preview?.error ? (
                                     'بررسی و ادامه پرداخت'
                                 ) : (preview?.data?.priceInNoor ?? finalTotalPrice) === 0 ? (
-                                    'ثبت‌نام و دسترسی رایگان'
+                                    'ثبت‌نام و دسترسی رایگان '
                                 ) : isCartEligible ? (
                                     balance == null
                                         ? 'ادامه پرداخت'
@@ -909,7 +920,7 @@ export default function CartPage() {
                                             ? ((preview?.data?.status === 'AwaitingTopUp' || isCartUnderReview) ? 'پرداخت مجدد آنلاین' : 'پرداخت آنلاین و خرید')
                                             : 'خرید با کیف نور'
                                 ) : (
-                                    'پرداخت آنلاین شتاب'
+                                    'پرداخت آنلاین شتاب '
                                 )}
                             </button>
 

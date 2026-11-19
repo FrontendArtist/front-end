@@ -2,7 +2,6 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getUsers } from '@/lib/admin/adminUsersApi';
 import UsersTable from '@/components/admin/Users/UsersTable';
-import styles from '../orders/orders.module.scss';
 
 export const metadata = {
     title: 'مدیریت کاربران',
@@ -17,20 +16,14 @@ export default async function AdminUsersPage() {
     const { users, meta, error } = await getUsers(jwt, { pageSize: 50 });
 
     return (
-        <div className={styles.page}>
-            <header className={styles.page__header}>
-                <h1 className={styles.page__title}>مدیریت کاربران</h1>
-                {meta?.pagination && (
-                    <span className={styles.page__count}>
-                        {new Intl.NumberFormat('fa-IR').format(meta.pagination.total)} کاربر
-                    </span>
-                )}
-            </header>
+        <div style={{ padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>مدیریت کاربران</h1>
+            </div>
 
             {error ? (
-                <div className={styles.page__error} role="alert">
-                    <span>⚠️</span>
-                    <p>خطا در دریافت لیست کاربران از سرویس‌دهنده داده‌ها. لطفاً دوباره تلاش کنید.</p>
+                <div style={{ padding: '2rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '8px' }}>
+                    خطا در دریافت لیست کاربران. لطفاً دوباره تلاش کنید.
                 </div>
             ) : (
                 <UsersTable initialUsers={users} initialMeta={meta} />

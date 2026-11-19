@@ -33,7 +33,7 @@ export default function PurchasesList() {
                     setProfileCourses(data.courses);
                 }
             })
-            .catch(() => { });
+            .catch(() => {});
     }, [userId]);
 
     // واکشی پروفایل برای اطمینان از دریافت تازه‌ترین لیست دوره‌ها (شامل خریدهای انجام‌شده با نور)
@@ -82,7 +82,7 @@ export default function PurchasesList() {
                     setCourseCatalog(json.data);
                 }
             })
-            .catch(() => { });
+            .catch(() => {});
         return () => {
             isMounted = false;
         };
@@ -259,7 +259,7 @@ export default function PurchasesList() {
 
                 {/* 4. تعداد کالا / یا مبلغ کل */}
                 <div className={cartStyles.itemTotal} style={{ color: 'var(--color-text-primary)' }}>
-                    {!isCourse && (item.quantity || 1) > 1 ? `تعداد کل: ${Number(item.quantity || 1).toLocaleString('fa-IR')}` : ''}
+                    {!isCourse && (item.quantity || 1) > 1 ? `تعداد کل: ${item.quantity || 1}` : ''}
                 </div>
 
                 {/* 5. دکمه مشاهده؛ بدون اسلاگ معتبر لینک مرده ساخته نمی‌شود */}
@@ -278,19 +278,19 @@ export default function PurchasesList() {
 
     return (
         <div className={styles.purchases}>
-            <h2 className={styles.purchases__title}>دوره‌ها و محصولات</h2>
+            <h2 className={styles.purchases__title}>محصولات و دوره‌های من</h2>
 
             {courses.length === 0 && products.length === 0 ? (
                 <div className={styles.purchases__empty}>
                     <p>{isRetrying
-                        ? 'در حال به‌روزرسانی فهرست خریدها…'
+                        ?'در حال به‌روزرسانی فهرست خریدها…'
                         : 'شما تاکنون محصول یا دوره‌ای خریداری نکرده‌اید.'}</p>
                 </div>
             ) : (
                 <>
                     {courses.length > 0 && (
                         <div className={styles.purchases__section}>
-                            <h3 className={styles.purchases__sectionTitle}>دوره‌های آموزشی ({courses.length.toLocaleString('fa-IR')})</h3>
+                            <h3 className={styles.purchases__sectionTitle}>دوره‌های آموزشی ({courses.length})</h3>
                             <div className={cartStyles.itemsList}>
                                 {courses.map((course) => renderItem(course, true))}
                             </div>
@@ -299,7 +299,7 @@ export default function PurchasesList() {
 
                     {products.length > 0 && (
                         <div className={styles.purchases__section}>
-                            <h3 className={styles.purchases__sectionTitle}>محصولات فیزیکی ({products.length.toLocaleString('fa-IR')})</h3>
+                            <h3 className={styles.purchases__sectionTitle}>محصولات فیزیکی ({products.length})</h3>
                             <div className={cartStyles.itemsList}>
                                 {products.map((product) => renderItem(product, false))}
                             </div>

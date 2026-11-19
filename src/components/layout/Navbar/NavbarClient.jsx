@@ -154,7 +154,6 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
               </Link>
             </li>
             <li><Link href="/courses" className={styles.navLink}>دوره‌ها</Link></li>
-            {/* <li><Link href="/roadmap" className={styles.navLink}>نقشه راه سالک</Link></li> */}
             <li><Link href="/quran" className={styles.navLink}>کلام نور</Link></li>
             <li><Link href="/services" className={styles.navLink}>خدمات</Link></li>
             <li><Link href="/about" className={styles.navLink}>درباره ما</Link></li>
@@ -214,16 +213,14 @@ const NavbarClient = ({ categoriesSnapshot = '[]', articleCategoriesSnapshot = '
       <div className={`${styles.mobileMenuDrawer} ${isMobileMenuOpen ? styles.open : ''}`}>
         <div className={styles.mobileMenuTop}>
           <button
-            type="button"
-            className={styles.mobileCloseBtn}
-            onClick={closeMobileMenu}
-            aria-label="بستن منو"
-            title="بستن منو"
+            className={`${styles.mobileMenuToggle} ${isMobileMenuOpen ? styles.open : ''}`}
+            onClick={toggleMobileMenu}
+            aria-label="منوی موبایل"
+            aria-expanded={isMobileMenuOpen}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <span className={styles.hamburgerLine}></span>
+            <span className={styles.hamburgerLine}></span>
+            <span className={styles.hamburgerLine}></span>
           </button>
           <form
             onSubmit={handleMobileSearch}

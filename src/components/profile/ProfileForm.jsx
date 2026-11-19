@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import Alert from '@/components/ui/Alert/Alert';
 import ProvinceCitySelects, { localitySubmitError } from '@/components/address/ProvinceCitySelects';
 import { isFullAddressLongEnough, SHORT_FULL_ADDRESS_MESSAGE } from '@/lib/fullAddress';
 import styles from './ProfileForm.module.scss';
@@ -14,7 +13,6 @@ export default function ProfileForm() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isEditing, setIsEditing] = useState(false); // Track edit mode
-    const feedbackRef = useRef(null);
     const localityRef = useRef({ status: 'loading', province: '', city: '' });
     const successTimer = useRef(null);
 
@@ -192,13 +190,13 @@ export default function ProfileForm() {
             }
 
             // اگر ایجاد موفق بود، addressDocumentId را به‌روزرسانی کن
-            let resolvedAddressDocId = formData.addressDocumentId;
-            if (!resolvedAddressDocId) {
+            let createdDocumentId = null;
+            if (!formData.addressDocumentId) {
                 const newAddress = await addressResponse.json();
-                resolvedAddressDocId = newAddress?.data?.documentId || null;
+                createdDocumentId = newAddress.data.documentId;
                 setFormData(prev => ({
                     ...prev,
-                    addressDocumentId: resolvedAddressDocId // ✅ Use documentId for Strapi V5
+                    addressDocumentId: createdDocumentId // ✅ Use documentId for Strapi V5
                 }));
             }
 
@@ -218,7 +216,7 @@ export default function ProfileForm() {
                 province,
                 city,
                 cityLink: effectiveCityLink || null,
-                addressDocumentId: resolvedAddressDocId || null
+                addressDocumentId: formData.addressDocumentId || createdDocumentId || null
             });
             setSuccess('اطلاعات با موفقیت ذخیره شد');
             setIsEditing(false); // Exit edit mode after successful save
@@ -229,11 +227,6 @@ export default function ProfileForm() {
             }, 3000);
         } catch (err) {
             setError(err.message);
-            setTimeout(() => {
-                if (typeof feedbackRef.current?.scrollIntoView === 'function') {
-                    feedbackRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 50);
         } finally {
             setSaving(false);
         }
@@ -449,37 +442,24 @@ export default function ProfileForm() {
 
                 </div>
 
-                <div ref={feedbackRef}>
-                    {error && (
-                        <Alert variant="error">
-                            {error}
-                        </Alert>
-                    )}
+                {error && (
+                    <div className={styles.error}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                            <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                        {error}
+                    </div>
+                )}
 
-                    {success && (
-                        <Alert variant="success">
-                            {success}
-                        </Alert>
-                    )}
-                </div>
-
-                {isEditing && (
-                    <div className={styles.bottomActions}>
-                        <button
-                            type="button"
-                            onClick={handleCancel}
-                            className={styles.cancelButton}
-                            disabled={saving}
-                        >
-                            انصراف
-                        </button>
-                        <button
-                            type="submit"
-                            className={styles.saveButton}
-                            disabled={saving}
-                        >
-                            {saving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
-                        </button>
+                {success && (
+                    <div className={styles.success}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        {success}
                     </div>
                 )}
             </form>

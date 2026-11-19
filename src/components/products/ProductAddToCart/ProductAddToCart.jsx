@@ -154,15 +154,8 @@ export default function ProductAddToCart({ product }) {
 
     if (isOutOfStock) {
         return (
-            <div className={styles.wrapper}>
-                <button
-                    type="button"
-                    className={styles.outOfStockButton}
-                    disabled
-                    aria-disabled="true"
-                >
-                    ناموجود
-                </button>
+            <div >
+                
             </div>
         );
     }
@@ -221,7 +214,7 @@ export default function ProductAddToCart({ product }) {
                     >
                         <PlusIcon />
                     </button>
-                    <span className={styles.quantityDisplay}>{currentQuantity.toLocaleString('fa-IR')}</span>
+                    <span className={styles.quantityDisplay}>{currentQuantity}</span>
                     <button
                         className={styles.quantityButton}
                         onClick={handleDecrement}

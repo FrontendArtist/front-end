@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import styles from './ProvinceCitySelects.module.scss';
 
 export const LOCALITIES_LOADING_MESSAGE = 'فهرست استان و شهر هنوز آماده نیست. لطفاً کمی بعد دوباره تلاش کنید.';
 export const LOCALITIES_LOAD_ERROR_MESSAGE = 'بارگذاری فهرست استان و شهر ناموفق بود.';
@@ -132,39 +131,31 @@ export default function ProvinceCitySelects({
                     استان
                     <span className={requiredMarkClassName}>*</span>
                 </label>
-                <div className={styles.selectWrapper}>
-                    <select
-                        id={provinceId}
-                        name="province"
-                        className={`${controlClassName || ''} ${status === 'loading' ? styles.selectLoading : ''}`.trim()}
-                        value={provinceValue}
-                        onChange={handleProvinceChange}
-                        disabled={fieldsDisabled}
-                        required
-                        aria-busy={status === 'loading'}
-                    >
-                        <option value="">{status === 'loading' ? 'در حال بارگذاری استان‌ها...' : 'انتخاب استان'}</option>
-                        {localities.map((item) => (
-                            <option key={item.name} value={item.name}>
-                                {item.name}
-                            </option>
-                        ))}
-                    </select>
-                    {status === 'loading' && (
-                        <span className={styles.inlineSpinner} aria-hidden="true" />
-                    )}
-                </div>
+                <select
+                    id={provinceId}
+                    name="province"
+                    className={controlClassName}
+                    value={provinceValue}
+                    onChange={handleProvinceChange}
+                    disabled={fieldsDisabled}
+                    required
+                    aria-busy={status === 'loading'}
+                >
+                    <option value="">انتخاب استان</option>
+                    {localities.map((item) => (
+                        <option key={item.name} value={item.name}>
+                            {item.name}
+                        </option>
+                    ))}
+                </select>
+                {status === 'loading' && <p>در حال بارگذاری فهرست استان و شهر...</p>}
                 {status === 'error' && (
-                    <div className={styles.errorHint} role="status">
-                        <span>{LOCALITIES_LOAD_ERROR_MESSAGE}</span>
-                        <button
-                            type="button"
-                            className={styles.retryInlineBtn}
-                            onClick={() => setRequestId((id) => id + 1)}
-                        >
+                    <p>
+                        {LOCALITIES_LOAD_ERROR_MESSAGE}{' '}
+                        <button type="button" onClick={() => setRequestId((id) => id + 1)}>
                             تلاش مجدد
                         </button>
-                    </div>
+                    </p>
                 )}
             </div>
 

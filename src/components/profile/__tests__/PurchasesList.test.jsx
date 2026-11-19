@@ -117,7 +117,7 @@ describe('PurchasesList Component', () => {
             expect(courseTitles).toHaveLength(1);
         });
 
-        expect(screen.getByText('دوره‌های آموزشی (۱)')).toBeInTheDocument();
+        expect(screen.getByText('دوره‌های آموزشی (1)')).toBeInTheDocument();
     });
 
     it('shows the course title and a working link for a ByeMoney chapter purchase without slug', async () => {

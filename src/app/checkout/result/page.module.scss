@@ -346,50 +346,6 @@
     }
 }
 
-.techDetails {
-    margin-top: 8px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(246, 217, 130, 0.12);
-    border-radius: 10px;
-    overflow: hidden;
-
-    &[open] .techDetailsSummary svg {
-        transform: rotate(180deg);
-    }
-}
-
-.techDetailsSummary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 9px 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: rgba(255, 250, 234, 0.72);
-    cursor: pointer;
-    list-style: none;
-    user-select: none;
-
-    &::-webkit-details-marker {
-        display: none;
-    }
-
-    svg {
-        transition: transform 0.2s ease;
-        color: #F6D982;
-    }
-
-    &:hover {
-        color: #F6D982;
-        background: rgba(255, 255, 255, 0.03);
-    }
-}
-
-.techDetailsBody {
-    padding: 4px 12px 10px;
-    border-top: 1px dashed rgba(255, 255, 255, 0.06);
-}
-
 .receiptLabel {
     color: rgba(255, 250, 234, 0.65);
     display: flex;

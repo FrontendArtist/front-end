@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCartStore, selectTotalPrice, selectItemsCount } from '@/store/useCartStore';
 import { formatPrice } from '@/lib/formatters';
@@ -226,7 +225,7 @@ export default function CartIcon() {
                 */}
                 {mounted && itemsCount > 0 && (
                     <span className={styles.badge}>
-                        {itemsCount.toLocaleString('fa-IR')}
+                        {itemsCount}
                     </span>
                 )}
             </button>
@@ -255,7 +254,7 @@ export default function CartIcon() {
                             <circle cx="20" cy="21" r="1" />
                             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                         </svg>
-                        <span>سبد خرید شما ({itemsCount.toLocaleString('fa-IR')} کالا)</span>
+                        <span>سبد خرید شما ({itemsCount} آیتم)</span>
                     </div>
 
                     {/* لیست آیتم‌های سبد خرید - حداکثر 5 آیتم اول */}
@@ -267,24 +266,19 @@ export default function CartIcon() {
                                 className={styles.cartItem}
                                 onClick={() => setIsDropdownOpen(false)}
                             >
-                                {/* تصویر کالا */}
+                                {/* تصویر آیتم */}
                                 <div className={styles.itemImage}>
-                                    <Image
-                                        src={item.image || '/images/forempties2.png'}
-                                        alt={item.title || 'تصویر کالا'}
-                                        width={48}
-                                        height={48}
-                                    />
+                                    <img src={item.image || '/images/forempties2.png'} alt={item.title || 'تصویر آیتم'} />
                                 </div>
 
-                                {/* اطلاعات کالا */}
+                                {/* اطلاعات آیتم */}
                                 <div className={styles.itemInfo}>
                                     <h4 className={styles.itemTitle}>{item.title}</h4>
                                     <div className={styles.itemMeta}>
                                         {/* نمایش تعداد فقط برای محصولات */}
                                         {item.type === 'product' && (
                                             <span className={styles.itemQuantity}>
-                                                {Number(item.quantity || 1).toLocaleString('fa-IR')} عدد
+                                                {item.quantity} عدد
                                             </span>
                                         )}
                                         {/* نمایش نوع برای دوره‌ها و فصل‌ها */}
@@ -296,7 +290,7 @@ export default function CartIcon() {
                                     </div>
                                 </div>
 
-                                {/* قیمت */}
+                                {/* قیمت آیتم */}
                                 <div className={styles.itemPrice}>
                                     <PriceWithHint
                                         price={item.price * item.quantity}
@@ -307,10 +301,10 @@ export default function CartIcon() {
                             </Link>
                         ))}
 
-                        {/* نمایش پیام در صورتی که بیش از 5 کالا موجود باشد */}
+                        {/* نمایش پیام در صورتی که بیش از 5 آیتم موجود باشد */}
                         {items.length > 5 && (
                             <div className={styles.moreItems}>
-                                و {(items.length - 5).toLocaleString('fa-IR')} کالای دیگر...
+                                و {items.length - 5} آیتم دیگر...
                             </div>
                         )}
                     </div>

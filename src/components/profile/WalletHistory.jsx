@@ -114,19 +114,9 @@ export default function WalletHistory() {
                         )}
                     </>
                 ) : balanceFailed ? (
-                    <div className={styles.wallet__balanceErrorBox}>
-                        <span className={styles.wallet__balanceError} role="status">
-                            موجودی در دسترس نیست.
-                        </span>
-                        <button
-                            type="button"
-                            className={styles.wallet__retryBtn}
-                            onClick={() => load(page)}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? 'در حال بررسی…' : 'تلاش مجدد'}
-                        </button>
-                    </div>
+                    <span className={styles.wallet__balanceError} role="status">
+                        موجودی در دسترس نیست؛ صفحه را دوباره بارگذاری کنید.
+                    </span>
                 ) : (
                     <strong className={styles.wallet__balanceValue} data-testid="wallet-total">—</strong>
                 )}

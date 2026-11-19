@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import Modal from '@/components/ui/Modal/Modal';
-import Alert from '@/components/ui/Alert/Alert';
 import ProvinceCitySelects, { localitySubmitError } from '@/components/address/ProvinceCitySelects';
 import { isFullAddressLongEnough, SHORT_FULL_ADDRESS_MESSAGE } from '@/lib/fullAddress';
 import styles from './AddressModal.module.scss';
@@ -28,7 +27,6 @@ export default function AddressModal({
     const { data: session } = useSession();
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
-    const [fieldErrors, setFieldErrors] = useState({});
     const localityRef = useRef({ status: 'loading', province: '', city: '' });
 
     const [formData, setFormData] = useState({
@@ -44,7 +42,6 @@ export default function AddressModal({
     useEffect(() => {
         if (isOpen) {
             setError('');
-            setFieldErrors({});
             const initialCityLink = initialAddress?.cityLink?.documentId || (typeof initialAddress?.cityLink === 'string' ? initialAddress.cityLink : null);
             setFormData({
                 recipientName: initialAddress?.recipientName || '',
@@ -61,13 +58,6 @@ export default function AddressModal({
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        if (fieldErrors[name]) {
-            setFieldErrors((prev) => {
-                const next = { ...prev };
-                delete next[name];
-                return next;
-            });
-        }
     };
 
     const handleSubmit = async (e) => {
@@ -76,35 +66,24 @@ export default function AddressModal({
 
         const trimmedName = formData.recipientName?.trim();
         const trimmedAddress = formData.fullAddress?.trim();
-        const trimmedPostalCode = formData.postalCode?.trim();
-        const nextErrors = {};
 
         if (!trimmedName) {
-            nextErrors.recipientName = 'لطفاً نام و نام خانوادگی تحویل‌گیرنده را وارد کنید.';
+            setError('لطفاً نام و نام خانوادگی تحویل‌گیرنده را وارد کنید.');
+            return;
         }
 
         if (!trimmedAddress) {
-            nextErrors.fullAddress = 'لطفاً آدرس پستی کامل را وارد کنید.';
-        }
-
-        if (trimmedPostalCode && !/^\d{10}$/.test(trimmedPostalCode)) {
-            nextErrors.postalCode = 'کد پستی باید دقیقاً ۱۰ رقم عددی باشد.';
-        }
-
-        if (Object.keys(nextErrors).length > 0) {
-            setFieldErrors(nextErrors);
+            setError('لطفاً آدرس پستی کامل را وارد کنید.');
             return;
         }
-        setFieldErrors({});
 
         const localityError = localitySubmitError(localityRef.current);
         if (localityError) {
             setError(localityError);
             return;
         }
-
         if (!isFullAddressLongEnough(trimmedAddress)) {
-            setFieldErrors({ fullAddress: SHORT_FULL_ADDRESS_MESSAGE });
+            setError(SHORT_FULL_ADDRESS_MESSAGE);
             return;
         }
         const { province, city, cityLink } = localityRef.current || {};
@@ -184,9 +163,9 @@ export default function AddressModal({
                 </p>
 
                 {error && (
-                    <Alert variant="error">
+                    <div className={styles.error} role="alert">
                         {error}
-                    </Alert>
+                    </div>
                 )}
 
                 <div className={styles.row}>
@@ -201,19 +180,9 @@ export default function AddressModal({
                             value={formData.recipientName}
                             onChange={handleChange}
                             placeholder="مثال: علی محمدی"
-                            className={fieldErrors.recipientName ? styles.inputError : ''}
-                            aria-invalid={Boolean(fieldErrors.recipientName)}
                             disabled={saving}
                             required
                         />
-                        {fieldErrors.recipientName && (
-                            <span
-                                className={styles.fieldError}
-                                role={!error ? 'alert' : undefined}
-                            >
-                                {fieldErrors.recipientName}
-                            </span>
-                        )}
                     </div>
 
                     <div className={styles.inputGroup}>
@@ -256,20 +225,10 @@ export default function AddressModal({
                         value={formData.fullAddress}
                         onChange={handleChange}
                         placeholder="خیابان، کوچه، پلاک، واحد..."
-                        className={fieldErrors.fullAddress ? styles.inputError : ''}
-                        aria-invalid={Boolean(fieldErrors.fullAddress)}
                         rows={3}
                         disabled={saving}
                         required
                     />
-                    {fieldErrors.fullAddress && (
-                        <span
-                            className={styles.fieldError}
-                            role={!error && !fieldErrors.recipientName ? 'alert' : undefined}
-                        >
-                            {fieldErrors.fullAddress}
-                        </span>
-                    )}
                 </div>
 
                 <div className={styles.inputGroup}>
@@ -281,20 +240,10 @@ export default function AddressModal({
                         value={formData.postalCode}
                         onChange={handleChange}
                         placeholder="کد پستی ۱۰ رقمی بدون خط تیره"
-                        className={fieldErrors.postalCode ? styles.inputError : ''}
-                        aria-invalid={Boolean(fieldErrors.postalCode)}
                         dir="ltr"
                         maxLength={10}
                         disabled={saving}
                     />
-                    {fieldErrors.postalCode && (
-                        <span
-                            className={styles.fieldError}
-                            role={!error && !fieldErrors.recipientName && !fieldErrors.fullAddress ? 'alert' : undefined}
-                        >
-                            {fieldErrors.postalCode}
-                        </span>
-                    )}
                 </div>
 
                 <div className={styles.formActions}>

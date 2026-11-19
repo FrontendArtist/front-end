@@ -110,7 +110,7 @@ export default function NotificationBell() {
                                 className={styles.markAllBtn}
                                 onClick={markAllAsRead}
                             >
-                                خواندن همه
+                                خوانده شد همه
                             </button>
                         )}
                     </div>

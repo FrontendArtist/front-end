@@ -7,8 +7,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getAdminArticles } from '@/lib/admin/adminArticlesApi';
 import ArticlesTable from '@/components/admin/Articles/ArticlesTable';
-import AdminButton from '@/components/admin/Shared/AdminButton';
-import { Plus } from 'lucide-react';
+import Link from 'next/link';
 import styles from '../orders/orders.module.scss'; // using shared layout styles usually
 
 export const metadata = {
@@ -35,10 +34,24 @@ export default async function AdminArticlesPage() {
                             {new Intl.NumberFormat('fa-IR').format(meta.pagination.total)} مقاله
                         </span>
                     )}
-                    <AdminButton href="/admin/articles/new" variant="primary">
-                        <Plus size={16} />
-                        مقاله جدید
-                    </AdminButton>
+                    <Link
+                        href="/admin/articles/new"
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            padding: '0.6rem 1.25rem',
+                            borderRadius: '8px',
+                            background: 'var(--color-title-hover)',
+                            color: 'var(--color-bg-primary)',
+                            fontWeight: 'var(--font-weight-bold)',
+                            fontSize: 'var(--font-sm)',
+                            textDecoration: 'none',
+                            transition: 'opacity 0.2s',
+                        }}
+                    >
+                        ➕ مقاله جدید
+                    </Link>
                 </div>
             </header>
 
@@ -46,7 +59,7 @@ export default async function AdminArticlesPage() {
             {error && (
                 <div className={styles.page__error}>
                     <span>⚠️</span>
-                    <p>خطا در برقراری ارتباط با سرویس‌دهنده داده‌ها. لطفاً دوباره تلاش کنید.</p>
+                    <p>اتصال به سرور ناموفق بود. لطفاً مطمئن شوید Strapi در حال اجراست.</p>
                 </div>
             )}
 

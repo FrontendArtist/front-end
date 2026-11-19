@@ -108,7 +108,6 @@ export default function OrderReceiptUpload({ orderId, bankInfo: bankInfoProp = n
     const [bankError, setBankError] = useState(null);           // خطای دریافت اطلاعات بانک
 
     const [file, setFile] = useState(null);           // فایل تصویر انتخاب‌شده
-    const [previewUrl, setPreviewUrl] = useState(null); // پیش‌نمایش تصویر فیش
     const [cardHolderName, setCardHolderName] = useState('');           // نام صاحب کارت
 
     const [isDragOver, setIsDragOver] = useState(false);          // حالت Drag روی dropzone
@@ -119,18 +118,6 @@ export default function OrderReceiptUpload({ orderId, bankInfo: bankInfoProp = n
     const [isSubmitted, setIsSubmitted] = useState(false);          // آیا فرم قبلاً ارسال شده؟
 
     const fileInputRef = useRef(null);
-
-    useEffect(() => {
-        if (!file || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
-            setPreviewUrl(null);
-            return;
-        }
-        const objectUrl = URL.createObjectURL(file);
-        setPreviewUrl(objectUrl);
-        return () => {
-            URL.revokeObjectURL(objectUrl);
-        };
-    }, [file]);
 
     // ── دریافت اطلاعات بانکی از Strapi (در صورتی که از طریق prop داده نشده) ──
     useEffect(() => {
@@ -357,7 +344,7 @@ export default function OrderReceiptUpload({ orderId, bankInfo: bankInfoProp = n
                     {/* نام صاحب کارت */}
                     <div className={styles.inputGroup}>
                         <label htmlFor="cardHolderName" className={styles.label}>
-                            نام صاحب کارت واریزکننده<span className={styles.required}>*</span>
+                            نام صاحب کارت واریزکننده
                         </label>
                         <input
                             id="cardHolderName"
@@ -369,14 +356,13 @@ export default function OrderReceiptUpload({ orderId, bankInfo: bankInfoProp = n
                             disabled={isSubmitting}
                             autoComplete="name"
                             dir="rtl"
-                            required
                         />
                     </div>
 
                     {/* آپلود تصویر فیش — Drag & Drop Zone */}
                     <div className={styles.inputGroup}>
                         <span className={styles.label} id="receipt-upload-label">
-                            تصویر فیش واریزی<span className={styles.required}>*</span>
+                            تصویر فیش واریزی
                         </span>
 
                         {/* اینپوت واقعی — باید خارج از dropzone div باشد
@@ -431,45 +417,11 @@ export default function OrderReceiptUpload({ orderId, bankInfo: bankInfoProp = n
                             </p>
                         </div>
 
-                        {/* نمایش پیش‌نمایش تصویر و مشخصات فایل انتخاب‌شده */}
+                        {/* نمایش نام فایل انتخاب‌شده */}
                         {file && (
                             <div className={styles.selectedFile} aria-live="polite">
-                                {previewUrl ? (
-                                    <img
-                                        src={previewUrl}
-                                        alt="پیش‌نمایش تصویر فیش واریزی"
-                                        className={styles.previewThumb}
-                                    />
-                                ) : (
-                                    <IconFile />
-                                )}
-                                <div className={styles.selectedFileInfo}>
-                                    <span className={styles.selectedFileName}>{file.name}</span>
-                                    <span className={styles.selectedFileSize}>
-                                        {`${(file.size / 1024).toFixed(0)} کیلوبایت`}
-                                    </span>
-                                </div>
-                                <div className={styles.selectedFileActions}>
-                                    <button
-                                        type="button"
-                                        className={styles.changeFileBtn}
-                                        onClick={() => fileInputRef.current?.click()}
-                                        disabled={isSubmitting}
-                                    >
-                                        تغییر
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={styles.removeFileBtn}
-                                        onClick={() => {
-                                            setFile(null);
-                                            if (fileInputRef.current) fileInputRef.current.value = '';
-                                        }}
-                                        disabled={isSubmitting}
-                                    >
-                                        حذف
-                                    </button>
-                                </div>
+                                <IconFile />
+                                {file.name}
                             </div>
                         )}
                     </div>

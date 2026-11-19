@@ -80,7 +80,7 @@ describe('OrdersList Component', () => {
     });
 
     render(<OrdersList />);
-    expect(screen.getByText(/در دریافت بخشی از تاریخچه سفارش‌ها خطایی رخ داده است/)).toBeInTheDocument();
+    expect(screen.getByText(/امکان دریافت خریدهای جدید از بای‌مانی وجود ندارد/)).toBeInTheDocument();
     expect(screen.getByText(/101/)).toBeInTheDocument();
   });
 

@@ -381,23 +381,3 @@ select.input {
         }
     }
 }
-
-.bottomActions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
-    padding-top: 8px;
-    border-top: 1px solid fade(var(--color-primary), 15%);
-
-    @include respond(md) {
-        position: sticky;
-        bottom: 12px;
-        z-index: 5;
-        padding: 12px;
-        background: color-mix(in srgb, var(--color-bg-primary) 92%, transparent);
-        backdrop-filter: blur(12px);
-        border: 1px solid fade(var(--color-primary), 25%);
-        border-radius: var(--border-radius);
-    }
-}

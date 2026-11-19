@@ -119,8 +119,16 @@ export default function VpnModal() {
 
         {/* توضیحات تکمیلی */}
         <p className={styles.description}>
-          روشن بودن فیلترشکن ممکن است سرعت بارگذاری صفحات و دسترسی به برخی بخش‌های سایت یا درگاه پرداخت را مختل کند.
+          روشن بودن فیلترشکن ممکن است سرعت بارگذاری صفحات و دسترسی به برخی بخش‌های سایت را کاهش دهد.
         </p>
+
+        {/* اطلاعات IP شناسایی‌شده */}
+        {vpnInfo?.isp && (
+          <div className={styles.infoBadge}>
+            <span>ارائه‌دهنده شناسایی‌شده:</span>
+            <span className={styles.ispName}>{vpnInfo.isp}</span>
+          </div>
+        )}
 
         {/* دکمه اکشن */}
         <div className={styles.actions}>
@@ -129,7 +137,7 @@ export default function VpnModal() {
             onClick={handleDismiss}
             type="button"
           >
-            متوجه شدم
+            باشه
           </button>
         </div>
       </div>

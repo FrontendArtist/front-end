@@ -7,22 +7,9 @@ import { apiClient } from './apiClient';
 import { formatStrapiProducts, formatStrapiArticles, formatStrapiCourses } from './strapiUtils';
 
 /**
- * نرمال‌سازی کلید دسته‌بندی جستجو به شناسه‌های استاندارد
- * @param {string} type
- * @returns {'all'|'product'|'article'|'course'}
- */
-export const normalizeSearchType = (type) => {
-    const val = String(type || 'all').trim().toLowerCase();
-    if (val === 'product' || val === 'products' || val === 'محصولات') return 'product';
-    if (val === 'article' || val === 'articles' || val === 'مقالات') return 'article';
-    if (val === 'course' || val === 'courses' || val === 'دوره‌ها' || val === 'دوره ها') return 'course';
-    return 'all';
-};
-
-/**
  * جستجوی سراسری میان محصولات، مقالات و دوره‌ها
  * @param {string} query - عبارت مورد جستجو
- * @param {string} type - فیلتر نوع محتوا ('all' | 'product' | 'article' | 'course')
+ * @param {string} type - فیلتر نوع محتوا ('all' | 'products' | 'articles' | 'courses' | 'محصولات' | 'مقالات' | 'دوره‌ها')
  * @returns {Promise<{ products: Array, articles: Array, courses: Array }>}
  */
 export const searchGlobal = async (query, type = 'all') => {
@@ -31,24 +18,24 @@ export const searchGlobal = async (query, type = 'all') => {
     }
 
     const q = encodeURIComponent(query.trim());
-    const normalizedType = normalizeSearchType(type);
+    const typeLower = type?.toLowerCase() || 'all';
 
     const requests = [];
 
     // افزودن endpoint ها بر اساس نوع جستجو با فیلدهای معتبر اسکیما
-    if (normalizedType === 'all' || normalizedType === 'product') {
+    if (typeLower === 'all' || typeLower === 'محصولات' || typeLower === 'products') {
         requests.push({
             key: 'products',
             endpoint: `/api/products?filters[title][$containsi]=${q}&populate[categories][populate]=parent&populate[images]=true`
         });
     }
-    if (normalizedType === 'all' || normalizedType === 'article') {
+    if (typeLower === 'all' || typeLower === 'مقالات' || typeLower === 'articles') {
         requests.push({
             key: 'articles',
             endpoint: `/api/articles?filters[title][$containsi]=${q}&populate[cover]=true`
         });
     }
-    if (normalizedType === 'all' || normalizedType === 'course') {
+    if (typeLower === 'all' || typeLower === 'دوره‌ها' || typeLower === 'courses') {
         requests.push({
             key: 'courses',
             endpoint: `/api/courses?filters[title][$containsi]=${q}&populate[media]=true`

@@ -32,8 +32,7 @@ const Footer = async () => {
               <li><Link href="/products">محصولات</Link></li>
               <li><Link href="/articles">مقالات</Link></li>
               <li><Link href="/courses">دوره‌ها</Link></li>
-              <li><Link href="/roadmap">نقشه راه سالک</Link></li>
-              <li><Link href="/contact">تماس با ما</Link></li>
+              <li><Link href="/about">درباره ما</Link></li>
             </ul>
           </div>
 
@@ -72,7 +71,7 @@ const Footer = async () => {
         />
 
         <div className={styles.footerBottom}>
-          <p>تمامی حقوق برای این وب‌سایت محفوظ است. © {new Date().getFullYear()}</p>
+          <p>تمامی حقوق برای این وب‌سایت محفوظ است. © 2025</p>
         </div>
       </GradientBorderCard>
     </footer>

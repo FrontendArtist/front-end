@@ -288,7 +288,6 @@
     }
 
     @include respond(md) {
-
       :global(.plyr__volume),
       :global([data-plyr="mute"]),
       :global([data-plyr="volume"]) {

@@ -244,11 +244,8 @@ export default function OrderDetailPage() {
                 </div>
                 <div className={styles.orderMeta}>
                     <span className={styles.metaItem}>
-                        <span className={styles.metaLabel}>شماره سفارش:</span>
-                        <span className={styles.metaValue} dir="ltr">
-                            #{order.id ? Number(order.id).toLocaleString('fa-IR', { useGrouping: false }) : String(order.documentId || id).slice(0, 8).toUpperCase()}
-                        </span>
-                        <CopyBtn text={order.documentId || id} label="شناسه پیگیری" buttonText="کپی شناسه" />
+                        <span className={styles.metaLabel}>شناسه:</span>
+                        <span className={styles.metaValue} dir="ltr">{order.documentId || id}</span>
                     </span>
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>تاریخ ثبت:</span>

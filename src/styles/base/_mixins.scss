@@ -172,7 +172,7 @@ $breakpoint-sm: 440px;
  * Common image styles with hover effect
  */
 @mixin card-image {
-  object-fit: fill;
+  object-fit: cover;
   @include hover-transition;
 }
 

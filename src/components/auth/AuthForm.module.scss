@@ -112,18 +112,14 @@
   border: 2px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
   background: color-mix(in srgb, var(--color-bg-primary-overlay) 60%, transparent);
   color: var(--color-card-text);
-  font-size: var(--font-md);
+  font-size: var(--font-lg);
   font-weight: var(--font-weight-medium);
   font-family: inherit;
   transition: all 0.3s ease;
-  text-align: right;
-  letter-spacing: normal;
+  text-align: center;
+  letter-spacing: 2px;
   width: 100%;
   box-sizing: border-box;
-
-  &[dir="ltr"] {
-    text-align: left;
-  }
 
   &::placeholder {
     color: color-mix(in srgb, var(--color-cream-light) 40%, transparent);
@@ -145,48 +141,7 @@
 
   @include respond(md) {
     padding: 12px 14px;
-    font-size: var(--font-sm);
-  }
-}
-
-.codeInput {
-  font-size: var(--font-lg);
-  text-align: center !important;
-  letter-spacing: 2px;
-
-  @include respond(md) {
     font-size: var(--font-md);
-  }
-}
-
-.otpActions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 2px;
-}
-
-.resendButton {
-  width: 100%;
-  padding: 10px 16px;
-  border-radius: var(--border-radius);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
-  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
-  color: var(--color-text-primary);
-  font-size: var(--font-sm);
-  font-weight: var(--font-weight-medium);
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.25s ease;
-
-  &:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
-    border-color: var(--color-text-primary);
-  }
-
-  &:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
   }
 }
 

@@ -99,10 +99,10 @@ function PaymentCallbackContent() {
         const isLightTopup = source === 'light_topup';
         const isLightCardToCard = isCardToCard && orderType === 'light_topup';
         const primaryHref = (isFree || isByemoney)
-            ? '/profile/purchases'
+            ? '/profile/courses'
             : isCardToCard && orderId
                 ? `/profile/orders/${orderId}`
-                : isLightTopup ? '/profile/wallet'
+                : isLightTopup ? '/profile'
                     : orderId ? `/profile/orders/${orderId}` : '/profile/orders';
 
         return (
@@ -308,7 +308,7 @@ function PaymentCallbackContent() {
                                         : 'مشاهده سفارش‌ها'}
                         </Link>
                         <Link href="/courses" className={styles.secondaryButton}>
-                            مشاهده همه دوره‌ها
+                            بازگشت به دوره
                         </Link>
                     </div>
                 </div>
