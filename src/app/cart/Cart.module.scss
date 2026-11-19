@@ -810,6 +810,33 @@
     }
 }
 
+// بخش ارسال سفارش فیزیکی (مبدأ و مقصد)
+.shippingSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 2px 0;
+}
+
+// نمایش مجزا و مشخص مبدأ ارسال
+.shippingOriginBox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: fade(var(--color-primary), 6%);
+    border: 1px solid fade(var(--color-primary), 18%);
+    border-radius: var(--radius-sm, 6px);
+    font-size: 0.775rem;
+    color: var(--color-text-primary);
+    line-height: 1.4;
+
+    &::before {
+        content: '📦';
+        font-size: 0.85rem;
+    }
+}
+
 // نمایش خلاصه آدرس تحویل سفارش - بدون کادر اضافه
 .addressSummaryCard {
     margin: 2px 0;
@@ -856,7 +883,7 @@
     line-height: 1.4;
     word-break: break-word;
     font-size: 0.775rem;
-}
+}
 
 // اقلام خریداری‌شده در سبد
 .ownedItemRow {

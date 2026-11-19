@@ -579,7 +579,9 @@ test('سبد کالای فیزیکی دارای آدرس: نمایش آدرس د
     // بررسی نمایش آدرس در سایدبار
     await waitFor(() => {
         expect(screen.getByText(/اصفهان، خیابان چهارباغ/)).toBeTruthy();
-        expect(screen.getByText('مبدأ ارسال: اصفهان')).toBeTruthy();
+        const originEl = screen.getByText('مبدأ ارسال: اصفهان');
+        expect(originEl).toBeTruthy();
+        expect(originEl.closest('[class*="addressSummaryCard"]')).toBeNull();
         expect(screen.getByRole('button', { name: 'تغییر آدرس' })).toBeTruthy();
     });
 

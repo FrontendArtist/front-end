@@ -689,27 +689,31 @@ export default function CartPage() {
                         <span className={styles.summaryCount}>{formatPrice(itemsCount)} کالا</span>
                     </h2>
                     <div className={styles.summary}>
-                        {/* آدرس تحویل سفارش فیزیکی */}
-                        {hasPhysicalProducts && deliveryAddress?.fullAddress && (
+                        {/* آدرس تحویل و مبدأ ارسال سفارش فیزیکی */}
+                        {hasPhysicalProducts && (deliveryAddress?.fullAddress || shippingOriginName) && (
                             <>
-                                <div className={styles.addressSummaryCard}>
-                                    <div className={styles.addressSummaryHeader}>
-                                        <span className={styles.addressSummaryTitle}>آدرس تحویل:</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsAddressModalOpen(true)}
-                                            className={styles.changeAddressBtn}
-                                        >
-                                            تغییر آدرس
-                                        </button>
-                                    </div>
-                                    <p className={styles.addressSummaryText}>
-                                        {[deliveryAddress.recipientName, deliveryAddress.province, deliveryAddress.city, deliveryAddress.fullAddress].filter(Boolean).join('، ')}
-                                    </p>
+                                <div className={styles.shippingSection}>
+                                    {deliveryAddress?.fullAddress && (
+                                        <div className={styles.addressSummaryCard}>
+                                            <div className={styles.addressSummaryHeader}>
+                                                <span className={styles.addressSummaryTitle}>آدرس تحویل:</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsAddressModalOpen(true)}
+                                                    className={styles.changeAddressBtn}
+                                                >
+                                                    تغییر آدرس
+                                                </button>
+                                            </div>
+                                            <p className={styles.addressSummaryText}>
+                                                {[deliveryAddress.recipientName, deliveryAddress.province, deliveryAddress.city, deliveryAddress.fullAddress].filter(Boolean).join('، ')}
+                                            </p>
+                                        </div>
+                                    )}
                                     {shippingOriginName && (
-                                        <p className={styles.addressSummaryText} data-testid="shipping-origin">
+                                        <div className={styles.shippingOriginBox} data-testid="shipping-origin">
                                             مبدأ ارسال: {shippingOriginName}
-                                        </p>
+                                        </div>
                                     )}
                                 </div>
                                 <div className={styles.divider}></div>
