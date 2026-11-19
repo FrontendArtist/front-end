@@ -18,7 +18,7 @@ import styles from './PriceWithHint.module.scss';
 export default function PriceWithHint({
   price,
   originalPrice = null,
-  hideHint = true,
+  hideHint = false,
   size = 'md',
   className = '',
 }) {
