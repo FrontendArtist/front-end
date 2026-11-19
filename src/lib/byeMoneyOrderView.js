@@ -5,6 +5,22 @@
 
 const isProduct = (i) => i?.type === 'product' || String(i?.itemType || '').toLowerCase() === 'product';
 
+/** پیام واحد ۴۰۹ تأیید دریافت برای مرسولهٔ برگشتی. */
+export const CARRIER_RETURN_CONFIRM_BLOCKED_MESSAGE =
+    'این مرسوله برگشته و تأیید دریافت برایش ثبت نمی‌شود.';
+
+/** قلم برگشتی که تأیید دریافت خریدار برایش ثبت نمی‌شود (حل‌نشده یا بسته‌شده بدون تسویه). */
+export function carrierReturnBlocksConfirmation(item) {
+    return Boolean(item?.carrierReturnedAtUtc) && item.carrierReturnResolution !== 'DeliveryConfirmed';
+}
+
+/** لینک رهگیری فقط از trackingUrl مطلق https و منبعی غیر از Manual ساخته می‌شود. */
+export function getTrackingHref(item) {
+    if (String(item?.trackingProvider || '').toLowerCase() === 'manual') return null;
+    const url = String(item?.trackingUrl || '').trim();
+    return /^https:\/\/[^\s]+$/i.test(url) ? url : null;
+}
+
 export const formatNoor = (value) => `${Number(value || 0).toLocaleString('fa-IR')} نور`;
 
 export const formatOrderDate = (value) => {

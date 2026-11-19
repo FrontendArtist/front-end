@@ -16,4 +16,23 @@ describe('mapByeMoneyLineItem — مبلغ برگشتی کالای فیزیکی'
         expect(product({ refundedRegularInNoor: 'x', refundedGiftInNoor: null }))
             .toMatchObject({ refundedRegularInNoor: 0, refundedGiftInNoor: 0 });
     });
+
+    it('trackingUrl را برای لینک رهگیری نگه می‌دارد', () => {
+        const item = product({ trackingUrl: 'https://track.example/1', trackingProvider: 'PostEx' });
+        expect(item.trackingUrl).toBe('https://track.example/1');
+        expect(item.trackingProvider).toBe('PostEx');
+    });
+
+    it('فیلدهای ادمین (شناسهٔ مرسوله و هشدار) را به نمای خریدار نمی‌برد', () => {
+        const item = product({
+            providerParcelId: 'parcel-9',
+            carrierAlertCode: 11304,
+            carrierAlertResolutionNote: 'یادداشت ادمین',
+            carrierPaymentPendingSinceUtc: '2026-11-19T10:00:00Z',
+        });
+        expect(item.providerParcelId).toBeUndefined();
+        expect(item.carrierAlertCode).toBeUndefined();
+        expect(item.carrierAlertResolutionNote).toBeUndefined();
+        expect(item.carrierPaymentPendingSinceUtc).toBeUndefined();
+    });
 });

@@ -155,6 +155,45 @@ describe('getOrderTracking', () => {
         });
     });
 
+    test('فیلدهای هشدار مرسوله و شناسهٔ مرسوله برای ادمین حفظ می‌شوند', async () => {
+        const withAlert = detail('Paid');
+        withAlert.data.order.items = [{
+            title: 'کتاب',
+            itemType: 'Product',
+            purchaseId: 'p1',
+            providerParcelId: 'parcel-9',
+            carrierAlertCode: 11304,
+            carrierAlertAtUtc: '2026-11-19T09:00:00Z',
+            carrierAlertResolution: 'DeliveryConfirmed',
+            carrierAlertResolutionNote: 'یادداشت ادمین',
+            carrierAlertResolvedAtUtc: '2026-11-19T10:00:00Z',
+            carrierAlertResolvedByExternalUserId: 'admin-1',
+        }];
+        withAlert.data.order.topUps = [];
+        getAdminCourseOrderDetails.mockResolvedValue(withAlert);
+        getAdminCourseOrderReceipt.mockResolvedValue({
+            success: true,
+            data: {
+                purchasedAtUtc: '2026-11-19T09:00:00Z',
+                finalAmountInNoor: 50,
+                items: [{ purchaseId: 'p1', providerParcelId: 'parcel-9' }],
+            },
+        });
+
+        const res = await getOrderTracking({ jwt: 'admin', orderId: ORDER_ID, now: NOW });
+
+        expect(res.success).toBe(true);
+        expect(res.data.order.items[0]).toMatchObject({
+            providerParcelId: 'parcel-9',
+            carrierAlertCode: 11304,
+            carrierAlertAtUtc: '2026-11-19T09:00:00Z',
+            carrierAlertResolution: 'DeliveryConfirmed',
+            carrierAlertResolutionNote: 'یادداشت ادمین',
+            carrierAlertResolvedByExternalUserId: 'admin-1',
+        });
+        expect(res.data.receipt.items[0].providerParcelId).toBe('parcel-9');
+    });
+
     test('رسید فقط برای Paid خوانده می‌شود', async () => {
         getAdminCourseOrderDetails.mockResolvedValue(detail('AwaitingPayment'));
         global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });

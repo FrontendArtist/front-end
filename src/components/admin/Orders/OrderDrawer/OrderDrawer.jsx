@@ -22,7 +22,7 @@ import { shippingOriginText } from '@/lib/shippingOrigin';
 import PendingRestockNotice from '../PendingRestockNotice';
 import AdminBadge from '../../Shared/AdminBadge';
 import { canShowReceipt, getFinancialStatusConfig } from '@/lib/admin/orderTracking';
-import { shortOrderNumber, getItemsShippingState, getCarrierReturnBadge } from '@/lib/admin/orderDisplay';
+import { shortOrderNumber, getItemsShippingState, getCarrierReturnBadge, getCarrierAlertBadge, carrierAlertStatusOf, CARRIER_ALERT_STATUS_LABELS } from '@/lib/admin/orderDisplay';
 import styles from './OrderDrawer.module.scss';
 
 const fa = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString('fa-IR'));
@@ -77,6 +77,7 @@ function SummaryTab({ order, data, isPaid, restockPending, onGoItems }) {
     );
     const paid = isPaid && receipt ? receipt.finalAmountInNoor : detail.finalAmountInNoor;
     const buyerName = order.buyerName || buyer?.displayName || 'نام ثبت نشده';
+    const alertStatus = carrierAlertStatusOf(detail.items);
 
     return (
         <div className={styles.stack}>
@@ -114,6 +115,9 @@ function SummaryTab({ order, data, isPaid, restockPending, onGoItems }) {
                         <Field label="ثبت دستی توسط">{adminOrigin.adminName || adminOrigin.adminExternalUserId}</Field>
                     )}
                     {adminOrigin?.freeReason && <Field label="علت رایگان">{adminOrigin.freeReason}</Field>}
+                    {alertStatus !== 'None' && (
+                        <Field label="هشدار مرسوله">{CARRIER_ALERT_STATUS_LABELS[alertStatus] || alertStatus}</Field>
+                    )}
                     {receipt?.couponCode && <Field label="کد تخفیف" ltr>{receipt.couponCode}</Field>}
                 </dl>
             </section>
@@ -137,7 +141,7 @@ function SummaryTab({ order, data, isPaid, restockPending, onGoItems }) {
     );
 }
 
-function ItemsTab({ data, isPaid, onReload, onItemStatus, onRestockCleared, onCarrierResolved }) {
+function ItemsTab({ data, isPaid, onReload, onItemStatus, onRestockCleared, onCarrierResolved, onCarrierAlertResolved }) {
     const { order: detail, shippingAddress, shippingOrigin } = data;
     const originName = shippingOriginText(shippingOrigin);
     return (
@@ -151,6 +155,7 @@ function ItemsTab({ data, isPaid, onReload, onItemStatus, onRestockCleared, onCa
                 onReload={onReload}
                 onItemStatus={onItemStatus}
                 onCarrierResolved={onCarrierResolved}
+                onCarrierAlertResolved={onCarrierAlertResolved}
             />
             {shippingAddress && (
                 <section className={styles.card} data-testid="shipping-address" aria-label="آدرس تحویل">
@@ -191,7 +196,7 @@ function DrawerSkeleton() {
  *   restockPending?: boolean, onClose: () => void, onToast?: (msg: string, tone?: string) => void,
  *   onChanged?: () => void, onRestockCleared?: () => void, shareUrl?: string }} props
  */
-export default function OrderDrawer({ order, restockPending = false, onClose, onToast, onChanged, onRestockCleared, onCarrierResolved, shareUrl }) {
+export default function OrderDrawer({ order, restockPending = false, onClose, onToast, onChanged, onRestockCleared, onCarrierResolved, onCarrierAlertResolved, shareUrl }) {
     const [tab, setTab] = useState('summary');
     const [mounted, setMounted] = useState(false);
     const closeRef = useRef(null);
@@ -230,11 +235,20 @@ export default function OrderDrawer({ order, restockPending = false, onClose, on
         reload();
         if (onCarrierResolved) onCarrierResolved(status);
     };
-    const carrierBadge = getCarrierReturnBadge(order.carrierReturnStatus);
     const handleReload = () => {
         reload();
         onChanged && onChanged();
     };
+    const handleCarrierAlertResolved = (status) => {
+        handleReload();
+        notify('تعیین تکلیف هشدار ثبت شد.');
+        if (onCarrierAlertResolved) onCarrierAlertResolved(status);
+    };
+    const carrierBadge = getCarrierReturnBadge(order.carrierReturnStatus);
+    const carrierAlertStatus = order.carrierAlertStatus && order.carrierAlertStatus !== 'None'
+        ? order.carrierAlertStatus
+        : carrierAlertStatusOf(detail?.items);
+    const carrierAlertBadge = getCarrierAlertBadge(carrierAlertStatus);
 
     if (!mounted) return null;
 
@@ -274,6 +288,7 @@ export default function OrderDrawer({ order, restockPending = false, onClose, on
                         <AdminBadge text={fin.label} variant={fin.variant} />
                         {shipping && <AdminBadge text={shipping.label} variant={shipping.variant} />}
                         {carrierBadge && <AdminBadge text={carrierBadge.text} variant={carrierBadge.variant} />}
+                        {carrierAlertBadge && <AdminBadge text={carrierAlertBadge.text} variant={carrierAlertBadge.variant} />}
                         {restockPending && <AdminBadge text="موجودی برنگشته" variant="warning" />}
                     </div>
 
@@ -315,6 +330,7 @@ export default function OrderDrawer({ order, restockPending = false, onClose, on
                                 <ItemsTab data={data} isPaid={isPaid} onReload={() => { handleReload(); notify('لغو کالا ثبت شد.'); }}
                                     onItemStatus={handleItemStatus}
                                     onCarrierResolved={handleCarrierResolved}
+                                    onCarrierAlertResolved={handleCarrierAlertResolved}
                                     onRestockCleared={() => { onRestockCleared && onRestockCleared(); notify('برگشت موجودی ثبت شد.'); }} />
                             )}
                             {tab === 'timeline' && (

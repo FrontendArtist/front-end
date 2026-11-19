@@ -16,7 +16,7 @@ import { getAdminCourseOrders, getAdminCourseOrderDetails, getPendingPhysicalRes
 import { lookupPeople } from '../courseOrderSettlementRoute';
 import { findStrapiUserIdForByeMoney } from './adminOrdersApi';
 import { mapByeMoneyOrderRow } from './orderTracking';
-import { carrierReturnStatusOf } from './orderDisplay';
+import { carrierReturnStatusOf, carrierAlertStatusOf } from './orderDisplay';
 
 export const ORDER_TABS = ['action', 'all', 'paid', 'pending', 'canceled'];
 export const DEFAULT_TAB = 'action';
@@ -154,6 +154,7 @@ function rowFromDetails(details) {
         buyerDisplayName: details.buyerDisplayName,
         refundedAmountInNoor: refunded,
         carrierReturnStatus: carrierReturnStatusOf(o.items),
+        carrierAlertStatus: carrierAlertStatusOf(o.items),
     };
 }
 

@@ -20,7 +20,7 @@ import {
 import { usePermissions } from '@/context/PermissionsContext';
 import { ADMIN_PERMISSIONS } from '@/config/adminPermissions';
 import { getFinancialStatusConfig } from '@/lib/admin/orderTracking';
-import { getRowShippingBadge, getCarrierReturnBadge, shortOrderNumber, faNumber, splitDateTime } from '@/lib/admin/orderDisplay';
+import { getRowShippingBadge, getCarrierReturnBadge, getCarrierAlertBadge, shortOrderNumber, faNumber, splitDateTime } from '@/lib/admin/orderDisplay';
 import AdminBadge from '../../Shared/AdminBadge';
 import { useAdminToast, AdminToastViewport } from '../../Shared/AdminToast';
 import OrderDrawer from '../OrderDrawer/OrderDrawer';
@@ -430,6 +430,7 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                                 const fin = getFinancialStatusConfig(o.financialStatus);
                                 const ship = getRowShippingBadge(o);
                                 const carrier = getCarrierReturnBadge(o.carrierReturnStatus);
+                                const carrierAlert = getCarrierAlertBadge(o.carrierAlertStatus);
                                 const restock = isRestock(o.orderId);
                                 const selected = openOrderId === o.orderId;
                                 return (
@@ -462,6 +463,11 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                                                 {carrier && (
                                                     <span data-testid="carrier-return-row-badge">
                                                         <AdminBadge text={carrier.text} variant={carrier.variant} />
+                                                    </span>
+                                                )}
+                                                {carrierAlert && (
+                                                    <span data-testid="carrier-alert-row-badge">
+                                                        <AdminBadge text={carrierAlert.text} variant={carrierAlert.variant} />
                                                     </span>
                                                 )}
                                                 {restock && <AdminBadge text="موجودی برنگشته" variant="warning" />}
@@ -503,6 +509,17 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                             ...prev,
                             orders: (prev.orders || []).map((row) => (
                                 row.orderId === orderId ? { ...row, carrierReturnStatus: status } : row
+                            )),
+                        }));
+                    }}
+                    onCarrierAlertResolved={(status) => {
+                        drawerDirty.current = true;
+                        const orderId = openRow?.orderId;
+                        if (!orderId || !status) return;
+                        setData((prev) => ({
+                            ...prev,
+                            orders: (prev.orders || []).map((row) => (
+                                row.orderId === orderId ? { ...row, carrierAlertStatus: status } : row
                             )),
                         }));
                     }}

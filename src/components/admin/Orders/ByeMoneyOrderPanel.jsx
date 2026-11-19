@@ -19,7 +19,10 @@ import { canShowReceipt, isPhysicalFullyCancelled } from '@/lib/admin/orderTrack
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import PhysicalDeliveryControl from './PhysicalDeliveryControl';
 import CarrierReturnResolveControl from './CarrierReturnResolveControl';
-import { carrierReturnStatusOf } from '@/lib/admin/orderDisplay';
+import CarrierAlertResolveControl from './CarrierAlertResolveControl';
+import {
+    carrierReturnStatusOf, carrierAlertStatusOf, hasPendingCarrierAlert, CARRIER_ALERT_STATUS_LABELS,
+} from '@/lib/admin/orderDisplay';
 import { shippingOriginText } from '@/lib/shippingOrigin';
 import PendingRestockNotice from './PendingRestockNotice';
 import PhysicalCancelFlow from '@/components/physicalCancel/PhysicalCancelFlow';
@@ -186,7 +189,7 @@ export function OrderWarnings({ warnings }) {
  * @param {{ detail: object, isPaid: boolean, onReload: () => void,
  *   onItemStatus: (purchaseId: string, status: string) => void }} props
  */
-export function OrderItemsList({ detail, isPaid, onReload, onItemStatus, onCarrierResolved }) {
+export function OrderItemsList({ detail, isPaid, onReload, onItemStatus, onCarrierResolved, onCarrierAlertResolved }) {
     if (detail.items.length === 0) {
         return <p className={styles.expanded_empty}>اطلاعات اقلام در دسترس نیست.</p>;
     }
@@ -206,6 +209,8 @@ export function OrderItemsList({ detail, isPaid, onReload, onItemStatus, onCarri
                 const canCancel = isProduct && isPaid && Boolean(item.purchaseId)
                     && !fullyCancelled && !isShippedOrDelivered;
                 const returnUnresolved = isProduct && item.carrierReturnedAtUtc && !item.carrierReturnResolution;
+                const alertUnresolved = isProduct && hasPendingCarrierAlert(item);
+                const alertStatus = isProduct ? carrierAlertStatusOf([item]) : 'None';
                 const deliveryLocked = blocksPrematureDelivery(item);
 
                 return (
@@ -246,6 +251,20 @@ export function OrderItemsList({ detail, isPaid, onReload, onItemStatus, onCarri
                                         برگشتی پستکس — {formatTime(item.carrierReturnedAtUtc)}
                                     </span>
                                 )}
+                                {isProduct && item.carrierAlertCode != null && (
+                                    <span
+                                        className={`${styles.item_card__badge} ${alertUnresolved ? styles['item_card__badge--warning'] : styles['item_card__badge--neutral']}`}
+                                        data-testid="carrier-alert-badge"
+                                    >
+                                        هشدار مرسوله — {CARRIER_ALERT_STATUS_LABELS[alertStatus] || 'ثبت‌شده'}
+                                        {item.carrierAlertAtUtc ? ` (${formatTime(item.carrierAlertAtUtc)})` : ''}
+                                    </span>
+                                )}
+                                {isProduct && item.providerParcelId && (
+                                    <span className={styles.item_card__meta} data-testid="provider-parcel-id">
+                                        شناسهٔ مرسوله: <bdi dir="ltr">{item.providerParcelId}</bdi>
+                                    </span>
+                                )}
                                 {isProduct && item.carrierReturnResolution && (
                                     <div className={styles.item_card__resolved} data-testid="carrier-return-resolved">
                                         <span className={`${styles.item_card__badge} ${item.carrierReturnResolution === 'DeliveryConfirmed' ? styles['item_card__badge--info'] : styles['item_card__badge--neutral']}`}>
@@ -264,6 +283,24 @@ export function OrderItemsList({ detail, isPaid, onReload, onItemStatus, onCarri
                                         )}
                                     </div>
                                 )}
+                                {isProduct && item.carrierAlertResolution && (
+                                    <div className={styles.item_card__resolved} data-testid="carrier-alert-resolved">
+                                        <span className={`${styles.item_card__badge} ${item.carrierAlertResolution === 'DeliveryConfirmed' ? styles['item_card__badge--info'] : styles['item_card__badge--neutral']}`}>
+                                            {CARRIER_ALERT_STATUS_LABELS[alertStatus] || item.carrierAlertResolution}
+                                        </span>
+                                        {item.carrierAlertResolutionNote && (
+                                            <span className={styles.item_card__meta}>{item.carrierAlertResolutionNote}</span>
+                                        )}
+                                        <span className={styles.item_card__meta}>
+                                            زمان رسیدگی: {formatTime(item.carrierAlertResolvedAtUtc)}
+                                        </span>
+                                        {item.carrierAlertResolvedByExternalUserId && (
+                                            <span className={styles.item_card__meta} dir="ltr">
+                                                {item.carrierAlertResolvedByExternalUserId}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                                 {isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus && (
                                     <span className={styles.item_card__meta}>
                                         ارسال: {getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}
@@ -275,7 +312,7 @@ export function OrderItemsList({ detail, isPaid, onReload, onItemStatus, onCarri
                             </span>
                         </div>
 
-                        {isProduct && isPaid && item.purchaseId && (!fullyCancelled || returnUnresolved) && (
+                        {isProduct && isPaid && item.purchaseId && (!fullyCancelled || returnUnresolved || alertUnresolved) && (
                             <div className={styles.item_card__actions}>
                                 {!fullyCancelled && (
                                     <PhysicalDeliveryControl
@@ -302,6 +339,29 @@ export function OrderItemsList({ detail, isPaid, onReload, onItemStatus, onCarri
                                             ));
                                             if (typeof onCarrierResolved === 'function') {
                                                 onCarrierResolved(carrierReturnStatusOf(nextItems));
+                                            }
+                                        }}
+                                    />
+                                )}
+                                {alertUnresolved && (
+                                    <CarrierAlertResolveControl
+                                        purchaseId={item.purchaseId}
+                                        onResolved={(body) => {
+                                            const nextItems = detail.items.map((it) => (
+                                                it.purchaseId === item.purchaseId
+                                                    ? {
+                                                        ...it,
+                                                        carrierAlertResolution: body?.carrierAlertResolution || null,
+                                                        carrierAlertResolutionNote: body?.carrierAlertResolutionNote || null,
+                                                        carrierAlertResolvedAtUtc: body?.carrierAlertResolvedAtUtc || null,
+                                                        physicalDeliveryStatus: body?.deliveryStatus || it.physicalDeliveryStatus,
+                                                    }
+                                                    : it
+                                            ));
+                                            if (typeof onCarrierAlertResolved === 'function') {
+                                                onCarrierAlertResolved(carrierAlertStatusOf(nextItems));
+                                            } else if (typeof onReload === 'function') {
+                                                onReload();
                                             }
                                         }}
                                     />
@@ -347,6 +407,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
     const { order: detail, timeline, warnings = [], receipt, shippingAddress, shippingOrigin } = state.data;
     const originName = shippingOriginText(shippingOrigin);
     const isPaid = canShowReceipt(detail);
+    const alertStatus = carrierAlertStatusOf(detail.items);
 
     return (
         <>
@@ -370,6 +431,14 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
                             {DELIVERY_LABELS[detail.deliveryStatus] || detail.deliveryStatus || '—'}
                         </span>
                     </div>
+                    {alertStatus !== 'None' && (
+                        <div className={styles.expanded_field} data-testid="carrier-alert-status">
+                            <span className={styles.expanded_field__label}>هشدار مرسوله</span>
+                            <span className={styles.expanded_field__value}>
+                                {CARRIER_ALERT_STATUS_LABELS[alertStatus] || alertStatus}
+                            </span>
+                        </div>
+                    )}
                     {!(isPaid && receipt) && (
                         <div className={styles.expanded_field}>
                             <span className={styles.expanded_field__label}>مبلغ نهایی</span>
@@ -433,6 +502,7 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
                     onReload={reload}
                     onItemStatus={setItemDeliveryStatus}
                     onCarrierResolved={() => reload()}
+                    onCarrierAlertResolved={() => reload()}
                 />
             </div>
 

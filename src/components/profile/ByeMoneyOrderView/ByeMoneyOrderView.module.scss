@@ -466,6 +466,13 @@ summary.cardTitle {
     color: var(--color-text-secondary, var(--color-text-primary));
 }
 
+.trackingLink {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    font-weight: 600;
+}
+
 .deliveryConfirm {
     display: flex;
     flex-direction: column;

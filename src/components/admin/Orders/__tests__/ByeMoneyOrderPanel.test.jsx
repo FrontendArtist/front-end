@@ -98,6 +98,34 @@ describe('ByeMoneyOrderPanel', () => {
         expect(await screen.findByText(/عدم دسترسی توکن/)).toBeInTheDocument();
     });
 
+    test('کارت همان سفارش وضعیت هشدار و شناسهٔ مرسوله را نشان می‌دهد و کنترل تعیین‌تکلیف دارد', async () => {
+        fetchOrderTracking.mockResolvedValue(payload({
+            order: {
+                ...payload().order,
+                financialStatus: 'Paid',
+                items: [{
+                    title: 'کتاب',
+                    itemType: 'Product',
+                    quantity: 1,
+                    finalAmountInNoor: 50,
+                    purchaseId: 'p1',
+                    physicalDeliveryStatus: 'Shipped',
+                    providerParcelId: 'parcel-9',
+                    carrierAlertCode: 11304,
+                    carrierAlertAtUtc: '2026-11-19T09:00:00Z',
+                    carrierAlertResolution: null,
+                }],
+            },
+            receipt: { purchasedAtUtc: '2026-11-01T10:20:00Z', couponCode: null, finalAmountInNoor: 50, cartSummary: { originalTotalInNoor: 50 }, items: [] },
+        }));
+        render(<ByeMoneyOrderPanel order={ORDER} />);
+
+        expect(await screen.findByTestId('carrier-alert-status')).toHaveTextContent('در انتظار رسیدگی');
+        expect(screen.getByTestId('carrier-alert-badge')).toHaveTextContent('هشدار مرسوله');
+        expect(screen.getByTestId('provider-parcel-id')).toHaveTextContent('parcel-9');
+        expect(screen.getByTestId('carrier-alert-resolve-open')).toBeInTheDocument();
+    });
+
     test('سفارش Paid: رسید و کنترل ارسال کالا فقط برای قلم کالا', async () => {
         fetchOrderTracking.mockResolvedValue(payload({
             order: {

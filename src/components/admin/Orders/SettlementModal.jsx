@@ -128,7 +128,7 @@ export default function SettlementModal({
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div className={styles.modal__field}>
                         <label className={styles.modal__label}>
-                            عنوان دوره :
+                            عنوان دورهٔ تسویه :
                         </label>
                         <input
                             type="text"

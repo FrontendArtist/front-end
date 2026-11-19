@@ -47,6 +47,50 @@ export function carrierReturnStatusOf(items) {
     return 'None';
 }
 
+const CARRIER_ALERT_CODES = new Set([11304, 11305]);
+
+export const CARRIER_ALERT_STATUS_LABELS = {
+    PendingReview: 'در انتظار رسیدگی',
+    DeliveryConfirmed: 'تحویل تأیید شد',
+    ClosedWithoutSettlement: 'بدون تسویه بسته شد',
+    None: 'بدون هشدار',
+};
+
+const CARRIER_ALERT_ROW_BADGES = {
+    PendingReview: { text: 'هشدار مرسوله — در انتظار رسیدگی', variant: 'warning' },
+    ClosedWithoutSettlement: { text: 'هشدار مرسوله — بسته‌شده بدون تسویه', variant: 'default' },
+    DeliveryConfirmed: { text: 'هشدار مرسوله — تحویل تأیید شد', variant: 'info' },
+};
+
+/** نشان ردیف فهرست ادمین برای هشدار خسارت/مفقودی؛ None و مقدار ناشناخته نشان نمی‌گیرند */
+export function getCarrierAlertBadge(status) {
+    return CARRIER_ALERT_ROW_BADGES[status] || null;
+}
+
+/** قلم کالایی که هشدار خسارت/مفقودی دارد و هنوز تعیین‌تکلیف نشده است. */
+export function hasPendingCarrierAlert(item) {
+    const code = Number(item?.carrierAlertCode);
+    if (!CARRIER_ALERT_CODES.has(code)) return false;
+    return !item.carrierAlertResolution;
+}
+
+/** وضعیت تجمیعی هشدار مرسوله، هم‌معنای OrderCarrierAlertStatus بای‌مانی. */
+export function carrierAlertStatusOf(items) {
+    const alerts = (items || []).filter((item) => (
+        String(item?.itemType || '').toLowerCase() === 'product' &&
+        CARRIER_ALERT_CODES.has(Number(item?.carrierAlertCode))
+    ));
+    if (alerts.length === 0) return 'None';
+    if (alerts.some((item) => !item.carrierAlertResolution)) return 'PendingReview';
+    if (alerts.some((item) => item.carrierAlertResolution === 'ClosedWithoutSettlement')) {
+        return 'ClosedWithoutSettlement';
+    }
+    if (alerts.every((item) => item.carrierAlertResolution === 'DeliveryConfirmed')) {
+        return 'DeliveryConfirmed';
+    }
+    return 'None';
+}
+
 /** برچسب ارسال ردیف جدول؛ برای سفارش پرداخت‌نشده یا بدون کالا null */
 export function getRowShippingBadge(row) {
     if (!row || row.financialStatus !== 'Paid') return null;

@@ -73,6 +73,7 @@ export function mapByeMoneyOrderRow(row) {
         financialStatus: row.financialStatus,
         deliveryStatus: row.deliveryStatus,
         carrierReturnStatus: row.carrierReturnStatus || 'None',
+        carrierAlertStatus: row.carrierAlertStatus || 'None',
         itemCount: row.itemCount ?? 0,
         topUpAttemptCount: row.topUpAttemptCount ?? 0,
         createdAt: row.createdAtUtc,

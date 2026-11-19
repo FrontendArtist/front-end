@@ -37,6 +37,7 @@ function mapByeMoneyProductItem(item) {
         refundedGiftInNoor: Number(item.refundedGiftInNoor) || 0,
         trackingCode: item.trackingCode || null,
         trackingProvider: item.trackingProvider || null,
+        trackingUrl: item.trackingUrl || null,
         shippedAtUtc: item.shippedAtUtc || null,
         carrierReturnedAtUtc: item.carrierReturnedAtUtc || null,
         carrierReturnResolution: item.carrierReturnResolution || null,

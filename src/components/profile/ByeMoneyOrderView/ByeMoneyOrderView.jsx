@@ -13,7 +13,8 @@ import { isGuid, sumRefunds, CANCEL_OUTCOME_LABELS } from '@/lib/physicalCancel'
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import {
     formatNoor, formatOrderDate, getAmountRows, getByeMoneyOrderView, getOrderNumber,
-    getPaidAt, getPaymentRefCode, getPhysicalSteps,
+    getPaidAt, getPaymentRefCode, getPhysicalSteps, getTrackingHref, carrierReturnBlocksConfirmation,
+    CARRIER_RETURN_CONFIRM_BLOCKED_MESSAGE,
 } from '@/lib/byeMoneyOrderView';
 import { shippingOriginText } from '@/lib/shippingOrigin';
 import styles from './ByeMoneyOrderView.module.scss';
@@ -61,6 +62,8 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
     const refundedGift = Number(item.refundedGiftInNoor) || 0;
     const typeLabel = isProduct ? 'کالای فیزیکی' : item.type === 'chapter' ? 'فصل' : 'دوره آموزشی';
     const physicalLabel = getPhysicalDeliveryLabel(item.physicalDeliveryStatus);
+    const returnPending = isProduct && carrierReturnBlocksConfirmation(item);
+    const trackingHref = isProduct ? getTrackingHref(item) : null;
 
     return (
         <li className={styles.item}>
@@ -91,10 +94,30 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
                             {physicalLabel}
                         </span>
                     )}
-                    {isProduct && item.trackingCode && (
+                    {isProduct && returnPending && (
+                        <span className={`${styles.pill} ${styles.warning}`} data-testid="physical-return-badge">
+                            برگشتی
+                        </span>
+                    )}
+                    {isProduct && (item.trackingCode || trackingHref) && (
                         <span className={styles.trackingCode} data-testid="physical-tracking-code">
-                            کد رهگیری: <bdi dir="ltr">{item.trackingCode}</bdi>
-                            <CopyButton text={item.trackingCode} label="کد رهگیری" />
+                            {item.trackingCode && (
+                                <>
+                                    کد رهگیری: <bdi dir="ltr">{item.trackingCode}</bdi>
+                                    <CopyButton text={item.trackingCode} label="کد رهگیری" />
+                                </>
+                            )}
+                            {trackingHref && (
+                                <a
+                                    href={trackingHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={styles.trackingLink}
+                                    data-testid="physical-tracking-link"
+                                >
+                                    پیگیری مرسوله
+                                </a>
+                            )}
                             {item.shippedAtUtc && (
                                 <span className={styles.itemHint} data-testid="physical-shipped-at">
                                     ارسال: {formatOrderDate(item.shippedAtUtc)}
@@ -167,13 +190,12 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
     const isRemainingShipped = (item) =>
         item.physicalDeliveryStatus === 'Shipped' &&
         (Number(item.cancelledQuantity) || 0) < (Number(item.quantity) || 1);
-    const carrierReturnBlocksConfirm = (item) =>
-        item.carrierReturnedAtUtc != null && item.carrierReturnResolution !== 'DeliveryConfirmed';
+    const carrierReturnBlocksConfirm = (item) => carrierReturnBlocksConfirmation(item);
     const shippedProductItems = physicalItems.filter(isRemainingShipped);
+    const blockedShippedItems = shippedProductItems.filter(carrierReturnBlocksConfirm);
     const confirmableShippedItems = shippedProductItems.filter((item) => !carrierReturnBlocksConfirm(item));
     const canConfirmDelivery = view.isPaid && !confirmedNow && confirmableShippedItems.length > 0;
-    const showCarrierReviewNote = view.isPaid && !confirmedNow && !canConfirmDelivery
-        && shippedProductItems.some(carrierReturnBlocksConfirm);
+    const showCarrierReviewNote = view.isPaid && !confirmedNow && blockedShippedItems.length > 0;
 
     const confirmDelivery = async () => {
         if (confirming) return;
@@ -184,11 +206,20 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
             const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}/confirm-delivery`, { method: 'POST' });
             const json = await res.json().catch(() => ({}));
             if (res.ok) {
+                const confirmedCount = Number(json?.data?.confirmedCount ?? json?.confirmedCount ?? 0);
+                const partial = confirmedCount > 0 && confirmedCount < shippedProductItems.length;
                 setConfirmedNow(true);
-                setConfirmMessage({ ok: true, text: 'دریافت کالا ثبت شد.' });
+                setConfirmMessage({
+                    ok: true,
+                    text: partial
+                        ? `دریافت ${confirmedCount.toLocaleString('fa-IR')} قلم ثبت شد؛ قلم برگشتی در این تأیید نبوده است.`
+                        : 'دریافت کالا ثبت شد.',
+                });
                 if (typeof onOrderChanged === 'function') {
                     await onOrderChanged();
                 }
+            } else if (res.status === 409) {
+                setConfirmMessage({ ok: false, conflict: true, text: CARRIER_RETURN_CONFIRM_BLOCKED_MESSAGE });
             } else {
                 setConfirmMessage({ ok: false, text: json?.error || 'ثبت تأیید دریافت ناموفق بود.' });
             }
@@ -305,14 +336,16 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
 
                     {showCarrierReviewNote && (
                         <p className={`${styles.notice} ${styles.noticeCalm}`} role="status" data-testid="carrier-return-review-note">
-                            مرسوله در وضعیت بررسی پستی است
+                            مرسوله از سوی پست برگشت اعلام شده است. برای پیگیری با{' '}
+                            <Link href="/contact" className={styles.trackingLink}>پشتیبانی</Link>{' '}
+                            تماس بگیرید.
                         </p>
                     )}
 
                     {canConfirmDelivery && (
                         <div className={styles.deliveryConfirm} data-testid="confirm-delivery-box">
                             <p className={styles.deliveryHint}>
-                                مرسوله را دریافت کرده‌اید؟ با تأیید شما همهٔ اقلام ارسال‌شدهٔ این سفارش «تحویل‌شده» ثبت می‌شوند.
+                                مرسوله را دریافت کرده‌اید؟ با تأیید شما همهٔ اقلام ارسال‌شدهٔ قابل تأیید این سفارش «تحویل‌شده» ثبت می‌شوند.
                             </p>
                             <button
                                 type="button"

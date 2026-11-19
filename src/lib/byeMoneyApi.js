@@ -1631,7 +1631,7 @@ function extractDomainErrorMessage(errJson, fallback) {
  * @param {string} params.jwt
  * @param {string} params.orderId - شناسهٔ سفارش با قالب I11-T (cart:... یا purchase:...)
  * @returns {Promise<{ success: boolean, data?: { orderId: string, confirmedCount: number, purchaseIds: string[] },
- *   badRequest?: boolean, notFound?: boolean, unauthorized?: boolean, error?: string, networkError?: boolean }>}
+ *   badRequest?: boolean, notFound?: boolean, unauthorized?: boolean, conflict?: boolean, error?: string, networkError?: boolean }>}
  */
 export async function confirmMyCourseOrderDelivery({ jwt, orderId, signal } = {}) {
   if (!jwt) {
@@ -1665,6 +1665,13 @@ export async function confirmMyCourseOrderDelivery({ jwt, orderId, signal } = {}
     } catch {}
     if (res.status === 400) {
       return { success: false, badRequest: true, error: extractDomainErrorMessage(errJson, 'درخواست نامعتبر است.') };
+    }
+    if (res.status === 409) {
+      return {
+        success: false,
+        conflict: true,
+        error: extractDomainErrorMessage(errJson, 'تأیید دریافت برای این مرسوله امکان‌پذیر نیست.'),
+      };
     }
     return { success: false, error: extractDomainErrorMessage(errJson, 'ثبت تأیید دریافت کالا ناموفق بود.') };
   } catch (err) {

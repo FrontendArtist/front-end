@@ -104,6 +104,10 @@ function sanitizeItem(i) {
         financialStatus: i.financialStatus ?? null,
         deliveryStatus: i.deliveryStatus ?? null,
         physicalDeliveryStatus: i.physicalDeliveryStatus ?? null,
+        trackingCode: i.trackingCode ?? null,
+        trackingProvider: i.trackingProvider ?? null,
+        trackingUrl: i.trackingUrl ?? null,
+        providerParcelId: i.providerParcelId ?? null,
         cancelledQuantity: Number(i.cancelledQuantity) || 0,
         refundedRegularInNoor: Number(i.refundedRegularInNoor) || 0,
         refundedGiftInNoor: Number(i.refundedGiftInNoor) || 0,
@@ -112,6 +116,12 @@ function sanitizeItem(i) {
         carrierReturnResolutionNote: i.carrierReturnResolutionNote ?? null,
         carrierReturnResolvedAtUtc: i.carrierReturnResolvedAtUtc ?? null,
         carrierReturnResolvedByExternalUserId: i.carrierReturnResolvedByExternalUserId ?? null,
+        carrierAlertCode: i.carrierAlertCode ?? null,
+        carrierAlertAtUtc: i.carrierAlertAtUtc ?? null,
+        carrierAlertResolution: i.carrierAlertResolution ?? null,
+        carrierAlertResolutionNote: i.carrierAlertResolutionNote ?? null,
+        carrierAlertResolvedAtUtc: i.carrierAlertResolvedAtUtc ?? null,
+        carrierAlertResolvedByExternalUserId: i.carrierAlertResolvedByExternalUserId ?? null,
     };
 }
 
@@ -138,6 +148,7 @@ function sanitizeReceipt(r) {
             refundedGiftInNoor: Number(i.refundedGiftInNoor) || 0,
             carrierReturnedAtUtc: i.carrierReturnedAtUtc ?? null,
             carrierReturnResolution: i.carrierReturnResolution ?? null,
+            providerParcelId: i.providerParcelId ?? null,
         })),
     };
 }

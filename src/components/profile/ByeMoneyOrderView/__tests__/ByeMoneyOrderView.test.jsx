@@ -77,3 +77,101 @@ describe('ByeMoneyOrderView — رهگیری مرسوله', () => {
         expect(screen.queryByTestId('confirm-delivery-btn')).not.toBeInTheDocument();
     });
 });
+
+describe('ByeMoneyOrderView — برگشتی مرسوله', () => {
+    const returnedItem = (extra = {}) => ({
+        ...buildOrder().items[0],
+        purchaseId: 'p-returned',
+        carrierReturnedAtUtc: '2026-11-18T10:00:00Z',
+        carrierReturnResolution: null,
+        ...extra,
+    });
+
+    it('قلم برگشتی حل‌نشده نشان «برگشتی» می‌گیرد حتی وقتی بقیه ارسال‌شده‌اند', () => {
+        const order = buildOrder({
+            items: [returnedItem(), { ...buildOrder().items[0], purchaseId: 'p-normal', title: 'کتاب دوم' }],
+        });
+
+        render(<ByeMoneyOrderView order={order} />);
+
+        expect(screen.getByTestId('physical-return-badge')).toHaveTextContent('برگشتی');
+        expect(screen.getByTestId('physical-return-badge')).not.toHaveTextContent('برگشت خورد');
+        const note = screen.getByTestId('carrier-return-review-note');
+        expect(note).toHaveTextContent('مرسوله از سوی پست برگشت اعلام شده است');
+        expect(note).toHaveTextContent('تماس بگیرید');
+        expect(screen.getByRole('link', { name: 'پشتیبانی' })).toHaveAttribute('href', '/contact');
+        expect(screen.getByTestId('confirm-delivery-btn')).toBeInTheDocument();
+    });
+
+    it('تأیید جزئی تعداد تأییدشده را می‌گوید و قلم برگشتی را خارج از تأیید اعلام می‌کند', async () => {
+        global.fetch.mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true, data: { confirmedCount: 1 } }),
+        });
+        const order = buildOrder({
+            items: [returnedItem(), { ...buildOrder().items[0], purchaseId: 'p-normal', title: 'کتاب دوم' }],
+        });
+
+        render(<ByeMoneyOrderView order={order} />);
+        fireEvent.click(screen.getByTestId('confirm-delivery-btn'));
+
+        const message = await screen.findByTestId('confirm-delivery-message');
+        expect(message).toHaveTextContent('دریافت ۱ قلم ثبت شد');
+        expect(message).toHaveTextContent('قلم برگشتی در این تأیید نبوده است');
+    });
+
+    it('۴۰۹ را نشان می‌دهد و جملهٔ واحد تأیید مرسولهٔ برگشتی را می‌آورد', async () => {
+        global.fetch.mockResolvedValue({
+            ok: false,
+            status: 409,
+            json: async () => ({ success: false, error: 'مرسولهٔ این سفارش برگشتی اعلام شده است.' }),
+        });
+        const order = buildOrder({
+            items: [
+                { ...buildOrder().items[0], purchaseId: 'p-normal' },
+                returnedItem(),
+            ],
+        });
+
+        render(<ByeMoneyOrderView order={order} />);
+        fireEvent.click(screen.getByTestId('confirm-delivery-btn'));
+
+        const message = await screen.findByTestId('confirm-delivery-message');
+        expect(message).toHaveTextContent('این مرسوله برگشته و تأیید دریافت برایش ثبت نمی‌شود.');
+    });
+});
+
+describe('ByeMoneyOrderView — لینک رهگیری', () => {
+    it('فقط trackingUrl مطلق https لینک امن می‌سازد', () => {
+        const order = buildOrder({
+            items: [{ ...buildOrder().items[0], trackingUrl: 'https://track.example/parcel/1' }],
+        });
+
+        render(<ByeMoneyOrderView order={order} />);
+
+        const link = screen.getByTestId('physical-tracking-link');
+        expect(link).toHaveAttribute('href', 'https://track.example/parcel/1');
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+
+    it.each([
+        ['http', { trackingUrl: 'http://track.example/1' }],
+        ['javascript', { trackingUrl: 'javascript:alert(1)' }],
+        ['منبع Manual', { trackingUrl: 'https://track.example/1', trackingProvider: 'Manual' }],
+    ])('%s لینک نمی‌سازد و فقط کد و کپی می‌ماند', (_name, extra) => {
+        const order = buildOrder({ items: [{ ...buildOrder().items[0], ...extra }] });
+
+        render(<ByeMoneyOrderView order={order} />);
+
+        expect(screen.queryByTestId('physical-tracking-link')).not.toBeInTheDocument();
+        expect(screen.getByTestId('physical-tracking-code')).toHaveTextContent('PTX-8846884');
+        expect(screen.getByRole('button', { name: 'کپی کد رهگیری' })).toBeInTheDocument();
+    });
+
+    it('بدون trackingUrl از روی کد لینک نمی‌سازد', () => {
+        render(<ByeMoneyOrderView order={buildOrder()} />);
+        expect(screen.queryByTestId('physical-tracking-link')).not.toBeInTheDocument();
+    });
+});

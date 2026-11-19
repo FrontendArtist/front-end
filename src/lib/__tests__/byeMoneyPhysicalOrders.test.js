@@ -1,6 +1,7 @@
 import {
   getMyCourseOrderReceipt,
   getAdminCourseOrderReceipt,
+  confirmMyCourseOrderDelivery,
   updatePhysicalPurchaseDeliveryStatus,
   getPendingPhysicalRestocks,
 } from '../byeMoneyApi';
@@ -119,6 +120,32 @@ describe.each([
   test('خطای شبکه', async () => {
     fetch.mockRejectedValue(new Error('down'));
     expect(await fn({ jwt: 'tok', orderId: ORDER_ID })).toMatchObject({ success: false, networkError: true });
+  });
+});
+
+describe('confirmMyCourseOrderDelivery (SHIP-FIX-2)', () => {
+  const url = `https://byemoney.test/api/me/orders/${encodeURIComponent(ORDER_ID)}/confirm-delivery`;
+
+  test('۲۰۰ تعداد تأییدشده را برمی‌گرداند', async () => {
+    const data = { orderId: ORDER_ID, confirmedCount: 1, purchaseIds: [PURCHASE_ID] };
+    fetch.mockResolvedValue(res(200, data));
+    const r = await confirmMyCourseOrderDelivery({ jwt: 'tok', orderId: ORDER_ID });
+    expect(r).toEqual({ success: true, data });
+    expect(fetch).toHaveBeenCalledWith(url, expect.objectContaining({ method: 'POST' }));
+  });
+
+  test('۴۰۹ پرچم تعارض و پیام دامنه می‌دهد', async () => {
+    fetch.mockResolvedValue(res(409, {
+      title: 'تعارض',
+      status: 409,
+      errors: ['مرسولهٔ این سفارش توسط واسط پستی برگشتی اعلام شده و تأیید دریافت توسط خریدار امکان‌پذیر نیست.'],
+    }));
+    const r = await confirmMyCourseOrderDelivery({ jwt: 'tok', orderId: ORDER_ID });
+    expect(r).toEqual({
+      success: false,
+      conflict: true,
+      error: 'مرسولهٔ این سفارش توسط واسط پستی برگشتی اعلام شده و تأیید دریافت توسط خریدار امکان‌پذیر نیست.',
+    });
   });
 });
 
