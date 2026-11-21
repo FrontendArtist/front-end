@@ -20,6 +20,8 @@ export function getTrackingHref(item) {
     const url = String(item?.trackingUrl || '').trim();
     return /^https:\/\/[^\s]+$/i.test(url) ? url : null;
 }
+export const isPhysicalItemFullyCancelled = (item) =>
+    Number(item?.cancelledQuantity || 0) >= Number(item?.quantity || 1);
 
 export const formatNoor = (value) => `${Number(value || 0).toLocaleString('fa-IR')} نور`;
 
@@ -42,7 +44,9 @@ export function getOrderNumber(order) {
 export function getPhysicalState(physicalItems, cancelled) {
     if (physicalItems.length === 0) return null;
     if (cancelled) return 'cancelled';
-    const st = physicalItems.map((i) => i.physicalDeliveryStatus);
+    const activeItems = physicalItems.filter((i) => !isPhysicalItemFullyCancelled(i));
+    if (activeItems.length === 0) return 'cancelled';
+    const st = activeItems.map((i) => i.physicalDeliveryStatus);
     if (st.every((s) => s === 'Delivered')) return 'delivered';
     if (st.some((s) => s === 'Shipped' || s === 'Delivered')) return 'shipped';
     return 'preparing';
@@ -62,6 +66,20 @@ export function getPhysicalSteps(state) {
     }));
 }
 
+const TOPUP_STATUS_META = {
+    Confirmed: { label: 'شارژ تأیید شد', tone: 'success' },
+    Rejected: { label: 'شارژ رد شد', tone: 'danger' },
+    Pending: { label: 'در انتظار تأیید', tone: 'warning' },
+    UnderReview: { label: 'در حال بررسی مالی', tone: 'warning' },
+    Unresolved: { label: 'نامشخص (نیازمند پیگیری)', tone: 'danger' },
+    ManuallyRefunded: { label: 'استرداد دستی انجام شد', tone: 'info' },
+};
+
+/** برچسب و رنگ فارسی وضعیت تلاش شارژ (TopUpStatus). */
+export function getTopUpStatusMeta(status) {
+    return TOPUP_STATUS_META[status] || { label: status || 'نامشخص', tone: 'default' };
+}
+
 /**
  * @param {object} order سفارش نگاشت‌شدهٔ /api/orders
  * @param {{ cancelledNow?: boolean }} opts نتیجهٔ لغوی که در همین نشست انجام شده
@@ -71,7 +89,7 @@ export function getByeMoneyOrderView(order, { cancelledNow = false } = {}) {
     const physicalItems = items.filter(isProduct);
     const courseItems = items.filter((i) => !isProduct(i));
     const physicalCancelled = cancelledNow
-        || (physicalItems.length > 0 && physicalItems.every((i) => Number(i.cancelledQuantity) >= Number(i.quantity || 1)));
+        || (physicalItems.length > 0 && physicalItems.every(isPhysicalItemFullyCancelled));
     const physicalState = getPhysicalState(physicalItems, physicalCancelled);
     const status = order?.financialStatus;
     const isPaid = status === 'Paid';
@@ -141,20 +159,40 @@ export function getAmountRows(order) {
     const hasProduct = (order?.items || []).some(isProduct);
     if (shipping > 0) rows.push({ key: 'shipping', label: 'هزینهٔ ارسال', value: formatNoor(shipping) });
     else if (hasProduct && summary?.shippingAmountInNoor != null) rows.push({ key: 'shipping', label: 'هزینهٔ ارسال', value: 'رایگان' });
+
+    const finalAmount = order?.totalPrice ?? summary?.finalAmountInNoor;
+    if (
+        rows.length === 1
+        && rows[0].key === 'subtotal'
+        && finalAmount != null
+        && Number(original) === Number(finalAmount)
+    ) {
+        return [];
+    }
     return rows;
+}
+
+function findRelevantConfirmedTopUp(order, predicate) {
+    const topUps = Array.isArray(order?.topUps) ? order.topUps : [];
+    const confirmed = topUps.filter((t) => t?.status === 'Confirmed' && predicate(t));
+    if (confirmed.length === 0) return null;
+    if (order?.currentTopUpRequestId) {
+        const currentId = String(order.currentTopUpRequestId).toLowerCase();
+        const matched = confirmed.find((t) => String(t.topUpRequestId || '').toLowerCase() === currentId);
+        if (matched) return matched;
+    }
+    return confirmed[confirmed.length - 1];
 }
 
 /** کد پیگیری پرداخت از شارژ تأییدشده (در صورت وجود). */
 export function getPaymentRefCode(order) {
-    const confirmed = Array.isArray(order?.topUps)
-        ? order.topUps.find((t) => t.status === 'Confirmed' && t.clientReferenceCode)
-        : null;
+    const confirmed = findRelevantConfirmedTopUp(order, (t) => Boolean(t.clientReferenceCode));
     return confirmed?.clientReferenceCode || order?.clientReferenceCode || null;
 }
 
 /** زمان پرداخت: تأیید شارژ یا خرید اولین قلم؛ فقط اگر از تاریخ ثبت متفاوت باشد. */
 export function getPaidAt(order) {
-    const confirmed = Array.isArray(order?.topUps) ? order.topUps.find((t) => t.status === 'Confirmed' && t.confirmedAtUtc) : null;
+    const confirmed = findRelevantConfirmedTopUp(order, (t) => Boolean(t.confirmedAtUtc));
     const itemTime = (order?.items || []).map((i) => i.purchasedAtUtc).find(Boolean);
     const raw = confirmed?.confirmedAtUtc || itemTime || null;
     const formatted = formatOrderDate(raw);

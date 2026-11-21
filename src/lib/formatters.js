@@ -65,5 +65,5 @@ export function formatTomanHint(noorAmount, tomanPerNoor) {
   }
 
   const estimatedToman = Math.round(numericNoor * rate);
-  return `معادل تقریبی: ${formatPrice(estimatedToman)} تومان`;
+  return `معادل : ${formatPrice(estimatedToman)} تومان`;
 }

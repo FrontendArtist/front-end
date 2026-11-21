@@ -290,4 +290,97 @@ describe('دریافت سفارشات و رسیدها (I11-T و I11-P)', () => {
     expect(res.status).toBe(404);
     expect(res.body.notFound).toBe(true);
   });
+
+  it('فیلدهای حساس Strapi را حذف و اطلاعات رسید را از notes استخراج و با populate محدود فچ می‌کند', async () => {
+    global.fetch = jest.fn(async () => jsonResponse({
+      data: [
+        {
+          id: 50,
+          documentId: 'legacy-doc-50',
+          createdAt: '2026-10-01T10:00:00Z',
+          orderStatus: 'paid',
+          paymentStatus: 'paid',
+          paymentMethod: 'online',
+          totalPrice: 250000,
+          user: { id: 5, provider: 'local', enrolledChapters: ['c1'] },
+          hashedCardNumber: 'secret-hash',
+          settlement: { id: 99 },
+          notes: 'رسید دیجیتال (RefNum): REF-9988\nکد رهگیری: 123456\nشماره کارت: 6037-****-1234',
+          items: [{ title: 'کتاب', price: 250000 }],
+          receiptImage: { id: 7, url: '/uploads/r.jpg', name: 'r.jpg', provider_metadata: { secret: 1 } },
+        },
+      ],
+    }));
+
+    const res = await GET({ url: 'http://site.test/api/orders?documentId=legacy-doc-50' });
+    expect(res.status).toBe(200);
+    const calledUrl = global.fetch.mock.calls[0][0];
+    expect(calledUrl).toContain('populate[0]=items&populate[1]=receiptImage');
+    expect(calledUrl).not.toContain('populate=*');
+
+    const order = res.body.data[0];
+    expect(order.user).toBeUndefined();
+    expect(order.hashedCardNumber).toBeUndefined();
+    expect(order.settlement).toBeUndefined();
+    expect(order.notes).toBeUndefined();
+    expect(order.refNum).toBe('REF-9988');
+    expect(order.traceNo).toBe('123456');
+    expect(order.securePan).toBe('6037-****-1234');
+    expect(order.receiptImage).toEqual({ id: 7, url: '/uploads/r.jpg', name: 'r.jpg', formats: null });
+  });
+
+  it('خطای ۴۰۴ یا ۵۰۲ برای شناسه معتبر بای‌مانی مستقیماً برگردانده می‌شود و fallback به receipt یا Strapi نمی‌رود', async () => {
+    getMyCourseOrderDetails.mockResolvedValueOnce({ success: false, notFound: true, error: 'سفارش پیدا نشد.' });
+    const res404 = await GET({ url: 'http://site.test/api/orders?documentId=cart:11111111-1111-1111-1111-111111111111' });
+    expect(res404.status).toBe(404);
+    expect(getCoursePurchaseReceipt).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
+
+    getMyCourseOrderDetails.mockResolvedValueOnce({ success: false, networkError: true, error: 'Down' });
+    const res502 = await GET({ url: 'http://site.test/api/orders?documentId=cart:11111111-1111-1111-1111-111111111111' });
+    expect(res502.status).toBe(502);
+    expect(getCoursePurchaseReceipt).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('فیلدهای couponCode و برگشت هزینه ارسال در جزئیات سفارش بای‌مانی نگاشت می‌شوند و اقلام لیست بدون خرید جعلی نمی‌مانند', async () => {
+    getMyCourseOrderDetails.mockResolvedValueOnce({
+      success: true,
+      data: {
+        orderId: 'cart:11111111-1111-1111-1111-111111111111',
+        sourceType: 'Cart',
+        financialStatus: 'Paid',
+        deliveryStatus: 'Cancelled',
+        finalAmountInNoor: 385000,
+        itemCount: 1,
+        couponCode: 'OFF474',
+        shippingRegularRefundInNoor: 0,
+        shippingGiftRefundInNoor: 25000,
+        items: [],
+        topUps: [],
+      },
+    });
+    const detailRes = await GET({ url: 'http://site.test/api/orders?documentId=cart:11111111-1111-1111-1111-111111111111' });
+    expect(detailRes.body.data[0].couponCode).toBe('OFF474');
+    expect(detailRes.body.data[0].shippingGiftRefundInNoor).toBe(25000);
+
+    getMyCourseOrders.mockResolvedValueOnce({
+      success: true,
+      data: {
+        items: [{
+          orderId: 'cart:99999999-9999-9999-9999-999999999999',
+          sourceType: 'Cart',
+          financialStatus: 'AwaitingPayment',
+          deliveryStatus: 'NotStarted',
+          finalAmountInNoor: 150000,
+          itemCount: 2,
+          createdAtUtc: '2026-10-20T10:00:00Z',
+        }],
+      },
+    });
+    const listRes = await GET({ url: 'http://site.test/api/orders' });
+    const unpaid = listRes.body.data.find(o => o.orderId === 'cart:99999999-9999-9999-9999-999999999999');
+    expect(unpaid.items).toEqual([]);
+    expect(unpaid.itemCount).toBe(2);
+  });
 });

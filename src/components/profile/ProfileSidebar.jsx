@@ -108,7 +108,9 @@ export default function ProfileSidebar() {
             {/* Navigation Links */}
             <nav className={styles.nav}>
                 {navItems.map((item) => {
-                    const isActive = pathname === item.href;
+                    const isActive =
+                        pathname === item.href ||
+                        (item.href !== '/profile' && Boolean(pathname?.startsWith(`${item.href}/`)));
                     return (
                         <Link
                             key={item.href}

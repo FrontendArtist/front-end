@@ -25,7 +25,7 @@ describe('Formatters with Noor and Display Hint', () => {
 
   test('formatTomanHint calculates and formats approximate Toman amount', () => {
     const hint = formatTomanHint(100, 1000);
-    expect(hint).toContain('معادل تقریبی:');
+    expect(hint).toContain('معادل');
     expect(hint).toContain('۱۰۰');
     expect(hint).toContain('تومان');
   });

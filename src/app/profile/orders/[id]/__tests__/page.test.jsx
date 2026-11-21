@@ -216,12 +216,106 @@ describe('جزئیات سفارش بای‌مانی – ارسال کالا و �
     expect(screen.queryByTestId('shipping-address')).not.toBeInTheDocument();
   });
 
-  it('سفارش پرداخت‌نشده: دکمهٔ لغو و نوار پیشرفت نیست', async () => {
+  it('سفارش پرداخت‌نشده بدون آدرس: کارت خالی ارسال کالا رندر نمی‌شود (O13)', async () => {
     mockOrder({ ...baseOrder, financialStatus: 'AwaitingPayment', items: [productItem('Preparing')] });
     render(<OrderDetailPage />);
-    await screen.findByTestId('shipping-card');
+    await screen.findByTestId('order-status-badge');
+    expect(screen.queryByTestId('shipping-card')).not.toBeInTheDocument();
     expect(screen.queryByText('لغو بخش فیزیکی سفارش')).not.toBeInTheDocument();
     expect(screen.queryByTestId('physical-progress')).not.toBeInTheDocument();
+  });
+});
+
+describe('جزئیات سفارش قدیمی استراپی – واحد پولی و وضعیت‌ها', () => {
+  it('سفارش آنلاین ارسال‌شده (L1): مبلغ تومانی بدون PriceWithHint و نمایش هر دو بج موفق و ارسال شده', async () => {
+    mockOrder({
+      id: 1735,
+      documentId: 'testleg001online0shipped',
+      source: 'strapi',
+      paymentMethod: 'online',
+      orderStatus: 'shipped',
+      paymentStatus: 'paid',
+      totalPrice: 250000,
+      trackingNumber: 'POST-9988',
+      createdAt: '2026-10-15T10:00:00Z',
+      items: [{ __component: 'order.product-order-item', title: 'کتاب سلوک', price: 250000, quantity: 1 }],
+    });
+
+    render(<OrderDetailPage />);
+    expect(await screen.findByText('جزئیات سفارش')).toBeInTheDocument();
+    expect(screen.queryByTestId('price')).not.toBeInTheDocument();
+    expect(screen.getAllByText(`${Number(250000).toLocaleString('fa-IR')} تومان`)).toHaveLength(3);
+    expect(screen.getByText('پرداخت آنلاین موفق')).toBeInTheDocument();
+    expect(screen.getByText('ارسال شده')).toBeInTheDocument();
+  });
+
+  it('سفارش آنلاین ناموفق (L2): ردیف تاریخ و زمان پرداخت نمایش داده نمی‌شود', async () => {
+    mockOrder({
+      id: 1736,
+      documentId: 'testleg002online0failed1',
+      source: 'strapi',
+      paymentMethod: 'online',
+      orderStatus: 'canceled',
+      paymentStatus: 'failed',
+      totalPrice: 120000,
+      createdAt: '2026-10-15T10:00:00Z',
+      items: [],
+    });
+
+    render(<OrderDetailPage />);
+    expect(await screen.findByText('پرداخت ناموفق / لغو شده')).toBeInTheDocument();
+    expect(screen.queryByText('تاریخ و زمان پرداخت')).not.toBeInTheDocument();
+  });
+
+  it('سفارش کارت‌به‌کارت لغوشده (L5): بج در انتظار پرداخت و فرم آپلود مخفی می‌مانند', async () => {
+    mockOrder({
+      id: 1739,
+      documentId: 'testleg005c2c0canceled01',
+      source: 'strapi',
+      paymentMethod: 'card_to_card',
+      orderStatus: 'canceled',
+      paymentStatus: 'pending_payment',
+      rejectionReason: 'فیش نامعتبر بود',
+      totalPrice: 100000,
+      createdAt: '2026-10-15T10:00:00Z',
+      items: [],
+    });
+
+    render(<OrderDetailPage />);
+    expect(await screen.findByText('لغو شده')).toBeInTheDocument();
+    expect(screen.queryByText('در انتظار پرداخت')).not.toBeInTheDocument();
+    expect(screen.queryByText('ارسال فیش واریزی')).not.toBeInTheDocument();
+    expect(screen.getByText('فیش نامعتبر بود')).toBeInTheDocument();
+  });
+
+  it('سفارش کارت‌به‌کارت منتظر فیش (L3): متن راهنما اشاره نادرست به کد پیگیری ندارد', async () => {
+    mockOrder({
+      id: 1737,
+      documentId: 'testleg003c2c0pendpay001',
+      source: 'strapi',
+      paymentMethod: 'card_to_card',
+      orderStatus: 'pending',
+      paymentStatus: 'pending_payment',
+      totalPrice: 100000,
+      createdAt: '2026-10-15T10:00:00Z',
+      items: [],
+    });
+
+    render(<OrderDetailPage />);
+    expect(await screen.findByText('ارسال فیش واریزی')).toBeInTheDocument();
+    expect(screen.getByText(/نام صاحب کارت و تصویر فیش واریزی/)).toBeInTheDocument();
+    expect(screen.queryByText(/تصویر فیش و کد پیگیری/)).not.toBeInTheDocument();
+  });
+
+  it('دریافت پیام خطای سرور روی وضعیت غیر ۲۰۰ نمایش داده می‌شود', async () => {
+    global.fetch = jest.fn(async () => ({
+      ok: false,
+      status: 404,
+      json: async () => ({ message: 'سفارشی با این شناسه یافت نشد.' }),
+    }));
+
+    render(<OrderDetailPage />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('سفارشی با این شناسه یافت نشد.');
   });
 });
 
