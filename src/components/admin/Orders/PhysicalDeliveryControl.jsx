@@ -16,12 +16,14 @@ import { CourseOrderId } from '@/lib/byeMoneyApi';
 import { getAdminOrderReceipt } from '@/lib/admin/adminByeMoneyClient';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import {
-    getCreatablePhysicalDeliveryProviders,
     getPhysicalDeliveryProvider,
     PHYSICAL_DELIVERY_PROVIDERS,
 } from '@/lib/physicalDeliveryProviders';
 import AdminBadge from '../Shared/AdminBadge';
+import CartShipmentControl, { COLLECTION_TYPES } from './CartShipmentControl';
 import styles from './PhysicalDeliveryControl.module.scss';
+
+export { default as CartShipmentControl, COLLECTION_TYPES } from './CartShipmentControl';
 
 const BADGE_VARIANTS = {
     Preparing: 'warning',
@@ -29,19 +31,20 @@ const BADGE_VARIANTS = {
     Delivered: 'success',
 };
 
-/** مقادیر مجاز I11-O برای بدنهٔ ساخت مرسوله */
-const COLLECTION_TYPES = [
-    { value: 'courier_drop_off', label: 'تحویل توسط خودمان' },
-    { value: 'pick_up', label: 'پیک بیاید' },
-];
+export default function PhysicalDeliveryControl(props) {
+    const {
+        purchaseId,
+        cartId,
+        initialStatus = null,
+        onStatusChange = null,
+        carrierReturnLocked = false,
+    } = props;
 
-export default function PhysicalDeliveryControl({
-    purchaseId,
-    cartId,
-    initialStatus = null,
-    onStatusChange = null,
-    carrierReturnLocked = false,
-}) {
+    // اگر کامپوننت برای سبد بدون شناسهٔ خرید صدا زده شده باشد، کنترل مرسولهٔ سبد را نشان می‌دهد
+    if (!purchaseId && cartId) {
+        return <CartShipmentControl cartId={cartId} {...props} />;
+    }
+
     const [status, setStatus] = useState(initialStatus);
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState(null);
@@ -50,7 +53,6 @@ export default function PhysicalDeliveryControl({
     const [trackingProvider, setTrackingProvider] = useState('Manual');
     const [providerParcelId, setProviderParcelId] = useState('');
     const [loadedProvider, setLoadedProvider] = useState(null);
-    const [collectionType, setCollectionType] = useState('courier_drop_off');
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -142,46 +144,6 @@ export default function PhysicalDeliveryControl({
             if (typeof onStatusChange === 'function') {
                 onStatusChange(newStatus);
             }
-        }
-    };
-
-    const createShipment = async () => {
-        if (!purchaseId || busy || !isPreparing) return;
-        const provider = getCreatablePhysicalDeliveryProviders()[0]?.value;
-        if (!provider) {
-            setMessage({ ok: false, text: 'هیچ واسط پستی برای ساخت مرسوله فعال نیست.' });
-            return;
-        }
-        if (!COLLECTION_TYPES.some((item) => item.value === collectionType)) {
-            setMessage({ ok: false, text: 'روش جمع‌آوری را انتخاب کنید.' });
-            return;
-        }
-        setBusy(true);
-        setMessage(null);
-        try {
-            const res = await fetch(
-                `/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/shipments`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ provider, collectionType }),
-                }
-            );
-            const json = await res.json().catch(() => ({}));
-            if (res.ok && json?.data) {
-                applyDeliveryPayload(json.data, {
-                    fallbackOkText: (label) => `مرسوله ثبت و وضعیت به «${label}» تغییر کرد.`,
-                });
-            } else {
-                setMessage({
-                    ok: false,
-                    text: json?.error || 'ساخت مرسوله نزد واسط پستی ناموفق بود.',
-                });
-            }
-        } catch {
-            setMessage({ ok: false, text: 'خطا در ارتباط با سرور.' });
-        } finally {
-            setBusy(false);
         }
     };
 
@@ -280,7 +242,6 @@ export default function PhysicalDeliveryControl({
     const isDelivered = status === 'Delivered';
     const requiresProviderReference =
         getPhysicalDeliveryProvider(trackingProvider)?.requiresProviderReference || false;
-    const canCreateProviderShipment = getCreatablePhysicalDeliveryProviders().length > 0;
 
     const options = [
         {
@@ -314,43 +275,7 @@ export default function PhysicalDeliveryControl({
             </div>
 
             {isPreparing && (
-                <>
-                    {canCreateProviderShipment && (
-                        <div className={styles.dispatchBox} data-testid="postex-dispatch-box">
-                            <p className={styles.trackingLabel}>ارسال با پستکس</p>
-                            <fieldset
-                                className={styles.resolveOptions}
-                                data-testid="collection-type-fieldset"
-                                aria-label="روش جمع‌آوری"
-                            >
-                                {COLLECTION_TYPES.map((item) => (
-                                    <label key={item.value} className={styles.resolveOption}>
-                                        <input
-                                            type="radio"
-                                            name={`collection-type-${purchaseId}`}
-                                            data-testid={`collection-type-${item.value}`}
-                                            value={item.value}
-                                            checked={collectionType === item.value}
-                                            onChange={() => setCollectionType(item.value)}
-                                            disabled={busy}
-                                        />
-                                        <span>{item.label}</span>
-                                    </label>
-                                ))}
-                            </fieldset>
-                            <button
-                                type="button"
-                                data-testid="create-provider-shipment"
-                                className={styles.createShipmentBtn}
-                                onClick={createShipment}
-                                disabled={busy}
-                            >
-                                ارسال با پستکس
-                            </button>
-                        </div>
-                    )}
-
-                    <div className={styles.trackingBox} data-testid="manual-tracking-box">
+                <div className={styles.trackingBox} data-testid="manual-tracking-box">
                         <label className={styles.trackingLabel} htmlFor={`tracking-code-${purchaseId}`}>
                             ثبت کد رهگیری دستی
                         </label>
@@ -375,7 +300,6 @@ export default function PhysicalDeliveryControl({
                             ثبت کد رهگیری دستی
                         </button>
                     </div>
-                </>
             )}
 
             {/* پس از ارسال: اصلاح کد/منبع و پیشبرد به تحویل‌شده */}

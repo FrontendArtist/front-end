@@ -1755,28 +1755,29 @@ export async function updatePhysicalPurchaseDeliveryStatus({
 }
 
 /**
- * ساخت مرسوله نزد واسط پستی (SHIP-TRACKING-B / SHIP-ADMIN-DISPATCH).
- * POST /api/admin/physical-purchases/{purchaseId}/shipments
+ * ساخت مرسوله نزد واسط پستی در سطح سبد خرید (SHIP-CART-LEVEL).
+ * POST /api/admin/carts/{cartId}/shipments
  * فقط از route سروری Next.js صدا زده شود.
- * «ارسال‌شده» فقط وقتی برمی‌گردد که کد پستی واقعی آمده باشد؛ وگرنه Preparing + warning.
  *
  * @param {object} params
  * @param {string} params.jwt
- * @param {string} params.purchaseId
- * @param {string} params.collectionType - pick_up | courier_drop_off (I11-O)
+ * @param {string} params.cartId
+ * @param {string} [params.collectionType] - pick_up | courier_drop_off (I11-O)
  * @param {string} [params.provider] - مثلاً PostEx؛ خالی = پیش‌فرض سرور
+ * @param {number|null} [params.boxTypeId] - ۱ تا ۱۲ یا خالی
  */
-export async function createPhysicalShipment({ jwt, purchaseId, collectionType, provider, signal } = {}) {
+export async function createCartPhysicalShipment({ jwt, cartId, collectionType, provider = 'PostEx', boxTypeId = null, signal } = {}) {
   if (!jwt) {
     return { success: false, unauthorized: true, error: 'نشست ادمین نامعتبر است.' };
   }
-  if (!purchaseId) {
-    return { success: false, badRequest: true, error: 'شناسه خرید نامعتبر است.' };
+  if (!cartId) {
+    return { success: false, badRequest: true, error: 'شناسه سبد نامعتبر است.' };
   }
-  const url = `${BYEMONEY_API_URL}/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/shipments`;
+  const url = `${BYEMONEY_API_URL}/api/admin/carts/${encodeURIComponent(cartId)}/shipments`;
   const body = {
+    provider,
     ...(collectionType ? { collectionType } : {}),
-    ...(provider ? { provider } : {}),
+    ...(boxTypeId != null ? { boxTypeId: Number(boxTypeId) } : {}),
   };
   try {
     const res = await fetch(url, {
@@ -1789,31 +1790,31 @@ export async function createPhysicalShipment({ jwt, purchaseId, collectionType, 
       cache: 'no-store',
       signal,
     });
-    if (res.status === 200) {
-      const data = await res.json();
-      return { success: true, data };
-    }
-    if (res.status === 401) {
-      return { success: false, unauthorized: true, error: 'نشست ادمین منقضی شده است.' };
-    }
-    if (res.status === 403) {
-      return { success: false, forbidden: true, error: 'ادمین مجوز مدیریت دوره‌ها و کالاها (Courses.Manage) را ندارد.' };
-    }
-    let errJson = null;
+    let json = null;
     try {
-      errJson = await res.json();
+      json = await res.json();
     } catch {}
-    if (res.status === 404) {
-      return { success: false, notFound: true, error: extractDomainErrorMessage(errJson, 'خرید کالای فیزیکی یافت نشد.') };
+    if (res.ok) {
+      return { success: true, status: res.status, data: json };
     }
-    if (res.status === 400) {
-      return { success: false, badRequest: true, error: extractDomainErrorMessage(errJson, 'ساخت مرسوله مجاز نیست.') };
-    }
-    return { success: false, error: extractDomainErrorMessage(errJson, `خطای ساخت مرسوله (${res.status})`) };
+    return {
+      success: false,
+      status: res.status,
+      payload: json,
+      error: extractDomainErrorMessage(json, `خطای ساخت مرسوله (${res.status})`),
+    };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+    return { success: false, status: 502, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
   }
+}
+
+/** @deprecated به جای ساخت مرسوله برای تک‌قلم، از createCartPhysicalShipment در سطح سبد استفاده کنید. */
+export async function createPhysicalShipment(params = {}) {
+  if (params.cartId) {
+    return createCartPhysicalShipment(params);
+  }
+  return { success: false, badRequest: true, error: 'ساخت مرسوله فقط در سطح سبد خرید مجاز است.' };
 }
 
 /**

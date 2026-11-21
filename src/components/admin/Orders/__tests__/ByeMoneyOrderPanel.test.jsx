@@ -209,6 +209,56 @@ describe('ByeMoneyOrderPanel', () => {
         });
     });
 
+    describe('کنترل ساخت مرسولهٔ سبد (CartShipmentControl)', () => {
+        test('فقط وقتی سفارش Paid است و حداقل یک قلم فعال Preparing بدون مرسوله دارد نمایش داده می‌شود', async () => {
+            fetchOrderTracking.mockResolvedValue(payload({
+                order: {
+                    ...payload().order,
+                    financialStatus: 'Paid',
+                    items: [
+                        { title: 'کتاب', itemType: 'Product', quantity: 2, cancelledQuantity: 0, finalAmountInNoor: 20, purchaseId: 'p1', physicalDeliveryStatus: 'Preparing' },
+                    ],
+                },
+                receipt: { purchasedAtUtc: '2026-11-01T10:20:00Z', couponCode: null, finalAmountInNoor: 20, cartSummary: { originalTotalInNoor: 20 }, items: [] },
+            }));
+            render(<ByeMoneyOrderPanel order={ORDER} />);
+            expect(await screen.findByTestId('cart-shipment-section')).toBeInTheDocument();
+            expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ساخت مرسوله پستکس');
+        });
+
+        test('اگر مرسوله قبلاً ساخته شده باشد (دارای providerParcelId) مخفی است', async () => {
+            fetchOrderTracking.mockResolvedValue(payload({
+                order: {
+                    ...payload().order,
+                    financialStatus: 'Paid',
+                    items: [
+                        { title: 'کتاب', itemType: 'Product', quantity: 2, cancelledQuantity: 0, finalAmountInNoor: 20, purchaseId: 'p1', physicalDeliveryStatus: 'Preparing', providerParcelId: 'parcel-123' },
+                    ],
+                },
+                receipt: { purchasedAtUtc: '2026-11-01T10:20:00Z', couponCode: null, finalAmountInNoor: 20, cartSummary: { originalTotalInNoor: 20 }, items: [] },
+            }));
+            render(<ByeMoneyOrderPanel order={ORDER} />);
+            await screen.findByTestId('delivery-control');
+            expect(screen.queryByTestId('cart-shipment-section')).not.toBeInTheDocument();
+        });
+
+        test('اگر همه اقلام فیزیکی لغو شده باشند مخفی است', async () => {
+            fetchOrderTracking.mockResolvedValue(payload({
+                order: {
+                    ...payload().order,
+                    financialStatus: 'Paid',
+                    items: [
+                        { title: 'کتاب', itemType: 'Product', quantity: 2, cancelledQuantity: 2, finalAmountInNoor: 20, purchaseId: 'p1', physicalDeliveryStatus: 'Preparing' },
+                    ],
+                },
+                receipt: { purchasedAtUtc: '2026-11-01T10:20:00Z', couponCode: null, finalAmountInNoor: 20, cartSummary: { originalTotalInNoor: 20 }, items: [] },
+            }));
+            render(<ByeMoneyOrderPanel order={ORDER} />);
+            await screen.findByTestId('item-cancelled-badge');
+            expect(screen.queryByTestId('cart-shipment-section')).not.toBeInTheDocument();
+        });
+    });
+
     test('خطای دریافت جزئیات فقط در همین پنل پیام می‌دهد', async () => {
         fetchOrderTracking.mockRejectedValue(new Error('ادمین به سفارش‌های بای‌مانی دسترسی ندارد'));
         render(<ByeMoneyOrderPanel order={ORDER} />);

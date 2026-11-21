@@ -18,6 +18,7 @@ import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
 import { canShowReceipt, isPhysicalFullyCancelled } from '@/lib/admin/orderTracking';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import PhysicalDeliveryControl from './PhysicalDeliveryControl';
+import CartShipmentControl from './CartShipmentControl';
 import CarrierReturnResolveControl from './CarrierReturnResolveControl';
 import CarrierAlertResolveControl from './CarrierAlertResolveControl';
 import {
@@ -28,6 +29,26 @@ import PendingRestockNotice from './PendingRestockNotice';
 import PhysicalCancelFlow from '@/components/physicalCancel/PhysicalCancelFlow';
 import AdminButton from '../Shared/AdminButton';
 import styles from './OrdersTable.module.scss';
+import deliveryStyles from './PhysicalDeliveryControl.module.scss';
+
+/**
+ * آیا سبد واجد شرایط ساخت مرسولهٔ پستکس در سطح سبد است؟
+ * شرط: سفارش پرداخت‌شده (Paid)، دارای cartId، و حداقل یک قلم فیزیکی فعال
+ * (cancelledQuantity < quantity) در وضعیت Preparing بدون مرسولهٔ موجود.
+ */
+export function canCreateCartShipment(detail, isPaid) {
+    if (!isPaid || !detail?.cartId || !Array.isArray(detail?.items)) return false;
+    return detail.items.some((item) => {
+        const isProduct = item.itemType === 'Product' || item.type === 'product';
+        if (!isProduct || !item.purchaseId) return false;
+        const totalQty = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
+        const cancelledQty = Math.min(Number(item.cancelledQuantity) || 0, totalQty);
+        const isActive = cancelledQty < totalQty;
+        const isPreparing = !item.physicalDeliveryStatus || item.physicalDeliveryStatus === 'Preparing';
+        const hasExistingShipment = Boolean(item.providerParcelId || item.trackingCode);
+        return isActive && isPreparing && !hasExistingShipment;
+    });
+}
 
 export const DELIVERY_LABELS = {
     NotStarted: 'شروع نشده',
@@ -389,6 +410,7 @@ export function OrderItemsList({ detail, isPaid, onReload, onItemStatus, onCarri
  */
 export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancelled, onRestockCleared }) {
     const { state, reload, setItemDeliveryStatus } = useOrderTracking(order, { onSummary, onPhysicalCancelled });
+    const [cartShipmentNotice, setCartShipmentNotice] = useState(null);
 
     if (state.loading) {
         return <p className={styles.expanded_empty}>در حال دریافت اقلام و خط زمانی سفارش...</p>;
@@ -496,6 +518,43 @@ export default function ByeMoneyOrderPanel({ order, onSummary, onPhysicalCancell
 
             <div className={styles.expanded_section}>
                 <h4 className={styles.expanded_section__title}>🛒 اقلام سفارش</h4>
+                {cartShipmentNotice && (
+                    <div style={{ marginBottom: '12px' }}>
+                        <p
+                            role={cartShipmentNotice.ok ? 'status' : 'alert'}
+                            className={`${deliveryStyles.message} ${cartShipmentNotice.ok ? deliveryStyles['message--ok'] : deliveryStyles['message--error']}`}
+                            data-testid="cart-shipment-notice"
+                        >
+                            {cartShipmentNotice.text}
+                        </p>
+                    </div>
+                )}
+                {canCreateCartShipment(detail, isPaid) && (
+                    <div style={{ marginBottom: '16px' }} data-testid="cart-shipment-section">
+                        <CartShipmentControl
+                            cartId={detail.cartId}
+                            onShipmentCreated={(payload) => {
+                                const warning = typeof payload?.warning === 'string' ? payload.warning.trim() : '';
+                                const isAwaitingOrPreparing =
+                                    payload?.deliveryStatus === 'Preparing' ||
+                                    payload?.outcome === 'AwaitingTrackingCode';
+
+                                if (isAwaitingOrPreparing) {
+                                    setCartShipmentNotice({
+                                        ok: false,
+                                        text: warning || 'کد پستی هنوز نیامده.',
+                                    });
+                                } else {
+                                    setCartShipmentNotice({
+                                        ok: true,
+                                        text: `مرسوله ثبت و وضعیت به «${getPhysicalDeliveryLabel(payload?.deliveryStatus) || 'ارسال‌شده'}» تغییر کرد.`,
+                                    });
+                                }
+                                reload();
+                            }}
+                        />
+                    </div>
+                )}
                 <OrderItemsList
                     detail={detail}
                     isPaid={isPaid}

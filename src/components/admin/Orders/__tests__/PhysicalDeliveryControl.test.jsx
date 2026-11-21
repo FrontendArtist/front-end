@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import PhysicalDeliveryControl from '../PhysicalDeliveryControl';
+import PhysicalDeliveryControl, { CartShipmentControl } from '../PhysicalDeliveryControl';
 import { getAdminOrderReceipt as getAdminCourseOrderReceipt } from '@/lib/admin/adminByeMoneyClient';
 
 jest.mock('@/lib/byeMoneyApi', () => ({
@@ -23,78 +23,17 @@ beforeEach(() => {
   global.fetch = jest.fn();
 });
 
-describe('PhysicalDeliveryControl', () => {
-  it('در آماده‌سازی فقط ارسال پستکس و ثبت دستی می‌ماند و پیشبرد بی‌کد نیست', async () => {
+describe('PhysicalDeliveryControl (کنترل ارسال سطر کالا)', () => {
+  it('در آماده‌سازی فقط ثبت دستی در سطر کالا می‌ماند و ساخت مرسوله به سطح سبد منتقل شده است', async () => {
     mockStatus('Preparing');
     render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
     expect(await screen.findByText('در حال آماده‌سازی')).toBeInTheDocument();
 
-    expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال با پستکس');
     expect(screen.getByTestId('register-manual-tracking')).toHaveTextContent('ثبت کد رهگیری دستی');
+    expect(screen.queryByTestId('create-provider-shipment')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('collection-type-fieldset')).not.toBeInTheDocument();
     expect(screen.queryByTestId('delivery-status-select')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /پیشبرد به: ارسال‌شده/ })).not.toBeInTheDocument();
-  });
-
-  it('ارسال با پستکس collectionType را به route سروری می‌فرستد و با Shipped نشان را عوض می‌کند', async () => {
-    mockStatus('Preparing');
-    render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
-    await screen.findByText('در حال آماده‌سازی');
-
-    fireEvent.click(screen.getByTestId('collection-type-courier_drop_off'));
-
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          purchaseId: PID,
-          deliveryStatus: 'Shipped',
-          trackingCode: 'IR-POST-100',
-          trackingProvider: 'PostEx',
-          providerParcelId: '1319906676294',
-          outcome: 'Created',
-        },
-      }),
-    });
-
-    fireEvent.click(screen.getByTestId('create-provider-shipment'));
-
-    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
-    expect(global.fetch).toHaveBeenCalledWith(
-      `/api/admin/physical-purchases/${PID}/shipments`,
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ provider: 'PostEx', collectionType: 'courier_drop_off' }),
-      })
-    );
-    expect(JSON.stringify(global.fetch.mock.calls[0][1])).not.toContain('admin-jwt');
-    expect(await screen.findByText('ارسال‌شده')).toBeInTheDocument();
-  });
-
-  it('اگر پستکس Preparing و warning برگرداند، پیام نشان داده می‌شود و نشان عوض نمی‌شود', async () => {
-    mockStatus('Preparing');
-    render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
-    await screen.findByText('در حال آماده‌سازی');
-
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          purchaseId: PID,
-          deliveryStatus: 'Preparing',
-          providerParcelId: '1319906676294',
-          outcome: 'AwaitingTrackingCode',
-          warning: 'کد پستی هنوز نیامده.',
-        },
-      }),
-    });
-
-    fireEvent.click(screen.getByTestId('create-provider-shipment'));
-
-    expect(await screen.findByTestId('delivery-message-alert')).toHaveTextContent('کد پستی هنوز نیامده.');
-    expect(screen.getByText('در حال آماده‌سازی')).toBeInTheDocument();
-    expect(screen.queryByText('ارسال‌شده')).not.toBeInTheDocument();
   });
 
   it('ثبت کد رهگیری دستی فقط با کد به delivery-status می‌رود و نشان را Shipped می‌کند', async () => {
@@ -115,11 +54,17 @@ describe('PhysicalDeliveryControl', () => {
     fireEvent.click(screen.getByTestId('register-manual-tracking'));
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
-    expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual({
-      status: 'Shipped',
-      trackingCode: 'PTX-8846884',
-      trackingProvider: 'Manual',
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/admin/physical-purchases/${PID}/delivery-status`,
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({
+          status: 'Shipped',
+          trackingCode: 'PTX-8846884',
+          trackingProvider: 'Manual',
+        }),
+      })
+    );
     expect(await screen.findByText('ارسال‌شده')).toBeInTheDocument();
   });
 
@@ -160,11 +105,96 @@ describe('PhysicalDeliveryControl', () => {
     expect(getAdminCourseOrderReceipt).toHaveBeenCalledWith(expect.objectContaining({ orderId: `purchase:${PID}` }));
   });
 
-  it('شکست خواندن وضعیت مانع کارهای آماده‌سازی نمی‌شود', async () => {
+  it('شکست خواندن وضعیت مانع ثبت کد رهگیری دستی نمی‌شود', async () => {
     getAdminCourseOrderReceipt.mockResolvedValue({ success: false, error: 'x' });
     render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
     expect(await screen.findByText('نامشخص')).toBeInTheDocument();
-    expect(screen.getByTestId('create-provider-shipment')).toBeEnabled();
     expect(screen.getByTestId('register-manual-tracking')).toBeEnabled();
+  });
+});
+
+describe('CartShipmentControl (ساخت مرسوله در سطح سبد خرید)', () => {
+  it('ارسال با پستکس collectionType و boxTypeId را به route سبد می‌فرستد و با Shipped رفرش می‌کند', async () => {
+    const onShipmentCreated = jest.fn();
+    render(<CartShipmentControl cartId={CART} onShipmentCreated={onShipmentCreated} />);
+
+    fireEvent.click(screen.getByTestId('collection-type-courier_drop_off'));
+    fireEvent.change(screen.getByTestId('box-type-select'), { target: { value: '5' } });
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        cartId: CART,
+        deliveryStatus: 'Shipped',
+        trackingCode: 'IR-POST-100',
+        trackingProvider: 'PostEx',
+        providerParcelId: '1319906676294',
+        outcome: 'Created',
+      }),
+    });
+
+    fireEvent.click(screen.getByTestId('create-provider-shipment'));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/admin/carts/${CART}/shipments`,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          provider: 'PostEx',
+          collectionType: 'courier_drop_off',
+          boxTypeId: 5,
+        }),
+      })
+    );
+    expect(await screen.findByTestId('delivery-message-ok')).toHaveTextContent('مرسوله ثبت و وضعیت به «ارسال‌شده» تغییر کرد.');
+    expect(onShipmentCreated).toHaveBeenCalled();
+  });
+
+  it('اگر پستکس Preparing و warning برگرداند، پیام نشان داده می‌شود و رفرش فراخوانی می‌شود', async () => {
+    const onShipmentCreated = jest.fn();
+    render(<CartShipmentControl cartId={CART} onShipmentCreated={onShipmentCreated} />);
+
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        cartId: CART,
+        deliveryStatus: 'Preparing',
+        providerParcelId: '1319906676294',
+        outcome: 'AwaitingTrackingCode',
+        warning: 'کد پستی هنوز نیامده.',
+      }),
+    });
+
+    fireEvent.click(screen.getByTestId('create-provider-shipment'));
+
+    expect(await screen.findByTestId('delivery-message-alert')).toHaveTextContent('کد پستی هنوز نیامده.');
+    expect(onShipmentCreated).toHaveBeenCalled();
+  });
+
+  it('خطای سروری (error pass-through) در پیام خطا منعکس می‌شود', async () => {
+    const onShipmentCreated = jest.fn();
+    render(<CartShipmentControl cartId={CART} onShipmentCreated={onShipmentCreated} />);
+
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        error: 'آدرس گیرنده ناقص است.',
+      }),
+    });
+
+    fireEvent.click(screen.getByTestId('create-provider-shipment'));
+
+    expect(await screen.findByTestId('delivery-message-alert')).toHaveTextContent('آدرس گیرنده ناقص است.');
+    expect(onShipmentCreated).not.toHaveBeenCalled();
+  });
+
+  it('فراخوانی PhysicalDeliveryControl با cartId و بدون purchaseId به CartShipmentControl منتقل می‌شود', () => {
+    render(<PhysicalDeliveryControl cartId={CART} />);
+    expect(screen.getByTestId('cart-shipment-control')).toBeInTheDocument();
+    expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ساخت مرسوله پستکس');
   });
 });
