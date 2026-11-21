@@ -222,7 +222,7 @@ export default function OrdersList({ limit }) {
                                 </div>
                                 <div className={styles.orders__detailItem}>
                                     <span className={styles.orders__label}>تعداد اقلام:</span>
-                                    <span className={styles.orders__value}>{Number(itemCount || 0).toLocaleString('fa-IR')} کالا</span>
+                                    <span className={styles.orders__value}>{Number(itemCount || 0).toLocaleString('fa-IR')} قلم</span>
                                 </div>
                                 {(order.traceNo || order.trackingNumber || order.refNum) && (
                                     <div className={styles.orders__detailItem}>
