@@ -239,6 +239,28 @@
         border: 1px solid fade(var(--color-error), 40%);
         font-size: var(--font-md);
         line-height: 1.6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+    }
+
+    &__retryBtn {
+        padding: 10px 24px;
+        border-radius: 10px;
+        border: 1px solid fade(var(--color-error), 45%);
+        background: fade(var(--color-bg-primary-overlay), 70%);
+        color: var(--color-text-primary);
+        font-family: inherit;
+        font-size: var(--font-sm);
+        font-weight: var(--font-weight-bold);
+        cursor: pointer;
+        transition: all 0.25s ease;
+
+        &:hover {
+            border-color: var(--color-text-primary);
+            background: fade(var(--color-bg-primary-overlay), 90%);
+        }
     }
 
     &__empty {

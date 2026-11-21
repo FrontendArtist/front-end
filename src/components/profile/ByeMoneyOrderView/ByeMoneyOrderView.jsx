@@ -6,14 +6,15 @@
  * هر مقدار فقط یک‌بار می‌آید: مبلغ نهایی و تاریخ ثبت در خلاصه، وضعیت هر قلم کنار همان قلم.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import PhysicalCancelFlow from '@/components/physicalCancel/PhysicalCancelFlow';
+import { useOrdersStore } from '@/store/useOrdersStore';
 import { isGuid, sumRefunds, CANCEL_OUTCOME_LABELS } from '@/lib/physicalCancel';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import {
     formatNoor, formatOrderDate, getAmountRows, getByeMoneyOrderView, getOrderNumber,
-    getPaidAt, getPaymentRefCode, getPhysicalSteps,
+    getPaidAt, getPaymentRefCode, getPhysicalSteps, getTopUpStatusMeta, isPhysicalItemFullyCancelled,
 } from '@/lib/byeMoneyOrderView';
 import { shippingOriginText } from '@/lib/shippingOrigin';
 import styles from './ByeMoneyOrderView.module.scss';
@@ -59,8 +60,16 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
     const partlyCancelled = isProduct && !fullyCancelled && cancelledQty > 0;
     const refundedRegular = Number(item.refundedRegularInNoor) || 0;
     const refundedGift = Number(item.refundedGiftInNoor) || 0;
+    const refundParts = [];
+    if (refundedRegular > 0) refundParts.push(formatNoor(refundedRegular));
+    if (refundedGift > 0) refundParts.push(`${formatNoor(refundedGift)} هدیه`);
     const typeLabel = isProduct ? 'کالای فیزیکی' : item.type === 'chapter' ? 'فصل' : 'دوره آموزشی';
     const physicalLabel = getPhysicalDeliveryLabel(item.physicalDeliveryStatus);
+    const itemPriceText = item.price == null
+        ? '—'
+        : Number(item.price) === 0
+            ? 'رایگان'
+            : formatNoor(item.price);
 
     return (
         <li className={styles.item}>
@@ -80,10 +89,9 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
                             {cancelledQty.toLocaleString('fa-IR')} از {qty.toLocaleString('fa-IR')} عدد لغو شد
                         </span>
                     )}
-                    {(fullyCancelled || partlyCancelled) && refundedRegular + refundedGift > 0 && (
+                    {(fullyCancelled || partlyCancelled) && refundParts.length > 0 && (
                         <span className={styles.itemHint} data-testid="physical-item-refunded">
-                            برگشتی: {formatNoor(refundedRegular)}
-                            {refundedGift > 0 && ` + ${formatNoor(refundedGift)} هدیه`}
+                            برگشتی: {refundParts.join(' + ')}
                         </span>
                     )}
                     {isProduct && !fullyCancelled && showItemPhysicalStatus && physicalLabel && (
@@ -109,7 +117,7 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
                     )}
                 </div>
             </div>
-            <span className={`${styles.itemPrice} ${fullyCancelled ? styles.struck : ''}`}>{formatNoor(item.price ?? 0)}</span>
+            <span className={`${styles.itemPrice} ${fullyCancelled ? styles.struck : ''}`}>{itemPriceText}</span>
         </li>
     );
 }
@@ -139,11 +147,20 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
     const [confirmMessage, setConfirmMessage] = useState(null);
     const [confirmedNow, setConfirmedNow] = useState(false);
 
+    const currentOrderKey = order?.orderId || order?.id || null;
+    useEffect(() => {
+        setCancelResult(null);
+        setConfirming(false);
+        setConfirmMessage(null);
+        setConfirmedNow(false);
+    }, [currentOrderKey]);
+
     const items = Array.isArray(order.items) ? order.items : [];
     const address = order.shippingAddress;
     const originName = shippingOriginText(order.shippingOrigin);
     const view = getByeMoneyOrderView(order, { cancelledNow: Boolean(cancelResult) });
     const { physicalItems } = view;
+    const activePhysicalItems = physicalItems.filter((i) => !isPhysicalItemFullyCancelled(i));
     const number = getOrderNumber(order);
     const created = formatOrderDate(order.createdAt);
     const paidAt = view.isPaid ? getPaidAt(order) : null;
@@ -151,12 +168,31 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
     const amountRows = getAmountRows(order);
     const refunds = sumRefunds(cancelResult);
 
+    const shippingRegular = Number(order.shippingRegularRefundInNoor) || 0;
+    const shippingGift = Number(order.shippingGiftRefundInNoor) || 0;
+    const persistedRegular = physicalItems.reduce((s, i) => s + (Number(i.refundedRegularInNoor) || 0), 0) + shippingRegular;
+    const persistedGift = physicalItems.reduce((s, i) => s + (Number(i.refundedGiftInNoor) || 0), 0) + shippingGift;
+    const displayRefunds = cancelResult
+        ? {
+            regular: refunds.regular,
+            gift: refunds.gift,
+            shippingRegular: Number(cancelResult.shippingRegularRefundInNoor) || 0,
+            shippingGift: Number(cancelResult.shippingGiftRefundInNoor) || 0,
+        }
+        : {
+            regular: persistedRegular,
+            gift: persistedGift,
+            shippingRegular,
+            shippingGift,
+        };
+    const totalShippingRefund = displayRefunds.shippingRegular + displayRefunds.shippingGift;
+
     const physicalCartId = String(order.cartId || order.orderId || '').replace(/^cart:/, '');
     const canCancel = view.isPaid && !view.physicalCancelled && isGuid(physicalCartId)
-        && physicalItems.length > 0 && physicalItems.every((i) => i.physicalDeliveryStatus === 'Preparing');
+        && activePhysicalItems.length > 0 && activePhysicalItems.every((i) => i.physicalDeliveryStatus === 'Preparing');
 
-    // اگر وضعیت همهٔ کالاها یکی است، فقط نوار پیشرفت نشان داده می‌شود و کنار قلم‌ها تکرار نمی‌شود
-    const uniformPhysical = new Set(physicalItems.map((i) => i.physicalDeliveryStatus)).size <= 1;
+    // اگر وضعیت همهٔ کالاهای فعال یکی است، فقط نوار پیشرفت نشان داده می‌شود و کنار قلم‌ها تکرار نمی‌شود
+    const uniformPhysical = new Set(activePhysicalItems.map((i) => i.physicalDeliveryStatus)).size <= 1;
     const showProgress = view.isPaid && !view.physicalCancelled && uniformPhysical;
     const showItemPhysicalStatus = view.isPaid && !uniformPhysical;
 
@@ -172,8 +208,27 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
     const shippedProductItems = physicalItems.filter(isRemainingShipped);
     const confirmableShippedItems = shippedProductItems.filter((item) => !carrierReturnBlocksConfirm(item));
     const canConfirmDelivery = view.isPaid && !confirmedNow && confirmableShippedItems.length > 0;
-    const showCarrierReviewNote = view.isPaid && !confirmedNow && !canConfirmDelivery
+    const showCarrierReviewNote = view.isPaid && !canConfirmDelivery
         && shippedProductItems.some(carrierReturnBlocksConfirm);
+
+    const hasShippingContent = Boolean(
+        showProgress ||
+        address ||
+        originName ||
+        view.physicalCancelled ||
+        showCarrierReviewNote ||
+        canConfirmDelivery ||
+        confirmMessage ||
+        canCancel
+    );
+
+    const handleCancelled = async (res) => {
+        setCancelResult(res);
+        useOrdersStore.getState().invalidateOrders();
+        if (typeof onOrderChanged === 'function') {
+            await onOrderChanged();
+        }
+    };
 
     const confirmDelivery = async () => {
         if (confirming) return;
@@ -186,6 +241,7 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
             if (res.ok) {
                 setConfirmedNow(true);
                 setConfirmMessage({ ok: true, text: 'دریافت کالا ثبت شد.' });
+                useOrdersStore.getState().invalidateOrders();
                 if (typeof onOrderChanged === 'function') {
                     await onOrderChanged();
                 }
@@ -219,7 +275,7 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
                         <div className={styles.amountBlock}>
                             <span className={styles.amountLabel}>{view.amountLabel}</span>
                             <strong className={styles.amountValue} data-testid={view.unpaid ? 'payable-amount' : 'paid-amount'}>
-                                {formatNoor(order.totalPrice)}
+                                {Number(order.totalPrice) === 0 && !view.unpaid ? 'رایگان' : formatNoor(order.totalPrice)}
                             </strong>
                             {view.unpaid && !view.hideUnpaidNote && (
                                 <span className={styles.amountNote} data-testid="unpaid-note">پرداخت‌شده: {formatNoor(0)}</span>
@@ -266,7 +322,7 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
             )}
 
             {/* ─── ارسال کالا ─── */}
-            {view.hasProduct && (
+            {view.hasProduct && hasShippingContent && (
                 <section className={styles.card} data-testid="shipping-card">
                     <h2 className={styles.cardTitle}>ارسال کالا</h2>
 
@@ -294,10 +350,11 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
                                     ? (CANCEL_OUTCOME_LABELS[cancelResult.outcome] || 'بخش کالای سفارش لغو شد')
                                     : 'بخش کالای این سفارش لغو شده است'}
                             </strong>
-                            {cancelResult && (refunds.regular > 0 || refunds.gift > 0) && (
+                            {(displayRefunds.regular > 0 || displayRefunds.gift > 0) && (
                                 <ul className={styles.refunds} data-testid="cancelled-refunds">
-                                    {refunds.regular > 0 && <li>نور عادی برگشتی: <strong>{refunds.regular.toLocaleString('fa-IR')}</strong></li>}
-                                    {refunds.gift > 0 && <li>نور هدیهٔ برگشتی: <strong>{refunds.gift.toLocaleString('fa-IR')}</strong></li>}
+                                    {displayRefunds.regular > 0 && <li>نور عادی برگشتی: <strong>{displayRefunds.regular.toLocaleString('fa-IR')}</strong></li>}
+                                    {displayRefunds.gift > 0 && <li>نور هدیهٔ برگشتی: <strong>{displayRefunds.gift.toLocaleString('fa-IR')}</strong></li>}
+                                    {totalShippingRefund > 0 && <li>شامل برگشت هزینهٔ ارسال: <strong>{formatNoor(totalShippingRefund)}</strong></li>}
                                 </ul>
                             )}
                         </div>
@@ -338,7 +395,7 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
 
                     {canCancel && (
                         <div className={styles.actions}>
-                            <PhysicalCancelFlow mode="user" targetId={physicalCartId} onCancelled={setCancelResult} />
+                            <PhysicalCancelFlow mode="user" targetId={physicalCartId} onCancelled={handleCancelled} />
                         </div>
                     )}
                 </section>
@@ -350,8 +407,7 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
                     <summary className={styles.cardTitle}>تلاش‌های پرداخت <span className={styles.count}>{topUps.length.toLocaleString('fa-IR')}</span></summary>
                     <ul className={styles.attempts}>
                         {topUps.map((t, idx) => {
-                            const tone = t.status === 'Confirmed' ? 'success' : t.status === 'Rejected' ? 'danger' : 'warning';
-                            const label = t.status === 'Confirmed' ? 'شارژ تأیید شد' : t.status === 'Rejected' ? 'شارژ رد شد' : 'در انتظار تأیید';
+                            const { tone, label } = getTopUpStatusMeta(t.status);
                             return (
                                 <li key={t.topUpRequestId || idx} className={styles.attempt}>
                                     <div className={styles.attemptInfo}>

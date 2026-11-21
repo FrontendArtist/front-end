@@ -29,17 +29,12 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-
-// ── Environment ───────────────────────────────────────────────────────────────
-// STRAPI_API_TOKEN is intentionally NOT prefixed with NEXT_PUBLIC_ so it is
-// never bundled into client-side JavaScript.
-const STRAPI_BASE_URL =
-    process.env.NEXT_PUBLIC_STRAPI_API_URL || "http://localhost:1337";
-const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+import { STRAPI_API_URL } from "@/lib/api";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ORDER_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
 
 // ─────────────────────────────────────────────────────────────────────────────
 export async function POST(request) {
@@ -54,7 +49,10 @@ export async function POST(request) {
     }
 
     // ── Guard: Token configured ─────────────────────────────────────────────────
-    if (!STRAPI_TOKEN) {
+    // STRAPI_API_TOKEN is intentionally NOT prefixed with NEXT_PUBLIC_ so it is
+    // never bundled into client-side JavaScript.
+    const strapiToken = process.env.STRAPI_API_TOKEN;
+    if (!strapiToken) {
         // Log server-side only; never reveal token details to the client.
         console.error("[upload-receipt] STRAPI_API_TOKEN is not set in environment.");
         return NextResponse.json(
@@ -87,7 +85,15 @@ export async function POST(request) {
         );
     }
 
-    if (!cardHolderName || cardHolderName.trim() === "") {
+    const trimmedOrderId = orderId.trim();
+    if (!ORDER_ID_RE.test(trimmedOrderId)) {
+        return NextResponse.json(
+            { message: "شناسه سفارش نامعتبر است." },
+            { status: 400 }
+        );
+    }
+
+    if (!cardHolderName || typeof cardHolderName !== "string" || cardHolderName.trim() === "") {
         return NextResponse.json(
             { message: "نام صاحب کارت الزامی است." },
             { status: 400 }
@@ -121,29 +127,92 @@ export async function POST(request) {
         );
     }
 
-    // [VALIDATION 5] Check if order is already rejected or canceled
+    // [VALIDATION 5] Mandatory order lookup, ownership check (IDOR), and state guard BEFORE upload
+    let existingOrder = null;
     try {
         const orderCheckRes = await fetch(
-            `${STRAPI_BASE_URL}/api/orders/${orderId.trim()}`,
+            `${STRAPI_API_URL}/api/orders/${encodeURIComponent(trimmedOrderId)}?populate[0]=user`,
             {
-                headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
+                headers: { Authorization: `Bearer ${strapiToken}` },
                 cache: "no-store",
             }
         );
-        if (orderCheckRes.ok) {
-            const orderCheckData = await orderCheckRes.json();
-            const existingOrder = orderCheckData?.data;
-            const oStatus = String(existingOrder?.orderStatus || '').trim().toLowerCase();
-            const pStatus = String(existingOrder?.paymentStatus || '').trim().toLowerCase();
-            if (oStatus === 'canceled' || oStatus === 'cancelled' || oStatus === 'rejected' || pStatus === 'failed' || pStatus === 'rejected') {
-                return NextResponse.json(
-                    { message: "این سفارش لغو شده است و امکان ارسال مجدد فیش برای آن وجود ندارد." },
-                    { status: 400 }
-                );
-            }
+
+        if (orderCheckRes.status === 404) {
+            return NextResponse.json(
+                { message: "سفارش مورد نظر یافت نشد." },
+                { status: 404 }
+            );
+        }
+
+        if (!orderCheckRes.ok) {
+            return NextResponse.json(
+                { message: "امکان بررسی وضعیت سفارش وجود ندارد. لطفاً دوباره تلاش کنید." },
+                { status: 502 }
+            );
+        }
+
+        const orderCheckData = await orderCheckRes.json().catch(() => null);
+        existingOrder = orderCheckData?.data ?? null;
+
+        if (!existingOrder) {
+            return NextResponse.json(
+                { message: "سفارش مورد نظر یافت نشد." },
+                { status: 404 }
+            );
         }
     } catch (checkErr) {
-        console.warn("[upload-receipt] Could not check order status beforehand:", checkErr);
+        console.error("[upload-receipt] Network error while checking order:", checkErr);
+        return NextResponse.json(
+            { message: "ارتباط با سرور سفارشات برقرار نشد. لطفاً دوباره تلاش کنید." },
+            { status: 503 }
+        );
+    }
+
+    const sessionUserId = String(session.user.id);
+    const existingUser = existingOrder.user ?? null;
+    const rawSessionPhone = session.user.phoneNumber || session.user.phone;
+    const sessionPhone =
+        typeof rawSessionPhone === "string" && rawSessionPhone.trim().length >= 10
+            ? rawSessionPhone.trim()
+            : null;
+    const orderPhone =
+        typeof existingOrder.phone === "string" ? existingOrder.phone.trim() : null;
+
+    const isOwner =
+        existingUser?.id != null
+            ? String(existingUser.id) === sessionUserId
+            : Boolean(sessionPhone && orderPhone && sessionPhone === orderPhone);
+
+    if (!isOwner) {
+        return NextResponse.json(
+            { message: "شما مجاز به ارسال فیش برای این سفارش نیستید." },
+            { status: 403 }
+        );
+    }
+
+    const paymentMethod = String(existingOrder.paymentMethod || "").trim().toLowerCase();
+    const oStatus = String(existingOrder.orderStatus || "").trim().toLowerCase();
+    const pStatus = String(existingOrder.paymentStatus || "").trim().toLowerCase();
+
+    if (
+        oStatus === "canceled" ||
+        oStatus === "cancelled" ||
+        oStatus === "rejected" ||
+        pStatus === "failed" ||
+        pStatus === "rejected"
+    ) {
+        return NextResponse.json(
+            { message: "این سفارش لغو شده است و امکان ارسال فیش برای آن وجود ندارد." },
+            { status: 400 }
+        );
+    }
+
+    if (paymentMethod !== "card_to_card" || pStatus !== "pending_payment" || oStatus !== "pending") {
+        return NextResponse.json(
+            { message: "امکان ارسال فیش فقط برای سفارش‌های کارت‌به‌کارت در انتظار پرداخت وجود دارد." },
+            { status: 400 }
+        );
     }
 
     // ── STEP 2: Upload image to Strapi /api/upload ──────────────────────────────
@@ -160,8 +229,9 @@ export async function POST(request) {
         // شناسه سفارش در نام فایل قرار می‌گیرد تا فایل‌ها کاملاً متمایز و قابل‌شناسایی باشند.
         const receiptFolder = "receipts";
         const uniqueTimestamp = Date.now();
-        const fileExt = (file.name || "receipt.jpg").split(".").pop() || "jpg";
-        const uniqueFileName = `order-${orderId.trim()}-${uniqueTimestamp}.${fileExt}`;
+        const rawExt = (file.name || "receipt.jpg").split(".").pop() || "jpg";
+        const fileExt = rawExt.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "jpg";
+        const uniqueFileName = `order-${trimmedOrderId}-${uniqueTimestamp}.${fileExt}`;
 
         // path مستقیماً در form data (سطح metas، نه fileInfo)
         uploadForm.append("path", receiptFolder);
@@ -171,17 +241,17 @@ export async function POST(request) {
             "fileInfo",
             JSON.stringify({
                 name: uniqueFileName,
-                caption: `Receipt for order ${orderId.trim()}`,
-                alternativeText: `Payment receipt for order ${orderId.trim()}`,
+                caption: `Receipt for order ${trimmedOrderId}`,
+                alternativeText: `Payment receipt for order ${trimmedOrderId}`,
             })
         );
 
-        const uploadRes = await fetch(`${STRAPI_BASE_URL}/api/upload`, {
+        const uploadRes = await fetch(`${STRAPI_API_URL}/api/upload`, {
             method: "POST",
             headers: {
                 // Do NOT set Content-Type manually — fetch sets the correct boundary
                 // for multipart automatically when body is FormData.
-                Authorization: `Bearer ${STRAPI_TOKEN}`,
+                Authorization: `Bearer ${strapiToken}`,
             },
             body: uploadForm,
         });
@@ -216,53 +286,38 @@ export async function POST(request) {
 
     // ── STEP 3: Check User/Order Name & Update Order in Strapi ────────────────
     // Strapi v5 uses documentId in the URL instead of numeric id.
-    // If the order has a default/generic name or user profile name is empty,
-    // we assign cardHolderName to order.fullName and also update user profile.
+    // Reuse existingOrder & existingUser verified in Step 1.
     try {
         let shouldUpdateOrderFullName = true;
         let userToUpdateId = null;
 
-        // استعلام اطلاعات فعلی سفارش و کاربر متصل به آن
-        try {
-            const currentOrderRes = await fetch(
-                `${STRAPI_BASE_URL}/api/orders/${orderId.trim()}?populate[0]=user`,
-                {
-                    headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
-                    cache: "no-store",
-                }
-            );
+        const userProfileName = (existingUser?.firstName || existingUser?.lastName)
+            ? `${existingUser?.firstName || ''} ${existingUser?.lastName || ''}`.trim()
+            : '';
 
-            if (currentOrderRes.ok) {
-                const currentOrderData = await currentOrderRes.json();
-                const existingOrder = currentOrderData?.data;
-                const existingUser = existingOrder?.user;
+        const orderFullName = existingOrder?.fullName?.trim() || '';
+        const isOrderNameGeneric =
+            !orderFullName ||
+            orderFullName.startsWith('کاربر (') ||
+            orderFullName === 'کاربر فروشگاه' ||
+            /^\d+$/.test(orderFullName);
 
-                const userProfileName = (existingUser?.firstName || existingUser?.lastName)
-                    ? `${existingUser?.firstName || ''} ${existingUser?.lastName || ''}`.trim()
-                    : '';
-
-                const orderFullName = existingOrder?.fullName?.trim() || '';
-                const isOrderNameGeneric =
-                    !orderFullName ||
-                    orderFullName.startsWith('کاربر (') ||
-                    orderFullName === 'کاربر فروشگاه' ||
-                    /^\d+$/.test(orderFullName);
-
-                // اگر در پروفایل کاربر نام وجود داشت و سفارش نام معتبر داشت، نام قبلی را حفظ کن
-                if (userProfileName && !isOrderNameGeneric) {
-                    shouldUpdateOrderFullName = false;
-                }
-
-                // اگر کاربر در پروفایلش نام ندارد، برای ثبت خودکار نام در پروفایل ذخیره کن
-                if (existingUser?.id && !userProfileName && cardHolderName.trim()) {
-                    userToUpdateId = existingUser.id;
-                }
-            }
-        } catch (fetchErr) {
-            console.warn("[upload-receipt] Could not fetch current order details:", fetchErr);
+        // اگر در پروفایل کاربر نام وجود داشت و سفارش نام معتبر داشت، نام قبلی را حفظ کن
+        if (userProfileName && !isOrderNameGeneric) {
+            shouldUpdateOrderFullName = false;
         }
 
         const trimmedCardHolder = cardHolderName.trim();
+
+        // اگر کاربر مالک در پروفایلش نام ندارد، برای ثبت خودکار نام در پروفایل ذخیره کن
+        if (
+            existingUser?.id != null &&
+            String(existingUser.id) === sessionUserId &&
+            !userProfileName &&
+            trimmedCardHolder
+        ) {
+            userToUpdateId = existingUser.id;
+        }
 
         // در صورت خالی بودن نام پروفایل، نام کاربر را نیز در دیتابیس کاربران تکمیل کن
         if (userToUpdateId && trimmedCardHolder) {
@@ -271,10 +326,10 @@ export async function POST(request) {
                 const firstName = nameParts[0] || trimmedCardHolder;
                 const lastName = nameParts.slice(1).join(' ') || '';
 
-                await fetch(`${STRAPI_BASE_URL}/api/users/${userToUpdateId}`, {
+                await fetch(`${STRAPI_API_URL}/api/users/${encodeURIComponent(String(userToUpdateId))}`, {
                     method: 'PUT',
                     headers: {
-                        Authorization: `Bearer ${STRAPI_TOKEN}`,
+                        Authorization: `Bearer ${strapiToken}`,
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
@@ -301,11 +356,11 @@ export async function POST(request) {
 
         const orderRes = await fetch(
             // Strapi v5: /api/{plural-name}/{documentId}
-            `${STRAPI_BASE_URL}/api/orders/${orderId.trim()}`,
+            `${STRAPI_API_URL}/api/orders/${encodeURIComponent(trimmedOrderId)}`,
             {
                 method: "PUT",
                 headers: {
-                    Authorization: `Bearer ${STRAPI_TOKEN}`,
+                    Authorization: `Bearer ${strapiToken}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(orderUpdatePayload),

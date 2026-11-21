@@ -3,6 +3,7 @@ import {
   getAdminCourseOrderReceipt,
   updatePhysicalPurchaseDeliveryStatus,
   getPendingPhysicalRestocks,
+  confirmMyCourseOrderDelivery,
 } from '../byeMoneyApi';
 import { mapByeMoneyLineItem } from '../byeMoneyOrderItems';
 
@@ -209,5 +210,17 @@ describe('getPendingPhysicalRestocks (BND-05)', () => {
     global.fetch.mockRejectedValue(new Error('down'));
     const r = await getPendingPhysicalRestocks({ jwt: 'jwt' });
     expect(r.networkError).toBe(true);
+  });
+});
+
+describe('confirmMyCourseOrderDelivery', () => {
+  test('پاسخ ۴۰۹ با conflict: true و پیام دامنه برمی‌گردد', async () => {
+    global.fetch.mockResolvedValue(res(409, { errors: ['تأیید دریافت برای مرسوله برگشتی مجاز نیست.'] }));
+    const r = await confirmMyCourseOrderDelivery({ jwt: 'tok', orderId: ORDER_ID });
+    expect(r).toEqual({
+      success: false,
+      conflict: true,
+      error: 'تأیید دریافت برای مرسوله برگشتی مجاز نیست.',
+    });
   });
 });

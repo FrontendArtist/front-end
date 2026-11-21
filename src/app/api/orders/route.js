@@ -9,12 +9,86 @@ import { pickShippingOrigin } from '@/lib/shippingOrigin';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // فقط فیلدهای نمایشی آدرس تحویل از پاسخ بای‌مانی به مرورگر می‌رسد.
 function pickShippingAddress(address) {
     if (!address) return null;
     const { recipientName, recipientPhone, province, city, fullAddress, postalCode } = address;
     return { recipientName, recipientPhone, province, city, fullAddress, postalCode: postalCode ?? null };
+}
+
+function extractFromNotes(notes, label) {
+    if (!notes || typeof notes !== 'string') return null;
+    const regex = new RegExp(`${label}\\s*([^\\n\\r]+)`, 'i');
+    const match = notes.match(regex);
+    return match ? match[1].trim() : null;
+}
+
+function pickReceiptImage(receiptImage) {
+    const img = receiptImage?.data?.attributes
+        ? { id: receiptImage.data.id, ...receiptImage.data.attributes }
+        : receiptImage;
+    if (!img || typeof img !== 'object') return null;
+    return {
+        id: img.id ?? null,
+        url: img.url ?? null,
+        name: img.name ?? null,
+        formats: img.formats ?? null,
+    };
+}
+
+/**
+ * پاکسازی فیلدهای خام Strapi پیش از ارسال به مرورگر (حذف user، hashedCardNumber، settlement، notes و ...).
+ * فیلدهای قدیمیِ رسید درگاه که فقط در notes ذخیره شده‌اند قبل از حذف notes استخراج می‌شوند.
+ */
+function sanitizeStrapiOrder(rawOrder) {
+    if (!rawOrder || typeof rawOrder !== 'object') return null;
+    const src = rawOrder.attributes
+        ? { id: rawOrder.id, documentId: rawOrder.documentId, ...rawOrder.attributes }
+        : rawOrder;
+
+    const refNum = src.refNum || extractFromNotes(src.notes, 'رسید دیجیتال \\(RefNum\\):') || null;
+    const traceNo = src.traceNo || extractFromNotes(src.notes, 'کد رهگیری:') || null;
+    const rrn = src.rrn || extractFromNotes(src.notes, 'شماره مرجع \\(RRN\\):') || null;
+    const securePan = src.securePan || extractFromNotes(src.notes, 'شماره کارت:') || null;
+    const rejectionReason =
+        src.rejectionReason
+        || extractFromNotes(src.notes, '❌ پرداخت ناموفق در درگاه:')
+        || extractFromNotes(src.notes, '❌ عدم تایید تراکنش توسط بانک:')
+        || null;
+
+    return {
+        id: src.id,
+        documentId: src.documentId,
+        createdAt: src.createdAt,
+        updatedAt: src.updatedAt,
+        publishedAt: src.publishedAt,
+        orderStatus: src.orderStatus,
+        paymentStatus: src.paymentStatus,
+        paymentMethod: src.paymentMethod,
+        totalPrice: src.totalPrice,
+        currency: src.currency ?? null,
+        originalTotalPrice: src.originalTotalPrice ?? null,
+        discountAmount: src.discountAmount ?? null,
+        couponCode: src.couponCode ?? null,
+        shippingAmountInNoor: src.shippingAmountInNoor ?? null,
+        shippingRuleLabel: src.shippingRuleLabel ?? null,
+        trackingNumber: src.trackingNumber ?? null,
+        cardHolderName: src.cardHolderName ?? null,
+        fullName: src.fullName ?? null,
+        refNum,
+        traceNo,
+        rrn,
+        securePan,
+        paymentDate: src.paymentDate ?? null,
+        rejectionReason,
+        purchaseId: src.purchaseId ?? null,
+        items: Array.isArray(src.items) ? src.items : [],
+        receiptImage: pickReceiptImage(src.receiptImage),
+        source: 'strapi',
+        orderSource: 'strapi',
+    };
 }
 
 // --------------------------------------------------------------------------
@@ -62,7 +136,10 @@ export async function GET(request) {
         // حالت ۱-ب: دریافت یک سفارش خاص (بای‌مانی یا استراپی)
         if (documentId) {
             // ۱. اگر شناسه با قالب سفارش پیگیری بای‌مانی (cart:..., topup:..., purchase:...) باشد
-            if (session.user.jwt && CourseOrderId.isValid(documentId)) {
+            if (CourseOrderId.isValid(documentId)) {
+                if (!session.user.jwt) {
+                    return NextResponse.json({ message: 'نشست کاربری نامعتبر است.' }, { status: 401 });
+                }
                 try {
                     const bmOrder = await getMyCourseOrderDetails({
                         jwt: session.user.jwt,
@@ -92,6 +169,9 @@ export async function GET(request) {
                             cartStatus: d.cartStatus,
                             expiresAtUtc: d.expiresAtUtc,
                             currentTopUpRequestId: d.currentTopUpRequestId,
+                            couponCode: d.couponCode ?? null,
+                            shippingRegularRefundInNoor: Number(d.shippingRegularRefundInNoor) || 0,
+                            shippingGiftRefundInNoor: Number(d.shippingGiftRefundInNoor) || 0,
                             cartSummary: d.cartSummary,
                             shippingAddress: pickShippingAddress(d.shippingAddress),
                             shippingOrigin: pickShippingOrigin(d.shippingOrigin),
@@ -100,13 +180,27 @@ export async function GET(request) {
                         };
                         return NextResponse.json({ data: [mappedOrder] });
                     }
+                    if (bmOrder.unauthorized) {
+                        return NextResponse.json({ message: bmOrder.error || 'نشست کاربری منقضی شده است.' }, { status: 401 });
+                    }
+                    if (bmOrder.forbidden) {
+                        return NextResponse.json({ message: bmOrder.error || 'دسترسی به این سفارش مجاز نیست.' }, { status: 403 });
+                    }
+                    if (bmOrder.notFound) {
+                        return NextResponse.json({ message: bmOrder.error || 'سفارشی با این شناسه یافت نشد.' }, { status: 404 });
+                    }
+                    if (bmOrder.badRequest) {
+                        return NextResponse.json({ message: bmOrder.error || 'شناسه سفارش نامعتبر است.' }, { status: 400 });
+                    }
+                    return NextResponse.json({ message: bmOrder.error || 'خطا در ارتباط با سرویس سفارش‌ها.' }, { status: 502 });
                 } catch (bmOrderErr) {
                     console.error("ByeMoney GET Course Order Details Error:", bmOrderErr);
+                    return NextResponse.json({ message: 'خطا در ارتباط با سرویس سفارش‌ها.' }, { status: 502 });
                 }
             }
 
-            // ۲. بررسی رسید خرید ثبت‌شده از مسیر شخصی getCoursePurchaseReceipt
-            if (session.user.jwt) {
+            // ۲. بررسی رسید خرید ثبت‌شده از مسیر شخصی getCoursePurchaseReceipt (فقط GUID)
+            if (session.user.jwt && GUID_RE.test(documentId)) {
                 try {
                     const bmReceipt = await getCoursePurchaseReceipt({
                         jwt: session.user.jwt,
@@ -152,7 +246,7 @@ export async function GET(request) {
             const strapiUrl = `${STRAPI_BASE_URL}/api/orders`
                 + `?filters[documentId][$eq]=${encodeURIComponent(documentId)}`
                 + `&${userFilter}`
-                + `&populate=*`;
+                + `&populate[0]=items&populate[1]=receiptImage`;
             const res = await fetch(strapiUrl, {
                 headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
                 cache: 'no-store'
@@ -164,7 +258,10 @@ export async function GET(request) {
                 throw new Error("Failed to fetch order from Strapi");
             }
             const data = await res.json();
-            return NextResponse.json(data);
+            return NextResponse.json({
+                ...data,
+                data: Array.isArray(data?.data) ? data.data.map(sanitizeStrapiOrder).filter(Boolean) : [],
+            });
         }
 
         // حالت ۲: دریافت فهرست کامل سفارشات (ادغام استراپی و بای‌مانی با تحمل قطعی)
@@ -177,7 +274,7 @@ export async function GET(request) {
             + `?${userFilter}`
             + `&pagination[pageSize]=100`
             + `&sort=createdAt:desc`
-            + `&populate=*`;
+            + `&populate[0]=items&populate[1]=receiptImage`;
 
         try {
             const res = await fetch(strapiUrl, {
@@ -187,11 +284,7 @@ export async function GET(request) {
 
             if (res.ok) {
                 const sData = await res.json();
-                strapiOrders = (sData.data || []).map(order => ({
-                    ...order,
-                    source: 'strapi',
-                    orderSource: 'strapi',
-                }));
+                strapiOrders = (sData.data || []).map(sanitizeStrapiOrder).filter(Boolean);
             } else {
                 console.error("Strapi GET Orders Non-OK:", await res.text());
             }
@@ -242,10 +335,7 @@ export async function GET(request) {
                             financialStatus: item.financialStatus,
                             deliveryStatus: item.deliveryStatus,
                             itemCount: item.itemCount,
-                            items: Array.from({ length: item.itemCount || 1 }, () => ({
-                                type: 'course',
-                                price: item.finalAmountInNoor
-                            }))
+                            items: []
                         }, purchases);
                     });
                 } else {

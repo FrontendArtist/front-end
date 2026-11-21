@@ -21,6 +21,7 @@ import Link from 'next/link';
 import OrderReceiptUpload from '@/components/profile/OrderReceiptUpload';
 import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import ByeMoneyOrderView from '@/components/profile/ByeMoneyOrderView/ByeMoneyOrderView';
+import { formatPriceWithCurrency } from '@/lib/formatters';
 import styles from './orderDetail.module.scss';
 
 // ─── فرمت‌کننده‌ها و ابزارها ──────────────────────────────────────────
@@ -57,8 +58,10 @@ function CopyBtn({ text, label = 'کپی', buttonText }) {
     );
 }
 
-const formatPrice = (price) =>
-    Number(price || 0).toLocaleString('fa-IR');
+const formatTomanPrice = (price) => {
+    const numeric = Number(price) || 0;
+    return numeric <= 0 ? 'رایگان' : formatPriceWithCurrency(numeric);
+};
 
 const formatDate = (dateString) => {
     if (!dateString) return '—';
@@ -124,10 +127,12 @@ export default function OrderDetailPage() {
     const [error, setError] = useState(null);
 
     // ── دریافت سفارش از API Proxy ─────────────────────────────────────────────
-    const fetchOrder = useCallback(async () => {
+    const fetchOrder = useCallback(async ({ silent = false } = {}) => {
         if (!id) return;
-        setIsLoading(true);
-        setError(null);
+        if (!silent) {
+            setIsLoading(true);
+            setError(null);
+        }
         try {
             // ── BUG FIX ─────────────────────────────────────────────────────────────
             // قبلاً URL با brackets فیلتر ارسال می‌شد اما GET handler هیچ query param
@@ -136,8 +141,13 @@ export default function OrderDetailPage() {
                 `/api/orders?documentId=${encodeURIComponent(id)}`,
                 { cache: 'no-store' }
             );
-            if (!res.ok) throw new Error('دریافت اطلاعات سفارش با خطا مواجه شد.');
-            const json = await res.json();
+            const json = await res.json().catch(() => null);
+            if (!res.ok) {
+                throw new Error(
+                    json?.message ||
+                    (res.status === 404 ? 'سفارشی با این شناسه یافت نشد.' : 'دریافت اطلاعات سفارش با خطا مواجه شد.')
+                );
+            }
 
             // Strapi v5: data یک آرایه است (حتی برای یک نتیجه)
             const orderData = json?.data?.[0] ?? null;
@@ -146,9 +156,13 @@ export default function OrderDetailPage() {
 
             setOrder(orderData);
         } catch (err) {
-            setError(err.message);
+            if (!silent) {
+                setError(err.message);
+            }
         } finally {
-            setIsLoading(false);
+            if (!silent) {
+                setIsLoading(false);
+            }
         }
     }, [id]);
 
@@ -198,21 +212,27 @@ export default function OrderDetailPage() {
                     </svg>
                     بازگشت به سفارشات
                 </Link>
-                <ByeMoneyOrderView order={order} onOrderChanged={fetchOrder} />
+                <ByeMoneyOrderView order={order} onOrderChanged={() => fetchOrder({ silent: true })} />
             </div>
         );
     }
 
     const items = Array.isArray(order.items) ? order.items : [];
+    const normalizedOrderStatus = order.orderStatus?.trim()?.toLowerCase();
     const isCardToCard = order.paymentMethod === 'card_to_card';
     const isOnline = order.paymentMethod === 'online';
-    const isPaid = ['paid', 'shipped', 'delivered'].includes(order.orderStatus?.trim()?.toLowerCase()) || order.paymentStatus === 'paid';
+    const isPaid = ['paid', 'shipped', 'delivered'].includes(normalizedOrderStatus) || order.paymentStatus === 'paid';
     const isFailedOrCanceled = order.paymentStatus === 'failed'
         || order.paymentStatus === 'rejected'
-        || order.orderStatus === 'canceled'
-        || order.orderStatus === 'cancelled';
+        || normalizedOrderStatus === 'canceled'
+        || normalizedOrderStatus === 'cancelled'
+        || normalizedOrderStatus === 'rejected';
     const isRejected = isCardToCard && isFailedOrCanceled;
     const needsReceiptUpload = isCardToCard && order.paymentStatus === 'pending_payment' && !isRejected;
+
+    const isNoorCurrency = String(order.currency || '').trim().toLowerCase() === 'noor';
+    const renderOrderPrice = (amount) =>
+        isNoorCurrency ? <PriceWithHint price={amount} size="sm" /> : formatTomanPrice(amount);
 
     const failureReason = order.rejectionReason 
         || extractFromNotes(order.notes, '❌ پرداخت ناموفق در درگاه:') 
@@ -263,26 +283,34 @@ export default function OrderDetailPage() {
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>مبلغ کل:</span>
                         <span className={`${styles.metaValue} ${styles.metaPrice}`}>
-                            {order.totalPrice != null ? (
-                                <PriceWithHint price={order.totalPrice} size="sm" />
-                            ) : (
-                                '—'
-                            )}
+                            {order.totalPrice != null ? renderOrderPrice(order.totalPrice) : '—'}
                         </span>
                     </span>
                     <span className={styles.metaItem}>
                         <span className={styles.metaLabel}>وضعیت سفارش:</span>
                         <span className={styles.metaValue} style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            <OrderStatusBadge status={isOnline && isPaid ? 'paid' : order.orderStatus} paymentStatus={order.paymentStatus} paymentMethod={order.paymentMethod} />
-                            {isCardToCard && <PaymentStatusBadge status={order.paymentStatus} />}
-                            {isOnline && isPaid && (
-                                <span className={`${styles.badge} ${styles.badgeSuccess}`}>
-                                    پرداخت آنلاین موفق
-                                </span>
+                            {isOnline && isPaid ? (
+                                <>
+                                    <span className={`${styles.badge} ${styles.badgeSuccess}`}>
+                                        پرداخت آنلاین موفق
+                                    </span>
+                                    {normalizedOrderStatus && normalizedOrderStatus !== 'paid' && (
+                                        <OrderStatusBadge status={order.orderStatus} paymentStatus={order.paymentStatus} paymentMethod={order.paymentMethod} />
+                                    )}
+                                </>
+                            ) : isCardToCard && !isRejected && normalizedOrderStatus === 'pending' ? (
+                                <PaymentStatusBadge status={order.paymentStatus} />
+                            ) : (
+                                <>
+                                    <OrderStatusBadge status={order.orderStatus} paymentStatus={order.paymentStatus} paymentMethod={order.paymentMethod} />
+                                    {isCardToCard && !isRejected && !(normalizedOrderStatus === 'paid' && order.paymentStatus === 'paid') && (
+                                        <PaymentStatusBadge status={order.paymentStatus} />
+                                    )}
+                                </>
                             )}
                         </span>
                     </span>
-                    {(order.orderStatus?.trim() === 'shipped' || order.trackingNumber) && (
+                    {(normalizedOrderStatus === 'shipped' || order.trackingNumber) && (
                         <span className={styles.metaItem}>
                             <span className={styles.metaLabel}>کد پیگیری:</span>
                             <span className={styles.metaValue} dir="ltr" style={{ fontWeight: 'bold' }}>
@@ -357,15 +385,17 @@ export default function OrderDetailPage() {
                             </div>
                         )}
 
-                        <div className={styles.receiptField}>
-                            <span className={styles.receiptFieldLabel}>تاریخ و زمان پرداخت</span>
-                            <span className={styles.receiptFieldValue}>{formatDate(onlinePaymentDate)}</span>
-                        </div>
+                        {onlinePaymentDate && (
+                            <div className={styles.receiptField}>
+                                <span className={styles.receiptFieldLabel}>تاریخ و زمان پرداخت</span>
+                                <span className={styles.receiptFieldValue}>{formatDate(onlinePaymentDate)}</span>
+                            </div>
+                        )}
 
                         <div className={styles.receiptField}>
-                            <span className={styles.receiptFieldLabel}>مبلغ پرداختی</span>
+                            <span className={styles.receiptFieldLabel}>{isPaid ? 'مبلغ پرداختی' : 'مبلغ سفارش'}</span>
                             <span className={styles.receiptFieldValue}>
-                                <PriceWithHint price={order.totalPrice} size="sm" />
+                                {order.totalPrice != null ? renderOrderPrice(order.totalPrice) : '—'}
                             </span>
                         </div>
                     </div>
@@ -416,7 +446,7 @@ export default function OrderDetailPage() {
                                             <span className={styles.itemQty}>× {item.quantity}</span>
                                         )}
                                         <span className={styles.itemPrice}>
-                                            <PriceWithHint price={(item.price ?? 0) * (item.quantity ?? 1)} size="sm" />
+                                            {renderOrderPrice((item.price ?? 0) * (item.quantity ?? 1))}
                                         </span>
                                     </div>
                                 </li>
@@ -508,8 +538,8 @@ export default function OrderDetailPage() {
                             <line x1="12" y1="16" x2="12" y2="12" />
                             <line x1="12" y1="8" x2="12.01" y2="8" />
                         </svg>
-                        مبلغ <strong>{formatPrice(order.totalPrice)} تومان</strong> را به شماره کارت زیر واریز کرده،
-                        سپس تصویر فیش و کد پیگیری را ارسال کنید.
+                        مبلغ <strong>{order.totalPrice != null ? renderOrderPrice(order.totalPrice) : '—'}</strong> را به شماره کارت زیر واریز کرده،
+                        سپس نام صاحب کارت و تصویر فیش واریزی را ارسال کنید.
                     </div>
 
                     {/*

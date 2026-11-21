@@ -39,6 +39,7 @@ export async function POST(_request, { params }) {
     if (result.badRequest) status = 400;
     else if (result.unauthorized) status = 401;
     else if (result.notFound) status = 404;
+    else if (result.conflict) status = 409;
     else if (!result.networkError) status = 500;
 
     return NextResponse.json({ success: false, error: result.error }, { status });
