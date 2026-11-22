@@ -4,8 +4,9 @@
  * @file src/components/admin/Orders/OrderDrawer/OrderDrawer.jsx
  * @description کشوی جزئیات سفارش بای‌مانی با سه تب: خلاصه / اقلام و ارسال / خط زمانی (ADMIN-ORDERS-REDESIGN)
  *
- * داده و کامپوننت‌های عملیاتی همان پنل قبلی‌اند (useOrderTracking، OrderItemsList با کنترل ارسال و لغو کالا،
- * PendingRestockNotice و Timeline)؛ اینجا فقط چیدمان عوض شده و تکرارها حذف شده‌اند:
+ * این کشو جزئیات سفارش‌های بای‌مانی در `/admin/orders` است، نه سفارش‌های قدیمی `/admin/orders/legacy`.
+ * داده و کنترل‌های عملیاتی از پنل قبلی می‌آیند (useOrderTracking، OrderItemsList با کنترل ارسال و لغو کالا،
+ * PendingRestockNotice و Timeline). ارسال به پستکس و کد رهگیری هر کدام یک‌بار برای کل سفارش‌اند.
  * شناسهٔ کامل فقط با دکمهٔ کپی، و وضعیت ارسال فقط یک‌بار در سرصفحه (از روی اقلام).
  * فقط‌مشاهده است جز وضعیت ارسال و لغو کالا (TASK-ADMIN-ORDER-OPS-REVIEW).
  */
@@ -141,7 +142,7 @@ function SummaryTab({ order, data, isPaid, restockPending, onGoItems }) {
     );
 }
 
-function ItemsTab({ data, isPaid, onReload, onItemStatus, onRestockCleared, onCarrierResolved, onCarrierAlertResolved }) {
+function ItemsTab({ data, isPaid, onReload, onShippingChanged, onItemStatus, onRestockCleared, onCarrierResolved, onCarrierAlertResolved }) {
     const { order: detail, shippingAddress, shippingOrigin } = data;
     const originName = shippingOriginText(shippingOrigin);
     return (
@@ -153,6 +154,7 @@ function ItemsTab({ data, isPaid, onReload, onItemStatus, onRestockCleared, onCa
                 detail={detail}
                 isPaid={isPaid}
                 onReload={onReload}
+                onShippingChanged={onShippingChanged}
                 onItemStatus={onItemStatus}
                 onCarrierResolved={onCarrierResolved}
                 onCarrierAlertResolved={onCarrierAlertResolved}
@@ -328,6 +330,7 @@ export default function OrderDrawer({ order, restockPending = false, onClose, on
                             )}
                             {tab === 'items' && (
                                 <ItemsTab data={data} isPaid={isPaid} onReload={() => { handleReload(); notify('لغو کالا ثبت شد.'); }}
+                                    onShippingChanged={handleReload}
                                     onItemStatus={handleItemStatus}
                                     onCarrierResolved={handleCarrierResolved}
                                     onCarrierAlertResolved={handleCarrierAlertResolved}

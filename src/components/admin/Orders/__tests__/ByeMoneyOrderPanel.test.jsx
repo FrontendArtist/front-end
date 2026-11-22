@@ -223,7 +223,7 @@ describe('ByeMoneyOrderPanel', () => {
             }));
             render(<ByeMoneyOrderPanel order={ORDER} />);
             expect(await screen.findByTestId('cart-shipment-section')).toBeInTheDocument();
-            expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ساخت مرسوله پستکس');
+            expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال به پستکس');
         });
 
         test('اگر مرسوله قبلاً ساخته شده باشد (دارای providerParcelId) مخفی است', async () => {

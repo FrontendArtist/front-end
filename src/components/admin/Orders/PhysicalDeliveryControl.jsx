@@ -4,8 +4,11 @@
  * @file src/components/admin/Orders/PhysicalDeliveryControl.jsx
  * @description مدیریت و پیشبرد وضعیت ارسال کالای فیزیکی در پنل ادمین (I11-O / SHIP-ADMIN-DISPATCH)
  *
- * در «در حال آماده‌سازی» فقط دو کار می‌ماند: ارسال با پستکس (با collectionType) و
- * ثبت کد رهگیری دستی. پیشبرد جدا به «ارسال‌شده» بدون کد حذف شده است.
+ * صفحهٔ سفارش‌های زنده، سفارش‌های بای‌مانی در `/admin/orders` است (`OrderDrawer`)، نه
+ * `/admin/orders/legacy` و نه پنل بازنشستهٔ `ByeMoneyOrderPanel`.
+ * کد رهگیری سفارش یک‌بار در `OrderTrackingControl` است؛ با `showTracking={false}` این سطر فقط وضعیت قلم را نشان می‌دهد.
+ * دکمهٔ ارسال به پستکس در فهرست اقلام، یک‌بار برای کل سفارش است.
+ * پیشبرد جدا به «ارسال‌شده» بدون کد حذف شده است.
  * نشان «ارسال‌شده» فقط وقتی عوض می‌شود که بای‌مانی واقعاً Shipped با کد برگرداند.
  * تغییر وضعیت فقط از route سروری Next.js؛ توکن بای‌مانی به مرورگر نمی‌رسد.
  */
@@ -38,6 +41,7 @@ export default function PhysicalDeliveryControl(props) {
         initialStatus = null,
         onStatusChange = null,
         carrierReturnLocked = false,
+        showTracking = true,
     } = props;
 
     // اگر کامپوننت برای سبد بدون شناسهٔ خرید صدا زده شده باشد، کنترل مرسولهٔ سبد را نشان می‌دهد
@@ -274,7 +278,7 @@ export default function PhysicalDeliveryControl(props) {
                 <AdminBadge variant={badgeVariant} text={statusLabel} />
             </div>
 
-            {isPreparing && (
+            {showTracking && isPreparing && (
                 <div className={styles.trackingBox} data-testid="manual-tracking-box">
                         <label className={styles.trackingLabel} htmlFor={`tracking-code-${purchaseId}`}>
                             ثبت کد رهگیری دستی
@@ -303,7 +307,7 @@ export default function PhysicalDeliveryControl(props) {
             )}
 
             {/* پس از ارسال: اصلاح کد/منبع و پیشبرد به تحویل‌شده */}
-            {isShipped && (
+            {showTracking && isShipped && (
                 <div className={styles.trackingBox}>
                     <label className={styles.trackingLabel} htmlFor={`tracking-code-${purchaseId}`}>
                         کد رهگیری مرسوله

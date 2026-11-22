@@ -195,6 +195,6 @@ describe('CartShipmentControl (ساخت مرسوله در سطح سبد خرید
   it('فراخوانی PhysicalDeliveryControl با cartId و بدون purchaseId به CartShipmentControl منتقل می‌شود', () => {
     render(<PhysicalDeliveryControl cartId={CART} />);
     expect(screen.getByTestId('cart-shipment-control')).toBeInTheDocument();
-    expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ساخت مرسوله پستکس');
+    expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال به پستکس');
   });
 });
