@@ -92,7 +92,22 @@ function sanitizeAddress(a) {
     return address;
 }
 
-function sanitizeItem(i) {
+function carrierPendingByPurchase(receipt) {
+    const map = new Map();
+    for (const item of receipt?.items || []) {
+        const since = typeof item?.carrierPaymentPendingSinceUtc === 'string'
+            ? item.carrierPaymentPendingSinceUtc.trim()
+            : '';
+        if (item?.purchaseId && since) map.set(String(item.purchaseId), since);
+    }
+    return map;
+}
+
+function sanitizeItem(i, pendingByPurchase) {
+    const fromItem = typeof i.carrierPaymentPendingSinceUtc === 'string'
+        ? i.carrierPaymentPendingSinceUtc.trim()
+        : '';
+    const fromReceipt = i.purchaseId ? pendingByPurchase?.get(String(i.purchaseId)) : '';
     return {
         purchaseId: i.purchaseId ?? null,
         externalItemId: i.externalItemId ?? null,
@@ -122,6 +137,7 @@ function sanitizeItem(i) {
         carrierAlertResolutionNote: i.carrierAlertResolutionNote ?? null,
         carrierAlertResolvedAtUtc: i.carrierAlertResolvedAtUtc ?? null,
         carrierAlertResolvedByExternalUserId: i.carrierAlertResolvedByExternalUserId ?? null,
+        carrierPaymentPendingSinceUtc: fromItem || fromReceipt || null,
     };
 }
 
@@ -215,7 +231,10 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
                 cartStatus: order.cartStatus ?? null,
                 expiresAtUtc: order.expiresAtUtc ?? null,
                 cartSummary: order.cartSummary ?? null,
-                items: (order.items || []).map(sanitizeItem),
+                items: (order.items || []).map((item) => sanitizeItem(
+                item,
+                carrierPendingByPurchase(receipt?.success ? receipt.data : null),
+            )),
             },
             buyer: { externalUserId: buyerExternalUserId ?? null, displayName: buyerDisplayName ?? null },
             topUps,

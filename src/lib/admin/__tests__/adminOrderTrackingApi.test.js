@@ -194,6 +194,36 @@ describe('getOrderTracking', () => {
         expect(res.data.receipt.items[0].providerParcelId).toBe('parcel-9');
     });
 
+    test('نشان انتظار پرداخت از رسید ادمین به جزئیات می‌آید و در خود رسید نمی‌ماند', async () => {
+        const paid = detail('Paid');
+        paid.data.order.items = [{
+            title: 'کتاب',
+            itemType: 'Product',
+            purchaseId: 'p1',
+            physicalDeliveryStatus: 'Preparing',
+        }];
+        paid.data.order.topUps = [];
+        getAdminCourseOrderDetails.mockResolvedValue(paid);
+        getAdminCourseOrderReceipt.mockResolvedValue({
+            success: true,
+            data: {
+                purchasedAtUtc: '2026-11-19T09:00:00Z',
+                finalAmountInNoor: 50,
+                items: [{
+                    purchaseId: 'p1',
+                    providerParcelId: 'parcel-9',
+                    carrierPaymentPendingSinceUtc: '2026-11-19T10:00:00Z',
+                }],
+            },
+        });
+
+        const res = await getOrderTracking({ jwt: 'admin', orderId: ORDER_ID, now: NOW });
+
+        expect(res.data.order.items[0].carrierPaymentPendingSinceUtc).toBe('2026-11-19T10:00:00Z');
+        expect(res.data.receipt.items[0].carrierPaymentPendingSinceUtc).toBeUndefined();
+        expect(res.data.receipt.items[0].providerParcelId).toBe('parcel-9');
+    });
+
     test('رسید فقط برای Paid خوانده می‌شود', async () => {
         getAdminCourseOrderDetails.mockResolvedValue(detail('AwaitingPayment'));
         global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });

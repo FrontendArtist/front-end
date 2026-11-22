@@ -124,6 +124,70 @@ describe('ByeMoneyOrderPanel', () => {
         expect(screen.getByTestId('carrier-alert-badge')).toHaveTextContent('هشدار مرسوله');
         expect(screen.getByTestId('provider-parcel-id')).toHaveTextContent('parcel-9');
         expect(screen.getByTestId('carrier-alert-resolve-open')).toBeInTheDocument();
+        expect(screen.queryByTestId('carrier-payment-pending-badge')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('refresh-carrier-shipment')).not.toBeInTheDocument();
+    });
+
+    test('نشان انتظار پرداخت فقط با فیلد پر می‌آید و کنار هشدار مرسوله می‌ماند', async () => {
+        fetchOrderTracking.mockResolvedValue(payload({
+            order: {
+                ...payload().order,
+                financialStatus: 'Paid',
+                items: [
+                    {
+                        title: 'کتاب',
+                        itemType: 'Product',
+                        quantity: 1,
+                        finalAmountInNoor: 50,
+                        purchaseId: 'p1',
+                        physicalDeliveryStatus: 'Preparing',
+                        providerParcelId: 'parcel-pending',
+                        carrierPaymentPendingSinceUtc: '2026-11-19T10:00:00Z',
+                    },
+                    {
+                        title: 'دفتر',
+                        itemType: 'Product',
+                        quantity: 1,
+                        finalAmountInNoor: 20,
+                        purchaseId: 'p2',
+                        physicalDeliveryStatus: 'Shipped',
+                        carrierAlertCode: 11304,
+                        carrierAlertAtUtc: '2026-11-19T09:00:00Z',
+                    },
+                ],
+            },
+            receipt: { purchasedAtUtc: '2026-11-01T10:20:00Z', couponCode: null, finalAmountInNoor: 70, cartSummary: { originalTotalInNoor: 70 }, items: [] },
+        }));
+        render(<ByeMoneyOrderPanel order={ORDER} />);
+
+        expect(await screen.findByTestId('carrier-payment-pending-badge')).toHaveTextContent('کرایهٔ پستکس پرداخت نشده');
+        expect(screen.getAllByTestId('carrier-payment-pending-badge')).toHaveLength(1);
+        expect(screen.getByTestId('refresh-carrier-shipment')).toBeInTheDocument();
+        expect(screen.getByTestId('carrier-alert-badge')).toHaveTextContent('هشدار مرسوله');
+        expect(screen.getByTestId('carrier-alert-resolve-open')).toBeInTheDocument();
+    });
+
+    test('بدون فیلد انتظار پرداخت، نشان و دکمهٔ بررسی وضعیت نیستند', async () => {
+        fetchOrderTracking.mockResolvedValue(payload({
+            order: {
+                ...payload().order,
+                financialStatus: 'Paid',
+                items: [{
+                    title: 'کتاب',
+                    itemType: 'Product',
+                    quantity: 1,
+                    finalAmountInNoor: 50,
+                    purchaseId: 'p1',
+                    physicalDeliveryStatus: 'Preparing',
+                    carrierPaymentPendingSinceUtc: '',
+                }],
+            },
+            receipt: { purchasedAtUtc: '2026-11-01T10:20:00Z', couponCode: null, finalAmountInNoor: 50, cartSummary: { originalTotalInNoor: 50 }, items: [] },
+        }));
+        render(<ByeMoneyOrderPanel order={ORDER} />);
+        await screen.findByText('کتاب');
+        expect(screen.queryByTestId('carrier-payment-pending-badge')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('refresh-carrier-shipment')).not.toBeInTheDocument();
     });
 
     test('سفارش Paid: رسید و کنترل ارسال کالا فقط برای قلم کالا', async () => {

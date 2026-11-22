@@ -22,6 +22,8 @@ import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import PhysicalDeliveryControl from './PhysicalDeliveryControl';
 import CartShipmentControl from './CartShipmentControl';
 import OrderTrackingControl from './OrderTrackingControl';
+import ShipmentRefreshControl from './ShipmentRefreshControl';
+import { carrierPaymentPendingSince, firstCarrierPaymentPending } from '@/lib/admin/shipmentRefresh';
 import CarrierReturnResolveControl from './CarrierReturnResolveControl';
 import CarrierAlertResolveControl from './CarrierAlertResolveControl';
 import {
@@ -215,10 +217,15 @@ export function OrderWarnings({ warnings }) {
 export function OrderItemsList({
     detail, isPaid, onReload, onShippingChanged, onItemStatus, onCarrierResolved, onCarrierAlertResolved,
 }) {
-    if (detail.items.length === 0) {
+    const [holdRefreshResult, setHoldRefreshResult] = useState(false);
+    useEffect(() => {
+        setHoldRefreshResult(false);
+    }, [detail.orderId, detail.cartId]);
+    if (!Array.isArray(detail.items) || detail.items.length === 0) {
         return <p className={styles.expanded_empty}>اطلاعات اقلام در دسترس نیست.</p>;
     }
     const refreshShipping = onShippingChanged || onReload;
+    const pendingPayment = firstCarrierPaymentPending(detail.items);
     return (
         <div className={styles.items_list}>
             {canCreateCartShipment(detail, isPaid) && (
@@ -238,6 +245,15 @@ export function OrderItemsList({
                     if (typeof refreshShipping === 'function') refreshShipping();
                 }}
             />
+            {(pendingPayment || holdRefreshResult) && (
+                <ShipmentRefreshControl
+                    purchaseId={pendingPayment?.purchaseId || null}
+                    onRefreshed={() => {
+                        setHoldRefreshResult(true);
+                        if (typeof refreshShipping === 'function') refreshShipping();
+                    }}
+                />
+            )}
             {detail.items.map((item, idx) => {
                 const isProduct = String(item.itemType || '').toLowerCase() === 'product';
                 const isShippedOrDelivered = item.physicalDeliveryStatus === 'Shipped' || item.physicalDeliveryStatus === 'Delivered';
@@ -287,6 +303,11 @@ export function OrderItemsList({
                                     <span className={styles.item_card__meta} data-testid="item-refunded">
                                         برگشتی: {fa(refundedRegular)} نور عادی
                                         {refundedGift > 0 && ` و ${fa(refundedGift)} نور هدیه`}
+                                    </span>
+                                )}
+                                {isProduct && carrierPaymentPendingSince(item) && (
+                                    <span className={`${styles.item_card__badge} ${styles['item_card__badge--warning']}`} data-testid="carrier-payment-pending-badge">
+                                        کرایهٔ پستکس پرداخت نشده
                                     </span>
                                 )}
                                 {isProduct && item.carrierReturnedAtUtc && (
