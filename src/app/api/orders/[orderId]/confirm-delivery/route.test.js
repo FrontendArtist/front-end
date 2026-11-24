@@ -1,49 +1,60 @@
-/**
- * @file src/app/api/orders/[orderId]/confirm-delivery/route.test.js
- * عبور ۴۰۹ تعارض تأیید دریافت برای مرسولهٔ برگشتی (SHIP-FIX-2).
- */
-
 import { POST } from './route';
 import { getServerSession } from 'next-auth/next';
-import { CourseOrderId, confirmMyCourseOrderDelivery } from '@/lib/byeMoneyApi';
+import { confirmMyCourseOrderDelivery } from '@/lib/byeMoneyApi';
 
 jest.mock('next-auth/next', () => ({ getServerSession: jest.fn() }));
 jest.mock('@/lib/auth', () => ({ authOptions: {} }));
-jest.mock('@/lib/byeMoneyApi', () => ({
-    CourseOrderId: { isValid: jest.fn() },
-    confirmMyCourseOrderDelivery: jest.fn(),
-}));
+jest.mock('@/lib/byeMoneyApi', () => {
+    const actual = jest.requireActual('@/lib/byeMoneyApi');
+    return {
+        ...actual,
+        confirmMyCourseOrderDelivery: jest.fn(),
+    };
+});
 jest.mock('next/server', () => ({
-    NextResponse: { json: (body, init) => ({ body, status: init?.status ?? 200 }) },
+    NextResponse: {
+        json: (body, init) => ({ body, status: init?.status || 200 }),
+    },
 }));
 
 const ORDER_ID = 'cart:11111111-1111-1111-1111-111111111111';
-const context = { params: Promise.resolve({ orderId: encodeURIComponent(ORDER_ID) }) };
-
-beforeEach(() => {
-    jest.clearAllMocks();
-    getServerSession.mockResolvedValue({ user: { jwt: 'server-jwt' } });
-    CourseOrderId.isValid.mockReturnValue(true);
-});
 
 describe('POST /api/orders/[orderId]/confirm-delivery', () => {
-    it('۴۰۹ بای‌مانی را با پیام دامنه برمی‌گرداند', async () => {
-        confirmMyCourseOrderDelivery.mockResolvedValue({
-            success: false,
-            conflict: true,
-            error: 'مرسولهٔ این سفارش برگشتی اعلام شده است.',
-        });
+    beforeEach(() => {
+        jest.clearAllMocks();
+        getServerSession.mockResolvedValue({ user: { id: 1, jwt: 'jwt-token' } });
+    });
 
-        const res = await POST({}, context);
+    it('بدون jwt وضعیت ۴۰۱ برمی‌گرداند', async () => {
+        getServerSession.mockResolvedValue(null);
+        const res = await POST({}, { params: Promise.resolve({ orderId: ORDER_ID }) });
+        expect(res.status).toBe(401);
+    });
 
-        expect(res.status).toBe(409);
-        expect(res.body).toEqual({
-            success: false,
-            error: 'مرسولهٔ این سفارش برگشتی اعلام شده است.',
-        });
-        expect(confirmMyCourseOrderDelivery).toHaveBeenCalledWith({
-            jwt: 'server-jwt',
-            orderId: ORDER_ID,
-        });
+    it('شناسه نامعتبر ۴۰۰ برمی‌گرداند', async () => {
+        const res = await POST({}, { params: Promise.resolve({ orderId: 'bad-id' }) });
+        expect(res.status).toBe(400);
+        expect(confirmMyCourseOrderDelivery).not.toHaveBeenCalled();
+    });
+
+    it('در حالت موفق ۲۰۰ برمی‌گرداند', async () => {
+        confirmMyCourseOrderDelivery.mockResolvedValue({ success: true, data: { confirmedCount: 1 } });
+        const res = await POST({}, { params: Promise.resolve({ orderId: encodeURIComponent(ORDER_ID) }) });
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ success: true, data: { confirmedCount: 1 } });
+    });
+
+    it.each([
+        ['badRequest', { badRequest: true, error: 'نامعتبر' }, 400],
+        ['unauthorized', { unauthorized: true, error: 'منقضی' }, 401],
+        ['notFound', { notFound: true, error: 'یافت نشد' }, 404],
+        ['conflict', { conflict: true, error: 'مرسوله برگشتی' }, 409],
+        ['generic', { error: 'خطای داخلی' }, 500],
+        ['networkError', { networkError: true, error: 'قطع شبکه' }, 502],
+    ])('خطای %s به کد %i نگاشت می‌شود', async (_name, mockRes, expectedStatus) => {
+        confirmMyCourseOrderDelivery.mockResolvedValue({ success: false, ...mockRes });
+        const res = await POST({}, { params: Promise.resolve({ orderId: ORDER_ID }) });
+        expect(res.status).toBe(expectedStatus);
+        expect(res.body).toEqual({ success: false, error: mockRes.error });
     });
 });

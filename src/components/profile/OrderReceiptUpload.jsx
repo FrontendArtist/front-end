@@ -132,16 +132,14 @@ export default function OrderReceiptUpload({ orderId, bankInfo: bankInfoProp = n
             setIsBankLoading(true);
             setBankError(null);
             try {
-                // این endpoint به /api/bank-settings در Next.js اشاره می‌کند
-                // که یک proxy برای Strapi Single Type bank-setting است.
-                // اگر proxy مستقیم وجود ندارد، به Strapi public endpoint مراجعه می‌کنیم.
-                const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
-                const res = await fetch(`${strapiUrl}/api/bank-setting`);
+                const res = await fetch('/api/bank-settings', { cache: 'no-store' });
 
-                if (!res.ok) throw new Error('دریافت اطلاعات بانکی با خطا مواجه شد.');
+                if (!res.ok) {
+                    const errJson = await res.json().catch(() => null);
+                    throw new Error(errJson?.message || 'دریافت اطلاعات بانکی با خطا مواجه شد.');
+                }
 
                 const json = await res.json();
-                // Strapi v5 Single Type data structure: { data: { bankName, cardNumber, accountHolder } }
                 const data = json?.data;
                 if (!data) throw new Error('اطلاعات بانکی موجود نیست.');
 

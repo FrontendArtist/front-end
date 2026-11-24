@@ -50,11 +50,11 @@ beforeEach(()=>{
 test('خروج و ورود بدون بارگذاری مجدد نمایش و مالکیت را عوض می‌کند و سبد حساب دوم درست پاک می‌شود',async()=>{
  fetchClientOrders.mockResolvedValueOnce({data:[paid(11,course)]}).mockResolvedValueOnce({data:[paid(22,other)]});
  const view=render(<App/>);
- await waitFor(()=>expect(screen.getByText('سفارش #11')).toBeTruthy());expect(screen.getByText('مشاهده دوره')).toBeTruthy();
- act(()=>{login(null);view.rerender(<App/>);});expect(screen.queryByText('سفارش #11')).toBeNull();expect(screen.queryByText('مشاهده دوره')).toBeNull();
+ await waitFor(()=>expect(screen.getByText('سفارش #۱۱')).toBeTruthy());expect(screen.getByText('مشاهده دوره')).toBeTruthy();
+ act(()=>{login(null);view.rerender(<App/>);});expect(screen.queryByText('سفارش #۱۱')).toBeNull();expect(screen.queryByText('مشاهده دوره')).toBeNull();
  fetchProfileCartData.mockResolvedValue({cartData:{state:{items:[course,other]}}});
- act(()=>{login(2);view.rerender(<App/>);});expect(screen.queryByText('سفارش #11')).toBeNull();
- await waitFor(()=>expect(screen.getByText('سفارش #22')).toBeTruthy());
+ act(()=>{login(2);view.rerender(<App/>);});expect(screen.queryByText('سفارش #۱۱')).toBeNull();
+ await waitFor(()=>expect(screen.getByText('سفارش #۲۲')).toBeTruthy());
  expect(screen.queryByText('مشاهده دوره')).toBeNull();await waitFor(()=>expect(useCartStore.getState().items).toEqual([course]));
  expect(fetchClientOrders).toHaveBeenCalledTimes(2);
 });
@@ -66,7 +66,7 @@ test('پاسخ دیرهنگام سفارش و پروفایل حساب اول س�
  const view=render(<App/>);act(()=>{login(2);view.rerender(<App/>);});
  await waitFor(()=>expect(useCartStore.getState().hydratedUserId).toBe(2));
  await act(async()=>{orders.resolve({data:[paid(11,course)]});profile.resolve({cartData:{state:{items:[other]}}});});
- expect(screen.queryByText('سفارش #11')).toBeNull();expect(screen.queryByText('مشاهده دوره')).toBeNull();expect(useCartStore.getState().items).toEqual([course]);
+ expect(screen.queryByText('سفارش #۱۱')).toBeNull();expect(screen.queryByText('مشاهده دوره')).toBeNull();expect(useCartStore.getState().items).toEqual([course]);
 });
 
 function Notifications({ label }) { const { notifications }=useOrderNotifications(); return <span data-testid={label}>{notifications.map(n=>n.id).join(',')}</span>; }

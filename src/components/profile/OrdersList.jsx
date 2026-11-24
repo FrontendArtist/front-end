@@ -5,6 +5,7 @@ import Link from 'next/link';
 import GradientBorderCard from '@/components/ui/GradientBorderCard/GradientBorderCard';
 import PriceWithHint from '@/components/ui/PriceWithHint/PriceWithHint';
 import { useAccountOrders } from '@/hooks/useAccountOrders';
+import { formatPriceWithCurrency } from '@/lib/formatters';
 import styles from './OrdersList.module.scss';
 
 export default function OrdersList({ limit }) {
@@ -16,8 +17,9 @@ export default function OrdersList({ limit }) {
         }
     }, [hasFetched, fetchOrders]);
 
-    const formatPrice = (price) => {
-        return Number(price || 0).toLocaleString('fa-IR');
+    const formatTomanPrice = (price) => {
+        const numeric = Number(price) || 0;
+        return numeric <= 0 ? 'رایگان' : formatPriceWithCurrency(numeric);
     };
 
     const formatDate = (dateString) => {
@@ -31,13 +33,14 @@ export default function OrdersList({ limit }) {
 
     // ─── بج وضعیت سفارش (orderStatus) ────────────────────────────────────────
     const StatusBadge = ({ status }) => {
-        const normalizedStatus = status?.trim();
+        const normalizedStatus = status?.trim()?.toLowerCase();
         const map = {
             paid: { label: 'پرداخت شده', cls: styles.orders__badgeSuccess },
             pending: { label: 'در انتظار پرداخت', cls: styles.orders__badgeWarning },
             shipped: { label: 'ارسال شده', cls: styles.orders__badgeDefault },
             delivered: { label: 'تحویل داده شد', cls: styles.orders__badgeSuccess },
-            canceled: { label: 'رد شده', cls: styles.orders__badgeDanger },
+            canceled: { label: 'لغو شده', cls: styles.orders__badgeDanger },
+            cancelled: { label: 'لغو شده', cls: styles.orders__badgeDanger },
             failed: { label: 'ناموفق', cls: styles.orders__badgeDanger },
         };
         const { label, cls } = map[normalizedStatus] ?? { label: status || 'نامشخص', cls: styles.orders__badgeDefault };
@@ -65,7 +68,7 @@ export default function OrdersList({ limit }) {
             Paid: { label: 'پرداخت شده ✓', cls: styles.orders__badgeSuccess },
             AwaitingPayment: { label: 'در انتظار پرداخت', cls: styles.orders__badgeWarning },
             Processing: { label: 'در حال پردازش', cls: styles.orders__badgePending },
-            Preparing: { label: 'در حال آماده‌سازی', cls: styles.orders__badgeDefault },
+            Preparing: { label: 'در حال ثبت سفارش', cls: styles.orders__badgeDefault },
             Failed: { label: 'پرداخت ناموفق ⚠️', cls: styles.orders__badgeDanger },
             Expired: { label: 'منقضی شده', cls: styles.orders__badgeDanger },
             Cancelled: { label: 'لغو شده', cls: styles.orders__badgeDanger },
@@ -80,13 +83,36 @@ export default function OrdersList({ limit }) {
             Cancelled: { label: 'لغو شده', cls: styles.orders__badgeDanger },
         };
 
+        if (finStatus === 'Paid' && delStatus === 'Cancelled') {
+            const items = Array.isArray(order.items) ? order.items : [];
+            const hasCourseItem = items.some(
+                (i) => i?.type !== 'product' && String(i?.itemType || '').toLowerCase() !== 'product'
+            );
+            if (!hasCourseItem) {
+                return (
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span className={`${styles.orders__badge} ${styles.orders__badgeDanger}`}>سفارش لغو شد</span>
+                    </div>
+                );
+            }
+            return (
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span className={`${styles.orders__badge} ${styles.orders__badgeSuccess}`}>پرداخت شده ✓</span>
+                    <span className={`${styles.orders__badge} ${styles.orders__badgeWarning}`}>کالای فیزیکی لغو شد</span>
+                </div>
+            );
+        }
+
         const finEntry = financialMap[finStatus] ?? { label: finStatus || 'وضعیت مالی نامشخص', cls: styles.orders__badgeDefault };
+        const showDeliveryBadge = finStatus === 'Paid' || (delStatus && delStatus !== 'NotStarted');
         const delEntry = deliveryMap[delStatus] ?? { label: delStatus || 'وضعیت تحویل نامشخص', cls: styles.orders__badgeDefault };
 
         return (
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <span className={`${styles.orders__badge} ${finEntry.cls}`}>{finEntry.label}</span>
-                <span className={`${styles.orders__badge} ${delEntry.cls}`}>{delEntry.label}</span>
+                {showDeliveryBadge && (
+                    <span className={`${styles.orders__badge} ${delEntry.cls}`}>{delEntry.label}</span>
+                )}
             </div>
         );
     };
@@ -101,10 +127,24 @@ export default function OrdersList({ limit }) {
         const isOnline = order.paymentMethod === 'online';
         const isCardToCard = order.paymentMethod === 'card_to_card';
         const isPaid = ['paid', 'shipped', 'delivered'].includes(oStatus) || pStatus === 'paid';
-        const isFailedOrCanceled = (oStatus === 'canceled' || oStatus === 'cancelled' || pStatus === 'failed');
+        const isFailedOrCanceled =
+            oStatus === 'canceled' ||
+            oStatus === 'cancelled' ||
+            oStatus === 'rejected' ||
+            pStatus === 'failed' ||
+            pStatus === 'rejected';
+        const hasDeliveryProgress = oStatus === 'shipped' || oStatus === 'delivered';
 
-        // پرداخت آنلاین موفق
+        // پرداخت آنلاین موفق (به همراه وضعیت ارسال/تحویل در صورت وجود)
         if (isOnline && isPaid) {
+            if (hasDeliveryProgress) {
+                return (
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span className={`${styles.orders__badge} ${styles.orders__badgeSuccess}`}>پرداخت آنلاین موفق ✓</span>
+                        <StatusBadge status={oStatus} />
+                    </div>
+                );
+            }
             return <span className={`${styles.orders__badge} ${styles.orders__badgeSuccess}`}>پرداخت آنلاین موفق ✓</span>;
         }
 
@@ -118,8 +158,21 @@ export default function OrdersList({ limit }) {
             return <span className={`${styles.orders__badge} ${styles.orders__badgeWarning}`}>در انتظار پرداخت</span>;
         }
 
+        // کارت‌به‌کارت لغوشده / ردشده (پیش از بررسی pending_payment تا بج «منتظر فیش واریز» نگیرد)
+        if (isCardToCard && isFailedOrCanceled) {
+            return <StatusBadge status="canceled" />;
+        }
+
         // کارت‌به‌کارت
         if (isCardToCard) {
+            if (hasDeliveryProgress) {
+                return (
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <PaymentStatusBadge status={pStatus || 'paid'} />
+                        <StatusBadge status={oStatus} />
+                    </div>
+                );
+            }
             return <PaymentStatusBadge status={pStatus} />;
         }
 
@@ -138,8 +191,15 @@ export default function OrdersList({ limit }) {
 
     if (error) {
         return (
-            <div className={styles.orders__error}>
+            <div className={styles.orders__error} role="alert">
                 <p>{error}</p>
+                <button
+                    type="button"
+                    className={styles.orders__retryBtn}
+                    onClick={() => fetchOrders(true)}
+                >
+                    تلاش مجدد
+                </button>
             </div>
         );
     }
@@ -212,11 +272,29 @@ export default function OrdersList({ limit }) {
                 {displayedOrders.map((orderData) => {
                     const order = orderData.attributes || orderData;
                     const isByeMoney = order.source === 'byemoney' || orderData.source === 'byemoney';
+                    const isNoorOrder = isByeMoney || String(order.currency || '').trim().toLowerCase() === 'noor';
+                    const legacyId = orderData.id != null
+                        ? (/^\d+$/.test(String(orderData.id))
+                            ? Number(orderData.id).toLocaleString('fa-IR', { useGrouping: false })
+                            : String(orderData.id))
+                        : '';
                     const id = isByeMoney
                         ? (order.orderNumber || (orderData.id ? String(orderData.id).slice(0, 8).toUpperCase() : ''))
-                        : orderData.id;
+                        : legacyId;
                     const items = Array.isArray(order.items) ? order.items : [];
                     const itemCount = order.itemCount ?? items.length;
+                    const oStatus = order.orderStatus?.trim()?.toLowerCase();
+                    const pStatus = order.paymentStatus?.trim()?.toLowerCase();
+                    const isOrderFailedOrCanceled =
+                        oStatus === 'canceled' ||
+                        oStatus === 'cancelled' ||
+                        oStatus === 'rejected' ||
+                        pStatus === 'failed' ||
+                        pStatus === 'rejected';
+                    const canUploadReceipt =
+                        order.paymentMethod === 'card_to_card' &&
+                        pStatus === 'pending_payment' &&
+                        !isOrderFailedOrCanceled;
 
                     return (
                         <GradientBorderCard gradient={'horizontal-rtl'} key={orderData.documentId || orderData.id} className={styles.orders__cardWrapper} contentClassName={styles.orders__card} enableHover={false}>
@@ -235,7 +313,11 @@ export default function OrdersList({ limit }) {
                                     <span className={styles.orders__label}>مبلغ کل:</span>
                                     <span className={styles.orders__value}>
                                         {order.totalPrice != null ? (
-                                            <PriceWithHint price={order.totalPrice} hideHint={isByeMoney} size="sm" />
+                                            isNoorOrder ? (
+                                                <PriceWithHint price={order.totalPrice} hideHint={isByeMoney} size="sm" />
+                                            ) : (
+                                                formatTomanPrice(order.totalPrice)
+                                            )
                                         ) : (
                                             '—'
                                         )}
@@ -243,7 +325,7 @@ export default function OrdersList({ limit }) {
                                 </div>
                                 <div className={styles.orders__detailItem}>
                                     <span className={styles.orders__label}>تعداد اقلام:</span>
-                                    <span className={styles.orders__value}>{itemCount} آیتم</span>
+                                  <span className={styles.orders__value}>{Number(itemCount || 0).toLocaleString('fa-IR')} قلم</span>
                                 </div>
                                 {(order.traceNo || order.trackingNumber || order.refNum) && (
                                     <div className={styles.orders__detailItem}>
@@ -259,9 +341,7 @@ export default function OrdersList({ limit }) {
                                     className={styles.orders__viewBtn}
                                     aria-label={`مشاهده جزئیات سفارش ${id}`}
                                 >
-                                    {order.paymentMethod === 'card_to_card' && order.paymentStatus === 'pending_payment'
-                                        ? 'آپلود فیش پرداخت'
-                                        : 'مشاهده جزئیات'}
+                                    {canUploadReceipt ? 'آپلود فیش پرداخت' : 'مشاهده جزئیات'}
                                 </Link>
                             </div>
                         </GradientBorderCard>
