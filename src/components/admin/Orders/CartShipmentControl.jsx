@@ -13,11 +13,6 @@ import { Loader2 } from 'lucide-react';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import styles from './PhysicalDeliveryControl.module.scss';
 
-export const COLLECTION_TYPES = [
-    { value: 'courier_drop_off', label: 'تحویل توسط خودمان' },
-    { value: 'pick_up', label: 'پیک بیاید' },
-];
-
 export const POSTEX_BOX_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
     value: i + 1,
     label: `جعبه استاندارد ${i + 1}`,
@@ -29,7 +24,6 @@ export default function CartShipmentControl({
 }) {
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState(null);
-    const [collectionType, setCollectionType] = useState('courier_drop_off');
     const [boxTypeId, setBoxTypeId] = useState('');
 
     const createShipment = async () => {
@@ -39,7 +33,6 @@ export default function CartShipmentControl({
 
         const body = {
             provider: 'PostEx',
-            ...(collectionType ? { collectionType } : {}),
             ...(boxTypeId ? { boxTypeId: Number(boxTypeId) } : {}),
         };
 
@@ -93,27 +86,6 @@ export default function CartShipmentControl({
             <div className={styles.statusHeader}>
                 <span className={styles.label}>ارسال به پستکس برای تمام اقلام این سفارش:</span>
             </div>
-
-            <fieldset
-                className={styles.resolveOptions}
-                data-testid="collection-type-fieldset"
-                aria-label="روش جمع‌آوری"
-            >
-                {COLLECTION_TYPES.map((item) => (
-                    <label key={item.value} className={styles.resolveOption}>
-                        <input
-                            type="radio"
-                            name={`cart-collection-type-${cartId}`}
-                            data-testid={`collection-type-${item.value}`}
-                            value={item.value}
-                            checked={collectionType === item.value}
-                            onChange={() => setCollectionType(item.value)}
-                            disabled={busy}
-                        />
-                        <span>{item.label}</span>
-                    </label>
-                ))}
-            </fieldset>
 
             <div className={styles.trackingBox}>
                 <label className={styles.trackingLabel} htmlFor={`box-type-select-${cartId}`}>

@@ -7,20 +7,20 @@
  * فقط‌مشاهده است و هیچ تغییر وضعیت مالی ندارد. داده از route سروری /api/admin/orders/[id]/tracking
  * می‌آید. اگر استرپی در دسترس نباشد فقط وضعیت بای‌مانی با هشدار نمایش داده می‌شود و پنل نمی‌شکند.
  * وضعیت شارژ با وضعیت خرید یکی نمایش داده نمی‌شود (TRACK-04): خط «شارژ» جدا از «نتیجهٔ نهایی سفارش» است.
- * کنترل وضعیت ارسال کالا فقط برای قلم کالای سفارش Paid است؛ برگشتی باز یا بسته‌شده بدون تسویه، دکمهٔ تحویل را می‌بندد.
+ * وضعیت ارسال مرسوله یک‌بار برای کل سفارش است؛ برگشتی باز یا بسته‌شده بدون تسویه، دکمهٔ تحویل را می‌بندد.
  *
  * این کامپوننت روی صفحه سوار نیست. صفحهٔ سفارش‌ها یعنی سفارش‌های بای‌مانی در `/admin/orders`
  * با کشوی `OrderDrawer`؛ سفارش‌های قدیمی استرپی در `/admin/orders/legacy` هستند.
  * هوک داده (useOrderTracking) و بخش‌ها (OrderItemsList، Timeline، OrderWarnings) را کشو استفاده می‌کند.
- * دکمهٔ «ارسال به پستکس» و کد رهگیری، هر کدام یک‌بار برای کل سفارش، داخل OrderItemsList هستند.
+ * دکمهٔ «ارسال به پستکس»، کد رهگیری و وضعیت مرسوله، هر کدام یک‌بار برای کل سفارش، داخل OrderItemsList هستند.
  */
 
 import { useEffect, useState } from 'react';
 import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
 import { canShowReceipt, isPhysicalFullyCancelled } from '@/lib/admin/orderTracking';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
-import PhysicalDeliveryControl from './PhysicalDeliveryControl';
 import CartShipmentControl from './CartShipmentControl';
+import OrderDeliveryStatus from './OrderDeliveryStatus';
 import OrderTrackingControl from './OrderTrackingControl';
 import ShipmentRefreshControl from './ShipmentRefreshControl';
 import { carrierPaymentPendingSince, firstCarrierPaymentPending } from '@/lib/admin/shipmentRefresh';
@@ -68,12 +68,6 @@ const RESOLUTION_LABELS = {
     DeliveryConfirmed: 'تحویل تأیید شد (ورود مجدد به تسویه)',
     ClosedWithoutSettlement: 'بدون تسویه بسته شد (حذف دائمی از تسویه)',
 };
-
-function blocksPrematureDelivery(item) {
-    return Boolean(item?.carrierReturnedAtUtc) && (
-        !item.carrierReturnResolution || item.carrierReturnResolution === 'ClosedWithoutSettlement'
-    );
-}
 
 export function formatTime(d) {
     if (!d) return '—';
@@ -184,7 +178,7 @@ export function useOrderTracking(order, { onSummary, onPhysicalCancelled } = {})
 
     const reload = () => setReloadKey((k) => k + 1);
 
-    /** به‌روزرسانی محلی وضعیت ارسال یک قلم پس از ثبت در PhysicalDeliveryControl */
+    /** به‌روزرسانی محلی وضعیت ارسال یک قلم پس از ثبت در OrderDeliveryStatus */
     const setItemDeliveryStatus = (purchaseId, newStatus) => {
         setState((prev) => {
             if (!prev?.data?.order?.items) return prev;
@@ -238,6 +232,11 @@ export function OrderItemsList({
                     />
                 </div>
             )}
+            <OrderDeliveryStatus
+                detail={detail}
+                isPaid={isPaid}
+                onItemStatus={onItemStatus}
+            />
             <OrderTrackingControl
                 detail={detail}
                 isPaid={isPaid}
@@ -270,7 +269,6 @@ export function OrderItemsList({
                 const returnUnresolved = isProduct && item.carrierReturnedAtUtc && !item.carrierReturnResolution;
                 const alertUnresolved = isProduct && hasPendingCarrierAlert(item);
                 const alertStatus = isProduct ? carrierAlertStatusOf([item]) : 'None';
-                const deliveryLocked = blocksPrematureDelivery(item);
 
                 return (
                     <div
@@ -376,18 +374,8 @@ export function OrderItemsList({
                             </span>
                         </div>
 
-                        {isProduct && isPaid && item.purchaseId && (!fullyCancelled || returnUnresolved || alertUnresolved) && (
+                        {isProduct && isPaid && item.purchaseId && (returnUnresolved || alertUnresolved || canCancel) && (
                             <div className={styles.item_card__actions}>
-                                {!fullyCancelled && (
-                                    <PhysicalDeliveryControl
-                                        purchaseId={item.purchaseId}
-                                        cartId={detail.cartId}
-                                        initialStatus={item.physicalDeliveryStatus || null}
-                                        carrierReturnLocked={deliveryLocked}
-                                        showTracking={false}
-                                        onStatusChange={(newStatus) => onItemStatus(item.purchaseId, newStatus)}
-                                    />
-                                )}
                                 {returnUnresolved && (
                                     <CarrierReturnResolveControl
                                         purchaseId={item.purchaseId}

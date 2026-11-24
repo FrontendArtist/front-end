@@ -70,6 +70,7 @@ describe('OrderItemsList', () => {
         expect(screen.getAllByTestId('create-provider-shipment')).toHaveLength(1);
         expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال به پستکس');
         expect(screen.getAllByTestId('manual-tracking-box')).toHaveLength(1);
-        expect(screen.getAllByTestId('delivery-control')).toHaveLength(2);
+        expect(screen.getAllByTestId('order-delivery-status')).toHaveLength(1);
+        expect(screen.queryByTestId('delivery-control')).not.toBeInTheDocument();
     });
 });

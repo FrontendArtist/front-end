@@ -53,7 +53,6 @@ describe('POST /api/admin/carts/[cartId]/shipments', () => {
         },
         body: JSON.stringify({
           provider: 'PostEx',
-          collectionType: 'pick_up',
         }),
       })
     );
@@ -82,7 +81,6 @@ describe('POST /api/admin/carts/[cartId]/shipments', () => {
       expect.objectContaining({
         body: JSON.stringify({
           provider: 'PostEx',
-          collectionType: 'courier_drop_off',
           boxTypeId: 5,
         }),
       })

@@ -32,9 +32,6 @@ export async function POST(request, { params }) {
     const forwardBody = {
         provider: body?.provider || 'PostEx',
     };
-    if (body?.collectionType !== undefined) {
-        forwardBody.collectionType = body.collectionType;
-    }
     if (body?.boxTypeId !== undefined) {
         forwardBody.boxTypeId = body.boxTypeId;
     }

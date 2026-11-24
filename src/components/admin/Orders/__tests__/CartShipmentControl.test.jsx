@@ -10,13 +10,12 @@ beforeEach(() => {
 });
 
 describe('CartShipmentControl (ساخت مرسوله در سطح سبد)', () => {
-  it('فیلدهای collectionType و سایز جعبه (boxTypeId) ۱ تا ۱۲ را رندر می‌کند', () => {
+  it('سایز جعبه (boxTypeId) ۱ تا ۱۲ را رندر می‌کند و روش جمع‌آوری را نمی‌پرسد', () => {
     render(<CartShipmentControl cartId={CART} />);
 
     expect(screen.getByTestId('cart-shipment-control')).toBeInTheDocument();
-    expect(screen.getByTestId('collection-type-fieldset')).toBeInTheDocument();
-    expect(screen.getByTestId('collection-type-courier_drop_off')).toBeChecked();
-    expect(screen.getByTestId('collection-type-pick_up')).not.toBeChecked();
+    expect(screen.queryByTestId('collection-type-fieldset')).not.toBeInTheDocument();
+    expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال به پستکس');
 
     const boxSelect = screen.getByTestId('box-type-select');
     expect(boxSelect).toBeInTheDocument();
@@ -29,8 +28,6 @@ describe('CartShipmentControl (ساخت مرسوله در سطح سبد)', () =>
   it('ساخت مرسوله با پیش‌فرض‌ها درخواست را به route سروری سبد می‌فرستد و با Shipped پیام موفق می‌دهد', async () => {
     const onShipmentCreated = jest.fn();
     render(<CartShipmentControl cartId={CART} onShipmentCreated={onShipmentCreated} />);
-
-    fireEvent.click(screen.getByTestId('collection-type-pick_up'));
 
     const mockResponse = {
       cartId: CART,
@@ -57,7 +54,6 @@ describe('CartShipmentControl (ساخت مرسوله در سطح سبد)', () =>
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           provider: 'PostEx',
-          collectionType: 'pick_up',
         }),
       })
     );
@@ -70,7 +66,6 @@ describe('CartShipmentControl (ساخت مرسوله در سطح سبد)', () =>
     const onShipmentCreated = jest.fn();
     render(<CartShipmentControl cartId={CART} onShipmentCreated={onShipmentCreated} />);
 
-    fireEvent.click(screen.getByTestId('collection-type-courier_drop_off'));
     fireEvent.change(screen.getByTestId('box-type-select'), { target: { value: '5' } });
 
     global.fetch.mockResolvedValueOnce({
@@ -92,7 +87,6 @@ describe('CartShipmentControl (ساخت مرسوله در سطح سبد)', () =>
       expect.objectContaining({
         body: JSON.stringify({
           provider: 'PostEx',
-          collectionType: 'courier_drop_off',
           boxTypeId: 5,
         }),
       })

@@ -52,7 +52,7 @@ describe('ByeMoneyOrderPanel', () => {
         expect(list).toHaveTextContent('لغو توسط کاربر');
         expect(list).toHaveTextContent('نتیجهٔ نهایی سفارش');
         expect(screen.queryByTestId('order-receipt')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('delivery-control')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('order-delivery-status')).not.toBeInTheDocument();
         expect(fetchOrderTracking).toHaveBeenCalledWith(ORDER.orderId, expect.any(Object));
         await waitFor(() => expect(onSummary).toHaveBeenCalledWith(expect.objectContaining({ label: 'لغو توسط کاربر' })));
     });
@@ -204,9 +204,8 @@ describe('ByeMoneyOrderPanel', () => {
         }));
         render(<ByeMoneyOrderPanel order={ORDER} />);
         expect(await screen.findByTestId('order-receipt')).toBeInTheDocument();
-        const controls = screen.getAllByTestId('delivery-control');
-        expect(controls).toHaveLength(1);
-        expect(controls[0]).toHaveTextContent('p1');
+        expect(screen.getAllByTestId('order-delivery-status')).toHaveLength(1);
+        expect(screen.queryByTestId('delivery-control')).not.toBeInTheDocument();
     });
 
     describe('دکمهٔ لغو کالای فیزیکی (PhysicalCancelFlow)', () => {
@@ -230,7 +229,7 @@ describe('ByeMoneyOrderPanel', () => {
         test.each(['Shipped', 'Delivered'])('با وضعیت ارسال %s پنهان است', async (status) => {
             fetchOrderTracking.mockResolvedValue(paidWith({ physicalDeliveryStatus: status }));
             render(<ByeMoneyOrderPanel order={ORDER} />);
-            await screen.findByTestId('delivery-control');
+            await screen.findByText('کتاب');
             expect(screen.queryByTestId('cancel-flow')).not.toBeInTheDocument();
         });
 
@@ -302,7 +301,7 @@ describe('ByeMoneyOrderPanel', () => {
                 receipt: { purchasedAtUtc: '2026-11-01T10:20:00Z', couponCode: null, finalAmountInNoor: 20, cartSummary: { originalTotalInNoor: 20 }, items: [] },
             }));
             render(<ByeMoneyOrderPanel order={ORDER} />);
-            await screen.findByTestId('delivery-control');
+            await screen.findByText('کتاب');
             expect(screen.queryByTestId('cart-shipment-section')).not.toBeInTheDocument();
         });
 

@@ -114,11 +114,10 @@ describe('PhysicalDeliveryControl (کنترل ارسال سطر کالا)', () =
 });
 
 describe('CartShipmentControl (ساخت مرسوله در سطح سبد خرید)', () => {
-  it('ارسال با پستکس collectionType و boxTypeId را به route سبد می‌فرستد و با Shipped رفرش می‌کند', async () => {
+  it('ارسال با پستکس boxTypeId را به route سبد می‌فرستد و با Shipped رفرش می‌کند', async () => {
     const onShipmentCreated = jest.fn();
     render(<CartShipmentControl cartId={CART} onShipmentCreated={onShipmentCreated} />);
 
-    fireEvent.click(screen.getByTestId('collection-type-courier_drop_off'));
     fireEvent.change(screen.getByTestId('box-type-select'), { target: { value: '5' } });
 
     global.fetch.mockResolvedValueOnce({
@@ -143,7 +142,6 @@ describe('CartShipmentControl (ساخت مرسوله در سطح سبد خرید
         method: 'POST',
         body: JSON.stringify({
           provider: 'PostEx',
-          collectionType: 'courier_drop_off',
           boxTypeId: 5,
         }),
       })

@@ -6,8 +6,8 @@
  *
  * صفحهٔ سفارش‌های زنده، سفارش‌های بای‌مانی در `/admin/orders` است (`OrderDrawer`)، نه
  * `/admin/orders/legacy` و نه پنل بازنشستهٔ `ByeMoneyOrderPanel`.
- * کد رهگیری سفارش یک‌بار در `OrderTrackingControl` است؛ با `showTracking={false}` این سطر فقط وضعیت قلم را نشان می‌دهد.
- * دکمهٔ ارسال به پستکس در فهرست اقلام، یک‌بار برای کل سفارش است.
+ * کشوی سفارش این کنترل را روی هر قلم سوار نمی‌کند؛ وضعیت یک‌بار در `OrderDeliveryStatus` است.
+ * کد رهگیری سفارش یک‌بار در `OrderTrackingControl` است.
  * پیشبرد جدا به «ارسال‌شده» بدون کد حذف شده است.
  * نشان «ارسال‌شده» فقط وقتی عوض می‌شود که بای‌مانی واقعاً Shipped با کد برگرداند.
  * تغییر وضعیت فقط از route سروری Next.js؛ توکن بای‌مانی به مرورگر نمی‌رسد.
@@ -23,10 +23,10 @@ import {
     PHYSICAL_DELIVERY_PROVIDERS,
 } from '@/lib/physicalDeliveryProviders';
 import AdminBadge from '../Shared/AdminBadge';
-import CartShipmentControl, { COLLECTION_TYPES } from './CartShipmentControl';
+import CartShipmentControl from './CartShipmentControl';
 import styles from './PhysicalDeliveryControl.module.scss';
 
-export { default as CartShipmentControl, COLLECTION_TYPES } from './CartShipmentControl';
+export { default as CartShipmentControl } from './CartShipmentControl';
 
 const BADGE_VARIANTS = {
     Preparing: 'warning',

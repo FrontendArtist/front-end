@@ -1762,11 +1762,10 @@ export async function updatePhysicalPurchaseDeliveryStatus({
  * @param {object} params
  * @param {string} params.jwt
  * @param {string} params.cartId
- * @param {string} [params.collectionType] - pick_up | courier_drop_off (I11-O)
  * @param {string} [params.provider] - مثلاً PostEx؛ خالی = پیش‌فرض سرور
  * @param {number|null} [params.boxTypeId] - ۱ تا ۱۲ یا خالی
  */
-export async function createCartPhysicalShipment({ jwt, cartId, collectionType, provider = 'PostEx', boxTypeId = null, signal } = {}) {
+export async function createCartPhysicalShipment({ jwt, cartId, provider = 'PostEx', boxTypeId = null, signal } = {}) {
   if (!jwt) {
     return { success: false, unauthorized: true, error: 'نشست ادمین نامعتبر است.' };
   }
@@ -1776,7 +1775,6 @@ export async function createCartPhysicalShipment({ jwt, cartId, collectionType, 
   const url = `${BYEMONEY_API_URL}/api/admin/carts/${encodeURIComponent(cartId)}/shipments`;
   const body = {
     provider,
-    ...(collectionType ? { collectionType } : {}),
     ...(boxTypeId != null ? { boxTypeId: Number(boxTypeId) } : {}),
   };
   try {
