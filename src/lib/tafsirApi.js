@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from './apiClient';
+import { getStrapiBaseUrl } from './api';
 import { withErrorHandling } from './apiErrorHandler';
 
 /**
@@ -13,7 +14,7 @@ function getMediaUrl(mediaField) {
   const audioData = mediaField?.data?.attributes || mediaField;
   let url = audioData?.url || null;
   if (url && !url.startsWith('http')) {
-    const strapiBase = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+    const strapiBase = getStrapiBaseUrl();
     url = `${strapiBase}${url}`;
   }
   return url;

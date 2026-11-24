@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { API_BASE_URL } from '@/lib/api';
+import { getStrapiBaseUrl } from '@/lib/api';
 
 // فقط عدد آستانهٔ «در حال بررسی» برای کاربر لاگین‌شده؛ JWT فقط سمت سرور استفاده می‌شود (D20 بند ۵).
 export async function GET() {
@@ -9,7 +9,7 @@ export async function GET() {
     const jwt = session?.user?.jwt;
     if (!jwt) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
 
-    const base = (API_BASE_URL || 'http://localhost:1337').trim().replace(/\/+$/, '').replace(/\/api\/?$/, '');
+    const base = getStrapiBaseUrl();
     try {
         const res = await fetch(`${base}/api/gateway-reviews/threshold`, {
             headers: { Authorization: `Bearer ${jwt}` },

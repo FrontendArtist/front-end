@@ -34,7 +34,7 @@ function getFullAudioUrl(rawUrl) {
         return trimmed;
     }
 
-    const base = (API_BASE_URL || 'http://localhost:1337').replace(/\/+$/, '');
+    const base = API_BASE_URL.replace(/\/+$/, '');
     const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
     return `${base}${path}`;
 }

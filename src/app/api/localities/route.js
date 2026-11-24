@@ -3,6 +3,7 @@
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { getStrapiBaseUrl } from '@/lib/api';
 import { NextResponse } from 'next/server';
 
 const UNAUTHENTICATED_MESSAGE = 'برای دریافت فهرست استان و شهر باید وارد حساب کاربری شوید.';
@@ -10,10 +11,7 @@ const UPSTREAM_MESSAGE = 'دریافت فهرست استان و شهر نامو�
 const INTERNAL_MESSAGE = 'خطای داخلی در دریافت فهرست استان و شهر.';
 
 function strapiBaseUrl() {
-    return (process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337')
-        .trim()
-        .replace(/\/api\/?$/, '')
-        .replace(/\/+$/, '');
+    return getStrapiBaseUrl();
 }
 
 function normalizeLocalities(data) {

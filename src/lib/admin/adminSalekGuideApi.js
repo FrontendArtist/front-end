@@ -4,7 +4,7 @@
  */
 
 import { adminFetch } from './adminFetch';
-import { API_BASE_URL } from '../api';
+import { getStrapiBaseUrl } from '../api';
 
 export async function getAdminSalekGuide(jwt) {
   const data = await adminFetch('/api/salek-guide', jwt);
@@ -25,10 +25,7 @@ export async function getAdminSalekGuide(jwt) {
 
 export async function updateAdminSalekGuide(jwt, payload) {
   try {
-    const cleanBase = (API_BASE_URL || 'http://localhost:1337')
-      .trim()
-      .replace(/\/+$/, '')
-      .replace(/\/api\/?$/, '');
+    const cleanBase = getStrapiBaseUrl();
 
     const res = await fetch(`${cleanBase}/api/salek-guide`, {
       method: 'PUT',

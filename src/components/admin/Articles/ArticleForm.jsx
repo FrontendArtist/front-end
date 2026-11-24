@@ -11,9 +11,10 @@ import { Editor } from '@tinymce/tinymce-react';
 import AdminBadge from '../Shared/AdminBadge';
 import { uploadMedia } from '@/lib/client/admin/mediaClient';
 import { createArticle, updateArticle } from '@/lib/client/admin/articlesClient';
+import { STRAPI_API_URL } from '@/lib/api';
 import styles from './Articles.module.scss';
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+const STRAPI_URL = STRAPI_API_URL;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Toast Helper

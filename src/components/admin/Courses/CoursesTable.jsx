@@ -22,8 +22,9 @@ import AdminButton from '../Shared/AdminButton';
 import AdminLazyLoad from '../Shared/AdminLazyLoad';
 import { useAdminLazyLoad } from '../Shared/useAdminLazyLoad';
 import { fetchAdminCourses, updateCourse, deleteCourse } from '@/lib/client/admin/coursesClient';
+import { STRAPI_API_URL } from '@/lib/api';
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+const STRAPI_URL = STRAPI_API_URL;
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 function useToast() {

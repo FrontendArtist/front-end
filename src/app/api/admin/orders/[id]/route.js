@@ -27,11 +27,11 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { getStrapiBaseUrl } from '@/lib/api';
 import { NextResponse } from 'next/server';
 import { confirmTopUpWithByeMoney, rejectTopUpWithByeMoney } from '@/lib/byeMoneyApi';
 
-const STRAPI_API_URL =
-    process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+const STRAPI_API_URL = getStrapiBaseUrl();
 
 export async function PUT(request, { params }) {
     // ── ۱. بررسی session و دسترسی ادمین ─────────────────────────────

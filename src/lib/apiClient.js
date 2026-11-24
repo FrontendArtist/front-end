@@ -15,7 +15,7 @@
  * @module lib/apiClient
  */
 
-import { API_BASE_URL } from './api';
+import { getStrapiBaseUrl } from './api';
 
 /**
  * تابع پایه برای ارسال درخواست HTTP به Strapi با اعتبارسنجی و پاکسازی آدرس (URL Sanitization)
@@ -29,10 +29,7 @@ export async function apiClient(endpoint, options = {}) {
   const { suppressErrorLog, timeoutMs = 15000, ...fetchOptions } = options;
 
   // ۱. حذف اسلش‌ها و پسوند /api از انتهای Base URL جهت اطمینان از خلوص ریشه دامنه
-  const cleanBase = (API_BASE_URL || 'http://localhost:1337')
-    .trim()
-    .replace(/\/+$/, '')
-    .replace(/\/api\/?$/, '');
+  const cleanBase = getStrapiBaseUrl();
 
   // ۲. اطمینان از شروع مسیر با اسلش و حذف هرگونه تکرار ناخواسته /api/api
   let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;

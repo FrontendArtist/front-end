@@ -19,10 +19,11 @@ import { useRouter } from 'next/navigation';
 import AdminButton from '../Shared/AdminButton';
 import { uploadMedia as uploadMediaApi } from '@/lib/client/admin/mediaClient';
 import { createCourse, updateCourse, deleteCourse } from '@/lib/client/admin/coursesClient';
+import { STRAPI_API_URL } from '@/lib/api';
 import { Editor } from '@tinymce/tinymce-react';
 import styles from './Courses.module.scss';
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+const STRAPI_URL = STRAPI_API_URL;
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
 function useToast() {
