@@ -10,6 +10,100 @@ import { pickShippingOrigin } from '@/lib/shippingOrigin';
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ORDER_LIST_PAGE_SIZE = 100;
+const MAX_UNCAPPED_ORDER_LIST_PAGES = 100;
+
+function logOrderListSource(source, page, outcome) {
+    console.error(`[orders] ${outcome} source=${source} page=${page}`);
+}
+
+function finiteCount(value) {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return null;
+    return Math.floor(value);
+}
+
+function uniqueById(rows, idOf) {
+    const seen = new Set();
+    const unique = [];
+    for (const row of rows) {
+        const id = idOf(row);
+        if (id == null || id === '') {
+            unique.push(row);
+            continue;
+        }
+        const key = String(id);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        unique.push(row);
+    }
+    return unique;
+}
+
+function knownPageCount(page) {
+    if (page.pageCount != null) return page.pageCount;
+    if (page.totalCount == null) return null;
+    if (page.totalCount === 0) return 0;
+    return Math.ceil(page.totalCount / ORDER_LIST_PAGE_SIZE);
+}
+
+function rowsRemainAfterEmptyPage(declaredTotal, pageNumber, pagesToRead, collectedCount) {
+    if (declaredTotal != null) return declaredTotal > collectedCount;
+    return pageNumber < pagesToRead || (pageNumber === pagesToRead && pagesToRead > 1);
+}
+
+/**
+ * همهٔ صفحه‌های یک منبع. اگر pageCount یا totalCount باشد، پایان فقط از آن است.
+ * صفحهٔ کوتاه فقط وقتی «تمام» است که این مقدار نباشد.
+ * صفحهٔ خالی در حالی که شمارش هنوز ردیف مانده، منبع را ناقص می‌کند و هیچ ردیفی برنمی‌گردد.
+ */
+async function readOrderSourcePages({ source, load, idOf }) {
+    const collected = [];
+    let pagesToRead = null;
+    let declaredTotal = null;
+
+    for (let pageNumber = 1; ; pageNumber += 1) {
+        if (pagesToRead == null && pageNumber > MAX_UNCAPPED_ORDER_LIST_PAGES) {
+            logOrderListSource(source, MAX_UNCAPPED_ORDER_LIST_PAGES, 'incomplete');
+            return { ok: false, items: [] };
+        }
+
+        let page;
+        try {
+            page = await load(pageNumber);
+        } catch {
+            logOrderListSource(source, pageNumber, 'failed');
+            return { ok: false, items: [] };
+        }
+        if (!page?.ok || !Array.isArray(page.items)) {
+            logOrderListSource(source, pageNumber, 'failed');
+            return { ok: false, items: [] };
+        }
+
+        if (pageNumber === 1) {
+            pagesToRead = knownPageCount(page);
+            declaredTotal = page.totalCount;
+            if (pagesToRead === 0) return { ok: true, items: [] };
+        }
+
+        if (pagesToRead == null) {
+            collected.push(page.items);
+            if (page.items.length < ORDER_LIST_PAGE_SIZE) {
+                return { ok: true, items: uniqueById(collected.flat(), idOf) };
+            }
+            continue;
+        }
+
+        if (page.items.length === 0 && rowsRemainAfterEmptyPage(declaredTotal, pageNumber, pagesToRead, collected.flat().length)) {
+            logOrderListSource(source, pageNumber, 'incomplete');
+            return { ok: false, items: [] };
+        }
+
+        collected.push(page.items);
+        if (pageNumber >= pagesToRead) {
+            return { ok: true, items: uniqueById(collected.flat(), idOf) };
+        }
+    }
+}
 
 // فقط فیلدهای نمایشی آدرس تحویل از پاسخ بای‌مانی به مرورگر می‌رسد.
 function pickShippingAddress(address) {
@@ -269,81 +363,94 @@ export async function GET(request) {
         let byemoneyOrders = [];
         let byemoneyWarning = false;
 
-        // فراخوانی استراپی
-        const strapiUrl = `${STRAPI_BASE_URL}/api/orders`
-            + `?${userFilter}`
-            + `&pagination[pageSize]=100`
-            + `&sort=createdAt:desc`
-            + `&populate[0]=items&populate[1]=receiptImage`;
-
-        try {
-            const res = await fetch(strapiUrl, {
-                headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
-                cache: 'no-store'
-            });
-
-            if (res.ok) {
-                const sData = await res.json();
-                strapiOrders = (sData.data || []).map(sanitizeStrapiOrder).filter(Boolean);
-            } else {
-                console.error("Strapi GET Orders Non-OK:", await res.text());
-            }
-        } catch (sErr) {
-            console.error("Strapi GET Orders Error:", sErr);
-        }
+        const strapiPages = await readOrderSourcePages({
+            source: 'strapi',
+            idOf: (row) => row.documentId ?? row.id,
+            load: async (page) => {
+                const strapiUrl = `${STRAPI_BASE_URL}/api/orders`
+                    + `?${userFilter}`
+                    + `&pagination[page]=${page}`
+                    + `&pagination[pageSize]=${ORDER_LIST_PAGE_SIZE}`
+                    + `&sort=createdAt:desc`
+                    + `&populate[0]=items&populate[1]=receiptImage`;
+                const res = await fetch(strapiUrl, {
+                    headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },
+                    cache: 'no-store'
+                });
+                if (!res.ok) return { ok: false, items: [] };
+                const body = await res.json();
+                const items = (Array.isArray(body?.data) ? body.data : [])
+                    .map(sanitizeStrapiOrder)
+                    .filter(Boolean);
+                return {
+                    ok: true,
+                    items,
+                    pageCount: finiteCount(body?.meta?.pagination?.pageCount),
+                    totalCount: null,
+                };
+            },
+        });
+        if (strapiPages.ok) strapiOrders = strapiPages.items;
 
         // فراخوانی فهرست پیگیری سفارش‌های بای‌مانی طبق قرارداد I11-T
         if (session.user.jwt) {
-            try {
-                const bmRes = await getMyCourseOrders({
-                    jwt: session.user.jwt,
-                    page: 1,
-                    pageSize: 100
-                });
-                let purchases = [];
-                try {
-                    const purchasesRes = await getMyCoursePurchases({
-                        jwt: session.user.jwt,
-                        page: 1,
-                        pageSize: 100,
-                    });
-                    if (purchasesRes?.success && Array.isArray(purchasesRes.data?.items)) {
-                        purchases = purchasesRes.data.items;
-                    }
-                } catch (purchasesErr) {
-                    console.error("ByeMoney GET course purchases fetch error:", purchasesErr);
-                }
-                if (bmRes.success && bmRes.data?.items) {
-                    byemoneyOrders = bmRes.data.items.map(item => {
-                        const rawId = item.orderId;
-                        const cleanId = rawId.replace(/^[a-z]+:/, '');
-                        return attachPurchasesToByeMoneyOrder({
-                            id: item.orderId,
-                            documentId: item.orderId,
-                            orderId: item.orderId,
-                            cartId: item.cartId,
-                            source: 'byemoney',
-                            orderSource: 'byemoney',
-                            sourceType: item.sourceType,
-                            orderNumber: cleanId.slice(0, 8).toUpperCase(),
-                            createdAt: item.createdAtUtc,
-                            updatedAt: item.updatedAtUtc,
-                            orderStatus: item.financialStatus === 'Paid' ? 'paid' : (['Failed', 'Expired'].includes(item.financialStatus) ? 'failed' : 'pending'),
-                            paymentStatus: item.financialStatus === 'Paid' ? 'paid' : (['Failed', 'Expired'].includes(item.financialStatus) ? 'failed' : 'pending_payment'),
-                            paymentMethod: 'noor',
-                            totalPrice: item.finalAmountInNoor,
-                            financialStatus: item.financialStatus,
-                            deliveryStatus: item.deliveryStatus,
-                            itemCount: item.itemCount,
-                            items: []
-                        }, purchases);
-                    });
-                } else {
-                    byemoneyWarning = true;
-                }
-            } catch (bmFetchErr) {
-                console.error("ByeMoney GET course orders fetch error:", bmFetchErr);
+            const jwt = session.user.jwt;
+            const orderPages = await readOrderSourcePages({
+                source: 'byemoney-orders',
+                idOf: (row) => row.orderId,
+                load: async (page) => {
+                    const res = await getMyCourseOrders({ jwt, page, pageSize: ORDER_LIST_PAGE_SIZE });
+                    if (!res?.success || !Array.isArray(res.data?.items)) return { ok: false, items: [] };
+                    return {
+                        ok: true,
+                        items: res.data.items,
+                        pageCount: null,
+                        totalCount: finiteCount(res.data.totalCount),
+                    };
+                },
+            });
+            const purchasePages = await readOrderSourcePages({
+                source: 'byemoney-purchases',
+                idOf: (row) => row.purchaseId,
+                load: async (page) => {
+                    const res = await getMyCoursePurchases({ jwt, page, pageSize: ORDER_LIST_PAGE_SIZE });
+                    if (!res?.success || !Array.isArray(res.data?.items)) return { ok: false, items: [] };
+                    return {
+                        ok: true,
+                        items: res.data.items,
+                        pageCount: null,
+                        totalCount: finiteCount(res.data.totalCount),
+                    };
+                },
+            });
+            if (!orderPages.ok) {
                 byemoneyWarning = true;
+            } else {
+                const purchases = purchasePages.ok ? purchasePages.items : [];
+                byemoneyOrders = orderPages.items.map(item => {
+                    const rawId = item.orderId;
+                    const cleanId = String(rawId || '').replace(/^[a-z]+:/, '');
+                    return attachPurchasesToByeMoneyOrder({
+                        id: item.orderId,
+                        documentId: item.orderId,
+                        orderId: item.orderId,
+                        cartId: item.cartId,
+                        source: 'byemoney',
+                        orderSource: 'byemoney',
+                        sourceType: item.sourceType,
+                        orderNumber: cleanId.slice(0, 8).toUpperCase(),
+                        createdAt: item.createdAtUtc,
+                        updatedAt: item.updatedAtUtc,
+                        orderStatus: item.financialStatus === 'Paid' ? 'paid' : (['Failed', 'Expired'].includes(item.financialStatus) ? 'failed' : 'pending'),
+                        paymentStatus: item.financialStatus === 'Paid' ? 'paid' : (['Failed', 'Expired'].includes(item.financialStatus) ? 'failed' : 'pending_payment'),
+                        paymentMethod: 'noor',
+                        totalPrice: item.finalAmountInNoor,
+                        financialStatus: item.financialStatus,
+                        deliveryStatus: item.deliveryStatus,
+                        itemCount: item.itemCount,
+                        items: []
+                    }, purchases);
+                });
             }
         } else {
             byemoneyWarning = true;
@@ -363,7 +470,7 @@ export async function GET(request) {
                 pagination: {
                     total: allOrders.length,
                     page: 1,
-                    pageSize: 100
+                    pageSize: ORDER_LIST_PAGE_SIZE
                 }
             }
         });

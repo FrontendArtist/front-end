@@ -12,12 +12,18 @@ function isProductLike(item) {
     return String(item.itemType || '').toLowerCase() === 'product';
 }
 
+function readExternalItemId(item) {
+    if (item?.externalItemId == null) return null;
+    const text = String(item.externalItemId).trim();
+    return text === '' ? null : text;
+}
+
 /**
  * قلم کالای فیزیکی: نه دوره است و نه به صفحهٔ دوره لینک می‌شود.
  * finalAmountInNoor از قبل مبلغ کل همهٔ تعداد است؛ price همان را نگه می‌دارد و unitPrice قیمت واحد است.
  */
 function mapByeMoneyProductItem(item) {
-    const externalId = item.externalItemId || item.purchaseId || null;
+    const externalId = readExternalItemId(item);
     const quantity = Number(item.quantity);
     return {
         id: externalId,
@@ -51,7 +57,7 @@ export function mapByeMoneyLineItem(item) {
     if (!item || typeof item !== 'object') return null;
     if (isProductLike(item)) return mapByeMoneyProductItem(item);
     const isChapter = isChapterLike(item);
-    const externalId = item.externalItemId || item.purchaseId || null;
+    const externalId = readExternalItemId(item);
     const parentExternalId = item.parentExternalId || item.courseDocumentId || null;
     const title = item.title || item.itemTitle || null;
 

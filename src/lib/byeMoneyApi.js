@@ -1059,7 +1059,7 @@ export async function createAdminCartOrderWithByeMoney({ cartId, beneficiaryExte
  * @param {AbortSignal} [params.signal]
  * @returns {Promise<{
  *   success: boolean,
- *   data?: { items: Array<{ purchaseId: string, cartId: string|null, itemTitle: string, finalAmountInNoor: number, purchasedAtUtc: string, financialStatus: string, deliveryStatus: string }>, page: number, pageSize: number, totalCount: number },
+ *   data?: { items: Array<{ purchaseId: string, cartId: string|null, itemTitle: string, finalAmountInNoor: number, purchasedAtUtc: string, financialStatus: string, deliveryStatus: string, externalItemId: string|null, quantity: number, cancelledQuantity: number, physicalDeliveryStatus: string|null }>, page: number, pageSize: number, totalCount: number },
  *   error?: string,
  *   unauthorized?: boolean,
  *   forbidden?: boolean,

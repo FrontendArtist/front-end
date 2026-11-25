@@ -231,7 +231,10 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
     const blockedShippedItems = shippedProductItems.filter(carrierReturnBlocksConfirm);
     const confirmableShippedItems = shippedProductItems.filter((item) => !carrierReturnBlocksConfirm(item));
     const canConfirmDelivery = view.isPaid && !confirmedNow && confirmableShippedItems.length > 0;
-    const showCarrierReviewNote = view.isPaid && !confirmedNow && blockedShippedItems.length > 0;
+    const hasUnresolvedCarrierReturn = physicalItems.some(
+        (item) => item.carrierReturnedAtUtc && !item.carrierReturnResolution
+    );
+    const showCarrierReviewNote = view.isPaid && hasUnresolvedCarrierReturn;
 
     const hasShippingContent = Boolean(
         showProgress ||
