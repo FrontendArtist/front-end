@@ -13,7 +13,10 @@ import { GET as rateRoute } from './conversion-rate/route';
 import { getConversionRateWithByeMoney } from '@/lib/byeMoneyApi';
 
 jest.mock('next-auth/next', () => ({ getServerSession: jest.fn() }));
-jest.mock('@/lib/auth', () => ({ authOptions: {} }));
+jest.mock('@/lib/auth', () => {
+    const { isUserAdmin } = jest.requireActual('@/lib/auth');
+    return { authOptions: {}, isUserAdmin };
+});
 jest.mock('@/lib/byeMoneyNoorWithdrawals', () => ({
     createNoorWithdrawalWithByeMoney: jest.fn(),
     listNoorWithdrawalsWithByeMoney: jest.fn(),

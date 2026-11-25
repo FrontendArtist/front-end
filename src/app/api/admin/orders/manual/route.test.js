@@ -3,10 +3,13 @@
  */
 import { getServerSession } from 'next-auth/next';
 import { createAdminCartOrderWithByeMoney } from '@/lib/byeMoneyApi';
-import { POST } from './route';
+import { GET, POST } from './route';
 
 jest.mock('next-auth/next', () => ({ getServerSession: jest.fn() }));
-jest.mock('@/lib/auth', () => ({ authOptions: {}, isUserAdmin: () => true }));
+jest.mock('@/lib/auth', () => {
+    const { isUserAdmin } = jest.requireActual('@/lib/auth');
+    return { authOptions: {}, isUserAdmin };
+});
 jest.mock('@/lib/byeMoneyApi', () => ({
     createAdminCartOrderWithByeMoney: jest.fn(),
     getBatchBalancesWithByeMoney: jest.fn(),
@@ -95,5 +98,47 @@ describe('POST /api/admin/orders/manual', () => {
         const res = await POST(req(valid()));
         expect(res.status).toBe(401);
         expect(createAdminCartOrderWithByeMoney).not.toHaveBeenCalled();
+    });
+
+    test('logged-in non-admin is 403 and role admin is allowed', async () => {
+        getServerSession.mockResolvedValue({ user: { jwt: JWT, role: { type: 'authenticated' } } });
+        const denied = await POST(req(valid()));
+        expect(denied.status).toBe(403);
+        expect(createAdminCartOrderWithByeMoney).not.toHaveBeenCalled();
+
+        getServerSession.mockResolvedValue({ user: { jwt: JWT, role: { name: 'admin' } } });
+        const allowed = await POST(req(valid()));
+        expect(allowed.status).toBe(200);
+    });
+});
+
+describe('GET /api/admin/orders/manual', () => {
+    const listUrl = 'http://localhost/api/admin/orders/manual';
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        getServerSession.mockResolvedValue({ user: { jwt: JWT, role: { type: 'administrator' } } });
+        global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => [] });
+    });
+
+    test('missing session is 401 and does not call Strapi', async () => {
+        getServerSession.mockResolvedValue(null);
+        const res = await GET({ url: listUrl });
+        expect(res.status).toBe(401);
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test('logged-in non-admin is 403', async () => {
+        getServerSession.mockResolvedValue({ user: { jwt: JWT, role: { type: 'authenticated' } } });
+        const res = await GET({ url: listUrl });
+        expect(res.status).toBe(403);
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    test.each(['administrator', 'admin'])('role %s can search users', async (type) => {
+        getServerSession.mockResolvedValue({ user: { jwt: JWT, role: { type } } });
+        const res = await GET({ url: listUrl });
+        expect(res.status).toBe(200);
+        expect(res.body.users).toEqual([]);
     });
 });

@@ -5,17 +5,14 @@
  * query: tab، q، view=restock، start، limit و counts=1 برای افزودن شمارندهٔ تب‌ها.
  */
 
-import { getServerSession } from 'next-auth/next';
 import { NextResponse } from 'next/server';
-import { authOptions } from '@/lib/auth';
 import { getByeMoneyAdminOrders, getByeMoneyOrderCounts, readOrderFilters } from '@/lib/admin/byeMoneyAdminOrders';
+import { requireAdminJwt } from '@/lib/admin/byeMoneyAdminRoute';
 
 export async function GET(request) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.jwt || session.user.role?.type !== 'administrator') {
-        return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
-    }
-    const jwt = session.user.jwt;
+    const auth = await requireAdminJwt();
+    if (auth.response) return auth.response;
+    const jwt = auth.jwt;
 
     try {
         const { searchParams } = new URL(request.url);

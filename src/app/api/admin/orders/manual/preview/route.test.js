@@ -5,7 +5,10 @@ import { getServerSession } from 'next-auth/next';
 import { POST } from './route';
 
 jest.mock('next-auth/next', () => ({ getServerSession: jest.fn() }));
-jest.mock('@/lib/auth', () => ({ authOptions: {} }));
+jest.mock('@/lib/auth', () => {
+    const { isUserAdmin } = jest.requireActual('@/lib/auth');
+    return { authOptions: {}, isUserAdmin };
+});
 jest.mock('@/lib/api', () => ({ STRAPI_API_URL: 'http://strapi.test' }));
 jest.mock('next/server', () => ({ NextResponse: { json: (body, init) => ({ body, status: init?.status || 200 }) } }));
 
@@ -41,6 +44,17 @@ describe('POST /api/admin/orders/manual/preview', () => {
         const res = await POST(req({ userId: '7', items }));
         expect(res.status).toBe(409);
         expect(res.body).toMatchObject({ error: 'قبلاً خریده شده', lineError: { externalId: 'chapter-int' } });
+    });
+
+    test('logged-in non-admin is 403 and role admin is allowed', async () => {
+        getServerSession.mockResolvedValue({ user: { jwt: JWT, role: { type: 'authenticated' } } });
+        const denied = await POST(req({ userId: '7', items }));
+        expect(denied.status).toBe(403);
+        expect(global.fetch).not.toHaveBeenCalled();
+
+        getServerSession.mockResolvedValue({ user: { jwt: JWT, role: { type: 'admin' } } });
+        const allowed = await POST(req({ userId: '7', items }));
+        expect(allowed.status).toBe(200);
     });
 
     test('rejects product items and missing session without calling Strapi', async () => {

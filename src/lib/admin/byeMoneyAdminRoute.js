@@ -8,11 +8,13 @@
 
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { authOptions, isUserAdmin } from '@/lib/auth';
 
 const PASS_THROUGH_STATUSES = [400, 401, 403, 404, 409];
 
 /**
+ * JWT نشست سروری را فقط برای ادمین برمی‌گرداند.
+ * بدون JWT پاسخ ۴۰۱ است. با JWT، نقش با `isUserAdmin` سنجیده می‌شود (`administrator` و `admin`) و غیر از آن ۴۰۳ است.
  * @returns {Promise<{ jwt: string } | { response: Response }>}
  */
 export async function requireAdminJwt() {
@@ -20,7 +22,7 @@ export async function requireAdminJwt() {
     if (!session?.user?.jwt) {
         return { response: NextResponse.json({ success: false, error: 'دسترسی غیرمجاز' }, { status: 401 }) };
     }
-    if (session.user.role?.type !== 'administrator') {
+    if (!isUserAdmin(session.user)) {
         return { response: NextResponse.json({ success: false, error: 'دسترسی غیرمجاز' }, { status: 403 }) };
     }
     return { jwt: session.user.jwt };

@@ -12,7 +12,10 @@ import { POST as postBalances } from '../wallets/batch-balances/route';
 import { GET as getReceipt } from '../byemoney-orders/[orderId]/receipt/route';
 
 jest.mock('next-auth/next', () => ({ getServerSession: jest.fn() }));
-jest.mock('@/lib/auth', () => ({ authOptions: {} }));
+jest.mock('@/lib/auth', () => {
+    const { isUserAdmin } = jest.requireActual('@/lib/auth');
+    return { authOptions: {}, isUserAdmin };
+});
 jest.mock('@/lib/byeMoneyApi', () => ({
     sendNoorGiftWithByeMoney: jest.fn(),
     createAdminAssistedTopUpWithByeMoney: jest.fn(),
@@ -102,6 +105,14 @@ describe.each(routes)('$name', ({ lib, call, expectedArgs }) => {
         expect(res.status).toBe(403);
         expect(res.body.error).toBe('مجوز ندارید.');
     });
+});
+
+test('نقش admin مانند administrator از requireAdminJwt عبور می‌کند', async () => {
+    getServerSession.mockResolvedValue({ user: { jwt: JWT, role: { type: 'admin' } } });
+    sendNoorGiftWithByeMoney.mockResolvedValue({ success: true, data: { ok: 1 } });
+    const res = await routes[0].call();
+    expect(res.status).toBe(200);
+    expect(sendNoorGiftWithByeMoney).toHaveBeenCalledWith(expect.objectContaining({ jwt: JWT }));
 });
 
 test('خطای شبکهٔ بای‌مانی ۵۰۲ و invalidUsers هدیه حفظ می‌شود', async () => {

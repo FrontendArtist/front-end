@@ -5,8 +5,6 @@
  * 🔐 امنیت: منحصراً برای ادمین‌های احراز هویت شده در دسترس است.
  */
 
-import { getServerSession } from 'next-auth/next';
-import { authOptions, isUserAdmin } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { getBatchBalancesWithByeMoney, createAdminCartOrderWithByeMoney, CourseOrderId } from '@/lib/byeMoneyApi';
 import { parseManualOrderItems, resolveBeneficiary } from '@/lib/admin/manualOrderInput';
@@ -33,16 +31,15 @@ function normalizePhoneNumber(input) {
 
 // ── GET: جستجوی زنده کاربران برای فرم ثبت سفارش دستی ──────────────────────
 export async function GET(request) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.jwt || !isUserAdmin(session.user)) {
-        return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
-    }
+    const auth = await requireAdminJwt();
+    if (auth.response) return auth.response;
+    const jwt = auth.jwt;
 
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || searchParams.get('search') || '';
 
     try {
-        const tokenToUse = STRAPI_TOKEN || session.user.jwt;
+        const tokenToUse = STRAPI_TOKEN || jwt;
         let endpoint = `${STRAPI_BASE_URL}/api/users?populate[courses][fields][0]=id&populate[courses][fields][1]=title&sort=createdAt:desc&pagination[limit]=20`;
 
         if (query && query.trim()) {
@@ -93,7 +90,7 @@ export async function GET(request) {
         const userIds = users.map(u => u.documentId || String(u.id)).filter(Boolean);
         if (userIds.length > 0) {
             try {
-                const batchRes = await getBatchBalancesWithByeMoney({ userIds, jwt: session.user.jwt });
+                const batchRes = await getBatchBalancesWithByeMoney({ userIds, jwt });
                 if (batchRes.success && batchRes.balances) {
                     users.forEach(u => {
                         u.balanceUnavailable = false;

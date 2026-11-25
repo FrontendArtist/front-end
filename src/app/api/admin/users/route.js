@@ -1,7 +1,6 @@
-import { getServerSession } from 'next-auth/next';
-import { authOptions, isUserAdmin } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { getUsers } from '@/lib/admin/adminUsersApi';
+import { requireAdminJwt } from '@/lib/admin/byeMoneyAdminRoute';
 
 function normalizePhoneNumber(input) {
     if (!input) return '';
@@ -19,10 +18,8 @@ function normalizePhoneNumber(input) {
 }
 
 export async function GET(request) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.jwt || !isUserAdmin(session.user)) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requireAdminJwt();
+    if (auth.response) return auth.response;
 
     const { searchParams } = new URL(request.url);
     const startParam = searchParams.get('start');
@@ -43,7 +40,7 @@ export async function GET(request) {
             options.limit = 20;
         }
 
-        const { users, meta, error } = await getUsers(session.user.jwt, options);
+        const { users, meta, error } = await getUsers(auth.jwt, options);
 
         if (error) {
             return NextResponse.json({ error: 'خطا در دریافت لیست کاربران' }, { status: 500 });
@@ -60,10 +57,8 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.jwt || !isUserAdmin(session.user)) {
-        return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
-    }
+    const auth = await requireAdminJwt();
+    if (auth.response) return auth.response;
 
     try {
         const body = await request.json();
@@ -74,7 +69,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'شماره موبایل نامعتبر است (حداقل ۱۰ رقم).' }, { status: 400 });
         }
 
-        const tokenToUse = process.env.STRAPI_API_TOKEN || session.user.jwt;
+        const tokenToUse = process.env.STRAPI_API_TOKEN || auth.jwt;
         const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 
         // بررسی یکتایی شماره موبایل در سامانه
