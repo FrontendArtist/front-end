@@ -15,8 +15,7 @@ import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import {
     formatNoor, formatOrderDate, getAmountRows, getByeMoneyOrderView, getOrderNumber,
     getPaidAt, getPaymentRefCode, getPhysicalSteps, getTrackingHref, carrierReturnBlocksConfirmation,
-    CARRIER_RETURN_CONFIRM_BLOCKED_MESSAGE,
-    getPaidAt, getPaymentRefCode, getPhysicalSteps, getTopUpStatusMeta, isPhysicalItemFullyCancelled,
+    CARRIER_RETURN_CONFIRM_BLOCKED_MESSAGE, getTopUpStatusMeta, isPhysicalItemFullyCancelled,
 } from '@/lib/byeMoneyOrderView';
 import { shippingOriginText } from '@/lib/shippingOrigin';
 import styles from './ByeMoneyOrderView.module.scss';
