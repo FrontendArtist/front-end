@@ -171,6 +171,12 @@ describe('updatePhysicalPurchaseDeliveryStatus', () => {
     expect(r).toEqual({ success: false, badRequest: true, error: 'بازگشت به وضعیت قبلی مجاز نیست.' });
   });
 
+  test('۴۰۹ به conflict نگاشت می‌شود و پیام دامنه را برمی‌گرداند', async () => {
+    fetch.mockResolvedValue(res(409, { title: 'تعارض', status: 409, errors: ['تغییر وضعیت در این حالت مجاز نیست.'] }));
+    const r = await updatePhysicalPurchaseDeliveryStatus({ jwt: 'adm', purchaseId: PURCHASE_ID, status: 'Delivered' });
+    expect(r).toEqual({ success: false, conflict: true, error: 'تغییر وضعیت در این حالت مجاز نیست.' });
+  });
+
   test('۴۰۳ بدون Courses.Manage', async () => {
     fetch.mockResolvedValue(res(403, {}));
     const r = await updatePhysicalPurchaseDeliveryStatus({ jwt: 'adm', purchaseId: PURCHASE_ID, status: 'Shipped' });

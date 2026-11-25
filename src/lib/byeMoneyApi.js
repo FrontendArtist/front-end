@@ -1696,7 +1696,7 @@ export async function confirmMyCourseOrderDelivery({ jwt, orderId, signal } = {}
  * @returns {Promise<{
  *   success: boolean,
  *   data?: { purchaseId: string, deliveryStatus: string, shippedAtUtc: string|null, deliveredAtUtc: string|null },
- *   badRequest?: boolean, notFound?: boolean, unauthorized?: boolean, forbidden?: boolean,
+ *   badRequest?: boolean, notFound?: boolean, unauthorized?: boolean, forbidden?: boolean, conflict?: boolean,
  *   error?: string, networkError?: boolean
  * }>}
  */
@@ -1746,6 +1746,9 @@ export async function updatePhysicalPurchaseDeliveryStatus({
     }
     if (res.status === 400) {
       return { success: false, badRequest: true, error: extractDomainErrorMessage(errJson, 'تغییر وضعیت ارسال مجاز نیست.') };
+    }
+    if (res.status === 409) {
+      return { success: false, conflict: true, error: extractDomainErrorMessage(errJson, 'تغییر وضعیت ارسال با وضعیت فعلی سفارش تعارض دارد.') };
     }
     return { success: false, error: extractDomainErrorMessage(errJson, `خطای ثبت وضعیت ارسال (${res.status})`) };
   } catch (err) {

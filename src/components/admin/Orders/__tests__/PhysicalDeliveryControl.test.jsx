@@ -88,14 +88,14 @@ describe('PhysicalDeliveryControl (کنترل ارسال سطر کالا)', () =
     expect(getAdminCourseOrderReceipt).toHaveBeenCalledWith(expect.objectContaining({ orderId: `cart:${CART}` }));
   });
 
-  it('پیام خطای ۴۰۰ هنگام پیشبرد به تحویل‌شده نشان داده می‌شود', async () => {
+  it.each([400, 409])('پیام خطای %i هنگام پیشبرد به تحویل‌شده نشان داده می‌شود', async (statusCode) => {
     mockStatus('Shipped');
     render(<PhysicalDeliveryControl purchaseId={PID} cartId={null} />);
     await screen.findByText('ارسال‌شده');
 
     global.fetch.mockResolvedValueOnce({
       ok: false,
-      status: 400,
+      status: statusCode,
       json: async () => ({ success: false, error: 'انتقال مجاز نیست.' }),
     });
 

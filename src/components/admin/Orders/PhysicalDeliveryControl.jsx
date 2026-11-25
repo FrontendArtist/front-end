@@ -224,7 +224,7 @@ export default function PhysicalDeliveryControl(props) {
             } else {
                 const from = getPhysicalDeliveryLabel(status);
                 const to = getPhysicalDeliveryLabel(next);
-                const invalidTransition = res.status === 400 && from && to;
+                const invalidTransition = (res.status === 400 || res.status === 409) && from && to;
                 setMessage({
                     ok: false,
                     text: invalidTransition

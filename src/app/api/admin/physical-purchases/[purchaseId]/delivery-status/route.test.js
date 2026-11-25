@@ -63,6 +63,7 @@ describe('PUT /api/admin/physical-purchases/[purchaseId]/delivery-status', () =>
   it.each([
     [{ forbidden: true }, 403],
     [{ notFound: true }, 404],
+    [{ conflict: true }, 409],
     [{ unauthorized: true }, 401],
     [{ networkError: true }, 502],
   ])('نگاشت خطا %p به %i', async (flags, code) => {
