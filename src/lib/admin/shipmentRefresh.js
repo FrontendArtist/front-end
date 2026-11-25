@@ -6,7 +6,7 @@ export const SHIPMENT_REFRESH_MESSAGES = {
     Shipped: 'مرسوله با بارکد واقعی پذیرفته شد و وضعیت به «ارسال‌شده» تغییر کرد.',
     AwaitingTrackingCode: 'مرسوله پذیرفته شده ولی بارکد واقعی هنوز نیامده و سفارش در آماده‌سازی می‌ماند.',
     PaymentPending: 'کرایه هنوز پرداخت نشده و سفارش در انتظار پرداخت مانده است.',
-    ParcelNotFound: 'مرسوله در پستکس پیدا نشد.',
+    ParcelNotFound: 'مرسوله در واسط پستی پیدا نشد.',
 };
 
 export function carrierPaymentPendingSince(item) {

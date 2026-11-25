@@ -27,7 +27,7 @@ describe('PhysicalDeliveryControl (کنترل ارسال سطر کالا)', () =
   it('در آماده‌سازی فقط ثبت دستی در سطر کالا می‌ماند و ساخت مرسوله به سطح سبد منتقل شده است', async () => {
     mockStatus('Preparing');
     render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
-    expect(await screen.findByText('در حال آماده‌سازی')).toBeInTheDocument();
+    expect(await screen.findByText('منتظر ارسال')).toBeInTheDocument();
 
     expect(screen.getByTestId('register-manual-tracking')).toHaveTextContent('ثبت کد رهگیری دستی');
     expect(screen.queryByTestId('create-provider-shipment')).not.toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('PhysicalDeliveryControl (کنترل ارسال سطر کالا)', () =
   it('ثبت کد رهگیری دستی فقط با کد به delivery-status می‌رود و نشان را Shipped می‌کند', async () => {
     mockStatus('Preparing');
     render(<PhysicalDeliveryControl purchaseId={PID} cartId={CART} />);
-    await screen.findByText('در حال آماده‌سازی');
+    await screen.findByText('منتظر ارسال');
 
     fireEvent.change(screen.getByTestId('tracking-code-input'), { target: { value: ' PTX-8846884 ' } });
 
@@ -193,6 +193,6 @@ describe('CartShipmentControl (ساخت مرسوله در سطح سبد خرید
   it('فراخوانی PhysicalDeliveryControl با cartId و بدون purchaseId به CartShipmentControl منتقل می‌شود', () => {
     render(<PhysicalDeliveryControl cartId={CART} />);
     expect(screen.getByTestId('cart-shipment-control')).toBeInTheDocument();
-    expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال به پستکس');
+    expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال با واسط پستی');
   });
 });

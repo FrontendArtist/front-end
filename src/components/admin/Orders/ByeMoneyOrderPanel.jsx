@@ -305,12 +305,12 @@ export function OrderItemsList({
                                 )}
                                 {isProduct && carrierPaymentPendingSince(item) && (
                                     <span className={`${styles.item_card__badge} ${styles['item_card__badge--warning']}`} data-testid="carrier-payment-pending-badge">
-                                        کرایهٔ پستکس پرداخت نشده
+                                        کرایهٔ واسط پستی پرداخت نشده
                                     </span>
                                 )}
                                 {isProduct && item.carrierReturnedAtUtc && (
                                     <span className={`${styles.item_card__badge} ${styles['item_card__badge--warning']}`} data-testid="carrier-return-badge">
-                                        برگشتی پستکس — {formatTime(item.carrierReturnedAtUtc)}
+                                        برگشتی واسط پستی — {formatTime(item.carrierReturnedAtUtc)}
                                     </span>
                                 )}
                                 {isProduct && item.carrierAlertCode != null && (

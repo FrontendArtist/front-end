@@ -10,13 +10,51 @@
  */
 
 export const FINANCIAL_STATUS_CONFIG = {
-    Preparing: { label: 'در حال آماده‌سازی سبد', variant: 'info', paymentStatus: 'pending_payment', orderStatus: 'pending' },
-    AwaitingPayment: { label: 'در انتظار پرداخت', variant: 'warning', paymentStatus: 'pending_payment', orderStatus: 'pending' },
-    Processing: { label: 'در حال پردازش', variant: 'warning', paymentStatus: 'pending_payment', orderStatus: 'pending' },
-    Paid: { label: 'پرداخت شده', variant: 'success', paymentStatus: 'paid', orderStatus: 'paid' },
-    Failed: { label: 'ناموفق', variant: 'error', paymentStatus: 'failed', orderStatus: 'canceled' },
-    Expired: { label: 'منقضی', variant: 'default', paymentStatus: 'expired', orderStatus: 'expired' },
-    RequiresReview: { label: 'نیازمند بررسی', variant: 'warning', paymentStatus: 'review', orderStatus: 'review' },
+    Preparing: {
+        label: 'در حال صدور فاکتور',
+        tooltip: 'سبد ساخته شده ولی هنوز به مرحلهٔ پرداخت نرسیده است',
+        variant: 'info',
+        paymentStatus: 'pending_payment',
+        orderStatus: 'pending',
+    },
+    AwaitingPayment: {
+        label: 'در انتظار پرداخت',
+        variant: 'warning',
+        paymentStatus: 'pending_payment',
+        orderStatus: 'pending',
+    },
+    Processing: {
+        label: 'در حال ثبت نهایی',
+        tooltip: 'شارژ کیف‌پول تأیید شده و سیستم در حال نهایی‌کردن خرید است',
+        variant: 'warning',
+        paymentStatus: 'pending_payment',
+        orderStatus: 'pending',
+    },
+    Paid: {
+        label: 'پرداخت‌شده',
+        variant: 'success',
+        paymentStatus: 'paid',
+        orderStatus: 'paid',
+    },
+    Failed: {
+        label: 'پرداخت ناموفق',
+        variant: 'error',
+        paymentStatus: 'failed',
+        orderStatus: 'canceled',
+    },
+    Expired: {
+        label: 'منقضی‌شده',
+        variant: 'default',
+        paymentStatus: 'expired',
+        orderStatus: 'expired',
+    },
+    RequiresReview: {
+        label: 'نیازمند بررسی مالی',
+        tooltip: 'ناهماهنگی مالی رخ داده؛ جزئیات را در کشوی سفارش بررسی کنید',
+        variant: 'warning',
+        paymentStatus: 'review',
+        orderStatus: 'review',
+    },
 };
 
 const UNKNOWN_FINANCIAL = { label: 'نامشخص', variant: 'default', paymentStatus: 'unknown', orderStatus: 'unknown' };

@@ -23,7 +23,7 @@ import { shippingOriginText } from '@/lib/shippingOrigin';
 import PendingRestockNotice from '../PendingRestockNotice';
 import AdminBadge from '../../Shared/AdminBadge';
 import { canShowReceipt, getFinancialStatusConfig } from '@/lib/admin/orderTracking';
-import { shortOrderNumber, getItemsShippingState, getCarrierReturnBadge, getCarrierAlertBadge, carrierAlertStatusOf, CARRIER_ALERT_STATUS_LABELS } from '@/lib/admin/orderDisplay';
+import { shortOrderNumber, getItemsShippingState, getCarrierReturnBadge, getCarrierAlertBadge, carrierAlertStatusOf, CARRIER_ALERT_STATUS_LABELS, RESTOCK_BADGE_TOOLTIP } from '@/lib/admin/orderDisplay';
 import styles from './OrderDrawer.module.scss';
 
 const fa = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString('fa-IR'));
@@ -287,11 +287,29 @@ export default function OrderDrawer({ order, restockPending = false, onClose, on
                         </div>
                     </div>
                     <div className={styles.header__badges}>
-                        <AdminBadge text={fin.label} variant={fin.variant} />
-                        {shipping && <AdminBadge text={shipping.label} variant={shipping.variant} />}
-                        {carrierBadge && <AdminBadge text={carrierBadge.text} variant={carrierBadge.variant} />}
-                        {carrierAlertBadge && <AdminBadge text={carrierAlertBadge.text} variant={carrierAlertBadge.variant} />}
-                        {restockPending && <AdminBadge text="موجودی برنگشته" variant="warning" />}
+                        <span title={fin.tooltip || undefined}>
+                            <AdminBadge text={fin.label} variant={fin.variant} />
+                        </span>
+                        {shipping && (
+                            <span title={shipping.tooltip || undefined}>
+                                <AdminBadge text={shipping.label} variant={shipping.variant} />
+                            </span>
+                        )}
+                        {carrierBadge && (
+                            <span title={carrierBadge.tooltip || undefined}>
+                                <AdminBadge text={carrierBadge.label} variant={carrierBadge.variant} />
+                            </span>
+                        )}
+                        {carrierAlertBadge && (
+                            <span title={carrierAlertBadge.tooltip || undefined}>
+                                <AdminBadge text={carrierAlertBadge.label} variant={carrierAlertBadge.variant} />
+                            </span>
+                        )}
+                        {restockPending && (
+                            <span title={RESTOCK_BADGE_TOOLTIP}>
+                                <AdminBadge text="موجودی برنگشته" variant="warning" />
+                            </span>
+                        )}
                     </div>
 
                     <nav className={styles.tabs} role="tablist" aria-label="بخش‌های جزئیات سفارش">

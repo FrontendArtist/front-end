@@ -11,16 +11,44 @@
 export const shortOrderNumber = (orderId) => String(orderId || '').split(':').pop().slice(0, 8).toUpperCase();
 
 const ROW_DELIVERY = {
-    Pending: { label: 'در جریان ارسال', variant: 'info' },
-    PartiallyDelivered: { label: 'تحویل ناقص', variant: 'info' },
-    Delivered: { label: 'تحویل‌شده', variant: 'success' },
-    Cancelled: { label: 'کالا لغو شده', variant: 'error' },
+    Pending: {
+        label: 'در جریان ارسال',
+        tooltip: 'سفارش در مرحلهٔ آماده‌سازی یا ارسال است؛ وضعیت دقیق اقلام را در کشوی سفارش ببینید',
+        variant: 'info',
+    },
+    PartiallyDelivered: {
+        label: 'تحویل جزئی',
+        tooltip: 'بخشی از اقلام سفارش تحویل مشتری شده است',
+        variant: 'info',
+    },
+    Delivered: {
+        label: 'تحویل‌شده',
+        tooltip: 'همهٔ اقلام سفارش تحویل مشتری شده است',
+        variant: 'success',
+    },
+    Cancelled: {
+        label: 'کالا لغوشده',
+        tooltip: 'همهٔ اقلام فیزیکی این سفارش لغو شده‌اند',
+        variant: 'error',
+    },
 };
 
 const CARRIER_RETURN_ROW_BADGES = {
-    PendingReview: { text: 'برگشتی پستکس — در انتظار رسیدگی', variant: 'warning' },
-    ClosedWithoutSettlement: { text: 'بسته‌شده بدون تسویه (برگشتی)', variant: 'default' },
-    DeliveryConfirmed: { text: 'برگشتی پستکس — تحویل تأیید شد', variant: 'info' },
+    PendingReview: {
+        label: 'برگشتی — نیاز به بررسی',
+        tooltip: 'مرسوله توسط واسط پستی برگشت خورده و در انتظار رسیدگی ادمین است',
+        variant: 'warning',
+    },
+    ClosedWithoutSettlement: {
+        label: 'برگشتی — بدون تسویه',
+        tooltip: 'پروندهٔ برگشتی واسط پستی بدون تسویه بسته شده است',
+        variant: 'default',
+    },
+    DeliveryConfirmed: {
+        label: 'برگشتی — تحویل تأیید شد',
+        tooltip: 'با وجود گزارش برگشتی واسط پستی، تحویل مرسوله تأیید شده است',
+        variant: 'default',
+    },
 };
 
 /** نشان ردیف فهرست ادمین؛ None و مقدار ناشناخته نشان نمی‌گیرند */
@@ -57,10 +85,24 @@ export const CARRIER_ALERT_STATUS_LABELS = {
 };
 
 const CARRIER_ALERT_ROW_BADGES = {
-    PendingReview: { text: 'هشدار مرسوله — در انتظار رسیدگی', variant: 'warning' },
-    ClosedWithoutSettlement: { text: 'هشدار مرسوله — بسته‌شده بدون تسویه', variant: 'default' },
-    DeliveryConfirmed: { text: 'هشدار مرسوله — تحویل تأیید شد', variant: 'info' },
+    PendingReview: {
+        label: 'هشدار پست — نیاز به بررسی',
+        tooltip: 'هشدار خسارت یا مفقودی مرسوله ثبت شده و در انتظار رسیدگی ادمین است',
+        variant: 'warning',
+    },
+    ClosedWithoutSettlement: {
+        label: 'هشدار پست — بدون تسویه',
+        tooltip: 'هشدار مرسوله بدون تسویه بسته شده است',
+        variant: 'default',
+    },
+    DeliveryConfirmed: {
+        label: 'هشدار پست — تحویل تأیید شد',
+        tooltip: 'با وجود هشدار مرسوله، تحویل به مشتری تأیید شده است',
+        variant: 'default',
+    },
 };
+
+export const RESTOCK_BADGE_TOOLTIP = 'این سفارش لغو شده ولی موجودی کالا به انبار برنگشته؛ از تب اقلام و ارسال اصلاح کنید';
 
 /** نشان ردیف فهرست ادمین برای هشدار خسارت/مفقودی؛ None و مقدار ناشناخته نشان نمی‌گیرند */
 export function getCarrierAlertBadge(status) {
@@ -95,7 +137,13 @@ export function carrierAlertStatusOf(items) {
 export function getRowShippingBadge(row) {
     if (!row || row.financialStatus !== 'Paid') return null;
     if (row.physicalCancelled) return ROW_DELIVERY.Cancelled;
-    if (row.needsShipment) return { label: 'منتظر ارسال', variant: 'warning' };
+    if (row.needsShipment) {
+        return {
+            label: 'منتظر ارسال',
+            tooltip: 'حداقل یک کالای این سفارش هنوز ارسال نشده است',
+            variant: 'warning',
+        };
+    }
     return ROW_DELIVERY[row.deliveryStatus] || null;
 }
 
@@ -107,13 +155,41 @@ export function getItemsShippingState(items) {
         return (Number(i.cancelledQuantity) || 0) < qty && i.physicalDeliveryStatus !== 'Cancelled';
     });
     if (products.length === 0) return null;
-    if (active.length === 0) return { label: 'کالا لغو شده', variant: 'error' };
+    if (active.length === 0) {
+        return {
+            label: 'کالا لغوشده',
+            tooltip: 'همهٔ اقلام فیزیکی این سفارش لغو شده‌اند',
+            variant: 'error',
+        };
+    }
     const delivered = active.filter((i) => i.physicalDeliveryStatus === 'Delivered').length;
     const shipped = active.filter((i) => i.physicalDeliveryStatus === 'Shipped').length;
-    if (delivered === active.length) return { label: 'تحویل‌شده', variant: 'success' };
-    if (delivered + shipped === active.length) return { label: 'ارسال‌شده', variant: 'info' };
-    if (delivered + shipped > 0) return { label: 'ارسال ناقص', variant: 'warning' };
-    return { label: 'منتظر ارسال', variant: 'warning' };
+    if (delivered === active.length) {
+        return {
+            label: 'تحویل‌شده',
+            tooltip: 'همهٔ اقلام فعال سفارش تحویل مشتری شده‌اند',
+            variant: 'success',
+        };
+    }
+    if (delivered + shipped === active.length) {
+        return {
+            label: 'ارسال‌شده',
+            tooltip: 'همهٔ اقلام فعال سفارش ارسال شده‌اند',
+            variant: 'info',
+        };
+    }
+    if (delivered + shipped > 0) {
+        return {
+            label: 'ارسال جزئی',
+            tooltip: 'بخشی از اقلام فعال سفارش ارسال شده و بخشی هنوز منتظر ارسال است',
+            variant: 'warning',
+        };
+    }
+    return {
+        label: 'منتظر ارسال',
+        tooltip: 'هنوز هیچ‌یک از اقلام فعال سفارش ارسال نشده است',
+        variant: 'warning',
+    };
 }
 
 export const faNumber = (n) => (n === null || n === undefined ? '—' : Number(n).toLocaleString('fa-IR'));

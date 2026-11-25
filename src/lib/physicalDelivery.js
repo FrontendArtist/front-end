@@ -3,10 +3,10 @@
  * مالک این وضعیت فقط بای‌مانی است؛ اینجا فقط نمایش می‌دهیم و مقدار ناشناخته خطا نمی‌دهد.
  */
 export const PHYSICAL_DELIVERY_LABELS = {
-    Preparing: 'در حال آماده‌سازی',
+    Preparing: 'منتظر ارسال',
     Shipped: 'ارسال‌شده',
     Delivered: 'تحویل‌شده',
-    Cancelled: 'لغو شده',
+    Cancelled: 'کالا لغوشده',
 };
 
 export function getPhysicalDeliveryLabel(status) {

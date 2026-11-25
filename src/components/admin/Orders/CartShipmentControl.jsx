@@ -84,7 +84,7 @@ export default function CartShipmentControl({
     return (
         <div data-testid="cart-shipment-control" className={styles.dispatchBox}>
             <div className={styles.statusHeader}>
-                <span className={styles.label}>ارسال به پستکس برای تمام اقلام این سفارش:</span>
+                <span className={styles.label}>ارسال با واسط پستی برای تمام اقلام این سفارش:</span>
             </div>
 
             <div className={styles.trackingBox}>
@@ -123,7 +123,7 @@ export default function CartShipmentControl({
                         در حال ساخت مرسوله...
                     </span>
                 ) : (
-                    'ارسال به پستکس'
+                    'ارسال با واسط پستی'
                 )}
             </button>
 

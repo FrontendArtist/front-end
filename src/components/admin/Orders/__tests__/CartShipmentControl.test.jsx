@@ -15,7 +15,7 @@ describe('CartShipmentControl (ساخت مرسوله در سطح سبد)', () =>
 
     expect(screen.getByTestId('cart-shipment-control')).toBeInTheDocument();
     expect(screen.queryByTestId('collection-type-fieldset')).not.toBeInTheDocument();
-    expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال به پستکس');
+    expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال با واسط پستی');
 
     const boxSelect = screen.getByTestId('box-type-select');
     expect(boxSelect).toBeInTheDocument();

@@ -160,7 +160,7 @@ describe('ByeMoneyOrderPanel', () => {
         }));
         render(<ByeMoneyOrderPanel order={ORDER} />);
 
-        expect(await screen.findByTestId('carrier-payment-pending-badge')).toHaveTextContent('کرایهٔ پستکس پرداخت نشده');
+        expect(await screen.findByTestId('carrier-payment-pending-badge')).toHaveTextContent('کرایهٔ واسط پستی پرداخت نشده');
         expect(screen.getAllByTestId('carrier-payment-pending-badge')).toHaveLength(1);
         expect(screen.getByTestId('refresh-carrier-shipment')).toBeInTheDocument();
         expect(screen.getByTestId('carrier-alert-badge')).toHaveTextContent('هشدار مرسوله');
@@ -286,7 +286,7 @@ describe('ByeMoneyOrderPanel', () => {
             }));
             render(<ByeMoneyOrderPanel order={ORDER} />);
             expect(await screen.findByTestId('cart-shipment-section')).toBeInTheDocument();
-            expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال به پستکس');
+            expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال با واسط پستی');
         });
 
         test('اگر مرسوله قبلاً ساخته شده باشد (دارای providerParcelId) مخفی است', async () => {

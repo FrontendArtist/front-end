@@ -169,7 +169,7 @@ describe('buildTimeline', () => {
         expect(tl.map((e) => e.kind)).toEqual(['cart', 'attempt', 'final']);
         expect(tl[1].result.label).toBe('لغو توسط کاربر');
         expect(tl[1].source).toBe('strapi');
-        expect(tl[2].result.label).toBe('ناموفق');
+        expect(tl[2].result.label).toBe('پرداخت ناموفق');
         expect(summarizeAttempts(tl).label).toBe('لغو توسط کاربر');
     });
 
@@ -204,6 +204,6 @@ describe('buildTimeline', () => {
             now: NOW,
         });
         expect(tl[1].result.label).toBe('شارژ: تأیید شده');
-        expect(tl[2].result.label).toBe('ناموفق');
+        expect(tl[2].result.label).toBe('پرداخت ناموفق');
     });
 });

@@ -4,7 +4,7 @@
  */
 export const PHYSICAL_DELIVERY_PROVIDERS = [
     { value: 'Manual', label: 'ثبت دستی', requiresProviderReference: false, supportsCreate: false },
-    { value: 'PostEx', label: 'پستکس', requiresProviderReference: true, supportsCreate: true },
+    { value: 'PostEx', label: 'واسط پستی', requiresProviderReference: true, supportsCreate: true },
 ];
 
 /** واسط‌هایی که ساخت مرسوله از پنل برایشان فعال است. */

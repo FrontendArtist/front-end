@@ -20,7 +20,7 @@ import {
 import { usePermissions } from '@/context/PermissionsContext';
 import { ADMIN_PERMISSIONS } from '@/config/adminPermissions';
 import { getFinancialStatusConfig } from '@/lib/admin/orderTracking';
-import { getRowShippingBadge, getCarrierReturnBadge, getCarrierAlertBadge, shortOrderNumber, faNumber, splitDateTime } from '@/lib/admin/orderDisplay';
+import { getRowShippingBadge, getCarrierReturnBadge, getCarrierAlertBadge, RESTOCK_BADGE_TOOLTIP, shortOrderNumber, faNumber, splitDateTime } from '@/lib/admin/orderDisplay';
 import AdminBadge from '../../Shared/AdminBadge';
 import { useAdminToast, AdminToastViewport } from '../../Shared/AdminToast';
 import OrderDrawer from '../OrderDrawer/OrderDrawer';
@@ -457,21 +457,37 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                                             </span>
                                         </td>
                                         <td>
-                                            <span className={styles.badges}>
-                                                <AdminBadge text={fin.label} variant={fin.variant} />
-                                                {ship && <AdminBadge text={ship.label} variant={ship.variant} />}
-                                                {carrier && (
-                                                    <span data-testid="carrier-return-row-badge">
-                                                        <AdminBadge text={carrier.text} variant={carrier.variant} />
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                <div className={styles.badges}>
+                                                    <span title={fin.tooltip || undefined}>
+                                                        <AdminBadge text={fin.label} variant={fin.variant} />
                                                     </span>
+                                                    {ship && (
+                                                        <span title={ship.tooltip || undefined}>
+                                                            <AdminBadge text={ship.label} variant={ship.variant} />
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {(carrier || carrierAlert || restock) && (
+                                                    <div className={styles.badges}>
+                                                        {carrier && (
+                                                            <span data-testid="carrier-return-row-badge" title={carrier.tooltip || undefined}>
+                                                                <AdminBadge text={carrier.label} variant={carrier.variant} />
+                                                            </span>
+                                                        )}
+                                                        {carrierAlert && (
+                                                            <span data-testid="carrier-alert-row-badge" title={carrierAlert.tooltip || undefined}>
+                                                                <AdminBadge text={carrierAlert.label} variant={carrierAlert.variant} />
+                                                            </span>
+                                                        )}
+                                                        {restock && (
+                                                            <span title={RESTOCK_BADGE_TOOLTIP}>
+                                                                <AdminBadge text="موجودی برنگشته" variant="warning" />
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 )}
-                                                {carrierAlert && (
-                                                    <span data-testid="carrier-alert-row-badge">
-                                                        <AdminBadge text={carrierAlert.text} variant={carrierAlert.variant} />
-                                                    </span>
-                                                )}
-                                                {restock && <AdminBadge text="موجودی برنگشته" variant="warning" />}
-                                            </span>
+                                            </div>
                                         </td>
                                         <td><Amount order={o} /></td>
                                         <td><DateCell value={o.createdAt} /></td>

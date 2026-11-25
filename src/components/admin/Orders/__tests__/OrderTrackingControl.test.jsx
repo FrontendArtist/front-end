@@ -57,7 +57,7 @@ describe('OrderTrackingControl', () => {
 });
 
 describe('OrderItemsList', () => {
-    it('دکمهٔ ارسال به پستکس و کد رهگیری را یک‌بار برای کل سفارش نشان می‌دهد', () => {
+    it('دکمهٔ ارسال با واسط پستی و کد رهگیری را یک‌بار برای کل سفارش نشان می‌دهد', () => {
         render(
             <OrderItemsList
                 detail={detail}
@@ -68,7 +68,7 @@ describe('OrderItemsList', () => {
         );
 
         expect(screen.getAllByTestId('create-provider-shipment')).toHaveLength(1);
-        expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال به پستکس');
+        expect(screen.getByTestId('create-provider-shipment')).toHaveTextContent('ارسال با واسط پستی');
         expect(screen.getAllByTestId('manual-tracking-box')).toHaveLength(1);
         expect(screen.getAllByTestId('order-delivery-status')).toHaveLength(1);
         expect(screen.queryByTestId('delivery-control')).not.toBeInTheDocument();

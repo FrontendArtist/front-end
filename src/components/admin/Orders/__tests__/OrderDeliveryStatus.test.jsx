@@ -65,7 +65,7 @@ describe('OrderDeliveryStatus', () => {
             />
         );
 
-        expect(screen.getByText('ارسال ناقص')).toHaveAttribute('data-variant', 'warning');
+        expect(screen.getByText('ارسال جزئی')).toHaveAttribute('data-variant', 'warning');
         global.fetch.mockResolvedValue({
             ok: true,
             json: async () => ({ data: { deliveryStatus: 'Delivered' } }),
