@@ -8,9 +8,10 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { getStrapiBaseUrl } from '@/lib/api';
 import { NextResponse } from 'next/server';
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+const STRAPI_URL = getStrapiBaseUrl();
 
 // ── Shared: check auth ─────────────────────────────────────────────────────────
 async function checkAdmin() {
@@ -47,10 +48,6 @@ export async function PUT(request, { params }) {
 
     try {
         // ── گام ۲: آپدیت داده‌های محتوایی ───────────────────────────────────────
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`[AdminProductsAPI] PUT ${strapiId} → contentPayload:`, JSON.stringify(contentPayload));
-        }
-
         const updateRes = await fetch(`${STRAPI_URL}/api/products/${strapiId}`, {
             method: 'PUT',
             headers: strapiHeaders,
@@ -59,10 +56,6 @@ export async function PUT(request, { params }) {
         });
 
         const updateData = await updateRes.json();
-
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`[AdminProductsAPI] PUT ${strapiId} ← status:${updateRes.status}`, JSON.stringify(updateData).slice(0, 500));
-        }
 
         if (!updateRes.ok) {
             return NextResponse.json(

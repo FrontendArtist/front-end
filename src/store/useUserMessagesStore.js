@@ -1,27 +1,65 @@
 import { create } from 'zustand';
 import { getMyMessages } from '@/lib/messagesApi';
 
-let inFlightPromise = null;
+const EMPTY_MESSAGES = [];
+let generation = 0;
+let inFlight = null;
+
+export const selectUserMessages = (state, userId) =>
+    userId != null && state.userId === String(userId) ? state.messages : EMPTY_MESSAGES;
 
 export const useUserMessagesStore = create((set, get) => ({
+    userId: null,
     messages: [],
     isLoading: false,
     error: null,
     hasFetched: false,
 
+    setMessagesUser: (userId) => {
+        const nextId = userId == null ? null : String(userId);
+        if (get().userId === nextId) return;
+        generation++;
+        inFlight = null;
+        set({
+            userId: nextId,
+            messages: [],
+            isLoading: false,
+            error: null,
+            hasFetched: false,
+        });
+    },
+
     fetchMessages: async (token, userId, force = false) => {
-        if (!token) return get().messages;
+        const nextUserId = userId == null ? null : String(userId);
+        if (!token || !nextUserId) return EMPTY_MESSAGES;
+
+        if (get().userId !== nextUserId) {
+            generation++;
+            inFlight = null;
+            set({
+                userId: nextUserId,
+                messages: [],
+                isLoading: false,
+                error: null,
+                hasFetched: false,
+            });
+        }
+
         if (get().hasFetched && !force) return get().messages;
 
-        if (inFlightPromise) {
-            return inFlightPromise;
+        if (inFlight && inFlight.userId === nextUserId) {
+            return inFlight.promise;
         }
+
+        const request = { generation, userId: nextUserId };
+        const isCurrent = () => request.generation === generation && get().userId === nextUserId;
 
         set({ isLoading: true, error: null });
 
-        inFlightPromise = (async () => {
+        request.promise = (async () => {
             try {
-                const result = await getMyMessages(token, userId);
+                const result = await getMyMessages(token, nextUserId);
+                if (!isCurrent()) return EMPTY_MESSAGES;
                 const messagesData = result?.data || [];
                 set({
                     messages: messagesData,
@@ -30,20 +68,24 @@ export const useUserMessagesStore = create((set, get) => ({
                 });
                 return messagesData;
             } catch (err) {
+                if (!isCurrent()) return EMPTY_MESSAGES;
                 set({
                     error: err.message,
                     isLoading: false,
                 });
                 return get().messages;
             } finally {
-                inFlightPromise = null;
+                if (inFlight === request) inFlight = null;
             }
         })();
 
-        return inFlightPromise;
+        inFlight = request;
+        return request.promise;
     },
 
-    setMessages: (messages) => {
+    setMessages: (messages, userId = get().userId) => {
+        const nextId = userId == null ? null : String(userId);
+        if (nextId !== get().userId) return;
         set({ messages, hasFetched: true });
     },
 

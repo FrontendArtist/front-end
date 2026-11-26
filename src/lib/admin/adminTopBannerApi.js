@@ -4,7 +4,7 @@
  */
 
 import { adminFetch } from './adminFetch';
-import { API_BASE_URL } from '../api';
+import { getStrapiBaseUrl } from '../api';
 
 /**
  * دریافت تنظیمات فعلی نوار اعلان بالای سایت با دسترسی ادمین
@@ -38,10 +38,7 @@ export async function getAdminTopBanner(jwt) {
  */
 export async function updateAdminTopBanner(jwt, payload) {
   try {
-    const cleanBase = (API_BASE_URL || 'http://localhost:1337')
-      .trim()
-      .replace(/\/+$/, '')
-      .replace(/\/api\/?$/, '');
+    const cleanBase = getStrapiBaseUrl();
 
     const res = await fetch(`${cleanBase}/api/top-banner`, {
       method: 'PUT',

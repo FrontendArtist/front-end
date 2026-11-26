@@ -11,8 +11,9 @@
  */
 
 import { resolveAudioAccess } from '@/lib/lessonAccess';
+import { getStrapiBaseUrl } from '@/lib/api';
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+const STRAPI_URL = getStrapiBaseUrl();
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
 // مقدار خالی یا نامعتبر نباید به‌اشتباه قیمت صفر و مجوز پخش بسازد.

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { signIn, useSession, getSession } from 'next-auth/react';
+import { getStrapiBaseUrl } from '@/lib/api';
 import { validatePhoneNumber, normalizeDigits } from '@/lib/phoneUtils';
 import styles from './AuthForm.module.scss';
 
@@ -44,7 +45,7 @@ export default function AuthForm({
         setLoading(true);
 
         try {
-            const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+            const strapiUrl = getStrapiBaseUrl();
             const checkRes = await fetch(`${strapiUrl}/api/auth/check-phone`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -244,7 +245,7 @@ export default function AuthForm({
 
             if (!userId || !jwt) throw new Error('خطا در دریافت اطلاعات کاربر');
 
-            const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+            const strapiUrl = getStrapiBaseUrl();
             const res = await fetch(`${strapiUrl}/api/users/${userId}`, {
                 method: 'PUT',
                 headers: {

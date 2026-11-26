@@ -8,9 +8,10 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { getStrapiBaseUrl } from '@/lib/api';
 import { NextResponse } from 'next/server';
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+const STRAPI_URL = getStrapiBaseUrl();
 
 async function checkAdmin() {
     const session = await getServerSession(authOptions);

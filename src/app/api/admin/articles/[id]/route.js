@@ -8,9 +8,10 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { getStrapiBaseUrl } from '@/lib/api';
 import { NextResponse } from 'next/server';
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+const STRAPI_URL = getStrapiBaseUrl();
 
 // ── Shared: check auth ─────────────────────────────────────────────────────────
 async function checkAdmin() {
@@ -45,10 +46,6 @@ export async function PUT(request, { params }) {
     };
 
     try {
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`[AdminArticlesAPI] PUT ${strapiId} → contentPayload:`, JSON.stringify(contentPayload));
-        }
-
         const updateRes = await fetch(`${STRAPI_URL}/api/articles/${strapiId}`, {
             method: 'PUT',
             headers: strapiHeaders,

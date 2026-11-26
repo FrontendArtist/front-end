@@ -53,10 +53,14 @@ export function useOrderNotifications() {
             if (!notifState.matches) {
                 useNotificationsStore.getState().setNotificationsUser(userId);
             }
+            useUserMessagesStore.getState().setMessagesUser(userId);
             if (!notifState.hasFetched) {
                 fetchNotifications();
             }
             fetchOrders();
+        } else if (status === 'unauthenticated') {
+            useNotificationsStore.getState().setNotificationsUser(null);
+            useUserMessagesStore.getState().setMessagesUser(null);
         }
     }, [status, userId, notifState.matches, notifState.hasFetched, fetchNotifications, fetchOrders]);
 

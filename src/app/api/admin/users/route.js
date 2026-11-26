@@ -1,3 +1,4 @@
+import { getStrapiBaseUrl } from '@/lib/api';
 import { NextResponse } from 'next/server';
 import { getUsers } from '@/lib/admin/adminUsersApi';
 import { requireAdminJwt } from '@/lib/admin/byeMoneyAdminRoute';
@@ -70,7 +71,7 @@ export async function POST(request) {
         }
 
         const tokenToUse = process.env.STRAPI_API_TOKEN || auth.jwt;
-        const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+        const STRAPI_BASE_URL = getStrapiBaseUrl();
 
         // بررسی یکتایی شماره موبایل در سامانه
         const checkRes = await fetch(`${STRAPI_BASE_URL}/api/users?filters[phoneNumber][$eq]=${encodeURIComponent(cleanPhone)}`, {

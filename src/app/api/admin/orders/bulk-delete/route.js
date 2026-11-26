@@ -7,10 +7,10 @@
 
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { getStrapiBaseUrl } from '@/lib/api';
 import { NextResponse } from 'next/server';
 
-const STRAPI_BASE_URL = (process.env.NEXT_PUBLIC_STRAPI_API_URL || process.env.STRAPI_API_URL || 'http://localhost:1337')
-    .replace(/\/+$/, '');
+const STRAPI_BASE_URL = getStrapiBaseUrl();
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
 function getAuthHeader(session) {

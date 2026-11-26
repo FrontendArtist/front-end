@@ -9,8 +9,9 @@ import { NextResponse } from 'next/server';
 import { getBatchBalancesWithByeMoney, createAdminCartOrderWithByeMoney, CourseOrderId } from '@/lib/byeMoneyApi';
 import { parseManualOrderItems, resolveBeneficiary } from '@/lib/admin/manualOrderInput';
 import { requireAdminJwt, respondByeMoneyResult, invalidBody } from '@/lib/admin/byeMoneyAdminRoute';
+import { getStrapiBaseUrl } from '@/lib/api';
 
-const STRAPI_BASE_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+const STRAPI_BASE_URL = getStrapiBaseUrl();
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
 // ── ابزار کمکی برای نرمال‌سازی شماره تلفن فارسی/عربی ───────────────────────

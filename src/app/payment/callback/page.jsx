@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { getStrapiBaseUrl } from '@/lib/api';
 import useCompletedOrderCart from '@/hooks/useCompletedOrderCart';
 import { triggerLightUpdate } from '@/store/useLightStore';
 
@@ -37,7 +38,7 @@ function PaymentCallbackContent() {
                 setIsBankLoading(true);
                 setBankError(null);
                 try {
-                    const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
+                    const strapiUrl = getStrapiBaseUrl();
                     const res = await fetch(`${strapiUrl}/api/bank-setting`);
 
                     if (!res.ok) throw new Error('دریافت اطلاعات بانکی با خطا مواجه شد.');

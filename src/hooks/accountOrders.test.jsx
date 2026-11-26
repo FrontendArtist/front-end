@@ -25,7 +25,7 @@ jest.mock('@/lib/client/notificationsClientApi',()=>({
     updateClientNotifications:jest.fn().mockResolvedValue({success:true}),
 }));
 jest.mock('@/lib/client/profileClientApi',()=>({setProfileUser:jest.fn(),fetchProfileCartData:jest.fn(),updateProfileCartData:jest.fn().mockResolvedValue({})}));
-jest.mock('@/store/useUserMessagesStore',()=>({useUserMessagesStore:Object.assign((selector)=>selector({messages:[],isLoading:false,hasFetched:true,fetchMessages:jest.fn()}),{getState:()=>({fetchMessages:jest.fn()})})}));
+jest.mock('@/store/useUserMessagesStore',()=>({useUserMessagesStore:Object.assign((selector)=>selector({messages:[],isLoading:false,hasFetched:true,fetchMessages:jest.fn(),setMessagesUser:jest.fn()}),{getState:()=>({fetchMessages:jest.fn(),setMessagesUser:jest.fn()})})}));
 jest.mock('next/image',()=>({__esModule:true,default:()=>null}));
 jest.mock('@/components/ui/DiscountCountdown/DiscountCountdown',()=>()=>null);
 jest.mock('@/components/ui/GradientBorderCard/GradientBorderCard',()=>({children})=><div>{children}</div>);

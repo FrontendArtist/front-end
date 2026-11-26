@@ -1,13 +1,10 @@
-import { API_BASE_URL } from '../api';
+import { getStrapiBaseUrl } from '../api';
 
 /**
  * پاکسازی آدرس پایه API
  */
 function getCleanBaseUrl() {
-    return (API_BASE_URL || 'http://localhost:1337')
-        .trim()
-        .replace(/\/+$/, '')
-        .replace(/\/api\/?$/, '');
+    return getStrapiBaseUrl();
 }
 
 /**

@@ -15,16 +15,21 @@ function MessagesContent() {
     const autoOpenMentor = openParam === 'mentor' || searchParams.get('mentor') === 'true';
     const autoOpenId = (!autoOpenMentor && openParam) ? openParam : null;
 
-    const messages = useUserMessagesStore((state) => state.messages);
+    const messages = useUserMessagesStore((state) =>
+        session?.user?.id != null && state.userId === String(session.user.id) ? state.messages : []
+    );
     const isLoading = useUserMessagesStore((state) => state.isLoading);
     const error = useUserMessagesStore((state) => state.error);
+    const setMessagesUser = useUserMessagesStore((state) => state.setMessagesUser);
     const fetchMessages = useUserMessagesStore((state) => state.fetchMessages);
     const updateMessageInStore = useUserMessagesStore((state) => state.updateMessageInStore);
 
     useEffect(() => {
-        if (!session?.user?.jwt) return;
-        fetchMessages(session.user.jwt, session.user?.id);
-    }, [session?.user?.jwt, session?.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+        const currentUserId = session?.user?.id ?? null;
+        setMessagesUser(currentUserId);
+        if (!session?.user?.jwt || !currentUserId) return;
+        fetchMessages(session.user.jwt, currentUserId);
+    }, [session?.user?.jwt, session?.user?.id, setMessagesUser, fetchMessages]);
 
     const handleUpdateMessage = (docId, updatedFields) => {
         updateMessageInStore(docId, updatedFields);

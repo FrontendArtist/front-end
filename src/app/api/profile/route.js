@@ -2,10 +2,10 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getStrapiBaseUrl } from "@/lib/api";
 import { NextResponse } from "next/server";
 
-// تنظیم آدرس پایه استرپی (حذف /api اگر وجود داشته باشد تا آدرس‌ها درست ساخته شوند)
-const STRAPI_URL = (process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337').trim().replace(/\/api\/?$/, '').replace(/\/+$/, '');
+const STRAPI_URL = getStrapiBaseUrl();
 // دریافت توکن ادمین از متغیرهای محیطی
 const STRAPI_ADMIN_TOKEN = process.env.STRAPI_API_TOKEN;
 

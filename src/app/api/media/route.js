@@ -9,9 +9,9 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions, isUserMentor } from '@/lib/auth';
 import { NextResponse } from 'next/server';
-import { STRAPI_API_URL } from '@/lib/api';
+import { getStrapiBaseUrl } from '@/lib/api';
 
-const STRAPI_URL = STRAPI_API_URL || 'http://localhost:1337';
+const STRAPI_URL = getStrapiBaseUrl();
 
 export async function POST(request) {
     const session = await getServerSession(authOptions);

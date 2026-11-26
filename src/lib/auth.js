@@ -1,12 +1,20 @@
 import NextAuth from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { STRAPI_API_URL } from './api';
 import { refreshSessionToken } from './strapiTokenRefresh';
 
-// ⚠️ هشدار امنیتی: در production حتماً NEXTAUTH_SECRET را در .env تنظیم کنید
-if (process.env.NODE_ENV === 'production' && (!process.env.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET === 'dev-secret-key-change-this')) {
-  console.error('🔴 [AUTH] NEXTAUTH_SECRET is not set or using default value in production! This is a security vulnerability.');
+const DEFAULT_DEV_SECRET = 'dev-secret-key-change-this';
+const isProductionRuntime =
+    process.env.NODE_ENV === 'production' &&
+    process.env.NEXT_PHASE !== 'phase-production-build';
+
+if (
+    isProductionRuntime &&
+    (!process.env.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET === DEFAULT_DEV_SECRET)
+) {
+    throw new Error(
+        '🔴 [AUTH] NEXTAUTH_SECRET is not set or is using the insecure default value in production.'
+    );
 }
 
 /**
@@ -17,14 +25,31 @@ if (process.env.NODE_ENV === 'production' && (!process.env.NEXTAUTH_SECRET || pr
 async function fetchUserSessionData(userId, jwt) {
     try {
         const tokenToUse = process.env.STRAPI_API_TOKEN || jwt;
-        const userRes = await fetch(`${STRAPI_API_URL}/api/users/${userId}?populate[0]=courses&populate[1]=role`, {
-            headers: { Authorization: `Bearer ${tokenToUse}` },
-            cache: 'no-store'
-        });
+        const userRes = await fetch(
+            `${STRAPI_API_URL}/api/users/${userId}?populate[courses][fields][0]=id&populate[courses][fields][1]=documentId&populate[courses][fields][2]=slug&populate[role][fields][0]=id&populate[role][fields][1]=name&populate[role][fields][2]=type`,
+            {
+                headers: { Authorization: `Bearer ${tokenToUse}` },
+                cache: 'no-store'
+            }
+        );
         const contentType = userRes.headers.get('content-type') || '';
         if (userRes.ok && contentType.includes('application/json')) {
             const userData = await userRes.json();
-            const courses = userData.courses || [];
+            const rawCourses = Array.isArray(userData.courses) ? userData.courses : [];
+            const courses = rawCourses.map((c) => ({
+                id: c.id,
+                ...(c.documentId ? { documentId: c.documentId } : {}),
+                ...(c.slug ? { slug: c.slug } : {}),
+            }));
+            const rawRole = userData.role;
+            const role =
+                rawRole && typeof rawRole === 'object'
+                    ? {
+                        ...(rawRole.id != null ? { id: rawRole.id } : {}),
+                        ...(rawRole.name ? { name: rawRole.name } : {}),
+                        ...(rawRole.type ? { type: rawRole.type } : {}),
+                    }
+                    : rawRole || null;
             return {
                 courses,
                 enrolledCourses: courses.map(c => c.id),
@@ -37,7 +62,7 @@ async function fetchUserSessionData(userId, jwt) {
                     : [],
                 firstName: userData.firstName || '',
                 lastName: userData.lastName || '',
-                role: userData.role || null,
+                role,
                 is_foreigner: Boolean(userData.is_foreigner),
             };
         }
@@ -125,9 +150,9 @@ export const authOptions = {
                     const { jwt, user } = data;
 
                     if (user && jwt) {
-                        return { 
-                            ...user, 
-                            id: user.id, 
+                        return {
+                            ...user,
+                            id: user.id,
                             jwt: jwt,
                             role: user.role || 'user'
                         };
@@ -184,9 +209,9 @@ export const authOptions = {
                     const { jwt, user } = data;
 
                     if (user && jwt) {
-                        return { 
-                            ...user, 
-                            id: user.id, 
+                        return {
+                            ...user,
+                            id: user.id,
                             jwt: jwt,
                             role: user.role || 'user'
                         };
@@ -197,12 +222,6 @@ export const authOptions = {
                     throw error;
                 }
             },
-        }),
-
-        GoogleProvider({
-            clientId: process.env.GOOGLE_ID || '',
-            clientSecret: process.env.GOOGLE_SECRET || '',
-            allowDangerousEmailAccountLinking: true
         }),
     ],
 
@@ -264,7 +283,10 @@ export const authOptions = {
             return session;
         },
     },
-    secret: process.env.NEXTAUTH_SECRET || 'dev-secret-key-change-this',
+    secret:
+        process.env.NODE_ENV === 'production'
+            ? process.env.NEXTAUTH_SECRET
+            : (process.env.NEXTAUTH_SECRET || DEFAULT_DEV_SECRET),
     trustHost: true,
     logger: {
         error(code, metadata) {
@@ -276,7 +298,8 @@ export const authOptions = {
     },
 };
 
-// مسیرهای پرداخت فقط هویت امضاشده را لازم دارند؛ آدرس و مبلغ جداگانه از سرور خوانده می‌شوند.
+
+// مسیرهای پرداخت فقط هویت امضاشده را لازم دارند؛ آدرس و مبلغ جداگانه از سرور خوانده می‌شوند.
 // سشن عمومی همچنان دوره‌ها و نقش به‌روز را برای پروفایل و کنترل دسترسی دریافت می‌کند.
 export const paymentAuthOptions = {
     ...authOptions,
@@ -300,4 +323,4 @@ export const paymentAuthOptions = {
     },
 };
 
-
+

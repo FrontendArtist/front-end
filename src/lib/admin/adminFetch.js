@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../api';
+import { getStrapiBaseUrl } from '../api';
 
 /**
  * واکشی ایمن از Strapi با Authorization هدر ادمین و پاکسازی آدرس (URL Sanitization)
@@ -9,10 +9,7 @@ import { API_BASE_URL } from '../api';
  */
 export async function adminFetch(endpoint, jwt) {
     try {
-        const cleanBase = (API_BASE_URL || 'http://localhost:1337')
-            .trim()
-            .replace(/\/+$/, '')
-            .replace(/\/api\/?$/, '');
+        const cleanBase = getStrapiBaseUrl();
 
         let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
         if (cleanEndpoint.startsWith('/api/api/')) {

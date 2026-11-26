@@ -17,10 +17,11 @@ import { useRouter } from 'next/navigation';
 import AdminButton from '../Shared/AdminButton';
 import { uploadMedia } from '@/lib/client/admin/mediaClient';
 import { createProduct, updateProduct, deleteProduct } from '@/lib/client/admin/productsClient';
+import { STRAPI_API_URL } from '@/lib/api';
 import { Editor } from '@tinymce/tinymce-react';
 import styles from './Products.module.scss';
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337';
+const STRAPI_URL = STRAPI_API_URL;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Toast hook
