@@ -111,7 +111,7 @@ describe('نتیجهٔ تلاش درگاه', () => {
         [{ status: 'failed' }, 'ناموفق'],
         [{ status: 'confirmed' }, 'موفق'],
         [{ status: 'failed', lastError: 'TOKEN_FAILED' }, 'ناموفق (خطای توکن درگاه)'],
-        [{ status: 'pending_sync' }, 'پرداخت بانکی ثبت شد؛ تحویل به بای‌مانی در صف تلاش مجدد'],
+        [{ status: 'pending_sync' }, 'پرداخت بانکی ثبت شد؛ تحویل به سامانه مالی در صف تلاش مجدد'],
         [{ status: 'financial_review', lastError: 'x' }, 'نیازمند بررسی مالی دستی'],
     ])('%j → %s', (attempt, label) => {
         expect(classifyAttempt(attempt, NOW).label).toBe(label);
@@ -178,7 +178,7 @@ describe('buildTimeline', () => {
         const attempt = tl[1];
         expect(attempt.source).toBe('byemoney');
         expect(attempt.result.label).toBe('شارژ: رد شده');
-        expect(attempt.details).toEqual(expect.arrayContaining([{ label: 'نتیجهٔ درگاه (بای‌مانی)', value: 'ناموفق' }]));
+        expect(attempt.details).toEqual(expect.arrayContaining([{ label: 'نتیجهٔ درگاه (سامانه مالی)', value: 'ناموفق' }]));
         expect(summarizeAttempts(tl)).toBeNull();
     });
 

@@ -172,6 +172,6 @@ describe('POST /api/admin/carts/[cartId]/shipments', () => {
     global.fetch.mockRejectedValueOnce(new Error('Network error'));
     const res = await POST(req({ collectionType: 'pick_up' }), ctx);
     expect(res.status).toBe(502);
-    expect(res.body.error).toBe('خطا در برقراری ارتباط با بای‌مانی.');
+    expect(res.body.error).toBe('خطا در برقراری ارتباط با سامانه مالی.');
   });
 });

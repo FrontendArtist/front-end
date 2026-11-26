@@ -162,7 +162,7 @@ export async function PUT(request, { params }) {
                 console.error(`[AdminOrdersAPI] ❌ ByeMoney Confirm TopUp Failed:`, bmConfirmRes.error);
                 return NextResponse.json(
                     {
-                        error: bmConfirmRes.error || 'خطا در تأیید مالی افزایش اعتبار در سامانه بای‌مانی. سفارش تأیید نشد.',
+                        error: bmConfirmRes.error || 'خطا در تأیید مالی افزایش اعتبار در سامانه مالی. سفارش تأیید نشد.',
                         details: bmConfirmRes,
                     },
                     { status: bmConfirmRes.status || 400 }
@@ -171,7 +171,7 @@ export async function PUT(request, { params }) {
         } catch (bmErr) {
             console.error(`[AdminOrdersAPI] ❌ ByeMoney Confirm TopUp Exception:`, bmErr?.message || bmErr);
             return NextResponse.json(
-                { error: 'خطای ارتباط با سامانه پرداخت بای‌مانی هنگام تأیید فیش.' },
+                { error: 'خطای ارتباط با سامانه مالی هنگام تأیید فیش.' },
                 { status: 502 }
             );
         }

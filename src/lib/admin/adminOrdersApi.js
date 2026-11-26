@@ -305,7 +305,7 @@ async function fetchByeMoneyPage(jwt, { page, pageSize, buyerExternalUserId, fin
                 totalCount: res.data.totalCount || 0,
             };
         }
-        return { items: [], totalCount: 0, error: res.error || 'خطا در دریافت سفارش‌های بای‌مانی' };
+        return { items: [], totalCount: 0, error: res.error || 'خطا در دریافت سفارش‌های سامانه مالی' };
     } catch (err) {
         console.error('[AdminOrdersApi] ByeMoney fetch error:', err);
         return { items: [], totalCount: 0, error: err.message || 'خطا' };

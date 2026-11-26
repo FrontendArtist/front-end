@@ -7,7 +7,7 @@
 
 import { BYEMONEY_API_URL } from './byeMoneySync.js';
 
-const NETWORK_ERROR = 'خطا در برقراری ارتباط با سامانه بای‌مانی.';
+const NETWORK_ERROR = 'خطا در برقراری ارتباط با سامانه مالی.';
 const WITHDRAWAL_BASE = `${BYEMONEY_API_URL}/api/admin/noor-withdrawals`;
 
 /** فقط این فیلدهای شارژ به مرورگر می‌رسند؛ userId و بقیهٔ فیلدهای داخلی عمداً حذف می‌شوند. */

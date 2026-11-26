@@ -26,7 +26,7 @@ const ATTEMPT_FIELDS = [
 ];
 
 export const STRAPI_UNAVAILABLE_WARNING =
-    'رکورد تلاش‌های درگاه از استرپی در دسترس نیست؛ فقط وضعیت ثبت‌شده در بای‌مانی نمایش داده می‌شود.';
+    'رکورد تلاش‌های درگاه از استرپی در دسترس نیست؛ فقط وضعیت ثبت‌شده در سامانه مالی نمایش داده می‌شود.';
 export const STRAPI_FORBIDDEN_WARNING =
     'عدم دسترسی توکن: استرپی با ۴۰۳ پاسخ داد (مجوز find روی gateway-payment-attempts برای STRAPI_API_TOKEN را بررسی کنید). این به معنی «بدون تلاش» نیست.';
 
@@ -181,7 +181,7 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
     }
 
     const { buyerExternalUserId, buyerDisplayName, order } = res.data || {};
-    if (!order) return { success: false, status: 502, error: 'پاسخ بای‌مانی نامعتبر است.' };
+    if (!order) return { success: false, status: 502, error: 'پاسخ سامانه مالی نامعتبر است.' };
 
     const warnings = [];
     const topUps = (order.topUps || []).map(sanitizeTopUp);

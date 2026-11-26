@@ -39,7 +39,7 @@ export default async function AdminLegacyOrdersPage() {
                             </span>
                         )}
                     </div>
-                    <p className={styles.page__subtitle}>سفارش‌های تومانی پیش از بای‌مانی (کارت‌به‌کارت، آنلاین، رایگان)</p>
+                    <p className={styles.page__subtitle}>سفارش‌های تومانی پیش از سامانه مالی (کارت‌به‌کارت، آنلاین، رایگان)</p>
                 </div>
             </header>
 

@@ -83,7 +83,7 @@ describe('OrdersList Component', () => {
     });
 
     render(<OrdersList />);
-    expect(screen.getByText(/امکان دریافت خریدهای جدید از بای‌مانی وجود ندارد/)).toBeInTheDocument();
+    expect(screen.getByText(/امکان دریافت خریدهای جدید از سامانه مالی وجود ندارد/)).toBeInTheDocument();
     expect(screen.getByText(/۱۰۱/)).toBeInTheDocument();
     expect(screen.getByText(`${Number(450000).toLocaleString('fa-IR')} تومان`)).toBeInTheDocument();
     expect(screen.queryByText('نور')).not.toBeInTheDocument();

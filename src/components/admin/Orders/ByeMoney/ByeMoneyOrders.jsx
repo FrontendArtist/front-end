@@ -317,7 +317,7 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
             <header className={styles.header}>
                 <div>
                     <h1 className={styles.header__title}>سفارش‌ها</h1>
-                    <p className={styles.header__subtitle}>سفارش‌های پرداخت با نور (بای‌مانی)</p>
+                    <p className={styles.header__subtitle}>سفارش‌های پرداخت با نور (سامانه مالی)</p>
                 </div>
                 {canCreateManual && (
                     <Link href="/admin/orders/new" className={styles.primaryBtn}>
@@ -333,13 +333,13 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                     {data.forbidden && (
                         <span className={`${styles.alertChip} ${styles['alertChip--error']}`}>
                             <AlertTriangle size={14} aria-hidden="true" />
-                            مجوز مشاهدهٔ سفارش‌های بای‌مانی (Purchases.View) را ندارید.
+                            مجوز مشاهدهٔ سفارش‌های سامانه مالی (Purchases.View) را ندارید.
                         </span>
                     )}
                     {data.warning && !data.forbidden && (
                         <button type="button" className={`${styles.alertChip} ${styles['alertChip--error']}`} onClick={() => reload()}>
                             <AlertTriangle size={14} aria-hidden="true" />
-                            ارتباط با بای‌مانی کامل نبود؛ ممکن است بعضی سفارش‌ها نیامده باشند.
+                            ارتباط با سامانه مالی کامل نبود؛ ممکن است بعضی سفارش‌ها نیامده باشند.
                             <span className={styles.alertChip__cta}>تلاش دوباره</span>
                         </button>
                     )}

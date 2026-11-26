@@ -233,7 +233,7 @@ describe('AdminAssistedTopUpModal Component', () => {
       success: false,
       forbidden: true,
       status: 403,
-      error: 'شما مجوز مالی لازم جهت ثبت شارژ برای کاربر را در سامانه مالی بای‌مانی ندارید.',
+      error: 'شما مجوز مالی لازم جهت ثبت شارژ برای کاربر را در سامانه مالی ندارید.',
     });
 
     render(
@@ -253,7 +253,7 @@ describe('AdminAssistedTopUpModal Component', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('شما مجوز مالی لازم جهت ثبت شارژ برای کاربر را در سامانه مالی بای‌مانی ندارید.')
+        screen.getByText('شما مجوز مالی لازم جهت ثبت شارژ برای کاربر را در سامانه مالی ندارید.')
       ).toBeInTheDocument();
     });
   });

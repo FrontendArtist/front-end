@@ -55,7 +55,7 @@ export default async function FinancialReviewLayout({ children }) {
                         <ShieldAlert size={32} />
                     </div>
                     <p style={{ margin: 0, fontSize: 'var(--font-md)', lineHeight: 1.7 }}>
-                        برای مشاهده پرونده‌ها، ورود و مجوز رسیدگی مالی بای‌مانی لازم است.
+                        برای مشاهده پرونده‌ها، ورود و مجوز رسیدگی سامانه مالی لازم است.
                     </p>
                     <Link
                         href="/"

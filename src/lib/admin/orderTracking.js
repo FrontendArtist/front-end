@@ -116,7 +116,7 @@ export function mapByeMoneyOrderRow(row) {
         topUpAttemptCount: row.topUpAttemptCount ?? 0,
         createdAt: row.createdAtUtc,
         updatedAt: row.updatedAtUtc,
-        fullName: row.buyerDisplayName || 'کاربر بای‌مانی',
+        fullName: row.buyerDisplayName || 'کاربر سامانه مالی',
         buyerDisplayName: row.buyerDisplayName,
         buyerExternalUserId: row.buyerExternalUserId,
         phone: null,
@@ -161,7 +161,7 @@ export const ATTEMPT_RESULT = {
     tokenFailed: { key: 'token_failed', label: 'ناموفق (خطای توکن درگاه)', tone: 'error' },
     abandoned: { key: 'abandoned_at_gateway', label: 'منقضی / رهاشده', tone: 'warning' },
     inGateway: { key: 'in_gateway', label: 'در انتظار پرداخت', tone: 'warning' },
-    pendingSync: { key: 'pending_sync', label: 'پرداخت بانکی ثبت شد؛ تحویل به بای‌مانی در صف تلاش مجدد', tone: 'warning' },
+    pendingSync: { key: 'pending_sync', label: 'پرداخت بانکی ثبت شد؛ تحویل به سامانه مالی در صف تلاش مجدد', tone: 'warning' },
     financialReview: { key: 'financial_review', label: 'نیازمند بررسی مالی دستی', tone: 'warning' },
     review: { key: 'under_review', label: 'در حال بررسی', tone: 'warning' },
     started: { key: 'started', label: 'ایجاد شده (هنوز به درگاه نرسیده)', tone: 'info' },
@@ -320,7 +320,7 @@ export function buildTimeline({ order, topUps = [], attempts = null, now = new D
             const d = describeTopUpWithoutStrapi(topUp);
             result = { key: d.key, label: d.label, tone: d.tone };
             source = 'byemoney';
-            if (d.gatewayLabel) details.push({ label: 'نتیجهٔ درگاه (بای‌مانی)', value: d.gatewayLabel });
+            if (d.gatewayLabel) details.push({ label: 'نتیجهٔ درگاه (سامانه مالی)', value: d.gatewayLabel });
             // استرپی پاسخ داده ولی رکوردی برای این شارژ نیست: «بدون تلاش» جدا از «استرپی در دسترس نیست» است
             if (attempts) details.push({ label: 'رکورد درگاه', value: 'در استرپی رکوردی یافت نشد' });
         }

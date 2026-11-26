@@ -74,7 +74,7 @@ function CheckoutResultContent() {
     const reviewNoticeText = useReviewNoticeText(isReviewOrPending);
     const courseMessage = checkout.phase === 'checking' ? (hasPhysicalItem ? 'در حال بررسی نتیجه خرید…' : 'در حال بررسی نتیجه خرید و فعال‌سازی دوره‌ها…')
         : checkout.phase === 'completed' ? (hasPhysicalItem ? 'خرید شما با موفقیت ثبت شد.' : 'خرید با موفقیت انجام شد و دسترسی همه دوره‌ها برای شما فعال است.')
-        : checkout.phase === 'accessMissing' ? 'سابقه خرید در بای‌مانی وجود دارد، اما دسترسی دوره در حساب شما فعال نیست. برای بررسی و بازیابی دسترسی با پشتیبانی تماس بگیرید.'
+        : checkout.phase === 'accessMissing' ? 'سابقه خرید در سامانه مالی وجود دارد، اما دسترسی دوره در حساب شما فعال نیست. برای بررسی و بازیابی دسترسی با پشتیبانی تماس بگیرید.'
         : checkout.phase === 'incomplete' ? (checkout.paid ? 'پرداخت یا شارژ ثبت شده است، اما خرید دوره تکمیل نشده است. وضعیت را از کیف پول و پشتیبانی پیگیری کنید.' : 'خرید دوره تکمیل نشده است. وضعیت را از حساب کاربری پیگیری کنید.')
         : checkout.phase === 'activating' ? (hasPhysicalItem ? 'پرداخت ثبت شد؛ در حال تکمیل سفارش هستیم.' : 'پرداخت ثبت شد؛ در حال فعال‌سازی دوره هستیم.')
         : isReviewOrPending ? reviewNoticeText

@@ -58,7 +58,7 @@ test('سابقه پرداخت با دسترسی حذف‌شده، پیام مو�
     useCourseCheckoutResult.mockReturnValue({ phase: 'accessMissing', paid: true,
         courses: [{ externalItemId: 'course-1', purchaseStatus: 'AccessMissing' }] });
     render(<CheckoutResultPage />);
-    expect(screen.getByText(/سابقه خرید در بای‌مانی وجود دارد/)).toBeTruthy();
+    expect(screen.getByText(/سابقه خرید در سامانه مالی وجود دارد/)).toBeTruthy();
     expect(screen.queryByText('خرید موفق؛ دوره‌ها فعال شدند')).toBeNull();
     expect(screen.getByRole('heading').closest('.card').className).not.toContain('success');
     expect(screen.queryByText(/پرداخت مجدد/)).toBeNull();

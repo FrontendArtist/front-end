@@ -56,6 +56,6 @@ export async function POST(request, { params }) {
             headers: { 'Content-Type': res.headers.get('content-type') || 'application/json' },
         });
     } catch {
-        return NextResponse.json({ error: 'خطا در برقراری ارتباط با بای‌مانی.' }, { status: 502 });
+        return NextResponse.json({ error: 'خطا در برقراری ارتباط با سامانه مالی.' }, { status: 502 });
     }
 }

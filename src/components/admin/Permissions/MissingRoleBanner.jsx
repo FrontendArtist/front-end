@@ -15,7 +15,7 @@ export default function MissingRoleBanner() {
 
     return (
         <div className={styles.banner} role="alert">
-            حساب شما در بای‌مانی نقشی ندارد و بخش‌های مالی پنل ممکن است ناقص یا خالی نمایش داده شوند.
+            حساب شما در سامانه مالی نقشی ندارد و بخش‌های مالی پنل ممکن است ناقص یا خالی نمایش داده شوند.
             برای تخصیص نقش، مسئول فنی باید اسکریپت <code dir="ltr">scripts/assign-admin-role.sql</code> را اجرا کند.
         </div>
     );

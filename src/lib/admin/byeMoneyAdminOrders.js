@@ -70,7 +70,7 @@ async function fetchPage(jwt, filter, page, pageSize, buyer) {
     if (res.success && res.data) {
         return { items: res.data.items || [], totalCount: res.data.totalCount || 0 };
     }
-    return { items: [], totalCount: 0, error: res.error || 'خطا در دریافت سفارش‌های بای‌مانی', forbidden: Boolean(res.forbidden) };
+    return { items: [], totalCount: 0, error: res.error || 'خطا در دریافت سفارش‌های سامانه مالی', forbidden: Boolean(res.forbidden) };
 }
 
 /** بازهٔ [localStart, localStart+take) از یک فیلتر؛ با pageSize ثابت حداکثر دو صفحه */

@@ -29,7 +29,7 @@ export async function createGatewayTopUp(amountNoor, jwt, pendingItems = []) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data?.errors?.[0] || 'ثبت درخواست شارژ انجام نشد.');
   if (!Number.isSafeInteger(data.amountRial) || data.amountRial <= 0 || !data.clientReferenceId || !data.topUpRequestId)
-    throw new Error('مبلغ ریالی یا شناسهٔ شارژ در پاسخ بای‌مانی معتبر نیست.');
+    throw new Error('مبلغ ریالی یا شناسهٔ شارژ در پاسخ سامانه مالی معتبر نیست.');
   return data;
 }
 
@@ -102,7 +102,7 @@ export async function deliverGatewayOutcome(recorded) {
       method: 'POST', headers: strapiHeaders(), cache: 'no-store',
       body: JSON.stringify({ eventId: recorded.eventId }),
     });
-    if (!delivery.ok) throw new Error('نتیجه در بای‌مانی ثبت شد اما تأیید تحویل در Strapi ثبت نشد.');
+    if (!delivery.ok) throw new Error('نتیجه در سامانه مالی ثبت شد اما تأیید تحویل در Strapi ثبت نشد.');
   }
   return { ok: response.ok, status: response.status, data, accepted };
 }
@@ -111,7 +111,7 @@ export async function getTopUpConfirmation(resNum) {
   const response = await fetch(`${BYEMONEY_API_URL}/api/integrations/topups/by-reference/${encodeURIComponent(resNum)}/confirmation`, {
     headers: byeMoneyHeaders(), cache: 'no-store',
   });
-  if (!response.ok) throw new Error('استعلام وضعیت شارژ از بای‌مانی انجام نشد.');
+  if (!response.ok) throw new Error('استعلام وضعیت شارژ از سامانه مالی انجام نشد.');
   return await response.json();
 }
 

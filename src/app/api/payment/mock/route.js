@@ -43,8 +43,8 @@ export async function POST(request) {
     const scenario = form.get('Scenario');
     if (!scenario) {
         const flow = payment.resNum.startsWith('TR-')
-            ? '<p>مسیر: شارژ نور در بای‌مانی</p>'
-            : '<p>مسیر: سفارش ریالی در استرپی؛ این پرداخت جدولی در بای‌مانی تغییر نمی‌دهد. برای تست بای‌مانی از <a href="/checkout/light?amount=10">صفحهٔ شارژ نور</a> و گزینهٔ پرداخت آنلاین شروع کنید.</p>';
+            ? '<p>مسیر: شارژ نور در سامانه مالی</p>'
+            : '<p>مسیر: سفارش ریالی در استرپی؛ این پرداخت جدولی در سامانه مالی تغییر نمی‌دهد. برای تست سامانه مالی از <a href="/checkout/light?amount=10">صفحهٔ شارژ نور</a> و گزینهٔ پرداخت آنلاین شروع کنید.</p>';
         const choices = SCENARIOS.map(([value, label]) => `<form method="post" action="/api/payment/mock">
             <input type="hidden" name="MockToken" value="${escapeHtml(token)}">
             <button type="submit" name="Scenario" value="${value}">${label}</button></form>`).join('');

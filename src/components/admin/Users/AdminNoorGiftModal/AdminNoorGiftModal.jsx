@@ -181,7 +181,7 @@ export default function AdminNoorGiftModal({
           return;
         }
 
-        setError(res.error || 'خطا در ثبت هدیه نور در سامانه بای‌مانی.');
+        setError(res.error || 'خطا در ثبت هدیه نور در سامانه مالی.');
         return;
       }
 

@@ -73,7 +73,7 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
             setConversionRate(res.rialPerNoor);
             setRateError(null);
           } else {
-            setRateError(res.error || 'خطا در واکشی نرخ رسمی از پایگاه داده بای‌مانی.');
+            setRateError(res.error || 'خطا در واکشی نرخ رسمی از پایگاه داده سامانه مالی.');
           }
         })
         .catch((err) => {
@@ -203,7 +203,7 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
       });
 
       if (!res.success) {
-        throw new Error(res.error || 'خطا در ثبت شارژ در سامانه مالی بای‌مانی.');
+        throw new Error(res.error || 'خطا در ثبت شارژ در سامانه مالی.');
       }
 
       invalidateConversionRateCache();
@@ -383,7 +383,7 @@ export default function AdminAssistedTopUpModal({ user, conversionRate: initialC
               disabled={loading || rateLoading || !!rateError || !conversionRate || conversionRate <= 0 || !rawAmount || rawAmount <= 0}
             >
               {loading ? (
-                'در حال ثبت در بای‌مانی...'
+                'در حال ثبت در سامانه مالی...'
               ) : (
                 <>
                   <CheckCircle2 size={18} />

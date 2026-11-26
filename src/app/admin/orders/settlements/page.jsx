@@ -12,7 +12,7 @@ import CourseOrderSettlements from '@/components/admin/Orders/Settlements/Course
 import styles from '../orders.module.scss';
 
 export const metadata = {
-    title: 'تسویهٔ سفارش‌های بای‌مانی',
+    title: 'تسویهٔ سفارش‌های سامانه مالی',
     robots: { index: false, follow: false },
 };
 
@@ -20,7 +20,7 @@ export default function AdminCourseOrderSettlementsPage() {
     return (
         <div className={styles.page}>
             <header className={styles.page__header}>
-                <h1 className={styles.page__title}>تسویه و آرشیو سفارش‌های بای‌مانی</h1>
+                <h1 className={styles.page__title}>تسویه و آرشیو سفارش‌های سامانه مالی</h1>
                 <Link href="/admin/orders" className={styles.backLink}>
                     <ArrowRight size={16} aria-hidden="true" />
                     بازگشت به سفارش‌ها

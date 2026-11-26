@@ -29,7 +29,7 @@ export function getSepMockEnvironmentError() {
     const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
     const byeMoneyUrl = process.env.NEXT_PUBLIC_BYEMONEY_API_URL || process.env.NEXT_PUBLIC_BYEMONEY_URL || 'http://localhost:5000';
     if (!isLocalServiceUrl(strapiUrl) || !isLocalServiceUrl(byeMoneyUrl)) {
-        return 'در حالت شبیه‌ساز، آدرس استرپی و بای‌مانی باید محلی باشند.';
+        return 'در حالت شبیه‌ساز، آدرس استرپی و سامانه مالی باید محلی باشند.';
     }
     return null;
 }

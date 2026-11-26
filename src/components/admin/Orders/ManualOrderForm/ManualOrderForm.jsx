@@ -448,7 +448,7 @@ export default function ManualOrderForm({ initialCourses = [] }) {
                                                     <span className={styles.userResults__phone}>{u.phoneNumber}</span>
                                                     <span
                                                         style={{ fontSize: '0.78rem', color: 'var(--color-title-hover)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                                                        title={u.noorBalance === null || u.noorBalance === undefined ? 'دسترسی مشاهدهٔ موجودی (Wallet.View) ندارید یا استعلام بای‌مانی ناموفق بود.' : undefined}
+                                                        title={u.noorBalance === null || u.noorBalance === undefined ? 'دسترسی مشاهدهٔ موجودی (Wallet.View) ندارید یا استعلام سامانه مالی ناموفق بود.' : undefined}
                                                     >
                                                         <Coins size={12} />
                                                         {u.noorBalance !== null && u.noorBalance !== undefined

@@ -227,7 +227,7 @@ export default function UsersTable({ initialUsers = [], initialMeta = null }) {
                 setRefreshNotice('به‌روزرسانی خودکار موجودی‌ها با خطا مواجه شد. لطفاً صفحه را تازه‌سازی کنید.');
             }
         } catch (err) {
-            setRefreshNotice('خطا در به‌روزرسانی خودکار موجودی‌ها از بای‌مانی.');
+            setRefreshNotice('خطا در به‌روزرسانی خودکار موجودی‌ها از سامانه مالی.');
         }
     };
 

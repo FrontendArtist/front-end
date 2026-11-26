@@ -35,7 +35,7 @@ describe('local SEP payment page', () => {
         expect(bankPage.status).toBe(200);
         const firstHtml = await bankPage.text();
         expect(firstHtml).toContain('پرداخت موفق');
-        expect(firstHtml).toContain('این پرداخت جدولی در بای‌مانی تغییر نمی‌دهد');
+        expect(firstHtml).toContain('این پرداخت جدولی در سامانه مالی تغییر نمی‌دهد');
         expect(firstHtml).toContain('/checkout/light?amount=10');
         expect(firstHtml).not.toContain('ارسال callback به برنامه');
 
@@ -57,6 +57,6 @@ describe('local SEP payment page', () => {
         const { token } = createMockToken({ amount: 10000, resNum: 'TR-12345678',
             redirectUrl: 'http://localhost:3000/api/payment/verify' });
         const response = await POST(request({ Token: token }));
-        expect(await response.text()).toContain('مسیر: شارژ نور در بای‌مانی');
+        expect(await response.text()).toContain('مسیر: شارژ نور در سامانه مالی');
     });
 });

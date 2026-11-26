@@ -512,12 +512,12 @@ export async function confirmTopUpWithByeMoney({ topUpId, confirmedAmount, exter
       errJson.message ||
       errJson.error ||
       (Array.isArray(errJson.errors) ? errJson.errors.join(' - ') : '') ||
-      `خطای سرور بای‌مانی (کد ${response.status})`;
+      `خطای سرور سامانه مالی (کد ${response.status})`;
 
     return { success: false, error: errText, status: response.status };
   } catch (err) {
     console.error('[ByeMoney Confirm TopUp Error]:', err);
-    return { success: false, error: 'خطا در برقراری ارتباط با سرور بای‌مانی.' };
+    return { success: false, error: 'خطا در برقراری ارتباط با سرور سامانه مالی.' };
   }
 }
 
@@ -562,12 +562,12 @@ export async function rejectTopUpWithByeMoney({ topUpId, reason, jwt }) {
       errJson.message ||
       errJson.error ||
       (Array.isArray(errJson.errors) ? errJson.errors.join(' - ') : '') ||
-      `خطای سرور بای‌مانی (کد ${response.status})`;
+      `خطای سرور سامانه مالی (کد ${response.status})`;
 
     return { success: false, error: errText, status: response.status };
   } catch (err) {
     console.error('[ByeMoney Reject TopUp Error]:', err);
-    return { success: false, error: 'خطا در برقراری ارتباط با سرور بای‌مانی.' };
+    return { success: false, error: 'خطا در برقراری ارتباط با سرور سامانه مالی.' };
   }
 }
 
@@ -611,13 +611,13 @@ export async function getConversionRateWithByeMoney({ jwt } = {}) {
     const errJson = await response.json().catch(() => ({}));
     return {
       success: false,
-      error: errJson.error || errJson.message || `خطا در واکشی نرخ تبدیل از دیتابیس بای‌مانی (کد ${response.status})`,
+      error: errJson.error || errJson.message || `خطا در واکشی نرخ تبدیل از دیتابیس سامانه مالی (کد ${response.status})`,
     };
   } catch (err) {
     console.error('[ByeMoney getConversionRate error]:', err);
     return {
       success: false,
-      error: 'خطا در ارتباط با سرور بای‌مانی جهت دریافت نرخ رسمی تبدیل.',
+      error: 'خطا در ارتباط با سرور سامانه مالی جهت دریافت نرخ رسمی تبدیل.',
     };
   }
 }
@@ -862,7 +862,7 @@ export async function createAdminAssistedTopUpWithByeMoney({
         success: false,
         forbidden: true,
         status: 403,
-        error: 'شما مجوز مالی لازم جهت ثبت شارژ برای کاربر را در سامانه مالی بای‌مانی ندارید.',
+        error: 'شما مجوز مالی لازم جهت ثبت شارژ برای کاربر را در سامانه مالی ندارید.',
       };
     }
 
@@ -890,7 +890,7 @@ export async function createAdminAssistedTopUpWithByeMoney({
     console.error('[ByeMoney createAdminAssistedTopUp Error]:', err);
     return {
       success: false,
-      error: 'خطا در برقراری ارتباط مستقیم با سامانه بای‌مانی. لطفاً اتصال اینترنت خود را بررسی کنید.',
+      error: 'خطا در برقراری ارتباط مستقیم با سامانه مالی. لطفاً اتصال اینترنت خود را بررسی کنید.',
     };
   }
 }
@@ -994,7 +994,7 @@ export async function getBatchBalancesWithByeMoney({ userIds, jwt }) {
     return {
       success: false,
       balances: {},
-      error: 'خطا در برقراری ارتباط با سامانه بای‌مانی.',
+      error: 'خطا در برقراری ارتباط با سامانه مالی.',
     };
   }
 }
@@ -1099,7 +1099,7 @@ export async function getMyCoursePurchases({ jwt, page = 1, pageSize = 20, signa
     return { success: false, error: errorMsg };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با سامانه مالی.' };
   }
 }
 
@@ -1215,7 +1215,7 @@ export async function getMyCourseOrders({
     return { success: false, error: errorMsg };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با سامانه مالی.' };
   }
 }
 
@@ -1319,7 +1319,7 @@ export async function getMyCourseOrderDetails({ jwt, orderId, signal } = {}) {
     return { success: false, error: errorMsg };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, networkError: true, error: 'خطا در دریافت جزئیات سفارش از بای‌مانی.' };
+    return { success: false, networkError: true, error: 'خطا در دریافت جزئیات سفارش از سامانه مالی.' };
   }
 }
 
@@ -1410,7 +1410,7 @@ async function fetchCoursePurchaseReceipt({ jwt, purchaseId, signal, scope }) {
     return { success: false, error: errorMsg };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, networkError: true, error: 'خطا در دریافت رسید خرید از بای‌مانی.' };
+    return { success: false, networkError: true, error: 'خطا در دریافت رسید خرید از سامانه مالی.' };
   }
 }
 
@@ -1546,7 +1546,7 @@ async function fetchAdminCourseOrdersEndpoint(url, jwt, signal, errorPrefix) {
       return { success: false, unauthorized: true, error: 'نشست ادمین منقضی شده است.' };
     }
     if (res.status === 403) {
-      return { success: false, forbidden: true, error: 'ادمین به سفارش‌های بای‌مانی دسترسی ندارد (فاقد مجوز Purchases.View).' };
+      return { success: false, forbidden: true, error: 'ادمین به سفارش‌های سامانه مالی دسترسی ندارد (فاقد مجوز Purchases.View).' };
     }
     let errorMsg = `${errorPrefix} (${res.status})`;
     try {
@@ -1556,7 +1556,7 @@ async function fetchAdminCourseOrdersEndpoint(url, jwt, signal, errorPrefix) {
     return { success: false, error: errorMsg };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, networkError: true, error: 'خطا در ارتباط با بای‌مانی در بخش ادمین.' };
+    return { success: false, networkError: true, error: 'خطا در ارتباط با سامانه مالی در بخش ادمین.' };
   }
 }
 
@@ -1605,7 +1605,7 @@ async function fetchCourseOrderReceipt({ jwt, orderId, signal, scope }) {
     return { success: false, error: errorMsg };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, networkError: true, error: 'خطا در دریافت رسید سفارش از بای‌مانی.' };
+    return { success: false, networkError: true, error: 'خطا در دریافت رسید سفارش از سامانه مالی.' };
   }
 }
 
@@ -1677,7 +1677,7 @@ export async function confirmMyCourseOrderDelivery({ jwt, orderId, signal } = {}
     return { success: false, error: extractDomainErrorMessage(errJson, 'ثبت تأیید دریافت کالا ناموفق بود.') };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با سامانه مالی.' };
   }
 }
 
@@ -1754,7 +1754,7 @@ export async function updatePhysicalPurchaseDeliveryStatus({
     return { success: false, error: extractDomainErrorMessage(errJson, `خطای ثبت وضعیت ارسال (${res.status})`) };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با سامانه مالی.' };
   }
 }
 
@@ -1807,7 +1807,7 @@ export async function createCartPhysicalShipment({ jwt, cartId, provider = 'Post
     };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, status: 502, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+    return { success: false, status: 502, networkError: true, error: 'خطا در برقراری ارتباط با سامانه مالی.' };
   }
 }
 
@@ -1852,7 +1852,7 @@ export async function getPendingPhysicalRestocks({ jwt, signal } = {}) {
     return { success: false, error: `خطای دریافت برگشت‌های موجودی (${res.status})` };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+    return { success: false, networkError: true, error: 'خطا در برقراری ارتباط با سامانه مالی.' };
   }
 }
 
@@ -1932,7 +1932,7 @@ export async function getAdminCoursePurchases({
       return { success: true, data };
     }
     if (res.status === 403) {
-      return { success: false, forbidden: true, error: 'ادمین به بخش خریدهای بای‌مانی دسترسی ندارد (فاقد مجوز Purchases.View).' };
+      return { success: false, forbidden: true, error: 'ادمین به بخش خریدهای سامانه مالی دسترسی ندارد (فاقد مجوز Purchases.View).' };
     }
     if (res.status === 401) {
       return { success: false, unauthorized: true, error: 'نشست ادمین منقضی شده است.' };
@@ -1945,7 +1945,7 @@ export async function getAdminCoursePurchases({
     return { success: false, error: errorMsg };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, networkError: true, error: 'خطا در ارتباط با بای‌مانی در بخش ادمین.' };
+    return { success: false, networkError: true, error: 'خطا در ارتباط با سامانه مالی در بخش ادمین.' };
   }
 }
 
@@ -2116,7 +2116,7 @@ export async function sendNoorGiftWithByeMoney({
     return {
       success: false,
       status: 0,
-      error: 'خطا در برقراری ارتباط با سامانه بای‌مانی. لطفاً اتصال اینترنت خود را بررسی کنید.',
+      error: 'خطا در برقراری ارتباط با سامانه مالی. لطفاً اتصال اینترنت خود را بررسی کنید.',
     };
   }
 }
@@ -2146,7 +2146,7 @@ async function callPhysicalCancel({ jwt, path, method, body, signal }) {
     };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, status: 502, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+    return { success: false, status: 502, networkError: true, error: 'خطا در برقراری ارتباط با سامانه مالی.' };
   }
 }
 
@@ -2217,7 +2217,7 @@ async function callCourseOrderSettlements({ jwt, method = 'GET', path = '', body
     return { success: false, status: 502, error: `خطای سرویس تسویه (${res.status})` };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    return { success: false, status: 502, networkError: true, error: 'خطا در برقراری ارتباط با بای‌مانی.' };
+    return { success: false, status: 502, networkError: true, error: 'خطا در برقراری ارتباط با سامانه مالی.' };
   }
 }
 
