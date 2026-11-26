@@ -110,17 +110,20 @@ export async function POST(request) {
                 redirectUrl,
                 cellNumber: session.user.phoneNumber || null,
             });
+            const hasIssuedToken = ['token_issued', 'verifying', 'verified', 'confirmed'].includes(attempt.status);
             if (!tokenResult.success) {
-                const recorded = await recordGatewayOutcome(attempt, {
-                    stage: 'callback', kind: 'Unpaid',
-                    bankResultCode: tokenResult.errorCode || 'TOKEN_FAILED',
-                    rawPayload: { tokenRequest: {
-                        success: false, errorCode: tokenResult.errorCode, errorDesc: tokenResult.errorDesc,
-                    } },
-                });
-                const delivery = await deliverGatewayOutcome(recorded).catch(() => ({ ok: false }));
-                await updateAttempt(attempt, { status: delivery.ok ? 'failed' : 'pending_sync',
-                    lastError: tokenResult.errorCode || 'TOKEN_FAILED' });
+                if (!hasIssuedToken) {
+                    const recorded = await recordGatewayOutcome(attempt, {
+                        stage: 'callback', kind: 'Unpaid',
+                        bankResultCode: tokenResult.errorCode || 'TOKEN_FAILED',
+                        rawPayload: { tokenRequest: {
+                            success: false, errorCode: tokenResult.errorCode, errorDesc: tokenResult.errorDesc,
+                        } },
+                    });
+                    const delivery = await deliverGatewayOutcome(recorded).catch(() => ({ ok: false }));
+                    await updateAttempt(attempt, { status: delivery.ok ? 'failed' : 'pending_sync',
+                        lastError: tokenResult.errorCode || 'TOKEN_FAILED' });
+                }
                 return NextResponse.json({ success: false, message: tokenResult.errorDesc || 'دریافت توکن انجام نشد.' }, { status: 502 });
             }
             try {
