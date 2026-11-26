@@ -424,4 +424,16 @@ describe('آدرس بازگشت درگاه', () => {
     expect((await POST(req)).status).toBe(200);
     expect(requestSepToken.mock.calls[0][0].redirectUrl).toBe('https://evil.example/api/payment/verify');
   });
+
+  test('LOG-002: در شکست دریافت توکن، اگر ResNum از قبل توکن صادرشده دارد Unpaid ارسال نمی‌شود', async () => {
+    findAttempt.mockResolvedValueOnce({ resNum: 'R1', status: 'token_issued', topUpRequestId: 't1', amountRial: 1000 });
+    requestSepToken.mockResolvedValueOnce({ success: false, errorCode: 'SEP_TIMEOUT', errorDesc: 'خطای درگاه' });
+
+    const response = await POST(req);
+
+    expect(response.status).toBe(502);
+    expect(recordGatewayOutcome).not.toHaveBeenCalled();
+    expect(deliverGatewayOutcome).not.toHaveBeenCalled();
+    expect(updateAttempt).not.toHaveBeenCalled();
+  });
 });

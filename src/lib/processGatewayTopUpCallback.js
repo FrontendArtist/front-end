@@ -168,27 +168,28 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
       message: 'شناسهٔ بانکی برای بررسی مالی ثبت شد.'
     });
   }
-  if (attempt.status !== 'token_issued' || !await claimAttempt(attempt.resNum)) {
-    await recordGatewayOutcome(attempt, {
-      stage: 'callback', kind: 'Unknown', bankTransactionId: refNum,
-      bankResultCode: status || state || null, rawPayload: callbackParams,
-    });
-    return result({ status: 'failed', message: 'پرداخت در حال بررسی است.' });
-  }
-
+  const claimed = attempt.status === 'token_issued' && await claimAttempt(attempt.resNum);
   await recordGatewayOutcome(attempt, {
     stage: 'callback', kind: 'Unknown', bankTransactionId: refNum,
-    bankResultCode: status, rawPayload: callbackParams,
+    bankResultCode: status || state || null, rawPayload: callbackParams,
   });
-  const verifying = await updateAttempt(attempt, { status: 'verifying', refNum });
+  const verifying = claimed
+    ? await updateAttempt(attempt, { status: 'verifying', refNum })
+    : (attempt.refNum ? attempt : await updateAttempt(attempt, { refNum }));
 
   const bank = await verifySepTransaction({ refNum, terminalNumber });
   const detail = bank.transactionDetail || {};
   const success = bank.success === true && bank.resultCode === 0;
-  const validDetail = success && detail.RefNum === refNum && detail.RRN &&
+  const hasValidDetail = detail.RefNum === refNum && detail.RRN &&
     String(detail.TerminalNumber) === terminalNumber &&
     Number.isSafeInteger(Number(detail.OrginalAmount)) && Number.isSafeInteger(Number(detail.AffectiveAmount)) &&
     Number(detail.OrginalAmount) > 0 && Number(detail.AffectiveAmount) > 0;
+  const expected = Number(attempt.amountRial);
+  const matchesSnapshotAmount = Number.isSafeInteger(expected) &&
+    Number(detail.OrginalAmount) === expected &&
+    Number(detail.AffectiveAmount) === expected;
+  const verifiedCode2 = bank.resultCode === 2 && hasValidDetail && validPaidCallback && matchesSnapshotAmount;
+  const validDetail = (success || verifiedCode2) && hasValidDetail;
 
   const verifiedAtUtc = new Date().toISOString();
   const recorded = await recordGatewayOutcome(verifying, {
@@ -201,7 +202,7 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
     rawPayload: bank.rawData || { resultCode: bank.resultCode, resultDescription: bank.resultDescription },
   });
 
-  if (!success) {
+  if (!success && !verifiedCode2) {
     if (bank.resultCode === 2) {
       const saved = await getTopUpConfirmation(attempt.resNum).catch(() => null);
       if (isConfirmedTopUp(saved) && saved.externalTransactionId === refNum) {
@@ -250,9 +251,7 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
     return reverseVerified(verified, refNum, terminalNumber,
       validDetail ? 'CONFLICTING_CALLBACK_STATE' : 'INVALID_VERIFY_DETAIL', result);
 
-  const expected = Number(attempt.amountRial);
-  if (!Number.isSafeInteger(expected) || Number(detail.OrginalAmount) !== expected ||
-      Number(detail.AffectiveAmount) !== expected) {
+  if (!matchesSnapshotAmount) {
     const delivery = await deliverGatewayOutcome(recorded).catch(() => null);
     if (!delivery?.accepted) {
       await updateAttempt(verified, { status: 'pending_sync', lastError: 'BYEMONEY_DELIVERY_PENDING' });
