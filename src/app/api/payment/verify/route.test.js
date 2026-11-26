@@ -344,14 +344,19 @@ describe('SEP TopUp Verification Flow', () => {
     );
   });
 
-  test('concurrent callback blocked by claimAttempt returns in-progress message', async () => {
+  test('LOG-003: callback with RefNum still verifies when claimAttempt returns false', async () => {
     claimAttempt.mockResolvedValue(false);
+    verifySepTransaction.mockResolvedValue({
+      success: true,
+      resultCode: 0,
+      transactionDetail: { RefNum: 'BANK-REF', RRN: 'BANK-RRN', TerminalNumber: 'test-terminal', OrginalAmount: 10000, AffectiveAmount: 10000 },
+    });
 
     const response = await callback();
 
-    expect(new URL(response.url).searchParams.get('status')).toBe('failed');
-    expect(verifySepTransaction).not.toHaveBeenCalled();
-    expect(confirmGatewayTopUp).not.toHaveBeenCalled();
+    expect(new URL(response.url).searchParams.get('status')).toBe('success');
+    expect(verifySepTransaction).toHaveBeenCalledWith({ refNum: 'BANK-REF', terminalNumber: 'test-terminal' });
+    expect(deliverGatewayOutcome).toHaveBeenCalled();
   });
 
   test.each([
@@ -419,5 +424,58 @@ describe('SEP TopUp Verification Flow', () => {
       expect.anything(),
       expect.objectContaining({ status: 'pending_sync', lastError: 'VERIFY_-6' })
     );
+  });
+
+  test('LOG-003: callback with RefNum outside token_issued on rejected TopUp verifies and safely reverses when no manual refund', async () => {
+    findAttempt.mockResolvedValueOnce({
+      documentId: 'attempt-doc',
+      resNum: 'TR-12345678',
+      topUpRequestId: 'topup-1',
+      amountRial: 10000,
+      status: 'failed',
+    });
+    verifySepTransaction.mockResolvedValue({
+      success: true,
+      resultCode: 0,
+      transactionDetail: { RefNum: 'BANK-REF', RRN: 'BANK-RRN', TerminalNumber: 'test-terminal', OrginalAmount: 10000, AffectiveAmount: 10000 },
+    });
+    deliverGatewayOutcome
+      .mockResolvedValueOnce({ ok: false, status: 409, data: { code: 'TOPUP_REQUIRES_REVIEW' }, accepted: true })
+      .mockResolvedValueOnce({ ok: true, status: 200, data: {} });
+    getTopUpConfirmation.mockResolvedValue({
+      topUpRequestId: 'topup-1',
+      status: 'Rejected',
+      hasManualRefund: false,
+    });
+    reverseSepTransaction.mockResolvedValue({
+      success: true,
+      resultCode: 0,
+      rawData: { TransactionDetail: { RRN: 'REV-RRN', OrginalAmount: 10000, AffectiveAmount: 10000 } },
+    });
+
+    const response = await callback();
+
+    expect(new URL(response.url).searchParams.get('status')).toBe('failed');
+    expect(verifySepTransaction).toHaveBeenCalledWith({ refNum: 'BANK-REF', terminalNumber: 'test-terminal' });
+    expect(reverseSepTransaction).toHaveBeenCalledWith({ refNum: 'BANK-REF', terminalNumber: 'test-terminal' });
+  });
+
+  test('LOG-004: SEP verify resultCode 2 with matching snapshot records Verified and settles once', async () => {
+    verifySepTransaction.mockResolvedValue({
+      success: false,
+      resultCode: 2,
+      transactionDetail: { RefNum: 'BANK-REF', RRN: 'BANK-RRN', TerminalNumber: 'test-terminal', OrginalAmount: 10000, AffectiveAmount: 10000 },
+    });
+
+    const response = await callback();
+
+    expect(new URL(response.url).searchParams.get('status')).toBe('success');
+    expect(recordGatewayOutcome).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      stage: 'verify',
+      kind: 'Verified',
+      bankResultCode: '2',
+      bankTransactionId: 'BANK-REF',
+    }));
+    expect(deliverGatewayOutcome).toHaveBeenCalled();
   });
 });
