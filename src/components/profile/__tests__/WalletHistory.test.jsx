@@ -131,6 +131,26 @@ describe('WalletHistory', () => {
         expect(screen.getByText('افزایش اعتبار توسط مدیر')).toBeInTheDocument();
     });
 
+    it('distinguishes TopUp payment methods and falls back for null or unknown', async () => {
+        const gatewayTopUp = { ...topUp, transactionId: 'tx-gw', paymentMethod: 'Gateway' };
+        const cardTopUp = { ...topUp, transactionId: 'tx-c2c', paymentMethod: 'CardToCard' };
+        const nullTopUp = { ...topUp, transactionId: 'tx-null', paymentMethod: null };
+        const unknownTopUp = { ...topUp, transactionId: 'tx-unk', paymentMethod: 'Crypto' };
+        getWalletTransactionsWithByeMoney.mockResolvedValue({
+            success: true,
+            items: [gatewayTopUp, cardTopUp, nullTopUp, unknownTopUp],
+            page: 1,
+            pageSize: 20,
+            totalCount: 4,
+        });
+
+        render(<WalletHistory />);
+
+        expect(await screen.findByText('شارژ از درگاه')).toBeInTheDocument();
+        expect(screen.getByText('شارژ کارت‌به‌کارت (ثبت مدیر)')).toBeInTheDocument();
+        expect(screen.getAllByText('شارژ کیف پول')).toHaveLength(2);
+    });
+
     it('tells the user when the balance cannot be loaded', async () => {
         getWalletBalanceWithByeMoney.mockResolvedValue({ success: false, balance: 0, error: 'x' });
         getWalletTransactionsWithByeMoney.mockResolvedValue({

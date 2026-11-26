@@ -72,10 +72,13 @@ function SummaryTab({ order, data, isPaid, restockPending, onGoItems }) {
     const { order: detail, receipt, buyer, adminOrigin } = data;
     const summary = receipt?.cartSummary;
     const discount = (summary?.itemDiscountInNoor || 0) + (summary?.couponDiscountInNoor || 0);
-    const refunded = (detail.items || []).reduce(
+    const itemRefunded = (detail.items || []).reduce(
         (s, i) => s + (Number(i.refundedRegularInNoor) || 0) + (Number(i.refundedGiftInNoor) || 0),
         0
     );
+    const shippingRefunded = (Number(detail.shippingRegularRefundInNoor) || 0)
+        + (Number(detail.shippingGiftRefundInNoor) || 0);
+    const refunded = itemRefunded + shippingRefunded;
     const paid = isPaid && receipt ? receipt.finalAmountInNoor : detail.finalAmountInNoor;
     const buyerName = order.buyerName || buyer?.displayName || 'نام ثبت نشده';
     const alertStatus = carrierAlertStatusOf(detail.items);
@@ -132,8 +135,13 @@ function SummaryTab({ order, data, isPaid, restockPending, onGoItems }) {
                     <AmountRow label={isPaid ? 'مبلغ پرداختی' : 'مبلغ نهایی'} value={`${fa(paid)} نور`} tone="strong" />
                     {refunded > 0 && (
                         <>
-                            <AmountRow label="برگشتی به نور (لغو کالا)" value={`− ${fa(refunded)} نور`} tone="refund" />
-                            <AmountRow label="خالص" value={`${fa(Math.max(0, Number(paid || 0) - refunded))} نور`} tone="net" />
+                            {itemRefunded > 0 && (
+                                <AmountRow label="برگشتی به نور (لغو کالا)" value={`− ${fa(itemRefunded)} نور`} tone="refund" />
+                            )}
+                            {shippingRefunded > 0 && (
+                                <AmountRow label="برگشتی هزینهٔ ارسال" value={`− ${fa(shippingRefunded)} نور`} tone="refund" />
+                            )}
+                            <AmountRow label="مبلغ نهایی پس از برگشت" value={`${fa(Math.max(0, Number(paid || 0) - refunded))} نور`} tone="net" />
                         </>
                     )}
                 </div>

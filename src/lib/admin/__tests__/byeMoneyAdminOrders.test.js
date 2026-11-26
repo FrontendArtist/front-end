@@ -2,6 +2,7 @@ import { hasUnshippedItems, readOrderFilters, normalizeTab, getByeMoneyAdminOrde
 import { getAdminCourseOrders, getAdminCourseOrderDetails, getPendingPhysicalRestocks } from '../../byeMoneyApi';
 import { lookupPeople } from '../../courseOrderSettlementRoute';
 import { getRowShippingBadge, getItemsShippingState, shortOrderNumber } from '../orderDisplay';
+import { findStrapiUserIdsForByeMoney } from '../adminOrdersApi';
 
 jest.mock('../../byeMoneyApi', () => ({
     getAdminCourseOrders: jest.fn(),
@@ -10,7 +11,7 @@ jest.mock('../../byeMoneyApi', () => ({
     CourseOrderId: { for: (s, id) => `cart:${id}` },
 }));
 jest.mock('../../courseOrderSettlementRoute', () => ({ lookupPeople: jest.fn() }));
-jest.mock('../adminOrdersApi', () => ({ findStrapiUserIdForByeMoney: jest.fn() }));
+jest.mock('../adminOrdersApi', () => ({ findStrapiUserIdForByeMoney: jest.fn(), findStrapiUserIdsForByeMoney: jest.fn() }));
 
 const product = (extra = {}) => ({ itemType: 'Product', quantity: 1, ...extra });
 
@@ -121,5 +122,24 @@ describe('تب «نیاز به اقدام» با فیلتر سروری (SHIP-TRA
         const result = await getByeMoneyAdminOrders('jwt', { tab: 'action' });
 
         expect(result.truncated).toBe(true);
+    });
+
+    test('جستجوی نام مشترک سفارش‌های همه کاربران منطبق را برمی‌گرداند', async () => {
+        findStrapiUserIdsForByeMoney.mockResolvedValue(['u1', 'u2']);
+        getAdminCourseOrders.mockImplementation(async ({ buyerExternalUserId }) => {
+            if (buyerExternalUserId === 'u1') return { success: true, data: { items: [], totalCount: 0 } };
+            return {
+                success: true,
+                data: {
+                    items: [{ orderId, sourceType: 'Cart', financialStatus: 'Paid', createdAtUtc: '2026-11-10T10:00:00Z', buyerExternalUserId: 'u2' }],
+                    totalCount: 1,
+                },
+            };
+        });
+
+        const result = await getByeMoneyAdminOrders('jwt', { tab: 'all', q: 'علی' });
+        expect(result.orders).toHaveLength(1);
+        expect(result.orders[0].buyerExternalUserId).toBe('u2');
+        expect(result.total).toBe(1);
     });
 });

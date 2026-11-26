@@ -235,10 +235,9 @@ describe('ByeMoneyOrderView — برگشتی مرسوله', () => {
 
         render(<ByeMoneyOrderView order={order} />);
 
-        expect(screen.getByTestId('physical-return-badge')).toHaveTextContent('برگشتی');
-        expect(screen.getByTestId('physical-return-badge')).not.toHaveTextContent('برگشت خورد');
+        expect(screen.getByTestId('physical-return-badge')).toHaveTextContent('برگشت‌خورده');
         const note = screen.getByTestId('carrier-return-review-note');
-        expect(note).toHaveTextContent('مرسوله از سوی پست برگشت اعلام شده است');
+        expect(note).toHaveTextContent('برگشت اعلام شده است');
         expect(note).toHaveTextContent('تماس بگیرید');
         expect(screen.getByRole('link', { name: 'پشتیبانی' })).toHaveAttribute('href', '/contact');
         expect(screen.getByTestId('confirm-delivery-btn')).toBeInTheDocument();

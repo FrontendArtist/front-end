@@ -18,6 +18,11 @@ const TYPE_LABELS = {
     WithdrawalReversal: 'جبران خروج نور',
 };
 
+const TOPUP_METHOD_LABELS = {
+    Gateway: 'شارژ از درگاه',
+    CardToCard: 'شارژ کارت‌به‌کارت (ثبت مدیر)',
+};
+
 export function formatNoor(value) {
     return Math.abs(Number(value || 0)).toLocaleString('fa-IR', { maximumFractionDigits: 4 });
 }
@@ -36,6 +41,9 @@ export function formatDate(value) {
  * برچسب «هدیه» فقط وقتی درست است که کل مبلغ از سهم هدیه باشد.
  */
 export function resolveTypeLabel(item) {
+    if (item.type === 'TopUp') {
+        return TOPUP_METHOD_LABELS[item.paymentMethod] || TYPE_LABELS.TopUp;
+    }
     if (item.type === 'AdminGrant') {
         const amount = Number(item.amountNoor || 0);
         const gift = Number(item.giftAmountNoor || 0);

@@ -1,4 +1,4 @@
-import { getOrders, getOrdersStats } from '../adminOrdersApi';
+import { getOrders, getOrdersStats, findStrapiUserIdsForByeMoney } from '../adminOrdersApi';
 import { getAdminCourseOrders } from '../../byeMoneyApi';
 import { adminFetch } from '../adminFetch';
 
@@ -190,5 +190,27 @@ describe('getOrdersStats – شمارندهٔ تب‌ها و درآمد', () => 
         const stats = await getOrdersStats('jwt');
         expect(stats.byemoney.available).toBe(false);
         expect(stats.statusCounts).toMatchObject({ pending: 0, paid: 0, canceled: 0, expired: 0, review: 0 });
+    });
+});
+
+describe('findStrapiUserIdsForByeMoney', () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    test('جستجوی نام و نام خانوادگی شرط $and برای firstName و lastName می‌فرستد', async () => {
+        adminFetch.mockResolvedValue([{ documentId: 'doc-1' }, { documentId: 'doc-2' }]);
+        const ids = await findStrapiUserIdsForByeMoney('jwt', 'علی رضایی');
+        expect(ids).toEqual(['doc-1', 'doc-2']);
+        const url = decodeURIComponent(adminFetch.mock.calls[0][0]);
+        expect(url).toContain('[$and][0][firstName][$containsi]=علی');
+        expect(url).toContain('[$and][1][lastName][$containsi]=رضایی');
+    });
+
+    test('شماره موبایل فارسی را هم با صفر و هم بدون صفر برای +98 جستجو می‌کند', async () => {
+        adminFetch.mockResolvedValue([{ documentId: 'doc-9' }]);
+        const ids = await findStrapiUserIdsForByeMoney('jwt', '۰۹۱۲۳۴۵۶۷۸۹');
+        expect(ids).toEqual(['doc-9']);
+        const url = decodeURIComponent(adminFetch.mock.calls[0][0]);
+        expect(url).toContain('[phoneNumber][$containsi]=09123456789');
+        expect(url).toContain('[phoneNumber][$containsi]=9123456789');
     });
 });

@@ -231,6 +231,8 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
                 cartStatus: order.cartStatus ?? null,
                 expiresAtUtc: order.expiresAtUtc ?? null,
                 cartSummary: order.cartSummary ?? null,
+                shippingRegularRefundInNoor: Number(order.shippingRegularRefundInNoor) || 0,
+                shippingGiftRefundInNoor: Number(order.shippingGiftRefundInNoor) || 0,
                 items: (order.items || []).map((item) => sanitizeItem(
                 item,
                 carrierPendingByPurchase(receipt?.success ? receipt.data : null),

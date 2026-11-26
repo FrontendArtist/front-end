@@ -15,7 +15,7 @@ import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
 import {
     formatNoor, formatOrderDate, getAmountRows, getByeMoneyOrderView, getOrderNumber,
     getPaidAt, getPaymentRefCode, getPhysicalSteps, getTrackingHref, carrierReturnBlocksConfirmation,
-    CARRIER_RETURN_CONFIRM_BLOCKED_MESSAGE, getTopUpStatusMeta, isPhysicalItemFullyCancelled,
+    getItemCarrierReturnStatus, CARRIER_RETURN_CONFIRM_BLOCKED_MESSAGE, getTopUpStatusMeta, isPhysicalItemFullyCancelled,
 } from '@/lib/byeMoneyOrderView';
 import { shippingOriginText } from '@/lib/shippingOrigin';
 import styles from './ByeMoneyOrderView.module.scss';
@@ -66,7 +66,12 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
     if (refundedGift > 0) refundParts.push(`${formatNoor(refundedGift)} هدیه`);
     const typeLabel = isProduct ? 'کالای فیزیکی' : item.type === 'chapter' ? 'فصل' : 'دوره آموزشی';
     const physicalLabel = getPhysicalDeliveryLabel(item.physicalDeliveryStatus);
-    const returnPending = isProduct && carrierReturnBlocksConfirmation(item);
+    const itemReturnStatus = isProduct ? getItemCarrierReturnStatus(item) : 'None';
+    const itemReturnBadge = itemReturnStatus === 'PendingReview'
+        ? { label: 'برگشت‌خورده', cls: styles.warning }
+        : itemReturnStatus === 'ClosedWithoutSettlement'
+            ? { label: 'تحویل ناموفق', cls: styles.danger }
+            : null;
     const trackingHref = isProduct ? getTrackingHref(item) : null;
     const itemPriceText = item.price == null
         ? '—'
@@ -97,14 +102,14 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
                             برگشتی: {refundParts.join(' + ')}
                         </span>
                     )}
-                    {isProduct && !fullyCancelled && showItemPhysicalStatus && physicalLabel && (
-                        <span className={`${styles.pill} ${item.physicalDeliveryStatus === 'Delivered' ? styles.success : styles.info}`} data-testid="physical-delivery-status">
-                            {physicalLabel}
+                    {isProduct && !fullyCancelled && itemReturnBadge && (
+                        <span className={`${styles.pill} ${itemReturnBadge.cls}`} data-testid="physical-return-badge">
+                            {itemReturnBadge.label}
                         </span>
                     )}
-                    {isProduct && returnPending && (
-                        <span className={`${styles.pill} ${styles.warning}`} data-testid="physical-return-badge">
-                            برگشتی
+                    {isProduct && !fullyCancelled && !itemReturnBadge && showItemPhysicalStatus && physicalLabel && (
+                        <span className={`${styles.pill} ${item.physicalDeliveryStatus === 'Delivered' ? styles.success : styles.info}`} data-testid="physical-delivery-status">
+                            {physicalLabel}
                         </span>
                     )}
                     {isProduct && (item.trackingCode || trackingHref) && (
@@ -145,18 +150,18 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
     );
 }
 
-function Progress({ state }) {
-    const steps = getPhysicalSteps(state);
+function Progress({ state, carrierReturnStatus }) {
+    const steps = getPhysicalSteps(state, carrierReturnStatus);
     if (!steps) return null;
     return (
         <ol className={styles.progress} data-testid="physical-progress" aria-label="مراحل ارسال کالا">
             {steps.map((step) => (
                 <li
                     key={step.label}
-                    className={`${styles.step} ${step.done ? styles.stepDone : ''} ${step.current ? styles.stepCurrent : ''}`}
+                    className={`${styles.step} ${step.done ? styles.stepDone : ''} ${step.current ? styles.stepCurrent : ''} ${step.warning ? styles.stepWarning : ''} ${step.stopped ? styles.stepStopped : ''}`}
                     aria-current={step.current ? 'step' : undefined}
                 >
-                    <span className={styles.stepDot} aria-hidden>{step.done ? '✓' : ''}</span>
+                    <span className={styles.stepDot} aria-hidden>{step.done ? '✓' : step.warning ? '!' : step.stopped ? '✕' : ''}</span>
                     <span className={styles.stepLabel}>{step.label}</span>
                 </li>
             ))}
@@ -214,10 +219,11 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
     const canCancel = view.isPaid && !view.physicalCancelled && isGuid(physicalCartId)
         && activePhysicalItems.length > 0 && activePhysicalItems.every((i) => i.physicalDeliveryStatus === 'Preparing');
 
-    // اگر وضعیت همهٔ کالاهای فعال یکی است، فقط نوار پیشرفت نشان داده می‌شود و کنار قلم‌ها تکرار نمی‌شود
+    // اگر وضعیت همهٔ کالاهای فعال (تحویل و برگشت) یکی است، نوار پیشرفت نشان داده می‌شود؛ در حالت ترکیبی وضعیت از ردیف قلم‌ها خوانده می‌شود
     const uniformPhysical = new Set(activePhysicalItems.map((i) => i.physicalDeliveryStatus)).size <= 1;
-    const showProgress = view.isPaid && !view.physicalCancelled && uniformPhysical;
-    const showItemPhysicalStatus = view.isPaid && !uniformPhysical;
+    const uniformReturn = !view.hasMixedReturnStates;
+    const showProgress = view.isPaid && !view.physicalCancelled && uniformPhysical && uniformReturn;
+    const showItemPhysicalStatus = view.isPaid && (!uniformPhysical || !uniformReturn);
 
     const topUps = Array.isArray(order.topUps) ? order.topUps : [];
     const showMyCourses = view.isPaid && view.hasCourse;
@@ -231,10 +237,18 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
     const blockedShippedItems = shippedProductItems.filter(carrierReturnBlocksConfirm);
     const confirmableShippedItems = shippedProductItems.filter((item) => !carrierReturnBlocksConfirm(item));
     const canConfirmDelivery = view.isPaid && !confirmedNow && confirmableShippedItems.length > 0;
-    const hasUnresolvedCarrierReturn = physicalItems.some(
-        (item) => item.carrierReturnedAtUtc && !item.carrierReturnResolution
-    );
-    const showCarrierReviewNote = view.isPaid && hasUnresolvedCarrierReturn;
+    const hasUnresolvedCarrierReturn = view.carrierReturnStatus === 'PendingReview';
+    const hasClosedCarrierReturn = view.carrierReturnStatus === 'ClosedWithoutSettlement';
+    const carrierReviewNoticeText = hasUnresolvedCarrierReturn
+        ? (view.hasMixedReturnStates
+            ? 'بخشی از مرسوله‌های این سفارش از سوی پست برگشت اعلام شده است. برای پیگیری با '
+            : 'مرسوله از سوی پست برگشت اعلام شده است. برای پیگیری با ')
+        : hasClosedCarrierReturn
+            ? (view.hasMixedReturnStates
+                ? 'پروندهٔ بخشی از مرسوله‌های برگشتی این سفارش بدون تحویل بسته شده است. برای اطلاعات بیشتر با '
+                : 'پروندهٔ مرسولهٔ برگشتی بدون تحویل بسته شده است. برای اطلاعات بیشتر با ')
+            : null;
+    const showCarrierReviewNote = view.isPaid && Boolean(carrierReviewNoticeText);
 
     const hasShippingContent = Boolean(
         showProgress ||
@@ -302,7 +316,14 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
 
                 <div className={styles.summaryMain}>
                     <div className={styles.statusBlock}>
-                        <span className={`${styles.statusBadge} ${styles[view.tone]}`} data-testid="order-status-badge">{view.title}</span>
+                        <div className={styles.statusBadges}>
+                            <span className={`${styles.statusBadge} ${styles[view.tone]}`} data-testid="order-status-badge">{view.title}</span>
+                            {view.returnBadge && (
+                                <span className={`${styles.statusBadge} ${styles[view.returnBadge.tone]}`} data-testid="order-return-badge">
+                                    {view.returnBadge.label}
+                                </span>
+                            )}
+                        </div>
                         {view.hint && <p className={styles.hint} data-testid="order-hint">{view.hint}</p>}
                     </div>
                     {order.totalPrice != null && (
@@ -360,7 +381,7 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
                 <section className={styles.card} data-testid="shipping-card">
                     <h2 className={styles.cardTitle}>ارسال کالا</h2>
 
-                    {showProgress && <Progress state={view.physicalState} />}
+                    {showProgress && <Progress state={view.physicalState} carrierReturnStatus={view.carrierReturnStatus} />}
 
                     {address && (
                         <dl className={styles.address} data-testid="shipping-address">
@@ -396,7 +417,7 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
 
                     {showCarrierReviewNote && (
                         <p className={`${styles.notice} ${styles.noticeCalm}`} role="status" data-testid="carrier-return-review-note">
-                            مرسوله از سوی پست برگشت اعلام شده است. برای پیگیری با{' '}
+                            {carrierReviewNoticeText}
                             <Link href="/contact" className={styles.trackingLink}>پشتیبانی</Link>{' '}
                             تماس بگیرید.
                         </p>

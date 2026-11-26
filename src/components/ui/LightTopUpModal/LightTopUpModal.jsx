@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useDisplayRate } from '@/context/DisplayRateContext';
 import { useLightStore } from '@/store/useLightStore';
+import { useAuthStore } from '@/store/authStore';
 import styles from './LightTopUpModal.module.scss';
 
 /**
@@ -23,7 +23,7 @@ import styles from './LightTopUpModal.module.scss';
  * @param {number}   currentLight - موجودی فعلی نور
  */
 export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
-    const router = useRouter();
+    const openAuthModal = useAuthStore((state) => state.openAuthModal);
     const { data: session, status: authStatus } = useSession();
     const { tomanPerNoor } = useDisplayRate();
     const storeBalance = useLightStore((state) => state.lightBalance);
@@ -85,7 +85,7 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
 
         if (authStatus !== 'authenticated' || !session?.user?.jwt) {
             onClose();
-            router.push('/auth/login?callbackUrl=' + encodeURIComponent(window.location.href));
+            openAuthModal();
             return;
         }
 
@@ -148,7 +148,7 @@ export default function LightTopUpModal({ isOpen, onClose, currentLight = 0 }) {
             setErrorMessage(error.message || 'ارتباط با درگاه پرداخت برقرار نشد. اتصال اینترنت را بررسی و دوباره تلاش کنید.');
             setIsProcessing(false);
         }
-    }, [isValidAmount, parsedAmount, authStatus, session, router, onClose]);
+    }, [isValidAmount, parsedAmount, authStatus, session, openAuthModal, onClose]);
 
     if (!isOpen) return null;
 

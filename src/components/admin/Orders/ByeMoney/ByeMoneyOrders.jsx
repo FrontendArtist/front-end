@@ -174,13 +174,32 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
 
     const loadedKey = useRef(initialKey);
     const lastQ = useRef(q);
+    const lastCommittedQ = useRef(q);
+    const debounceTimer = useRef(null);
     const drawerDirty = useRef(false);
     const openedByPush = useRef(false);
     const sentinelRef = useRef(null);
     const selectedRowRef = useRef(null);
 
     // جستجوی آدرس (مثلاً با دکمهٔ بازگشت) با ورودی هماهنگ می‌ماند
-    useEffect(() => setSearchInput(q), [q]);
+    useEffect(() => {
+        if (q !== lastCommittedQ.current) {
+            lastCommittedQ.current = q;
+            setSearchInput(q);
+        }
+    }, [q]);
+
+    // جستجوی خودکار با تاخیر کوتاه هنگام تایپ یا پاک‌کردن ورودی
+    useEffect(() => {
+        const trimmed = searchInput.trim();
+        if (trimmed === q) return undefined;
+        const timer = setTimeout(() => {
+            lastCommittedQ.current = trimmed;
+            writeParams({ q: trimmed || null, order: null }, { replace: true });
+        }, 400);
+        debounceTimer.current = timer;
+        return () => clearTimeout(timer);
+    }, [searchInput, q]);
 
     const reload = useCallback(async ({ silent = false, withCounts = true } = {}) => {
         if (!silent) setLoading(true);
@@ -272,9 +291,14 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
     const setTab = (key) => writeParams({ tab: key, view: null, order: null });
     const submitSearch = (e) => {
         e.preventDefault();
-        writeParams({ q: searchInput.trim() || null, order: null });
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        const nextQ = searchInput.trim();
+        lastCommittedQ.current = nextQ;
+        writeParams({ q: nextQ || null, order: null });
     };
     const clearSearch = () => {
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        lastCommittedQ.current = '';
         setSearchInput('');
         writeParams({ q: null, order: null });
     };
@@ -357,7 +381,9 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                 </nav>
 
                 <form className={styles.search} onSubmit={submitSearch} role="search">
-                    <Search size={16} className={styles.search__icon} aria-hidden="true" />
+                    <button type="submit" className={styles.search__iconBtn} aria-label="جستجو">
+                        <Search size={16} aria-hidden="true" />
+                    </button>
                     <input
                         type="search"
                         value={searchInput}

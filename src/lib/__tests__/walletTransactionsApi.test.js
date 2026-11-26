@@ -11,7 +11,12 @@ describe('wallet transactions API client', () => {
         global.fetch.mockResolvedValue({
             ok: true,
             status: 200,
-            json: async () => ({ items: [{ transactionId: 't1', amountNoor: 10 }], page: 2, pageSize: 5, totalCount: 6 }),
+            json: async () => ({
+                items: [{ transactionId: 't1', type: 'TopUp', amountNoor: 10, paymentMethod: 'Gateway' }],
+                page: 2,
+                pageSize: 5,
+                totalCount: 6,
+            }),
         });
 
         const result = await getWalletTransactionsWithByeMoney({ jwt: 'jwt', page: 2, pageSize: 5 });
@@ -20,7 +25,11 @@ describe('wallet transactions API client', () => {
             'http://byemoney.test/api/wallet/transactions?page=2&pageSize=5',
             expect.objectContaining({ headers: { Authorization: 'Bearer jwt' } }));
         expect(result).toEqual({
-            success: true, items: [{ transactionId: 't1', amountNoor: 10 }], page: 2, pageSize: 5, totalCount: 6,
+            success: true,
+            items: [{ transactionId: 't1', type: 'TopUp', amountNoor: 10, paymentMethod: 'Gateway' }],
+            page: 2,
+            pageSize: 5,
+            totalCount: 6,
         });
     });
 

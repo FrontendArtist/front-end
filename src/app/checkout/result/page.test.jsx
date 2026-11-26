@@ -151,7 +151,6 @@ test('خرید با ۱ قلم به صورت پیش‌فرض آکاردئون ر�
     // چون فقط ۱ قلم وجود دارد، جزئیات باید پیش‌فرض باز باشند
     expect(screen.getByText('شماره سفارش / شناسه خرید:')).toBeTruthy();
     expect(screen.getByText('order-item-999')).toBeTruthy();
-    expect(screen.getByText('رسید مالی بای‌مانی ✓')).toBeTruthy();
 });
 
 test('خرید با چند قلم به صورت پیش‌فرض آکاردئون‌ها را بسته نگه می‌دارد و با کلیک باز و بسته می‌شود', () => {
@@ -244,7 +243,7 @@ test('چیدمان جدید اقدام‌ها در خرید موفق: دکمه �
     expect(ordersLink.className).toContain('textLink');
 
     const walletLink = screen.getByRole('link', { name: 'کیف پول' });
-    expect(walletLink.getAttribute('href')).toBe('/profile');
+    expect(walletLink.getAttribute('href')).toBe('/profile/wallet');
     expect(walletLink.className).toContain('textLink');
 
     // لینک راهنمای پشتیبانی در انتهای کارت
@@ -269,7 +268,7 @@ test('چیدمان جدید اقدام‌ها در خرید ناموفق یا د
 
     // دکمه اصلی در حالت ناموفق/استعلام: کیف پول و حساب کاربری
     const primaryBtn = screen.getByRole('link', { name: 'کیف پول و حساب کاربری' });
-    expect(primaryBtn.getAttribute('href')).toBe('/profile');
+    expect(primaryBtn.getAttribute('href')).toBe('/profile/wallet');
     expect(primaryBtn.className).toContain('primaryButton');
 
     // لینک متنی مشاهده دوره‌های من

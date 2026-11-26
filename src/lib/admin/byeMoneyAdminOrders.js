@@ -14,7 +14,7 @@
 
 import { getAdminCourseOrders, getAdminCourseOrderDetails, getPendingPhysicalRestocks, CourseOrderId } from '../byeMoneyApi';
 import { lookupPeople } from '../courseOrderSettlementRoute';
-import { findStrapiUserIdForByeMoney } from './adminOrdersApi';
+import { findStrapiUserIdForByeMoney, findStrapiUserIdsForByeMoney } from './adminOrdersApi';
 import { mapByeMoneyOrderRow } from './orderTracking';
 import { carrierReturnStatusOf, carrierAlertStatusOf } from './orderDisplay';
 
@@ -186,6 +186,27 @@ async function getAwaitingShipmentRows(jwt, buyer) {
     };
 }
 
+async function resolveBuyerIds(jwt, q) {
+    if (!q) return null;
+    if (typeof findStrapiUserIdsForByeMoney === 'function') {
+        return findStrapiUserIdsForByeMoney(jwt, q);
+    }
+    const id = await findStrapiUserIdForByeMoney(jwt, q);
+    if (id === null) return null;
+    return id === '__USER_NOT_FOUND__' ? [] : [id];
+}
+
+function dedupeAndSortByDate(rows) {
+    const seen = new Set();
+    const unique = [];
+    for (const r of rows) {
+        if (!r?.orderId || seen.has(r.orderId)) continue;
+        seen.add(r.orderId);
+        unique.push(r);
+    }
+    return unique.sort((a, b) => new Date(b.createdAtUtc || 0) - new Date(a.createdAtUtc || 0));
+}
+
 async function getActionRows(jwt, buyer, restockIds) {
     const [restock, awaiting] = await Promise.all([
         getRestockRows(jwt, restockIds),
@@ -195,6 +216,36 @@ async function getActionRows(jwt, buyer, restockIds) {
     const seen = new Set(restockRows.map((r) => r.orderId));
     const rows = [...restockRows, ...awaiting.rows.filter((r) => !seen.has(r.orderId))];
     return { rows, warning: restock.warning || awaiting.warning, truncated: awaiting.truncated, forbidden: awaiting.forbidden };
+}
+
+async function getActionRowsForBuyers(jwt, buyerIds, restockIds) {
+    if (!buyerIds || buyerIds.length === 1) {
+        return getActionRows(jwt, buyerIds?.[0] || null, restockIds);
+    }
+    const [restock, ...awaitingList] = await Promise.all([
+        getRestockRows(jwt, restockIds),
+        ...buyerIds.map((b) => getAwaitingShipmentRows(jwt, b)),
+    ]);
+    const buyerSet = new Set(buyerIds);
+    const restockRows = restock.rows.filter((r) => buyerSet.has(r.buyerExternalUserId));
+    const awaitingRows = dedupeAndSortByDate(awaitingList.flatMap((a) => a.rows));
+    const seen = new Set(restockRows.map((r) => r.orderId));
+    const rows = [...restockRows, ...awaitingRows.filter((r) => !seen.has(r.orderId))];
+    return {
+        rows,
+        warning: restock.warning || awaitingList.some((a) => a.warning),
+        truncated: awaitingList.some((a) => a.truncated),
+        forbidden: awaitingList.some((a) => a.forbidden),
+    };
+}
+
+async function countFilteredForBuyers(jwt, filters, buyerIds) {
+    if (!buyerIds || buyerIds.length === 1) {
+        return countFiltered(jwt, filters, buyerIds?.[0] || null);
+    }
+    const counts = await Promise.all(buyerIds.map((b) => countFiltered(jwt, filters, b)));
+    if (counts.some((c) => c === null)) return null;
+    return counts.reduce((sum, c) => sum + c, 0);
 }
 
 async function withPeople(jwt, rows) {
@@ -225,19 +276,20 @@ async function withPeople(jwt, rows) {
  */
 export async function getByeMoneyAdminOrders(jwt, { tab, q, view, start = 0, limit = 20 } = {}) {
     const empty = { orders: [], total: 0, hasMore: false, warning: false, truncated: false, forbidden: false };
-    const buyer = q ? await findStrapiUserIdForByeMoney(jwt, q) : null;
+    const buyerIds = await resolveBuyerIds(jwt, q);
     const restock = await getRestockOrderIds(jwt);
     const base = { restockIds: restock.ids, restockError: restock.error };
-    if (buyer === '__USER_NOT_FOUND__') return { ...empty, ...base };
+    if (Array.isArray(buyerIds) && buyerIds.length === 0) return { ...empty, ...base };
 
     if (view === 'restock') {
         const r = await getRestockRows(jwt, restock.ids);
-        const rows = buyer ? r.rows.filter((x) => x.buyerExternalUserId === buyer) : r.rows;
+        const buyerSet = buyerIds ? new Set(buyerIds) : null;
+        const rows = buyerSet ? r.rows.filter((x) => buyerSet.has(x.buyerExternalUserId)) : r.rows;
         return { ...empty, ...base, orders: await withPeople(jwt, rows), total: rows.length, warning: r.warning };
     }
 
     if (normalizeTab(tab) === 'action') {
-        const r = await getActionRows(jwt, buyer, restock.ids);
+        const r = await getActionRowsForBuyers(jwt, buyerIds, restock.ids);
         return {
             ...empty,
             ...base,
@@ -249,30 +301,49 @@ export async function getByeMoneyAdminOrders(jwt, { tab, q, view, start = 0, lim
         };
     }
 
-    const r = await fetchFiltered(jwt, TAB_FILTERS[normalizeTab(tab)], { start, limit, buyer });
+    const filters = TAB_FILTERS[normalizeTab(tab)];
+    if (!buyerIds || buyerIds.length === 1) {
+        const r = await fetchFiltered(jwt, filters, { start, limit, buyer: buyerIds?.[0] || null });
+        return {
+            ...empty,
+            ...base,
+            orders: await withPeople(jwt, r.items),
+            total: r.totalCount,
+            hasMore: start + r.items.length < r.totalCount && r.items.length > 0,
+            warning: r.warning,
+            forbidden: r.forbidden,
+        };
+    }
+
+    const results = await Promise.all(
+        buyerIds.map((b) => fetchFiltered(jwt, filters, { start: 0, limit: start + limit, buyer: b }))
+    );
+    const merged = dedupeAndSortByDate(results.flatMap((res) => res.items));
+    const sliced = merged.slice(start, start + limit);
+    const totalCount = results.reduce((sum, res) => sum + res.totalCount, 0);
     return {
         ...empty,
         ...base,
-        orders: await withPeople(jwt, r.items),
-        total: r.totalCount,
-        hasMore: start + r.items.length < r.totalCount && r.items.length > 0,
-        warning: r.warning,
-        forbidden: r.forbidden,
+        orders: await withPeople(jwt, sliced),
+        total: totalCount,
+        hasMore: start + sliced.length < totalCount && sliced.length > 0,
+        warning: results.some((res) => res.warning),
+        forbidden: results.some((res) => res.forbidden),
     };
 }
 
 /** شمارندهٔ تب‌ها (با همان جستجوی خریدار). action در صورت داشتن فهرست همان تب از طول آن گرفته می‌شود. */
 export async function getByeMoneyOrderCounts(jwt, { q, actionCount } = {}) {
-    const buyer = q ? await findStrapiUserIdForByeMoney(jwt, q) : null;
-    if (buyer === '__USER_NOT_FOUND__') return { action: 0, all: 0, paid: 0, pending: 0, canceled: 0 };
+    const buyerIds = await resolveBuyerIds(jwt, q);
+    if (Array.isArray(buyerIds) && buyerIds.length === 0) return { action: 0, all: 0, paid: 0, pending: 0, canceled: 0 };
     const [all, paid, pending, canceled, action] = await Promise.all([
-        countFiltered(jwt, TAB_FILTERS.all, buyer),
-        countFiltered(jwt, TAB_FILTERS.paid, buyer),
-        countFiltered(jwt, TAB_FILTERS.pending, buyer),
-        countFiltered(jwt, TAB_FILTERS.canceled, buyer),
+        countFilteredForBuyers(jwt, TAB_FILTERS.all, buyerIds),
+        countFilteredForBuyers(jwt, TAB_FILTERS.paid, buyerIds),
+        countFilteredForBuyers(jwt, TAB_FILTERS.pending, buyerIds),
+        countFilteredForBuyers(jwt, TAB_FILTERS.canceled, buyerIds),
         actionCount !== undefined
             ? actionCount
-            : getRestockOrderIds(jwt).then((r) => getActionRows(jwt, buyer, r.ids)).then((r) => r.rows.length).catch(() => null),
+            : getRestockOrderIds(jwt).then((r) => getActionRowsForBuyers(jwt, buyerIds, r.ids)).then((r) => r.rows.length).catch(() => null),
     ]);
     return { action, all, paid, pending, canceled };
 }

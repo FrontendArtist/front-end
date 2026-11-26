@@ -252,11 +252,22 @@ $gold: var(--color-gold);
         flex-basis: 100%;
     }
 
-    &__icon {
+    &__iconBtn {
         position: absolute;
-        right: 12px;
+        right: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
         color: $muted;
-        pointer-events: none;
+        cursor: pointer;
+
+        &:hover {
+            color: var(--color-card-text);
+        }
     }
 
     &__input {

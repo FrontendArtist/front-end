@@ -101,6 +101,13 @@ summary.cardTitle {
     flex: 1;
 }
 
+.statusBadges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
 .statusBadge,
 .pill {
     display: inline-flex;
@@ -397,6 +404,31 @@ summary.cardTitle {
     }
 }
 
+.stepWarning {
+    opacity: 1;
+    color: var(--color-warning);
+    font-weight: var(--font-weight-bold);
+
+    .stepDot {
+        background: var(--color-warning);
+        border-color: var(--color-warning);
+        color: #fff;
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-warning) 22%, transparent);
+    }
+}
+
+.stepStopped {
+    opacity: 1;
+    color: var(--color-error);
+    font-weight: var(--font-weight-bold);
+
+    .stepDot {
+        background: var(--color-error);
+        border-color: var(--color-error);
+        color: #fff;
+    }
+}
+
 .address {
     margin: 0;
     display: flex;
@@ -434,12 +466,18 @@ summary.cardTitle {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin: 0;
     padding: 12px 14px;
     border-radius: 10px;
     border: 1px solid fade(var(--color-error), 35%);
     background: fade(var(--color-error), 8%);
     color: var(--color-text-primary);
     font-size: var(--font-sm);
+    line-height: 1.8;
+}
+
+p.notice {
+    display: block;
 }
 
 .noticeCalm {

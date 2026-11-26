@@ -230,39 +230,60 @@ export async function getStrapiOrdersStats(jwt) {
     };
 }
 
-export async function findStrapiUserIdForByeMoney(jwt, search) {
+export async function findStrapiUserIdsForByeMoney(jwt, search) {
     if (!search || !search.trim()) return null;
     const raw = search.trim();
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)) {
-        return raw;
+        return [raw];
     }
     try {
         const normalized = toEnglishDigits(raw);
         const cleanDigits = normalized.replace(/\D/g, '');
+        const strippedZero = cleanDigits.replace(/^0+/, '');
         const userParams = new URLSearchParams();
         userParams.set('pagination[pageSize]', '5');
+        userParams.set('pagination[limit]', '5');
         let idx = 0;
-        if (cleanDigits.length >= 7) {
+        if (cleanDigits.length >= 4) {
             userParams.set(`filters[$or][${idx}][phoneNumber][$containsi]`, cleanDigits);
             idx++;
+            if (strippedZero && strippedZero !== cleanDigits && strippedZero.length >= 4) {
+                userParams.set(`filters[$or][${idx}][phoneNumber][$containsi]`, strippedZero);
+                idx++;
+            }
         }
         userParams.set(`filters[$or][${idx}][username][$containsi]`, raw);
         idx++;
+        if (normalized !== raw) {
+            userParams.set(`filters[$or][${idx}][username][$containsi]`, normalized);
+            idx++;
+        }
         userParams.set(`filters[$or][${idx}][firstName][$containsi]`, raw);
         idx++;
         userParams.set(`filters[$or][${idx}][lastName][$containsi]`, raw);
         idx++;
 
+        const parts = raw.split(/\s+/).filter(Boolean);
+        if (parts.length >= 2) {
+            userParams.set(`filters[$or][${idx}][$and][0][firstName][$containsi]`, parts[0]);
+            userParams.set(`filters[$or][${idx}][$and][1][lastName][$containsi]`, parts.slice(1).join(' '));
+            idx++;
+        }
+
         const res = await adminFetch(`/api/users?${userParams.toString()}`, jwt);
         const list = Array.isArray(res) ? res : (res?.data || []);
-        if (list.length > 0) {
-            return list[0].documentId || String(list[0].id);
-        }
-        return '__USER_NOT_FOUND__';
+        const ids = [...new Set(list.map((u) => u?.documentId || (u?.id != null ? String(u.id) : null)).filter(Boolean))].slice(0, 5);
+        return ids;
     } catch (e) {
         console.error('[AdminOrdersApi] search user in strapi error:', e);
         return null;
     }
+}
+
+export async function findStrapiUserIdForByeMoney(jwt, search) {
+    const ids = await findStrapiUserIdsForByeMoney(jwt, search);
+    if (ids === null) return null;
+    return ids.length > 0 ? ids[0] : '__USER_NOT_FOUND__';
 }
 
 /**

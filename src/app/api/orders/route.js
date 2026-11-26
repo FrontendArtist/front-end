@@ -447,6 +447,7 @@ export async function GET(request) {
                         totalPrice: item.finalAmountInNoor,
                         financialStatus: item.financialStatus,
                         deliveryStatus: item.deliveryStatus,
+                        carrierReturnStatus: item.carrierReturnStatus || 'None',
                         itemCount: item.itemCount,
                         items: []
                     }, purchases);

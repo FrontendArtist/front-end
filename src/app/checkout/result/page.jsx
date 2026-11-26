@@ -524,15 +524,6 @@ function CheckoutResultContent() {
                                                     </div>
                                                 )}
 
-                                                {item.receipt?.referenceRialPerNoorAtPurchaseTime != null && (
-                                                    <div className={styles.detailRow}>
-                                                        <span className={styles.label}>نرخ مرجع هنگام خرید:</span>
-                                                        <span className={styles.value} dir="ltr">
-                                                            {Number(item.receipt.referenceRialPerNoorAtPurchaseTime).toLocaleString('fa-IR')}
-                                                        </span>
-                                                    </div>
-                                                )}
-
                                                 {item.receipt?.purchasedAtUtc && (
                                                     <div className={styles.detailRow}>
                                                         <span className={styles.label}>زمان خرید:</span>
@@ -554,15 +545,6 @@ function CheckoutResultContent() {
                                                         {deliveryText}
                                                     </span>
                                                 </div>
-
-                                                {item.receipt && (
-                                                    <div className={styles.detailRow}>
-                                                        <span className={styles.label}>رسید مالی:</span>
-                                                        <span className={`${styles.badge} ${styles.successBadge}`}>
-                                                            رسید مالی بای‌مانی ✓
-                                                        </span>
-                                                    </div>
-                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -722,7 +704,7 @@ function CheckoutResultContent() {
                                             سفارش‌های من
                                         </Link>
                                         <span className={styles.textLinkDot}>•</span>
-                                        <Link href="/profile" className={styles.textLink}>
+                                        <Link href="/profile/wallet" className={styles.textLink}>
                                             کیف پول
                                         </Link>
                                     </div>
@@ -734,7 +716,7 @@ function CheckoutResultContent() {
                                             <RotateCcw size={18} />
                                             بازگشت به سبد و پرداخت مجدد
                                         </Link>
-                                        <Link href="/profile" className={styles.secondaryButton}>
+                                        <Link href="/profile/wallet" className={styles.secondaryButton}>
                                             <Wallet size={18} />
                                             کیف پول و حساب کاربری
                                         </Link>
@@ -755,7 +737,7 @@ function CheckoutResultContent() {
                                 </>
                             ) : (
                                 <>
-                                    <Link href="/profile" className={styles.primaryButton}>
+                                    <Link href="/profile/wallet" className={styles.primaryButton}>
                                         <Wallet size={18} />
                                         کیف پول و حساب کاربری
                                     </Link>
@@ -782,7 +764,7 @@ function CheckoutResultContent() {
                         ) : isSuccess ? (
                             isTopUp ? (
                                 <>
-                                    <Link href="/profile" className={styles.primaryButton}>
+                                    <Link href="/profile/wallet" className={styles.primaryButton}>
                                         <Wallet size={18} />
                                         کیف پول و حساب کاربری
                                     </Link>
@@ -824,7 +806,7 @@ function CheckoutResultContent() {
                                         <RotateCcw size={18} />
                                         بازگشت به سبد و پرداخت مجدد
                                     </Link>
-                                    <Link href="/profile" className={styles.secondaryButton}>
+                                    <Link href="/profile/wallet" className={styles.secondaryButton}>
                                         <Wallet size={18} />
                                         کیف پول و حساب کاربری
                                     </Link>
@@ -841,7 +823,7 @@ function CheckoutResultContent() {
                             </>
                         ) : isPending ? (
                             <>
-                                <Link href="/profile" className={styles.primaryButton}>
+                                <Link href="/profile/wallet" className={styles.primaryButton}>
                                     <Wallet size={18} />
                                     کیف پول و حساب کاربری
                                 </Link>
@@ -858,7 +840,7 @@ function CheckoutResultContent() {
                         ) : (
                             isTopUp ? (
                                 <>
-                                    <Link href="/profile" className={styles.primaryButton}>
+                                    <Link href="/profile/wallet" className={styles.primaryButton}>
                                         <Wallet size={18} />
                                         کیف پول و حساب کاربری
                                     </Link>

@@ -105,7 +105,12 @@ export default function OrdersList({ limit }) {
 
         const finEntry = financialMap[finStatus] ?? { label: finStatus || 'وضعیت مالی نامشخص', cls: styles.orders__badgeDefault };
         const showDeliveryBadge = finStatus === 'Paid' || (delStatus && delStatus !== 'NotStarted');
-        const delEntry = deliveryMap[delStatus] ?? { label: delStatus || 'وضعیت تحویل نامشخص', cls: styles.orders__badgeDefault };
+        const returnStatus = finStatus === 'Paid' ? order.carrierReturnStatus : null;
+        const delEntry = returnStatus === 'PendingReview'
+            ? { label: 'برگشت‌خورده', cls: styles.orders__badgeWarning }
+            : returnStatus === 'ClosedWithoutSettlement'
+                ? { label: 'تحویل ناموفق', cls: styles.orders__badgeDanger }
+                : (deliveryMap[delStatus] ?? { label: delStatus || 'وضعیت تحویل نامشخص', cls: styles.orders__badgeDefault });
 
         return (
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>

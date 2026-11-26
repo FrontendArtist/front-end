@@ -9,6 +9,31 @@ const isProduct = (i) => i?.type === 'product' || String(i?.itemType || '').toLo
 export const CARRIER_RETURN_CONFIRM_BLOCKED_MESSAGE =
     'این مرسوله برگشته و تأیید دریافت برایش ثبت نمی‌شود.';
 
+/** وضعیت برگشتی یک قلم کالای فیزیکی: PendingReview | ClosedWithoutSettlement | DeliveryConfirmed | None. */
+export function getItemCarrierReturnStatus(item) {
+    if (!isProduct(item) || !item?.carrierReturnedAtUtc) return 'None';
+    if (!item.carrierReturnResolution) return 'PendingReview';
+    if (item.carrierReturnResolution === 'ClosedWithoutSettlement') return 'ClosedWithoutSettlement';
+    if (item.carrierReturnResolution === 'DeliveryConfirmed') return 'DeliveryConfirmed';
+    return 'None';
+}
+
+/** وضعیت تجمیعی برگشتی سفارش، هم‌معنای OrderCarrierReturnStatus بای‌مانی. */
+export function getOrderCarrierReturnStatus(items) {
+    const returned = (Array.isArray(items) ? items : []).filter(
+        (item) => isProduct(item) && Boolean(item?.carrierReturnedAtUtc)
+    );
+    if (returned.length === 0) return 'None';
+    if (returned.some((item) => !item.carrierReturnResolution)) return 'PendingReview';
+    if (returned.some((item) => item.carrierReturnResolution === 'ClosedWithoutSettlement')) {
+        return 'ClosedWithoutSettlement';
+    }
+    if (returned.every((item) => item.carrierReturnResolution === 'DeliveryConfirmed')) {
+        return 'DeliveryConfirmed';
+    }
+    return 'None';
+}
+
 /** قلم برگشتی که تأیید دریافت خریدار برایش ثبت نمی‌شود (حل‌نشده یا بسته‌شده بدون تسویه). */
 export function carrierReturnBlocksConfirmation(item) {
     return Boolean(item?.carrierReturnedAtUtc) && item.carrierReturnResolution !== 'DeliveryConfirmed';
@@ -55,15 +80,28 @@ export function getPhysicalState(physicalItems, cancelled) {
 const PHYSICAL_STEPS = ['پرداخت', 'آماده‌سازی', 'ارسال', 'تحویل'];
 const PHYSICAL_STEP_INDEX = { preparing: 1, shipped: 2, delivered: 3 };
 
-/** مراحل نوار پیشرفت کالا؛ done = انجام‌شده، current = مرحلهٔ فعلی. */
-export function getPhysicalSteps(state) {
+/** مراحل نوار پیشرفت کالا؛ done = انجام‌شده، current = مرحلهٔ فعلی، warning/stopped برای برگشتی. */
+export function getPhysicalSteps(state, carrierReturnStatus = 'None') {
     const current = PHYSICAL_STEP_INDEX[state];
     if (current == null) return null;
-    return PHYSICAL_STEPS.map((label, idx) => ({
-        label,
-        done: idx < current || state === 'delivered',
-        current: idx === current && state !== 'delivered',
-    }));
+    const isReturnPending = state === 'shipped' && carrierReturnStatus === 'PendingReview';
+    const isReturnClosed = state === 'shipped' && carrierReturnStatus === 'ClosedWithoutSettlement';
+
+    return PHYSICAL_STEPS.map((label, idx) => {
+        if (idx === 2 && isReturnPending) {
+            return { label: 'برگشت از پست', done: false, current: false, warning: true, stopped: false };
+        }
+        if (idx === 2 && isReturnClosed) {
+            return { label: 'تحویل ناموفق', done: false, current: false, warning: false, stopped: true };
+        }
+        return {
+            label,
+            done: idx < current || state === 'delivered',
+            current: idx === current && state !== 'delivered' && !isReturnPending && !isReturnClosed,
+            warning: false,
+            stopped: false,
+        };
+    });
 }
 
 const TOPUP_STATUS_META = {
@@ -91,24 +129,53 @@ export function getByeMoneyOrderView(order, { cancelledNow = false } = {}) {
     const physicalCancelled = cancelledNow
         || (physicalItems.length > 0 && physicalItems.every(isPhysicalItemFullyCancelled));
     const physicalState = getPhysicalState(physicalItems, physicalCancelled);
+    const carrierReturnStatus = getOrderCarrierReturnStatus(physicalItems);
+    const activePhysicalItems = physicalItems.filter((i) => !isPhysicalItemFullyCancelled(i));
+    const activeReturnStatuses = new Set(activePhysicalItems.map(getItemCarrierReturnStatus));
+    const hasMixedReturnStates = activePhysicalItems.length > 1 && activeReturnStatuses.size > 1;
     const status = order?.financialStatus;
     const isPaid = status === 'Paid';
     const wholeOrderCancelled = isPaid && physicalCancelled && courseItems.length === 0;
 
     const expiry = formatOrderDate(order?.expiresAtUtc);
-    const base = { isPaid, physicalItems, courseItems, physicalCancelled, physicalState, hasProduct: physicalItems.length > 0, hasCourse: courseItems.length > 0 };
+    const base = {
+        isPaid,
+        physicalItems,
+        courseItems,
+        physicalCancelled,
+        physicalState,
+        carrierReturnStatus,
+        hasMixedReturnStates,
+        hasProduct: physicalItems.length > 0,
+        hasCourse: courseItems.length > 0,
+    };
 
     if (wholeOrderCancelled) {
         return { ...base, tone: 'warning', title: 'سفارش لغو شد', hint: 'بخش کالای سفارش لغو شده و مبلغ آن برگشت داده شده است.', amountLabel: 'مبلغ پرداخت‌شده', unpaid: false };
     }
 
     switch (status) {
-        case 'Paid':
+        case 'Paid': {
+            let returnBadge = null;
+            let hint = physicalCancelled ? 'بخش کالای سفارش لغو شده است.' : 'پرداخت با موفقیت انجام شد.';
+            if (!physicalCancelled && carrierReturnStatus === 'PendingReview') {
+                returnBadge = { label: 'برگشت‌خورده', tone: 'warning' };
+                hint = hasMixedReturnStates
+                    ? 'بخشی از مرسوله‌های این سفارش از سوی پست برگشت اعلام شده و در حال بررسی است.'
+                    : 'مرسوله از سوی پست برگشت اعلام شده و در حال بررسی است.';
+            } else if (!physicalCancelled && carrierReturnStatus === 'ClosedWithoutSettlement') {
+                returnBadge = { label: 'تحویل ناموفق', tone: 'danger' };
+                hint = hasMixedReturnStates
+                    ? 'پروندهٔ بخشی از مرسوله‌های برگشتی این سفارش بدون تحویل بسته شده است.'
+                    : 'پروندهٔ مرسولهٔ برگشتی بدون تحویل بسته شده است.';
+            }
             return {
                 ...base, tone: 'success', title: 'پرداخت شد',
-                hint: physicalCancelled ? 'بخش کالای سفارش لغو شده است.' : 'پرداخت با موفقیت انجام شد.',
+                returnBadge,
+                hint,
                 amountLabel: 'مبلغ پرداخت‌شده', unpaid: false,
             };
+        }
         case 'AwaitingPayment':
             return {
                 ...base, tone: 'warning', title: 'در انتظار پرداخت',

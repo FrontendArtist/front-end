@@ -1145,6 +1145,7 @@ export const CourseOrderId = {
  *       updatedAtUtc: string,
  *       financialStatus: string,
  *       deliveryStatus: string,
+ *       carrierReturnStatus: string,
  *       finalAmountInNoor: number|null,
  *       itemCount: number
  *     }>,
@@ -2253,7 +2254,7 @@ export const getCourseOrderSettlementPeriodOrders = ({ jwt, periodId, page = 1, 
  * @param {number} [params.pageSize=20] - بین ۱ تا ۱۰۰
  * @returns {Promise<{
  *   success: boolean,
- *   items: Array<{ transactionId: string, type: string, amountNoor: number, giftAmountNoor: number, createdAtUtc: string, orderId: string|null, topUpId: string|null }>,
+ *   items: Array<{ transactionId: string, type: string, amountNoor: number, giftAmountNoor: number, createdAtUtc: string, orderId: string|null, topUpId: string|null, paymentMethod?: string|null }>,
  *   page: number, pageSize: number, totalCount: number,
  *   error?: string, unauthorized?: boolean
  * }>}
