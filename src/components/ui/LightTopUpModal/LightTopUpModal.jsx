@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import { useDisplayRate } from '@/context/DisplayRateContext';
 import { useLightStore } from '@/store/useLightStore';
-import { useAuthStore } from '@/store/authStore';
+import useAuthStore from '@/store/authStore';
 import styles from './LightTopUpModal.module.scss';
 
 /**
