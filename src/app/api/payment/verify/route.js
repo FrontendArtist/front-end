@@ -91,10 +91,11 @@ export async function GET(request) {
             if (topUpAttempt) {
                 // درخواست‌های GET مستقیم مرورگر نباید وضعیت مالی یا دیتابیس را تغییر دهند
                 if (topUpAttempt.status === 'confirmed') {
+                    const resolvedTraceNo = topUpAttempt.traceNo || topUpAttempt.rrn;
                     return redirectToResult({
                         orderType: 'light_topup',
                         status: 'success',
-                        refNum: topUpAttempt.refNum,
+                        ...(resolvedTraceNo ? { traceNo: resolvedTraceNo } : {}),
                         topUpId: topUpAttempt.topUpRequestId,
                     }, request);
                 }
@@ -184,7 +185,7 @@ async function handlePaymentVerification(params, request) {
         }
     }
     if (topUpAttempt) {
-        return processGatewayTopUpCallback({ attempt: topUpAttempt, state, status, refNum, request,
+        return processGatewayTopUpCallback({ attempt: topUpAttempt, state, status, refNum, traceNo, request,
             terminalId, callbackParams: bankCallbackFields(params),
             result: (query) => redirectToResult({ orderType: 'light_topup', topUpId: topUpAttempt.topUpRequestId, ...query }, request) });
     }

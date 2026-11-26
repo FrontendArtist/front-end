@@ -214,8 +214,8 @@ test('کارت درگاه و مشخصات پرداخت اطلاعات و وضع�
     render(<CheckoutResultPage />);
 
     expect(screen.getByText('مشخصات پرداخت و تراکنش')).toBeTruthy();
-    expect(screen.getByText('رسید دیجیتال (RefNum):')).toBeTruthy();
-    expect(screen.getByText('sep-ref-123456789')).toBeTruthy();
+    expect(screen.queryByText('رسید دیجیتال (RefNum):')).toBeNull();
+    expect(screen.queryByText('sep-ref-123456789')).toBeNull();
     expect(screen.getByText('کد رهگیری بانک (TraceNo):')).toBeTruthy();
     expect(screen.getByText('sep-trace-987')).toBeTruthy();
     expect(screen.getByText('پرداخت الکترونیک سامان (سپ)')).toBeTruthy();
@@ -280,20 +280,28 @@ test('چیدمان جدید اقدام‌ها در خرید ناموفق یا د
     expect(screen.getByRole('link', { name: 'با پشتیبانی تماس بگیرید' }).getAttribute('href')).toBe('/contact');
 });
 
-test('فیلد رسید دیجیتال (RefNum) و شناسه‌ها به درستی با کلاس کوتاه ساز و کنترل سرریز نمایش داده می‌شوند', () => {
-    useSearchParams.mockReturnValue(new URLSearchParams('cartId=cart-1&status=success&refNum=sep-ref-very-long-digit-12345678901234567890'));
+test('شناسه پرداخت (topUpId) و کد رهگیری بانک (TraceNo) با کنترل سرریز نمایش داده می‌شوند و RefNum نمایش داده نمی‌شود', () => {
+    useSearchParams.mockReturnValue(new URLSearchParams('orderType=light_topup&topUpId=fc685d22-c98b-4ca8-af0a-9302702277fd&status=success&refNum=mock.very-long-ref&traceNo=038039024576'));
     useCourseCheckoutResult.mockReturnValue({
-        phase: 'completed',
+        phase: 'standalone',
         paid: true,
-        courses: [{ externalItemId: 'c1', title: 'دوره فیزیک', purchaseStatus: 'Completed' }],
+        courses: [],
         receipts: []
     });
     render(<CheckoutResultPage />);
 
-    expect(screen.getByText('رسید دیجیتال (RefNum):')).toBeTruthy();
-    const refNumElem = screen.getByText('sep-ref-very-long-digit-12345678901234567890');
-    expect(refNumElem).toBeTruthy();
-    expect(refNumElem.getAttribute('dir')).toBe('ltr');
+    expect(screen.queryByText('رسید دیجیتال (RefNum):')).toBeNull();
+    expect(screen.queryByText('mock.very-long-ref')).toBeNull();
+
+    expect(screen.getByText('شناسه پرداخت:')).toBeTruthy();
+    const topUpIdElem = screen.getByText('fc685d22-c98b-4ca8-af0a-9302702277fd');
+    expect(topUpIdElem).toBeTruthy();
+    expect(topUpIdElem.getAttribute('dir')).toBe('ltr');
+
+    expect(screen.getByText('کد رهگیری بانک (TraceNo):')).toBeTruthy();
+    const traceNoElem = screen.getByText('038039024576');
+    expect(traceNoElem).toBeTruthy();
+    expect(traceNoElem.getAttribute('dir')).toBe('ltr');
 });
 
 test('بازگشت از درگاه با status=success در صورت ارجاع به بررسی مالی، پیام چرخنده استعلام را نشان نمی‌دهد و وضعیت در صف بررسی مالی را نمایش می‌دهد', () => {
@@ -321,7 +329,8 @@ test('بازگشت از درگاه با status=success در صورت ارجاع 
     // نمایش کد پرونده و کدهای پیگیری
     expect(screen.getByText('کد پرونده رسیدگی مالی:')).toBeTruthy();
     expect(screen.getByText('case-financial-789')).toBeTruthy();
-    expect(screen.getByText('sep-ref-666')).toBeTruthy();
+    expect(screen.getByText('sep-trace-666')).toBeTruthy();
+    expect(screen.queryByText('sep-ref-666')).toBeNull();
 
     // کارت نباید دارای کلاس failed باشد
     expect(screen.getByRole('heading').closest('.card').className).not.toContain('failed');

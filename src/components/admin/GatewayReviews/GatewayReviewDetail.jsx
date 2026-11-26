@@ -12,6 +12,10 @@ import {
     CheckCircle2,
     Sliders,
     ChevronDown,
+    Copy,
+    Check,
+    User,
+    Phone,
 } from 'lucide-react';
 import {
     fetchGatewayReview,
@@ -131,6 +135,42 @@ function Field({ label, hint, id, children }) {
         </div>
     );
 }
+
+function CopyChip({ label, value }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        if (!value) return;
+        try {
+            await navigator.clipboard?.writeText(String(value));
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        } catch {
+            // نادیده گرفتن خطای دسترسی کلیپ‌بورد
+        }
+    };
+
+    return (
+        <div className={styles.copyChip}>
+            <span className={styles.copyChip__label}>{label}:</span>
+            <span className={styles.copyChip__value}>{value || '—'}</span>
+            {value && (
+                <button
+                    type="button"
+                    className={styles.copyChip__btn}
+                    onClick={handleCopy}
+                    title={`کپی ${label}`}
+                    aria-label={`کپی ${label}`}
+                >
+                    {copied ? <Check size={13} /> : <Copy size={13} />}
+                </button>
+            )}
+        </div>
+    );
+}
+
+const getBadgeClass = (variant) =>
+    `${styles.badge} ${styles[`badge--${variant || 'default'}`]}`;
 
 export default function GatewayReviewDetail({ initialCase, initialError }) {
     const [data, setData] = useState(initialCase);
@@ -321,6 +361,20 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
         return result;
     }, [data?.history]);
 
+    const { latestRefNum, latestRrn } = useMemo(() => {
+        const sortedHistory = [...deduplicatedHistory].sort((a, b) => {
+            const ta = new Date(a?.details?.occurredAtUtc || a?.occurredAtUtc || 0).getTime();
+            const tb = new Date(b?.details?.occurredAtUtc || b?.occurredAtUtc || 0).getTime();
+            return tb - ta;
+        });
+        const refItem = sortedHistory.find((h) => h?.details?.bankTransactionId);
+        const rrnItem = sortedHistory.find((h) => h?.details?.bankReferenceNumber);
+        return {
+            latestRefNum: data?.refNum || refItem?.details?.bankTransactionId || '',
+            latestRrn: data?.rrn || data?.bankReferenceNumber || rrnItem?.details?.bankReferenceNumber || '',
+        };
+    }, [data?.refNum, data?.rrn, data?.bankReferenceNumber, deduplicatedHistory]);
+
     if (!data) {
         return (
             <div className={styles.page} dir="rtl">
@@ -351,17 +405,16 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
     const outcomeOptions = ['PAID_AND_CONFIRMED', 'CONFIRMED_EXCEPTIONAL', 'NO_MATCHING_DEPOSIT', 'REVERSED_REJECTED', 'MANUAL_REFUND']
         .filter((value) => value !== 'CONFIRMED_EXCEPTIONAL' || data.canCloseExceptional);
 
+    const caseStatusCfg = CASE_STATUS_CONFIG[data.status] || { label: data.status, variant: 'default' };
+    const topupStatusCfg = TOPUP_STATUS_CONFIG[data.topUpStatus] || TOPUP_STATUS_CONFIG.null;
+    const reasonCfg = REASON_CONFIG[data.reasonCode] || { label: data.reasonCode, variant: 'default' };
+
     const details = [
-        ['نام کاربر', data.userName || 'ثبت نشده'],
-        ['تلفن', data.userPhone || 'ثبت نشده'],
         ['زمان درخواست', dateTime(data.requestedAtUtc)],
-        ['مبلغ درخواست', rial(data.amountRial)],
-        ['شماره درخواست درگاه (ResNum)', data.clientReferenceCode],
-        ['شناسه شارژ (TopUp)', data.topUpRequestId],
-        ['دلیل ایجاد پرونده', REASON_CONFIG[data.reasonCode]?.label || data.reasonCode],
-        ['وضعیت شارژ', TOPUP_STATUS_CONFIG[data.topUpStatus]?.label || data.topUpStatus],
-        ['وضعیت پرونده', CASE_STATUS_CONFIG[data.status]?.label || data.status],
-        ['زمان ایجاد پرونده ', dateTime(data.openedAtUtc)],
+        ['زمان ایجاد پرونده', dateTime(data.openedAtUtc)],
+        ['دلیل ایجاد پرونده', reasonCfg.label],
+        ['وضعیت شارژ', topupStatusCfg.label],
+        ['وضعیت پرونده', caseStatusCfg.label],
     ];
     const inputClass = styles.resolutionSection__input;
 
@@ -404,23 +457,43 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                 </div>
             )}
 
-            {/* کارت مشخصات اصلی درخواست */}
-            <section className={styles.detailCard}>
-                <h2>
-                    <FileText size={20} style={{ color: 'var(--color-title-hover)' }} />
-                    مشخصات پرونده و تراکنش
-                </h2>
-                <dl className={styles.detailCard__grid}>
-                    {details.map(([label, value]) => (
-                        <div key={label} className={styles.detailCard__item}>
-                            <dt className={styles.detailCard__label}>{label}</dt>
-                            <dd className={styles.detailCard__value}>{value}</dd>
-                        </div>
-                    ))}
-                </dl>
+            {/* نوار خلاصه بالای صفحه */}
+            <section className={styles.summaryBar} aria-label="خلاصه پرونده">
+                <div className={styles.summaryBar__top}>
+                    <div className={styles.summaryBar__amountBlock}>
+                        <span className={styles.summaryBar__amountLabel}>مبلغ تراکنش</span>
+                        <strong className={styles.summaryBar__amount}>{rial(data.amountRial)}</strong>
+                    </div>
+
+                    <div className={styles.summaryBar__user}>
+                        <span className={styles.summaryBar__userItem}>
+                            <User size={15} style={{ color: 'var(--color-title-hover)' }} />
+                            {data.userName || 'ثبت نشده'}
+                        </span>
+                        <span className={styles.summaryBar__userItem} dir="ltr">
+                            <Phone size={15} style={{ color: 'var(--color-title-hover)' }} />
+                            {data.userPhone || 'ثبت نشده'}
+                        </span>
+                    </div>
+
+                    <div className={styles.summaryBar__badges}>
+                        <span className={getBadgeClass(caseStatusCfg.variant)}>{caseStatusCfg.label}</span>
+                        <span className={getBadgeClass(topupStatusCfg.variant)}>{topupStatusCfg.label}</span>
+                        <span className={getBadgeClass(reasonCfg.variant)}>{reasonCfg.label}</span>
+                    </div>
+                </div>
+
+                <div className={styles.summaryBar__refs}>
+                    <CopyChip label="ResNum" value={data.clientReferenceCode} />
+                    <CopyChip label="RefNum" value={latestRefNum} />
+                    <CopyChip label="RRN" value={latestRrn} />
+                </div>
             </section>
 
-            {/* بخش رسیدگی یا نمایش وضعیت نهایی */}
+            {/* چیدمان دو ستونه دسکتاپ */}
+            <div className={styles.detailLayout}>
+                <div className={styles.detailLayout__primary}>
+                    {/* بخش رسیدگی یا نمایش وضعیت نهایی */}
             {data.status === 'resolved' ? (
                 <section className={styles.detailCard}>
                     <h2>
@@ -697,126 +770,184 @@ export default function GatewayReviewDetail({ initialCase, initialError }) {
                     </form>
                 </section>
             )}
+                </div>
 
-            {/* سابقه رسیدگی و وقایع پرونده بدون تکرار */}
-            <section className={styles.detailCard}>
-                <h2>
-                    <History size={20} style={{ color: 'var(--color-title-hover)' }} />
-                    سابقه رسیدگی به پرونده
-                </h2>
-                {deduplicatedAudit.length === 0 ? (
-                    <p className={styles.emptyNote}>هنوز نتیجه رسیدگی ثبت نشده است.</p>
-                ) : (
-                    deduplicatedAudit.map((item) => (
-                        <article className={styles.reviewAudit} key={item.eventId || `${item.occurredAtUtc}_${item.eventType}`}>
-                            <div className={styles.reviewAudit__header}>
-                                <strong className={styles.reviewAudit__title}>
-                                    {getAuditEventTitle(item)}
-                                </strong>
-                                <span className={styles.reviewAudit__date}>
-                                    {dateTime(item.occurredAtUtc)}
-                                    {item.actorName || item.actorUserId ? ` (${item.actorName || item.actorUserId})` : ''}
-                                </span>
-                            </div>
+                <div className={styles.detailLayout__secondary}>
+                    {/* کارت مشخصات اصلی درخواست */}
+                    <section className={styles.detailCard}>
+                        <h2>
+                            <FileText size={20} style={{ color: 'var(--color-title-hover)' }} />
+                            مشخصات پرونده و تراکنش
+                        </h2>
+                        <dl className={styles.detailCard__grid}>
+                            {details.map(([label, value]) => (
+                                <div key={label} className={styles.detailCard__item}>
+                                    <dt className={styles.detailCard__label}>{label}</dt>
+                                    <dd className={styles.detailCard__value}>{value}</dd>
+                                </div>
+                            ))}
+                        </dl>
 
-                            {item.evidence && (
-                                <div className={styles.reviewAudit__evidence}>
+                        {data.topUpRequestId && (
+                            <details className={styles.techDetails}>
+                                <summary>جزئیات فنی</summary>
+                                <div className={styles.techDetails__body}>
                                     <p>
-                                        تاریخ بررسی: <strong>{reportDate(item.evidence.checkedReportDate)}</strong> | نتیجه واریز:{' '}
-                                        <span className={item.evidence.matchingDepositFound ? styles['text--success'] : styles['text--muted']}>
-                                            {item.evidence.matchingDepositFound ? 'منطبق ✓' : 'نامنطبق ✗'}
+                                        شناسه شارژ (TopUp):{' '}
+                                        <span className={styles['detailCard__value--code']}>
+                                            {data.topUpRequestId}
                                         </span>
                                     </p>
-                                    {item.evidence.matchingDepositFound && (
-                                        <p>
-                                            شناسه واریز: <code>{item.evidence.depositReference}</code> | تاریخ واریز:{' '}
-                                            <strong>{reportDate(item.evidence.depositDate)}</strong> | مبلغ:{' '}
-                                            <strong>{rial(item.evidence.depositAmountRial)}</strong>
-                                        </p>
-                                    )}
-                                    {item.evidence.manualRefundReference && (
-                                        <p>مرجع بازپرداخت دستی: <code>{item.evidence.manualRefundReference}</code></p>
-                                    )}
                                 </div>
-                            )}
+                            </details>
+                        )}
+                    </section>
 
-                            {item.note && <p className={styles.reviewAudit__note}>{item.note}</p>}
-                        </article>
-                    ))
-                )}
-            </section>
+                    {/* سابقه رسیدگی کارشناسان */}
+                    <section className={styles.detailCard}>
+                        <h2>
+                            <History size={20} style={{ color: 'var(--color-title-hover)' }} />
+                            سابقه رسیدگی به پرونده
+                        </h2>
+                        {deduplicatedAudit.length === 0 ? (
+                            <p className={styles.emptyNote}>هنوز نتیجه رسیدگی ثبت نشده است.</p>
+                        ) : (
+                            deduplicatedAudit.map((item) => (
+                                <article className={styles.reviewAudit} key={item.eventId || `${item.occurredAtUtc}_${item.eventType}`}>
+                                    <div className={styles.reviewAudit__header}>
+                                        <strong className={styles.reviewAudit__title}>
+                                            {getAuditEventTitle(item)}
+                                        </strong>
+                                        <span className={styles.reviewAudit__date}>
+                                            {dateTime(item.occurredAtUtc)}
+                                            {item.actorName || item.actorUserId ? ` (${item.actorName || item.actorUserId})` : ''}
+                                        </span>
+                                    </div>
 
-            {/* رویدادهای پرداخت و مدارک درگاه */}
-            <section className={styles.detailCard}>
-                <h2>
-                    <ShieldAlert size={20} style={{ color: 'var(--color-title-hover)' }} />
-                    رویدادهای پرداخت و مدارک درگاه
-                </h2>
-                {deduplicatedHistory.length === 0 ? (
-                    <p className={styles.emptyNote}>رویدادی ثبت نشده است.</p>
-                ) : (
-                    deduplicatedHistory.map((item, index) => (
-                        <article className={styles.reviewAudit} key={item.eventId || index}>
-                            <div className={styles.reviewAudit__header}>
-                                <strong className={styles.reviewAudit__title}>
-                                    {eventLabels[item.eventType] || 'رویداد رسیدگی'} — {stageLabels[item.evidenceStage] || ''}
-                                </strong>
-                                <span className={styles.reviewAudit__date}>
-                                    {dateTime(item.details?.occurredAtUtc || item.occurredAtUtc)}
+                                    {item.evidence && (
+                                        <div className={styles.reviewAudit__evidence}>
+                                            <p>
+                                                تاریخ بررسی: <strong>{reportDate(item.evidence.checkedReportDate)}</strong> | نتیجه واریز:{' '}
+                                                <span className={item.evidence.matchingDepositFound ? styles['text--success'] : styles['text--muted']}>
+                                                    {item.evidence.matchingDepositFound ? 'منطبق ✓' : 'نامنطبق ✗'}
+                                                </span>
+                                            </p>
+                                            {item.evidence.matchingDepositFound && (
+                                                <p>
+                                                    شناسه واریز: <code>{item.evidence.depositReference}</code> | تاریخ واریز:{' '}
+                                                    <strong>{reportDate(item.evidence.depositDate)}</strong> | مبلغ:{' '}
+                                                    <strong>{rial(item.evidence.depositAmountRial)}</strong>
+                                                </p>
+                                            )}
+                                            {item.evidence.manualRefundReference && (
+                                                <p>مرجع بازپرداخت دستی: <code>{item.evidence.manualRefundReference}</code></p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {item.note && <p className={styles.reviewAudit__note}>{item.note}</p>}
+                                </article>
+                            ))
+                        )}
+                    </section>
+
+                    {/* رویدادهای پرداخت و مدارک درگاه */}
+                    <section className={styles.detailCard}>
+                        <h2>
+                            <ShieldAlert size={20} style={{ color: 'var(--color-blue-alt)' }} />
+                            رویدادهای پرداخت و مدارک درگاه
+                        </h2>
+                        {deduplicatedHistory.length === 0 ? (
+                            <p className={styles.emptyNote}>رویدادی ثبت نشده است.</p>
+                        ) : (
+                            deduplicatedHistory.map((item, index) => {
+                                const d = item.details || {};
+                                const hasTechDetails =
+                                    d.bankResultCode != null ||
+                                    Boolean(d.callbackState) ||
+                                    d.originalAmountRial != null ||
+                                    Boolean(d.actorDocumentId);
+
+                                return (
+                                    <article className={styles.gatewayEvent} key={item.eventId || index}>
+                                        <div className={styles.gatewayEvent__header}>
+                                            <strong className={styles.gatewayEvent__title}>
+                                                {eventLabels[item.eventType] || 'رویداد رسیدگی'}
+                                                {stageLabels[item.evidenceStage] ? ` — ${stageLabels[item.evidenceStage]}` : ''}
+                                            </strong>
+                                            <span className={styles.gatewayEvent__date}>
+                                                {dateTime(d.occurredAtUtc || item.occurredAtUtc)}
+                                            </span>
+                                        </div>
+
+                                        {d.bankTransactionId && (
+                                            <p>شماره تراکنش بانک (RefNum): <code>{d.bankTransactionId}</code></p>
+                                        )}
+                                        {d.bankReferenceNumber && (
+                                            <p>شماره ارجاع بانک (RRN): <code>{d.bankReferenceNumber}</code></p>
+                                        )}
+                                        {d.verifySuccess != null && (
+                                            <p>نتیجه بررسی بانک: {d.verifySuccess ? 'موفق ✓' : 'ناموفق ✗'}</p>
+                                        )}
+                                        {d.note && <p className={styles.reviewAudit__note}>{d.note}</p>}
+
+                                        {hasTechDetails && (
+                                            <details className={styles.techDetails}>
+                                                <summary>جزئیات فنی</summary>
+                                                <div className={styles.techDetails__body}>
+                                                    {d.bankResultCode != null && <p>کد نتیجه بانک: {d.bankResultCode}</p>}
+                                                    {d.callbackState && (
+                                                        <p>
+                                                            وضعیت بازگشت از درگاه: {d.callbackState} / {d.callbackStatus}
+                                                        </p>
+                                                    )}
+                                                    {d.originalAmountRial != null && (
+                                                        <p>
+                                                            مبلغ اصلی: {rial(d.originalAmountRial)} | مبلغ مؤثر:{' '}
+                                                            {rial(d.affectiveAmountRial)}
+                                                        </p>
+                                                    )}
+                                                    {d.actorDocumentId && (
+                                                        <p className={styles.subText}>شناسه ثبت‌کننده: {d.actorDocumentId}</p>
+                                                    )}
+                                                </div>
+                                            </details>
+                                        )}
+                                    </article>
+                                );
+                            })
+                        )}
+
+                        {data.historyPagination && data.historyPagination.total > data.historyPagination.pageSize && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
+                                <button
+                                    className={`${styles.btn} ${styles['btn--secondary']}`}
+                                    style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                                    disabled={busy || data.historyPagination.page <= 1}
+                                    onClick={() => refresh(data.historyPagination.page - 1)}
+                                >
+                                    رویدادهای جدیدتر
+                                </button>
+                                <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-card-text)' }}>
+                                    صفحه {data.historyPagination.page}
                                 </span>
+                                <button
+                                    className={`${styles.btn} ${styles['btn--secondary']}`}
+                                    style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                                    disabled={
+                                        busy ||
+                                        data.historyPagination.page * data.historyPagination.pageSize >=
+                                            data.historyPagination.total
+                                    }
+                                    onClick={() => refresh(data.historyPagination.page + 1)}
+                                >
+                                    رویدادهای قدیمی‌تر
+                                </button>
                             </div>
-
-                            {item.details?.bankTransactionId && <p>شماره تراکنش بانک (RefNum): <code>{item.details.bankTransactionId}</code></p>}
-                            {item.details?.bankReferenceNumber && <p>شماره ارجاع بانک (RRN): <code>{item.details.bankReferenceNumber}</code></p>}
-                            {item.details?.bankResultCode != null && <p>کد نتیجه بانک: {item.details.bankResultCode}</p>}
-                            {item.details?.callbackState && (
-                                <p>
-                                    وضعیت بازگشت از درگاه: {item.details.callbackState} / {item.details.callbackStatus}
-                                </p>
-                            )}
-                            {item.details?.verifySuccess != null && (
-                                <p>نتیجه بررسی بانک: {item.details.verifySuccess ? 'موفق ✓' : 'ناموفق ✗'}</p>
-                            )}
-                            {item.details?.originalAmountRial != null && (
-                                <p>
-                                    مبلغ اصلی: {rial(item.details.originalAmountRial)} | مبلغ مؤثر:{' '}
-                                    {rial(item.details.affectiveAmountRial)}
-                                </p>
-                            )}
-                            {item.details?.note && <p className={styles.reviewAudit__note}>{item.details.note}</p>}
-                            {item.details?.actorDocumentId && <p className={styles.subText}>شناسه ثبت‌کننده: {item.details.actorDocumentId}</p>}
-                        </article>
-                    ))
-                )}
-
-                {data.historyPagination && data.historyPagination.total > data.historyPagination.pageSize && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
-                        <button
-                            className={`${styles.btn} ${styles['btn--secondary']}`}
-                            style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
-                            disabled={busy || data.historyPagination.page <= 1}
-                            onClick={() => refresh(data.historyPagination.page - 1)}
-                        >
-                            رویدادهای جدیدتر
-                        </button>
-                        <span style={{ fontSize: 'var(--font-sm)', color: 'var(--color-card-text)' }}>
-                            صفحه {data.historyPagination.page}
-                        </span>
-                        <button
-                            className={`${styles.btn} ${styles['btn--secondary']}`}
-                            style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
-                            disabled={
-                                busy ||
-                                data.historyPagination.page * data.historyPagination.pageSize >=
-                                    data.historyPagination.total
-                            }
-                            onClick={() => refresh(data.historyPagination.page + 1)}
-                        >
-                            رویدادهای قدیمی‌تر
-                        </button>
-                    </div>
-                )}
-            </section>
+                        )}
+                    </section>
+                </div>
+            </div>
         </div>
     );
 }

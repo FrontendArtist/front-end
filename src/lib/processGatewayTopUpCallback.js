@@ -71,10 +71,16 @@ async function reverseVerified(attempt, refNum, terminalNumber, reason, result) 
   });
 }
 
-export async function processGatewayTopUpCallback({ attempt, state, status, refNum, request,
+export async function processGatewayTopUpCallback({ attempt, state, status, refNum, traceNo, request,
   terminalId, callbackParams, result }) {
-  if (attempt.status === 'confirmed')
-    return result({ status: 'success', refNum: attempt.refNum, topUpId: attempt.topUpRequestId });
+  if (attempt.status === 'confirmed') {
+    const resolvedTraceNo = attempt.traceNo || attempt.rrn || traceNo;
+    return result({
+      status: 'success',
+      ...(resolvedTraceNo ? { traceNo: resolvedTraceNo } : {}),
+      topUpId: attempt.topUpRequestId,
+    });
+  }
   if (attempt.status === 'reversed')
     return result({ status: 'failed', message: 'مبلغ پرداختی به حساب شما برگشت داده شد.' });
   if (request.method !== 'POST')
@@ -127,8 +133,12 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
     const saved = await getTopUpConfirmation(attempt.resNum).catch(() => null);
     if (isConfirmedTopUp(saved)) {
       await updateAttempt(attempt, { status: 'confirmed', refNum: saved.externalTransactionId || attempt.refNum });
-      return result({ status: 'success', refNum: saved.externalTransactionId,
-        topUpId: attempt.topUpRequestId });
+      const resolvedTraceNo = attempt.traceNo || attempt.rrn || traceNo;
+      return result({
+        status: 'success',
+        ...(resolvedTraceNo ? { traceNo: resolvedTraceNo } : {}),
+        topUpId: attempt.topUpRequestId,
+      });
     }
     const recorded = await recordGatewayOutcome(attempt, {
       stage: 'callback', kind: 'Unpaid', bankResultCode: status || state,
@@ -196,7 +206,12 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
       const saved = await getTopUpConfirmation(attempt.resNum).catch(() => null);
       if (isConfirmedTopUp(saved) && saved.externalTransactionId === refNum) {
         await updateAttempt(verifying, { status: 'confirmed', refNum });
-        return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
+        const resolvedTraceNo = detail.StraceNo || traceNo || attempt.rrn;
+        return result({
+          status: 'success',
+          ...(resolvedTraceNo ? { traceNo: resolvedTraceNo } : {}),
+          topUpId: attempt.topUpRequestId,
+        });
       }
     }
     const isTransitory = bank.resultCode == null || bank.resultCode === -999;
@@ -256,7 +271,12 @@ export async function processGatewayTopUpCallback({ attempt, state, status, refN
   const delivery = await deliverGatewayOutcome(recorded).catch(() => ({ ok: false }));
   if (delivery.ok) {
     await updateAttempt(verified, { status: 'confirmed', lastAttemptAtUtc: new Date().toISOString() });
-    return result({ status: 'success', refNum, topUpId: attempt.topUpRequestId });
+    const resolvedTraceNo = detail.StraceNo || traceNo || detail.RRN;
+    return result({
+      status: 'success',
+      ...(resolvedTraceNo ? { traceNo: resolvedTraceNo } : {}),
+      topUpId: attempt.topUpRequestId,
+    });
   }
   if (delivery.data?.code === 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED') {
     await updateAttempt(verified, { status: 'financial_review', lastError: 'REVIEW_MANUAL_REFUND_NOT_SUPPORTED' });

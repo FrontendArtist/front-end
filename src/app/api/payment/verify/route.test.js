@@ -100,12 +100,16 @@ describe('SEP TopUp Verification Flow', () => {
     verifySepTransaction.mockResolvedValue({
       success: true,
       resultCode: 0,
-      transactionDetail: { RefNum: 'BANK-REF', RRN: 'BANK-RRN', TerminalNumber: 'test-terminal', OrginalAmount: 10000, AffectiveAmount: 10000 },
+      transactionDetail: { RefNum: 'BANK-REF', RRN: 'BANK-RRN', StraceNo: 'BANK-TRACE', TerminalNumber: 'test-terminal', OrginalAmount: 10000, AffectiveAmount: 10000 },
     });
 
     const response = await callback();
 
-    expect(new URL(response.url).searchParams.get('status')).toBe('success');
+    const redirectUrl = new URL(response.url);
+    expect(redirectUrl.searchParams.get('status')).toBe('success');
+    expect(redirectUrl.searchParams.get('topUpId')).toBe(attempt.topUpRequestId);
+    expect(redirectUrl.searchParams.get('traceNo')).toBe('BANK-TRACE');
+    expect(redirectUrl.searchParams.get('refNum')).toBeNull();
     expect(claimAttempt).toHaveBeenCalledWith(attempt.resNum);
     expect(recordGatewayOutcome).toHaveBeenCalledWith(expect.anything(),
       expect.objectContaining({ stage: 'verify', kind: 'Verified', bankTransactionId: 'BANK-REF',
@@ -156,7 +160,7 @@ describe('SEP TopUp Verification Flow', () => {
   });
 
   test('direct GET request for confirmed attempt returns success without mutation', async () => {
-    findAttempt.mockResolvedValue({ ...attempt, status: 'confirmed', refNum: 'BANK-REF' });
+    findAttempt.mockResolvedValue({ ...attempt, status: 'confirmed', refNum: 'BANK-REF', rrn: 'BANK-RRN' });
     const getReq = {
       method: 'GET',
       url: `https://tarhelahi.ir/api/payment/verify?ResNum=${attempt.resNum}`,
@@ -165,7 +169,10 @@ describe('SEP TopUp Verification Flow', () => {
 
     const response = await GET(getReq);
 
-    expect(new URL(response.url).searchParams.get('status')).toBe('success');
+    const redirectUrl = new URL(response.url);
+    expect(redirectUrl.searchParams.get('status')).toBe('success');
+    expect(redirectUrl.searchParams.get('traceNo')).toBe('BANK-RRN');
+    expect(redirectUrl.searchParams.get('refNum')).toBeNull();
     expect(updateAttempt).not.toHaveBeenCalled();
   });
 

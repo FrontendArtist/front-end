@@ -35,7 +35,6 @@ function CheckoutResultContent() {
 
     const status = searchParams.get('status') || 'failed';
     const orderId = searchParams.get('orderId') || '';
-    const refNum = searchParams.get('refNum') || '';
     const traceNo = searchParams.get('traceNo') || '';
     const message = searchParams.get('message') || '';
     const isTopUp = searchParams.get('orderType') === 'light_topup';
@@ -562,7 +561,7 @@ function CheckoutResultContent() {
                         <div className={styles.receiptFooterGrid}>
                             {isTopUp && topUpId && (
                                 <div className={styles.receiptRow}>
-                                    <span className={styles.receiptLabel}>شناسه شارژ:</span>
+                                    <span className={styles.receiptLabel}>شناسه پرداخت:</span>
                                     <span
                                         className={styles.receiptValueWithCopy}
                                         onClick={() => handleCopy(topUpId, 'topUpId')}
@@ -591,21 +590,7 @@ function CheckoutResultContent() {
                                 </div>
                             )}
 
-                            {refNum && (
-                                <div className={styles.receiptRow}>
-                                    <span className={styles.receiptLabel}>رسید دیجیتال (RefNum):</span>
-                                    <span
-                                        className={styles.receiptValueWithCopy}
-                                        onClick={() => handleCopy(refNum, 'refNum')}
-                                        title="برای کپی کلیک کنید"
-                                    >
-                                        <span className={styles.truncateText} dir="ltr">{refNum}</span>
-                                        {copiedKey === 'refNum' ? <Check size={14} color="#34d399" /> : <Copy size={14} opacity={0.6} />}
-                                    </span>
-                                </div>
-                            )}
-
-                            {traceNo && traceNo !== refNum && (
+                            {traceNo && (
                                 <div className={styles.receiptRow}>
                                     <span className={styles.receiptLabel}>کد رهگیری بانک (TraceNo):</span>
                                     <span
