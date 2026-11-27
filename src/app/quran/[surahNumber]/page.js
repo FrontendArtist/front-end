@@ -16,7 +16,7 @@ import SurahViewer from '@/modules/quran/SurahViewer';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import styles from './page.module.scss';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 604800;
 
 // ============================================================================
 // پیکربندی API خارجی Al Quran Cloud

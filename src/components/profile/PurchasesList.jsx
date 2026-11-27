@@ -27,7 +27,7 @@ export default function PurchasesList() {
 
     const loadProfileCourses = useCallback(() => {
         if (!userId) return Promise.resolve();
-        return fetchProfileCartData(true, userId)
+        return fetchProfileCartData(true, userId, 'courses')
             .then(data => {
                 if (Array.isArray(data?.courses)) {
                     setProfileCourses(data.courses);
@@ -75,7 +75,7 @@ export default function PurchasesList() {
 
     useEffect(() => {
         let isMounted = true;
-        fetch('/api/courses?pageSize=100')
+        fetch('/api/courses/catalog-lite')
             .then(res => (res.ok ? res.json() : null))
             .then(json => {
                 if (isMounted && Array.isArray(json?.data)) {

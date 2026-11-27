@@ -6,15 +6,22 @@
 import { getTopBanner } from '@/lib/topBannerApi';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export async function GET() {
   try {
     const banner = await getTopBanner();
-    return NextResponse.json({
-      success: true,
-      data: banner,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: banner,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400',
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json(
       {

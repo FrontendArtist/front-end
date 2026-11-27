@@ -7,7 +7,7 @@ import {
 } from '@/lib/byeMoneyApi';
 
 jest.mock('next-auth', () => ({ getServerSession: jest.fn() }));
-jest.mock('@/lib/auth', () => ({ authOptions: {}, paymentAuthOptions: {} }));
+jest.mock('@/lib/auth', () => ({ authOptions: {}, paymentAuthOptions: {}, lightAuthOptions: {} }));
 
 jest.mock('@/lib/byeMoneyApi', () => {
   const actual = jest.requireActual('@/lib/byeMoneyApi');

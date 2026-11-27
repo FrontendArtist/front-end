@@ -8,6 +8,13 @@ import { API_BASE_URL } from './api';
 import { formatStrapiArticles, formatStrapiCourses, formatStrapiProducts } from './strapiUtils';
 import { withErrorHandling } from './apiErrorHandler';
 import { ARTICLES_PAGE_SIZE } from './constants';
+import { CACHE_TAGS } from './cacheTags';
+
+const ARTICLE_CACHE_OPTIONS = { next: { revalidate: 3600, tags: [CACHE_TAGS.articles] } };
+const ARTICLE_CARD_FIELDS =
+  'fields[0]=title&fields[1]=slug&fields[2]=excerpt&fields[3]=publishedAt&fields[4]=createdAt&fields[5]=updatedAt' +
+  '&populate[cover][fields][0]=url&populate[cover][fields][1]=alternativeText&populate[cover][fields][2]=name&populate[cover][fields][3]=formats' +
+  '&populate[articles_categories][fields][0]=name&populate[articles_categories][fields][1]=slug';
 
 /**
  * واکشی دسته‌بندی‌های مقالات
@@ -17,7 +24,8 @@ export async function getArticleCategories() {
   return withErrorHandling(
     async () => {
       const response = await apiClient(
-        '/api/articles-categories?populate=image&sort=name:asc'
+        '/api/articles-categories?fields[0]=name&fields[1]=slug&populate[image][fields][0]=url&populate[image][fields][1]=formats&sort=name:asc',
+        { next: { revalidate: 3600, tags: [CACHE_TAGS.articleCategories] } }
       );
 
       const categoriesRaw = response?.data || [];
@@ -63,7 +71,10 @@ export async function getArticleCategories() {
 export async function getAllArticles() {
   return withErrorHandling(
     async () => {
-      const response = await apiClient('/api/articles?status=published&populate=*&sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc');
+      const response = await apiClient(
+        '/api/articles?status=published&fields[0]=title&fields[1]=slug&fields[2]=updatedAt&fields[3]=publishedAt&pagination[pageSize]=200&sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc',
+        ARTICLE_CACHE_OPTIONS
+      );
       return formatStrapiArticles(response);
     },
     'واکشی مقالات',
@@ -78,7 +89,8 @@ export async function getArticleBySlug(slug) {
   return withErrorHandling(
     async () => {
       const response = await apiClient(
-        `/api/articles?status=published&filters[slug][$eq]=${slug}&populate=*`
+        `/api/articles?status=published&filters[slug][$eq]=${encodeURIComponent(slug)}&populate=*`,
+        ARTICLE_CACHE_OPTIONS
       );
       const formattedArticles = formatStrapiArticles(response);
       return formattedArticles[0] || null;
@@ -107,13 +119,13 @@ export async function getArticles({
         sortParam = `sort=${sort}`;
       }
 
-      let url = `/api/articles?status=published&populate=*&pagination[limit]=${limit}&${sortParam}`;
+      let url = `/api/articles?status=published&${ARTICLE_CARD_FIELDS}&pagination[limit]=${limit}&${sortParam}`;
 
       if (categorySlug) {
         url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
       }
 
-      const response = await apiClient(url);
+      const response = await apiClient(url, ARTICLE_CACHE_OPTIONS);
       return formatStrapiArticles(response);
     },
     'واکشی مقالات',
@@ -123,7 +135,6 @@ export async function getArticles({
 
 /**
  * واکشی مقالات با صفحه‌بندی (برای صفحه اصلی مقالات)
- * اصلاح شده: استفاده از populate=* برای اطمینان از دریافت کامل داده‌ها
  */
 export async function getArticlesPaginated(
   page = 1,
@@ -142,13 +153,13 @@ export async function getArticlesPaginated(
         sortParam = `sort=${sort}`;
       }
 
-      let url = `/api/articles?status=published&populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}&${sortParam}`;
+      let url = `/api/articles?status=published&${ARTICLE_CARD_FIELDS}&pagination[page]=${page}&pagination[pageSize]=${pageSize}&${sortParam}`;
 
       if (categorySlug) {
         url += `&filters[articles_categories][slug][$eq]=${categorySlug}`;
       }
 
-      const response = await apiClient(url);
+      const response = await apiClient(url, ARTICLE_CACHE_OPTIONS);
       const formattedArticles = formatStrapiArticles(response);
 
       return {
@@ -176,7 +187,8 @@ export async function getAdjacentArticles(identifier) {
     async () => {
       // واکشی لیست مقالات منتشرشده با ترتیب نزولی تاریخ انتشار (مشابه صفحه مقالات)
       const response = await apiClient(
-        '/api/articles?status=published&fields[0]=title&fields[1]=slug&fields[2]=documentId&fields[3]=publishedAt&fields[4]=createdAt&sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc&pagination[pageSize]=100'
+        '/api/articles?status=published&fields[0]=title&fields[1]=slug&fields[2]=documentId&fields[3]=publishedAt&fields[4]=createdAt&sort[0]=publishedAt:desc&sort[1]=updatedAt:desc&sort[2]=createdAt:desc&pagination[pageSize]=100',
+        ARTICLE_CACHE_OPTIONS
       );
 
       const articles = formatStrapiArticles(response);
@@ -246,7 +258,7 @@ export async function getAdjacentArticles(identifier) {
 export async function getRelatedArticles({ categoryId = null, categorySlug = null, currentId = null, limit = 6 } = {}) {
   return withErrorHandling(
     async () => {
-      let url = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort[0]=publishedAt:desc&sort[1]=createdAt:desc`;
+      let url = `/api/articles?status=published&${ARTICLE_CARD_FIELDS}&pagination[limit]=${limit + 2}&sort[0]=publishedAt:desc&sort[1]=createdAt:desc`;
 
       if (categoryId) {
         url += `&filters[articles_categories][id][$eq]=${categoryId}`;
@@ -258,7 +270,7 @@ export async function getRelatedArticles({ categoryId = null, categorySlug = nul
         url += `&filters[id][$ne]=${currentId}`;
       }
 
-      const response = await apiClient(url);
+      const response = await apiClient(url, ARTICLE_CACHE_OPTIONS);
       let formattedArticles = formatStrapiArticles(response);
 
       if (currentId) {
@@ -268,8 +280,8 @@ export async function getRelatedArticles({ categoryId = null, categorySlug = nul
       }
 
       if (formattedArticles.length === 0 && (categoryId || categorySlug)) {
-        const fallbackUrl = `/api/articles?populate=*&pagination[limit]=${limit + 2}&sort[0]=publishedAt:desc&sort[1]=createdAt:desc`;
-        const fallbackResponse = await apiClient(fallbackUrl);
+        const fallbackUrl = `/api/articles?status=published&${ARTICLE_CARD_FIELDS}&pagination[limit]=${limit + 2}&sort[0]=publishedAt:desc&sort[1]=createdAt:desc`;
+        const fallbackResponse = await apiClient(fallbackUrl, ARTICLE_CACHE_OPTIONS);
         formattedArticles = formatStrapiArticles(fallbackResponse).filter(
           (art) => String(art.id) !== String(currentId) && String(art.documentId) !== String(currentId)
         );
@@ -303,7 +315,8 @@ export async function getArticleCTA(article) {
     if (courseSlug) {
       try {
         const courseRes = await apiClient(
-          `/api/courses?filters[slug][$eq]=${encodeURIComponent(courseSlug)}&populate=*`
+          `/api/courses?filters[slug][$eq]=${encodeURIComponent(courseSlug)}&fields[0]=title&fields[1]=slug&fields[2]=price&fields[3]=discountPercent&fields[4]=discountUntil&fields[5]=description&fields[6]=isChaptered&fields[7]=isFree&populate[media][fields][0]=url&populate[media][fields][1]=alternativeText&populate[media][fields][2]=formats`,
+          { next: { revalidate: 3600, tags: [CACHE_TAGS.courses] } }
         );
         const courses = formatStrapiCourses(courseRes);
         if (courses && courses.length > 0) {
@@ -335,7 +348,8 @@ export async function getArticleCTA(article) {
     if (productSlug) {
       try {
         const productRes = await apiClient(
-          `/api/products?filters[slug][$eq]=${encodeURIComponent(productSlug)}&populate=*`
+          `/api/products?filters[slug][$eq]=${encodeURIComponent(productSlug)}&fields[0]=title&fields[1]=slug&fields[2]=price&fields[3]=discountPercent&fields[4]=discountUntil&fields[5]=description&fields[6]=shortDescription&fields[7]=stock&fields[8]=isAvailable&populate[images][fields][0]=url&populate[images][fields][1]=alternativeText&populate[images][fields][2]=formats&populate[categories][fields][0]=slug&populate[categories][fields][1]=name&populate[categories][populate][parent][fields][0]=slug`,
+          { next: { revalidate: 3600, tags: [CACHE_TAGS.products] } }
         );
         const products = formatStrapiProducts(productRes);
         if (products && products.length > 0) {
@@ -362,4 +376,4 @@ export async function getArticleCTA(article) {
   }
 
   return items;
-}
+}

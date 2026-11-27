@@ -13,9 +13,7 @@ export default function PopupModal() {
 
     async function fetchPopup() {
       try {
-        const response = await fetch('/api/popup', {
-          cache: 'no-store',
-        });
+        const response = await fetch('/api/popup');
         if (!response.ok) return;
 
         const result = await response.json();

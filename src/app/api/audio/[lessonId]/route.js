@@ -11,9 +11,29 @@
  */
 
 import { resolveAudioAccess } from '@/lib/lessonAccess';
+import { CACHE_TAGS } from '@/lib/cacheTags';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337';
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+const AUDIO_COURSE_QUERY = new URLSearchParams({
+  'fields[0]': 'id',
+  'fields[1]': 'documentId',
+  'fields[2]': 'slug',
+  'fields[3]': 'price',
+  'fields[4]': 'internationalPrice',
+  'fields[5]': 'discountPercent',
+  'fields[6]': 'discountUntil',
+  'populate[chapters][fields][0]': 'id',
+  'populate[chapters][fields][1]': 'title',
+  'populate[chapters][fields][2]': 'price',
+  'populate[chapters][fields][3]': 'integrationId',
+  'populate[chapters][populate][lessons][fields][0]': 'id',
+  'populate[chapters][populate][lessons][fields][1]': 'audioUrl',
+  'populate[chapters][populate][lessons][fields][2]': 'isFree',
+  'populate[curriculum][fields][0]': 'id',
+  'populate[curriculum][fields][1]': 'audioUrl',
+  'populate[curriculum][fields][2]': 'isFree',
+}).toString();
 
 // مقدار خالی یا نامعتبر نباید به‌اشتباه قیمت صفر و مجوز پخش بسازد.
 function hasZeroPrice(price) {
@@ -32,10 +52,10 @@ async function findLessonFromStrapi(lessonId, cid) {
   if (cid) {
     try {
       const res = await fetch(
-        `${STRAPI_URL}/api/courses/${cid}?populate[chapters][populate][lessons]=*&populate[curriculum]=*`,
+        `${STRAPI_URL}/api/courses/${cid}?${AUDIO_COURSE_QUERY}`,
         {
           headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
-          next: { revalidate: 60 },
+          next: { revalidate: 300, tags: [CACHE_TAGS.courses] },
         }
       );
       if (res.ok) {
@@ -47,10 +67,10 @@ async function findLessonFromStrapi(lessonId, cid) {
     if (!targetCourse) {
       try {
         const res = await fetch(
-          `${STRAPI_URL}/api/courses?filters[$or][0][slug][$eq]=${cid}&filters[$or][1][id][$eq]=${cid}&populate[chapters][populate][lessons]=*&populate[curriculum]=*`,
+          `${STRAPI_URL}/api/courses?filters[$or][0][slug][$eq]=${cid}&filters[$or][1][id][$eq]=${cid}&${AUDIO_COURSE_QUERY}`,
           {
             headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
-            next: { revalidate: 60 },
+            next: { revalidate: 300, tags: [CACHE_TAGS.courses] },
           }
         );
         if (res.ok) {
@@ -101,10 +121,10 @@ async function findLessonFromStrapi(lessonId, cid) {
   // ۲. فال‌بک: در صورتی که cid ارائه نشده بود، جستجو در بین دوره‌های منتشرشده
   try {
     const res = await fetch(
-      `${STRAPI_URL}/api/courses?populate[chapters][populate][lessons]=*&populate[curriculum]=*&pagination[pageSize]=100`,
+      `${STRAPI_URL}/api/courses?${AUDIO_COURSE_QUERY}&pagination[pageSize]=100`,
       {
         headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
-        next: { revalidate: 60 },
+        next: { revalidate: 300, tags: [CACHE_TAGS.courses] },
       }
     );
     if (res.ok) {

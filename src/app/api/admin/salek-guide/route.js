@@ -7,6 +7,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { getAdminSalekGuide, updateAdminSalekGuide } from '@/lib/admin/adminSalekGuideApi';
+import { CACHE_TAGS } from '@/lib/cacheTags';
+import { invalidateCacheTags } from '@/lib/revalidateCache';
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -53,5 +55,6 @@ export async function PUT(request) {
     return NextResponse.json({ error: result.error }, { status: 500 });
   }
 
+  invalidateCacheTags([CACHE_TAGS.salekGuide]);
   return NextResponse.json({ success: true, data: result.data });
 }

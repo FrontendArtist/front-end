@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { lightAuthOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { STRAPI_API_URL } from "@/lib/api";
 
@@ -95,7 +95,7 @@ function sanitizeStrapiOrder(rawOrder) {
 // GET /api/orders : دریافت لیست سفارشات کاربر همراه با دوره‌های داخل آن
 // --------------------------------------------------------------------------
 export async function GET(request) {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(lightAuthOptions);
 
     if (!session || !session.user || !session.user.id) {
         return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });

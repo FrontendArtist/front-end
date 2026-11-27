@@ -4,7 +4,7 @@ import { GET } from './route';
 import { getServerSession } from 'next-auth';
 
 jest.mock('next-auth', () => ({ getServerSession: jest.fn() }));
-jest.mock('@/lib/auth', () => ({ authOptions: {} }));
+jest.mock('@/lib/auth', () => ({ authOptions: {}, lightAuthOptions: {} }));
 
 describe('GET /api/localities', () => {
     const localities = [{

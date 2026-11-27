@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { lightAuthOptions } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/api';
 
 // فقط عدد آستانهٔ «در حال بررسی» برای کاربر لاگین‌شده؛ JWT فقط سمت سرور استفاده می‌شود (D20 بند ۵).
 export async function GET() {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(lightAuthOptions);
     const jwt = session?.user?.jwt;
     if (!jwt) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
 

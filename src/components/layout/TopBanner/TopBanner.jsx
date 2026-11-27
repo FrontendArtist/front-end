@@ -26,7 +26,7 @@ export default function TopBanner({ initialData = null }) {
       // در صورتی که داده اولیه از سرور نیامده بود، به صورت کلاینت ساید واکشی می‌کنیم
       if (!data) {
         try {
-          const res = await fetch('/api/top-banner', { cache: 'no-store' });
+          const res = await fetch('/api/top-banner');
           if (res.ok) {
             const json = await res.json();
             if (json?.success && json?.data) {

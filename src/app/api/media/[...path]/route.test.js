@@ -5,7 +5,7 @@ import { checkCourseAccess } from '@/lib/ordersApi';
 import { API_BASE_URL } from '@/lib/api';
 
 jest.mock('next-auth', () => ({ getServerSession: jest.fn() }));
-jest.mock('@/lib/auth', () => ({ authOptions: {} }));
+jest.mock('@/lib/auth', () => ({ authOptions: {}, lightAuthOptions: {} }));
 jest.mock('@/lib/ordersApi', () => ({ checkCourseAccess: jest.fn() }));
 
 let course, session, sourceFetch, catalogFetch;

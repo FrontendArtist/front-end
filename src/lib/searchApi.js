@@ -39,19 +39,32 @@ export const searchGlobal = async (query, type = 'all') => {
     if (normalizedType === 'all' || normalizedType === 'product') {
         requests.push({
             key: 'products',
-            endpoint: `/api/products?filters[title][$containsi]=${q}&populate[categories][populate]=parent&populate[images]=true`
+            endpoint:
+                `/api/products?status=published&filters[title][$containsi]=${q}` +
+                `&fields[0]=title&fields[1]=slug&fields[2]=price&fields[3]=discountPercent&fields[4]=discountUntil&fields[5]=description&fields[6]=shortDescription&fields[7]=stock&fields[8]=isAvailable` +
+                `&populate[categories][fields][0]=slug&populate[categories][fields][1]=name&populate[categories][populate][parent][fields][0]=slug&populate[categories][populate][parent][fields][1]=name` +
+                `&populate[images][fields][0]=url&populate[images][fields][1]=alternativeText&populate[images][fields][2]=formats` +
+                `&pagination[limit]=20`
         });
     }
     if (normalizedType === 'all' || normalizedType === 'article') {
         requests.push({
             key: 'articles',
-            endpoint: `/api/articles?filters[title][$containsi]=${q}&populate[cover]=true`
+            endpoint:
+                `/api/articles?status=published&filters[title][$containsi]=${q}` +
+                `&fields[0]=title&fields[1]=slug&fields[2]=excerpt&fields[3]=publishedAt&fields[4]=createdAt&fields[5]=updatedAt` +
+                `&populate[cover][fields][0]=url&populate[cover][fields][1]=alternativeText&populate[cover][fields][2]=formats` +
+                `&pagination[limit]=20`
         });
     }
     if (normalizedType === 'all' || normalizedType === 'course') {
         requests.push({
             key: 'courses',
-            endpoint: `/api/courses?filters[title][$containsi]=${q}&populate[media]=true`
+            endpoint:
+                `/api/courses?status=published&filters[title][$containsi]=${q}` +
+                `&fields[0]=title&fields[1]=slug&fields[2]=price&fields[3]=internationalPrice&fields[4]=discountPercent&fields[5]=discountUntil&fields[6]=description&fields[7]=isChaptered&fields[8]=isFree` +
+                `&populate[media][fields][0]=url&populate[media][fields][1]=alternativeText&populate[media][fields][2]=formats` +
+                `&pagination[limit]=20`
         });
     }
 

@@ -5,6 +5,7 @@
 
 import { apiClient } from './apiClient';
 import { withErrorHandling } from './apiErrorHandler';
+import { CACHE_TAGS } from './cacheTags';
 
 // مقادیر پیش‌فرض در صورت عدم تنظیم در پنل بک‌اند یا بروز خطا
 export const DEFAULT_SALEK_GUIDE = {
@@ -51,7 +52,7 @@ export async function getSalekGuide() {
     async () => {
       try {
         const response = await apiClient('/api/salek-guide', {
-          cache: 'no-store',
+          next: { revalidate: 3600, tags: [CACHE_TAGS.salekGuide] },
           suppressErrorLog: true,
         });
 

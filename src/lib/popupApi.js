@@ -7,6 +7,7 @@
 import { apiClient } from './apiClient';
 import { API_BASE_URL } from './api';
 import { withErrorHandling } from './apiErrorHandler';
+import { CACHE_TAGS } from './cacheTags';
 
 /**
  * استخراج و تبدیل آدرس تصویر پاپ‌آپ از ساختار Strapi 4 و Strapi 5
@@ -68,7 +69,8 @@ export async function getActivePopupMessage() {
     async () => {
       // دریافت تمام پیام‌های فعال با اولویت آخرین به‌روزرسانی
       const response = await apiClient(
-        '/api/popup-messages?filters[isShow][$eq]=true&populate=*&sort=updatedAt:desc'
+        '/api/popup-messages?filters[isShow][$eq]=true&populate[image][fields][0]=url&populate[image][fields][1]=alternativeText&populate[image][fields][2]=name&sort=updatedAt:desc',
+        { next: { revalidate: 3600, tags: [CACHE_TAGS.popup] } }
       );
 
       const items = Array.isArray(response) ? response : response?.data;

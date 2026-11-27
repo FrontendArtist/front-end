@@ -6,7 +6,7 @@ import { refreshSessionToken } from './strapiTokenRefresh';
 
 // ⚠️ هشدار امنیتی: در production حتماً NEXTAUTH_SECRET را در .env تنظیم کنید
 if (process.env.NODE_ENV === 'production' && (!process.env.NEXTAUTH_SECRET || process.env.NEXTAUTH_SECRET === 'dev-secret-key-change-this')) {
-  console.error('🔴 [AUTH] NEXTAUTH_SECRET is not set or using default value in production! This is a security vulnerability.');
+    console.error('🔴 [AUTH] NEXTAUTH_SECRET is not set or using default value in production! This is a security vulnerability.');
 }
 
 /**
@@ -17,7 +17,20 @@ if (process.env.NODE_ENV === 'production' && (!process.env.NEXTAUTH_SECRET || pr
 async function fetchUserSessionData(userId, jwt) {
     try {
         const tokenToUse = process.env.STRAPI_API_TOKEN || jwt;
-        const userRes = await fetch(`${STRAPI_API_URL}/api/users/${userId}?populate[0]=courses&populate[1]=role`, {
+        const params = new URLSearchParams({
+            'fields[0]': 'id',
+            'fields[1]': 'firstName',
+            'fields[2]': 'lastName',
+            'fields[3]': 'is_foreigner',
+            'fields[4]': 'enrolledChapters',
+            'fields[5]': 'enrolledChapterIntegrationIds',
+            'populate[courses][fields][0]': 'id',
+            'populate[courses][fields][1]': 'documentId',
+            'populate[courses][fields][2]': 'slug',
+            'populate[role][fields][0]': 'name',
+            'populate[role][fields][1]': 'type',
+        });
+        const userRes = await fetch(`${STRAPI_API_URL}/api/users/${userId}?${params.toString()}`, {
             headers: { Authorization: `Bearer ${tokenToUse}` },
             cache: 'no-store'
         });
@@ -26,7 +39,6 @@ async function fetchUserSessionData(userId, jwt) {
             const userData = await userRes.json();
             const courses = userData.courses || [];
             return {
-                courses,
                 enrolledCourses: courses.map(c => c.id),
                 enrolledSlugs: courses.map(c => c.slug).filter(Boolean),
                 enrolledChapters: Array.isArray(userData.enrolledChapters)
@@ -125,9 +137,9 @@ export const authOptions = {
                     const { jwt, user } = data;
 
                     if (user && jwt) {
-                        return { 
-                            ...user, 
-                            id: user.id, 
+                        return {
+                            ...user,
+                            id: user.id,
                             jwt: jwt,
                             role: user.role || 'user'
                         };
@@ -184,9 +196,9 @@ export const authOptions = {
                     const { jwt, user } = data;
 
                     if (user && jwt) {
-                        return { 
-                            ...user, 
-                            id: user.id, 
+                        return {
+                            ...user,
+                            id: user.id,
                             jwt: jwt,
                             role: user.role || 'user'
                         };
@@ -243,7 +255,6 @@ export const authOptions = {
                 if (token.id) {
                     const extraData = await fetchUserSessionData(token.id, token.jwt);
                     if (extraData) {
-                        session.user.courses = extraData.courses;
                         session.user.enrolledCourses = extraData.enrolledCourses;
                         session.user.enrolledSlugs = extraData.enrolledSlugs;
                         session.user.enrolledChapters = extraData.enrolledChapters;
@@ -276,7 +287,8 @@ export const authOptions = {
     },
 };
 
-// مسیرهای پرداخت فقط هویت امضاشده را لازم دارند؛ آدرس و مبلغ جداگانه از سرور خوانده می‌شوند.
+
+// مسیرهای پرداخت فقط هویت امضاشده را لازم دارند؛ آدرس و مبلغ جداگانه از سرور خوانده می‌شوند.
 // سشن عمومی همچنان دوره‌ها و نقش به‌روز را برای پروفایل و کنترل دسترسی دریافت می‌کند.
 export const paymentAuthOptions = {
     ...authOptions,
@@ -300,4 +312,7 @@ export const paymentAuthOptions = {
     },
 };
 
-
+/** سشن سبک بدون واکشی دوره‌ها از استراپی؛ برای Route Handlerهایی که فقط هویت/توکن کاربر را لازم دارند. */
+export const lightAuthOptions = paymentAuthOptions;
+
+

@@ -6,7 +6,7 @@ test('دسترسی فعلی را بدون کش و با شناسه سند دور�
     global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ id: 7, courses: [{ id: 42, documentId: 'course-1' }] }) });
     const controller = new AbortController();
     expect(await getCurrentCourseAccess(7, controller.signal)).toEqual(new Set(['course-1']));
-    expect(fetch).toHaveBeenCalledWith('/api/profile', { cache: 'no-store', signal: controller.signal });
+    expect(fetch).toHaveBeenCalledWith('/api/profile?include=courses', { cache: 'no-store', signal: controller.signal });
 });
 
 test.each([

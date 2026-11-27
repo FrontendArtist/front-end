@@ -6,15 +6,22 @@
 import { getSalekGuide } from '@/lib/salekGuideApi';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export async function GET() {
   try {
     const guide = await getSalekGuide();
-    return NextResponse.json({
-      success: true,
-      data: guide,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: guide,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400',
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json(
       {

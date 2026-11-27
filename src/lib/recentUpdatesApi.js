@@ -10,6 +10,7 @@ import {
   formatStrapiArticles,
   formatStrapiServices,
 } from './strapiUtils';
+import { CACHE_TAGS } from './cacheTags';
 
 /** تعداد آیتم‌های هر منبع برای واکشی */
 const FETCH_LIMITS = {
@@ -22,7 +23,8 @@ const FETCH_LIMITS = {
 async function fetchLatestProducts() {
   try {
     const res = await apiClient(
-      `/api/products?populate[images]=true&pagination[limit]=${FETCH_LIMITS.products}&sort[0]=createdAt:desc`
+      `/api/products?fields[0]=title&fields[1]=slug&fields[2]=shortDescription&fields[3]=description&fields[4]=createdAt&populate[images][fields][0]=url&populate[images][fields][1]=alternativeText&populate[images][fields][2]=formats&pagination[limit]=${FETCH_LIMITS.products}&sort[0]=createdAt:desc`,
+      { next: { revalidate: 3600, tags: [CACHE_TAGS.products] } }
     );
     return formatStrapiProducts(res).map((p) => ({
       type: 'product',
@@ -42,7 +44,8 @@ async function fetchLatestProducts() {
 async function fetchLatestArticles() {
   try {
     const res = await apiClient(
-      `/api/articles?populate=cover&pagination[limit]=${FETCH_LIMITS.articles}&sort[0]=publishedAt:desc`
+      `/api/articles?fields[0]=title&fields[1]=slug&fields[2]=excerpt&fields[3]=publishedAt&fields[4]=createdAt&populate[cover][fields][0]=url&populate[cover][fields][1]=alternativeText&populate[cover][fields][2]=formats&pagination[limit]=${FETCH_LIMITS.articles}&sort[0]=publishedAt:desc`,
+      { next: { revalidate: 3600, tags: [CACHE_TAGS.articles] } }
     );
     return formatStrapiArticles(res).map((a) => ({
       type: 'article',
@@ -62,7 +65,8 @@ async function fetchLatestArticles() {
 async function fetchLatestServices() {
   try {
     const res = await apiClient(
-      `/api/services?populate=image&pagination[limit]=${FETCH_LIMITS.services}&sort[0]=createdAt:desc`
+      `/api/services?fields[0]=title&fields[1]=slug&fields[2]=description&fields[3]=createdAt&populate[image][fields][0]=url&populate[image][fields][1]=alternativeText&populate[image][fields][2]=formats&pagination[limit]=${FETCH_LIMITS.services}&sort[0]=createdAt:desc`,
+      { next: { revalidate: 3600, tags: [CACHE_TAGS.services] } }
     );
     return formatStrapiServices(res).map((s) => ({
       type: 'service',
@@ -82,7 +86,8 @@ async function fetchLatestServices() {
 async function fetchLatestComments() {
   try {
     const res = await apiClient(
-      `/api/comments?filters[isApproved][$eq]=true&populate[user][fields][0]=username&populate[article][fields][0]=slug&populate[product][fields][0]=slug&populate[course][fields][0]=slug&pagination[limit]=${FETCH_LIMITS.comments}&sort[0]=createdAt:desc`
+      `/api/comments?filters[isApproved][$eq]=true&fields[0]=content&fields[1]=name&fields[2]=createdAt&populate[user][fields][0]=username&populate[article][fields][0]=slug&populate[product][fields][0]=slug&populate[course][fields][0]=slug&pagination[limit]=${FETCH_LIMITS.comments}&sort[0]=createdAt:desc`,
+      { next: { revalidate: 3600, tags: [CACHE_TAGS.comments] } }
     );
     const rawItems = res?.data || [];
     return rawItems.map((item) => {

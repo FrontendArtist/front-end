@@ -1,5 +1,5 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { lightAuthOptions } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { STRAPI_API_URL } from '@/lib/api';
 
@@ -13,7 +13,7 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
  * دریافت لیست اعلان‌های خوانده‌نشده کاربر جاری (حداکثر مربوط به ۷ روز گذشته)
  */
 export async function GET() {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(lightAuthOptions);
 
     if (!session?.user?.id) {
         return NextResponse.json({ message: 'Unauthenticated', data: [] }, { status: 401 });
@@ -61,7 +61,7 @@ export async function GET() {
  * علامت‌گذاری یک اعلان، اعلان‌های یک پیام، یا تمام اعلان‌های کاربر به عنوان خوانده‌شده در دیتابیس
  */
 export async function PUT(request) {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(lightAuthOptions);
 
     if (!session?.user?.id) {
         return NextResponse.json({ message: 'Unauthenticated' }, { status: 401 });

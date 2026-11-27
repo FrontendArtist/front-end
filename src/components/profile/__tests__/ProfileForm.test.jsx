@@ -44,7 +44,7 @@ describe('ProfileForm locality selects', () => {
             if (url === '/api/localities') {
                 return { ok: true, json: async () => LOCALITIES };
             }
-            if (url === '/api/profile' && options.method !== 'PUT') {
+            if (String(url).startsWith('/api/profile') && options.method !== 'PUT') {
                 return {
                     ok: true,
                     json: async () => profileBody({
@@ -111,7 +111,7 @@ describe('ProfileForm locality selects', () => {
             if (url === '/api/localities') {
                 return { ok: true, json: async () => LOCALITIES };
             }
-            if (url === '/api/profile' && options.method !== 'PUT') {
+            if (String(url).startsWith('/api/profile') && options.method !== 'PUT') {
                 return {
                     ok: true,
                     json: async () => profileBody({
@@ -179,7 +179,7 @@ describe('ProfileForm locality selects', () => {
             if (url === '/api/localities') {
                 return { ok: true, json: async () => LOCALITIES };
             }
-            if (url === '/api/profile' && options.method !== 'PUT') {
+            if (String(url).startsWith('/api/profile') && options.method !== 'PUT') {
                 return {
                     ok: true,
                     json: async () => profileBody({

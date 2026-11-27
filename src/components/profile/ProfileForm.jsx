@@ -48,8 +48,8 @@ export default function ProfileForm() {
             }
 
             try {
-                // فراخوانی API Proxy داخلی Next.js: /api/profile
-                const response = await fetch('/api/profile', {
+                // فراخوانی API Proxy داخلی Next.js: /api/profile?include=address
+                const response = await fetch('/api/profile?include=address', {
                     headers: {
                         'Content-Type': 'application/json',
                     },

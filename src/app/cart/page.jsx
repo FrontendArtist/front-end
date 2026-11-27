@@ -114,7 +114,7 @@ export default function CartPage() {
     useEffect(() => {
         if (!hasPhysicalProducts || status !== 'authenticated' || typeof fetch !== 'function') return;
         let active = true;
-        fetch('/api/profile')
+        fetch('/api/profile?include=address')
             .then((res) => res.json())
             .then((data) => {
                 if (active && data?.address) {
@@ -264,7 +264,7 @@ export default function CartPage() {
                     if (!addr || !isFullAddressLongEnough(addr.fullAddress) || !addr.recipientName?.trim()) {
                         if (typeof fetch === 'function') {
                             try {
-                                const profileRes = await fetch('/api/profile');
+                                const profileRes = await fetch('/api/profile?include=address');
                                 const profileData = await profileRes.json().catch(() => ({}));
                                 addr = profileData?.address || null;
                                 if (addr) setUserAddress(addr);

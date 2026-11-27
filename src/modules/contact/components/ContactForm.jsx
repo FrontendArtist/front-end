@@ -60,7 +60,7 @@ export default function ContactForm() {
         let isMounted = true;
         const loadUserProfile = async () => {
             try {
-                const res = await fetch('/api/profile', { cache: 'no-store' });
+                const res = await fetch('/api/profile?include=basic', { cache: 'no-store' });
                 let profileData = null;
                 if (res.ok) {
                     profileData = await res.json();

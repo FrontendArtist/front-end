@@ -7,14 +7,40 @@ import { apiClient } from './apiClient';
 import { formatStrapiProducts } from './strapiUtils';
 import { withErrorHandling } from './apiErrorHandler';
 import { PRODUCTS_PAGE_SIZE } from './constants';
+import { CACHE_TAGS } from './cacheTags';
+
+const PRODUCT_CACHE_OPTIONS = { next: { revalidate: 3600, tags: [CACHE_TAGS.products] } };
+const PRODUCT_CARD_PARAMS = {
+  'fields[0]': 'title',
+  'fields[1]': 'slug',
+  'fields[2]': 'price',
+  'fields[3]': 'discountPercent',
+  'fields[4]': 'discountUntil',
+  'fields[5]': 'description',
+  'fields[6]': 'shortDescription',
+  'fields[7]': 'stock',
+  'fields[8]': 'isAvailable',
+  'populate[categories][fields][0]': 'slug',
+  'populate[categories][fields][1]': 'name',
+  'populate[categories][populate][parent][fields][0]': 'slug',
+  'populate[categories][populate][parent][fields][1]': 'name',
+  'populate[images][fields][0]': 'url',
+  'populate[images][fields][1]': 'alternativeText',
+  'populate[images][fields][2]': 'name',
+  'populate[images][fields][3]': 'formats',
+};
+const PRODUCT_CARD_QUERY = new URLSearchParams(PRODUCT_CARD_PARAMS).toString();
 
 /**
- * واکشی تمام محصولات از Strapi
+ * واکشی تمام محصولات از Strapi (فیلدهای سبک برای sitemap)
  */
 export async function getAllProducts() {
   return withErrorHandling(
     async () => {
-      const response = await apiClient('/api/products?status=published&populate[categories][populate]=parent&populate[images]=true');
+      const response = await apiClient(
+        '/api/products?status=published&fields[0]=title&fields[1]=slug&fields[2]=updatedAt&fields[3]=createdAt&populate[categories][fields][0]=slug&populate[categories][populate][parent][fields][0]=slug&pagination[pageSize]=200',
+        PRODUCT_CACHE_OPTIONS
+      );
       return formatStrapiProducts(response);
     },
     'واکشی محصولات',
@@ -30,7 +56,8 @@ export async function getProductBySlug(slug) {
   return withErrorHandling(
     async () => {
       const response = await apiClient(
-        `/api/products?status=published&filters[slug][$eq]=${slug}&populate[categories][populate]=parent&populate[images]=true`
+        `/api/products?status=published&filters[slug][$eq]=${encodeURIComponent(slug)}&populate[categories][populate]=parent&populate[images]=true`,
+        PRODUCT_CACHE_OPTIONS
       );
       const formattedProducts = formatStrapiProducts(response);
       return formattedProducts[0] || null;
@@ -47,7 +74,8 @@ export async function getProductCategoryPath(slug) {
   return withErrorHandling(
     async () => {
       const res = await apiClient(
-        `/api/products?filters[slug][$eq]=${slug}&populate[categories][populate]=parent`
+        `/api/products?filters[slug][$eq]=${encodeURIComponent(slug)}&fields[0]=slug&populate[categories][fields][0]=slug&populate[categories][fields][1]=isPrimary&populate[categories][populate][parent][fields][0]=slug`,
+        PRODUCT_CACHE_OPTIONS
       );
 
       const raw = res?.data?.[0] || null;
@@ -98,7 +126,8 @@ export async function getProducts({ limit = 4, sort = 'createdAt:desc' } = {}) {
   return withErrorHandling(
     async () => {
       const response = await apiClient(
-        `/api/products?status=published&populate[categories][populate]=parent&populate[images]=true&pagination[limit]=${limit}&sort=${sort}`
+        `/api/products?status=published&${PRODUCT_CARD_QUERY}&pagination[limit]=${limit}&sort=${sort}`,
+        PRODUCT_CACHE_OPTIONS
       );
       return formatStrapiProducts(response);
     },
@@ -118,15 +147,13 @@ export async function getProductsPaginated(
 ) {
   return withErrorHandling(
     async () => {
-      const params = new URLSearchParams();
-
-      params.set('status', 'published');
-      params.set('populate[categories][populate]', 'parent');
-      params.set('populate[images]', 'true');
-
-      params.set('pagination[page]', String(page));
-      params.set('pagination[pageSize]', String(pageSize));
-      params.set('sort', sort);
+      const params = new URLSearchParams({
+        status: 'published',
+        ...PRODUCT_CARD_PARAMS,
+        'pagination[page]': String(page),
+        'pagination[pageSize]': String(pageSize),
+        sort,
+      });
 
       if (subCategorySlug) {
         params.set('filters[categories][slug][$eq]', subCategorySlug);
@@ -148,7 +175,7 @@ export async function getProductsPaginated(
         console.log('🔍 Products Query URL:', decodeURIComponent(params.toString()));
       }
 
-      const res = await apiClient(`/api/products?${params.toString()}`);
+      const res = await apiClient(`/api/products?${params.toString()}`, PRODUCT_CACHE_OPTIONS);
 
       return {
         data: formatStrapiProducts(res),
@@ -185,14 +212,14 @@ export async function getRelatedProducts({ currentId = null, currentSlug = null,
 
       let result = [];
       if (categorySlug) {
-        const url = `/api/products?populate[categories][populate]=parent&populate[images]=true&pagination[limit]=${limit + 4}&sort=createdAt:desc&filters[categories][slug][$eq]=${categorySlug}`;
-        const res = await apiClient(url);
+        const url = `/api/products?status=published&${PRODUCT_CARD_QUERY}&pagination[limit]=${limit + 4}&sort=createdAt:desc&filters[categories][slug][$eq]=${encodeURIComponent(categorySlug)}`;
+        const res = await apiClient(url, PRODUCT_CACHE_OPTIONS);
         result = excludeCurrent(formatStrapiProducts(res));
       }
 
       if (result.length < limit) {
-        const fbUrl = `/api/products?populate[categories][populate]=parent&populate[images]=true&pagination[limit]=${limit + 4}&sort=createdAt:desc`;
-        const fbRes = await apiClient(fbUrl);
+        const fbUrl = `/api/products?status=published&${PRODUCT_CARD_QUERY}&pagination[limit]=${limit + 4}&sort=createdAt:desc`;
+        const fbRes = await apiClient(fbUrl, PRODUCT_CACHE_OPTIONS);
         const extra = excludeCurrent(formatStrapiProducts(fbRes)).filter(
           (p) => !result.some((r) => String(r.id) === String(p.id))
         );

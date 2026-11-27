@@ -1,5 +1,6 @@
 import { API_BASE_URL } from './api';
 import { resolveAudioAccess } from './lessonAccess';
+import { CACHE_TAGS } from './cacheTags';
 
 function matchesFile(value, fileUrl) {
   if (typeof value !== 'string' || !value.trim()) return false;
@@ -27,16 +28,32 @@ export async function resolveMediaAccess(fileUrl, cid, session) {
     let pageCount = 1;
     do {
       const query = new URLSearchParams({
-        'populate[chapters][populate][lessons]': '*',
-        'populate[curriculum]': '*',
-        'populate[media]': '*',
+        'fields[0]': 'id',
+        'fields[1]': 'documentId',
+        'fields[2]': 'slug',
+        'fields[3]': 'price',
+        'fields[4]': 'internationalPrice',
+        'fields[5]': 'discountPercent',
+        'fields[6]': 'discountUntil',
+        'populate[chapters][fields][0]': 'id',
+        'populate[chapters][fields][1]': 'price',
+        'populate[chapters][fields][2]': 'integrationId',
+        'populate[chapters][populate][lessons][fields][0]': 'id',
+        'populate[chapters][populate][lessons][fields][1]': 'audioUrl',
+        'populate[chapters][populate][lessons][fields][2]': 'videoUrl',
+        'populate[chapters][populate][lessons][fields][3]': 'isFree',
+        'populate[curriculum][fields][0]': 'id',
+        'populate[curriculum][fields][1]': 'audioUrl',
+        'populate[curriculum][fields][2]': 'videoUrl',
+        'populate[curriculum][fields][3]': 'isFree',
+        'populate[media][fields][0]': 'url',
         'pagination[pageSize]': '100',
         'pagination[page]': String(page),
         status,
       });
       const response = await fetch(`${API_BASE_URL}/api/courses?${query}`, {
         headers: { Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}` },
-        cache: 'no-store',
+        next: { revalidate: 300, tags: [CACHE_TAGS.courses] },
       });
       if (!response.ok) throw new Error('دریافت محتوای دوره‌ها انجام نشد.');
       const json = await response.json();

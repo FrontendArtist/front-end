@@ -6,7 +6,7 @@ import { getArticles } from '@/lib/articlesApi';
 import { getServices } from '@/lib/servicesApi';
 import { getCourses } from '@/lib/coursesApi';
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export async function GET() {
   try {

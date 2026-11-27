@@ -2,7 +2,7 @@
 // پروکسی فهرست رسمی استان/شهر شامل نام استان و شهرها به همراه شناسهٔ داخلی استرپی (documentId).
 
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { lightAuthOptions } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 const UNAUTHENTICATED_MESSAGE = 'برای دریافت فهرست استان و شهر باید وارد حساب کاربری شوید.';
@@ -46,7 +46,7 @@ function normalizeLocalities(data) {
 }
 
 export async function GET() {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(lightAuthOptions);
 
     if (!session || !session.user || !session.user.id) {
         return NextResponse.json({ message: UNAUTHENTICATED_MESSAGE }, { status: 401 });

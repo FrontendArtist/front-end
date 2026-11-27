@@ -23,6 +23,12 @@ import { apiClient } from './apiClient';
 import { formatStrapiServices } from './strapiUtils';
 import { withErrorHandling } from './apiErrorHandler';
 import { SERVICES_PAGE_SIZE } from './constants';
+import { CACHE_TAGS } from './cacheTags';
+
+const SERVICE_CACHE_OPTIONS = { next: { revalidate: 86400, tags: [CACHE_TAGS.services] } };
+const SERVICE_CARD_FIELDS =
+  'fields[0]=title&fields[1]=slug&fields[2]=description&fields[3]=link&fields[4]=createdAt' +
+  '&populate[image][fields][0]=url&populate[image][fields][1]=alternativeText&populate[image][fields][2]=name&populate[image][fields][3]=formats';
 
 /**
  * واکشی تمام خدمات از Strapi
@@ -64,7 +70,7 @@ import { SERVICES_PAGE_SIZE } from './constants';
 export async function getAllServices() {
   return withErrorHandling(
     async () => {
-      const response = await apiClient('/api/services?populate=image&sort=createdAt:desc');
+      const response = await apiClient(`/api/services?${SERVICE_CARD_FIELDS}&sort=createdAt:desc&pagination[pageSize]=100`, SERVICE_CACHE_OPTIONS);
       const formattedServices = formatStrapiServices(response);
       return formattedServices;
     },
@@ -91,7 +97,8 @@ export async function getServiceBySlug(slug) {
   return withErrorHandling(
     async () => {
       const response = await apiClient(
-        `/api/services?filters[slug][$eq]=${slug}&populate=*`
+        `/api/services?filters[slug][$eq]=${encodeURIComponent(slug)}&populate[image][fields][0]=url&populate[image][fields][1]=alternativeText&populate[image][fields][2]=name&populate[image][fields][3]=formats&populate[audio][fields][0]=url&populate[audio][fields][1]=name&populate[audio][fields][2]=mime`,
+        SERVICE_CACHE_OPTIONS
       );
       const formattedServices = formatStrapiServices(response);
       return formattedServices[0] || null;
@@ -120,7 +127,8 @@ export async function getServices({ limit = 3, sort = 'createdAt:desc' } = {}) {
   return withErrorHandling(
     async () => {
       const response = await apiClient(
-        `/api/services?populate=image&pagination[limit]=${limit}&sort=${sort}`
+        `/api/services?${SERVICE_CARD_FIELDS}&pagination[limit]=${limit}&sort=${sort}`,
+        SERVICE_CACHE_OPTIONS
       );
       const formattedServices = formatStrapiServices(response);
       return formattedServices;
@@ -153,7 +161,8 @@ export async function getServicesPaginated(page = 1, pageSize = SERVICES_PAGE_SI
   return withErrorHandling(
     async () => {
       const response = await apiClient(
-        `/api/services?populate=image&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`
+        `/api/services?${SERVICE_CARD_FIELDS}&pagination[page]=${page}&pagination[pageSize]=${pageSize}&sort=${sort}`,
+        SERVICE_CACHE_OPTIONS
       );
       const formattedServices = formatStrapiServices(response);
       return {

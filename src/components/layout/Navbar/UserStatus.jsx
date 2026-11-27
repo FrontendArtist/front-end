@@ -118,7 +118,7 @@ export default function UserStatus() {
     const profileData = status === 'authenticated' && profileResult?.userId === String(session?.user?.id)
         ? profileResult.data : null;
 
-    // ── fetch اطلاعات پروفایل با کش مشترک برای جلوگیری از فچ‌های همزمان ──────
+    // ── fetch اطلاعات پایه پروفایل فقط پس از رویداد تغییر پروفایل ──────
     useEffect(() => {
         let active = true;
         setProfileData(null);
@@ -127,7 +127,7 @@ export default function UserStatus() {
         const loadProfile = async (force = false) => {
             try {
                 if (force) invalidateProfileCache();
-                const data = await fetchProfileCartData(force, session?.user?.id);
+                const data = await fetchProfileCartData(force, session?.user?.id, 'basic');
                 if (active && data) {
                     setProfileData({ userId: String(session?.user?.id), data });
                 }
@@ -135,8 +135,6 @@ export default function UserStatus() {
                 // بی‌صدا رد می‌شویم
             }
         };
-
-        loadProfile(false);
 
         const handleProfileUpdated = () => loadProfile(true);
         window.addEventListener('profile-updated', handleProfileUpdated);

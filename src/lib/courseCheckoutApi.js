@@ -18,7 +18,7 @@ export const getTopUpCheckout = (topUpId, jwt, signal) =>
     readCheckout(`/api/topup/${encodeURIComponent(topUpId)}/checkout`, jwt, signal);
 
 export async function getCurrentCourseAccess(userId, signal) {
-    const response = await fetch('/api/profile', { cache: 'no-store', signal });
+    const response = await fetch('/api/profile?include=courses', { cache: 'no-store', signal });
     if (!response.ok) {
         throw new Error('بررسی دسترسی فعلی دوره‌ها ممکن نیست.');
     }

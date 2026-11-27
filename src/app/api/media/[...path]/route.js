@@ -1,11 +1,11 @@
 // فایل عمومی و رسانهٔ آموزشی پیش از دریافت، از روی محتوای واقعی تفکیک می‌شوند.
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { lightAuthOptions } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/api';
 import { resolveMediaAccess } from '@/lib/mediaAccess';
 
 async function proxyMedia(request, { params }, method) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession(lightAuthOptions);
   if (!session?.user?.id) return new Response(null, { status: 401 });
 
   const { path } = await params;

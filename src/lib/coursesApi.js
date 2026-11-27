@@ -17,10 +17,31 @@ import { apiClient } from './apiClient';
 import { formatStrapiCourses } from './strapiUtils';
 import { withErrorHandling } from './apiErrorHandler';
 import { COURSES_PAGE_SIZE } from './constants';
+import { CACHE_TAGS } from './cacheTags';
+
+const COURSE_CACHE_OPTIONS = { next: { revalidate: 3600, tags: [CACHE_TAGS.courses] } };
+
+const COURSE_CARD_QUERY_PARAMS = {
+  'fields[0]': 'title',
+  'fields[1]': 'slug',
+  'fields[2]': 'price',
+  'fields[3]': 'internationalPrice',
+  'fields[4]': 'discountPercent',
+  'fields[5]': 'discountUntil',
+  'fields[6]': 'description',
+  'fields[7]': 'isChaptered',
+  'fields[8]': 'isFree',
+  'populate[media][fields][0]': 'url',
+  'populate[media][fields][1]': 'alternativeText',
+  'populate[media][fields][2]': 'name',
+  'populate[media][fields][3]': 'formats',
+  'populate[chapters][fields][0]': 'id',
+  'populate[chapters][fields][1]': 'integrationId',
+};
 
 /**
- * واکشی تمام دوره‌ها از Strapi با ساختار Deep Populate در Strapi v5
- * 
+ * واکشی تمام دوره‌ها از Strapi (فیلدهای سبک برای sitemap و فهرست)
+ *
  * @returns {Promise<Array>} آرایه‌ای از اشیاء دوره فرمت شده
  */
 export async function getAllCourses() {
@@ -29,12 +50,14 @@ export async function getAllCourses() {
       const searchParams = new URLSearchParams({
         'status': 'published',
         'sort': 'createdAt:desc',
-        'populate[chapters][populate][lessons]': '*',
-        'populate[curriculum]': '*',
-        'populate[media]': 'true',
+        'pagination[pageSize]': '200',
+        'fields[0]': 'title',
+        'fields[1]': 'slug',
+        'fields[2]': 'updatedAt',
+        'fields[3]': 'createdAt',
       });
 
-      const response = await apiClient(`/api/courses?${searchParams.toString()}`);
+      const response = await apiClient(`/api/courses?${searchParams.toString()}`, COURSE_CACHE_OPTIONS);
       return formatStrapiCourses(response);
     },
     'واکشی دوره‌ها',
@@ -82,7 +105,7 @@ export async function getCourseBySlug(slug) {
       });
 
       const endpoint = `/api/courses?${searchParams.toString()}`;
-      const response = await apiClient(endpoint);
+      const response = await apiClient(endpoint, COURSE_CACHE_OPTIONS);
 
       const formattedCourses = formatStrapiCourses(response);
       const course = formattedCourses[0] || null;
@@ -115,12 +138,10 @@ export async function getCourses({ limit = 4 } = {}) {
         'status': 'published',
         'sort': 'createdAt:desc',
         'pagination[limit]': String(limit),
-        'populate[chapters][populate][lessons]': '*',
-        'populate[curriculum]': '*',
-        'populate[media]': 'true',
+        ...COURSE_CARD_QUERY_PARAMS,
       });
 
-      const response = await apiClient(`/api/courses?${searchParams.toString()}`);
+      const response = await apiClient(`/api/courses?${searchParams.toString()}`, COURSE_CACHE_OPTIONS);
       return formatStrapiCourses(response);
     },
     'واکشی دوره‌ها',
@@ -144,12 +165,10 @@ export async function getCoursesPaginated(page = 1, pageSize = COURSES_PAGE_SIZE
         'pagination[page]': String(page),
         'pagination[pageSize]': String(pageSize),
         'sort': sort,
-        'populate[chapters][populate][lessons]': '*',
-        'populate[curriculum]': '*',
-        'populate[media]': 'true',
+        ...COURSE_CARD_QUERY_PARAMS,
       });
 
-      const response = await apiClient(`/api/courses?${searchParams.toString()}`);
+      const response = await apiClient(`/api/courses?${searchParams.toString()}`, COURSE_CACHE_OPTIONS);
       const formattedCourses = formatStrapiCourses(response);
 
       return {

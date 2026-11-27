@@ -8,12 +8,12 @@
  */
 
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { lightAuthOptions } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { CourseOrderId, confirmMyCourseOrderDelivery } from '@/lib/byeMoneyApi';
 
 export async function POST(_request, { params }) {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(lightAuthOptions);
     if (!session?.user?.jwt) {
         return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
     }

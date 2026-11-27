@@ -2,7 +2,7 @@ import { POST } from './route';
 import { getServerSession } from 'next-auth';
 
 jest.mock('next-auth', () => ({ getServerSession: jest.fn() }));
-jest.mock('@/lib/auth', () => ({ authOptions: {} }));
+jest.mock('@/lib/auth', () => ({ authOptions: {}, lightAuthOptions: {} }));
 jest.mock('@/lib/api', () => ({ STRAPI_API_URL: 'http://strapi.test' }));
 jest.mock('next/server', () => ({
     NextResponse: {

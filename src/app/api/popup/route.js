@@ -5,16 +5,23 @@
 
 import { getActivePopupMessage } from '@/lib/popupApi';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export async function GET() {
   try {
     const popup = await getActivePopupMessage();
 
-    return Response.json({
-      success: true,
-      data: popup,
-    });
+    return Response.json(
+      {
+        success: true,
+        data: popup,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, max-age=60, s-maxage=3600, stale-while-revalidate=86400',
+        },
+      }
+    );
   } catch (error) {
     return Response.json(
       {

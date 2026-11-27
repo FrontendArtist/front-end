@@ -28,7 +28,7 @@
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { lightAuthOptions } from "@/lib/auth";
 import { STRAPI_API_URL } from "@/lib/api";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ const ORDER_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
 export async function POST(request) {
     // ── Auth Guard ──────────────────────────────────────────────────────────────
     // Ensure only authenticated users can call this endpoint.
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(lightAuthOptions);
     if (!session?.user?.id) {
         return NextResponse.json(
             { message: "برای ارسال فیش، ابتدا وارد حساب کاربری خود شوید." },

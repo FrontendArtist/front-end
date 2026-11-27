@@ -4,7 +4,7 @@ import { getTopBanner } from '@/lib/topBannerApi';
 import NavbarClient from './NavbarClient';
 import { unstable_noStore as noStore } from 'next/cache';
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 const Navbar = async () => {
   const [productCategories, articleCategories, topBanner] = await Promise.all([

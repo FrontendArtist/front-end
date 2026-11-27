@@ -192,7 +192,7 @@ async function handlePaymentVerification(params, request) {
     // 2. واکشی سفارش از استراپی با توکن سیستمی STRAPI_TOKEN
     let order = null;
     try {
-        let findUrl = `${STRAPI_BASE_URL}/api/orders?filters[documentId][$eq]=${encodeURIComponent(resNum)}&populate=*`;
+        let findUrl = `${STRAPI_BASE_URL}/api/orders?filters[documentId][$eq]=${encodeURIComponent(resNum)}&populate[0]=items&populate[user][fields][0]=id`;
         let findRes = await fetch(findUrl, {
             headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
             cache: 'no-store',
@@ -205,7 +205,7 @@ async function handlePaymentVerification(params, request) {
 
         // Fallback: اگر با documentId پیدا نشد، شاید شناسه عددی ارسال شده باشد
         if (!order && !isNaN(Number(resNum))) {
-            let numRes = await fetch(`${STRAPI_BASE_URL}/api/orders/${resNum}?populate=*`, {
+            let numRes = await fetch(`${STRAPI_BASE_URL}/api/orders/${resNum}?populate[0]=items&populate[user][fields][0]=id`, {
                 headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
                 cache: 'no-store',
             });
@@ -480,7 +480,7 @@ async function grantUserAccessAndCredits(userId, order) {
             .filter(Boolean);
 
         // واکشی پروفایل کاربر
-        const userRes = await fetch(`${STRAPI_BASE_URL}/api/users/${userId}?populate[0]=courses`, {
+        const userRes = await fetch(`${STRAPI_BASE_URL}/api/users/${userId}?populate[courses][fields][0]=id`, {
             headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
         });
 

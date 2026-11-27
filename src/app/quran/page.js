@@ -9,7 +9,7 @@ import QuranDirectory from '@/modules/quran/QuranDirectory/QuranDirectory';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import styles from './page.module.scss';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 604800;
 
 export const metadata = {
   title: 'کلام نور | فهرست سوره‌ها، تفاسیر اختصاصی و تفسیر موضوعی قرآن کریم',

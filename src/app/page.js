@@ -24,7 +24,7 @@ import { getCourses } from '@/lib/coursesApi';
 
 import { SITE_NAME, SITE_URL } from '@/lib/constants';
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export const metadata = {
   title: {

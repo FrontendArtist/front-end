@@ -5,6 +5,12 @@
 
 import { apiClient } from './apiClient';
 import { withErrorHandling } from './apiErrorHandler';
+import { CACHE_TAGS } from './cacheTags';
+
+const TAFSIR_CACHE_OPTIONS = {
+  suppressErrorLog: true,
+  next: { revalidate: 604800, tags: [CACHE_TAGS.tafsir] },
+};
 
 /**
  * تابع کمکی برای استخراج URL کامل فایل‌های صوتی آپلود شده در Strapi
@@ -63,10 +69,7 @@ export async function getSurahTafsir(surahNumber) {
     async () => {
       let response = null;
       try {
-        response = await apiClient(endpoint, {
-          suppressErrorLog: true,
-          cache: 'no-store',
-        });
+        response = await apiClient(endpoint, TAFSIR_CACHE_OPTIONS);
       } catch (err) {
         if (err.message?.includes('403') || err.message?.includes('404')) {
           return null;
@@ -128,16 +131,13 @@ export async function getSurahTafsir(surahNumber) {
  * @returns {Promise<Array<{ surahNumber: number, title?: string|null, hasTafsir: boolean }>>}
  */
 export async function getAllTafsirSurahsSummary() {
-  const endpoint = `/api/surahs?populate[ayeha][fields][0]=verseNumber&populate[ayeha][fields][1]=tafsirText&pagination[limit]=120&status=draft`;
+  const endpoint = `/api/surahs?fields[0]=surahNumber&fields[1]=title&populate[ayeha][fields][0]=verseNumber&populate[ayeha][fields][1]=tafsirText&pagination[limit]=120&status=draft`;
 
   return withErrorHandling(
     async () => {
       let response = null;
       try {
-        response = await apiClient(endpoint, {
-          suppressErrorLog: true,
-          cache: 'no-store',
-        });
+        response = await apiClient(endpoint, TAFSIR_CACHE_OPTIONS);
       } catch (err) {
         if (err.message?.includes('403') || err.message?.includes('404')) {
           return [];
@@ -175,16 +175,10 @@ export async function getAllQuranSubjects() {
   return withErrorHandling(
     async () => {
       const [subjectsRes, surahsRes] = await Promise.allSettled([
-        apiClient('/api/quran-subjects?pagination[limit]=200&status=draft', {
-          suppressErrorLog: true,
-          cache: 'no-store',
-        }),
+        apiClient('/api/quran-subjects?fields[0]=title&fields[1]=slug&fields[2]=description&pagination[limit]=200&status=draft', TAFSIR_CACHE_OPTIONS),
         apiClient(
-          '/api/surahs?populate[ayeha][populate][0]=subjects&pagination[limit]=120&status=draft',
-          {
-            suppressErrorLog: true,
-            cache: 'no-store',
-          }
+          '/api/surahs?fields[0]=surahNumber&populate[ayeha][fields][0]=verseNumber&populate[ayeha][populate][subjects][fields][0]=title&populate[ayeha][populate][subjects][fields][1]=slug&populate[ayeha][populate][subjects][fields][2]=description&pagination[limit]=120&status=draft',
+          TAFSIR_CACHE_OPTIONS
         ),
       ]);
 
@@ -254,15 +248,9 @@ export async function getSubjectTafsirBySlug(slug) {
       const [subjectsRes, surahsRes] = await Promise.allSettled([
         apiClient(
           `/api/quran-subjects?filters[slug][$eq]=${encodeURIComponent(decodedSlug)}&status=draft`,
-          {
-            suppressErrorLog: true,
-            cache: 'no-store',
-          }
+          TAFSIR_CACHE_OPTIONS
         ),
-        apiClient('/api/surahs?populate[ayeha][populate]=*&pagination[limit]=120&status=draft', {
-          suppressErrorLog: true,
-          cache: 'no-store',
-        }),
+        apiClient('/api/surahs?fields[0]=surahNumber&fields[1]=title&populate[ayeha][populate]=*&pagination[limit]=120&status=draft', TAFSIR_CACHE_OPTIONS),
       ]);
 
       let targetSubject = null;

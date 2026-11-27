@@ -10,6 +10,7 @@
 
 import { apiClient } from './apiClient';
 import { formatStrapiFaqs } from './strapiUtils';
+import { CACHE_TAGS } from './cacheTags';
 
 /**
  * واکشی تمام سوالات متداول از Strapi
@@ -44,7 +45,10 @@ export async function getAllFaqs() {
   try {
     // واکشی سوالات متداول با مرتب‌سازی بر اساس فیلد No
     // Strapi از پارامتر "sort" برای مرتب‌سازی استفاده می‌کند
-    const response = await apiClient('/api/faqs?populate=*&sort=No:asc');
+    const response = await apiClient(
+      '/api/faqs?fields[0]=question&fields[1]=answer&sort=No:asc&pagination[pageSize]=100',
+      { next: { revalidate: 86400, tags: [CACHE_TAGS.faqs] } }
+    );
 
     // فرمت کردن پاسخ خام Strapi به داده‌های تمیز و قابل استفاده
     // strapiUtils مدیریت نگاشت فیلدها و بررسی null را انجام می‌دهد

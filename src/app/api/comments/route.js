@@ -1,7 +1,7 @@
 // src/app/api/comments/route.js
 
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { lightAuthOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 const STRAPI_URL = (process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://127.0.0.1:1337').trim().replace(/\/api\/?$/, '').replace(/\/+$/, '');
@@ -9,7 +9,7 @@ const STRAPI_ADMIN_TOKEN = process.env.STRAPI_API_TOKEN;
 
 export async function POST(request) {
     try {
-        const session = await getServerSession(authOptions);
+        const session = await getServerSession(lightAuthOptions);
 
         if (!session || !session.user || !session.user.id) {
             return NextResponse.json({ message: "برای ثبت نظر ابتدا باید وارد حساب کاربری خود شوید" }, { status: 401 });

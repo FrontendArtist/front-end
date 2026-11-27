@@ -75,13 +75,13 @@ export async function checkCourseAccess(userId, courseId, courseSlug, sessionUse
     const phone = typeof rawPhone === 'string' && rawPhone.trim().length >= 10 ? rawPhone.trim() : null;
     const ordersUrl = isNumericUserId
       ? (phone
-        ? `${API_BASE_URL}/api/orders?filters[$or][0][user][id][$eq]=${encodeURIComponent(userId)}&filters[$or][1][phone][$eq]=${encodeURIComponent(phone)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate=*`
-        : `${API_BASE_URL}/api/orders?filters[user][id][$eq]=${encodeURIComponent(userId)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate=*`)
-      : `${API_BASE_URL}/api/orders?filters[user][documentId][$eq]=${encodeURIComponent(userId)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate=*`;
+        ? `${API_BASE_URL}/api/orders?filters[$or][0][user][id][$eq]=${encodeURIComponent(userId)}&filters[$or][1][phone][$eq]=${encodeURIComponent(phone)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate[items][populate]=*`
+        : `${API_BASE_URL}/api/orders?filters[user][id][$eq]=${encodeURIComponent(userId)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate[items][populate]=*`)
+      : `${API_BASE_URL}/api/orders?filters[user][documentId][$eq]=${encodeURIComponent(userId)}&pagination[pageSize]=100&sort[0]=createdAt:desc&populate[items][populate]=*`;
 
     const userUrl = isNumericUserId
-      ? `${API_BASE_URL}/api/users/${encodeURIComponent(userId)}?populate=courses`
-      : `${API_BASE_URL}/api/users?filters[documentId][$eq]=${encodeURIComponent(userId)}&populate=courses`;
+      ? `${API_BASE_URL}/api/users/${encodeURIComponent(userId)}?populate[courses][fields][0]=id&populate[courses][fields][1]=documentId&populate[courses][fields][2]=slug`
+      : `${API_BASE_URL}/api/users?filters[documentId][$eq]=${encodeURIComponent(userId)}&populate[courses][fields][0]=id&populate[courses][fields][1]=documentId&populate[courses][fields][2]=slug`;
 
     const ordersRes = await fetch(ordersUrl, {
       headers: { 'Authorization': `Bearer ${STRAPI_TOKEN}` },

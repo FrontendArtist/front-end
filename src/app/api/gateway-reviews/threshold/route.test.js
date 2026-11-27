@@ -3,7 +3,7 @@ import { GET } from './route';
 import { getServerSession } from 'next-auth/next';
 
 jest.mock('next-auth/next', () => ({ getServerSession: jest.fn() }));
-jest.mock('@/lib/auth', () => ({ authOptions: {} }));
+jest.mock('@/lib/auth', () => ({ authOptions: {}, lightAuthOptions: {} }));
 jest.mock('@/lib/api', () => ({ API_BASE_URL: 'http://strapi.test/api/' }));
 
 const originalFetch = global.fetch;

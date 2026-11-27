@@ -1,11 +1,11 @@
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { lightAuthOptions } from '@/lib/auth';
 import { STRAPI_API_URL } from '@/lib/api';
 
 const validKey = key => typeof key === 'string' && /^(course|chapter|product):[1-9]\d*$/.test(key);
 
 export async function POST(request) {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(lightAuthOptions);
     if (!session?.user?.id) return Response.json({ message: 'ابتدا وارد حساب خود شوید.' }, { status: 401 });
     try {
         const { removedItemKey, remainingItemKeys } = await request.json();

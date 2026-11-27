@@ -1,9 +1,15 @@
 let userId = null;
 let generation = 0;
-let inFlight = null;
-let cachedProfileData = null;
-let cacheTimestamp = 0;
+const sliceStore = new Map();
 const CACHE_TTL_MS = 60000;
+
+function getSlice(includeKey) {
+    const key = includeKey || 'cart';
+    if (!sliceStore.has(key)) {
+        sliceStore.set(key, { inFlight: null, cachedData: null, cacheTimestamp: 0 });
+    }
+    return sliceStore.get(key);
+}
 
 export function setProfileUser(nextUserId) {
     const nextId = nextUserId == null ? null : String(nextUserId);
@@ -11,46 +17,56 @@ export function setProfileUser(nextUserId) {
     userId = nextId;
     invalidateProfileCache();
 }
+
 export function invalidateProfileCache() {
     generation++;
-    inFlight = null;
-    cachedProfileData = null;
-    cacheTimestamp = 0;
+    sliceStore.clear();
 }
-export async function fetchProfileCartData(force = false, expectedUserId = userId) {
+
+export async function fetchProfileCartData(force = false, expectedUserId = userId, include = 'cart') {
     if (expectedUserId == null || String(expectedUserId) !== userId) return null;
-    if (!force && cachedProfileData && Date.now() - cacheTimestamp < CACHE_TTL_MS) return cachedProfileData;
-    if (inFlight) return inFlight.promise;
+    const sliceKey = include || 'cart';
+    const slice = getSlice(sliceKey);
+
+    if (!force && slice.cachedData && Date.now() - slice.cacheTimestamp < CACHE_TTL_MS) {
+        return slice.cachedData;
+    }
+    if (slice.inFlight) return slice.inFlight.promise;
+
     const request = { generation };
     request.promise = (async () => {
         try {
-            const response = await fetch('/api/profile');
+            const url = `/api/profile?include=${encodeURIComponent(sliceKey)}`;
+            const response = await fetch(url);
             if (!response.ok) throw new Error('خطا در دریافت اطلاعات پروفایل');
             const data = await response.json();
             if (request.generation !== generation) return null;
-            cachedProfileData = data;
-            cacheTimestamp = Date.now();
+            slice.cachedData = data;
+            slice.cacheTimestamp = Date.now();
             return data;
         } finally {
-            if (inFlight === request) inFlight = null;
+            if (slice.inFlight === request) slice.inFlight = null;
         }
     })();
-    inFlight = request;
+    slice.inFlight = request;
     return request.promise;
 }
+
 export async function updateProfileCartData(cartDataPayload, expectedUserId = userId) {
     if (expectedUserId == null || String(expectedUserId) !== userId) return null;
     const requestGeneration = generation;
     const response = await fetch('/api/profile', {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cartData: cartDataPayload }),
     });
     if (!response.ok) throw new Error('خطا در همگام‌سازی سبد خرید با سرور');
     const data = await response.json();
     if (requestGeneration !== generation) return null;
     if (data) {
-        cachedProfileData = data;
-        cacheTimestamp = Date.now();
+        const cartSlice = getSlice('cart');
+        cartSlice.cachedData = data;
+        cartSlice.cacheTimestamp = Date.now();
     }
     return data;
 }

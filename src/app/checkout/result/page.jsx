@@ -117,7 +117,7 @@ function CheckoutResultContent() {
         if (missingParentIds.length === 0 || typeof fetch !== 'function') return;
 
         let active = true;
-        fetch('/api/courses?pageSize=50')
+        fetch('/api/courses/catalog-lite')
             .then(res => res.ok ? res.json() : null)
             .then(json => {
                 if (!active || !json?.data) return;

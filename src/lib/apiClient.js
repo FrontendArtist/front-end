@@ -26,7 +26,14 @@ import { API_BASE_URL } from './api';
  * @throws {Error} در صورت شکست درخواست API
  */
 export async function apiClient(endpoint, options = {}) {
-  const { suppressErrorLog, timeoutMs = 15000, ...fetchOptions } = options;
+  const {
+    suppressErrorLog,
+    timeoutMs = 15000,
+    headers: customHeaders,
+    cache: customCache,
+    next: nextOption,
+    ...fetchOptions
+  } = options;
 
   // ۱. حذف اسلش‌ها و پسوند /api از انتهای Base URL جهت اطمینان از خلوص ریشه دامنه
   const cleanBase = (API_BASE_URL || 'http://localhost:1337')
@@ -47,16 +54,25 @@ export async function apiClient(endpoint, options = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+  const requestConfig = {
+    ...fetchOptions,
+    headers: {
+      'Content-Type': 'application/json',
+      ...customHeaders,
+    },
+    signal: controller.signal,
+  };
+
+  if (customCache === 'no-store') {
+    requestConfig.cache = 'no-store';
+  } else if (nextOption !== undefined) {
+    requestConfig.next = nextOption;
+  } else {
+    requestConfig.cache = customCache || 'no-store';
+  }
+
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...fetchOptions.headers,
-      },
-      cache: fetchOptions.cache || (fetchOptions.next ? undefined : 'no-store'),
-      signal: controller.signal,
-      ...fetchOptions,
-    });
+    const response = await fetch(url, requestConfig);
     
     clearTimeout(timeoutId);
 

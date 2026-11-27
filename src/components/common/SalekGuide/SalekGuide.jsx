@@ -57,7 +57,7 @@ export default function SalekGuide() {
       // دریافت تنظیمات داینامیک از بک‌اند
       let activeConfig = DEFAULT_CONFIG;
       try {
-        const response = await fetch('/api/salek-guide', { cache: 'no-store' });
+        const response = await fetch('/api/salek-guide');
         if (response.ok) {
           const result = await response.json();
           if (result?.success && result?.data) {

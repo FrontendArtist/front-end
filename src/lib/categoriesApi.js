@@ -5,6 +5,7 @@
 import { apiClient } from './apiClient';
 import { formatSingleImage } from './strapiUtils';
 import { API_BASE_URL } from './api';
+import { CACHE_TAGS } from './cacheTags';
 
 /**
  * گرفتن دسته‌های اصلی (Parent=null)
@@ -13,7 +14,8 @@ import { API_BASE_URL } from './api';
 export async function getMainCategories() {
   try {
     const res = await apiClient(
-      '/api/categories?filters[parent][$null]=true&populate[image][fields][0]=url&populate[image][fields][1]=alternativeText'
+      '/api/categories?filters[parent][$null]=true&populate[image][fields][0]=url&populate[image][fields][1]=alternativeText',
+      { next: { revalidate: 86400, tags: [CACHE_TAGS.categories] } }
     );
     const raw = res?.data?.data || res?.data || [];
     if (!Array.isArray(raw)) return [];
@@ -50,7 +52,10 @@ export async function getCategoryTree() {
       '/api/categories?filters[parent][id][$null]=true' +
       '&populate[subCategories][fields][0]=name' +
       '&populate[subCategories][fields][1]=slug' +
-      '&populate=image'
+      '&populate[image][fields][0]=url' +
+      '&populate[image][fields][1]=alternativeText' +
+      '&populate[image][fields][2]=formats',
+      { next: { revalidate: 86400, tags: [CACHE_TAGS.categories] } }
     );
 
     if (!res?.data) return [];

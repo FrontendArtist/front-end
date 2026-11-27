@@ -10,6 +10,7 @@
 
 import { apiClient } from './apiClient';
 import { formatStrapiTestimonials } from './strapiUtils';
+import { CACHE_TAGS } from './cacheTags';
 
 /**
  * واکشی تمام نظرات از Strapi
@@ -46,7 +47,10 @@ export async function getAllTestimonials() {
   try {
     // واکشی نظرات با مرتب‌سازی بر اساس تاریخ ایجاد
     // Strapi از پارامتر "sort" برای مرتب‌سازی استفاده می‌کند
-    const response = await apiClient('/api/testimontials?sort=createdAt:desc');
+    const response = await apiClient(
+      '/api/testimontials?fields[0]=name&fields[1]=title&fields[2]=comment&fields[3]=createdAt&fields[4]=publishedAt&sort=createdAt:desc&pagination[pageSize]=100',
+      { next: { revalidate: 86400, tags: [CACHE_TAGS.testimonials] } }
+    );
 
     // فرمت کردن پاسخ خام Strapi به داده‌های تمیز و قابل استفاده
     // strapiUtils مدیریت نگاشت فیلدها و بررسی null را انجام می‌دهد

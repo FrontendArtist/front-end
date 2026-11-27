@@ -6,6 +6,7 @@
 import { apiClient } from './apiClient';
 import { API_BASE_URL } from './api';
 import { withErrorHandling } from './apiErrorHandler';
+import { CACHE_TAGS } from './cacheTags';
 
 /**
  * نرمال‌سازی داده خام دریافت شده از Strapi
@@ -49,7 +50,7 @@ export async function getTopBanner() {
     async () => {
       // درخواست مستقیم به Strapi Single Type
       const response = await apiClient('/api/top-banner', {
-        cache: 'no-store',
+        next: { revalidate: 3600, tags: [CACHE_TAGS.topBanner] },
         suppressErrorLog: true,
       });
 

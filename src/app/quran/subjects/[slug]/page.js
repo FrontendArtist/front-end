@@ -11,7 +11,7 @@ import SurahViewer from '@/modules/quran/SurahViewer';
 import Breadcrumb from '@/components/ui/BreadCrumb/Breadcrumb';
 import styles from './page.module.scss';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 604800;
 
 const QURAN_CLOUD_BASE = 'https://api.alquran.cloud/v1';
 const EDITIONS = 'quran-uthmani,fa.makarem,ar.alafasy';
