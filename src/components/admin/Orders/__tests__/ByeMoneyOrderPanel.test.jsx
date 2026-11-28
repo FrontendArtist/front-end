@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import ByeMoneyOrderPanel from '../ByeMoneyOrderPanel';
+import ByeMoneyOrderPanel, { useOrderTracking } from '../ByeMoneyOrderPanel';
 import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
 
 jest.mock('@/lib/client/admin/ordersClient', () => ({ fetchOrderTracking: jest.fn() }));
@@ -326,5 +326,62 @@ describe('ByeMoneyOrderPanel', () => {
         fetchOrderTracking.mockRejectedValue(new Error('ادمین به سفارش‌های بای‌مانی دسترسی ندارد'));
         render(<ByeMoneyOrderPanel order={ORDER} />);
         expect(await screen.findByRole('alert')).toHaveTextContent('دسترسی ندارد');
+    });
+});
+
+describe('useOrderTracking — بازخوانی پس از برگشت', () => {
+    function Probe() {
+        const { state, reload } = useOrderTracking(ORDER);
+        const [result, setResult] = useState('');
+        const status = state.data?.order?.items?.[0]?.closedParcelRefundStatus || '';
+        return (
+            <>
+                <span data-testid="loading">{state.loading ? 'yes' : 'no'}</span>
+                <span data-testid="item-status">{status}</span>
+                <span data-testid="reload-result">{result}</span>
+                <button
+                    type="button"
+                    onClick={async () => {
+                        const ok = await reload({ keepVisible: true });
+                        setResult(ok ? 'ok' : 'fail');
+                    }}
+                >
+                    quiet
+                </button>
+            </>
+        );
+    }
+
+    const tracked = (status) => ({
+        order: {
+            orderId: ORDER.orderId,
+            items: [{ purchaseId: 'p1', itemType: 'Product', closedParcelRefundStatus: status, title: 'کتاب' }],
+        },
+        warnings: [],
+        timeline: [],
+    });
+
+    test('جزئیات قبلی می‌ماند و شکست بازخوانی داده را پاک نمی‌کند', async () => {
+        fetchOrderTracking.mockResolvedValue(tracked('NotRefunded'));
+        render(<Probe />);
+        expect(await screen.findByTestId('item-status')).toHaveTextContent('NotRefunded');
+
+        let resolveNext;
+        const before = fetchOrderTracking.mock.calls.length;
+        fetchOrderTracking.mockImplementation(() => new Promise((resolve) => { resolveNext = resolve; }));
+        fireEvent.click(screen.getByText('quiet'));
+        await waitFor(() => expect(fetchOrderTracking.mock.calls.length).toBeGreaterThan(before));
+        expect(screen.getByTestId('loading')).toHaveTextContent('no');
+        expect(screen.getByTestId('item-status')).toHaveTextContent('NotRefunded');
+
+        resolveNext(tracked('Refunded'));
+        await waitFor(() => expect(screen.getByTestId('item-status')).toHaveTextContent('Refunded'));
+        await waitFor(() => expect(screen.getByTestId('reload-result')).toHaveTextContent('ok'));
+
+        fetchOrderTracking.mockRejectedValue(new Error('down'));
+        fireEvent.click(screen.getByText('quiet'));
+        await waitFor(() => expect(screen.getByTestId('reload-result')).toHaveTextContent('fail'));
+        expect(screen.getByTestId('loading')).toHaveTextContent('no');
+        expect(screen.getByTestId('item-status')).toHaveTextContent('Refunded');
     });
 });

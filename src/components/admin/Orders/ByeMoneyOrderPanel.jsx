@@ -4,8 +4,9 @@
  * @file src/components/admin/Orders/ByeMoneyOrderPanel.jsx
  * @description پنل جزئیات سفارش بای‌مانی: اقلام، رسید (فقط Paid) و خط زمانی تلاش‌های خرید (TRACK-03)
  *
- * فقط‌مشاهده است و هیچ تغییر وضعیت مالی ندارد. داده از route سروری /api/admin/orders/[id]/tracking
- * می‌آید. اگر استرپی در دسترس نباشد فقط وضعیت بای‌مانی با هشدار نمایش داده می‌شود و پنل نمی‌شکند.
+ * داده از route سروری /api/admin/orders/[id]/tracking می‌آید.
+ * برگشت دستی نور قلم بسته‌شده فقط از route سروری closed-parcel-refund ثبت می‌شود.
+ * اگر استرپی در دسترس نباشد فقط وضعیت بای‌مانی با هشدار نمایش داده می‌شود و پنل نمی‌شکند.
  * وضعیت شارژ با وضعیت خرید یکی نمایش داده نمی‌شود (TRACK-04): خط «شارژ» جدا از «نتیجهٔ نهایی سفارش» است.
  * وضعیت ارسال مرسوله یک‌بار برای کل سفارش است؛ برگشتی باز یا بسته‌شده بدون تسویه، دکمهٔ تحویل را می‌بندد.
  *
@@ -15,7 +16,7 @@
  * دکمهٔ «ارسال به پستکس»، کد رهگیری و وضعیت مرسوله، هر کدام یک‌بار برای کل سفارش، داخل OrderItemsList هستند.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
 import { canShowReceipt, isPhysicalFullyCancelled } from '@/lib/admin/orderTracking';
 import { getPhysicalDeliveryLabel } from '@/lib/physicalDelivery';
@@ -26,6 +27,7 @@ import ShipmentRefreshControl from './ShipmentRefreshControl';
 import { carrierPaymentPendingSince, firstCarrierPaymentPending } from '@/lib/admin/shipmentRefresh';
 import CarrierReturnResolveControl from './CarrierReturnResolveControl';
 import CarrierAlertResolveControl from './CarrierAlertResolveControl';
+import ClosedParcelRefundControl from './ClosedParcelRefundControl';
 import {
     carrierReturnStatusOf, carrierAlertStatusOf, hasPendingCarrierAlert, CARRIER_ALERT_STATUS_LABELS,
 } from '@/lib/admin/orderDisplay';
@@ -147,14 +149,25 @@ export function Timeline({ events, visibleCount = TIMELINE_VISIBLE }) {
  */
 export function useOrderTracking(order, { onSummary, onPhysicalCancelled } = {}) {
     const [state, setState] = useState({ loading: true, error: null, data: null });
-    const [reloadKey, setReloadKey] = useState(0);
+    const [reloadState, setReloadState] = useState({ n: 0, keep: false });
+    const pendingRef = useRef(null);
     const orderId = order.orderId || order.id;
 
     useEffect(() => {
         const controller = new AbortController();
         let mounted = true;
-        setState({ loading: true, error: null, data: null });
-        fetchOrderTracking(orderId, { signal: controller.signal, force: reloadKey > 0 })
+        const ticket = pendingRef.current;
+        const sameOrder = Boolean(ticket && ticket.orderId === orderId);
+        const keep = Boolean(sameOrder && ticket.keep && reloadState.n > 0);
+        setState((prev) => ({
+            loading: !(keep && prev.data),
+            error: null,
+            data: keep ? prev.data : null,
+        }));
+        const finish = (ok) => {
+            if (ticket && pendingRef.current === ticket) ticket.resolve(Boolean(ok));
+        };
+        fetchOrderTracking(orderId, { signal: controller.signal, force: reloadState.n > 0 })
             .then((data) => {
                 if (!mounted) return;
                 setState({ loading: false, error: null, data });
@@ -163,10 +176,16 @@ export function useOrderTracking(order, { onSummary, onPhysicalCancelled } = {})
                     const cancelled = isPhysicalFullyCancelled(data.order?.items);
                     if (cancelled !== Boolean(order.physicalCancelled)) onPhysicalCancelled(cancelled);
                 }
+                finish(true);
             })
             .catch((err) => {
                 if (!mounted || err.name === 'AbortError') return;
-                setState({ loading: false, error: err.message || 'خطا در دریافت جزئیات سفارش', data: null });
+                setState((prev) => (
+                    keep && prev.data
+                        ? { loading: false, error: null, data: prev.data }
+                        : { loading: false, error: err.message || 'خطا در دریافت جزئیات سفارش', data: null }
+                ));
+                finish(false);
             });
         return () => {
             mounted = false;
@@ -174,9 +193,13 @@ export function useOrderTracking(order, { onSummary, onPhysicalCancelled } = {})
         };
         // onSummary عمداً در وابستگی‌ها نیست: بارگذاری فقط به تغییر سفارش وابسته است
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [orderId, reloadKey]);
+    }, [orderId, reloadState]);
 
-    const reload = () => setReloadKey((k) => k + 1);
+    const reload = (options) => new Promise((resolve) => {
+        const keep = Boolean(options && options.keepVisible);
+        pendingRef.current = { resolve, orderId, keep };
+        setReloadState((current) => ({ n: current.n + 1, keep }));
+    });
 
     /** به‌روزرسانی محلی وضعیت ارسال یک قلم پس از ثبت در OrderDeliveryStatus */
     const setItemDeliveryStatus = (purchaseId, newStatus) => {
@@ -210,6 +233,7 @@ export function OrderWarnings({ warnings }) {
  */
 export function OrderItemsList({
     detail, isPaid, onReload, onShippingChanged, onItemStatus, onCarrierResolved, onCarrierAlertResolved,
+    onRefundReload, onRefundRecorded,
 }) {
     const [holdRefreshResult, setHoldRefreshResult] = useState(false);
     useEffect(() => {
@@ -428,6 +452,17 @@ export function OrderItemsList({
                                     />
                                 )}
                             </div>
+                        )}
+                        {isProduct && item.purchaseId && (
+                            <ClosedParcelRefundControl
+                                purchaseId={item.purchaseId}
+                                status={item.closedParcelRefundStatus}
+                                amountInNoor={item.closedParcelRefundAmountInNoor}
+                                refundedAtUtc={item.closedParcelRefundedAtUtc}
+                                reason={item.closedParcelRefundReason}
+                                onReload={onRefundReload}
+                                onRecorded={onRefundRecorded}
+                            />
                         )}
                     </div>
                 );

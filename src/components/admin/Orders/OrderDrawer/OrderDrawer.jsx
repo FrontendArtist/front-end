@@ -150,7 +150,7 @@ function SummaryTab({ order, data, isPaid, restockPending, onGoItems }) {
     );
 }
 
-function ItemsTab({ data, isPaid, onReload, onShippingChanged, onItemStatus, onRestockCleared, onCarrierResolved, onCarrierAlertResolved }) {
+function ItemsTab({ data, isPaid, onReload, onShippingChanged, onItemStatus, onRestockCleared, onCarrierResolved, onCarrierAlertResolved, onRefundReload, onRefundRecorded }) {
     const { order: detail, shippingAddress, shippingOrigin } = data;
     const originName = shippingOriginText(shippingOrigin);
     return (
@@ -166,6 +166,8 @@ function ItemsTab({ data, isPaid, onReload, onShippingChanged, onItemStatus, onR
                 onItemStatus={onItemStatus}
                 onCarrierResolved={onCarrierResolved}
                 onCarrierAlertResolved={onCarrierAlertResolved}
+                onRefundReload={onRefundReload}
+                onRefundRecorded={onRefundRecorded}
             />
             {shippingAddress && (
                 <section className={styles.card} data-testid="shipping-address" aria-label="آدرس تحویل">
@@ -206,7 +208,7 @@ function DrawerSkeleton() {
  *   restockPending?: boolean, onClose: () => void, onToast?: (msg: string, tone?: string) => void,
  *   onChanged?: () => void, onRestockCleared?: () => void, shareUrl?: string }} props
  */
-export default function OrderDrawer({ order, restockPending = false, onClose, onToast, onChanged, onRestockCleared, onCarrierResolved, onCarrierAlertResolved, shareUrl }) {
+export default function OrderDrawer({ order, restockPending = false, onClose, onToast, onChanged, onRestockCleared, onCarrierResolved, onCarrierAlertResolved, onRefundRecorded, shareUrl }) {
     const [tab, setTab] = useState('summary');
     const [mounted, setMounted] = useState(false);
     const closeRef = useRef(null);
@@ -360,6 +362,8 @@ export default function OrderDrawer({ order, restockPending = false, onClose, on
                                     onItemStatus={handleItemStatus}
                                     onCarrierResolved={handleCarrierResolved}
                                     onCarrierAlertResolved={handleCarrierAlertResolved}
+                                    onRefundReload={() => reload({ keepVisible: true })}
+                                    onRefundRecorded={onRefundRecorded}
                                     onRestockCleared={() => { onRestockCleared && onRestockCleared(); notify('برگشت موجودی ثبت شد.'); }} />
                             )}
                             {tab === 'timeline' && (

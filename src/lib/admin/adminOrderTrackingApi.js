@@ -138,6 +138,10 @@ function sanitizeItem(i, pendingByPurchase) {
         carrierAlertResolvedAtUtc: i.carrierAlertResolvedAtUtc ?? null,
         carrierAlertResolvedByExternalUserId: i.carrierAlertResolvedByExternalUserId ?? null,
         carrierPaymentPendingSinceUtc: fromItem || fromReceipt || null,
+        closedParcelRefundStatus: i.closedParcelRefundStatus || 'None',
+        closedParcelRefundedAtUtc: i.closedParcelRefundedAtUtc ?? null,
+        closedParcelRefundAmountInNoor: i.closedParcelRefundAmountInNoor ?? null,
+        closedParcelRefundReason: i.closedParcelRefundReason ?? null,
     };
 }
 

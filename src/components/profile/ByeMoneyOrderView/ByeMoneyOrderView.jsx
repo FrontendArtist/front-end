@@ -73,6 +73,10 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
             ? { label: 'تحویل ناموفق', cls: styles.danger }
             : null;
     const trackingHref = isProduct ? getTrackingHref(item) : null;
+    const closedRefunded = isProduct && item.closedParcelRefundStatus === 'Refunded';
+    const closedRefundAmount = Number(item.closedParcelRefundAmountInNoor);
+    const closedRefundAmountText = Number.isFinite(closedRefundAmount) ? formatNoor(closedRefundAmount) : null;
+    const closedRefundedAt = closedRefunded ? formatOrderDate(item.closedParcelRefundedAtUtc) : null;
     const itemPriceText = item.price == null
         ? '—'
         : Number(item.price) === 0
@@ -100,6 +104,13 @@ function ItemRow({ item, view, showItemPhysicalStatus }) {
                     {(fullyCancelled || partlyCancelled) && refundParts.length > 0 && (
                         <span className={styles.itemHint} data-testid="physical-item-refunded">
                             برگشتی: {refundParts.join(' + ')}
+                        </span>
+                    )}
+                    {closedRefunded && (
+                        <span className={styles.itemHint} data-testid="closed-parcel-refund">
+                            برگشت نور
+                            {closedRefundAmountText && <>: {closedRefundAmountText}</>}
+                            {closedRefundedAt && <> — {closedRefundedAt}</>}
                         </span>
                     )}
                     {isProduct && !fullyCancelled && itemReturnBadge && (

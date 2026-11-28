@@ -2162,6 +2162,16 @@ export const getAdminPhysicalCancelPreview = ({ jwt, purchaseId, quantity, signa
 export const cancelAdminPhysicalPurchase = ({ jwt, purchaseId, operationId, quantity, reason, signal }) =>
   callPhysicalCancel({ jwt, method: 'POST', path: `/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/cancel`, body: { operationId, quantity, reason }, signal });
 
+/** برگشت دستی نور قلم بسته‌شده بدون تسویه. فقط از route سروری Next صدا زده شود. */
+export const refundAdminClosedParcel = ({ jwt, purchaseId, operationId, reason, signal }) =>
+  callPhysicalCancel({
+    jwt,
+    method: 'POST',
+    path: `/api/admin/physical-purchases/${encodeURIComponent(purchaseId)}/closed-parcel-refund`,
+    body: { operationId, reason },
+    signal,
+  });
+
 /** تلاش فوری ادمین برای برگشت موجودی عملیات رهاشده (BND-05). */
 export const retryAdminPhysicalRestock = ({ jwt, operationId, signal }) =>
   callPhysicalCancel({ jwt, method: 'POST', path: `/api/admin/physical-purchases/restocks/${encodeURIComponent(operationId)}/retry`, signal });

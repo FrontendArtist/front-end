@@ -315,3 +315,31 @@ describe('ByeMoneyOrderView — لینک رهگیری', () => {
         expect(screen.queryByTestId('physical-tracking-link')).not.toBeInTheDocument();
     });
 });
+
+describe('ByeMoneyOrderView — برگشت قلم بسته‌شده', () => {
+    const withRefund = (extra) => buildOrder({
+        items: [{
+            ...buildOrder().items[0],
+            closedParcelRefundStatus: 'Refunded',
+            closedParcelRefundAmountInNoor: 70,
+            closedParcelRefundedAtUtc: '2026-11-26T10:00:00Z',
+            closedParcelRefundReason: 'علت محرمانهٔ ادمین',
+            ...extra,
+        }],
+    });
+
+    it('برای برگشت‌شده مبلغ و زمان را نشان می‌دهد و علت ادمین را نه', () => {
+        render(<ByeMoneyOrderView order={withRefund()} />);
+        const node = screen.getByTestId('closed-parcel-refund');
+        expect(node).toHaveTextContent('۷۰');
+        expect(node).toHaveTextContent('۱۴۰۵');
+        expect(node).not.toHaveTextContent('علت محرمانهٔ ادمین');
+        expect(screen.queryByText('علت محرمانهٔ ادمین')).not.toBeInTheDocument();
+    });
+
+    it.each(['None', 'NotRefunded', 'ManualReview'])('وضعیت %s برای خریدار دیده نمی‌شود', (status) => {
+        render(<ByeMoneyOrderView order={withRefund({ closedParcelRefundStatus: status })} />);
+        expect(screen.queryByTestId('closed-parcel-refund')).not.toBeInTheDocument();
+        expect(screen.queryByText('علت محرمانهٔ ادمین')).not.toBeInTheDocument();
+    });
+});

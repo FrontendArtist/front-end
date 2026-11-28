@@ -224,6 +224,32 @@ describe('getOrderTracking', () => {
         expect(res.data.receipt.items[0].providerParcelId).toBe('parcel-9');
     });
 
+    test('فیلدهای برگشت قلم بسته‌شده، از جمله علت، برای ادمین حفظ می‌شوند', async () => {
+        const paid = detail('Paid');
+        paid.data.order.items = [{
+            title: 'کتاب',
+            itemType: 'Product',
+            purchaseId: 'p1',
+            closedParcelRefundStatus: 'Refunded',
+            closedParcelRefundedAtUtc: '2026-11-26T10:00:00Z',
+            closedParcelRefundAmountInNoor: 70,
+            closedParcelRefundReason: 'علت ادمین',
+        }];
+        paid.data.order.topUps = [];
+        getAdminCourseOrderDetails.mockResolvedValue(paid);
+        getAdminCourseOrderReceipt.mockResolvedValue({ success: false });
+        global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });
+
+        const res = await getOrderTracking({ jwt: 'admin', orderId: ORDER_ID, now: NOW });
+
+        expect(res.data.order.items[0]).toMatchObject({
+            closedParcelRefundStatus: 'Refunded',
+            closedParcelRefundedAtUtc: '2026-11-26T10:00:00Z',
+            closedParcelRefundAmountInNoor: 70,
+            closedParcelRefundReason: 'علت ادمین',
+        });
+    });
+
     test('رسید فقط برای Paid خوانده می‌شود', async () => {
         getAdminCourseOrderDetails.mockResolvedValue(detail('AwaitingPayment'));
         global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [] }) });

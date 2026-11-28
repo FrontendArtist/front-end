@@ -24,6 +24,7 @@ import { getRowShippingBadge, getCarrierReturnBadge, getCarrierAlertBadge, RESTO
 import AdminBadge from '../../Shared/AdminBadge';
 import { useAdminToast, AdminToastViewport } from '../../Shared/AdminToast';
 import OrderDrawer from '../OrderDrawer/OrderDrawer';
+import { addListedRefund } from '@/lib/closedParcelRefund';
 import styles from './ByeMoneyOrders.module.scss';
 
 const PAGE_SIZE = 20;
@@ -568,6 +569,23 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                     onRestockCleared={() => {
                         drawerDirty.current = true;
                         setClearedRestock((prev) => new Set(prev).add(String(openRow.orderId).toLowerCase()));
+                    }}
+                    onRefundRecorded={(amount) => {
+                        drawerDirty.current = true;
+                        const orderId = openRow?.orderId;
+                        if (orderId) {
+                            setData((prev) => ({
+                                ...prev,
+                                orders: (prev.orders || []).map((row) => (
+                                    row.orderId === orderId ? addListedRefund(row, amount) : row
+                                )),
+                            }));
+                        }
+                        fetchOrders({ tab, q, view }).then((json) => {
+                            setData((prev) => ({ ...prev, ...json, counts: json.counts || prev.counts }));
+                        }).catch(() => {
+                            // مبلغ خوش‌بینانه می‌ماند و بستن کشو دوباره فهرست را می‌خواند.
+                        });
                     }}
                 />
             )}

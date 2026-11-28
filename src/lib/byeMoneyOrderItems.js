@@ -12,6 +12,12 @@ function isProductLike(item) {
     return String(item.itemType || '').toLowerCase() === 'product';
 }
 
+function readAmount(value) {
+    if (value == null || value === '') return null;
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount : null;
+}
+
 function readExternalItemId(item) {
     if (item?.externalItemId == null) return null;
     const text = String(item.externalItemId).trim();
@@ -47,6 +53,9 @@ function mapByeMoneyProductItem(item) {
         shippedAtUtc: item.shippedAtUtc || null,
         carrierReturnedAtUtc: item.carrierReturnedAtUtc || null,
         carrierReturnResolution: item.carrierReturnResolution || null,
+        closedParcelRefundStatus: item.closedParcelRefundStatus || 'None',
+        closedParcelRefundedAtUtc: item.closedParcelRefundedAtUtc || null,
+        closedParcelRefundAmountInNoor: readAmount(item.closedParcelRefundAmountInNoor),
         type: 'product',
         itemType: 'Product',
         __component: 'order.product-order-item',
