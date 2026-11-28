@@ -318,9 +318,21 @@ export default function OrdersList({ limit }) {
                                     <span className={styles.orders__label}>مبلغ کل:</span>
                                     <span className={styles.orders__value}>
                                         {order.totalPrice != null ? (
-                                            isNoorOrder ? (
-                                                <PriceWithHint price={order.totalPrice} hideHint={isByeMoney} size="sm" />
-                                            ) : (
+                                            isNoorOrder ? (() => {
+                                                const storedRate = Number(order.referenceRialPerNoorAtPurchaseTime);
+                                                const hasStoredRate = Number.isFinite(storedRate) && storedRate > 0;
+                                                const isPaidByeMoney = isByeMoney && order.financialStatus === 'Paid';
+                                                const shouldHideHint = isPaidByeMoney && !hasStoredRate;
+                                                const overrideRate = isByeMoney && hasStoredRate ? storedRate / 10 : null;
+                                                return (
+                                                    <PriceWithHint
+                                                        price={order.totalPrice}
+                                                        hideHint={shouldHideHint}
+                                                        tomanPerNoorOverride={overrideRate}
+                                                        size="sm"
+                                                    />
+                                                );
+                                            })() : (
                                                 formatTomanPrice(order.totalPrice)
                                             )
                                         ) : (

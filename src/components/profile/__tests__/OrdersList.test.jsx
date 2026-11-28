@@ -3,8 +3,12 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import OrdersList from '../OrdersList';
 import { useAccountOrders } from '@/hooks/useAccountOrders';
+import { useDisplayRate } from '@/context/DisplayRateContext';
 
 jest.mock('@/hooks/useAccountOrders');
+jest.mock('@/context/DisplayRateContext', () => ({
+  useDisplayRate: jest.fn(() => ({ tomanPerNoor: null })),
+}));
 jest.mock('next/link', () => {
   return ({ children, href, className }) => (
     <a href={href} className={className}>
@@ -18,6 +22,7 @@ describe('OrdersList Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    useDisplayRate.mockReturnValue({ tomanPerNoor: null });
   });
 
   it('renders loading skeleton when isLoading is true', () => {
@@ -288,5 +293,63 @@ describe('OrdersList Component', () => {
     // Only the mixed order (cart:5555...) has "پرداخت شده ✓"
     expect(screen.getAllByText('پرداخت شده ✓')).toHaveLength(1);
     expect(screen.getByText('کالای فیزیکی لغو شد')).toBeInTheDocument();
+  });
+
+  it('shows stored-rate Toman hint for paid ByeMoney orders, hides hint when paid order lacks stored rate, and keeps legacy Strapi Toman label', () => {
+    useDisplayRate.mockReturnValue({ tomanPerNoor: 5000 });
+    useAccountOrders.mockReturnValue({
+      orders: [
+        {
+          id: 'cart:66666666-6666-6666-6666-666666666666',
+          documentId: 'cart:66666666-6666-6666-6666-666666666666',
+          source: 'byemoney',
+          financialStatus: 'Paid',
+          deliveryStatus: 'Delivered',
+          totalPrice: 1000,
+          referenceRialPerNoorAtPurchaseTime: 10,
+          itemCount: 1,
+          createdAt: '2026-10-21T12:00:00Z',
+          items: [],
+        },
+        {
+          id: 'cart:77777777-7777-7777-7777-777777777777',
+          documentId: 'cart:77777777-7777-7777-7777-777777777777',
+          source: 'byemoney',
+          financialStatus: 'Paid',
+          deliveryStatus: 'Delivered',
+          totalPrice: 2000,
+          referenceRialPerNoorAtPurchaseTime: null,
+          itemCount: 1,
+          createdAt: '2026-10-21T11:00:00Z',
+          items: [],
+        },
+        {
+          id: 1897,
+          documentId: 'strapi-order-1897',
+          source: 'strapi',
+          createdAt: '2026-10-20T12:00:00Z',
+          orderStatus: 'paid',
+          paymentStatus: 'paid',
+          totalPrice: 803017,
+          items: [{ title: 'دوره قدیمی' }],
+        },
+      ],
+      isLoading: false,
+      error: null,
+      byemoneyWarning: false,
+      fetchOrders: fetchOrdersMock,
+    });
+
+    render(<OrdersList />);
+
+    // (a) Paid ByeMoney order with stored rate (10 rial/noor = 1 toman/noor): 1000 noor -> معادل : ۱٬۰۰۰ تومان (not live 5000)
+    expect(screen.getByText('(معادل : ۱٬۰۰۰ تومان)')).toBeInTheDocument();
+    expect(screen.queryByText(/۵٬۰۰۰٬۰۰۰/)).not.toBeInTheDocument();
+
+    // (b) Paid ByeMoney order with null stored rate: no live-rate hint (2000 * 5000 = ۱۰٬۰۰۰٬۰۰۰)
+    expect(screen.queryByText(/۱۰٬۰۰۰٬۰۰۰/)).not.toBeInTheDocument();
+
+    // (c) Legacy Strapi order still renders with Toman label
+    expect(screen.getByText(`${Number(803017).toLocaleString('fa-IR')} تومان`)).toBeInTheDocument();
   });
 });

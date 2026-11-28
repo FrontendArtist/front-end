@@ -133,6 +133,33 @@ export function carrierAlertStatusOf(items) {
     return 'None';
 }
 
+const CLOSED_PARCEL_REFUND_ROW_BADGES = {
+    NotRefunded: {
+        label: 'برگشت نور ثبت نشده',
+        tooltip: 'مرسوله بدون تسویه بسته شده و برگشت دستی نور آن هنوز ثبت نشده است',
+        variant: 'warning',
+    },
+    ManualReview: {
+        label: 'برگشت نور — پیگیری دستی',
+        tooltip: 'برگشت دستی نور این مرسوله از صفحهٔ سفارش قابل ثبت نیست و نیاز به پیگیری دستی دارد',
+        variant: 'default',
+    },
+};
+
+/** نشان ردیف فهرست ادمین برای برگشت دستی نور مرسولهٔ بسته‌شده؛ None و Refunded نشان نمی‌گیرند */
+export function getClosedParcelRefundRowBadge(status) {
+    return CLOSED_PARCEL_REFUND_ROW_BADGES[status] || null;
+}
+
+/** وضعیت تجمیعی برگشت دستی نور مرسولهٔ بسته‌شده؛ اولویت: NotRefunded > ManualReview > Refunded > None */
+export function closedParcelRefundStatusOf(items) {
+    const products = (items || []).filter((item) => String(item?.itemType || '').toLowerCase() === 'product');
+    if (products.some((item) => item.closedParcelRefundStatus === 'NotRefunded')) return 'NotRefunded';
+    if (products.some((item) => item.closedParcelRefundStatus === 'ManualReview')) return 'ManualReview';
+    if (products.some((item) => item.closedParcelRefundStatus === 'Refunded')) return 'Refunded';
+    return 'None';
+}
+
 /** برچسب ارسال ردیف جدول؛ برای سفارش پرداخت‌نشده یا بدون کالا null */
 export function getRowShippingBadge(row) {
     if (!row || row.financialStatus !== 'Paid') return null;

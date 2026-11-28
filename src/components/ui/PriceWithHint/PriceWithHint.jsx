@@ -12,6 +12,7 @@ import styles from './PriceWithHint.module.scss';
  * @param {number|string} props.price - قیمت نهایی به واحد نور
  * @param {number|string} [props.originalPrice] - قیمت اصلی قبل از تخفیف به واحد نور (اختیاری)
  * @param {boolean} [props.hideHint=false] - آیا راهنمای تومانی مخفی شود؟
+ * @param {number|null} [props.tomanPerNoorOverride=null] - نرخ جایگزین (مثلاً نرخ ذخیره‌شده زمان خرید) به جای نرخ زنده
  * @param {'sm'|'md'|'lg'} [props.size='md'] - اندازه فونت
  * @param {string} [props.className] - کلاس سفارشی اختیاری
  */
@@ -19,6 +20,7 @@ export default function PriceWithHint({
   price,
   originalPrice = null,
   hideHint = false,
+  tomanPerNoorOverride = null,
   size = 'md',
   className = '',
 }) {
@@ -28,7 +30,14 @@ export default function PriceWithHint({
   const numericOriginal = originalPrice !== null && originalPrice !== undefined ? Number(originalPrice) : null;
   const hasDiscount = numericOriginal !== null && numericOriginal > numericPrice;
 
-  const hintText = !hideHint && tomanPerNoor ? formatTomanHint(numericPrice, tomanPerNoor) : null;
+  const overrideRate = tomanPerNoorOverride !== null && tomanPerNoorOverride !== undefined
+    ? Number(tomanPerNoorOverride)
+    : null;
+  const effectiveRate = overrideRate !== null && Number.isFinite(overrideRate) && overrideRate > 0
+    ? overrideRate
+    : tomanPerNoor;
+
+  const hintText = !hideHint && effectiveRate ? formatTomanHint(numericPrice, effectiveRate) : null;
 
   const sizeClass = size === 'sm' ? styles.sizeSm : size === 'lg' ? styles.sizeLg : '';
 

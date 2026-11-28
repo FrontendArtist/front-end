@@ -20,7 +20,7 @@ import {
 import { usePermissions } from '@/context/PermissionsContext';
 import { ADMIN_PERMISSIONS } from '@/config/adminPermissions';
 import { getFinancialStatusConfig } from '@/lib/admin/orderTracking';
-import { getRowShippingBadge, getCarrierReturnBadge, getCarrierAlertBadge, RESTOCK_BADGE_TOOLTIP, shortOrderNumber, faNumber, splitDateTime } from '@/lib/admin/orderDisplay';
+import { getRowShippingBadge, getCarrierReturnBadge, getCarrierAlertBadge, getClosedParcelRefundRowBadge, RESTOCK_BADGE_TOOLTIP, shortOrderNumber, faNumber, splitDateTime } from '@/lib/admin/orderDisplay';
 import AdminBadge from '../../Shared/AdminBadge';
 import { useAdminToast, AdminToastViewport } from '../../Shared/AdminToast';
 import OrderDrawer from '../OrderDrawer/OrderDrawer';
@@ -39,7 +39,7 @@ const TABS = [
 ];
 
 const TAB_HINTS = {
-    action: 'سفارش‌های پرداخت‌شده‌ای که کالای ارسال‌نشده دارند، و سفارش‌هایی که موجودی لغوشان برنگشته.',
+    action: 'سفارش‌های منتظر ارسال، موجودی برنگشتهٔ لغو، مرسوله‌های برگشتی/هشدار پستیِ نیازمند بررسی، و اقلام بسته‌شده بدون تسویه با برگشت نور ثبت‌نشده.',
     pending: 'در انتظار پرداخت، در حال پردازش و نیازمند بررسی.',
     canceled: 'پرداخت ناموفق یا منقضی.',
 };
@@ -458,7 +458,8 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                                 const ship = getRowShippingBadge(o);
                                 const carrier = getCarrierReturnBadge(o.carrierReturnStatus);
                                 const carrierAlert = getCarrierAlertBadge(o.carrierAlertStatus);
-                                const restock = isRestock(o.orderId);
+                                const closedRefund = getClosedParcelRefundRowBadge(o.closedParcelRefundStatus);
+                                const restock = isRestock(o.orderId) || Boolean(o.restockPending);
                                 const selected = openOrderId === o.orderId;
                                 return (
                                     <tr
@@ -495,7 +496,7 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                                                         </span>
                                                     )}
                                                 </div>
-                                                {(carrier || carrierAlert || restock) && (
+                                                {(carrier || carrierAlert || closedRefund || restock) && (
                                                     <div className={styles.badges}>
                                                         {carrier && (
                                                             <span data-testid="carrier-return-row-badge" title={carrier.tooltip || undefined}>
@@ -505,6 +506,11 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                                                         {carrierAlert && (
                                                             <span data-testid="carrier-alert-row-badge" title={carrierAlert.tooltip || undefined}>
                                                                 <AdminBadge text={carrierAlert.label} variant={carrierAlert.variant} />
+                                                            </span>
+                                                        )}
+                                                        {closedRefund && (
+                                                            <span data-testid="closed-parcel-refund-row-badge" title={closedRefund.tooltip || undefined}>
+                                                                <AdminBadge text={closedRefund.label} variant={closedRefund.variant} />
                                                             </span>
                                                         )}
                                                         {restock && (
@@ -547,24 +553,28 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                     onCarrierResolved={(status) => {
                         drawerDirty.current = true;
                         const orderId = openRow?.orderId;
-                        if (!orderId || !status) return;
-                        setData((prev) => ({
-                            ...prev,
-                            orders: (prev.orders || []).map((row) => (
-                                row.orderId === orderId ? { ...row, carrierReturnStatus: status } : row
-                            )),
-                        }));
+                        if (orderId && status) {
+                            setData((prev) => ({
+                                ...prev,
+                                orders: (prev.orders || []).map((row) => (
+                                    row.orderId === orderId ? { ...row, carrierReturnStatus: status } : row
+                                )),
+                            }));
+                        }
+                        reload({ silent: true, withCounts: true });
                     }}
                     onCarrierAlertResolved={(status) => {
                         drawerDirty.current = true;
                         const orderId = openRow?.orderId;
-                        if (!orderId || !status) return;
-                        setData((prev) => ({
-                            ...prev,
-                            orders: (prev.orders || []).map((row) => (
-                                row.orderId === orderId ? { ...row, carrierAlertStatus: status } : row
-                            )),
-                        }));
+                        if (orderId && status) {
+                            setData((prev) => ({
+                                ...prev,
+                                orders: (prev.orders || []).map((row) => (
+                                    row.orderId === orderId ? { ...row, carrierAlertStatus: status } : row
+                                )),
+                            }));
+                        }
+                        reload({ silent: true, withCounts: true });
                     }}
                     onRestockCleared={() => {
                         drawerDirty.current = true;
@@ -581,11 +591,7 @@ export default function ByeMoneyOrders({ initialData, initialKey }) {
                                 )),
                             }));
                         }
-                        fetchOrders({ tab, q, view }).then((json) => {
-                            setData((prev) => ({ ...prev, ...json, counts: json.counts || prev.counts }));
-                        }).catch(() => {
-                            // مبلغ خوش‌بینانه می‌ماند و بستن کشو دوباره فهرست را می‌خواند.
-                        });
+                        reload({ silent: true, withCounts: true });
                     }}
                 />
             )}

@@ -16,7 +16,7 @@ import { getAdminCourseOrders, getAdminCourseOrderDetails, getPendingPhysicalRes
 import { lookupPeople } from '../courseOrderSettlementRoute';
 import { findStrapiUserIdForByeMoney, findStrapiUserIdsForByeMoney } from './adminOrdersApi';
 import { mapByeMoneyOrderRow } from './orderTracking';
-import { carrierReturnStatusOf, carrierAlertStatusOf } from './orderDisplay';
+import { carrierReturnStatusOf, carrierAlertStatusOf, closedParcelRefundStatusOf } from './orderDisplay';
 
 export const ORDER_TABS = ['action', 'all', 'paid', 'pending', 'canceled'];
 export const DEFAULT_TAB = 'action';
@@ -155,6 +155,7 @@ function rowFromDetails(details) {
         refundedAmountInNoor: refunded,
         carrierReturnStatus: carrierReturnStatusOf(o.items),
         carrierAlertStatus: carrierAlertStatusOf(o.items),
+        closedParcelRefundStatus: closedParcelRefundStatusOf(o.items),
     };
 }
 
@@ -169,7 +170,7 @@ async function getRestockOrderIds(jwt) {
 async function getRestockRows(jwt, ids) {
     const rows = await mapLimit(ids, DETAIL_CONCURRENCY, async (orderId) => {
         const res = await getAdminCourseOrderDetails({ jwt, orderId });
-        return res.success && res.data?.order ? rowFromDetails(res.data) : null;
+        return res.success && res.data?.order ? { ...rowFromDetails(res.data), restockPending: true } : null;
     });
     return { rows: rows.filter(Boolean), warning: rows.some((r) => !r) };
 }
@@ -184,6 +185,58 @@ async function getAwaitingShipmentRows(jwt, buyer) {
         truncated: totalCount > items.length,
         forbidden,
     };
+}
+
+/** سفارش‌های دارای برگشتی/هشدار پستیِ تعیین‌تکلیف‌نشده یا قلم بسته‌شده بدون تسویه با برگشت نور ثبت‌نشده */
+async function getCarrierActionRows(jwt, buyer) {
+    const { items, totalCount, error, forbidden } = await fetchPage(
+        jwt, { needsCarrierAction: true }, 1, ACTION_PAGE_SIZE, buyer);
+    return {
+        rows: items.map((row) => ({ ...row, needsCarrierAction: true })),
+        warning: Boolean(error),
+        truncated: totalCount > items.length,
+        forbidden,
+    };
+}
+
+const CLOSED_REFUND_PRIORITY = { NotRefunded: 3, ManualReview: 2, Refunded: 1, None: 0 };
+
+function pickCarrierStatus(a, b) {
+    if (a === 'PendingReview' || b === 'PendingReview') return 'PendingReview';
+    if (a && a !== 'None') return a;
+    if (b && b !== 'None') return b;
+    return 'None';
+}
+
+function pickClosedRefundStatus(a, b) {
+    const sa = a || 'None';
+    const sb = b || 'None';
+    return (CLOSED_REFUND_PRIORITY[sa] ?? 0) >= (CLOSED_REFUND_PRIORITY[sb] ?? 0) ? sa : sb;
+}
+
+function mergeActionRows(...lists) {
+    const byId = new Map();
+    for (const list of lists) {
+        for (const r of list || []) {
+            if (!r?.orderId) continue;
+            const prev = byId.get(r.orderId);
+            if (!prev) {
+                byId.set(r.orderId, { ...r });
+                continue;
+            }
+            byId.set(r.orderId, {
+                ...prev,
+                ...r,
+                needsShipment: Boolean(prev.needsShipment || r.needsShipment),
+                needsCarrierAction: Boolean(prev.needsCarrierAction || r.needsCarrierAction),
+                restockPending: Boolean(prev.restockPending || r.restockPending),
+                carrierReturnStatus: pickCarrierStatus(prev.carrierReturnStatus, r.carrierReturnStatus),
+                carrierAlertStatus: pickCarrierStatus(prev.carrierAlertStatus, r.carrierAlertStatus),
+                closedParcelRefundStatus: pickClosedRefundStatus(prev.closedParcelRefundStatus, r.closedParcelRefundStatus),
+            });
+        }
+    }
+    return [...byId.values()].sort((a, b) => new Date(b.createdAtUtc || 0) - new Date(a.createdAtUtc || 0));
 }
 
 async function resolveBuyerIds(jwt, q) {
@@ -208,34 +261,42 @@ function dedupeAndSortByDate(rows) {
 }
 
 async function getActionRows(jwt, buyer, restockIds) {
-    const [restock, awaiting] = await Promise.all([
+    const [restock, awaiting, carrierAction] = await Promise.all([
         getRestockRows(jwt, restockIds),
         getAwaitingShipmentRows(jwt, buyer),
+        getCarrierActionRows(jwt, buyer),
     ]);
     const restockRows = buyer ? restock.rows.filter((r) => r.buyerExternalUserId === buyer) : restock.rows;
-    const seen = new Set(restockRows.map((r) => r.orderId));
-    const rows = [...restockRows, ...awaiting.rows.filter((r) => !seen.has(r.orderId))];
-    return { rows, warning: restock.warning || awaiting.warning, truncated: awaiting.truncated, forbidden: awaiting.forbidden };
+    const rows = mergeActionRows(restockRows, awaiting.rows, carrierAction.rows);
+    return {
+        rows,
+        warning: restock.warning || awaiting.warning || carrierAction.warning,
+        truncated: awaiting.truncated || carrierAction.truncated,
+        forbidden: awaiting.forbidden || carrierAction.forbidden,
+    };
 }
 
 async function getActionRowsForBuyers(jwt, buyerIds, restockIds) {
     if (!buyerIds || buyerIds.length === 1) {
         return getActionRows(jwt, buyerIds?.[0] || null, restockIds);
     }
-    const [restock, ...awaitingList] = await Promise.all([
+    const [restock, awaitingList, carrierList] = await Promise.all([
         getRestockRows(jwt, restockIds),
-        ...buyerIds.map((b) => getAwaitingShipmentRows(jwt, b)),
+        Promise.all(buyerIds.map((b) => getAwaitingShipmentRows(jwt, b))),
+        Promise.all(buyerIds.map((b) => getCarrierActionRows(jwt, b))),
     ]);
     const buyerSet = new Set(buyerIds);
     const restockRows = restock.rows.filter((r) => buyerSet.has(r.buyerExternalUserId));
-    const awaitingRows = dedupeAndSortByDate(awaitingList.flatMap((a) => a.rows));
-    const seen = new Set(restockRows.map((r) => r.orderId));
-    const rows = [...restockRows, ...awaitingRows.filter((r) => !seen.has(r.orderId))];
+    const rows = mergeActionRows(
+        restockRows,
+        awaitingList.flatMap((a) => a.rows),
+        carrierList.flatMap((c) => c.rows)
+    );
     return {
         rows,
-        warning: restock.warning || awaitingList.some((a) => a.warning),
-        truncated: awaitingList.some((a) => a.truncated),
-        forbidden: awaitingList.some((a) => a.forbidden),
+        warning: restock.warning || awaitingList.some((a) => a.warning) || carrierList.some((c) => c.warning),
+        truncated: awaitingList.some((a) => a.truncated) || carrierList.some((c) => c.truncated),
+        forbidden: awaitingList.some((a) => a.forbidden) || carrierList.some((c) => c.forbidden),
     };
 }
 
@@ -261,6 +322,9 @@ async function withPeople(jwt, rows) {
         return {
             ...row,
             needsShipment: Boolean(r.needsShipment),
+            needsCarrierAction: Boolean(r.needsCarrierAction),
+            restockPending: Boolean(r.restockPending),
+            closedParcelRefundStatus: row.closedParcelRefundStatus || r.closedParcelRefundStatus || 'None',
             buyerName: person?.name || r.buyerDisplayName || null,
             buyerPhone: person?.phone || null,
         };

@@ -1480,6 +1480,7 @@ export async function getAdminCourseOrders({
   fromUtc,
   toUtc,
   awaitingShipment,
+  needsCarrierAction,
   signal,
 } = {}) {
   if (!jwt) {
@@ -1495,6 +1496,7 @@ export async function getAdminCourseOrders({
   if (fromUtc) params.set('fromUtc', String(fromUtc));
   if (toUtc) params.set('toUtc', String(toUtc));
   if (awaitingShipment) params.set('awaitingShipment', 'true');
+  if (needsCarrierAction) params.set('needsCarrierAction', 'true');
   return fetchAdminCourseOrdersEndpoint(
     `${BYEMONEY_API_URL}/api/admin/orders?${params.toString()}`,
     jwt,

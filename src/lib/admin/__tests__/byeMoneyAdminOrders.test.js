@@ -1,4 +1,4 @@
-import { hasUnshippedItems, readOrderFilters, normalizeTab, getByeMoneyAdminOrders } from '../byeMoneyAdminOrders';
+import { hasUnshippedItems, readOrderFilters, normalizeTab, getByeMoneyAdminOrders, getByeMoneyOrderCounts } from '../byeMoneyAdminOrders';
 import { getAdminCourseOrders, getAdminCourseOrderDetails, getPendingPhysicalRestocks } from '../../byeMoneyApi';
 import { lookupPeople } from '../../courseOrderSettlementRoute';
 import { getRowShippingBadge, getItemsShippingState, shortOrderNumber } from '../orderDisplay';
@@ -122,6 +122,103 @@ describe('تب «نیاز به اقدام» با فیلتر سروری (SHIP-TRA
         const result = await getByeMoneyAdminOrders('jwt', { tab: 'action' });
 
         expect(result.truncated).toBe(true);
+    });
+
+    test('ادغام ۳ گروه با حفظ فیلدها هنگام حذف تکرار، شمارنده و truncated گروه سوم', async () => {
+        const orderA = 'cart:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+        const orderB = 'cart:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+        getPendingPhysicalRestocks.mockResolvedValue({
+            success: true,
+            data: [{ cartId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', abandoned: true }],
+        });
+        getAdminCourseOrderDetails.mockResolvedValue({
+            success: true,
+            data: {
+                buyerExternalUserId: 'u1',
+                buyerDisplayName: 'کاربر یک',
+                order: {
+                    orderId: orderA,
+                    sourceType: 'Cart',
+                    cartId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+                    createdAtUtc: '2026-11-12T10:00:00Z',
+                    financialStatus: 'Paid',
+                    deliveryStatus: 'Pending',
+                    finalAmountInNoor: 200,
+                    items: [{ itemType: 'Product', quantity: 1, closedParcelRefundStatus: 'None' }],
+                    topUps: [],
+                },
+            },
+        });
+        getAdminCourseOrders.mockImplementation(async (params) => {
+            if (params.awaitingShipment) {
+                return {
+                    success: true,
+                    data: {
+                        items: [{
+                            orderId: orderA,
+                            sourceType: 'Cart',
+                            createdAtUtc: '2026-11-12T10:00:00Z',
+                            financialStatus: 'Paid',
+                            deliveryStatus: 'Pending',
+                            carrierReturnStatus: 'None',
+                            carrierAlertStatus: 'None',
+                            closedParcelRefundStatus: 'None',
+                        }],
+                        totalCount: 1,
+                    },
+                };
+            }
+            if (params.needsCarrierAction) {
+                return {
+                    success: true,
+                    data: {
+                        items: [
+                            {
+                                orderId: orderA,
+                                sourceType: 'Cart',
+                                createdAtUtc: '2026-11-12T10:00:00Z',
+                                financialStatus: 'Paid',
+                                deliveryStatus: 'Pending',
+                                carrierReturnStatus: 'PendingReview',
+                                carrierAlertStatus: 'None',
+                                closedParcelRefundStatus: 'NotRefunded',
+                            },
+                            {
+                                orderId: orderB,
+                                sourceType: 'Cart',
+                                createdAtUtc: '2026-11-11T10:00:00Z',
+                                financialStatus: 'Paid',
+                                deliveryStatus: 'Pending',
+                                carrierReturnStatus: 'ClosedWithoutSettlement',
+                                carrierAlertStatus: 'None',
+                                closedParcelRefundStatus: 'NotRefunded',
+                            },
+                        ],
+                        totalCount: 150,
+                    },
+                };
+            }
+            return { success: true, data: { items: [], totalCount: 0 } };
+        });
+
+        const result = await getByeMoneyAdminOrders('jwt', { tab: 'action' });
+        const counts = await getByeMoneyOrderCounts('jwt', {});
+
+        expect(getAdminCourseOrders).toHaveBeenCalledWith(
+            expect.objectContaining({ needsCarrierAction: true, page: 1 })
+        );
+        expect(result.orders).toHaveLength(2);
+        expect(result.total).toBe(2);
+        expect(result.truncated).toBe(true);
+
+        const mergedA = result.orders.find((o) => o.orderId === orderA);
+        expect(mergedA.restockPending).toBe(true);
+        expect(mergedA.needsShipment).toBe(true);
+        expect(mergedA.needsCarrierAction).toBe(true);
+        expect(mergedA.carrierReturnStatus).toBe('PendingReview');
+        expect(mergedA.closedParcelRefundStatus).toBe('NotRefunded');
+
+        expect(counts.action).toBe(2);
     });
 
     test('جستجوی نام مشترک سفارش‌های همه کاربران منطبق را برمی‌گرداند', async () => {
