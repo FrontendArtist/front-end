@@ -172,10 +172,14 @@ function ItemsTab({ data, isPaid, onReload, onShippingChanged, onItemStatus, onR
             {shippingAddress && (
                 <section className={styles.card} data-testid="shipping-address" aria-label="آدرس تحویل">
                     <h3 className={styles.card__title}><MapPin size={15} aria-hidden="true" /> آدرس تحویل</h3>
-                    <p className={styles.address__who}>
-                        {shippingAddress.recipientName}
-                        {shippingAddress.recipientPhone && <span dir="ltr"> · {shippingAddress.recipientPhone}</span>}
-                    </p>
+                    <div className={styles.address__who}>
+                        <span className={styles.address__name}>{shippingAddress.recipientName}</span>
+                        {shippingAddress.recipientPhone && (
+                            <span className={styles.address__phone} dir="ltr">
+                                <Phone size={12} aria-hidden="true" /> {shippingAddress.recipientPhone}
+                            </span>
+                        )}
+                    </div>
                     <p className={styles.address__line}>
                         {[shippingAddress.province, shippingAddress.city, shippingAddress.fullAddress].filter(Boolean).join('، ')}
                     </p>

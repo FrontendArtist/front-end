@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import ByeMoneyOrderPanel, { useOrderTracking } from '../ByeMoneyOrderPanel';
+import ByeMoneyOrderPanel, { useOrderTracking, OrderItemsList } from '../ByeMoneyOrderPanel';
 import { fetchOrderTracking } from '@/lib/client/admin/ordersClient';
 
 jest.mock('@/lib/client/admin/ordersClient', () => ({ fetchOrderTracking: jest.fn() }));
@@ -383,5 +383,45 @@ describe('useOrderTracking — بازخوانی پس از برگشت', () => {
         await waitFor(() => expect(screen.getByTestId('reload-result')).toHaveTextContent('fail'));
         expect(screen.getByTestId('loading')).toHaveTextContent('no');
         expect(screen.getByTestId('item-status')).toHaveTextContent('Refunded');
+    });
+});
+
+describe('OrderItemsList — برچسب‌گذاری برگشتی و بازگشت وجه', () => {
+    test('فیلدهای رسیدگی برگشتی با برچسب روشن و بخش بازگشت وجه جدا نمایش داده می‌شوند', () => {
+        render(
+            <OrderItemsList
+                detail={{
+                    orderId: ORDER.orderId,
+                    items: [{
+                        purchaseId: 'p-ret',
+                        itemType: 'Product',
+                        title: 'کتاب نمونه',
+                        priceInNoor: 30,
+                        finalAmountInNoor: 30,
+                        carrierReturnedAtUtc: '2026-11-24T18:20:00Z',
+                        carrierReturnResolution: 'ClosedWithoutSettlement',
+                        carrierReturnResolutionNote: 'برگشت به انبار',
+                        carrierReturnResolvedAtUtc: '2026-11-24T21:50:00Z',
+                        carrierReturnResolvedByExternalUserId: 'admin-123',
+                        carrierReturnResolvedByName: 'علی رضایی',
+                        closedParcelRefundStatus: 'NotRefunded',
+                    }],
+                }}
+                isPaid
+            />
+        );
+
+        const resolved = screen.getByTestId('carrier-return-resolved');
+        expect(resolved).toHaveTextContent('نتیجهٔ رسیدگی:');
+        expect(resolved).toHaveTextContent('یادداشت ادمین:');
+        expect(resolved).toHaveTextContent('برگشت به انبار');
+        expect(resolved).toHaveTextContent('زمان رسیدگی:');
+        expect(resolved).toHaveTextContent('رسیدگی‌کننده:');
+        expect(resolved).toHaveTextContent('علی رضایی');
+        expect(resolved).not.toHaveTextContent('admin-123');
+
+        const refundBox = screen.getByTestId('closed-parcel-refund');
+        expect(refundBox).toHaveTextContent('بازگشت وجه (نور) به خریدار');
+        expect(screen.getByTestId('closed-parcel-refund-badge')).toHaveTextContent('برگشت ثبت نشده');
     });
 });

@@ -231,6 +231,42 @@ export function OrderWarnings({ warnings }) {
  * @param {{ detail: object, isPaid: boolean, onReload: () => void,
  *   onItemStatus: (purchaseId: string, status: string) => void }} props
  */
+function ResolutionDetails({
+    testId, badgeText, badgeTone, note, resolvedAtUtc, resolvedByName, resolvedByExternalUserId,
+}) {
+    const actor = resolvedByName || resolvedByExternalUserId;
+    return (
+        <div className={styles.item_card__resolved} data-testid={testId}>
+            <div className={styles.item_card__kv}>
+                <span className={styles.item_card__kvLabel}>نتیجهٔ رسیدگی:</span>
+                <span className={`${styles.item_card__badge} ${styles[`item_card__badge--${badgeTone}`]}`}>
+                    {badgeText}
+                </span>
+            </div>
+            {note && (
+                <div className={styles.item_card__kv}>
+                    <span className={styles.item_card__kvLabel}>یادداشت ادمین:</span>
+                    <span className={styles.item_card__kvValue}>{note}</span>
+                </div>
+            )}
+            <div className={styles.item_card__kv}>
+                <span className={styles.item_card__kvLabel}>زمان رسیدگی:</span>
+                <span className={styles.item_card__kvValue}>{formatTime(resolvedAtUtc)}</span>
+            </div>
+            {actor && (
+                <div className={styles.item_card__kv}>
+                    <span className={styles.item_card__kvLabel}>رسیدگی‌کننده:</span>
+                    {resolvedByName ? (
+                        <span className={styles.item_card__kvValue}>{resolvedByName}</span>
+                    ) : (
+                        <bdi className={styles.item_card__kvValue} dir="ltr">{resolvedByExternalUserId}</bdi>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export function OrderItemsList({
     detail, isPaid, onReload, onShippingChanged, onItemStatus, onCarrierResolved, onCarrierAlertResolved,
     onRefundReload, onRefundRecorded,
@@ -293,6 +329,13 @@ export function OrderItemsList({
                 const returnUnresolved = isProduct && item.carrierReturnedAtUtc && !item.carrierReturnResolution;
                 const alertUnresolved = isProduct && hasPendingCarrierAlert(item);
                 const alertStatus = isProduct ? carrierAlertStatusOf([item]) : 'None';
+                const hasCarrierPaymentPending = isProduct && carrierPaymentPendingSince(item);
+                const hasManualDeliveryLabel = isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus;
+                const hasDetails = fullyCancelled
+                    || partlyCancelled
+                    || hasCarrierPaymentPending
+                    || (isProduct && (item.carrierReturnedAtUtc || item.carrierAlertCode != null || item.providerParcelId))
+                    || hasManualDeliveryLabel;
 
                 return (
                     <div
@@ -311,6 +354,14 @@ export function OrderItemsList({
                                         {item.priceInNoor != null && ` (قیمت واحد: ${fa(item.priceInNoor)} نور)`}
                                     </span>
                                 )}
+                            </div>
+                            <span className={`${styles.item_card__price} ${fullyCancelled ? styles['item_card__price--struck'] : ''}`}>
+                                {fa(item.finalAmountInNoor ?? item.priceInNoor)} نور
+                            </span>
+                        </div>
+
+                        {hasDetails && (
+                            <div className={styles.item_card__details}>
                                 {fullyCancelled && (
                                     <span className={`${styles.item_card__badge} ${styles['item_card__badge--danger']}`} data-testid="item-cancelled-badge">
                                         ⛔ این کالا لغو شده است{totalQty > 1 ? ` (${fa(cancelledQty)} از ${fa(totalQty)} عدد)` : ''}
@@ -322,81 +373,79 @@ export function OrderItemsList({
                                     </span>
                                 )}
                                 {(fullyCancelled || partlyCancelled) && refundedTotal > 0 && (
-                                    <span className={styles.item_card__meta} data-testid="item-refunded">
-                                        برگشتی: {fa(refundedRegular)} نور عادی
-                                        {refundedGift > 0 && ` و ${fa(refundedGift)} نور هدیه`}
-                                    </span>
+                                    <div className={styles.item_card__kv} data-testid="item-refunded">
+                                        <span className={styles.item_card__kvLabel}>مبلغ برگشتی لغو:</span>
+                                        <span className={styles.item_card__kvValue}>
+                                            {fa(refundedRegular)} نور عادی
+                                            {refundedGift > 0 && ` و ${fa(refundedGift)} نور هدیه`}
+                                        </span>
+                                    </div>
                                 )}
-                                {isProduct && carrierPaymentPendingSince(item) && (
+                                {hasCarrierPaymentPending && (
                                     <span className={`${styles.item_card__badge} ${styles['item_card__badge--warning']}`} data-testid="carrier-payment-pending-badge">
                                         کرایهٔ واسط پستی پرداخت نشده
                                     </span>
                                 )}
+                                {isProduct && item.providerParcelId && (
+                                    <div className={styles.item_card__kv} data-testid="provider-parcel-id">
+                                        <span className={styles.item_card__kvLabel}>شناسهٔ مرسوله:</span>
+                                        <bdi className={styles.item_card__kvValue} dir="ltr">{item.providerParcelId}</bdi>
+                                    </div>
+                                )}
+                                {hasManualDeliveryLabel && (
+                                    <div className={styles.item_card__kv}>
+                                        <span className={styles.item_card__kvLabel}>وضعیت ارسال:</span>
+                                        <span className={styles.item_card__kvValue}>{getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}</span>
+                                    </div>
+                                )}
                                 {isProduct && item.carrierReturnedAtUtc && (
-                                    <span className={`${styles.item_card__badge} ${styles['item_card__badge--warning']}`} data-testid="carrier-return-badge">
-                                        برگشتی واسط پستی — {formatTime(item.carrierReturnedAtUtc)}
-                                    </span>
+                                    <div className={styles.item_card__section}>
+                                        <div className={styles.item_card__sectionHeader}>
+                                            <span className={styles.item_card__sectionTitle}>مرسولهٔ برگشتی</span>
+                                            <span className={`${styles.item_card__badge} ${styles['item_card__badge--warning']}`} data-testid="carrier-return-badge">
+                                                برگشتی واسط پستی — {formatTime(item.carrierReturnedAtUtc)}
+                                            </span>
+                                        </div>
+                                        {item.carrierReturnResolution && (
+                                            <ResolutionDetails
+                                                testId="carrier-return-resolved"
+                                                badgeText={RESOLUTION_LABELS[item.carrierReturnResolution] || item.carrierReturnResolution}
+                                                badgeTone={item.carrierReturnResolution === 'DeliveryConfirmed' ? 'info' : 'neutral'}
+                                                note={item.carrierReturnResolutionNote}
+                                                resolvedAtUtc={item.carrierReturnResolvedAtUtc}
+                                                resolvedByName={item.carrierReturnResolvedByName}
+                                                resolvedByExternalUserId={item.carrierReturnResolvedByExternalUserId}
+                                            />
+                                        )}
+                                    </div>
                                 )}
                                 {isProduct && item.carrierAlertCode != null && (
-                                    <span
-                                        className={`${styles.item_card__badge} ${alertUnresolved ? styles['item_card__badge--warning'] : styles['item_card__badge--neutral']}`}
-                                        data-testid="carrier-alert-badge"
-                                    >
-                                        هشدار مرسوله — {CARRIER_ALERT_STATUS_LABELS[alertStatus] || 'ثبت‌شده'}
-                                        {item.carrierAlertAtUtc ? ` (${formatTime(item.carrierAlertAtUtc)})` : ''}
-                                    </span>
-                                )}
-                                {isProduct && item.providerParcelId && (
-                                    <span className={styles.item_card__meta} data-testid="provider-parcel-id">
-                                        شناسهٔ مرسوله: <bdi dir="ltr">{item.providerParcelId}</bdi>
-                                    </span>
-                                )}
-                                {isProduct && item.carrierReturnResolution && (
-                                    <div className={styles.item_card__resolved} data-testid="carrier-return-resolved">
-                                        <span className={`${styles.item_card__badge} ${item.carrierReturnResolution === 'DeliveryConfirmed' ? styles['item_card__badge--info'] : styles['item_card__badge--neutral']}`}>
-                                            {RESOLUTION_LABELS[item.carrierReturnResolution] || item.carrierReturnResolution}
-                                        </span>
-                                        {item.carrierReturnResolutionNote && (
-                                            <span className={styles.item_card__meta}>{item.carrierReturnResolutionNote}</span>
-                                        )}
-                                        <span className={styles.item_card__meta}>
-                                            زمان رسیدگی: {formatTime(item.carrierReturnResolvedAtUtc)}
-                                        </span>
-                                        {item.carrierReturnResolvedByExternalUserId && (
-                                            <span className={styles.item_card__meta} dir="ltr">
-                                                {item.carrierReturnResolvedByExternalUserId}
+                                    <div className={styles.item_card__section}>
+                                        <div className={styles.item_card__sectionHeader}>
+                                            <span className={styles.item_card__sectionTitle}>هشدار مرسوله</span>
+                                            <span
+                                                className={`${styles.item_card__badge} ${alertUnresolved ? styles['item_card__badge--warning'] : styles['item_card__badge--neutral']}`}
+                                                data-testid="carrier-alert-badge"
+                                            >
+                                                هشدار مرسوله — {CARRIER_ALERT_STATUS_LABELS[alertStatus] || 'ثبت‌شده'}
+                                                {item.carrierAlertAtUtc ? ` (${formatTime(item.carrierAlertAtUtc)})` : ''}
                                             </span>
+                                        </div>
+                                        {item.carrierAlertResolution && (
+                                            <ResolutionDetails
+                                                testId="carrier-alert-resolved"
+                                                badgeText={CARRIER_ALERT_STATUS_LABELS[alertStatus] || item.carrierAlertResolution}
+                                                badgeTone={item.carrierAlertResolution === 'DeliveryConfirmed' ? 'info' : 'neutral'}
+                                                note={item.carrierAlertResolutionNote}
+                                                resolvedAtUtc={item.carrierAlertResolvedAtUtc}
+                                                resolvedByName={item.carrierAlertResolvedByName}
+                                                resolvedByExternalUserId={item.carrierAlertResolvedByExternalUserId}
+                                            />
                                         )}
                                     </div>
-                                )}
-                                {isProduct && item.carrierAlertResolution && (
-                                    <div className={styles.item_card__resolved} data-testid="carrier-alert-resolved">
-                                        <span className={`${styles.item_card__badge} ${item.carrierAlertResolution === 'DeliveryConfirmed' ? styles['item_card__badge--info'] : styles['item_card__badge--neutral']}`}>
-                                            {CARRIER_ALERT_STATUS_LABELS[alertStatus] || item.carrierAlertResolution}
-                                        </span>
-                                        {item.carrierAlertResolutionNote && (
-                                            <span className={styles.item_card__meta}>{item.carrierAlertResolutionNote}</span>
-                                        )}
-                                        <span className={styles.item_card__meta}>
-                                            زمان رسیدگی: {formatTime(item.carrierAlertResolvedAtUtc)}
-                                        </span>
-                                        {item.carrierAlertResolvedByExternalUserId && (
-                                            <span className={styles.item_card__meta} dir="ltr">
-                                                {item.carrierAlertResolvedByExternalUserId}
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
-                                {isProduct && !(isPaid && item.purchaseId) && item.physicalDeliveryStatus && (
-                                    <span className={styles.item_card__meta}>
-                                        ارسال: {getPhysicalDeliveryLabel(item.physicalDeliveryStatus)}
-                                    </span>
                                 )}
                             </div>
-                            <span className={`${styles.item_card__price} ${fullyCancelled ? styles['item_card__price--struck'] : ''}`}>
-                                {fa(item.finalAmountInNoor ?? item.priceInNoor)} نور
-                            </span>
-                        </div>
+                        )}
 
                         {isProduct && isPaid && item.purchaseId && (returnUnresolved || alertUnresolved || canCancel) && (
                             <div className={styles.item_card__actions}>

@@ -328,7 +328,7 @@ $transition: 0.2s ease;
 
     &__main {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 12px;
         width: 100%;
         max-width: 100%;
@@ -337,6 +337,7 @@ $transition: 0.2s ease;
 
     &__icon {
         font-size: var(--font-lg);
+        line-height: 1.3;
         flex-shrink: 0;
     }
 
@@ -344,17 +345,16 @@ $transition: 0.2s ease;
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 3px;
         min-width: 0;
     }
 
     &__title {
         font-size: var(--font-sm);
-        font-weight: var(--font-weight-medium);
+        font-weight: var(--font-weight-bold);
         color: $text;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        line-height: 1.5;
+        word-break: break-word;
     }
 
     &__type {
@@ -364,7 +364,69 @@ $transition: 0.2s ease;
 
     &__meta {
         font-size: var(--font-xs);
-        color: var(--color-warning-amber);
+        color: $muted;
+        line-height: 1.7;
+    }
+
+    &__details {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px solid fade(var(--color-primary), 10%);
+    }
+
+    &__section {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: fade(var(--color-black), 20%);
+        border: 1px solid fade(var(--color-primary), 12%);
+    }
+
+    &__sectionHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    &__sectionTitle {
+        font-size: var(--font-xs);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-card-text);
+    }
+
+    &__kv {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 2px 6px;
+        font-size: var(--font-xs);
+        line-height: 1.7;
+        color: var(--color-card-text);
+    }
+
+    &__kvLabel {
+        color: $muted;
+        flex-shrink: 0;
+    }
+
+    &__kvValue {
+        color: var(--color-card-text);
+        word-break: break-word;
+    }
+
+    &__hint {
+        margin: 0;
+        font-size: var(--font-xs);
+        line-height: 1.7;
+        color: $muted;
     }
 
     &__price {
@@ -389,7 +451,6 @@ $transition: 0.2s ease;
 
     &__badge {
         align-self: flex-start;
-        margin-top: 4px;
         padding: 3px 10px;
         border-radius: 999px;
         font-family: inherit;
@@ -1483,4 +1544,3 @@ $transition: 0.2s ease;
 }
 
 // مبلغ سفارش بای‌مانی پس از لغو کالا: مبلغ اولیه خط‌خورده، مبلغ خالص و برگشتی
-

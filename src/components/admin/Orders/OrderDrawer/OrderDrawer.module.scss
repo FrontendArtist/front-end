@@ -382,8 +382,25 @@ $muted: fade(var(--color-card-text), 65%);
     }
 
     &__who {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 14px;
         font-weight: var(--font-weight-bold);
         color: var(--color-card-text);
+    }
+
+    &__name {
+        min-width: 0;
+    }
+
+    &__phone {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: var(--font-xs);
+        font-weight: var(--font-weight-normal);
+        color: $muted;
     }
 
     &__line {

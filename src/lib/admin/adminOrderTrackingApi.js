@@ -103,11 +103,13 @@ function carrierPendingByPurchase(receipt) {
     return map;
 }
 
-function sanitizeItem(i, pendingByPurchase) {
+function sanitizeItem(i, pendingByPurchase, adminNames) {
     const fromItem = typeof i.carrierPaymentPendingSinceUtc === 'string'
         ? i.carrierPaymentPendingSinceUtc.trim()
         : '';
     const fromReceipt = i.purchaseId ? pendingByPurchase?.get(String(i.purchaseId)) : '';
+    const returnAdminId = i.carrierReturnResolvedByExternalUserId ?? null;
+    const alertAdminId = i.carrierAlertResolvedByExternalUserId ?? null;
     return {
         purchaseId: i.purchaseId ?? null,
         externalItemId: i.externalItemId ?? null,
@@ -130,13 +132,15 @@ function sanitizeItem(i, pendingByPurchase) {
         carrierReturnResolution: i.carrierReturnResolution ?? null,
         carrierReturnResolutionNote: i.carrierReturnResolutionNote ?? null,
         carrierReturnResolvedAtUtc: i.carrierReturnResolvedAtUtc ?? null,
-        carrierReturnResolvedByExternalUserId: i.carrierReturnResolvedByExternalUserId ?? null,
+        carrierReturnResolvedByExternalUserId: returnAdminId,
+        carrierReturnResolvedByName: (returnAdminId && adminNames?.get(returnAdminId)) || null,
         carrierAlertCode: i.carrierAlertCode ?? null,
         carrierAlertAtUtc: i.carrierAlertAtUtc ?? null,
         carrierAlertResolution: i.carrierAlertResolution ?? null,
         carrierAlertResolutionNote: i.carrierAlertResolutionNote ?? null,
         carrierAlertResolvedAtUtc: i.carrierAlertResolvedAtUtc ?? null,
-        carrierAlertResolvedByExternalUserId: i.carrierAlertResolvedByExternalUserId ?? null,
+        carrierAlertResolvedByExternalUserId: alertAdminId,
+        carrierAlertResolvedByName: (alertAdminId && adminNames?.get(alertAdminId)) || null,
         carrierPaymentPendingSinceUtc: fromItem || fromReceipt || null,
         closedParcelRefundStatus: i.closedParcelRefundStatus || 'None',
         closedParcelRefundedAtUtc: i.closedParcelRefundedAtUtc ?? null,
@@ -207,12 +211,25 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
     const shippingAddress = sanitizeAddress(res.data?.shippingAddress);
     const shippingOrigin = pickShippingOrigin(res.data?.shippingOrigin);
 
-    // سفارش دستی ادمین (I11-AO): دو فیلد افزودنی جزئیات ادمین
+    // سفارش دستی ادمین (I11-AO) + نام ادمین‌های رسیدگی‌کننده به برگشتی/هشدار
     const adminId = res.data?.createdByAdminExternalUserId ?? null;
+    const uniqueAdminIds = new Set(
+        [
+            adminId,
+            ...(order.items || []).flatMap((item) => [
+                item?.carrierReturnResolvedByExternalUserId,
+                item?.carrierAlertResolvedByExternalUserId,
+            ]),
+        ].filter(Boolean)
+    );
+    const adminNames = new Map(
+        await Promise.all([...uniqueAdminIds].map(async (id) => [id, await fetchAdminDisplayName(id)]))
+    );
+
     const adminOrigin = adminId
         ? {
             adminExternalUserId: adminId,
-            adminName: await fetchAdminDisplayName(adminId),
+            adminName: adminNames.get(adminId) ?? null,
             freeReason: res.data?.adminFreeReason ?? null,
         }
         : null;
@@ -238,9 +255,10 @@ export async function getOrderTracking({ jwt, orderId, now = new Date() }) {
                 shippingRegularRefundInNoor: Number(order.shippingRegularRefundInNoor) || 0,
                 shippingGiftRefundInNoor: Number(order.shippingGiftRefundInNoor) || 0,
                 items: (order.items || []).map((item) => sanitizeItem(
-                item,
-                carrierPendingByPurchase(receipt?.success ? receipt.data : null),
-            )),
+                    item,
+                    carrierPendingByPurchase(receipt?.success ? receipt.data : null),
+                    adminNames,
+                )),
             },
             buyer: { externalUserId: buyerExternalUserId ?? null, displayName: buyerDisplayName ?? null },
             topUps,

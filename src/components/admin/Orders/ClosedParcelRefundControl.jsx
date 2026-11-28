@@ -146,20 +146,43 @@ export default function ClosedParcelRefundControl({
     if (!badge && !notice) return null;
 
     return (
-        <div data-testid="closed-parcel-refund">
+        <div className={badgeStyles.item_card__section} data-testid="closed-parcel-refund">
             {badge && (
-                <span
-                    className={`${badgeStyles.item_card__badge} ${badgeStyles[`item_card__badge--${badge.tone}`]}`}
-                    data-testid="closed-parcel-refund-badge"
-                >
-                    {badge.label}
-                </span>
+                <div className={badgeStyles.item_card__sectionHeader}>
+                    <span className={badgeStyles.item_card__sectionTitle}>بازگشت وجه (نور) به خریدار</span>
+                    <span
+                        className={`${badgeStyles.item_card__badge} ${badgeStyles[`item_card__badge--${badge.tone}`]}`}
+                        data-testid="closed-parcel-refund-badge"
+                    >
+                        {badge.label}
+                    </span>
+                </div>
+            )}
+            {canAct && !open && (
+                <p className={badgeStyles.item_card__hint}>
+                    پروندهٔ این مرسوله بدون تسویه بسته شده است؛ در صورت لزوم بازگشت نور به کیف‌پول خریدار را دستی ثبت کنید.
+                </p>
             )}
             {showDetails && (amount != null || at || shownReason) && (
-                <div data-testid="closed-parcel-refund-details">
-                    {amount != null && <span>مبلغ برگشتی: {formatNoor(amount)}</span>}
-                    {at && <span>زمان: {formatOrderDate(at)}</span>}
-                    {shownReason && <span data-testid="closed-parcel-refund-reason-text">{shownReason}</span>}
+                <div className={badgeStyles.item_card__resolved} data-testid="closed-parcel-refund-details">
+                    {amount != null && (
+                        <div className={badgeStyles.item_card__kv}>
+                            <span className={badgeStyles.item_card__kvLabel}>مبلغ برگشتی:</span>
+                            <span className={badgeStyles.item_card__kvValue}>{formatNoor(amount)}</span>
+                        </div>
+                    )}
+                    {at && (
+                        <div className={badgeStyles.item_card__kv}>
+                            <span className={badgeStyles.item_card__kvLabel}>زمان:</span>
+                            <span className={badgeStyles.item_card__kvValue}>{formatOrderDate(at)}</span>
+                        </div>
+                    )}
+                    {shownReason && (
+                        <div className={badgeStyles.item_card__kv}>
+                            <span className={badgeStyles.item_card__kvLabel}>علت:</span>
+                            <span className={badgeStyles.item_card__kvValue} data-testid="closed-parcel-refund-reason-text">{shownReason}</span>
+                        </div>
+                    )}
                 </div>
             )}
             {canAct && !open && (
