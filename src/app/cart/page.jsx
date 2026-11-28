@@ -38,6 +38,7 @@ import { getCartItemDisplayTitle } from '@/lib/courseTitleUtils';
 import { cartStockErrorMessage } from '@/lib/cartStockError';
 import { quotedShippingAddress, quotedShippingOriginText } from '@/lib/shippingOrigin';
 import { isFullAddressLongEnough } from '@/lib/fullAddress';
+import { buyerFacingText } from '@/lib/buyerFacingText';
 
 /**
  * صفحه سبد خرید
@@ -215,14 +216,20 @@ export default function CartPage() {
                 }
                 if (['Failed', 'Expired'].includes(data.status) && !isUnderReview) {
                     setCheckoutPreview({ key: previewKey, error: 'پرداخت سبد تکمیل نشده است. برای بررسی امکان پرداخت مجدد روی همین سبد، بررسی دوباره را بزنید.' });
-                } else setCheckoutPreview({ key: previewKey, data });
+                } else setCheckoutPreview({
+                    key: previewKey,
+                    data: data && typeof data === 'object'
+                        ? { ...data, shippingRuleLabel: buyerFacingText(data.shippingRuleLabel) }
+                        : data,
+                });
             })
             .catch(error => {
                 if (controller.signal.aborted) return;
+                const message = buyerFacingText(error.message);
                 if (couponCode) {
-                    useCartStore.setState({ appliedCoupon: null, couponError: error.message });
+                    useCartStore.setState({ appliedCoupon: null, couponError: message });
                 }
-                setCheckoutPreview({ key: previewKey, error: error.message });
+                setCheckoutPreview({ key: previewKey, error: message });
             });
         return () => controller.abort();
     }, [isCartEligible, itemsKey, couponCode, session?.user?.jwt, status, previewKey]);
@@ -323,7 +330,7 @@ export default function CartPage() {
         } catch (err) {
             if (currentPreviewKey.current !== paymentKey) return;
             console.error('Payment Error:', err);
-            setErrorMessage(cartStockErrorMessage(err, items) || err.message || 'خطا در فرآیند پرداخت. لطفاً مجدداً تلاش کنید.');
+            setErrorMessage(cartStockErrorMessage(err, items) || buyerFacingText(err.message) || 'خطا در فرآیند پرداخت. لطفاً مجدداً تلاش کنید.');
         } finally {
             paymentLock.current = false;
             setIsProcessing(false);
@@ -759,7 +766,11 @@ export default function CartPage() {
                             {/* ردیف هزینه ارسال در صورت وجود کالای فیزیکی در سبد */}
                             {hasPhysicalProducts && (
                                 <div className={styles.summaryRow}>
-                                    <span>هزینه ارسال:</span>
+                                    <span>
+                                        {buyerFacingText(preview?.data?.shippingRuleLabel) === 'برآورد هزینه ارسال'
+                                            ? 'برآورد هزینه ارسال:'
+                                            : 'هزینه ارسال:'}
+                                    </span>
                                     {isCartEligible && !preview?.data ? 'در انتظار بررسی' :
                                         (preview?.data?.shippingAmountInNoor === 0 ? (
                                             <span style={{ color: '#4ade80', fontWeight: 600 }}>رایگان</span>

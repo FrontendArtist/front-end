@@ -14,6 +14,7 @@ import { fetchCancelPreview, submitCancel } from '@/lib/client/physicalCancelCli
 import {
     CANCEL_OUTCOME_LABELS, CANCEL_REASON_MAX, MANUAL_REVIEW_CODES, newOperationId, sumRefunds,
 } from '@/lib/physicalCancel';
+import { buyerFacingText } from '@/lib/buyerFacingText';
 import styles from './PhysicalCancelFlow.module.scss';
 
 const fa = (n) => Number(n || 0).toLocaleString('fa-IR');
@@ -200,7 +201,7 @@ export default function PhysicalCancelFlow({
                                     data-testid="cancel-warning"
                                     className={styles.warningBox}
                                 >
-                                    ⚠️ {w.message}
+                                    ⚠️ {isAdmin ? w.message : buyerFacingText(w.message)}
                                 </p>
                             ))}
                             {preview && <RefundSummary data={preview} />}
@@ -226,7 +227,7 @@ export default function PhysicalCancelFlow({
                                     data-manual={error.manual ? 'true' : 'false'}
                                     className={styles.errorBox}
                                 >
-                                    {error.manual ? '🛠️ رسیدگی دستی: ' : ''}{error.message}
+                                    {error.manual ? '🛠️ رسیدگی دستی: ' : ''}{isAdmin ? error.message : buyerFacingText(error.message)}
                                 </p>
                             )}
                         </div>

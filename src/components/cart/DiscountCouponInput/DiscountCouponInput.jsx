@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useCartStore, selectCouponPending } from '@/store/useCartStore';
 import { formatNoor } from '@/lib/formatters';
+import { buyerFacingText } from '@/lib/buyerFacingText';
 import styles from './DiscountCouponInput.module.scss';
 
 export default function DiscountCouponInput() {
@@ -151,7 +152,7 @@ export default function DiscountCouponInput() {
                         <line x1="12" y1="8" x2="12" y2="12" />
                         <line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
-                    <span>{errorMessage || couponError}</span>
+                    <span>{buyerFacingText(errorMessage || couponError)}</span>
                 </div>
             )}
         </div>

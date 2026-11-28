@@ -23,6 +23,23 @@ test('نشست نامعتبر پیش از ارتباط با استرپی رد م
     expect((await POST(request({}))).status).toBe(401);
     expect(fetch).not.toHaveBeenCalled();
 });
+test('نام حامل در خطا و برچسب ارسال به خریدار نمی‌رسد', async () => {
+    fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ priceInNoor: 10, shippingRuleLabel: 'برآورد پستکس' }),
+    });
+    const ok = await POST(request({ externalCourseIds: ['one'] }));
+    expect((await ok.json()).shippingRuleLabel).toBe('برآورد هزینه ارسال');
+
+    fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => ({ error: 'برآورد هزینهٔ ارسال از پستکس ممکن نیست.' }),
+    });
+    const failed = await POST(request({ externalCourseIds: ['one'] }));
+    expect(failed.status).toBe(409);
+    expect((await failed.json()).error).toBe('برآورد هزینهٔ ارسال از شرکت پستی ممکن نیست.');
+});
 test('خطای قرارداد و قطع سرویس به موفقیت تبدیل نمی‌شوند', async () => {
     fetch.mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ error: 'کوپن معتبر نیست.' }) });
     expect((await POST(request({ externalCourseIds: ['one'] }))).status).toBe(400);

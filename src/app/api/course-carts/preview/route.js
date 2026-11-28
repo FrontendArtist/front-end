@@ -2,6 +2,17 @@ import { getServerSession } from 'next-auth';
 import { paymentAuthOptions } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { STRAPI_API_URL } from '@/lib/api';
+import { buyerFacingText } from '@/lib/buyerFacingText';
+
+function forBuyer(data) {
+    if (!data || typeof data !== 'object') return data;
+    const next = { ...data };
+    if (typeof next.error === 'string') next.error = buyerFacingText(next.error);
+    else if (next.error && typeof next.error.message === 'string') next.error = { ...next.error, message: buyerFacingText(next.error.message) };
+    if (typeof next.message === 'string') next.message = buyerFacingText(next.message);
+    if (typeof next.shippingRuleLabel === 'string') next.shippingRuleLabel = buyerFacingText(next.shippingRuleLabel);
+    return next;
+}
 
 export async function POST(request) {
     const session = await getServerSession(paymentAuthOptions);
@@ -44,9 +55,10 @@ export async function POST(request) {
             body: JSON.stringify(forwardedBody),
             cache: 'no-store', signal: request.signal,
         });
-        const data = await response.json();
+        const data = forBuyer(await response.json());
         if (!response.ok) {
-            return NextResponse.json({ error: data.error?.message || data.error || data.message || 'بررسی قیمت سبد ممکن نیست.' },
+            const raw = data.error?.message || data.error || data.message || 'بررسی قیمت سبد ممکن نیست.';
+            return NextResponse.json({ error: buyerFacingText(typeof raw === 'string' ? raw : 'بررسی قیمت سبد ممکن نیست.') },
                 { status: response.status });
         }
         return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });

@@ -9,6 +9,7 @@ import { createGatewayTopUp, createAttempt, findAttempt, updateAttempt, recordGa
 import { getSepMockEnvironmentError, isSepMockEnabled } from '@/lib/sepMock';
 import { getCourseCheckout } from '@/lib/courseCheckoutApi';
 import { purchaseCourseWithByeMoney } from '@/lib/byeMoneyApi';
+import { buyerFacingText } from '@/lib/buyerFacingText';
 
 
 function getPaymentRedirectUrl(request) {
@@ -160,7 +161,7 @@ export async function POST(request) {
     } catch (error) {
         console.error('[POST /api/payment/request Error]:', error);
         return NextResponse.json(
-            { success: false, message: error.message || 'خطای غیرمنتظره در ثبت درخواست پرداخت' },
+            { success: false, message: buyerFacingText(error.message) || 'خطای غیرمنتظره در ثبت درخواست پرداخت' },
             { status: 500 }
         );
     }

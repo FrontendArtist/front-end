@@ -18,6 +18,7 @@ import {
     getItemCarrierReturnStatus, CARRIER_RETURN_CONFIRM_BLOCKED_MESSAGE, getTopUpStatusMeta, isPhysicalItemFullyCancelled,
 } from '@/lib/byeMoneyOrderView';
 import { shippingOriginText } from '@/lib/shippingOrigin';
+import { buyerFacingText } from '@/lib/buyerFacingText';
 import styles from './ByeMoneyOrderView.module.scss';
 
 function CopyButton({ text, label }) {
@@ -457,7 +458,7 @@ export default function ByeMoneyOrderView({ order, onOrderChanged }) {
                             className={`${styles.notice} ${confirmMessage.ok ? styles.noticeOk : styles.noticeError}`}
                             data-testid="confirm-delivery-message"
                         >
-                            {confirmMessage.text}
+                            {buyerFacingText(confirmMessage.text)}
                         </p>
                     )}
 

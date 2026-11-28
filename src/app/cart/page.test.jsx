@@ -607,6 +607,36 @@ test('زیرنویس معادل تومان در سایدبار فقط برای �
     const total = screen.getByText('مبلغ قابل پرداخت:').parentElement.querySelector('[data-testid="price-hint"]');
     expect(total.getAttribute('data-hide-hint')).toBe('false');
 });
+test('نام حامل در خطای سبد و برچسب ارسال خریدار دیده نمی‌شود', async () => {
+    previewCourseCart.mockResolvedValueOnce({
+        couponCode: null,
+        originalTotalInNoor: 100,
+        itemDiscountInNoor: 0,
+        couponDiscountInNoor: 0,
+        shippingAmountInNoor: 20,
+        shippingRuleLabel: 'برآورد پستکس',
+        priceInNoor: 120,
+        items: [
+            { externalId: 'prod-doc-1', externalCourseId: 'prod-doc-1', title: 'کتاب فیزیکی', type: 'product', basePriceInNoor: 100, priceInNoor: 100, quantity: 1 },
+        ],
+    });
+    useCartStore.setState({
+        items: [
+            { id: 10, documentId: 'prod-doc-1', type: 'product', title: 'کتاب فیزیکی', price: 100, quantity: 1, slug: 'book' },
+        ],
+    });
+    const { unmount } = render(<CartPage />);
+    expect(await screen.findByText('برآورد هزینه ارسال:')).toBeTruthy();
+    expect(screen.queryByText(/پستکس/)).toBeNull();
+    unmount();
+
+    previewCourseCart.mockRejectedValueOnce(new Error('برآورد هزینهٔ ارسال از پستکس ممکن نیست.'));
+    render(<CartPage />);
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('برآورد هزینهٔ ارسال از شرکت پستی ممکن نیست.');
+    expect(alert.textContent).not.toContain('پستکس');
+});
+
 test('خطای عدم تنظیم هزینه ارسال برای کالای فیزیکی در سایدبار سبد خرید نمایش داده می‌شود', async () => {
     previewCourseCart.mockRejectedValueOnce(new Error('خرید کالای فیزیکی تا تنظیم مبلغ ارسال فعال نیست.'));
     useCartStore.setState({

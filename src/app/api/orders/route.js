@@ -6,6 +6,7 @@ import { STRAPI_API_URL } from "@/lib/api";
 import { getMyCoursePurchases, getCoursePurchaseReceipt, getMyCourseOrders, getMyCourseOrderDetails, CourseOrderId } from '@/lib/byeMoneyApi';
 import { attachPurchasesToByeMoneyOrder, mapByeMoneyLineItem } from '@/lib/byeMoneyOrderItems';
 import { pickShippingOrigin } from '@/lib/shippingOrigin';
+import { buyerFacingText } from '@/lib/buyerFacingText';
 
 const STRAPI_BASE_URL = STRAPI_API_URL;
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
@@ -167,7 +168,7 @@ function sanitizeStrapiOrder(rawOrder) {
         discountAmount: src.discountAmount ?? null,
         couponCode: src.couponCode ?? null,
         shippingAmountInNoor: src.shippingAmountInNoor ?? null,
-        shippingRuleLabel: src.shippingRuleLabel ?? null,
+        shippingRuleLabel: buyerFacingText(src.shippingRuleLabel) ?? null,
         trackingNumber: src.trackingNumber ?? null,
         cardHolderName: src.cardHolderName ?? null,
         fullName: src.fullName ?? null,
